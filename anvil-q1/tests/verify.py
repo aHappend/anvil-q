@@ -1156,6 +1156,104 @@ if(writes>={len(values)} || mem_req_kind!==8 || mem_req_proj!==0 ||
     attention_test(run)
 
 
+def child_errors(run):
+    """Invalid public commands and read-boundary failures, without hierarchy access."""
+    common = dict(zip(KEYS, MATRIX["D"]))
+    common.pop("VOCAB_SIZE")
+    modules = ("w4a16_gemv", "rmsnorm", "rope", "gqa_attention",
+               "swiglu_mlp", "decoder_layer", "elementwise")
+    for module in modules:
+        parameters = dict(common)
+        if module == "rmsnorm":
+            parameters = {k: common[k] for k in ("NUM_LAYERS","HIDDEN_SIZE","MAX_SEQ_LEN")}
+        elif module == "elementwise":
+            parameters = {k: common[k] for k in
+                          ("NUM_LAYERS","HIDDEN_SIZE","INTERMEDIATE_SIZE","MAX_SEQ_LEN")}
+        extra = (",.cmd_proj(cmd_proj)" if module == "w4a16_gemv" else
+                 ",.cmd_mode(cmd_mode)" if module in ("rmsnorm","elementwise") else "")
+        params = ",".join(f".{k}({v})" for k,v in parameters.items())
+        cases = [(1,0,0,0,-1,0), (0,1,0,0,-1,0)]
+        if module == "w4a16_gemv":
+            cases += [(0,0,7,0,-1,0)]
+        if module in ("rmsnorm","elementwise"):
+            cases += [(0,0,0,3,-1,0)]
+        # -2 injects a memory-service fault at the first accepted request.
+        cases += [(0,0,0,0,-2,0)]
+        if module == "w4a16_gemv":
+            cases += [(0,0,0,0,kind,raw) for kind,raw in
+                      ((3,0x7c00),(3,0x7e00),(3,0xbc00),
+                       (4,0xfc00),(4,0x7e00))]
+        if module == "rmsnorm":
+            cases += [(0,0,0,mode,kind,raw) for mode,kind in ((0,5),(1,6),(2,7))
+                      for raw in (0x7c00,0x7e00)]
+        if module == "swiglu_mlp":
+            cases += [(0,0,0,0,3,0x7c00)]
+        if module == "decoder_layer":
+            cases += [(0,0,0,0,5,0x7e00),(0,0,0,0,4,0x7c00),
+                      (0,0,0,0,3,0xbc00)]
+        launches = "\n".join(
+            f"check_error({l},{p},{proj},{mode},{kind},16'h{raw:04x});"
+            for l,p,proj,mode,kind,raw in cases)
+        text = "module tb;\n"+BUS_PORTS+f"""
+anvil_q1_{module} #({params}) dut("""+BUS_CONNECT+extra+""");
+integer cycles=0, checks=0, requests=0, replies=0, writes=0;
+integer target=-1; reg [15:0] bad=0; reg pending=0, injected=0;
+reg [31:0] reply;
+always @(negedge clk) begin
+ mem_req_ready=rst_n;
+ mem_rsp_valid=rst_n && pending;
+ mem_rsp_rdata=reply;
+end
+always @(posedge clk) if(rst_n) begin
+ cycles=cycles+1; if(cycles>200000) $fatal(1,"CHILD watchdog");
+ if(mem_req_valid && mem_req_ready) begin
+   if(pending || injected || mem_rsp_ready) $fatal(1,"CHILD traffic after fault/overlap");
+   if(target==-1) $fatal(1,"INVALID child command memory effect");
+   requests=requests+1; pending=1;
+   if(mem_req_write) writes=writes+1;
+   reply=(mem_req_kind==8 ? 256 :
+          (mem_req_kind==1 ? 32'h99999999 :
+           (mem_req_kind==2 ? 32'h88888888 :
+            (mem_req_kind==4 ? 0 : 16'h3c00))));
+   if(target==-2 || mem_req_kind==target) begin
+     injected=1; reply={16'd0,bad}; mem_rsp_error=(target==-2);
+   end
+ end else if(mem_rsp_valid && mem_rsp_ready) begin
+   if(!pending) $fatal(1,"CHILD unexpected response");
+   pending=0; replies=replies+1;
+ end
+end
+task automatic check_error(input integer l,p,proj,mode,kind,input [15:0] raw);
+integer start_requests;
+begin
+ @(negedge clk); if(cmd_ready!==1) $fatal(1,"CHILD not idle");
+ start_requests=requests; target=kind; bad=raw; injected=0; mem_rsp_error=0;
+ cmd_layer=l; cmd_pos=p; cmd_proj=proj; cmd_mode=mode; cmd_valid=1;
+ @(negedge clk); cmd_valid=0;
+ while(done!==1) @(negedge clk);
+ if(error!==1 || cmd_ready!==0 || pending || writes!=0)
+   $fatal(1,"CHILD error propagation/no-write failure");
+ if(kind!=-1 && (!injected || requests==start_requests))
+   $fatal(1,"CHILD fault not reached");
+ checks=checks+1;
+ @(negedge clk);
+ if(done!==0 || error!==0 || cmd_ready!==1) $fatal(1,"CHILD error retirement");
+ mem_rsp_error=0;
+end endtask
+initial begin
+ #1; if({cmd_ready,done,error,mem_req_valid,mem_rsp_ready}!==5'd0)
+   $fatal(1,"CHILD reset");
+ repeat(3) @(negedge clk); rst_n=1;
+"""+launches+f"""
+ if(checks!={len(cases)} || requests!=replies) $fatal(1,"CHILD coverage");
+ $display("PASS child {module} errors=%0d requests=%0d",checks,requests);
+ $finish;
+end endmodule
+"""
+        stdout = compile_sim(run,text,"child-errors-"+module)
+        run.result("child-errors-"+module,outcome="pass",cases=len(cases),stdout=stdout)
+
+
 def attention_test(run):
     H,Q,K,D,S,pos = 112,14,2,8,4,2
     rng = random.Random(89)
@@ -1403,14 +1501,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","mutations","nonlinear","parameters","toolchain"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
-                     "protocol","mutations","nonlinear"},
+                     "protocol","errors","mutations","nonlinear"},
         "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
@@ -1439,6 +1537,8 @@ def main():
                 rms_test(run)
             if args.probe in (None, "protocol"):
                 protocol_test(run)
+            if args.probe in (None, "errors"):
+                child_errors(run)
             if args.probe in (None, "nonlinear"):
                 nonlinear_test(run)
             if args.probe=="matrix":
