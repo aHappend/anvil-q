@@ -60,6 +60,12 @@ RoPE products round by 30; residual additions saturate 16; SiLU rounds by 24
 and its up product by 8. Every signed rounding is nearest, ties away from zero.
 Binary16 ordinary data saturates Q8.8; nonfinite data is an explicit error.
 Scale conversion has its separate unsaturated rule, including subnormal ties.
+Binary16 exponent arithmetic explicitly zero-extends the five-bit exponent to
+32 bits before applying `$signed` and subtracting the fixed-point exponent
+offset. This preserves the nonnegative exponent and signed shift calculation
+without the `integer'(...)` cast syntax rejected by the Yosys 0.33 frontend.
+The same form is used in the package conversions and standalone dequantizer;
+mantissa widths, subnormal handling, rounding and output widths are unchanged.
 
 Softmax uses max subtraction and the six-term Q0.24 range-reduced exponential
 defined in SPEC (LN2=11629080, cutoff -16). Context uses the entire nonzero

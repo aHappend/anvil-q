@@ -10,7 +10,7 @@ module anvil_q1_awq_dequant(
     integer shift;
     begin
       magnitude = h[14:10] == 0 ? {54'd0,h[9:0]} : {53'd0,1'b1,h[9:0]};
-      shift = h[14:10] == 0 ? -8 : integer'(h[14:10])-9;
+      shift = h[14:10] == 0 ? -8 : $signed({27'd0,h[14:10]})-9;
       if (shift >= 0) magnitude = magnitude << shift;
       else magnitude = (magnitude + (64'd1 << (-shift-1))) >> (-shift);
       scale_integer = magnitude[31:0];
