@@ -52,6 +52,7 @@ class Run:
         self.commands = []
         self.results = []
         self.started = utc()
+        self.started_tick = time.monotonic()
         self.repair_of = repair_of
 
     def command(self, argv, name, timeout=20, observe_progress=False):
@@ -138,12 +139,14 @@ class Run:
                                 text = line.decode(errors="replace")
                                 if text.startswith(("PROGRESS ", "PROJECTION_ACK ",
                                                     "LAYER_ACK ", "EMBEDDING_ACK ", "TOKEN ",
-                                                    "COST_START ", "COST_END ")):
+                                                    "COST_START ", "COST_END ",
+                                                    "COST_PHASE ")):
                                     now = time.monotonic()
                                     user, system = live_cpu(process.pid)
                                     events.append(dict(message=text, stream=stream,
                                         host_monotonic_s=now, elapsed_wall_s=now-tick,
-                                        child_user_cpu_s=user, child_system_cpu_s=system))
+                                        child_user_cpu_s=user, child_system_cpu_s=system,
+                                        observation_work_s=time.monotonic()-now))
                     if not timed_out:
                         process.wait(timeout=max(0.001, timeout-(time.monotonic()-tick)))
                 except subprocess.TimeoutExpired:
@@ -1499,7 +1502,195 @@ def mac_qualified_cost_discriminator(run):
                "Four-token B17 completion and engineering acceptance remain open.")
 
 
-def _transactor_cost_replay(run, prior, setup_tick):
+def standalone_phase_cost(run):
+    """Implementation-only admitted diagnostic; execution needs separate admission."""
+    setup_tick = time.monotonic()
+    current = ROOT/"evidence/preparation/verifier-mac-qualified-integrated-cost-01/receipt.json"
+    require(run.repair_of == str(current.relative_to(ROOT)),
+            "phase measurement requires the admitted integrated-cost receipt")
+    receipt = json.loads(current.read_text())
+    require({p: d for p, d in run.source_hashes.items() if p != "tests/verify.py"} ==
+            {p: d for p, d in receipt["source_sha256"].items()
+             if p != "tests/verify.py"},
+            "phase measurement permits only tests/verify.py to differ")
+    lineage_path = ROOT/receipt["repair_of"]
+    require(lineage_path == ROOT/
+            "evidence/preparation/verifier-mac-qualified-cost-discriminator-01/receipt.json",
+            "unexpected integrated-cost lineage")
+    lineage = json.loads(lineage_path.read_text())
+    records = [r for r in lineage["results"]
+               if r["name"] == "mac-qualified-cost-bindings"]
+    require(len(records) == 1, "phase historical lineage bindings missing")
+    binding = records[0]
+    for relative, digest in binding["linked_receipt_sha256"].items():
+        require(hashlib.sha256((ROOT/relative).read_bytes()).hexdigest() == digest,
+                "phase linked historical receipt changed: "+relative)
+    input_records = [r for r in lineage["results"]
+                     if r["name"] == "transactor-cost-inputs"]
+    require(len(input_records) == 1 and
+            input_records[0]["retained_sha256"] == binding["retained_sha256"],
+            "phase historical input bindings disagree")
+    origins = binding["retained_sha256"]
+    parents = {Path(p).parent for p in origins}
+    require(len(parents) == 1, "ambiguous retained input origin")
+    prior = ROOT/next(iter(parents))
+    require(prior == ROOT/
+            "evidence/preparation/verifier-packed-request-cost-discriminator-02",
+            "unexpected original input lineage")
+    for relative, digest in origins.items():
+        require(hashlib.sha256((ROOT/relative).read_bytes()).hexdigest() == digest,
+                "phase retained input changed: "+relative)
+    historical_path = (ROOT/
+        "evidence/preparation/verifier-transactor-cost-discriminator-01/receipt.json")
+    require(str(historical_path.relative_to(ROOT)) in
+            binding["linked_receipt_sha256"], "historical pair is not linked")
+    historical = json.loads(historical_path.read_text())
+    arms = [r for r in historical["results"]
+            if r["name"] in ("cost-standalone", "cost-checker-only")]
+    require(len(arms) == 2 and all(
+        r["complete_trace_identical"] and r["final_acknowledgement"] and
+        r["compared_cycles"] == 10366 and r["transactions"] == 4242 and
+        r["compared_Q_writes"] == 112 for r in arms),
+        "phase historical complete-arm guards failed")
+    historical_inputs = [r for r in historical["results"]
+                         if r["name"] == "transactor-cost-inputs"]
+    require(len(historical_inputs) == 1 and
+            historical_inputs[0]["retained_sha256"] == origins,
+            "phase original historical binding changed")
+    for name in ("capture-pins.hex", "capture-normalized.hex",
+                 "matrix-B-17-memory.hex", "matrix-B-17-writes.hex",
+                 "matrix-B-17-logits.hex"):
+        require((current.parent/name).read_bytes() == (prior/name).read_bytes(),
+                "integrated receipt input differs from original lineage: "+name)
+    for source, digest in receipt["source_sha256"].items():
+        require(hashlib.sha256(
+            (current.parent/"source-snapshot"/source).read_bytes()).hexdigest() == digest,
+            "integrated source snapshot changed: "+source)
+    plan = _public_phase_partition(prior/"capture-pins.hex")
+    run.result("standalone-phase-cost-bindings", outcome="advisory_inputs_checked",
+        linked_receipt_sha256={
+            str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in (current, lineage_path)},
+        retained_sha256=origins, phase_partition=plan,
+        outer_budget_s=60, outer_budget_owner="shared runtime; separate admission required",
+        scope="No new stimulus, oracle output, integrated capture or acceptance claim.")
+    results = _transactor_cost_replay(run, prior, setup_tick, phase_plan=plan)
+    comparisons = []
+    for category in ("metadata", "input-product-accumulation", "bias-output-ack"):
+        pair = [r["phase_totals"][category] for r in results]
+        wall = pair[0]["wall_s"]-pair[1]["wall_s"]
+        cpu = pair[0]["child_cpu_s"]-pair[1]["child_cpu_s"]
+        comparisons.append(dict(phase=category, observed_wall_difference_s=wall,
+            observed_cpu_difference_s=cpu, attribution="inconclusive",
+            reason="Pipe buffering, tick quantization and uncalibrated instrumentation "
+                   "prevent expression-level or exact additive attribution."))
+    run.result("standalone-phase-cost", outcome="advisory_measurement_not_acceptance",
+        comparisons=comparisons, preparation_through_pair_wall_s=time.monotonic()-setup_tick,
+        invocation_through_pair_wall_s=time.monotonic()-run.started_tick,
+        scope="Exactly one standalone/checker-only pair; no concrete RTL-expression "
+              "hypothesis established by scheduling-region differences alone.")
+
+
+def _public_phase_partition(path):
+    """Partition public scheduling regions, never infer DUT states or arithmetic."""
+    rows = path.read_text().splitlines()
+    require(len(rows) == 10366 and
+            all(re.fullmatch("[0-9a-fA-F]{44}", row) for row in rows),
+            "phase public trace missing/XZ")
+    values = [int(row, 16) for row in rows]
+    requests, responses, pending = [], [], None
+    for index, value in enumerate(values):
+        if value >> 172 & 1 and value >> 171 & 1:
+            require(pending is None, "phase multiple outstanding requests")
+            request = dict(index=index, write=(value >> 170) & 1,
+                kind=(value >> 166) & 15, layer=(value >> 134) & 0xffffffff,
+                proj=(value >> 131) & 7, row=(value >> 99) & 0xffffffff,
+                col=(value >> 67) & 0xffffffff)
+            requests.append(request)
+            pending = request
+        if value >> 34 & 1 and value >> 33 & 1:
+            require(pending is not None and pending["index"] < index,
+                    "phase response not strictly later")
+            pending["response_index"] = index
+            responses.append(index)
+            pending = None
+    require(pending is None and len(requests) == len(responses) == 4242 and
+            responses[-1] == 10365, "phase transaction/final acknowledgement coverage")
+    cursor, spans = 0, []
+
+    def consume(kind, row, col, write=0):
+        nonlocal cursor
+        require(cursor < len(requests), "phase expected transaction missing")
+        request = requests[cursor]
+        require((request["kind"], request["row"], request["col"], request["write"],
+                 request["layer"], request["proj"]) == (kind, row, col, write, 0, 0),
+                "phase unexpected public transaction ordering/address")
+        cursor += 1
+        return request
+
+    def appearance(request):
+        index = request["index"]
+        # Include the full valid-but-not-ready prefix of this same transaction.
+        while index > 0 and values[index-1] >> 172 & 1:
+            require(not (values[index-1] >> 171 & 1) and
+                    (values[index-1] >> 35) & ((1 << 136)-1) ==
+                    (values[request["index"]] >> 35) & ((1 << 136)-1),
+                    "phase stalled boundary changed payload")
+            index -= 1
+        return index
+
+    for tile in range(14):
+        for group in range(7):
+            zero = consume(2, group, tile)
+            spans.append(dict(start=appearance(zero), category="metadata",
+                              tile=tile, group=group))
+            for lane in range(8):
+                consume(3, group, tile*8+lane)
+            first_input = None
+            for k in range(group*16, (group+1)*16):
+                activation = consume(8, 1, k)
+                if first_input is None:
+                    first_input = activation
+                consume(1, k, tile)
+            spans.append(dict(start=appearance(first_input),
+                category="input-product-accumulation", tile=tile, group=group))
+        bias = consume(4, 0, tile*8)
+        spans.append(dict(start=appearance(bias), category="bias-output-ack",
+                          tile=tile, group=None))
+        for lane in range(1, 8):
+            consume(4, 0, tile*8+lane)
+        for lane in range(8):
+            consume(8, 2, tile*8+lane, write=1)
+    require(cursor == len(requests) and spans[0]["start"] == 0,
+            "phase exhaustive public request coverage")
+    boundaries = [s["start"] for s in spans]+[10365]
+    require(all(a < b for a, b in zip(boundaries, boundaries[1:])),
+            "phase boundaries not strictly increasing")
+    for ordinal, span in enumerate(spans):
+        start, end = boundaries[ordinal:ordinal+2]
+        span.update(id=ordinal, end=end, elapsed_edges=end-start,
+            transactions=sum(start <= r["index"] < end for r in requests),
+            responses=sum(start <= i < end or
+                          (ordinal == len(spans)-1 and i == end) for i in responses))
+    require(sum(s["elapsed_edges"] for s in spans) == 10365 and
+            sum(s["transactions"] for s in spans) == 4242 and
+            sum(s["responses"] for s in spans) == 4242,
+            "phase edge/transaction partition has gap or double count")
+    return dict(spans=spans, boundaries=boundaries, elapsed_edges=10365,
+        endpoint_inclusive_samples=10366, transactions=4242, responses=4242,
+        convention="Edge i is the interval from public sample i to i+1. Spans own "
+            "half-open elapsed-edge indices [start,end); transactions at a boundary "
+            "sample belong to the following span. Sole exception: final endpoint "
+            "response at sample 10365 belongs to the last span, without another edge. "
+            "All samples remain compared, including both endpoints. Markers precede "
+            "sample service/comparison at each boundary; final endpoint validation "
+            "therefore occurs outside measured edges. Stalls, response waits and "
+            "intervening gaps belong to the current span until the next public "
+            "request's first valid appearance. Input regions include observable "
+            "packed-weight-to-next-request gaps, not inferred internal MAC states.")
+
+
+def _transactor_cost_replay(run, prior, setup_tick, phase_plan=None):
     """Shared retained service, schedule, assertions and bounded paired execution."""
     for relative in run.source_hashes:
         target = run.out / "source-snapshot" / relative
@@ -1564,6 +1755,8 @@ def _transactor_cost_replay(run, prior, setup_tick):
     template = template.replace(" responses=672;",
         f" responses=672; reply=32'h{(values[0] >> 1) & 0xffffffff:08x};", 1)
     require("responses=672; reply=" in template, "initial service state hook missing")
+    if phase_plan is not None:
+        template = _instrument_public_phases(template, phase_plan)
     endpoint = re.search(r"anvil_q1_w4a16_gemv #\(.*?\.cmd_proj\(cmd_proj\)\);\n",
                          template, re.S)
     require(endpoint is not None, "standalone public endpoint missing")
@@ -1626,10 +1819,12 @@ assign {mem_req_valid,mem_req_write,mem_req_kind,mem_req_layer,mem_req_proj,
         require(norm.read_bytes() == (retained/"capture-normalized.hex").read_bytes(),
                 name+": normalized scratch mismatch")
         observation = json.loads((ROOT/record["host_observations_path"]).read_text())
-        events = [e for e in observation["events"] if e["message"].startswith("COST_")]
-        require(len(events) == 2 and not observation["cpu_sample_errors"],
+        events = [e for e in observation["events"] if e["message"].startswith(
+            "COST_PHASE " if phase_plan is not None else ("COST_START ", "COST_END "))]
+        require(len(events) == (len(phase_plan["boundaries"]) if phase_plan else 2)
+                and not observation["cpu_sample_errors"],
                 name+": interval CPU observations missing")
-        start, end = events
+        start, end = events[0], events[-1]
         wall = end["elapsed_wall_s"]-start["elapsed_wall_s"]
         cpu = sum(end[k]-start[k] for k in ("child_user_cpu_s", "child_system_cpu_s"))
         scheduler = {}
@@ -1653,6 +1848,11 @@ assign {mem_req_valid,mem_req_write,mem_req_kind,mem_req_layer,mem_req_proj,
             scheduler_statistics=scheduler,
             scheduler_scope="complete simulator invocation, including setup",
             host_observations=record["host_observations_path"])
+        if phase_plan is not None:
+            require(not re.search(r"\b(warning|error)\b", stderr, re.I),
+                    name+": simulator warning/error "+stderr)
+            result.update(_public_phase_observations(
+                phase_plan, events, observation, record))
         run.result(**result)
         results.append(result)
     standalone, checker_only = results
