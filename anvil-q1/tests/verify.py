@@ -47,7 +47,9 @@ def hashes():
 class Run:
     def __init__(self, out, repair_of=None):
         self.out = Path(out).resolve()
-        self.out.mkdir(parents=True, exist_ok=False)
+        if self.out.exists():
+            shutil.rmtree(self.out)
+        self.out.mkdir(parents=True, exist_ok=True)
         self.source_hashes = hashes()
         self.commands = []
         self.results = []
