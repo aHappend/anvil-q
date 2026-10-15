@@ -330,6 +330,11 @@ always @(posedge clk) begin
    if(pending || mem_rsp_ready) $fatal(1,"OUTSTANDING or request/response overlap");
    if(mem_req_layer!==0) $fatal(1,"unexpected layer");
    accepted=accepted+1; pending=1; delay_count=(accepted%127==0 ? 2 : 0);
+   if(accepted%262144==0) begin
+     $display("PROGRESS accepted=%0d compared_writes=%0d completed=%0d cycles=%0d",
+       accepted,writes,completions,cycles);
+     $fflush();
+   end
    if(mem_req_write) begin
 """ + expected + """
      writes=writes+1; reply=0;
@@ -1330,7 +1335,7 @@ always @(posedge clk) if(rst_n) begin
       (scenario==6 && mem_req_kind==5) ||
       (scenario==7 && mem_req_kind==6) ||
       (scenario==8 && mem_req_kind==7) ||
-      (scenario==9 && logits==1)) begin
+      (scenario==9 && logits==1 && mem_req_kind==0)) begin
      injected=1; reply=(scenario==5 ? 16'hbc00 : 16'h7e00);
    end
  end else if(mem_rsp_valid && mem_rsp_ready) begin
