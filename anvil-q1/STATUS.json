@@ -1,44 +1,8 @@
 {
-  "family": "Anvil",
-  "series": "Anvil-Q",
   "chip": "Anvil-Q1",
-  "target_model": "Alibaba Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision Edition)",
+  "target": "Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision)",
   "vulcan_version": "0.8.0",
-  "github_repo": "https://github.com/aHappend/anvil-q",
-  "status": "settled",
-  "native_disposition": {
-    "workflow_phase": "no_progress",
-    "feedback": "verifier repeated continue with unchanged owned sources after recovery; inspect .vulcan/engineering/run-0003/attempt-0015. No further identical attempt was dispatched.",
-    "run_status": "ready",
-    "closeout_status": null,
-    "driver_steps": [
-      {
-        "operation": "init",
-        "exit_code": 0
-      },
-      {
-        "operation": "run",
-        "exit_code": 2
-      }
-    ],
-    "driver_steps_ok": false,
-    "state_error": null,
-    "repairs_used": 17,
-    "designer_attempts": 2,
-    "model_call_count": 38,
-    "all_process_scopes_settled": true,
-    "reviewer_decisions": [],
-    "native_engineering_accepted": false,
-    "candidate_present": false,
-    "candidate_invalid_reason": null,
-    "final_candidate": null,
-    "initial_unrepaired_candidate": null,
-    "initial_candidate_invalid_reason": null,
-    "scientific_acceptance": false
-  },
-  "started_utc": "2026-10-15T10:39:38.988607+00:00",
-  "finished_utc": "2026-10-15T12:58:04.806822+00:00",
-  "started_cst": "2026-10-15 18:39:38 UTC+8",
-  "finished_cst": "2026-10-15 20:58:04 UTC+8",
-  "elapsed_seconds": 8303.062
+  "status": "running",
+  "started_cst": "2026-10-15 21:03:22 UTC+8",
+  "updated_cst": "2026-10-15 21:03:22 UTC+8"
 }
