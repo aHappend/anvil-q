@@ -12,7 +12,11 @@ import math
 import os
 from pathlib import Path
 import random
+import re
+import resource
+import selectors
 import shutil
+import signal
 import struct
 import subprocess
 import sys
@@ -50,17 +54,22 @@ class Run:
         self.started = utc()
         self.repair_of = repair_of
 
-    def command(self, argv, name, timeout=20):
+    def command(self, argv, name, timeout=20, observe_progress=False):
         argv = [str(x) for x in argv]
         start = utc()
         tick = time.monotonic()
         timed_out = False
-        try:
-            p = subprocess.run(argv, cwd=ROOT, capture_output=True, timeout=timeout)
-            code, stdout, stderr = p.returncode, p.stdout, p.stderr
-        except subprocess.TimeoutExpired as exc:
-            code, stdout, stderr = None, exc.stdout or b"", exc.stderr or b""
-            timed_out = True
+        observation = None
+        if observe_progress:
+            code, stdout, stderr, timed_out, observation = self.observe_process(
+                argv, timeout, tick)
+        else:
+            try:
+                p = subprocess.run(argv, cwd=ROOT, capture_output=True, timeout=timeout)
+                code, stdout, stderr = p.returncode, p.stdout, p.stderr
+            except subprocess.TimeoutExpired as exc:
+                code, stdout, stderr = None, exc.stdout or b"", exc.stderr or b""
+                timed_out = True
         stdout_path = self.out / (name + ".stdout")
         stderr_path = self.out / (name + ".stderr")
         stdout_path.write_bytes(stdout)
@@ -70,9 +79,99 @@ class Run:
                       timed_out=timed_out, exit_code=code,
                       stdout_path=str(stdout_path.relative_to(ROOT)),
                       stderr_path=str(stderr_path.relative_to(ROOT)))
+        if observation is not None:
+            observation_path = self.out / (name + "-host-observations.json")
+            observation_path.write_text(json.dumps(observation, indent=2) + "\n")
+            record["host_observations_path"] = str(observation_path.relative_to(ROOT))
+            record["child_user_cpu_s"] = observation["child_user_cpu_s"]
+            record["child_system_cpu_s"] = observation["child_system_cpu_s"]
+            record["process_group_settled"] = observation["process_group_settled"]
         self.commands.append(record)
         self.save()
         return code, stdout.decode(errors="replace"), stderr.decode(errors="replace")
+
+    def observe_process(self, argv, timeout, tick):
+        """Diagnostic-only pipe observation; never drives simulation stimulus."""
+        cpu_before = resource.getrusage(resource.RUSAGE_CHILDREN)
+        clock_ticks = os.sysconf("SC_CLK_TCK")
+        events, cpu_errors = [], []
+        streams = {"stdout": bytearray(), "stderr": bytearray()}
+        partial = {"stdout": b"", "stderr": b""}
+        child_pids = set()
+
+        def live_cpu(pid):
+            user = system = 0
+            try:
+                children = Path(f"/proc/{pid}/task/{pid}/children").read_text().split()
+                child_pids.update(int(child) for child in children)
+                for process in (pid, *sorted(child_pids)):
+                    fields = Path(f"/proc/{process}/stat").read_text().rsplit(")", 1)[1].split()
+                    user += int(fields[11])
+                    system += int(fields[12])
+            except OSError as exc:
+                cpu_errors.append(str(exc))
+                return None, None
+            return user / clock_ticks, system / clock_ticks
+
+        timed_out = False
+        with subprocess.Popen(argv, cwd=ROOT, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, start_new_session=True) as process:
+            with selectors.DefaultSelector() as selector:
+                selector.register(process.stdout, selectors.EVENT_READ, "stdout")
+                selector.register(process.stderr, selectors.EVENT_READ, "stderr")
+                try:
+                    while selector.get_map():
+                        remaining = timeout - (time.monotonic() - tick)
+                        if remaining <= 0:
+                            timed_out = True
+                            break
+                        for key, _ in selector.select(min(remaining, 0.1)):
+                            data = os.read(key.fileobj.fileno(), 65536)
+                            if not data:
+                                selector.unregister(key.fileobj)
+                                continue
+                            stream = key.data
+                            streams[stream].extend(data)
+                            partial[stream] += data
+                            while b"\n" in partial[stream]:
+                                line, partial[stream] = partial[stream].split(b"\n", 1)
+                                text = line.decode(errors="replace")
+                                if text.startswith(("PROGRESS ", "PROJECTION_ACK ",
+                                                    "LAYER_ACK ", "EMBEDDING_ACK ", "TOKEN ")):
+                                    now = time.monotonic()
+                                    user, system = live_cpu(process.pid)
+                                    events.append(dict(message=text, stream=stream,
+                                        host_monotonic_s=now, elapsed_wall_s=now-tick,
+                                        child_user_cpu_s=user, child_system_cpu_s=system))
+                    if not timed_out:
+                        process.wait(timeout=max(0.001, timeout-(time.monotonic()-tick)))
+                except subprocess.TimeoutExpired:
+                    timed_out = True
+                finally:
+                    # The process group belongs only to this diagnostic invocation.
+                    if process.poll() is None or timed_out:
+                        try:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                    process.wait(timeout=1)
+                    for key in list(selector.get_map().values()):
+                        streams[key.data].extend(key.fileobj.read())
+        cpu_after = resource.getrusage(resource.RUSAGE_CHILDREN)
+        try:
+            os.killpg(process.pid, 0)
+            settled = False
+        except ProcessLookupError:
+            settled = True
+        return (None if timed_out else process.returncode,
+                bytes(streams["stdout"]), bytes(streams["stderr"]), timed_out,
+                dict(start_monotonic_s=tick, events=events,
+                     child_user_cpu_s=cpu_after.ru_utime-cpu_before.ru_utime,
+                     child_system_cpu_s=cpu_after.ru_stime-cpu_before.ru_stime,
+                     cpu_sample_resolution_s=1/clock_ticks,
+                     cpu_sample_errors=cpu_errors, observed_child_pids=sorted(child_pids),
+                     cpu_scope="timeout and its vvp child; final reaped child usage",
+                     process_group_settled=settled))
 
     def save(self):
         # This is a new output namespace, never a historical execution record.
@@ -1065,15 +1164,18 @@ def progress_probe(run,tb,prefix,sources,seconds):
                              executable,*(sources or RTL),sv],prefix+"-compile",timeout=5)
     require(code==0 and not err.strip(),"progress compile failure "+err)
     run.command(["timeout","--version"],"timeout-version",timeout=2)
-    code,stdout,stderr = run.command(["timeout",str(seconds),"vvp","-v",executable],
-                                     prefix+"-progress",timeout=seconds+3)
+    code,stdout,stderr = run.command(
+        ["timeout","--signal=INT","--kill-after=1s",str(seconds),
+         "vvp","-n","-v",executable],
+        prefix+"-progress",timeout=seconds+3,observe_progress=True)
     require(code in (0,124),"progress unexpected tool failure "+stdout+stderr)
+    command = run.commands[-1]
+    require(command["process_group_settled"],"progress child process group not settled")
     run.result("bounded-progress",outcome="measurement_not_acceptance",exit_code=code,
                budget_s=seconds,completed_simulation=code==0,
                full_B_gemv_products=573440,minimum_B_gemv_reads=183680,
                raw_stdout=str((run.out/(prefix+"-progress.stdout")).relative_to(ROOT)),
                raw_stderr=str((run.out/(prefix+"-progress.stderr")).relative_to(ROOT)))
-    import re
     samples = [dict(accepted=int(a),writes=int(w),completed_tokens=int(t),cycles=int(c))
                for a,w,t,c in re.findall(
                    r"PROGRESS accepted=(\d+) compared_writes=(\d+) completed=(\d+) cycles=(\d+)",
@@ -1085,10 +1187,64 @@ def progress_probe(run,tb,prefix,sources,seconds):
     require(samples,"progress diagnostic observed no public transactions")
     observed = max([s["accepted"] for s in samples]+[a["accepted"] for a in acknowledgements])
     elapsed = run.commands[-1]["elapsed_s"]
+    observation = json.loads((ROOT/command["host_observations_path"]).read_text())
+    events = observation["events"]
+    intervals, phases = [], []
+    previous = dict(elapsed_wall_s=0,child_user_cpu_s=0,child_system_cpu_s=0,
+                    accepted=0,cycles=0,message="simulation launch")
+    phase_start = previous
+    for event in events:
+        event.update({key:int(value) for key,value in
+                      re.findall(r"(\w+)=(\d+)",event["message"])})
+
+        def interval(start, end):
+            wall = end["elapsed_wall_s"]-start["elapsed_wall_s"]
+            user = (None if end["child_user_cpu_s"] is None or
+                    start["child_user_cpu_s"] is None else
+                    end["child_user_cpu_s"]-start["child_user_cpu_s"])
+            system = (None if end["child_system_cpu_s"] is None or
+                      start["child_system_cpu_s"] is None else
+                      end["child_system_cpu_s"]-start["child_system_cpu_s"])
+            cpu = None if user is None or system is None else user+system
+            return dict(start=start["message"],end=end["message"],wall_s=wall,
+                child_user_cpu_s=user,child_system_cpu_s=system,
+                cpu_to_wall_ratio=None if cpu is None else cpu/wall,
+                cycles=end["cycles"]-start["cycles"],
+                transactions=end["accepted"]-start["accepted"])
+
+        intervals.append(interval(previous,event))
+        if not event["message"].startswith("PROGRESS "):
+            phases.append(interval(phase_start,event))
+            phase_start = event
+        previous = event
+    cpu = command["child_user_cpu_s"]+command["child_system_cpu_s"]
+    ratio = cpu/elapsed
+    scheduler = {}
+    for key,pattern in (
+        ("time_steps",r"(\d+) time steps"),
+        ("thread_schedule_events",r"(\d+) thread schedule events"),
+        ("assign_events",r"(\d+) assign events"),
+        ("other_events",r"(\d+) other events")):
+        match = re.search(pattern,stdout+stderr)
+        require(match is not None,"missing vvp scheduler statistic "+key)
+        scheduler[key] = int(match.group(1))
+    require(events and not observation["cpu_sample_errors"],
+            "missing or failed public-message CPU observations")
     products = 4*2*(112*112*2+112*16*2+112*128*2+128*112)
     require(products==573440,"B workload arithmetic")
     report = dict(outcome="bounded_measurement_not_acceptance",
         samples=samples,projection_final_write_acknowledgements=acknowledgements,
+        host_observations=command["host_observations_path"],
+        public_message_intervals=intervals,completed_public_phase_intervals=phases,
+        unfinished_phase_after=phase_start["message"],
+        scheduler_statistics=scheduler,
+        child_user_cpu_s=command["child_user_cpu_s"],
+        child_system_cpu_s=command["child_system_cpu_s"],
+        cpu_to_wall_ratio=ratio,
+        cpu_diagnosis=("CPU-bound event processing; no substantial CPU deprivation observed"
+                       if ratio>=0.9 else
+                       "substantial non-CPU wall time observed; CPU deprivation versus "
+                       "other waiting is not distinguished"),
         observed_public_transactions_at_least=observed,elapsed_wall_s=elapsed,
         observed_floor_transaction_rate_per_s=observed/elapsed,
         full_B_gemv_products=products,current_GEMV_input_metadata_reads_per_product=41/128,
@@ -1097,13 +1253,18 @@ def progress_probe(run,tb,prefix,sources,seconds):
         extrapolation_is_not_a_completion_bound=True,
         unchanged_matrix_simulation_timeout_s=25,unchanged_aggregate_budget_s=120,
         diagnosis="Public request/response observations are retained with exact arithmetic "
-        "comparisons and deterministic stalls. The current eight-output scalar tile "
+        "comparisons and deterministic stalls. The current eight-output parallel tile "
         "analytically uses 183680 B input/metadata reads, excluding bias/output/other "
-        "engines. This diagnostic does not establish full workload completion.",
+        "engines. Phase intervals span public acknowledgements, not internal states; "
+        "the V-to-O interval includes RoPE/attention, O-to-gate includes residual/norm, "
+        "and up-to-down includes SiLU/product. CPU samples have kernel tick resolution "
+        "and host timestamps record pipe receipt, not exact simulator emission. "
+        "This diagnostic does not establish full workload completion.",
         designer_handoff="Retain the Q16.16 contract, signed37 dequantization, signed69 "
-        "products, signed128 accumulation, scalar eight-output reuse and all public "
-        "comparisons. A timeout requires another admitted execution-cost repair, not "
-        "larger deadlines or reduced coverage.")
+        "products, signed128 accumulation, eight real parallel dequantizer/product lanes, "
+        "direct GEMV handshake sequencing and all public comparisons. Measured phase "
+        "costs inform independent recovery admission, not larger deadlines, reduced "
+        "coverage or an unmeasured architectural repair.")
     (run.out/(prefix+"-execution-cost.json")).write_text(json.dumps(report,indent=2)+"\n")
 
 
