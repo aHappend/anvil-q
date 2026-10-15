@@ -1,10 +1,33 @@
 {
-  "status_label": "In Progress — Phase 2 Official Weights & Software-vs-RTL Verification",
+  "status_label": "Settled — Phase 2 Official Weights Package Published",
   "chip": "Anvil-Q1",
   "phase": "Phase 2 — Official Weights & Software-vs-RTL Comparison",
   "vulcan_version": "0.8.0",
+  "status": "settled",
+  "native_disposition": {
+    "workflow_phase": "blocked",
+    "feedback": "INDEPENDENT REVIEWER RECOVERY ADMISSION GRANTED (call-0004, status=done):\nApprove the proposed recovery decision to stop for missing official checkpoint data—not Phase 2 engineering acceptance. The supplied manifest has only 64 of 151936 embedding rows and 64 of 896 input rows for layer-0 Q packed weights. The coverage calculation in tests/official_weights.py excludes the unnecessary duplicate tied head and reports 572 absent required tensors and 183550528 unavailable elements. No permitted RTL or verification repair can reconstruct these official values; downloads and manufactured replacements are prohibited by the admitted work order.\n\nThe failure is supported beyond the manifest. I read official_top_coverage_test, its raw-file memory service, and evidence/preparation/verifier-phase2-final-integration-02/receipt.json and official-top-coverage-simulate.stdout. The recorded Python/Icarus 12 probe compared 1792 embedding/input-normalization writes, then injected the specified memory error at missing model.layers.0.self_attn.q_proj.qweight coordinate (64,0), requiring error completion and no logits. The simulation exited normally without timeout and its process group settled. This establishes partial execution and rejection of incomplete data, not completed inference. The comparison file correctly retains zero completed official tokens and null aggregate accuracy and cycle measurements. The earlier literal-layer assertion failure remains recorded in evidence/preparation/verifier-phase2-raw-integration-02/receipt.json; later partial execution does not erase it.\n\nPreserve tests/verify.py, tests/official_weights.py, design/OFFICIAL_WEIGHTS_EVALUATION.md, current RTL and all retained failures. The required external repair is authorized provision of complete official tensor contents and accompanying provenance. After that handoff, Verifier must validate complete coordinate coverage and execute the admitted checks through the shared runtime. Full functional and sensitivity results, A/B/C/D synthesis, and matched Icarus 12/13 portability remain unverified; the inspected synthesis receipt covers D only. Do not repeat unchanged probes, redesign the accelerator, substitute synthetic results, or relax acceptance while awaiting those inputs. This review used file reads and searches only and changed no files.\n\nAdmitted Coordinator Recovery Proposal:\nUnavailable checkpoint coverage, not an identified RTL defect, prevents Phase 2 acceptance. Read-only inspection of sources, the supplied execution ledger and retained receipts confirms only 64/151936 embedding rows, truncated qweight matrices and no layers 1–22: 572 required layer tensors and 183550528 required elements are unavailable. evidence/preparation/verifier-phase2-final-integration-02/receipt.json records settled, non-timeout Python/Icarus12 execution validating provenance and partial comparisons; its official-top-coverage-simulate.stdout shows 1792 matched writes followed by the intended missing model.layers.0.self_attn.q_proj.qweight coordinate (64,0) rejection, not completed inference. The earlier literal-layer harness assertion failure is retained in evidence/preparation/verifier-phase2-raw-integration-02/receipt.json and repaired in the subsequent partial run. Preserve tests/verify.py, tests/official_weights.py and design/OFFICIAL_WEIGHTS_EVALUATION.md; no coordinator edits or experiments were performed. Yosys preparation covers D only, and full functional, sensitivity, A/B/C/D synthesis and matched Icarus12/13 acceptance remain unverified. The input provisioner must supply complete official tensors with trusted provenance through an authorized handoff; project roles may not download or manufacture them. Once provisioned, route to Verifier to validate complete coordinate coverage and execute the admitted checks through the shared runtime. Keep full-model metrics incomplete/null and engineering acceptance blocked; partial and synthetic diagnostics cannot close the objective.",
+    "run_status": "ready",
+    "closeout_status": null,
+    "driver_steps": null,
+    "driver_steps_ok": false,
+    "state_error": null,
+    "repairs_used": 0,
+    "designer_attempts": 1,
+    "model_call_count": 4,
+    "all_process_scopes_settled": true,
+    "reviewer_decisions": [],
+    "native_engineering_accepted": false,
+    "candidate_present": false,
+    "candidate_invalid_reason": null,
+    "final_candidate": null,
+    "initial_unrepaired_candidate": null,
+    "initial_candidate_invalid_reason": null,
+    "scientific_acceptance": false
+  },
   "started_utc": "2026-10-15T15:19:23.596868+00:00",
+  "finished_utc": "2026-10-15T15:41:05.527371+00:00",
   "started_cst": "2026-10-15 23:19:23 UTC+8",
-  "status": "running",
-  "reason": "Execute Roadmap Phase 2 for Anvil-Q1: integrate real official HuggingFace Qwen/Qwen2.5-0.5B-Instruct-AWQ (model.safetensors) W4A16 G128 checkpoint weights and conduct end-to-end Software-Layer (FP32/FP16 AWQ dequantized reference) vs Hardware-RTL (SystemVerilog W4A16 Q8.8/Q16.16) numerical accuracy, bit-exactness, and cycle-accurate performance comparison."
+  "finished_cst": "2026-10-15 23:41:05 UTC+8",
+  "elapsed_seconds": 1299.11
 }

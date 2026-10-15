@@ -2,6 +2,10 @@
 
 The public protocol, exact arithmetic, AWQ unpack table and legal parameter
 matrix are frozen in [SPEC.md](SPEC.md). This file describes their implementation.
+Phase 2 checkpoint coverage, raw tensor addressing, independent FP32 semantics
+and software-versus-RTL measurements are specified in
+[OFFICIAL_WEIGHTS_EVALUATION.md](OFFICIAL_WEIGHTS_EVALUATION.md). That methodology
+does not certify execution: the supplied official extraction is incomplete.
 Each token is processed by one reused decoder engine; no full-model arrays are
 allocated. A parent exclusively routes its active child's memory transaction.
 External scratch retains intermediate vectors, external KV retains committed
@@ -42,18 +46,18 @@ write acknowledgements, cannot toggle those arithmetic inputs with their data.
 All consuming edges, arithmetic widths, rounding, transaction counts and error
 priority remain unchanged. This removes avoidable inactive-data fanout; it is
 not a measured execution-time improvement. The accepted dequantizer dependency
-partition and packed-request selection are retained. Following GEMV multiplier
-operand isolation, independent B17
-four-token completion must first be established
-against the unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-packed-request-B17-01/receipt.json`, using
-fresh `evidence/preparation/verifier-mac-qualified-B17-01` output (or a fresh
-suffix if occupied), before
-the remaining seeds and complete 120-second checks can establish coverage.
-Failure or timeout requires retained evidence and an independently admitted
-diagnosis, without additional seeds or another speculative repair loop.
-Engineering acceptance remains INCOMPLETE, including the independently unmet
-Icarus13 prerequisite; static elaboration does not establish acceptance.
+partition and packed-request selection are retained. Historical B17 timeouts
+and cost-profile diagnostics do not establish current correctness or impose
+Phase 2 scheduling limits. The current work order replaces the historical
+25-second simulation and 120-second total restrictions with generous normal
+functional/synthesis child limits of at least 3600 seconds, within the shared
+runtime's admitted envelope. Do not run cost microprofilers or replay old
+diagnostic plans. Retain failures and all B17/B89 numerical witnesses; no
+functional assertion or numerical limit is relaxed. Refuse occupied evidence
+destinations without overwriting or automatic suffix retries.
+Engineering acceptance remains incomplete pending independent checks,
+complete checkpoint coverage and matched Icarus12/13 portability evidence;
+static elaboration does not establish acceptance.
 
 Required hierarchy: top -> decoder_layer + final rmsnorm; decoder_layer ->
 rmsnorm, w4a16_gemv, rope, gqa_attention, swiglu_mlp; swiglu_mlp ->
@@ -109,8 +113,9 @@ isolation, not post-product masking. The resetless dequantizers, invalid-scale
 priority, signed-128 accumulators and increasing-input order are unchanged.
 No clock gating, new register, pipeline state, FSM transition or public cycle
 is introduced. This scheduling-neutral execution-cost hypothesis does not
-establish a measured speedup; the retained B17 timeout remains unresolved until
-independent four-token completion under its unchanged watchdog.
+establish a measured speedup; historical B17 timeout evidence is not a completed
+comparison. Phase 2 must independently establish four-token completion under
+the current execution policy without changing the retained stimulus.
 The exact sum stays below 2^100 even for unsigned-32-bit input dimensions.
 No signed-32-bit scale/dequant or signed-64-bit GEMV truncation is permitted.
 
@@ -234,7 +239,7 @@ For the retained four-token B workload, analytical input/metadata reads remain
 183680, excluding biases, writes and other engines. Public transaction order
 and counts are unchanged by the parallel-MAC/direct-handshake amendment.
 Neither this count nor fewer arithmetic/request-launch edges proves completion
-within the unchanged execution budgets.
+or measured performance under the current execution budgets.
 
 Only GEMV replaces helper issue/register/request staging with direct requests.
 Request-valid derives solely from request state; payloads derive from held

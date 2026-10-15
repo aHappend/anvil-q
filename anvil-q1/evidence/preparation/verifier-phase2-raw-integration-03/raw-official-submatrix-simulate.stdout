@@ -1,0 +1,2 @@
+PASS public writes=896 transactions=16624 stalls=1050 busy_holds=28 bubbles=42
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-03/raw-official-submatrix.sv:504: $finish called at 419110 (1s)

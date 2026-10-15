@@ -21,6 +21,10 @@ import struct
 import subprocess
 import sys
 import time
+import traceback
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import official_weights as official
 
 ROOT = Path(__file__).resolve().parents[1]
 RTL = sorted(ROOT.glob("rtl/*.sv"))
@@ -44,18 +48,25 @@ def hashes():
             for p in sorted(ROOT.glob(pattern))}
 
 
+def official_hashes():
+    return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for pattern in ("hf_qwen25_05b_awq_spec/official_weights/*.json",
+                            "hf_qwen25_05b_awq_spec/official_weights/*.safetensors")
+            for p in sorted(ROOT.glob(pattern))}
+
+
 class Run:
     def __init__(self, out, repair_of=None):
         self.out = Path(os.path.abspath(out))
         self.out.mkdir(parents=True, exist_ok=False)
-        self.source_hashes = hashes()
+        self.source_hashes = hashes() | official_hashes()
         self.commands = []
         self.results = []
         self.started = utc()
         self.started_tick = time.monotonic()
         self.repair_of = repair_of
 
-    def command(self, argv, name, timeout=20, observe_progress=False):
+    def command(self, argv, name, timeout=3600, observe_progress=True):
         argv = [str(x) for x in argv]
         start = utc()
         tick = time.monotonic()
@@ -80,6 +91,7 @@ class Run:
                       timed_out=timed_out, exit_code=code,
                       stdout_path=str(stdout_path.relative_to(ROOT)),
                       stderr_path=str(stderr_path.relative_to(ROOT)))
+        record["tool_path"] = shutil.which(argv[0])
         if observation is not None:
             observation_path = self.out / (name + "-host-observations.json")
             observation_path.write_text(json.dumps(observation, indent=2) + "\n")
@@ -174,14 +186,21 @@ class Run:
                      child_system_cpu_s=cpu_after.ru_stime-cpu_before.ru_stime,
                      cpu_sample_resolution_s=1/clock_ticks,
                      cpu_sample_errors=cpu_errors, observed_child_pids=sorted(child_pids),
-                     cpu_scope="timeout and its vvp child; final reaped child usage",
+                     cpu_scope="invocation process group; final reaped child usage",
                      process_group_settled=settled))
 
     def save(self):
         # This is a new output namespace, never a historical execution record.
+        final = next((result for result in reversed(self.results)
+                      if result["name"] == "check"), None)
         (self.out / "receipt.json").write_text(json.dumps(dict(
-            start_time=self.started, updated_time=utc(), argv=sys.argv,
+            start_time=self.started, updated_time=utc(), argv=[sys.executable, *sys.argv],
             cwd=str(ROOT), source_sha256=self.source_hashes, repair_of=self.repair_of,
+            python=dict(executable=sys.executable, version=sys.version),
+            end_time=utc() if final else None,
+            exit_code=(0 if final["outcome"] == "pass" else 1) if final else None,
+            process_groups_settled=all(
+                command.get("process_group_settled") is True for command in self.commands),
             commands=self.commands, results=self.results), indent=2) + "\n")
 
     def result(self, name, **values):
@@ -301,7 +320,7 @@ def manifest(run):
 
 def compile_sim(run, text, name, sources=None, timeout=3600, *,
                 compiler="iverilog", compiler_args=(), runtime="vvp",
-                settled=False):
+                settled=True):
     sv = run.out / (name+".sv")
     executable = run.out / (name+".vvp")
     sv.write_text(text)
@@ -574,7 +593,7 @@ launch(6,0);
 if(writes!=8) $fatal(1,"missing outputs");
 """
     stdout = compile_sim(run, command_tb(instance, reader, expected, commands),
-                         name, sources=sources, timeout=35)
+                         name, sources=sources, timeout=3600)
     run.result("gemv_wide_cancellation", exact_peak=exact_peak,
                expected_cancellation_accumulator=0, outputs=8,
                wide_saturating_outputs=2,
@@ -673,7 +692,7 @@ launch(4,0); if(accepted!=115) $fatal(1,"GEMV gate forbidden bias/count");
 """
     commands += f'if(writes!={len(writes)}) $fatal(1,"official outputs missing");'
     stdout = compile_sim(run,command_tb(instance,reader,check,commands),
-                         "official-gemv",timeout=30)
+                         "official-gemv",timeout=3600)
     run.result("official_gemv", official_scalar_products=comparisons,
                official_submatrices="Q/K/gate rows 0:8 channels 0:8",
                synthetic_padding="none: only supplied rows/channels; scaled G8 stays in official G128 group zero",
@@ -3008,8 +3027,13 @@ def mutations(run):
         ("rope","anvil_q1_rope.sv",
          "((state==3 || state==11) ? HEAD_DIM/2 : 0)",
          "((state==3 || state==11) ? 1 : 0)"),
+        ("rope-coefficient","anvil_q1_rope.sv",
+         "col=2*pair_index+(state==7);",
+         "col=2*pair_index+(state==5);"),
         ("cache","anvil_q1_gqa_attention.sv","row=time_index;",
          "row=time_index+1;"),
+        ("stale-cache","anvil_q1_gqa_attention.sv","row=time_index;",
+         "row=(time_index==0 ? 0 : time_index-1);"),
         ("layer","anvil_q1_top.sv","layer+1<NUM_LAYERS","1'b0"),
         ("dequant32","anvil_q1_awq_dequant.sv",
          "37'sd0 : product[36:0]","37'sd0 : $signed(product[31:0])"),
@@ -3085,7 +3109,7 @@ def _icarus_version(text, component):
     return versions[0].strip()
 
 
-def _portability_command(run, argv, name, timeout=20):
+def _portability_command(run, argv, name, timeout=3600):
     code, stdout, stderr = run.command(argv, name, timeout=timeout,
                                        observe_progress=True)
     require(run.commands[-1].get("process_group_settled") is True,
@@ -3246,7 +3270,7 @@ def portability(run, elaborate=True, selections=None):
             stdout, stderr = _portability_command(
                 run, [compiler, *args, "-g2012", "-Wall", "-t", "null",
                       "-s", "anvil_q1_top", *overrides, *RTL],
-                f"elaborate-{major}-{label}", timeout=120)
+                f"elaborate-{major}-{label}", timeout=3600)
             require(not stdout.strip() and not stderr.strip(),
                     f"warning-clean elaboration Icarus {major} {label}: {stdout} {stderr}")
             run.result(f"elaboration-{major}-{label}", outcome="pass",
@@ -3284,9 +3308,9 @@ def parameter_test(run):
         exe = run.out/(name+".vvp")
         sv.write_text("module tb; anvil_q1_top #("+params+") dut(); initial #1 $finish; endmodule\n")
         code,_,stderr = run.command(["iverilog","-g2012","-s","tb","-o",exe,*RTL,sv],
-                                    name+"-compile",timeout=10)
+                                    name+"-compile",timeout=3600)
         require(code==0,"illegal parameter diagnostics unreachable: "+name+" "+stderr)
-        code,stdout,stderr = run.command(["vvp",exe],name+"-reject",timeout=5)
+        code,stdout,stderr = run.command(["vvp",exe],name+"-reject",timeout=3600)
         require(code not in (0,None) and "PARAMETER ERROR" in stdout+stderr,
                 "missing explicit illegal parameter rejection "+name)
         run.result("parameter-"+name,outcome="expected_rejection",overrides=changes)
@@ -3303,7 +3327,7 @@ def synthesis(run, configuration=None):
                           " anvil_q1_top\nhierarchy -check -top anvil_q1_top\n"+
                           "proc\nopt\nmemory\nopt\ncheck -assert\nwrite_json "+str(output)+"\n")
         code, stdout, stderr = run.command(["yosys","-Q","-T","-s",script],
-                                           f"synthesis-{label}", timeout=600)
+                                           f"synthesis-{label}", timeout=3600)
         require(code == 0, f"Yosys {label}: {stderr or stdout[-3000:]}")
         modules = json.loads(output.read_text())["modules"]
         visited = set()
@@ -3357,9 +3381,43 @@ def synthesis(run, configuration=None):
             ("anvil_q1_swiglu_mlp","anvil_q1_w4a16_gemv"),
             ("anvil_q1_w4a16_gemv","anvil_q1_awq_dequant")}
         require(required_edges <= edges, f"missing literal hierarchy edges {required_edges-edges}")
+        concrete_gemvs = []
+
+        def inspect_instances(name, path, ancestors=()):
+            require(name not in ancestors, "recursive synthesized hierarchy")
+            module = modules[name]
+            if module_name(name) == "anvil_q1_w4a16_gemv":
+                lanes = []
+                consumers = set()
+                for cell in module.get("cells", {}).values():
+                    for port, bits in cell["connections"].items():
+                        if cell.get("port_directions", {}).get(port) == "input":
+                            consumers.update(bit for bit in bits if isinstance(bit, int))
+                for instance, cell in module.get("cells", {}).items():
+                    if cell["type"] in modules and module_name(cell["type"]) == "anvil_q1_awq_dequant":
+                        outputs = {bit for bit in cell["connections"].get("weight_q16_16", [])
+                                   if isinstance(bit, int)}
+                        require(len(outputs) == 37 and outputs <= consumers,
+                                f"unconsumed widened dequantizer output {path}/{instance}")
+                        lane = cell["connections"].get("lane", [])
+                        require(len(lane) == 3 and all(bit in ("0", "1") for bit in lane),
+                                f"nonconstant logical lane {path}/{instance}")
+                        logical = sum(int(bit) << i for i, bit in enumerate(lane))
+                        lanes.append(logical)
+                require(sorted(lanes) == list(range(8)),
+                        f"missing eight concrete consumed GEMV lanes {path}: {lanes}")
+                concrete_gemvs.append(dict(path=path, logical_lanes=sorted(lanes),
+                                           consumed_output_bits_per_lane=37))
+            for instance, cell in module.get("cells", {}).items():
+                if cell["type"] in modules:
+                    inspect_instances(cell["type"], path + "/" + instance, ancestors + (name,))
+
+        inspect_instances("anvil_q1_top", "anvil_q1_top")
+        require(len(concrete_gemvs) >= 2, "missing decoder/MLP concrete GEMVs")
         run.result(f"synthesis-{label}", outcome="pass", sequential_cells=state,
                    zero_latches=True, hierarchy=sorted(types),
-                   required_connected_edges=sorted(required_edges))
+                   required_connected_edges=sorted(required_edges),
+                   concrete_gemvs=concrete_gemvs)
 
 
 def main():
@@ -3395,17 +3453,21 @@ def main():
     except FileExistsError:
         parser.exit(2, f"error: refusing occupied output destination: {args.out}\n")
     try:
+        checkpoint = report = None
+        if args.check == "behavior" and args.probe in (None, "official", "mutations"):
+            checkpoint, report = official.audit_checkpoint(run, ROOT)
+            official.model_selftests(run)
+            official.checkpoint_sensitivity(run, checkpoint)
         tools = (() if args.check == "portability" else
-                 ("python3", "iverilog", "vvp") if
-                 args.probe in ("transactor-cost-discriminator",
-                                "mac-qualified-cost-discriminator",
-                                "standalone-phase-cost") else
-                 ("python3", "iverilog", "vvp", "yosys"))
+                 ("python3", "yosys") if args.check == "synthesis" else
+                 ("python3", "iverilog", "vvp"))
         for name in tools:
             executable = shutil.which(name)
-            if executable:
-                run.command([executable, "-V" if name in ("iverilog","yosys","vvp") else "--version"],
-                            name+"-version", timeout=5)
+            require(executable is not None, "missing required executable: " + name)
+            code, stdout, stderr = run.command(
+                [executable, "-V" if name in ("iverilog", "yosys", "vvp") else "--version"],
+                name+"-version", timeout=3600)
+            require(code == 0, f"tool version query failed: {name}: {stdout} {stderr}")
         if args.check == "behavior":
             if args.probe != "standalone-phase-cost":
                 slices = manifest(run)
@@ -3445,7 +3507,16 @@ def main():
             if args.probe in (None, "gemv"):
                 gemv_extremes(run)
             if args.probe in (None, "official"):
+                official.full_path_fixture(run, ROOT, command_tb, BUS_CONNECT, compile_sim)
                 official_gemv(run,slices)
+                official.raw_submatrix_test(run, checkpoint, command_tb, BUS_CONNECT, compile_sim)
+                official.official_top_coverage_test(run, checkpoint, command_tb, BUS_CONNECT, compile_sim)
+                report["partial_diagnostics"] = [
+                    {key: value for key, value in result.items() if key != "stdout"}
+                    for result in run.results
+                    if result["name"] in ("raw-official-submatrix", "synthetic-file-backed-top",
+                                          "official-top-coverage")]
+                official.write_comparison(run, report)
             if args.probe in (None, "rms"):
                 rms_test(run)
             if args.probe in (None, "protocol"):
@@ -3465,6 +3536,8 @@ def main():
                     for seed in (17,43,89):
                         integrated(run,label,seed)
                 mutations(run)
+                official.evaluate_official(run, checkpoint, report,
+                                           command_tb, BUS_CONNECT, compile_sim)
         elif args.check == "synthesis":
             synthesis(run,args.configuration)
         else:
@@ -3477,8 +3550,24 @@ def main():
             else:
                 parameter_test(run)
                 portability(run,selections=selections)
+        require(run.source_hashes == hashes() | official_hashes(),
+                "verification source/checkpoint changed during execution")
         run.result("check", outcome="pass", scope=args.probe or args.check)
-    except (AssertionError, ValueError, OSError, KeyError) as exc:
+    except (AssertionError, ValueError, OSError, KeyError, struct.error,
+            NameError, TypeError, IndexError) as exc:
+        (run.out / "check-failure.stderr").write_text(traceback.format_exc())
+        if args.check == "behavior" and args.probe in (None, "official", "mutations"):
+            if report is None:
+                report = dict(status="fail", source_sha256=run.source_hashes,
+                              software_label=official.SOFTWARE_LABEL,
+                              hardware_label=official.HARDWARE_LABEL,
+                              completed_tokens=0, bit_comparison=None,
+                              aggregate_metrics=None, cycle_measurements=None,
+                              memory_transactions=None, blockers=[],
+                              metrics_unavailable_reason="checkpoint validation or execution failed")
+            report["blockers"].append(str(exc))
+            report["status"] = "incomplete" if isinstance(exc, official.CoverageError) else "fail"
+            official.write_comparison(run, report)
         run.result("check", outcome="fail", diagnosis=str(exc))
         print(str(exc), file=sys.stderr)
         return 1

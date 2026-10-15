@@ -1,0 +1,789 @@
+{
+  "start_time": "2026-10-15T15:38:49.017699+00:00",
+  "updated_time": "2026-10-15T15:38:59.502294+00:00",
+  "argv": [
+    "/usr/bin/python3",
+    "tests/verify.py",
+    "--check",
+    "behavior",
+    "--probe",
+    "official",
+    "--repair-of",
+    "evidence/preparation/verifier-phase2-final-integration-01/receipt.json",
+    "--out",
+    "evidence/preparation/verifier-phase2-final-integration-02"
+  ],
+  "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+  "source_sha256": {
+    "rtl/anvil_q1_00_pkg.sv": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+    "rtl/anvil_q1_awq_dequant.sv": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+    "rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+    "rtl/anvil_q1_decoder_layer.sv": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+    "rtl/anvil_q1_elementwise.sv": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+    "rtl/anvil_q1_gqa_attention.sv": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+    "rtl/anvil_q1_mem_port.sv": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+    "rtl/anvil_q1_parameters.sv": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+    "rtl/anvil_q1_rmsnorm.sv": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+    "rtl/anvil_q1_rope.sv": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+    "rtl/anvil_q1_swiglu_mlp.sv": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+    "rtl/anvil_q1_top.sv": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+    "rtl/anvil_q1_w4a16_gemv.sv": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+    "tests/occupied_output_refusal.py": "b5713d4dc87d15a4bd100ab2a6e6b7a8b04aed0d34ebcd295e8882375f78d81f",
+    "tests/official_weights.py": "5a13af82a0b109b1342c0585e325050767976069bfedc82576dcdca5a46228a6",
+    "tests/verify.py": "956243a1c9d792a26ff7316edbadf4bb784be7c095eb50dd4bb7a24771299368",
+    "design/ARCHITECTURE.md": "93d7570c25176a47839c326f2df3e6f4b9ed0a1427c131a94648a2f542f85938",
+    "design/OFFICIAL_WEIGHTS_EVALUATION.md": "b8a46235ac0c0809038b4a2b8bec4e017b4063c3346c61aa2593f03060026647",
+    "design/SPEC.md": "eaf3abf90189bbe132b35e593c089f9e22389ab57129969bcfe7f2d10cce1a9e",
+    "hf_qwen25_05b_awq_spec/config.json": "bd20ae34a91eb38230b870d39f56677d1cda1e8b6688ad627e6efb6ca9f44090",
+    "hf_qwen25_05b_awq_spec/generation_config.json": "091fc0fd8cf33ecb3ded1399ffe17cca80fefdb167ac4c241c1ca42c6bc116e5",
+    "hf_qwen25_05b_awq_spec/official_layer0_awq_slice.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/qwen25_05b_awq_tensors.json": "0060eb7c6278d94b28c0d1d2ac6f9a07de417f0bfedd3c2652eec19e0f3df237",
+    "hf_qwen25_05b_awq_spec/tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "hf_qwen25_05b_awq_spec/official_weights/official_hardware_slices_fp16_awq.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/official_weights/official_weights_manifest.json": "8f7565f128ad04ce19fb027c4b30c34ad42a921e201dcf2d454082efa1c920df",
+    "hf_qwen25_05b_awq_spec/official_weights/qwen25_05b_awq_official_slice.safetensors": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0"
+  },
+  "repair_of": "evidence/preparation/verifier-phase2-final-integration-01/receipt.json",
+  "python": {
+    "executable": "/usr/bin/python3",
+    "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+  },
+  "end_time": "2026-10-15T15:38:59.502309+00:00",
+  "exit_code": 0,
+  "process_groups_settled": true,
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "--version"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:49.173666+00:00",
+      "end_time": "2026-10-15T15:38:49.178321+00:00",
+      "elapsed_s": 0.004660363003495149,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/python3-version.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/python3-version.stderr",
+      "tool_path": "/usr/bin/python3",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/python3-version-host-observations.json",
+      "child_user_cpu_s": 0.0009210000000000002,
+      "child_system_cpu_s": 0.002764,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/iverilog",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:49.179822+00:00",
+      "end_time": "2026-10-15T15:38:49.197545+00:00",
+      "elapsed_s": 0.017751168998074718,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/iverilog-version.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/iverilog-version.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/iverilog-version-host-observations.json",
+      "child_user_cpu_s": 0.0032439999999999995,
+      "child_system_cpu_s": 0.01377,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/vvp",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:49.199024+00:00",
+      "end_time": "2026-10-15T15:38:49.205143+00:00",
+      "elapsed_s": 0.006120926002040505,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/vvp-version.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/vvp-version.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/vvp-version-host-observations.json",
+      "child_user_cpu_s": 0.0008960000000000001,
+      "child_system_cpu_s": 0.004477000000000002,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:49.444885+00:00",
+      "end_time": "2026-10-15T15:38:49.548024+00:00",
+      "elapsed_s": 0.10314177800319158,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top-compile-host-observations.json",
+      "child_user_cpu_s": 0.068384,
+      "child_system_cpu_s": 0.04155199999999999,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:49.549364+00:00",
+      "end_time": "2026-10-15T15:38:52.123367+00:00",
+      "elapsed_s": 2.5740157950058347,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top-simulate-host-observations.json",
+      "child_user_cpu_s": 2.5627809999999998,
+      "child_system_cpu_s": 0.009999000000000008,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-gemv.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-gemv.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:52.132865+00:00",
+      "end_time": "2026-10-15T15:38:52.177857+00:00",
+      "elapsed_s": 0.04499675700208172,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv-compile-host-observations.json",
+      "child_user_cpu_s": 0.03221600000000002,
+      "child_system_cpu_s": 0.018255999999999994,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-gemv.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:52.179907+00:00",
+      "end_time": "2026-10-15T15:38:52.241327+00:00",
+      "elapsed_s": 0.06141259599826299,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv-simulate-host-observations.json",
+      "child_user_cpu_s": 0.0524950000000004,
+      "child_system_cpu_s": 0.007923,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:53.917259+00:00",
+      "end_time": "2026-10-15T15:38:53.970715+00:00",
+      "elapsed_s": 0.05345725700317416,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix-compile-host-observations.json",
+      "child_user_cpu_s": 0.04441899999999954,
+      "child_system_cpu_s": 0.015538999999999997,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:53.972661+00:00",
+      "end_time": "2026-10-15T15:38:57.325010+00:00",
+      "elapsed_s": 3.352350106986705,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix-simulate-host-observations.json",
+      "child_user_cpu_s": 3.335978,
+      "child_system_cpu_s": 0.014999000000000012,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:57.452017+00:00",
+      "end_time": "2026-10-15T15:38:57.551271+00:00",
+      "elapsed_s": 0.09925504800048657,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage-compile-host-observations.json",
+      "child_user_cpu_s": 0.07638700000000043,
+      "child_system_cpu_s": 0.029208999999999985,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:38:57.553403+00:00",
+      "end_time": "2026-10-15T15:38:59.457781+00:00",
+      "elapsed_s": 1.904394131997833,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage-simulate-host-observations.json",
+      "child_user_cpu_s": 1.8920280000000007,
+      "child_system_cpu_s": 0.01100000000000001,
+      "process_group_settled": true
+    }
+  ],
+  "results": [
+    {
+      "name": "official-checkpoint",
+      "outcome": "provenance_validated",
+      "checkpoint_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "parsed_tensors": 54,
+      "raw_excerpt_values": 552,
+      "coverage_complete": false,
+      "missing_elements": 183550528
+    },
+    {
+      "name": "official-model-analytical-fixtures",
+      "outcome": "pass",
+      "scope": "synthetic mathematical self-tests, not official model inference",
+      "tokens": 4,
+      "fp32_sub_lsb_retained": true,
+      "max_absolute_error": 6.520748138427734e-05
+    },
+    {
+      "name": "checkpoint-mutation-payload-corruption",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/payload-corruption.safetensors",
+      "fixture_sha256": "32f1a255f4cd46c1e8584d91190b568974a8f8509d09afc1326e17afba50a7c0",
+      "assertion": "checkpoint SHA-256 mismatch",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-truncated-length",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/truncated-length.safetensors",
+      "fixture_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7",
+      "assertion": "safetensors truncated length",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-header-out-of-bounds",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/header-out-of-bounds.safetensors",
+      "fixture_sha256": "e6ad6c9a3a3b7658c35bacf6553fcb8ffe34387534a648fe18f875b8f7a86ddb",
+      "assertion": "safetensors invalid header length",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-duplicate-tensor",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/duplicate-tensor.safetensors",
+      "fixture_sha256": "d60828e4c6aed4dfcba59ba442aa560ce7ae38f3872ab6dc9afb136402e2d347",
+      "assertion": "duplicate JSON key: x",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-malformed-json",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/malformed-json.safetensors",
+      "fixture_sha256": "b8314cf758b9a79e791b4bdfc0fbfb40d3ef664a16c2d402f10bac671917443c",
+      "assertion": "safetensors malformed header: Expecting value: line 1 column 9 (char 8)",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-unsupported-dtype",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/unsupported-dtype.safetensors",
+      "fixture_sha256": "1b3604a1dfbb5bef684d773ce18d37183771968a69a9c06f97f66189735bc829",
+      "assertion": "safetensors unsupported dtype: x",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-shape-length",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/shape-length.safetensors",
+      "fixture_sha256": "e7d52b0bdf48665fcbe4a4e5e3b8b767355a1c5f343aff629437cd041e538d2d",
+      "assertion": "safetensors payload bounds/length: x",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-overlap",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/overlap.safetensors",
+      "fixture_sha256": "554b014f7b6192b4da8982b3af779f2d2c7a5729abbae9676cc0447afc0a332f",
+      "assertion": "safetensors overlapping or noncontiguous payload: y",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-metadata",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/metadata.safetensors",
+      "fixture_sha256": "95888b78cc46e249ca41a53466f1be040490a68761678fa5290dd29d07ddee28",
+      "assertion": "safetensors metadata structure",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-tensor-digest",
+      "outcome": "intended_rejection",
+      "assertion": "tensor SHA-256 mismatch: model.layers.23.mlp.down_proj.scales",
+      "fixture_sha256": "32f1a255f4cd46c1e8584d91190b568974a8f8509d09afc1326e17afba50a7c0",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/tensor-digest.safetensors",
+      "fixture_manifest_path": "evidence/preparation/verifier-phase2-final-integration-02/checkpoint-fixtures/tensor-digest-manifest.json",
+      "fixture_manifest_sha256": "2c5abc5eacf5b0cda98e0e4274690a57836e5d1552be5a52ca2d9179396c4391",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0"
+    },
+    {
+      "name": "checkpoint-mutation-missing-coverage",
+      "outcome": "intended_rejection",
+      "assertion": "uncovered tensor model.layers.0.self_attn.q_proj.qweight coordinate (64, 0); loaded shape (64, 112)",
+      "source_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "compilation": "not applicable: uncovered checkpoint coordinate"
+    },
+    {
+      "name": "authoritative_inputs",
+      "tensors": 627,
+      "quantized_modules": 168,
+      "raw_slice_values": 552,
+      "outcome": "pass"
+    },
+    {
+      "name": "synthetic-file-backed-top-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.sv",
+      "testbench_sha256": "7d7bf842999f87212e4523c8285d26f898d44c85ce7b14951cdba7060f999aa9"
+    },
+    {
+      "name": "synthetic-file-backed-top-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.sv",
+      "testbench_sha256": "7d7bf842999f87212e4523c8285d26f898d44c85ce7b14951cdba7060f999aa9",
+      "executable": "evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.vvp",
+      "executable_sha256": "6f945218e1f237c865e1f19edb45074fb069551a29eec01727c697ab900450ff"
+    },
+    {
+      "name": "synthetic-file-backed-top",
+      "outcome": "pass",
+      "scope": "synthetic transactor/oracle diagnostic, NOT official inference",
+      "fixture_path": "evidence/preparation/verifier-phase2-final-integration-02/SYNTHETIC-NOT-OFFICIAL-path-fixture.safetensors",
+      "fixture_sha256": "4051482f0014574e161d28ad25929b1a90a94b20aa1ee06d1547e7cd9c7a12b1",
+      "configuration": [
+        2,
+        8,
+        8,
+        2,
+        2,
+        4,
+        8,
+        8,
+        4
+      ],
+      "sequence": [
+        {
+          "token_id": 0,
+          "position": 0
+        },
+        {
+          "token_id": 1,
+          "position": 1
+        },
+        {
+          "token_id": 1,
+          "position": 2
+        },
+        {
+          "token_id": 1,
+          "position": 3
+        }
+      ],
+      "compared_writes": 1152,
+      "compared_logits": 32,
+      "completed_tokens": 4,
+      "bit_mismatches": 0,
+      "prediction_metrics": [
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 4.710257053375244e-05,
+          "mean_absolute_error": 1.9496306777000427e-05,
+          "rmse": 2.611193970771975e-05,
+          "cosine_similarity": 0.9999999991425284,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            0,
+            7,
+            1,
+            6,
+            2
+          ],
+          "software_top5": [
+            0,
+            7,
+            1,
+            6,
+            2
+          ]
+        },
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 2.47955322265625e-05,
+          "mean_absolute_error": 1.1280179023742676e-05,
+          "rmse": 1.3472462791616753e-05,
+          "cosine_similarity": 0.999999999816556,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ],
+          "software_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 1.1146068572998047e-05,
+          "mean_absolute_error": 5.669891834259033e-06,
+          "rmse": 6.486200065920391e-06,
+          "cosine_similarity": 0.9999999999329815,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ],
+          "software_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 1.1742115020751953e-05,
+          "mean_absolute_error": 7.212162017822266e-06,
+          "rmse": 7.99019104818306e-06,
+          "cosine_similarity": 0.9999999998827608,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ],
+          "software_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ]
+        }
+      ],
+      "stdout": "OFFICIAL_ACCEPT token=0 edge=5\nOFFICIAL_LOGIT token=0 index=0 value=70449\nOFFICIAL_LOGIT token=0 index=1 value=25350\nOFFICIAL_LOGIT token=0 index=2 value=-7375\nOFFICIAL_LOGIT token=0 index=3 value=-27254\nOFFICIAL_LOGIT token=0 index=4 value=-32150\nOFFICIAL_LOGIT token=0 index=5 value=-24672\nOFFICIAL_LOGIT token=0 index=6 value=-4349\nOFFICIAL_LOGIT token=0 index=7 value=70449\nOFFICIAL_FINAL token=0 edge=3849 latency=3844\nOFFICIAL_RETIRE token=0 edge=3850 latency=3845 request_stalls=52 response_stalls=0 logit_stalls=1\nOFFICIAL_ACCEPT token=1 edge=3854\nOFFICIAL_LOGIT token=1 index=0 value=25913\nOFFICIAL_LOGIT token=1 index=1 value=65504\nOFFICIAL_LOGIT token=1 index=2 value=19128\nOFFICIAL_LOGIT token=1 index=3 value=-14856\nOFFICIAL_LOGIT token=1 index=4 value=-32810\nOFFICIAL_LOGIT token=1 index=5 value=-36027\nOFFICIAL_LOGIT token=1 index=6 value=-26852\nOFFICIAL_LOGIT token=1 index=7 value=25913\nOFFICIAL_FINAL token=1 edge=8308 latency=4454\nOFFICIAL_RETIRE token=1 edge=8309 latency=4455 request_stalls=59 response_stalls=0 logit_stalls=0\nOFFICIAL_ACCEPT token=2 edge=8313\nOFFICIAL_LOGIT token=2 index=0 value=25880\nOFFICIAL_LOGIT token=2 index=1 value=65495\nOFFICIAL_LOGIT token=2 index=2 value=19313\nOFFICIAL_LOGIT token=2 index=3 value=-14906\nOFFICIAL_LOGIT token=2 index=4 value=-33058\nOFFICIAL_LOGIT token=2 index=5 value=-35915\nOFFICIAL_LOGIT token=2 index=6 value=-26808\nOFFICIAL_LOGIT token=2 index=7 value=25880\nOFFICIAL_FINAL token=2 edge=13363 latency=5050\nOFFICIAL_RETIRE token=2 edge=13364 latency=5051 request_stalls=53 response_stalls=0 logit_stalls=0\nOFFICIAL_ACCEPT token=3 edge=13368\nOFFICIAL_LOGIT token=3 index=0 value=25864\nOFFICIAL_LOGIT token=3 index=1 value=65489\nOFFICIAL_LOGIT token=3 index=2 value=19405\nOFFICIAL_LOGIT token=3 index=3 value=-14931\nOFFICIAL_LOGIT token=3 index=4 value=-33182\nOFFICIAL_LOGIT token=3 index=5 value=-35859\nOFFICIAL_LOGIT token=3 index=6 value=-26786\nOFFICIAL_LOGIT token=3 index=7 value=25864\nOFFICIAL_FINAL token=3 edge=19029 latency=5661\nOFFICIAL_RETIRE token=3 edge=19030 latency=5662 request_stalls=60 response_stalls=0 logit_stalls=2\nOFFICIAL_MEM bin=0 requests=72 responses=72\nOFFICIAL_MEM bin=32 requests=8 responses=8\nOFFICIAL_MEM bin=33 requests=8 responses=8\nOFFICIAL_MEM bin=34 requests=8 responses=8\nOFFICIAL_MEM bin=35 requests=8 responses=8\nOFFICIAL_MEM bin=36 requests=8 responses=8\nOFFICIAL_MEM bin=37 requests=8 responses=8\nOFFICIAL_MEM bin=38 requests=8 responses=8\nOFFICIAL_MEM bin=40 requests=8 responses=8\nOFFICIAL_MEM bin=41 requests=8 responses=8\nOFFICIAL_MEM bin=42 requests=8 responses=8\nOFFICIAL_MEM bin=43 requests=8 responses=8\nOFFICIAL_MEM bin=44 requests=8 responses=8\nOFFICIAL_MEM bin=45 requests=8 responses=8\nOFFICIAL_MEM bin=46 requests=8 responses=8\nOFFICIAL_MEM bin=64 requests=1 responses=1\nOFFICIAL_MEM bin=65 requests=1 responses=1\nOFFICIAL_MEM bin=66 requests=1 responses=1\nOFFICIAL_MEM bin=67 requests=1 responses=1\nOFFICIAL_MEM bin=68 requests=1 responses=1\nOFFICIAL_MEM bin=69 requests=1 responses=1\nOFFICIAL_MEM bin=70 requests=1 responses=1\nOFFICIAL_MEM bin=72 requests=1 responses=1\nOFFICIAL_MEM bin=73 requests=1 responses=1\nOFFICIAL_MEM bin=74 requests=1 responses=1\nOFFICIAL_MEM bin=75 requests=1 responses=1\nOFFICIAL_MEM bin=76 requests=1 responses=1\nOFFICIAL_MEM bin=77 requests=1 responses=1\nOFFICIAL_MEM bin=78 requests=1 responses=1\nOFFICIAL_MEM bin=96 requests=8 responses=8\nOFFICIAL_MEM bin=97 requests=8 responses=8\nOFFICIAL_MEM bin=98 requests=8 responses=8\nOFFICIAL_MEM bin=99 requests=8 responses=8\nOFFICIAL_MEM bin=100 requests=8 responses=8\nOFFICIAL_MEM bin=101 requests=8 responses=8\nOFFICIAL_MEM bin=102 requests=8 responses=8\nOFFICIAL_MEM bin=104 requests=8 responses=8\nOFFICIAL_MEM bin=105 requests=8 responses=8\nOFFICIAL_MEM bin=106 requests=8 responses=8\nOFFICIAL_MEM bin=107 requests=8 responses=8\nOFFICIAL_MEM bin=108 requests=8 responses=8\nOFFICIAL_MEM bin=109 requests=8 responses=8\nOFFICIAL_MEM bin=110 requests=8 responses=8\nOFFICIAL_MEM bin=128 requests=8 responses=8\nOFFICIAL_MEM bin=129 requests=8 responses=8\nOFFICIAL_MEM bin=130 requests=8 responses=8\nOFFICIAL_MEM bin=136 requests=8 responses=8\nOFFICIAL_MEM bin=137 requests=8 responses=8\nOFFICIAL_MEM bin=138 requests=8 responses=8\nOFFICIAL_MEM bin=160 requests=8 responses=8\nOFFICIAL_MEM bin=168 requests=8 responses=8\nOFFICIAL_MEM bin=192 requests=8 responses=8\nOFFICIAL_MEM bin=200 requests=8 responses=8\nOFFICIAL_MEM bin=224 requests=8 responses=8\nOFFICIAL_MEM bin=256 requests=496 responses=496\nOFFICIAL_MEM bin=272 requests=256 responses=256\nOFFICIAL_MEM bin=288 requests=40 responses=40\nOFFICIAL_MEM bin=296 requests=40 responses=40\nOFFICIAL_MEM bin=304 requests=8 responses=8\nOFFICIAL_MEM bin=312 requests=8 responses=8\nOFFICIAL_MEM bin=320 requests=8 responses=8\nOFFICIAL_MEM bin=328 requests=8 responses=8\nOFFICIAL_MEM bin=336 requests=8 responses=8\nOFFICIAL_MEM bin=344 requests=8 responses=8\nOFFICIAL_MEM bin=352 requests=32 responses=32\nOFFICIAL_MEM bin=384 requests=72 responses=72\nOFFICIAL_MEM bin=416 requests=8 responses=8\nOFFICIAL_MEM bin=417 requests=8 responses=8\nOFFICIAL_MEM bin=418 requests=8 responses=8\nOFFICIAL_MEM bin=419 requests=8 responses=8\nOFFICIAL_MEM bin=420 requests=8 responses=8\nOFFICIAL_MEM bin=421 requests=8 responses=8\nOFFICIAL_MEM bin=422 requests=8 responses=8\nOFFICIAL_MEM bin=424 requests=8 responses=8\nOFFICIAL_MEM bin=425 requests=8 responses=8\nOFFICIAL_MEM bin=426 requests=8 responses=8\nOFFICIAL_MEM bin=427 requests=8 responses=8\nOFFICIAL_MEM bin=428 requests=8 responses=8\nOFFICIAL_MEM bin=429 requests=8 responses=8\nOFFICIAL_MEM bin=430 requests=8 responses=8\nOFFICIAL_MEM bin=448 requests=1 responses=1\nOFFICIAL_MEM bin=449 requests=1 responses=1\nOFFICIAL_MEM bin=450 requests=1 responses=1\nOFFICIAL_MEM bin=451 requests=1 responses=1\nOFFICIAL_MEM bin=452 requests=1 responses=1\nOFFICIAL_MEM bin=453 requests=1 responses=1\nOFFICIAL_MEM bin=454 requests=1 responses=1\nOFFICIAL_MEM bin=456 requests=1 responses=1\nOFFICIAL_MEM bin=457 requests=1 responses=1\nOFFICIAL_MEM bin=458 requests=1 responses=1\nOFFICIAL_MEM bin=459 requests=1 responses=1\nOFFICIAL_MEM bin=460 requests=1 responses=1\nOFFICIAL_MEM bin=461 requests=1 responses=1\nOFFICIAL_MEM bin=462 requests=1 responses=1\nOFFICIAL_MEM bin=480 requests=8 responses=8\nOFFICIAL_MEM bin=481 requests=8 responses=8\nOFFICIAL_MEM bin=482 requests=8 responses=8\nOFFICIAL_MEM bin=483 requests=8 responses=8\nOFFICIAL_MEM bin=484 requests=8 responses=8\nOFFICIAL_MEM bin=485 requests=8 responses=8\nOFFICIAL_MEM bin=486 requests=8 responses=8\nOFFICIAL_MEM bin=488 requests=8 responses=8\nOFFICIAL_MEM bin=489 requests=8 responses=8\nOFFICIAL_MEM bin=490 requests=8 responses=8\nOFFICIAL_MEM bin=491 requests=8 responses=8\nOFFICIAL_MEM bin=492 requests=8 responses=8\nOFFICIAL_MEM bin=493 requests=8 responses=8\nOFFICIAL_MEM bin=494 requests=8 responses=8\nOFFICIAL_MEM bin=512 requests=8 responses=8\nOFFICIAL_MEM bin=513 requests=8 responses=8\nOFFICIAL_MEM bin=514 requests=8 responses=8\nOFFICIAL_MEM bin=520 requests=8 responses=8\nOFFICIAL_MEM bin=521 requests=8 responses=8\nOFFICIAL_MEM bin=522 requests=8 responses=8\nOFFICIAL_MEM bin=544 requests=8 responses=8\nOFFICIAL_MEM bin=552 requests=8 responses=8\nOFFICIAL_MEM bin=576 requests=8 responses=8\nOFFICIAL_MEM bin=584 requests=8 responses=8\nOFFICIAL_MEM bin=608 requests=8 responses=8\nOFFICIAL_MEM bin=640 requests=576 responses=576\nOFFICIAL_MEM bin=656 requests=256 responses=256\nOFFICIAL_MEM bin=672 requests=80 responses=80\nOFFICIAL_MEM bin=680 requests=80 responses=80\nOFFICIAL_MEM bin=688 requests=8 responses=8\nOFFICIAL_MEM bin=696 requests=8 responses=8\nOFFICIAL_MEM bin=704 requests=16 responses=16\nOFFICIAL_MEM bin=712 requests=16 responses=16\nOFFICIAL_MEM bin=720 requests=8 responses=8\nOFFICIAL_MEM bin=728 requests=8 responses=8\nOFFICIAL_MEM bin=736 requests=32 responses=32\nOFFICIAL_MEM bin=768 requests=72 responses=72\nOFFICIAL_MEM bin=800 requests=8 responses=8\nOFFICIAL_MEM bin=801 requests=8 responses=8\nOFFICIAL_MEM bin=802 requests=8 responses=8\nOFFICIAL_MEM bin=803 requests=8 responses=8\nOFFICIAL_MEM bin=804 requests=8 responses=8\nOFFICIAL_MEM bin=805 requests=8 responses=8\nOFFICIAL_MEM bin=806 requests=8 responses=8\nOFFICIAL_MEM bin=808 requests=8 responses=8\nOFFICIAL_MEM bin=809 requests=8 responses=8\nOFFICIAL_MEM bin=810 requests=8 responses=8\nOFFICIAL_MEM bin=811 requests=8 responses=8\nOFFICIAL_MEM bin=812 requests=8 responses=8\nOFFICIAL_MEM bin=813 requests=8 responses=8\nOFFICIAL_MEM bin=814 requests=8 responses=8\nOFFICIAL_MEM bin=832 requests=1 responses=1\nOFFICIAL_MEM bin=833 requests=1 responses=1\nOFFICIAL_MEM bin=834 requests=1 responses=1\nOFFICIAL_MEM bin=835 requests=1 responses=1\nOFFICIAL_MEM bin=836 requests=1 responses=1\nOFFICIAL_MEM bin=837 requests=1 responses=1\nOFFICIAL_MEM bin=838 requests=1 responses=1\nOFFICIAL_MEM bin=840 requests=1 responses=1\nOFFICIAL_MEM bin=841 requests=1 responses=1\nOFFICIAL_MEM bin=842 requests=1 responses=1\nOFFICIAL_MEM bin=843 requests=1 responses=1\nOFFICIAL_MEM bin=844 requests=1 responses=1\nOFFICIAL_MEM bin=845 requests=1 responses=1\nOFFICIAL_MEM bin=846 requests=1 responses=1\nOFFICIAL_MEM bin=864 requests=8 responses=8\nOFFICIAL_MEM bin=865 requests=8 responses=8\nOFFICIAL_MEM bin=866 requests=8 responses=8\nOFFICIAL_MEM bin=867 requests=8 responses=8\nOFFICIAL_MEM bin=868 requests=8 responses=8\nOFFICIAL_MEM bin=869 requests=8 responses=8\nOFFICIAL_MEM bin=870 requests=8 responses=8\nOFFICIAL_MEM bin=872 requests=8 responses=8\nOFFICIAL_MEM bin=873 requests=8 responses=8\nOFFICIAL_MEM bin=874 requests=8 responses=8\nOFFICIAL_MEM bin=875 requests=8 responses=8\nOFFICIAL_MEM bin=876 requests=8 responses=8\nOFFICIAL_MEM bin=877 requests=8 responses=8\nOFFICIAL_MEM bin=878 requests=8 responses=8\nOFFICIAL_MEM bin=896 requests=8 responses=8\nOFFICIAL_MEM bin=897 requests=8 responses=8\nOFFICIAL_MEM bin=898 requests=8 responses=8\nOFFICIAL_MEM bin=904 requests=8 responses=8\nOFFICIAL_MEM bin=905 requests=8 responses=8\nOFFICIAL_MEM bin=906 requests=8 responses=8\nOFFICIAL_MEM bin=928 requests=8 responses=8\nOFFICIAL_MEM bin=936 requests=8 responses=8\nOFFICIAL_MEM bin=960 requests=8 responses=8\nOFFICIAL_MEM bin=968 requests=8 responses=8\nOFFICIAL_MEM bin=992 requests=8 responses=8\nOFFICIAL_MEM bin=1024 requests=656 responses=656\nOFFICIAL_MEM bin=1040 requests=256 responses=256\nOFFICIAL_MEM bin=1056 requests=120 responses=120\nOFFICIAL_MEM bin=1064 requests=120 responses=120\nOFFICIAL_MEM bin=1072 requests=8 responses=8\nOFFICIAL_MEM bin=1080 requests=8 responses=8\nOFFICIAL_MEM bin=1088 requests=24 responses=24\nOFFICIAL_MEM bin=1096 requests=24 responses=24\nOFFICIAL_MEM bin=1104 requests=8 responses=8\nOFFICIAL_MEM bin=1112 requests=8 responses=8\nOFFICIAL_MEM bin=1120 requests=32 responses=32\nOFFICIAL_MEM bin=1152 requests=72 responses=72\nOFFICIAL_MEM bin=1184 requests=8 responses=8\nOFFICIAL_MEM bin=1185 requests=8 responses=8\nOFFICIAL_MEM bin=1186 requests=8 responses=8\nOFFICIAL_MEM bin=1187 requests=8 responses=8\nOFFICIAL_MEM bin=1188 requests=8 responses=8\nOFFICIAL_MEM bin=1189 requests=8 responses=8\nOFFICIAL_MEM bin=1190 requests=8 responses=8\nOFFICIAL_MEM bin=1192 requests=8 responses=8\nOFFICIAL_MEM bin=1193 requests=8 responses=8\nOFFICIAL_MEM bin=1194 requests=8 responses=8\nOFFICIAL_MEM bin=1195 requests=8 responses=8\nOFFICIAL_MEM bin=1196 requests=8 responses=8\nOFFICIAL_MEM bin=1197 requests=8 responses=8\nOFFICIAL_MEM bin=1198 requests=8 responses=8\nOFFICIAL_MEM bin=1216 requests=1 responses=1\nOFFICIAL_MEM bin=1217 requests=1 responses=1\nOFFICIAL_MEM bin=1218 requests=1 responses=1\nOFFICIAL_MEM bin=1219 requests=1 responses=1\nOFFICIAL_MEM bin=1220 requests=1 responses=1\nOFFICIAL_MEM bin=1221 requests=1 responses=1\nOFFICIAL_MEM bin=1222 requests=1 responses=1\nOFFICIAL_MEM bin=1224 requests=1 responses=1\nOFFICIAL_MEM bin=1225 requests=1 responses=1\nOFFICIAL_MEM bin=1226 requests=1 responses=1\nOFFICIAL_MEM bin=1227 requests=1 responses=1\nOFFICIAL_MEM bin=1228 requests=1 responses=1\nOFFICIAL_MEM bin=1229 requests=1 responses=1\nOFFICIAL_MEM bin=1230 requests=1 responses=1\nOFFICIAL_MEM bin=1248 requests=8 responses=8\nOFFICIAL_MEM bin=1249 requests=8 responses=8\nOFFICIAL_MEM bin=1250 requests=8 responses=8\nOFFICIAL_MEM bin=1251 requests=8 responses=8\nOFFICIAL_MEM bin=1252 requests=8 responses=8\nOFFICIAL_MEM bin=1253 requests=8 responses=8\nOFFICIAL_MEM bin=1254 requests=8 responses=8\nOFFICIAL_MEM bin=1256 requests=8 responses=8\nOFFICIAL_MEM bin=1257 requests=8 responses=8\nOFFICIAL_MEM bin=1258 requests=8 responses=8\nOFFICIAL_MEM bin=1259 requests=8 responses=8\nOFFICIAL_MEM bin=1260 requests=8 responses=8\nOFFICIAL_MEM bin=1261 requests=8 responses=8\nOFFICIAL_MEM bin=1262 requests=8 responses=8\nOFFICIAL_MEM bin=1280 requests=8 responses=8\nOFFICIAL_MEM bin=1281 requests=8 responses=8\nOFFICIAL_MEM bin=1282 requests=8 responses=8\nOFFICIAL_MEM bin=1288 requests=8 responses=8\nOFFICIAL_MEM bin=1289 requests=8 responses=8\nOFFICIAL_MEM bin=1290 requests=8 responses=8\nOFFICIAL_MEM bin=1312 requests=8 responses=8\nOFFICIAL_MEM bin=1320 requests=8 responses=8\nOFFICIAL_MEM bin=1344 requests=8 responses=8\nOFFICIAL_MEM bin=1352 requests=8 responses=8\nOFFICIAL_MEM bin=1376 requests=8 responses=8\nOFFICIAL_MEM bin=1408 requests=736 responses=736\nOFFICIAL_MEM bin=1424 requests=256 responses=256\nOFFICIAL_MEM bin=1440 requests=160 responses=160\nOFFICIAL_MEM bin=1448 requests=160 responses=160\nOFFICIAL_MEM bin=1456 requests=8 responses=8\nOFFICIAL_MEM bin=1464 requests=8 responses=8\nOFFICIAL_MEM bin=1472 requests=32 responses=32\nOFFICIAL_MEM bin=1480 requests=32 responses=32\nOFFICIAL_MEM bin=1488 requests=8 responses=8\nOFFICIAL_MEM bin=1496 requests=8 responses=8\nOFFICIAL_MEM bin=1504 requests=32 responses=32\nOFFICIAL_COUNTS writes=1152 logits=32 completed=4\nPASS public writes=1152 transactions=6296 stalls=224 busy_holds=8 bubbles=12\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/synthetic-file-backed-top.sv:620: $finish called at 190320 (1s)\n"
+    },
+    {
+      "name": "official-gemv-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv.sv",
+      "testbench_sha256": "998839af9c23b951f4dd1eea787d41f085b64d61a829211c148213167686f9ea"
+    },
+    {
+      "name": "official-gemv-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv.sv",
+      "testbench_sha256": "998839af9c23b951f4dd1eea787d41f085b64d61a829211c148213167686f9ea",
+      "executable": "evidence/preparation/verifier-phase2-final-integration-02/official-gemv.vvp",
+      "executable_sha256": "4a89e706d2ccddddc9bc157c994a0b0ac78cccd9a202fc8081ff8b04f1321388"
+    },
+    {
+      "name": "official_gemv",
+      "official_scalar_products": 192,
+      "official_submatrices": "Q/K/gate rows 0:8 channels 0:8",
+      "synthetic_padding": "none: only supplied rows/channels; scaled G8 stays in official G128 group zero",
+      "compared_outputs": 24,
+      "outcome": "pass",
+      "stdout": "PASS public writes=24 transactions=115 stalls=6 busy_holds=6 bubbles=9\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-gemv.sv:216: $finish called at 2810 (1s)\n"
+    },
+    {
+      "name": "raw-official-submatrix-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.sv",
+      "testbench_sha256": "2cee490b9e1376b114dec6cabc3bb850932af005764fa61796b833b6645d9d20"
+    },
+    {
+      "name": "raw-official-submatrix-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.sv",
+      "testbench_sha256": "2cee490b9e1376b114dec6cabc3bb850932af005764fa61796b833b6645d9d20",
+      "executable": "evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.vvp",
+      "executable_sha256": "d156362ef3c7f3c992bf6a410712617b19a27c76d5fe914ca78593ffa69739d4"
+    },
+    {
+      "name": "raw-official-submatrix",
+      "outcome": "pass",
+      "scope": "partial diagnostic only",
+      "layers": [
+        0,
+        23
+      ],
+      "projections": [
+        "self_attn.q_proj",
+        "self_attn.k_proj",
+        "self_attn.v_proj",
+        "self_attn.o_proj",
+        "mlp.gate_proj",
+        "mlp.up_proj",
+        "mlp.down_proj"
+      ],
+      "input_rows": [
+        0,
+        64
+      ],
+      "output_channels": [
+        0,
+        64
+      ],
+      "group_mapping": "scaled G64 only visits original G128 group zero",
+      "padding": "none",
+      "completed_commands": 14,
+      "compared_writes": 896,
+      "bit_mismatches": 0,
+      "compared_products": 57344,
+      "partial_projection_metrics": {
+        "compared_logits": 896,
+        "max_absolute_error": 0.0002995431423187256,
+        "mean_absolute_error": 4.125465056858957e-05,
+        "rmse": 6.33708054135915e-05,
+        "cosine_similarity": 0.9999999999730884,
+        "cosine_undefined_reason": null,
+        "k": 5,
+        "top1_agreement": true,
+        "top5_overlap_fraction": 1.0,
+        "exact_top5_set_agreement": true,
+        "hardware_top5": [
+          95,
+          93,
+          127,
+          123,
+          94
+        ],
+        "software_top5": [
+          95,
+          93,
+          127,
+          123,
+          94
+        ]
+      },
+      "metrics_scope": "projection components, NOT full-model vocabulary logits",
+      "stdout": "PASS public writes=896 transactions=16624 stalls=1050 busy_holds=28 bubbles=42\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/raw-official-submatrix.sv:504: $finish called at 419110 (1s)\n"
+    },
+    {
+      "name": "official-top-coverage-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.sv",
+      "testbench_sha256": "1ab883434bd63ba63bc3fb4c345e01840f98586429d02c528069409fbf87ebdd"
+    },
+    {
+      "name": "official-top-coverage-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.sv",
+      "testbench_sha256": "1ab883434bd63ba63bc3fb4c345e01840f98586429d02c528069409fbf87ebdd",
+      "executable": "evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.vvp",
+      "executable_sha256": "cfd7cb78697473d78ad73f40a8cfd0f450ceaf56ab6115a2c0d805c63c605855"
+    },
+    {
+      "name": "official-top-coverage",
+      "outcome": "intended_missing_coverage_rejection",
+      "scope": "partial default-top embedding/input-norm; failed token, NOT official inference",
+      "configuration": [
+        24,
+        896,
+        4864,
+        14,
+        2,
+        64,
+        128,
+        151936,
+        32768
+      ],
+      "token_id": 0,
+      "position": 0,
+      "compared_writes": 1792,
+      "bit_mismatches": 0,
+      "covered_stages": [
+        "embedding",
+        "layer0.input_layernorm"
+      ],
+      "isolated_norm_max_absolute_error": 8.311541751027107e-05,
+      "isolated_norm_limit": 0.0078125,
+      "successful_tokens": 0,
+      "error_completions": 1,
+      "compared_logits": 0,
+      "uncovered_tensor": "model.layers.0.self_attn.q_proj.qweight",
+      "uncovered_coordinate": [
+        64,
+        0
+      ],
+      "response": "acknowledged memory error",
+      "stdout": "EXPECTED_COVERAGE_ERROR tensor=model.layers.0.self_attn.q_proj.qweight row=64 col=0\nPASS public writes=1792 transactions=5515 stalls=460 busy_holds=2 bubbles=3\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-final-integration-02/official-top-coverage.sv:504: $finish called at 170340 (1s)\n"
+    },
+    {
+      "name": "check",
+      "outcome": "pass",
+      "scope": "official"
+    }
+  ]
+}

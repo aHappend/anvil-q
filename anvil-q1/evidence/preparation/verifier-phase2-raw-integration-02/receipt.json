@@ -1,0 +1,514 @@
+{
+  "start_time": "2026-10-15T15:33:01.558904+00:00",
+  "updated_time": "2026-10-15T15:33:08.625988+00:00",
+  "argv": [
+    "/usr/bin/python3",
+    "tests/verify.py",
+    "--check",
+    "behavior",
+    "--probe",
+    "official",
+    "--repair-of",
+    "evidence/preparation/verifier-phase2-raw-integration-01/receipt.json",
+    "--out",
+    "evidence/preparation/verifier-phase2-raw-integration-02"
+  ],
+  "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+  "source_sha256": {
+    "rtl/anvil_q1_00_pkg.sv": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+    "rtl/anvil_q1_awq_dequant.sv": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+    "rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+    "rtl/anvil_q1_decoder_layer.sv": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+    "rtl/anvil_q1_elementwise.sv": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+    "rtl/anvil_q1_gqa_attention.sv": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+    "rtl/anvil_q1_mem_port.sv": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+    "rtl/anvil_q1_parameters.sv": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+    "rtl/anvil_q1_rmsnorm.sv": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+    "rtl/anvil_q1_rope.sv": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+    "rtl/anvil_q1_swiglu_mlp.sv": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+    "rtl/anvil_q1_top.sv": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+    "rtl/anvil_q1_w4a16_gemv.sv": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+    "tests/occupied_output_refusal.py": "b5713d4dc87d15a4bd100ab2a6e6b7a8b04aed0d34ebcd295e8882375f78d81f",
+    "tests/official_weights.py": "ab94d1b963200f954ba9628203d346545a85d0d9d7638e4786ebbf8fe597cf0d",
+    "tests/verify.py": "2ca29e32e375309679844b7db5fc3b02c906db0c0b64e5bcda4500de53a76923",
+    "design/ARCHITECTURE.md": "93d7570c25176a47839c326f2df3e6f4b9ed0a1427c131a94648a2f542f85938",
+    "design/OFFICIAL_WEIGHTS_EVALUATION.md": "b8a46235ac0c0809038b4a2b8bec4e017b4063c3346c61aa2593f03060026647",
+    "design/SPEC.md": "eaf3abf90189bbe132b35e593c089f9e22389ab57129969bcfe7f2d10cce1a9e",
+    "hf_qwen25_05b_awq_spec/config.json": "bd20ae34a91eb38230b870d39f56677d1cda1e8b6688ad627e6efb6ca9f44090",
+    "hf_qwen25_05b_awq_spec/generation_config.json": "091fc0fd8cf33ecb3ded1399ffe17cca80fefdb167ac4c241c1ca42c6bc116e5",
+    "hf_qwen25_05b_awq_spec/official_layer0_awq_slice.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/qwen25_05b_awq_tensors.json": "0060eb7c6278d94b28c0d1d2ac6f9a07de417f0bfedd3c2652eec19e0f3df237",
+    "hf_qwen25_05b_awq_spec/tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "hf_qwen25_05b_awq_spec/official_weights/official_hardware_slices_fp16_awq.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/official_weights/official_weights_manifest.json": "8f7565f128ad04ce19fb027c4b30c34ad42a921e201dcf2d454082efa1c920df",
+    "hf_qwen25_05b_awq_spec/official_weights/qwen25_05b_awq_official_slice.safetensors": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0"
+  },
+  "repair_of": "evidence/preparation/verifier-phase2-raw-integration-01/receipt.json",
+  "python": {
+    "executable": "/usr/bin/python3",
+    "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+  },
+  "end_time": "2026-10-15T15:33:08.626003+00:00",
+  "exit_code": 1,
+  "process_groups_settled": true,
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "--version"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:01.677524+00:00",
+      "end_time": "2026-10-15T15:33:01.682344+00:00",
+      "elapsed_s": 0.004835879008169286,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/python3-version.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/python3-version.stderr",
+      "tool_path": "/usr/bin/python3",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/python3-version-host-observations.json",
+      "child_user_cpu_s": 0.0009689999999999999,
+      "child_system_cpu_s": 0.002908,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/iverilog",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:01.683707+00:00",
+      "end_time": "2026-10-15T15:33:01.699918+00:00",
+      "elapsed_s": 0.016222499005380087,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/iverilog-version.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/iverilog-version.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/iverilog-version-host-observations.json",
+      "child_user_cpu_s": 0.001784,
+      "child_system_cpu_s": 0.013714999999999998,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/vvp",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:01.701249+00:00",
+      "end_time": "2026-10-15T15:33:01.707402+00:00",
+      "elapsed_s": 0.006166000996017829,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/vvp-version.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/vvp-version.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/vvp-version-host-observations.json",
+      "child_user_cpu_s": 0.0010739999999999999,
+      "child_system_cpu_s": 0.004298,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:01.946263+00:00",
+      "end_time": "2026-10-15T15:33:02.047943+00:00",
+      "elapsed_s": 0.10168072399392258,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top-compile-host-observations.json",
+      "child_user_cpu_s": 0.080456,
+      "child_system_cpu_s": 0.028131,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:02.049207+00:00",
+      "end_time": "2026-10-15T15:33:04.613768+00:00",
+      "elapsed_s": 2.564581657992676,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top-simulate-host-observations.json",
+      "child_user_cpu_s": 2.5532909999999998,
+      "child_system_cpu_s": 0.010001999999999997,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:04.623859+00:00",
+      "end_time": "2026-10-15T15:33:04.672173+00:00",
+      "elapsed_s": 0.04831545799970627,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv-compile-host-observations.json",
+      "child_user_cpu_s": 0.03236600000000012,
+      "child_system_cpu_s": 0.021970000000000003,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:04.674086+00:00",
+      "end_time": "2026-10-15T15:33:04.735639+00:00",
+      "elapsed_s": 0.06156816700240597,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv-simulate-host-observations.json",
+      "child_user_cpu_s": 0.05250599999999972,
+      "child_system_cpu_s": 0.007925000000000001,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:06.439908+00:00",
+      "end_time": "2026-10-15T15:33:06.495053+00:00",
+      "elapsed_s": 0.05511312698945403,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix-compile.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix-compile-host-observations.json",
+      "child_user_cpu_s": 0.042646000000000406,
+      "child_system_cpu_s": 0.017811999999999995,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T15:33:06.496971+00:00",
+      "end_time": "2026-10-15T15:33:08.574279+00:00",
+      "elapsed_s": 2.077316772993072,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix-simulate.stdout",
+      "stderr_path": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix-simulate-host-observations.json",
+      "child_user_cpu_s": 2.062023,
+      "child_system_cpu_s": 0.013993000000000005,
+      "process_group_settled": true
+    }
+  ],
+  "results": [
+    {
+      "name": "official-checkpoint",
+      "outcome": "provenance_validated",
+      "checkpoint_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "parsed_tensors": 54,
+      "raw_excerpt_values": 552,
+      "coverage_complete": false,
+      "missing_elements": 183550528
+    },
+    {
+      "name": "official-model-analytical-fixtures",
+      "outcome": "pass",
+      "scope": "synthetic mathematical self-tests, not official model inference",
+      "tokens": 4,
+      "fp32_sub_lsb_retained": true,
+      "max_absolute_error": 6.520748138427734e-05
+    },
+    {
+      "name": "authoritative_inputs",
+      "tensors": 627,
+      "quantized_modules": 168,
+      "raw_slice_values": 552,
+      "outcome": "pass"
+    },
+    {
+      "name": "synthetic-file-backed-top-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.sv",
+      "testbench_sha256": "d6a337d16ad778097a4cf2e7f3d69d03ec36b02b0ad14431a2f0c50da7fffdae"
+    },
+    {
+      "name": "synthetic-file-backed-top-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.sv",
+      "testbench_sha256": "d6a337d16ad778097a4cf2e7f3d69d03ec36b02b0ad14431a2f0c50da7fffdae",
+      "executable": "evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.vvp",
+      "executable_sha256": "ded582c9cd1adfa56efb0b6919fc012eaeea6976ac89f48eddb2677dfbdb1ce6"
+    },
+    {
+      "name": "synthetic-file-backed-top",
+      "outcome": "pass",
+      "scope": "synthetic transactor/oracle diagnostic, NOT official inference",
+      "fixture_path": "evidence/preparation/verifier-phase2-raw-integration-02/SYNTHETIC-NOT-OFFICIAL-path-fixture.safetensors",
+      "fixture_sha256": "4051482f0014574e161d28ad25929b1a90a94b20aa1ee06d1547e7cd9c7a12b1",
+      "configuration": [
+        2,
+        8,
+        8,
+        2,
+        2,
+        4,
+        8,
+        8,
+        4
+      ],
+      "sequence": [
+        {
+          "token_id": 0,
+          "position": 0
+        },
+        {
+          "token_id": 1,
+          "position": 1
+        },
+        {
+          "token_id": 1,
+          "position": 2
+        },
+        {
+          "token_id": 1,
+          "position": 3
+        }
+      ],
+      "compared_writes": 1152,
+      "compared_logits": 32,
+      "completed_tokens": 4,
+      "bit_mismatches": 0,
+      "prediction_metrics": [
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 4.710257053375244e-05,
+          "mean_absolute_error": 1.9496306777000427e-05,
+          "rmse": 2.611193970771975e-05,
+          "cosine_similarity": 0.9999999991425284,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            0,
+            7,
+            1,
+            6,
+            2
+          ],
+          "software_top5": [
+            0,
+            7,
+            1,
+            6,
+            2
+          ]
+        },
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 2.47955322265625e-05,
+          "mean_absolute_error": 1.1280179023742676e-05,
+          "rmse": 1.3472462791616753e-05,
+          "cosine_similarity": 0.999999999816556,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ],
+          "software_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 1.1146068572998047e-05,
+          "mean_absolute_error": 5.669891834259033e-06,
+          "rmse": 6.486200065920391e-06,
+          "cosine_similarity": 0.9999999999329815,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ],
+          "software_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "compared_logits": 8,
+          "max_absolute_error": 1.1742115020751953e-05,
+          "mean_absolute_error": 7.212162017822266e-06,
+          "rmse": 7.99019104818306e-06,
+          "cosine_similarity": 0.9999999998827608,
+          "cosine_undefined_reason": null,
+          "k": 5,
+          "top1_agreement": true,
+          "top5_overlap_fraction": 1.0,
+          "exact_top5_set_agreement": true,
+          "hardware_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ],
+          "software_top5": [
+            1,
+            0,
+            7,
+            2,
+            3
+          ]
+        }
+      ],
+      "stdout": "OFFICIAL_ACCEPT token=0 edge=5\nOFFICIAL_LOGIT token=0 index=0 value=70449\nOFFICIAL_LOGIT token=0 index=1 value=25350\nOFFICIAL_LOGIT token=0 index=2 value=-7375\nOFFICIAL_LOGIT token=0 index=3 value=-27254\nOFFICIAL_LOGIT token=0 index=4 value=-32150\nOFFICIAL_LOGIT token=0 index=5 value=-24672\nOFFICIAL_LOGIT token=0 index=6 value=-4349\nOFFICIAL_LOGIT token=0 index=7 value=70449\nOFFICIAL_FINAL token=0 edge=3849 latency=3844\nOFFICIAL_RETIRE token=0 edge=3850 latency=3845 request_stalls=52 response_stalls=0 logit_stalls=1\nOFFICIAL_ACCEPT token=1 edge=3854\nOFFICIAL_LOGIT token=1 index=0 value=25913\nOFFICIAL_LOGIT token=1 index=1 value=65504\nOFFICIAL_LOGIT token=1 index=2 value=19128\nOFFICIAL_LOGIT token=1 index=3 value=-14856\nOFFICIAL_LOGIT token=1 index=4 value=-32810\nOFFICIAL_LOGIT token=1 index=5 value=-36027\nOFFICIAL_LOGIT token=1 index=6 value=-26852\nOFFICIAL_LOGIT token=1 index=7 value=25913\nOFFICIAL_FINAL token=1 edge=8308 latency=4454\nOFFICIAL_RETIRE token=1 edge=8309 latency=4455 request_stalls=59 response_stalls=0 logit_stalls=0\nOFFICIAL_ACCEPT token=2 edge=8313\nOFFICIAL_LOGIT token=2 index=0 value=25880\nOFFICIAL_LOGIT token=2 index=1 value=65495\nOFFICIAL_LOGIT token=2 index=2 value=19313\nOFFICIAL_LOGIT token=2 index=3 value=-14906\nOFFICIAL_LOGIT token=2 index=4 value=-33058\nOFFICIAL_LOGIT token=2 index=5 value=-35915\nOFFICIAL_LOGIT token=2 index=6 value=-26808\nOFFICIAL_LOGIT token=2 index=7 value=25880\nOFFICIAL_FINAL token=2 edge=13363 latency=5050\nOFFICIAL_RETIRE token=2 edge=13364 latency=5051 request_stalls=53 response_stalls=0 logit_stalls=0\nOFFICIAL_ACCEPT token=3 edge=13368\nOFFICIAL_LOGIT token=3 index=0 value=25864\nOFFICIAL_LOGIT token=3 index=1 value=65489\nOFFICIAL_LOGIT token=3 index=2 value=19405\nOFFICIAL_LOGIT token=3 index=3 value=-14931\nOFFICIAL_LOGIT token=3 index=4 value=-33182\nOFFICIAL_LOGIT token=3 index=5 value=-35859\nOFFICIAL_LOGIT token=3 index=6 value=-26786\nOFFICIAL_LOGIT token=3 index=7 value=25864\nOFFICIAL_FINAL token=3 edge=19029 latency=5661\nOFFICIAL_RETIRE token=3 edge=19030 latency=5662 request_stalls=60 response_stalls=0 logit_stalls=2\nOFFICIAL_MEM bin=0 requests=72 responses=72\nOFFICIAL_MEM bin=32 requests=8 responses=8\nOFFICIAL_MEM bin=33 requests=8 responses=8\nOFFICIAL_MEM bin=34 requests=8 responses=8\nOFFICIAL_MEM bin=35 requests=8 responses=8\nOFFICIAL_MEM bin=36 requests=8 responses=8\nOFFICIAL_MEM bin=37 requests=8 responses=8\nOFFICIAL_MEM bin=38 requests=8 responses=8\nOFFICIAL_MEM bin=40 requests=8 responses=8\nOFFICIAL_MEM bin=41 requests=8 responses=8\nOFFICIAL_MEM bin=42 requests=8 responses=8\nOFFICIAL_MEM bin=43 requests=8 responses=8\nOFFICIAL_MEM bin=44 requests=8 responses=8\nOFFICIAL_MEM bin=45 requests=8 responses=8\nOFFICIAL_MEM bin=46 requests=8 responses=8\nOFFICIAL_MEM bin=64 requests=1 responses=1\nOFFICIAL_MEM bin=65 requests=1 responses=1\nOFFICIAL_MEM bin=66 requests=1 responses=1\nOFFICIAL_MEM bin=67 requests=1 responses=1\nOFFICIAL_MEM bin=68 requests=1 responses=1\nOFFICIAL_MEM bin=69 requests=1 responses=1\nOFFICIAL_MEM bin=70 requests=1 responses=1\nOFFICIAL_MEM bin=72 requests=1 responses=1\nOFFICIAL_MEM bin=73 requests=1 responses=1\nOFFICIAL_MEM bin=74 requests=1 responses=1\nOFFICIAL_MEM bin=75 requests=1 responses=1\nOFFICIAL_MEM bin=76 requests=1 responses=1\nOFFICIAL_MEM bin=77 requests=1 responses=1\nOFFICIAL_MEM bin=78 requests=1 responses=1\nOFFICIAL_MEM bin=96 requests=8 responses=8\nOFFICIAL_MEM bin=97 requests=8 responses=8\nOFFICIAL_MEM bin=98 requests=8 responses=8\nOFFICIAL_MEM bin=99 requests=8 responses=8\nOFFICIAL_MEM bin=100 requests=8 responses=8\nOFFICIAL_MEM bin=101 requests=8 responses=8\nOFFICIAL_MEM bin=102 requests=8 responses=8\nOFFICIAL_MEM bin=104 requests=8 responses=8\nOFFICIAL_MEM bin=105 requests=8 responses=8\nOFFICIAL_MEM bin=106 requests=8 responses=8\nOFFICIAL_MEM bin=107 requests=8 responses=8\nOFFICIAL_MEM bin=108 requests=8 responses=8\nOFFICIAL_MEM bin=109 requests=8 responses=8\nOFFICIAL_MEM bin=110 requests=8 responses=8\nOFFICIAL_MEM bin=128 requests=8 responses=8\nOFFICIAL_MEM bin=129 requests=8 responses=8\nOFFICIAL_MEM bin=130 requests=8 responses=8\nOFFICIAL_MEM bin=136 requests=8 responses=8\nOFFICIAL_MEM bin=137 requests=8 responses=8\nOFFICIAL_MEM bin=138 requests=8 responses=8\nOFFICIAL_MEM bin=160 requests=8 responses=8\nOFFICIAL_MEM bin=168 requests=8 responses=8\nOFFICIAL_MEM bin=192 requests=8 responses=8\nOFFICIAL_MEM bin=200 requests=8 responses=8\nOFFICIAL_MEM bin=224 requests=8 responses=8\nOFFICIAL_MEM bin=256 requests=496 responses=496\nOFFICIAL_MEM bin=272 requests=256 responses=256\nOFFICIAL_MEM bin=288 requests=40 responses=40\nOFFICIAL_MEM bin=296 requests=40 responses=40\nOFFICIAL_MEM bin=304 requests=8 responses=8\nOFFICIAL_MEM bin=312 requests=8 responses=8\nOFFICIAL_MEM bin=320 requests=8 responses=8\nOFFICIAL_MEM bin=328 requests=8 responses=8\nOFFICIAL_MEM bin=336 requests=8 responses=8\nOFFICIAL_MEM bin=344 requests=8 responses=8\nOFFICIAL_MEM bin=352 requests=32 responses=32\nOFFICIAL_MEM bin=384 requests=72 responses=72\nOFFICIAL_MEM bin=416 requests=8 responses=8\nOFFICIAL_MEM bin=417 requests=8 responses=8\nOFFICIAL_MEM bin=418 requests=8 responses=8\nOFFICIAL_MEM bin=419 requests=8 responses=8\nOFFICIAL_MEM bin=420 requests=8 responses=8\nOFFICIAL_MEM bin=421 requests=8 responses=8\nOFFICIAL_MEM bin=422 requests=8 responses=8\nOFFICIAL_MEM bin=424 requests=8 responses=8\nOFFICIAL_MEM bin=425 requests=8 responses=8\nOFFICIAL_MEM bin=426 requests=8 responses=8\nOFFICIAL_MEM bin=427 requests=8 responses=8\nOFFICIAL_MEM bin=428 requests=8 responses=8\nOFFICIAL_MEM bin=429 requests=8 responses=8\nOFFICIAL_MEM bin=430 requests=8 responses=8\nOFFICIAL_MEM bin=448 requests=1 responses=1\nOFFICIAL_MEM bin=449 requests=1 responses=1\nOFFICIAL_MEM bin=450 requests=1 responses=1\nOFFICIAL_MEM bin=451 requests=1 responses=1\nOFFICIAL_MEM bin=452 requests=1 responses=1\nOFFICIAL_MEM bin=453 requests=1 responses=1\nOFFICIAL_MEM bin=454 requests=1 responses=1\nOFFICIAL_MEM bin=456 requests=1 responses=1\nOFFICIAL_MEM bin=457 requests=1 responses=1\nOFFICIAL_MEM bin=458 requests=1 responses=1\nOFFICIAL_MEM bin=459 requests=1 responses=1\nOFFICIAL_MEM bin=460 requests=1 responses=1\nOFFICIAL_MEM bin=461 requests=1 responses=1\nOFFICIAL_MEM bin=462 requests=1 responses=1\nOFFICIAL_MEM bin=480 requests=8 responses=8\nOFFICIAL_MEM bin=481 requests=8 responses=8\nOFFICIAL_MEM bin=482 requests=8 responses=8\nOFFICIAL_MEM bin=483 requests=8 responses=8\nOFFICIAL_MEM bin=484 requests=8 responses=8\nOFFICIAL_MEM bin=485 requests=8 responses=8\nOFFICIAL_MEM bin=486 requests=8 responses=8\nOFFICIAL_MEM bin=488 requests=8 responses=8\nOFFICIAL_MEM bin=489 requests=8 responses=8\nOFFICIAL_MEM bin=490 requests=8 responses=8\nOFFICIAL_MEM bin=491 requests=8 responses=8\nOFFICIAL_MEM bin=492 requests=8 responses=8\nOFFICIAL_MEM bin=493 requests=8 responses=8\nOFFICIAL_MEM bin=494 requests=8 responses=8\nOFFICIAL_MEM bin=512 requests=8 responses=8\nOFFICIAL_MEM bin=513 requests=8 responses=8\nOFFICIAL_MEM bin=514 requests=8 responses=8\nOFFICIAL_MEM bin=520 requests=8 responses=8\nOFFICIAL_MEM bin=521 requests=8 responses=8\nOFFICIAL_MEM bin=522 requests=8 responses=8\nOFFICIAL_MEM bin=544 requests=8 responses=8\nOFFICIAL_MEM bin=552 requests=8 responses=8\nOFFICIAL_MEM bin=576 requests=8 responses=8\nOFFICIAL_MEM bin=584 requests=8 responses=8\nOFFICIAL_MEM bin=608 requests=8 responses=8\nOFFICIAL_MEM bin=640 requests=576 responses=576\nOFFICIAL_MEM bin=656 requests=256 responses=256\nOFFICIAL_MEM bin=672 requests=80 responses=80\nOFFICIAL_MEM bin=680 requests=80 responses=80\nOFFICIAL_MEM bin=688 requests=8 responses=8\nOFFICIAL_MEM bin=696 requests=8 responses=8\nOFFICIAL_MEM bin=704 requests=16 responses=16\nOFFICIAL_MEM bin=712 requests=16 responses=16\nOFFICIAL_MEM bin=720 requests=8 responses=8\nOFFICIAL_MEM bin=728 requests=8 responses=8\nOFFICIAL_MEM bin=736 requests=32 responses=32\nOFFICIAL_MEM bin=768 requests=72 responses=72\nOFFICIAL_MEM bin=800 requests=8 responses=8\nOFFICIAL_MEM bin=801 requests=8 responses=8\nOFFICIAL_MEM bin=802 requests=8 responses=8\nOFFICIAL_MEM bin=803 requests=8 responses=8\nOFFICIAL_MEM bin=804 requests=8 responses=8\nOFFICIAL_MEM bin=805 requests=8 responses=8\nOFFICIAL_MEM bin=806 requests=8 responses=8\nOFFICIAL_MEM bin=808 requests=8 responses=8\nOFFICIAL_MEM bin=809 requests=8 responses=8\nOFFICIAL_MEM bin=810 requests=8 responses=8\nOFFICIAL_MEM bin=811 requests=8 responses=8\nOFFICIAL_MEM bin=812 requests=8 responses=8\nOFFICIAL_MEM bin=813 requests=8 responses=8\nOFFICIAL_MEM bin=814 requests=8 responses=8\nOFFICIAL_MEM bin=832 requests=1 responses=1\nOFFICIAL_MEM bin=833 requests=1 responses=1\nOFFICIAL_MEM bin=834 requests=1 responses=1\nOFFICIAL_MEM bin=835 requests=1 responses=1\nOFFICIAL_MEM bin=836 requests=1 responses=1\nOFFICIAL_MEM bin=837 requests=1 responses=1\nOFFICIAL_MEM bin=838 requests=1 responses=1\nOFFICIAL_MEM bin=840 requests=1 responses=1\nOFFICIAL_MEM bin=841 requests=1 responses=1\nOFFICIAL_MEM bin=842 requests=1 responses=1\nOFFICIAL_MEM bin=843 requests=1 responses=1\nOFFICIAL_MEM bin=844 requests=1 responses=1\nOFFICIAL_MEM bin=845 requests=1 responses=1\nOFFICIAL_MEM bin=846 requests=1 responses=1\nOFFICIAL_MEM bin=864 requests=8 responses=8\nOFFICIAL_MEM bin=865 requests=8 responses=8\nOFFICIAL_MEM bin=866 requests=8 responses=8\nOFFICIAL_MEM bin=867 requests=8 responses=8\nOFFICIAL_MEM bin=868 requests=8 responses=8\nOFFICIAL_MEM bin=869 requests=8 responses=8\nOFFICIAL_MEM bin=870 requests=8 responses=8\nOFFICIAL_MEM bin=872 requests=8 responses=8\nOFFICIAL_MEM bin=873 requests=8 responses=8\nOFFICIAL_MEM bin=874 requests=8 responses=8\nOFFICIAL_MEM bin=875 requests=8 responses=8\nOFFICIAL_MEM bin=876 requests=8 responses=8\nOFFICIAL_MEM bin=877 requests=8 responses=8\nOFFICIAL_MEM bin=878 requests=8 responses=8\nOFFICIAL_MEM bin=896 requests=8 responses=8\nOFFICIAL_MEM bin=897 requests=8 responses=8\nOFFICIAL_MEM bin=898 requests=8 responses=8\nOFFICIAL_MEM bin=904 requests=8 responses=8\nOFFICIAL_MEM bin=905 requests=8 responses=8\nOFFICIAL_MEM bin=906 requests=8 responses=8\nOFFICIAL_MEM bin=928 requests=8 responses=8\nOFFICIAL_MEM bin=936 requests=8 responses=8\nOFFICIAL_MEM bin=960 requests=8 responses=8\nOFFICIAL_MEM bin=968 requests=8 responses=8\nOFFICIAL_MEM bin=992 requests=8 responses=8\nOFFICIAL_MEM bin=1024 requests=656 responses=656\nOFFICIAL_MEM bin=1040 requests=256 responses=256\nOFFICIAL_MEM bin=1056 requests=120 responses=120\nOFFICIAL_MEM bin=1064 requests=120 responses=120\nOFFICIAL_MEM bin=1072 requests=8 responses=8\nOFFICIAL_MEM bin=1080 requests=8 responses=8\nOFFICIAL_MEM bin=1088 requests=24 responses=24\nOFFICIAL_MEM bin=1096 requests=24 responses=24\nOFFICIAL_MEM bin=1104 requests=8 responses=8\nOFFICIAL_MEM bin=1112 requests=8 responses=8\nOFFICIAL_MEM bin=1120 requests=32 responses=32\nOFFICIAL_MEM bin=1152 requests=72 responses=72\nOFFICIAL_MEM bin=1184 requests=8 responses=8\nOFFICIAL_MEM bin=1185 requests=8 responses=8\nOFFICIAL_MEM bin=1186 requests=8 responses=8\nOFFICIAL_MEM bin=1187 requests=8 responses=8\nOFFICIAL_MEM bin=1188 requests=8 responses=8\nOFFICIAL_MEM bin=1189 requests=8 responses=8\nOFFICIAL_MEM bin=1190 requests=8 responses=8\nOFFICIAL_MEM bin=1192 requests=8 responses=8\nOFFICIAL_MEM bin=1193 requests=8 responses=8\nOFFICIAL_MEM bin=1194 requests=8 responses=8\nOFFICIAL_MEM bin=1195 requests=8 responses=8\nOFFICIAL_MEM bin=1196 requests=8 responses=8\nOFFICIAL_MEM bin=1197 requests=8 responses=8\nOFFICIAL_MEM bin=1198 requests=8 responses=8\nOFFICIAL_MEM bin=1216 requests=1 responses=1\nOFFICIAL_MEM bin=1217 requests=1 responses=1\nOFFICIAL_MEM bin=1218 requests=1 responses=1\nOFFICIAL_MEM bin=1219 requests=1 responses=1\nOFFICIAL_MEM bin=1220 requests=1 responses=1\nOFFICIAL_MEM bin=1221 requests=1 responses=1\nOFFICIAL_MEM bin=1222 requests=1 responses=1\nOFFICIAL_MEM bin=1224 requests=1 responses=1\nOFFICIAL_MEM bin=1225 requests=1 responses=1\nOFFICIAL_MEM bin=1226 requests=1 responses=1\nOFFICIAL_MEM bin=1227 requests=1 responses=1\nOFFICIAL_MEM bin=1228 requests=1 responses=1\nOFFICIAL_MEM bin=1229 requests=1 responses=1\nOFFICIAL_MEM bin=1230 requests=1 responses=1\nOFFICIAL_MEM bin=1248 requests=8 responses=8\nOFFICIAL_MEM bin=1249 requests=8 responses=8\nOFFICIAL_MEM bin=1250 requests=8 responses=8\nOFFICIAL_MEM bin=1251 requests=8 responses=8\nOFFICIAL_MEM bin=1252 requests=8 responses=8\nOFFICIAL_MEM bin=1253 requests=8 responses=8\nOFFICIAL_MEM bin=1254 requests=8 responses=8\nOFFICIAL_MEM bin=1256 requests=8 responses=8\nOFFICIAL_MEM bin=1257 requests=8 responses=8\nOFFICIAL_MEM bin=1258 requests=8 responses=8\nOFFICIAL_MEM bin=1259 requests=8 responses=8\nOFFICIAL_MEM bin=1260 requests=8 responses=8\nOFFICIAL_MEM bin=1261 requests=8 responses=8\nOFFICIAL_MEM bin=1262 requests=8 responses=8\nOFFICIAL_MEM bin=1280 requests=8 responses=8\nOFFICIAL_MEM bin=1281 requests=8 responses=8\nOFFICIAL_MEM bin=1282 requests=8 responses=8\nOFFICIAL_MEM bin=1288 requests=8 responses=8\nOFFICIAL_MEM bin=1289 requests=8 responses=8\nOFFICIAL_MEM bin=1290 requests=8 responses=8\nOFFICIAL_MEM bin=1312 requests=8 responses=8\nOFFICIAL_MEM bin=1320 requests=8 responses=8\nOFFICIAL_MEM bin=1344 requests=8 responses=8\nOFFICIAL_MEM bin=1352 requests=8 responses=8\nOFFICIAL_MEM bin=1376 requests=8 responses=8\nOFFICIAL_MEM bin=1408 requests=736 responses=736\nOFFICIAL_MEM bin=1424 requests=256 responses=256\nOFFICIAL_MEM bin=1440 requests=160 responses=160\nOFFICIAL_MEM bin=1448 requests=160 responses=160\nOFFICIAL_MEM bin=1456 requests=8 responses=8\nOFFICIAL_MEM bin=1464 requests=8 responses=8\nOFFICIAL_MEM bin=1472 requests=32 responses=32\nOFFICIAL_MEM bin=1480 requests=32 responses=32\nOFFICIAL_MEM bin=1488 requests=8 responses=8\nOFFICIAL_MEM bin=1496 requests=8 responses=8\nOFFICIAL_MEM bin=1504 requests=32 responses=32\nOFFICIAL_COUNTS writes=1152 logits=32 completed=4\nPASS public writes=1152 transactions=6296 stalls=224 busy_holds=8 bubbles=12\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/synthetic-file-backed-top.sv:618: $finish called at 190320 (1s)\n"
+    },
+    {
+      "name": "official-gemv-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.sv",
+      "testbench_sha256": "a2343e3e149a94db1f34e7401fae3e33640030d918f0d86267079810e1ca3ac2"
+    },
+    {
+      "name": "official-gemv-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.sv",
+      "testbench_sha256": "a2343e3e149a94db1f34e7401fae3e33640030d918f0d86267079810e1ca3ac2",
+      "executable": "evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.vvp",
+      "executable_sha256": "c2a67eca877f697ba9b0fc8bd2eaf331425270f68ede6ec552462e7d88c1cac3"
+    },
+    {
+      "name": "official_gemv",
+      "official_scalar_products": 192,
+      "official_submatrices": "Q/K/gate rows 0:8 channels 0:8",
+      "synthetic_padding": "none: only supplied rows/channels; scaled G8 stays in official G128 group zero",
+      "compared_outputs": 24,
+      "outcome": "pass",
+      "stdout": "PASS public writes=24 transactions=115 stalls=6 busy_holds=6 bubbles=9\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/official-gemv.sv:216: $finish called at 2810 (1s)\n"
+    },
+    {
+      "name": "raw-official-submatrix-source",
+      "outcome": "retained",
+      "testbench": "evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix.sv",
+      "testbench_sha256": "5c6174a725ca70dd505dbc41d32a4eeedc27347a274cedbabd61e4b76ee0f091"
+    },
+    {
+      "name": "check",
+      "outcome": "fail",
+      "diagnosis": "raw-official-submatrix: behavioral failure: FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix.sv:434: literal official layer mismatch\n       Time: 209765  Scope: tb\n "
+    }
+  ]
+}

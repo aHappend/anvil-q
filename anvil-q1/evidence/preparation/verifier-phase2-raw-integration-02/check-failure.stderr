@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/data/sufeng/anvil-q-line5/workspace_phase2/project/tests/verify.py", line 3508, in main
+    official.raw_submatrix_test(run, checkpoint, command_tb, BUS_CONNECT, compile_sim)
+  File "/data/sufeng/anvil-q-line5/workspace_phase2/project/tests/official_weights.py", line 856, in raw_submatrix_test
+    stdout = compile_sim(run, tb, "raw-official-submatrix", timeout=3600, settled=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/sufeng/anvil-q-line5/workspace_phase2/project/tests/verify.py", line 346, in compile_sim
+    require(code == 0 and "PASS" in stdout,
+  File "/data/sufeng/anvil-q-line5/workspace_phase2/project/tests/verify.py", line 213, in require
+    raise AssertionError(text)
+AssertionError: raw-official-submatrix: behavioral failure: FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-raw-integration-02/raw-official-submatrix.sv:434: literal official layer mismatch
+       Time: 209765  Scope: tb
+ 
