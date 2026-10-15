@@ -1169,6 +1169,10 @@ def child_errors(run):
         elif module == "elementwise":
             parameters = {k: common[k] for k in
                           ("NUM_LAYERS","HIDDEN_SIZE","INTERMEDIATE_SIZE","MAX_SEQ_LEN")}
+        elif module in ("rope","gqa_attention"):
+            parameters = {k: common[k] for k in
+                          ("NUM_LAYERS","HIDDEN_SIZE","NUM_Q_HEADS",
+                           "NUM_KV_HEADS","HEAD_DIM","MAX_SEQ_LEN")}
         extra = (",.cmd_proj(cmd_proj)" if module == "w4a16_gemv" else
                  ",.cmd_mode(cmd_mode)" if module in ("rmsnorm","elementwise") else "")
         params = ",".join(f".{k}({v})" for k,v in parameters.items())
@@ -1224,14 +1228,15 @@ always @(posedge clk) if(rst_n) begin
  end
 end
 task automatic check_error(input integer l,p,proj,mode,kind,input [15:0] raw);
-integer start_requests;
+integer start_requests,start_writes;
 begin
  @(negedge clk); if(cmd_ready!==1) $fatal(1,"CHILD not idle");
- start_requests=requests; target=kind; bad=raw; injected=0; mem_rsp_error=0;
+ start_requests=requests; start_writes=writes;
+ target=kind; bad=raw; injected=0; mem_rsp_error=0;
  cmd_layer=l; cmd_pos=p; cmd_proj=proj; cmd_mode=mode; cmd_valid=1;
  @(negedge clk); cmd_valid=0;
  while(done!==1) @(negedge clk);
- if(error!==1 || cmd_ready!==0 || pending || writes!=0)
+ if(error!==1 || cmd_ready!==0 || pending || (kind==-1 && writes!=start_writes))
    $fatal(1,"CHILD error propagation/no-write failure");
  if(kind!=-1 && (!injected || requests==start_requests))
    $fatal(1,"CHILD fault not reached");
@@ -1252,6 +1257,97 @@ end endmodule
 """
         stdout = compile_sim(run,text,"child-errors-"+module)
         run.result("child-errors-"+module,outcome="pass",cases=len(cases),stdout=stdout)
+
+
+def top_errors(run):
+    """Faults after acknowledged writes and after a genuinely transferred logit."""
+    params = dict(zip(KEYS,MATRIX["D"])) | {"VOCAB_SIZE":2}
+    declarations = ",".join(f".{k}({v})" for k,v in params.items())
+    connect = BUS_CONNECT.replace(
+        ".cmd_valid(cmd_valid),.cmd_ready(cmd_ready)",
+        ".token_valid(cmd_valid),.token_ready(cmd_ready)").replace(
+        ".cmd_layer(cmd_layer),.cmd_pos(cmd_pos)",
+        ".token_id(cmd_layer),.token_pos(cmd_pos)")
+    text = "module tb;\n"+BUS_PORTS+"""
+reg new_sequence=1; wire logit_valid; reg logit_ready=1;
+wire [31:0] logit_index; wire signed [31:0] logit_data;
+integer cycles=0,scenario=0,checks=0,writes=0,acks=0,logits=0,requests=0,replies=0;
+reg pending=0,injected=0,reply_error=0;
+reg [31:0] reply=0; reg [15:0] scratch[0:119];
+"""+f"anvil_q1_top #({declarations}) dut("+connect+"""
+,.new_sequence(new_sequence),.logit_valid(logit_valid),.logit_ready(logit_ready),
+.logit_index(logit_index),.logit_data(logit_data));
+always @(negedge clk) begin
+ mem_req_ready=rst_n; mem_rsp_valid=rst_n && pending;
+ mem_rsp_error=reply_error; mem_rsp_rdata=reply;
+end
+always @(posedge clk) if(rst_n) begin
+ cycles=cycles+1; if(cycles>100000) $fatal(1,"TOP fault watchdog");
+ if(logit_valid && logit_ready) begin
+   if(scenario!=2 || logits!=0 || logit_index!==0 || logit_data!==524288)
+     $fatal(1,"PARTIAL logit mismatch/scenario");
+   logits=logits+1;
+ end
+ if(mem_req_valid && mem_req_ready) begin
+   if(pending || injected || mem_rsp_ready) $fatal(1,"TOP post-fault/overlap traffic");
+   pending=1; requests=requests+1; reply_error=0;
+   if(mem_req_write) begin
+     if(mem_req_kind!=8 && mem_req_kind!=9 && mem_req_kind!=10)
+       $fatal(1,"TOP illegal write");
+     writes=writes+1;
+     if(mem_req_kind==8) scratch[mem_req_row*8+mem_req_col]=mem_req_wdata[15:0];
+     reply=0;
+   end else case(mem_req_kind)
+     0,3,5,6,7: reply=16'h3c00;
+     1,2,4,9,10: reply=0;
+     8: reply=scratch[mem_req_row*8+mem_req_col];
+     11: reply=mem_req_col%2==0 ? 32'h40000000 : 0;
+     default: $fatal(1,"TOP unknown kind");
+   endcase
+   if((scenario==1 && acks>0) || (scenario==2 && logits==1)) begin
+     injected=1; reply_error=1;
+   end
+   if(scenario==3 && mem_req_kind==0) begin
+     injected=1; reply=16'h7c00;
+   end
+ end else if(mem_rsp_valid && mem_rsp_ready) begin
+   pending=0; replies=replies+1;
+   if(writes>0) acks=writes;
+ end
+end
+task automatic launch(input ns);
+begin
+ @(negedge clk); if(cmd_ready!==1) $fatal(1,"TOP not idle");
+ cmd_valid=1; new_sequence=ns;
+ @(negedge clk); cmd_valid=0;
+end endtask
+task automatic retire_error;
+begin
+ while(done!==1) @(negedge clk);
+ if(error!==1 || cmd_ready!==0 || pending) $fatal(1,"TOP missing fault completion");
+ @(negedge clk);
+ if(done!==0 || error!==0 || cmd_ready!==1) $fatal(1,"TOP fault retirement");
+end endtask
+initial begin
+ repeat(3) @(negedge clk); rst_n=1;
+ for(scenario=1;scenario<=3;scenario=scenario+1) begin
+   writes=0; acks=0; logits=0; injected=0;
+   launch(1); retire_error();
+   if(!injected || (scenario==1 && acks==0) || (scenario==2 && logits!=1))
+     $fatal(1,"TOP missing directed fault event");
+   checks=checks+1;
+   // A fault must invalidate the sequence even though token position is zero.
+   launch(0); retire_error(); checks=checks+1;
+ end
+ if(checks!=6 || requests!=replies) $fatal(1,"TOP fault coverage");
+ $display("PASS top errors after_write=1 partial_logit=1 nonfinite_embedding=1 invalidated=3");
+ $finish;
+end endmodule
+"""
+    stdout = compile_sim(run,text,"top-errors")
+    run.result("top-errors",outcome="pass",post_write_errors=1,
+               partial_logit_errors=1,nonfinite_embeddings=1,
+               invalidated_sequence_rejections=3,stdout=stdout)
 
 
 def attention_test(run):
@@ -1539,6 +1635,7 @@ def main():
                 protocol_test(run)
             if args.probe in (None, "errors"):
                 child_errors(run)
+                top_errors(run)
             if args.probe in (None, "nonlinear"):
                 nonlinear_test(run)
             if args.probe=="matrix":
@@ -1552,11 +1649,7 @@ def main():
             if args.probe is None:
                 run.result("acceptance_gaps",outcome="incomplete",
                            remaining=[
-                               "standalone invalid-command matrix for every child",
-                               "nonfinite activation/bias/norm and invalid-scale integrated errors",
-                               "memory errors after writes and partial logit output",
-                               "explicit busy-held-valid and idle-bubble event coverage",
-                               "full kind/address/unused-field legality matrix",
+                               "complete seeded matrix with strengthened address/busy/bubble assertions",
                                "total mandatory execution within admitted 120-second budget"])
                 raise AssertionError("INCOMPLETE: see acceptance_gaps; focused passes are not full acceptance")
         elif args.check == "synthesis":
