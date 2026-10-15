@@ -48,14 +48,15 @@ The combinational dequantizer has no reset and always evaluates its inputs.
 | Reset asserted | All outward valid/ready/done/error and payloads zero | Rising edge clears state and sequence validity |
 | First deasserted idle cycle | token_ready/cmd_ready high | No state change absent a transfer |
 | E0 command/token acceptance | valid && ready | Busy, ready low, no completion or request transfer |
-| E1 | Busy startup | First request may become valid |
+| E1 | Busy startup; GEMV tile-clear state 16 | First request may become valid; GEMV enters zero-request state 5 |
 | Stalled request | valid && !ready | All request fields unchanged |
 | R request transfer | req_valid && req_ready | req_valid low, rsp_ready high |
 | S response transfer, S > R | rsp_valid && rsp_ready | rsp_ready low; dependent operation advances |
+| GEMV packed-weight S | State 4 accepts packed word | Enter MAC state 9; next edge performs all eight lane MACs and selects next input/group/completion path |
 | Stalled logit | valid && !ready | Index and data unchanged |
 | F final logit transfer | valid && ready | One-cycle done, ready remains low; commit position |
 | Completion retirement | done high | Return idle next edge |
-| Error | Invalid accepted command or response error | One-cycle done+error, then idle |
+| Error | Invalid accepted command or response error | Invalid command first enters pending error, never completion immediately after E0; then one-cycle done+error and idle |
 | Singleton vocabulary | First logit is also last | Same F rule, never skip its transfer |
 | Singleton context/layer | Index zero is also final | Execute the operation once, then terminate |
 | New sequence accepted | position must be zero | Old logical cache invalidated; storage need not erase |
@@ -92,14 +93,18 @@ Internal response-data isolation does not change this public interface.
 Each bus mux forwards response data only to its selected child, driving zero
 to the others. Each memory-port helper exposes data only on its existing
 response transfer (`complete`); no response is registered or delayed.
+GEMV alone uses a direct request/response FSM instead of that helper, exposing
+read data only during an accepted response in its response-wait states.
 Response-dependent arithmetic operands are zero outside their consuming
 response states: top binary16 conversion in states 2/12 and logit multiply
 in 12, RMSNorm square in 2, attention K-dot in 9 and V-weighted product in 14,
 and GEMV binary16 bias conversion in 12. Valid consuming data, including X/Z
 bits, is not sanitized; response errors retain their existing priority.
 Standalone engines retain the same behavior without a parent mux.
-This local activity isolation adds no clock gating, storage, arithmetic lanes,
-protocol cycles or transaction changes and makes no measured speedup claim.
+The consuming-state isolation itself adds no clock gating, storage or protocol
+cycles. The separate GEMV amendment instantiates eight arithmetic lanes and
+removes helper request staging only within GEMV, preserving transaction order,
+counts and numerical results; it makes no measured speedup claim.
 
 Top ports remain `clk,rst_n,token_valid,token_ready,token_id[31:0],
 token_pos[31:0],new_sequence,logit_valid,logit_ready,logit_index[31:0],
@@ -205,22 +210,44 @@ The SiLU exponential receives -abs(x) directly in Q16.16.
 
 ## Bounded eight-output GEMV
 
-Process consecutive output blocks of eight with one reused scalar dequantizer
-and multiplier, not eight parallel arithmetic lanes. Each block clears eight
-signed-128 accumulators. At each input group load one packed zero word and
-eight binary16 scales; retain only this group's metadata. For each increasing
-input index read one activation and one packed weight, then perform eight
-scalar lane MACs without intermediate rounding. Reload metadata on arithmetic
+Process consecutive output blocks of eight with exactly eight actually
+instantiated `anvil_q1_awq_dequant` children, each fixed to its logical lane,
+and eight explicitly signed-69 products feeding eight signed-128 accumulators.
+This architecture is identical across legal parameter configurations; it is
+neither eight scalar iterations nor wrappers around a shared scalar result.
+Each block clears the accumulators. At each input group load one packed zero
+word and eight binary16 scales in lane order; retain only this group's metadata.
+For each increasing input index read one activation and one packed weight,
+then perform all eight lane MACs on one following edge without intermediate
+rounding/saturation. Any invalid dequantizer fails the operation without
+accepting any lane's MAC result. Reload metadata on arithmetic
 group transitions, including G=3. After all inputs, read/add one bias per lane
 only for Q/K/V and write eight final values in channel order, waiting for each
 acknowledgement. O and all MLP projections never request bias.
 
 All tile state is command-local and invalid on reset, completion, rejection or
-fault. For N inputs and M outputs there are exactly N*M products, M writes and
+fault. For N inputs and M outputs there are exactly N*M scalar products through
+(M/8)*N parallel MAC edges, M writes and
 (M/8)*(2*N+9*(N/G)) reads, plus M reads for biased projections. Eight
-accumulators, eight scales and scalar holds are independent of model/context
-dimensions. The four-token B analytical input/metadata count is 183680 versus
-2293760 previously; this is not a measured speedup or completion-time bound.
+accumulators, eight scales, eight combinational lane datapaths and fixed holds
+are independent of model/context dimensions. No group-count-sized metadata
+array is allocated. The four-token B analytical input/metadata count remains
+183680, excluding biases, writes and other engines. The amendment preserves
+public transaction order and counts; this is not a measured speedup or
+completion-time bound.
+
+GEMV request-valid derives directly from request state, with no helper issue
+or request-register stage. Payloads derive only from held command/index/data,
+stay stable while valid && !ready, and zero unused fields/read write-data.
+Write data selects the stable completed accumulator, with final rounding and
+saturation enabled only in write-request state 13. Request states never assert
+response-ready, and response-wait states never assert request-valid. A request
+transfer always enters response wait; only a strictly later response transfer
+advances work. This applies equally to writes. No speculative request,
+response-driven combinational request, same-edge request/response transfer or
+unacknowledged write is allowed. Response data is zero outside an accepted
+response in a wait state; active consuming data, including X/Z, is unchanged.
+Other engines retain `anvil_q1_mem_port` staging and selected-child isolation.
 
 ## Parameter boundary matrix
 
@@ -258,10 +285,23 @@ RMSNorm/RoPE/SiLU/attention error <=2/256 real units; final norm <=16/256;
 logits <=16/256+0.01*abs(floating reference). These are not new-format LSB
 counts. Prior Q8.8-directed working inputs preserve real values by multiplying
 their integer encodings by 256. Full-range saturation and cancellation cases
-use exact integer expectations. All eight mutation categories, protocol/fault
+use exact integer expectations. All nine retained mutations (wrong AWQ lane,
+omitted QKV bias, wrong GQA association, wrong RoPE pairing/coefficient use,
+stale/future cache indexing, skipped decoder layer, signed-32 dequant
+truncation, signed-64 GEMV accumulation truncation and signed-53 product
+truncation), protocol/fault
 coverage, actual Yosys zero-latch checks and Icarus 12/13 remain required.
 Retain the existing 25-second matrix simulation and 120-second complete-check
 budgets. Missing Icarus13 remains an external unmet prerequisite, not a waiver.
+Engineering acceptance remains INCOMPLETE until all applicable obligations
+close. Verifier first establishes actual four-token B17 completion with the
+existing matrix probe and unchanged 25-second simulation watchdog, linked to
+`evidence/preparation/verifier-response-isolation-B17-01/receipt.json`.
+Predicted arithmetic quality, transaction progress and static elaboration do
+not certify that completion. New parallel-lane synthesis must independently
+check eight connected dequantizers and lane-result consumption in each concrete
+GEMV, not merely presence of the dequantizer module type. Historical scalar
+synthesis cannot certify the amendment.
 
 The concrete state-transition conditions and arithmetic iteration counts in
 [ARCHITECTURE.md, Concrete state transition and iteration inventory](ARCHITECTURE.md#concrete-state-transition-and-iteration-inventory)
@@ -269,16 +309,24 @@ are part of this contract. They specify each issue/response state and each
 component/head/group/layer/vocabulary loop rather than promising a fixed token
 latency independent of memory backpressure.
 
-GEMV transitions are 0 acceptance -> 16 tile clear -> 5/6 zero
-request/response -> 7/8 eight scale request/response pairs -> 1/2 activation
--> 3/4 packed weight -> 9 eight scalar MAC edges -> 10 input advance.
-State 10 selects 1 within a group, 5 on a group transition, or 11 for biased
-completion / 13 for unbiased completion. States 11/12 read/add all eight
-biases before 13/14 issue/acknowledge eight writes. State 14 selects another
-lane, 16 for the next block, or 20 completion. Invalid command uses 19->20;
-20 invalidates tile state and returns idle. Faults enter 20 without more issue.
-Thus there are N*M MACs, eight clears per block and nine metadata reads per
-group/block, not an arithmetic lane parallelism assumption.
+GEMV freezes these transitions: 0 acceptance -> 16 tile initialization, or 19
+invalid-command pending. State 16 clears tile state -> 5. Request states
+5,7,1,3,11,13 advance only on mem_req_valid && mem_req_ready to response-wait
+states 6,8,2,4,12,14 respectively. State 6 captures zero -> 7. State 8
+validates/captures scale and advances lane -> 7, or after lane 7 resets lane
+-> 1. State 2 captures activation -> 3. State 4 captures packed weight -> 9.
+State 9 performs all eight MACs on one edge and directly increments k and
+selects 1 within a group or 5 on a group transition; after the final input,
+lane zero and 11 for QKV or 13 otherwise. No input-advance state 10 remains.
+State 12 validates/converts/adds bias, loops 11 for next lane or resets lane
+-> 13. State 14 acknowledges output and selects 13 for next lane, 16 with
+incremented output block and reset input/lane, or completion 20. State 19
+-> 20; state 20 invalidates tile state -> 0. Reset dominates all transitions.
+Any accepted response error in a wait state takes priority over normal
+capture/progression and enters failed completion 20, with no subsequent request.
+Invalid scale/bias or any invalid dequantizer likewise fails. Completion lasts
+one cycle. Thus there are N*M products on (M/8)*N parallel MAC edges, eight
+accumulator clears per block and nine metadata reads per group/block.
 
 RMSNorm transitions are 0 -> 1/2 H square reads -> 3 mean -> 4 bounded
 64-step combinational sqrt -> 5 checked reciprocal -> 6/7 x read -> 8/9
