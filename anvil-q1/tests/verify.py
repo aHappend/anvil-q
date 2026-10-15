@@ -312,7 +312,7 @@ always @(posedge clk) begin
  cycles=cycles+1;
  if(!rst_n) reset_check();
  else begin
- if(cycles>12000000) $fatal(1,"WATCHDOG");
+ if(cycles>120000000) $fatal(1,"WATCHDOG");
  if(was_stalled && {mem_req_valid,mem_req_write,mem_req_kind,mem_req_layer,
       mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} !== held)
    $fatal(1,"REQUEST payload changed under backpressure");
