@@ -137,7 +137,8 @@ class Run:
                                 line, partial[stream] = partial[stream].split(b"\n", 1)
                                 text = line.decode(errors="replace")
                                 if text.startswith(("PROGRESS ", "PROJECTION_ACK ",
-                                                    "LAYER_ACK ", "EMBEDDING_ACK ", "TOKEN ")):
+                                                    "LAYER_ACK ", "EMBEDDING_ACK ", "TOKEN ",
+                                                    "COST_START ", "COST_END ")):
                                     now = time.monotonic()
                                     user, system = live_cpu(process.pid)
                                     events.append(dict(message=text, stream=stream,
@@ -1268,8 +1269,175 @@ def progress_probe(run,tb,prefix,sources,seconds):
     (run.out/(prefix+"-execution-cost.json")).write_text(json.dumps(report,indent=2)+"\n")
 
 
+def cost_discriminator(run, tb, instance, commands, params):
+    """Advisory matched public-pin capture/replay, never an acceptance shortcut."""
+    for relative in run.source_hashes:
+        target = run.out / "source-snapshot" / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target)
+    run.command(["timeout", "--version"], "timeout-version", timeout=2)
+    trace_fields = ("mem_req_valid,mem_req_ready,mem_req_write,mem_req_kind,"
+                    "mem_req_layer,mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata,"
+                    "mem_rsp_valid,mem_rsp_ready,mem_rsp_rdata,mem_rsp_error")
+    capture_trace = run.out / "capture-pins.hex"
+    normalized = run.out / "capture-normalized.hex"
+    declarations = f"""
+integer cost_fd=0,cost_norm_fd=0,cost_start=-1,cost_i=0;
+initial begin
+ cost_fd=$fopen("{capture_trace}","w");
+ cost_norm_fd=$fopen("{normalized}","w");
+ if(!cost_fd || !cost_norm_fd) $fatal(1,"COST trace open");
+end
+"""
+    capture = tb.replace("integer cycles=0", declarations+"\ninteger cycles=0", 1)
+    start_hook = f"""
+ if(cost_start<0 && mem_req_valid && mem_req_kind==2 &&
+    mem_req_layer==0 && mem_req_proj==0 && completions==0) begin
+   if(writes!=224 || pending) $fatal(1,"COST Q capture precondition");
+   cost_start=cycles;
+   for(cost_i=0;cost_i<112;cost_i=cost_i+1)
+     $fdisplay(cost_norm_fd,"%08h",storage[addr(8,0,0,1,cost_i)]);
+   $fclose(cost_norm_fd);
+   $display("COST_START cycles=%0d accepted=%0d writes=%0d",cycles,accepted,writes);
+   $fflush();
+ end
+ if(cost_start>=0) $fdisplay(cost_fd,"%044h",{{{trace_fields}}});
+"""
+    capture = capture.replace(' if(cycles>120000000)', start_hook+
+                              '\n if(cycles>120000000)', 1)
+    end_marker = "       active_gemv_proj=-1;"
+    end_hook = """
+       if(progress_token==0 && progress_layer==0 && progress_slot==2) begin
+         if(writes!=336 || pending || accepted!=responses)
+           $fatal(1,"COST final Q acknowledgement coverage");
+         $display("COST_END cycles=%0d accepted=%0d writes=%0d",
+           cycles,accepted,writes);
+         $fclose(cost_fd); $fflush();
+         $display("PASS diagnostic Q final write acknowledged"); $finish;
+       end
+"""
+    require(capture.count(end_marker)==1, "COST capture hook ambiguity")
+    capture = capture.replace(end_marker, end_hook+end_marker)
+
+    def execute(text, name):
+        sv, exe = run.out/(name+".sv"), run.out/(name+".vvp")
+        sv.write_text(text)
+        code, _, err = run.command(
+            ["iverilog","-g2012","-Wall","-s","tb","-o",exe,*RTL,sv],
+            name+"-compile", timeout=5)
+        require(code==0 and not err.strip(), name+": compile/warning failure "+err)
+        code, stdout, stderr = run.command(
+            ["timeout","--signal=INT","--kill-after=1s","6",
+             "vvp","-n",exe],name+"-simulate",timeout=9,observe_progress=True)
+        record = run.commands[-1]
+        require(record["process_group_settled"],name+": unsettled simulation")
+        require(code==0 and "PASS diagnostic Q final write acknowledged" in stdout,
+                name+": capture/replay failed or exceeded six-second cap: "+stdout+stderr)
+        observation = json.loads((ROOT/record["host_observations_path"]).read_text())
+        events = [e for e in observation["events"] if e["message"].startswith("COST_")]
+        require(len(events)==2 and not observation["cpu_sample_errors"],
+                name+": missing interval CPU observations")
+        start,end = events
+        values = [{k:int(v) for k,v in re.findall(r"(\w+)=(\d+)",e["message"])}
+                  for e in events]
+        wall = end["elapsed_wall_s"]-start["elapsed_wall_s"]
+        cpu = sum(end[k]-start[k] for k in ("child_user_cpu_s","child_system_cpu_s"))
+        result = dict(name=name,outcome="advisory_measurement",
+            start=values[0],end=values[1],matched_wall_s=wall,matched_child_cpu_s=cpu,
+            cycles=values[1]["cycles"]-values[0]["cycles"],
+            transactions=values[1]["accepted"]-values[0]["accepted"],
+            cpu_to_wall_ratio=cpu/wall,
+            cpu_s_per_transaction=cpu/(values[1]["accepted"]-values[0]["accepted"]),
+            total_child_user_cpu_s=record["child_user_cpu_s"],
+            total_child_system_cpu_s=record["child_system_cpu_s"],
+            total_wall_s=record["elapsed_s"],
+            host_observations=record["host_observations_path"],
+            caveat="Intervals use flushed pipe receipt and kernel CPU tick samples, "
+                   "not exact simulator timestamps. Trace file I/O is included.")
+        run.result(**result)
+        return result
+
+    captured = execute(capture, "cost-integrated")
+    rows = capture_trace.read_text().splitlines()
+    require(len(rows)==captured["cycles"]+1 and
+            all(re.fullmatch("[0-9a-fA-F]{44}",r) for r in rows),
+            "COST capture trace incomplete or contains X/Z")
+    values = [int(r,16) for r in rows]
+    # Low 35 bits are response {valid,ready,data,error}.
+    require(sum((v>>172)&1 and (v>>171)&1 for v in values)==captured["transactions"],
+            "COST captured request count")
+    require(sum((v>>34)&1 and (v>>33)&1 for v in values)==captured["transactions"],
+            "COST captured response count")
+    require(captured["transactions"]==14*(224+9*7)+112+112,
+            "COST Q exact transaction count")
+    replay_trace = run.out / "replay-pins.hex"
+    standalone_params = re.sub(r"\.VOCAB_SIZE\(\d+\),", "", params)
+    replay_instance = instance.split("anvil_q1_top #",1)[0]+(
+        f"anvil_q1_w4a16_gemv #({standalone_params}) dut("+BUS_CONNECT+
+        ",.cmd_proj(cmd_proj));\n")
+    replay = capture.replace(instance,replay_instance,1).replace(
+        str(capture_trace),str(replay_trace)).replace(
+        str(normalized),str(run.out/"replay-normalized.hex"))
+    replay = replay.replace(commands, "cmd_layer=0; launch(0,0);",1)
+    replay = replay.replace("integer cycles=0",
+        f"""reg [172:0] cost_schedule[0:{len(rows)-1}];
+integer cost_index=-1;
+initial $readmemh("{capture_trace}",cost_schedule);
+integer cycles=0""",1)
+    # The original reader and all transaction/write assertions remain active.
+    # Seed only previously observed/compared normalized scratch and counters.
+    normalized_values = normalized.read_text().splitlines()
+    require(len(normalized_values)==112,"COST normalized snapshot missing")
+    replay = replay.replace(" #0; reset_check();",
+        f""" #0; $readmemh("{normalized}",storage,
+          addr(8,0,0,1,0),addr(8,0,0,1,111));
+ writes=224; accepted={captured["start"]["accepted"]};
+ responses={captured["start"]["accepted"]};
+ reset_check();""",1)
+    old_drive = """   mem_req_ready = cycles%31 != 0;
+   mem_rsp_valid = pending && delay_count==0;
+   mem_rsp_rdata = reply;"""
+    new_drive = f"""
+   if(cost_index>=0) cost_index=cost_index+1;
+   else if(mem_req_valid) cost_index=0;
+   if(cost_index>=0) begin
+     if(cost_index>={len(rows)}) $fatal(1,"COST replay schedule exhausted");
+     mem_req_ready=cost_schedule[cost_index][171];
+     mem_rsp_valid=cost_schedule[cost_index][34];
+     mem_rsp_rdata=cost_schedule[cost_index][32:1];
+     mem_rsp_error=cost_schedule[cost_index][0];
+   end
+"""
+    require(replay.count(old_drive)==1,"COST replay drive hook ambiguity")
+    replay = replay.replace(old_drive,new_drive,1)
+    replay = replay.replace(start_hook,start_hook+f"""
+ if(cost_index>=0) begin
+   if({{{trace_fields}}} !== cost_schedule[cost_index])
+     $fatal(1,"COST replay complete public trace mismatch cycle %0d",cost_index);
+   if(mem_rsp_valid && mem_rsp_rdata !== reply)
+     $fatal(1,"COST replay response differs from independent memory service");
+ end
+""",1)
+    replayed = execute(replay,"cost-standalone")
+    require(replay_trace.read_bytes()==capture_trace.read_bytes(),
+            "COST replay pin trace differs")
+    require(captured["cycles"]==replayed["cycles"] and
+            captured["transactions"]==replayed["transactions"],
+            "COST mismatched measurement intervals")
+    run.result("cost-discriminator",outcome="advisory_measurement_not_acceptance",
+        identical_complete_pin_traces=True,compared_cycles=len(rows),
+        compared_Q_writes=112,transactions=captured["transactions"],
+        integrated_to_standalone_wall_ratio=(
+            captured["matched_wall_s"]/replayed["matched_wall_s"]),
+        integrated_to_standalone_cpu_ratio=(
+            captured["matched_child_cpu_s"]/replayed["matched_child_cpu_s"]),
+        scope="Distinguishes integrated hierarchy/routing overhead from cost "
+              "present in standalone GEMV plus transactor; cannot separate "
+              "GEMV arithmetic from transactor cost. Not four-token completion.")
+
+
 def integrated(run, label, seed, sources=None, name=None, audit=False,
-               progress_seconds=None):
+               progress_seconds=None, discriminate_cost=False):
     """Functional vector algebra oracle; no RTL state or timing is modeled."""
     L,H,I,Q,K,D,G,V,S = MATRIX[label]
     rng = random.Random(seed)
@@ -1672,6 +1840,9 @@ accepted=accepted+1; pending=1;""")
      $fflush();
    end
 """)
+    if discriminate_cost:
+        cost_discriminator(run,tb,instance,commands,params)
+        return
     if progress_seconds is not None:
         progress_probe(run,tb,prefix,sources,progress_seconds)
         return
@@ -2443,14 +2614,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
-                     "protocol","errors","mutations","nonlinear","numerical-audit","progress"},
+                     "protocol","errors","mutations","nonlinear","numerical-audit","progress",
+                     "cost-discriminator"},
         "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
@@ -2474,6 +2646,10 @@ def main():
                 require(args.configuration=="B" and args.seed==17,
                         "bounded progress diagnostic is B17 only")
                 integrated(run,"B",17,progress_seconds=12)
+            if args.probe == "cost-discriminator":
+                require(args.configuration=="B" and args.seed==17,
+                        "cost discriminator is B17 only")
+                integrated(run,"B",17,discriminate_cost=True)
             if args.probe in (None, "dequant"):
                 dequant_test(run, slices)
             if args.probe == "mutations":
