@@ -3230,6 +3230,8 @@ def _matched_icarus_toolchains(run, selections):
 
 
 def portability(run, elaborate=True, selections=None):
+    _portability_command(run, [sys.executable, "--version"],
+                         "portability-python-version", timeout=5)
     toolchains = _matched_icarus_toolchains(run, selections or {})
     if not elaborate:
         return
@@ -3393,7 +3395,7 @@ def main():
     except FileExistsError:
         parser.exit(2, f"error: refusing occupied output destination: {args.out}\n")
     try:
-        tools = (("python3",) if args.check == "portability" else
+        tools = (() if args.check == "portability" else
                  ("python3", "iverilog", "vvp") if
                  args.probe in ("transactor-cost-discriminator",
                                 "mac-qualified-cost-discriminator",
