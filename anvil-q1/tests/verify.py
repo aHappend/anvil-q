@@ -54,7 +54,7 @@ class Run:
         self.started = utc()
         self.repair_of = repair_of
 
-    def command(self, argv, name, timeout=3600, observe_progress=False):
+    def command(self, argv, name, timeout=20, observe_progress=False):
         argv = [str(x) for x in argv]
         start = utc()
         tick = time.monotonic()
@@ -296,7 +296,7 @@ def manifest(run):
     return slices
 
 
-def compile_sim(run, text, name, sources=None, timeout=3600):
+def compile_sim(run, text, name, sources=None, timeout=20):
     sv = run.out / (name+".sv")
     executable = run.out / (name+".vvp")
     sv.write_text(text)
@@ -2079,7 +2079,7 @@ accepted=accepted+1; pending=1;""")
     if progress_seconds is not None:
         progress_probe(run,tb,prefix,sources,progress_seconds)
         return
-    stdout=compile_sim(run,tb,prefix,sources=sources,timeout=3600)
+    stdout=compile_sim(run,tb,prefix,sources=sources,timeout=25)
     run.result(prefix,configuration=MATRIX[label],seed=seed,tokens=len(positions),
                compared_writes=len(expected_writes),compared_logits=len(logits),
                floating_final_max_error_q8_lsb=final_error,
@@ -2784,7 +2784,7 @@ def synthesis(run, configuration=None):
                           " anvil_q1_top\nhierarchy -check -top anvil_q1_top\n"+
                           "proc\nopt\nmemory\nopt\ncheck -assert\nwrite_json "+str(output)+"\n")
         code, stdout, stderr = run.command(["yosys","-Q","-T","-s",script],
-                                           f"synthesis-{label}", timeout=3600)
+                                           f"synthesis-{label}", timeout=25)
         require(code == 0, f"Yosys {label}: {stderr or stdout[-3000:]}")
         modules = json.loads(output.read_text())["modules"]
         visited = set()
