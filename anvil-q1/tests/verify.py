@@ -995,7 +995,7 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
         for pos in range(S):
             for c in range(kv):
                 for kind in (9,10):
-                    put(kind,l,0,pos,c,0x7000+c)  # poisoned future storage
+                    put(kind,l,0,pos,c,(0x7000+c)*256)  # same real-valued poison, Q16.16
     for c in range(H):
         put(7,0,0,0,c,half(rng.randint(240,272)/256))
     for pos in range(S):
@@ -1013,12 +1013,12 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
             integer_trace[ordinal,layer,stage] = (
                 list(values) if values is not None else vector(slot,n))
     def bounded(value):
-        if audit and (value < -32768 or value > 32767):
+        if audit and (value < -2147483648 or value > 2147483647):
             saturation[active_stage] = saturation.get(active_stage,0)+1
         return sat(value)
     def write(slot,c,value):
         scratch[slot,c] = value
-        expected_writes.append((8,0,slot,c,value & 65535))
+        expected_writes.append((8,0,slot,c,value & 0xffffffff))
     def vector(slot,n):
         return [scratch[slot,c] for c in range(n)]
     def norm(l,src,dst,kind):
@@ -1026,9 +1026,9 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
         stage = {5:"norm_input",6:"norm_post",7:"final"}[kind]
         active_stage = ordinal,(-1 if kind==7 else l),stage
         x=vector(src,H)
-        inv=(1 << 32)//math.isqrt((sum(v*v for v in x) << 16)//H+4295)
+        inv=(1 << 64)//math.isqrt((sum(v*v for v in x) << 32)//H+18446744073710)
         for c,v in enumerate(x):
-            write(dst,c,bounded(rounded(v*fixed(kind,l,0,0,c)*inv,1 << 24)))
+            write(dst,c,bounded(rounded(v*fixed(kind,l,0,0,c)*inv,1 << 48)))
         capture(active_stage[1],stage,dst,H)
     def linear(l,p,src,dst):
         nonlocal active_stage
@@ -1074,8 +1074,8 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
             for slot,kind in ((3,9),(4,10)):
                 for c in range(kv):
                     v=scratch[slot,c]
-                    put(kind,l,0,pos,c,v & 65535)
-                    expected_writes.append((kind,l,pos,c,v & 65535))
+                    put(kind,l,0,pos,c,v & 0xffffffff)
+                    expected_writes.append((kind,l,pos,c,v & 0xffffffff))
             active_stage = ordinal,l,"context"
             for head in range(Q):
                 kvhead=head//(Q//K)
@@ -1084,15 +1084,15 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
                     dot=0
                     for c in range(D):
                         k=get(9,l,0,t,kvhead*D+c)
-                        k=k if k<32768 else k-65536
+                        k=k if k<2**31 else k-2**32
                         dot+=scratch[2,head*D+c]*k
-                    scores.append(rounded(dot*65536,math.isqrt(D << 32)))
+                    scores.append(rounded(dot,math.isqrt(D << 32)))
                 es=[exp_integer(s-max(scores)) for s in scores]
                 for c in range(D):
                     weighted=0
                     for t,e in enumerate(es):
                         v=get(10,l,0,t,kvhead*D+c)
-                        weighted+=(v if v<32768 else v-65536)*e
+                        weighted+=(v if v<2**31 else v-2**32)*e
                     write(5,head*D+c,bounded(rounded(weighted,sum(es))))
             capture(l,"context",5,H)
             linear(l,3,5,6)
@@ -1106,13 +1106,13 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
             silus = []
             for c in range(I):
                 x=scratch[9,c]
-                e=exp_integer(-abs(x)*256)
+                e=exp_integer(-abs(x))
                 sigmoid=((1 << 48) if x>=0 else e*(1 << 24))//((1 << 24)+e)
                 active_stage = ordinal,l,"silu"
                 silu=bounded(rounded(x*sigmoid,1 << 24))
                 silus.append(silu)
                 active_stage = ordinal,l,"product"
-                write(11,c,bounded(rounded(silu*scratch[10,c],256)))
+                write(11,c,bounded(rounded(silu*scratch[10,c],65536)))
             capture(l,"silu",values=silus)
             capture(l,"product",11,I)
             linear(l,6,11,12)
@@ -1123,15 +1123,16 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
         norm(0,0,14,7)
         final_vectors.append(vector(14,H))
         for r in range(V):
-            logits.append(sat(sum(scratch[14,c]*fixed(0,0,0,r,c) for c in range(H)),32))
+            logits.append(sat(rounded(sum(scratch[14,c]*fixed(0,0,0,r,c)
+                                          for c in range(H)),65536)))
     float_final,float_logits = floating_stack(
         memory,get,fixed,dims,MATRIX[label],
         [((seed+n)%V,pos) for n,pos in enumerate(positions)],
         trace=float_trace if audit else None)
-    final_error = max(abs(a-b*256) for actual,reference in zip(final_vectors,float_final)
+    final_error = max(abs(a/256-b*256) for actual,reference in zip(final_vectors,float_final)
                       for a,b in zip(actual,reference))
     logit_error = max(abs(a/65536-b) for a,b in zip(logits,float_logits))
-    final_quality = all(abs(a-b*256)<=16 for actual,reference in zip(final_vectors,float_final)
+    final_quality = all(abs(a/65536-b)<=16/256 for actual,reference in zip(final_vectors,float_final)
                         for a,b in zip(actual,reference))
     logit_quality = all(abs(a/65536-b)<=16/256+0.01*abs(b)
                         for a,b in zip(logits,float_logits))
@@ -1326,7 +1327,7 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
 def rope_test(run):
     d, qh, kvh = 4, 4, 2
     positions = (1, 3, 32767)
-    initial = {(slot, c): (-1 if c%2 else 1)*(31+17*c)
+    initial = {(slot, c): (-1 if c%2 else 1)*(31+17*c)*256
                for slot, heads in ((2, qh), (3, kvh)) for c in range(heads*d)}
     # Each invocation starts from the previous public writes, exactly as an
     # ordinary external memory would; only coefficient values are provisioned.
@@ -1346,25 +1347,25 @@ def rope_test(run):
                     c, s = coefficients[pos, 2*pair], coefficients[pos, 2*pair+1]
                     xx, yy = sat(rounded(x*c-y*s, 2**30)), sat(rounded(y*c+x*s, 2**30))
                     require(abs(xx-(x*math.cos(pos*1000000**(-2*pair/d))-
-                                         y*math.sin(pos*1000000**(-2*pair/d)))) <= 2,
+                                         y*math.sin(pos*1000000**(-2*pair/d)))) <= 512,
                             "floating RoPE quality")
                     mem[slot, a], mem[slot, b] = xx, yy
                     writes += [(slot, a, xx), (slot, b, yy)]
     expected = run.out / "rope-expected.hex"
-    expected.write_text("\n".join(f"{slot:02x}{col:08x}{v&65535:04x}" for slot,col,v in writes)+"\n")
-    init_lines = "\n".join(f"storage[{slot}][{col}]=16'h{v&65535:04x};"
+    expected.write_text("\n".join(f"{slot:02x}{col:08x}{v&0xffffffff:08x}" for slot,col,v in writes)+"\n")
+    init_lines = "\n".join(f"storage[{slot}][{col}]=32'h{v&0xffffffff:08x};"
                            for (slot,col),v in initial.items())
     coef_cases = "\n".join(f"64'h{pos:08x}{col:08x}:read_memory=32'h{v&0xffffffff:08x};"
                            for (pos,col),v in coefficients.items())
     reader = f"""
-reg [15:0] storage[0:3][0:15]; reg [55:0] expected[0:{len(writes)-1}];
+reg [31:0] storage[0:3][0:15]; reg [71:0] expected[0:{len(writes)-1}];
 initial begin {init_lines} $readmemh("{expected}",expected); end
 function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
  input [31:0] row,col);
 begin
  if(proj!=0) $fatal(1,"RoPE unused projection");
  if(kind==8 && (row==2 || row==3) && col<(row==2 ? 16:8))
-   read_memory={{16'd0,storage[row][col]}};
+   read_memory=storage[row][col];
  else if(kind==11) case({{row,col}})
  {coef_cases}
  default: begin $fatal(1,"RoPE coefficient address"); read_memory=0; end
@@ -1374,11 +1375,10 @@ end endfunction
 """
     check = f"""
 if(writes>={len(writes)} || mem_req_kind!==8 ||
- {{mem_req_row[7:0],mem_req_col,mem_req_wdata[15:0]}} !== expected[writes] ||
- mem_req_wdata[31:16]!==0)
+ {{mem_req_row[7:0],mem_req_col,mem_req_wdata}} !== expected[writes])
  $fatal(1,"ROPE write mismatch %0d got row %0d col %0d data %h",
  writes,mem_req_row,mem_req_col,mem_req_wdata);
-storage[mem_req_row][mem_req_col]=mem_req_wdata[15:0];
+storage[mem_req_row][mem_req_col]=mem_req_wdata;
 """
     params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(16),.NUM_Q_HEADS(4),.NUM_KV_HEADS(2),.HEAD_DIM(4),.MAX_SEQ_LEN(32768))"
     instance = "anvil_q1_rope "+params+" dut("+BUS_CONNECT+");"
@@ -1508,37 +1508,37 @@ def nonlinear_test(run):
     error = max(abs(exp_integer(x)/(1 << 24)-math.exp(x/65536))
                 for x in arguments)
     require(error<=3e-5,"exponential floating maximum error")
-    values = list(range(-4096,4097))
+    values = [x*256 for x in range(-4096,4097)]
     values.extend([0]*(8-len(values)%8))
     expected = []
     quality = []
     for x in values:
-        e = exp_integer(-abs(x)*256)
+        e = exp_integer(-abs(x))
         sigmoid = ((1 << 48) if x>=0 else e*(1 << 24))//((1 << 24)+e)
         actual = sat(rounded(x*sigmoid,1 << 24))
-        reference = x/(1+math.exp(-x/256))
-        quality.append(abs(actual-reference))
-        expected.append(actual & 65535)
+        reference = x/(1+math.exp(-x/65536))
+        quality.append(abs(actual-reference)/256)
+        expected.append(actual & 0xffffffff)
     require(max(quality)<=2,"SiLU floating quality")
     expfile = run.out/"silu-expected.hex"
-    expfile.write_text("\n".join(f"{x:04x}" for x in expected)+"\n")
+    expfile.write_text("\n".join(f"{x:08x}" for x in expected)+"\n")
     reader = f"""
-reg [15:0] expected[0:{len(expected)-1}];
+reg [31:0] expected[0:{len(expected)-1}];
 initial $readmemh("{expfile}",expected);
 function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
  input [31:0] row,col);
 begin
  if(kind!=8 || proj!=0 || col>={len(values)} || (row!=9 && row!=10))
    $fatal(1,"SiLU address");
- if(row==10) read_memory=256;
- else if(col<8193) read_memory=(col-4096)&65535;
+ if(row==10) read_memory=65536;
+ else if(col<8193) read_memory=(col-4096)*256;
  else read_memory=0;
 end endfunction
 """
     check = f"""
 if(writes>={len(values)} || mem_req_kind!==8 || mem_req_proj!==0 ||
  mem_req_row!==11 || mem_req_col!==writes ||
- mem_req_wdata!=={{16'd0,expected[writes]}})
+ mem_req_wdata!==expected[writes])
  $fatal(1,"SILU public write mismatch %0d",writes);
 """
     instance = f"anvil_q1_elementwise #(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE({len(values)}),.MAX_SEQ_LEN(1)) dut("+BUS_CONNECT+",.cmd_mode(cmd_mode));"
@@ -1614,7 +1614,7 @@ always @(posedge clk) if(rst_n) begin
    if(target==-1) $fatal(1,"INVALID child command memory effect");
    requests=requests+1; pending=1;
    if(mem_req_write) writes=writes+1;
-   reply=(mem_req_kind==8 ? 256 :
+   reply=(mem_req_kind==8 ? 65536 :
           (mem_req_kind==1 ? 32'h99999999 :
            (mem_req_kind==2 ? 32'h88888888 :
             (mem_req_kind==4 ? 0 : 16'h3c00))));
@@ -1672,7 +1672,7 @@ reg new_sequence=1; wire logit_valid; reg logit_ready=1;
 wire [31:0] logit_index; wire signed [31:0] logit_data;
 integer cycles=0,scenario=0,checks=0,writes=0,acks=0,logits=0,requests=0,replies=0;
 reg pending=0,injected=0,reply_error=0;
-reg [31:0] reply=0; reg [15:0] scratch[0:119];
+reg [31:0] reply=0; reg [31:0] scratch[0:119];
 """+f"anvil_q1_top #({declarations}) dut("+connect+"""
 ,.new_sequence(new_sequence),.logit_valid(logit_valid),.logit_ready(logit_ready),
 .logit_index(logit_index),.logit_data(logit_data));
@@ -1695,7 +1695,7 @@ always @(posedge clk) if(rst_n) begin
      if(mem_req_kind!=8 && mem_req_kind!=9 && mem_req_kind!=10)
        $fatal(1,"TOP illegal write");
      writes=writes+1;
-     if(mem_req_kind==8) scratch[mem_req_row*8+mem_req_col]=mem_req_wdata[15:0];
+     if(mem_req_kind==8) scratch[mem_req_row*8+mem_req_col]=mem_req_wdata;
      reply=0;
    end else case(mem_req_kind)
      0,3,5,6,7: reply=16'h3c00;
@@ -1767,51 +1767,51 @@ def attention_test(run):
         storage[kind,row,col] = value
     for slot,n in ((2,H),(3,K*D),(4,K*D)):
         for c in range(n):
-            put(8,slot,c,rng.randint(-500,500))
+            put(8,slot,c,rng.randint(-500,500)*256)
     for kind in (9,10):
         for t in range(S):
             for c in range(K*D):
-                put(kind,t,c,30000 if t>pos else rng.randint(-600,600))
+                put(kind,t,c,(30000 if t>pos else rng.randint(-600,600))*256)
     initial = dict(storage)
     writes = []
     for slot,kind in ((3,9),(4,10)):
         for c in range(K*D):
             value = storage[8,slot,c]
             put(kind,pos,c,value)
-            writes.append((kind,pos,c,value & 65535))
+            writes.append((kind,pos,c,value & 0xffffffff))
     quality = []
     for head in range(Q):
         kh = head//7
         dots = [sum(storage[8,2,head*D+c]*storage[9,t,kh*D+c]
                     for c in range(D)) for t in range(pos+1)]
-        scores = [rounded(dot*65536,math.isqrt(D << 32)) for dot in dots]
+        scores = [rounded(dot,math.isqrt(D << 32)) for dot in dots]
         es = [exp_integer(score-max(scores)) for score in scores]
-        f_scores = [dot/65536/math.sqrt(D) for dot in dots]
+        f_scores = [dot/2**32/math.sqrt(D) for dot in dots]
         f_es = [math.exp(score-max(f_scores)) for score in f_scores]
         for c in range(D):
             actual = sat(rounded(sum(e*storage[10,t,kh*D+c]
                                     for t,e in enumerate(es)),sum(es)))
             reference = sum(e*storage[10,t,kh*D+c]
                             for t,e in enumerate(f_es))/sum(f_es)
-            quality.append(abs(actual-reference))
-            writes.append((8,5,head*D+c,actual & 65535))
+            quality.append(abs(actual-reference)/256)
+            writes.append((8,5,head*D+c,actual & 0xffffffff))
     require(max(quality)<=2,"standalone softmax attention floating quality")
-    cases = "\n".join(f"72'h{((kind<<64)|(row<<32)|col):018x}:read_memory=32'h{value&65535:08x};"
+    cases = "\n".join(f"72'h{((kind<<64)|(row<<32)|col):018x}:read_memory=32'h{value&0xffffffff:08x};"
                       for (kind,row,col),value in initial.items())
     expfile = run.out/"attention-expected.hex"
     expfile.write_text("\n".join(f"{kind:02x}{row:08x}{col:08x}{value:08x}"
                                 for kind,row,col,value in writes)+"\n")
     reader = f"""
 reg [103:0] expected[0:{len(writes)-1}];
-reg [15:0] keys[0:15], vals[0:15];
+reg [31:0] keys[0:15], vals[0:15];
 initial $readmemh("{expfile}",expected);
 function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
  input [31:0] row,col);
 begin
  if(proj!=0 || ((kind==9 || kind==10) && row>2))
    $fatal(1,"CAUSAL future-cache read or projection");
- if(kind==9 && row==2 && col<16) read_memory={{16'd0,keys[col]}};
- else if(kind==10 && row==2 && col<16) read_memory={{16'd0,vals[col]}};
+ if(kind==9 && row==2 && col<16) read_memory=keys[col];
+ else if(kind==10 && row==2 && col<16) read_memory=vals[col];
  else case({{4'd0,kind,row,col}})
  {cases}
  default: begin $fatal(1,"attention illegal address"); read_memory=0; end
@@ -1822,8 +1822,8 @@ end endfunction
 if(writes>={len(writes)} || mem_req_proj!==0 ||
  {{4'd0,mem_req_kind,mem_req_row,mem_req_col,mem_req_wdata}} !== expected[writes])
  $fatal(1,"ATTENTION write mismatch %0d",writes);
-if(mem_req_kind==9) keys[mem_req_col]=mem_req_wdata[15:0];
-if(mem_req_kind==10) vals[mem_req_col]=mem_req_wdata[15:0];
+if(mem_req_kind==9) keys[mem_req_col]=mem_req_wdata;
+if(mem_req_kind==10) vals[mem_req_col]=mem_req_wdata;
 """
     instance = "anvil_q1_gqa_attention #(.NUM_LAYERS(1),.HIDDEN_SIZE(112),.NUM_Q_HEADS(14),.NUM_KV_HEADS(2),.HEAD_DIM(8),.MAX_SEQ_LEN(4)) dut("+BUS_CONNECT+");"
     stdout = compile_sim(run,command_tb(instance,reader,check,
@@ -1839,8 +1839,8 @@ def mutations(run):
     mutations = [
         ("lane","anvil_q1_awq_dequant.sv","1: shift=16;","1: shift=4;"),
         ("bias","anvil_q1_w4a16_gemv.sv",
-         "accumulator<=accumulator+($signed({{80{bias_value[15]}},bias_value}) <<< 16);",
-         "accumulator<=accumulator;"),
+         "accumulators[lane]<=accumulators[lane]+\n            ($signed({{96{bias_value[31]}},bias_value}) <<< 16);",
+         "accumulators[lane]<=accumulators[lane];"),
         ("gqa","anvil_q1_gqa_attention.sv","(head/RATIO)*HEAD_DIM",
          "(head%NUM_KV_HEADS)*HEAD_DIM"),
         ("rope","anvil_q1_rope.sv",
@@ -1852,7 +1852,7 @@ def mutations(run):
         ("dequant32","anvil_q1_awq_dequant.sv",
          "37'sd0 : product[36:0]","37'sd0 : $signed(product[31:0])"),
         ("accumulator64","anvil_q1_w4a16_gemv.sv",
-         "reg signed [95:0] accumulator;","reg signed [63:0] accumulator;")]
+         "reg signed [127:0] accumulators [0:7];","reg signed [63:0] accumulators [0:7];")]
     for name,filename,before,after in mutations:
         directory = run.out/("mutation-"+name)
         directory.mkdir()
