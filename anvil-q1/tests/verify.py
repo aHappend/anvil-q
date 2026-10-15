@@ -46,10 +46,8 @@ def hashes():
 
 class Run:
     def __init__(self, out, repair_of=None):
-        self.out = Path(out).resolve()
-        if self.out.exists():
-            shutil.rmtree(self.out)
-        self.out.mkdir(parents=True, exist_ok=True)
+        self.out = Path(os.path.abspath(out))
+        self.out.mkdir(parents=True, exist_ok=False)
         self.source_hashes = hashes()
         self.commands = []
         self.results = []
@@ -3189,7 +3187,10 @@ def main():
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
         parser.error("probe incompatible with check")
-    run = Run(args.out, args.repair_of)
+    try:
+        run = Run(args.out, args.repair_of)
+    except FileExistsError:
+        parser.exit(2, f"error: refusing occupied output destination: {args.out}\n")
     try:
         tools = (("python3", "iverilog", "vvp") if
                  args.probe in ("transactor-cost-discriminator",
