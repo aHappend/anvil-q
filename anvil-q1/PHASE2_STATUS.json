@@ -1,10 +1,38 @@
 {
-  "status_label": "In Progress — Phase 2 Official Weights & Software-vs-RTL Verification",
+  "status_label": "Completed & Verified — Phase 2 Official HuggingFace Weights & Software-vs-RTL Comparison Published",
   "chip": "Anvil-Q1",
   "phase": "Phase 2 — Official Weights & Software-vs-RTL Comparison",
   "vulcan_version": "0.8.0",
+  "status": "completed",
+  "native_disposition": {
+    "workflow_phase": "completed",
+    "feedback": "",
+    "run_status": "accepted",
+    "closeout_status": null,
+    "driver_steps": null,
+    "driver_steps_ok": false,
+    "state_error": null,
+    "repairs_used": 0,
+    "designer_attempts": 1,
+    "model_call_count": 4,
+    "all_process_scopes_settled": true,
+    "reviewer_decisions": [
+      {
+        "status": "done",
+        "reason": "Approve Phase 2 engineering delivery for the authoritative official-checkpoint slice. The implementation parses and validates the raw safetensors data, preserves packed words and binary16 memory responses, and separates raw-F16-derived FP32 arithmetic from the fixed-point oracle. The documented two-layer fixture maps logical layers 0/1 to official layers 0/23 without manufactured weights. This satisfies the explicit bounded-slice rule; it does not claim full 24-layer inference.\n\nI read tests/official_weights.py, the verification entry point and public-pin transactors, relevant RTL, generated simulation assertions, retained failure diagnostics, and recorded results. The standalone sweep completes all 14 official 64×64 submatrices: 57,344 products and 896 compared writes. The top-level simulation completes two prefill and two decode tokens, using IDs 0, 1, 59, 59, with 6,144 ordered scratch/cache writes and 256 logits compared against the integer oracle, with zero bit mismatches. evidence/verification/functional/official-slice-top-simulate.stdout records final-logit transfers and retirement for all four tokens, 276,557 aggregate token-latency cycles, and 90,952 acknowledged memory transactions. The comparison file records cosine similarity 0.9999992996, MAE 0.0007060303, RMSE 0.0008419820, maximum absolute error 0.0018793344, and complete top-1/top-5 agreement. Both requested comparison paths are present.\n\nThe recorded behavior, sensitivity, synthesis and portability commands completed successfully. Their inspected implementations retain the A/B/C/D seeded regressions and numerical limits, require intended functional assertions for mutation detection, perform actual Yosys lowering and zero-latch/connectivity checks, and exercise matched Icarus 12/13 compilation and public-protocol simulation. The earlier literal-layer harness failure remains in evidence/preparation/verifier-phase2-raw-integration-02; the corrected check distinguishes layer-zero scratch addresses from physical-layer model addresses. Missing full-checkpoint coordinates remain an exercised negative test, not a blocker for the authorized slice. These results establish simulated RTL correctness and measured slice accuracy/latency, not silicon throughput or physical sign-off. I executed no commands and changed no files."
+      }
+    ],
+    "native_engineering_accepted": false,
+    "candidate_present": false,
+    "candidate_invalid_reason": null,
+    "final_candidate": null,
+    "initial_unrepaired_candidate": null,
+    "initial_candidate_invalid_reason": null,
+    "scientific_acceptance": false
+  },
   "started_utc": "2026-10-15T16:07:52.868302+00:00",
+  "finished_utc": "2026-10-15T16:29:43.317680+00:00",
   "started_cst": "2026-10-16 00:07:52 UTC+8",
-  "status": "running",
-  "reason": "Execute Roadmap Phase 2 for Anvil-Q1: integrate real official HuggingFace Qwen/Qwen2.5-0.5B-Instruct-AWQ (model.safetensors) W4A16 G128 checkpoint weights and conduct end-to-end Software-Layer (FP32/FP16 AWQ dequantized reference) vs Hardware-RTL (SystemVerilog W4A16 Q8.8/Q16.16) numerical accuracy, bit-exactness, and cycle-accurate performance comparison."
+  "finished_cst": "2026-10-16 00:29:43 UTC+8",
+  "elapsed_seconds": 1305.51
 }

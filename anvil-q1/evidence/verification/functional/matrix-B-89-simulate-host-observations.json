@@ -1,0 +1,939 @@
+{
+  "start_monotonic_s": 116540.154166543,
+  "events": [
+    {
+      "message": "EMBEDDING_ACK token=0 accepted=224 cycles=697",
+      "stream": "stdout",
+      "host_monotonic_s": 116540.357407414,
+      "elapsed_wall_s": 0.20324087100743782,
+      "child_user_cpu_s": 0.19,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.00043395899410825223
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=2 accepted=4914 cycles=12458",
+      "stream": "stdout",
+      "host_monotonic_s": 116543.065927551,
+      "elapsed_wall_s": 2.911761007999303,
+      "child_user_cpu_s": 2.89,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.000973344998783432
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=3 accepted=5520 cycles=13940",
+      "stream": "stdout",
+      "host_monotonic_s": 116543.434351668,
+      "elapsed_wall_s": 3.280185124996933,
+      "child_user_cpu_s": 3.26,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.00046211200242396444
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=4 accepted=6126 cycles=15414",
+      "stream": "stdout",
+      "host_monotonic_s": 116543.801701051,
+      "elapsed_wall_s": 3.64753450799617,
+      "child_user_cpu_s": 3.62,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.0006946050125407055
+    },
+    {
+      "message": "PROGRESS accepted=8192 compared_writes=608 completed=0 cycles=22088",
+      "stream": "stdout",
+      "host_monotonic_s": 116544.555856236,
+      "elapsed_wall_s": 4.401689692997024,
+      "child_user_cpu_s": 4.38,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.0005591830122284591
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=6 accepted=12944 cycles=34249",
+      "stream": "stdout",
+      "host_monotonic_s": 116546.794153703,
+      "elapsed_wall_s": 6.639987160000601,
+      "child_user_cpu_s": 6.61,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00042122500599361956
+    },
+    {
+      "message": "PROGRESS accepted=16384 compared_writes=1048 completed=0 cycles=43188",
+      "stream": "stdout",
+      "host_monotonic_s": 116547.973249118,
+      "elapsed_wall_s": 7.819082575006178,
+      "child_user_cpu_s": 7.79,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0004314440011512488
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=9 accepted=18448 cycles=48253",
+      "stream": "stdout",
+      "host_monotonic_s": 116548.7701924,
+      "elapsed_wall_s": 8.61602585700166,
+      "child_user_cpu_s": 8.59,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00024940499861259013
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=10 accepted=23168 cycles=59816",
+      "stream": "stdout",
+      "host_monotonic_s": 116551.388971855,
+      "elapsed_wall_s": 11.234805312007666,
+      "child_user_cpu_s": 11.21,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005001429963158444
+    },
+    {
+      "message": "PROGRESS accepted=24576 compared_writes=1384 completed=0 cycles=63509",
+      "stream": "stdout",
+      "host_monotonic_s": 116552.02430245,
+      "elapsed_wall_s": 11.870135906996438,
+      "child_user_cpu_s": 11.84,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0006242750096134841
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=12 accepted=28256 cycles=72534",
+      "stream": "stdout",
+      "host_monotonic_s": 116553.468094713,
+      "elapsed_wall_s": 13.31392816999869,
+      "child_user_cpu_s": 13.28,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000291714008199051
+    },
+    {
+      "message": "LAYER_ACK token=0 layer=0 accepted=28592 cycles=73578",
+      "stream": "stdout",
+      "host_monotonic_s": 116553.532557908,
+      "elapsed_wall_s": 13.378391364996787,
+      "child_user_cpu_s": 13.35,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002188380021834746
+    },
+    {
+      "message": "PROGRESS accepted=32768 compared_writes=1792 completed=0 cycles=84076",
+      "stream": "stdout",
+      "host_monotonic_s": 116554.944153237,
+      "elapsed_wall_s": 14.789986693998799,
+      "child_user_cpu_s": 14.76,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005760140047641471
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=2 accepted=33282 cycles=85331",
+      "stream": "stdout",
+      "host_monotonic_s": 116555.125573338,
+      "elapsed_wall_s": 14.971406794997165,
+      "child_user_cpu_s": 14.94,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00027482300356496125
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=3 accepted=33888 cycles=86811",
+      "stream": "stdout",
+      "host_monotonic_s": 116555.345129179,
+      "elapsed_wall_s": 15.190962635999313,
+      "child_user_cpu_s": 15.16,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022425899805966765
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=4 accepted=34494 cycles=88291",
+      "stream": "stdout",
+      "host_monotonic_s": 116555.56460951,
+      "elapsed_wall_s": 15.410442966996925,
+      "child_user_cpu_s": 15.38,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005295370065141469
+    },
+    {
+      "message": "PROGRESS accepted=40960 compared_writes=2208 completed=0 cycles=106256",
+      "stream": "stdout",
+      "host_monotonic_s": 116557.600769173,
+      "elapsed_wall_s": 17.446602630006964,
+      "child_user_cpu_s": 17.42,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000737144990125671
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=6 accepted=41312 cycles=107122",
+      "stream": "stdout",
+      "host_monotonic_s": 116557.734590284,
+      "elapsed_wall_s": 17.58042374100478,
+      "child_user_cpu_s": 17.55,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00027252799191046506
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=9 accepted=46816 cycles=121134",
+      "stream": "stdout",
+      "host_monotonic_s": 116559.91768069,
+      "elapsed_wall_s": 19.76351414700912,
+      "child_user_cpu_s": 19.73,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00028621399542316794
+    },
+    {
+      "message": "PROGRESS accepted=49152 compared_writes=2632 completed=0 cycles=126863",
+      "stream": "stdout",
+      "host_monotonic_s": 116560.910334398,
+      "elapsed_wall_s": 20.75616785499733,
+      "child_user_cpu_s": 20.73,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000240578010561876
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=10 accepted=51536 cycles=132705",
+      "stream": "stdout",
+      "host_monotonic_s": 116561.935672708,
+      "elapsed_wall_s": 21.78150616500352,
+      "child_user_cpu_s": 21.75,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00043093400017824024
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=1 slot=12 accepted=56624 cycles=145412",
+      "stream": "stdout",
+      "host_monotonic_s": 116564.040882102,
+      "elapsed_wall_s": 23.88671555899782,
+      "child_user_cpu_s": 23.86,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00047789100790396333
+    },
+    {
+      "message": "LAYER_ACK token=0 layer=1 accepted=56960 cycles=146456",
+      "stream": "stdout",
+      "host_monotonic_s": 116564.106711816,
+      "elapsed_wall_s": 23.952545273001306,
+      "child_user_cpu_s": 23.92,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021494099928531796
+    },
+    {
+      "message": "PROGRESS accepted=57344 compared_writes=3146 completed=0 cycles=147651",
+      "stream": "stdout",
+      "host_monotonic_s": 116564.163401813,
+      "elapsed_wall_s": 24.009235270001227,
+      "child_user_cpu_s": 23.98,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005531920032808557
+    },
+    {
+      "message": "TOKEN completed=1 accepted=61664 cycles=162930",
+      "stream": "stdout",
+      "host_monotonic_s": 116564.865987252,
+      "elapsed_wall_s": 24.71182070899522,
+      "child_user_cpu_s": 24.68,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0004989200097043067
+    },
+    {
+      "message": "EMBEDDING_ACK token=1 accepted=61888 cycles=163627",
+      "stream": "stdout",
+      "host_monotonic_s": 116564.866505849,
+      "elapsed_wall_s": 24.712339306002832,
+      "child_user_cpu_s": 24.68,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00015430699568241835
+    },
+    {
+      "message": "PROGRESS accepted=65536 compared_writes=3472 completed=1 cycles=172837",
+      "stream": "stdout",
+      "host_monotonic_s": 116566.004395868,
+      "elapsed_wall_s": 25.850229325005785,
+      "child_user_cpu_s": 25.82,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003193159936927259
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=2 accepted=66578 cycles=175374",
+      "stream": "stdout",
+      "host_monotonic_s": 116566.345449475,
+      "elapsed_wall_s": 26.19128293200629,
+      "child_user_cpu_s": 26.16,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00023115098883863539
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=3 accepted=67184 cycles=176858",
+      "stream": "stdout",
+      "host_monotonic_s": 116566.551753218,
+      "elapsed_wall_s": 26.397586674997,
+      "child_user_cpu_s": 26.36,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022315600654110312
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=4 accepted=67790 cycles=178343",
+      "stream": "stdout",
+      "host_monotonic_s": 116566.755974477,
+      "elapsed_wall_s": 26.601807933999225,
+      "child_user_cpu_s": 26.57,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003118519962299615
+    },
+    {
+      "message": "PROGRESS accepted=73728 compared_writes=3832 completed=1 cycles=196774",
+      "stream": "stdout",
+      "host_monotonic_s": 116568.197715714,
+      "elapsed_wall_s": 28.043549171008635,
+      "child_user_cpu_s": 28.01,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00042706698877736926
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=6 accepted=76736 cycles=204152",
+      "stream": "stdout",
+      "host_monotonic_s": 116569.254972258,
+      "elapsed_wall_s": 29.100805715002934,
+      "child_user_cpu_s": 29.07,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00034423200122546405
+    },
+    {
+      "message": "PROGRESS accepted=81920 compared_writes=4256 completed=1 cycles=217380",
+      "stream": "stdout",
+      "host_monotonic_s": 116571.14862496,
+      "elapsed_wall_s": 30.994458417000715,
+      "child_user_cpu_s": 30.96,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022154400357976556
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=9 accepted=82240 cycles=218164",
+      "stream": "stdout",
+      "host_monotonic_s": 116571.279610031,
+      "elapsed_wall_s": 31.125443487995653,
+      "child_user_cpu_s": 31.09,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021269700664561242
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=10 accepted=86960 cycles=229735",
+      "stream": "stdout",
+      "host_monotonic_s": 116573.151854113,
+      "elapsed_wall_s": 32.997687570008566,
+      "child_user_cpu_s": 32.97,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00030176299333106726
+    },
+    {
+      "message": "PROGRESS accepted=90112 compared_writes=4592 completed=1 cycles=237722",
+      "stream": "stdout",
+      "host_monotonic_s": 116574.335092295,
+      "elapsed_wall_s": 34.18092575200717,
+      "child_user_cpu_s": 34.15,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0006010309880366549
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=12 accepted=92048 cycles=242476",
+      "stream": "stdout",
+      "host_monotonic_s": 116575.109820382,
+      "elapsed_wall_s": 34.95565383900248,
+      "child_user_cpu_s": 34.92,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000346265995176509
+    },
+    {
+      "message": "LAYER_ACK token=1 layer=0 accepted=92384 cycles=243520",
+      "stream": "stdout",
+      "host_monotonic_s": 116575.175554588,
+      "elapsed_wall_s": 35.02138804500282,
+      "child_user_cpu_s": 34.99,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021332799224182963
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=2 accepted=97074 cycles=255271",
+      "stream": "stdout",
+      "host_monotonic_s": 116576.78094496,
+      "elapsed_wall_s": 36.62677841700497,
+      "child_user_cpu_s": 36.59,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00041834999865386635
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=3 accepted=97680 cycles=256751",
+      "stream": "stdout",
+      "host_monotonic_s": 116577.002352845,
+      "elapsed_wall_s": 36.848186301998794,
+      "child_user_cpu_s": 36.81,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022480000916402787
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=4 accepted=98286 cycles=258230",
+      "stream": "stdout",
+      "host_monotonic_s": 116577.22519683,
+      "elapsed_wall_s": 37.0710302869993,
+      "child_user_cpu_s": 37.04,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021595200814772397
+    },
+    {
+      "message": "PROGRESS accepted=98304 compared_writes=5013 completed=1 cycles=258287",
+      "stream": "stdout",
+      "host_monotonic_s": 116577.229115058,
+      "elapsed_wall_s": 37.07494851500087,
+      "child_user_cpu_s": 37.04,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021440999989863485
+    },
+    {
+      "message": "PROGRESS accepted=106496 compared_writes=5368 completed=1 cycles=282231",
+      "stream": "stdout",
+      "host_monotonic_s": 116579.687737861,
+      "elapsed_wall_s": 39.533571317995666,
+      "child_user_cpu_s": 39.5,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022647301375400275
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=6 accepted=107232 cycles=284037",
+      "stream": "stdout",
+      "host_monotonic_s": 116579.970110818,
+      "elapsed_wall_s": 39.81594427500386,
+      "child_user_cpu_s": 39.78,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021673399896826595
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=9 accepted=112736 cycles=298051",
+      "stream": "stdout",
+      "host_monotonic_s": 116582.159906761,
+      "elapsed_wall_s": 42.00574021799548,
+      "child_user_cpu_s": 41.97,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0004273970116628334
+    },
+    {
+      "message": "PROGRESS accepted=114688 compared_writes=5792 completed=1 cycles=302834",
+      "stream": "stdout",
+      "host_monotonic_s": 116582.99366507,
+      "elapsed_wall_s": 42.839498526998796,
+      "child_user_cpu_s": 42.81,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0007397190056508407
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=10 accepted=117456 cycles=309622",
+      "stream": "stdout",
+      "host_monotonic_s": 116584.189620952,
+      "elapsed_wall_s": 44.0354544090078,
+      "child_user_cpu_s": 44.0,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00026669799990486354
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=1 slot=12 accepted=122544 cycles=322353",
+      "stream": "stdout",
+      "host_monotonic_s": 116586.292717035,
+      "elapsed_wall_s": 46.13855049200356,
+      "child_user_cpu_s": 46.1,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0004769590013893321
+    },
+    {
+      "message": "PROGRESS accepted=122880 compared_writes=6223 completed=1 cycles=323397",
+      "stream": "stdout",
+      "host_monotonic_s": 116586.362020608,
+      "elapsed_wall_s": 46.207854064996354,
+      "child_user_cpu_s": 46.17,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002290980046382174
+    },
+    {
+      "message": "LAYER_ACK token=1 layer=1 accepted=122880 cycles=323398",
+      "stream": "stdout",
+      "host_monotonic_s": 116586.36225716,
+      "elapsed_wall_s": 46.20809061700129,
+      "child_user_cpu_s": 46.17,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000142995995702222
+    },
+    {
+      "message": "TOKEN completed=2 accepted=127584 cycles=339876",
+      "stream": "stdout",
+      "host_monotonic_s": 116587.107388774,
+      "elapsed_wall_s": 46.95322223100811,
+      "child_user_cpu_s": 46.92,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0008262509945780039
+    },
+    {
+      "message": "EMBEDDING_ACK token=2 accepted=127808 cycles=340575",
+      "stream": "stdout",
+      "host_monotonic_s": 116587.108230815,
+      "elapsed_wall_s": 46.95406427200942,
+      "child_user_cpu_s": 46.92,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00016047898679971695
+    },
+    {
+      "message": "PROGRESS accepted=131072 compared_writes=6632 completed=2 cycles=348847",
+      "stream": "stdout",
+      "host_monotonic_s": 116588.122289977,
+      "elapsed_wall_s": 47.96812343399506,
+      "child_user_cpu_s": 47.93,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00030782401154283434
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=2 accepted=132498 cycles=352322",
+      "stream": "stdout",
+      "host_monotonic_s": 116588.59320063,
+      "elapsed_wall_s": 48.439034087001346,
+      "child_user_cpu_s": 48.4,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022011100372765213
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=3 accepted=133104 cycles=353806",
+      "stream": "stdout",
+      "host_monotonic_s": 116588.799934977,
+      "elapsed_wall_s": 48.645768433998455,
+      "child_user_cpu_s": 48.61,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000350524001987651
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=4 accepted=133710 cycles=355291",
+      "stream": "stdout",
+      "host_monotonic_s": 116589.005339093,
+      "elapsed_wall_s": 48.85117254999932,
+      "child_user_cpu_s": 48.82,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021652299619745463
+    },
+    {
+      "message": "PROGRESS accepted=139264 compared_writes=6952 completed=2 cycles=373388",
+      "stream": "stdout",
+      "host_monotonic_s": 116590.137805696,
+      "elapsed_wall_s": 49.98363915299706,
+      "child_user_cpu_s": 49.95,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00032184099836740643
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=6 accepted=144784 cycles=388061",
+      "stream": "stdout",
+      "host_monotonic_s": 116591.899840749,
+      "elapsed_wall_s": 51.74567420600215,
+      "child_user_cpu_s": 51.71,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003245249972678721
+    },
+    {
+      "message": "PROGRESS accepted=147456 compared_writes=7360 completed=2 cycles=395122",
+      "stream": "stdout",
+      "host_monotonic_s": 116592.804902161,
+      "elapsed_wall_s": 52.650735618008184,
+      "child_user_cpu_s": 52.62,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003115009894827381
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=9 accepted=150288 cycles=402054",
+      "stream": "stdout",
+      "host_monotonic_s": 116593.925949556,
+      "elapsed_wall_s": 53.77178301299864,
+      "child_user_cpu_s": 53.74,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003385620075277984
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=10 accepted=155008 cycles=413617",
+      "stream": "stdout",
+      "host_monotonic_s": 116595.796372,
+      "elapsed_wall_s": 55.64220545699936,
+      "child_user_cpu_s": 55.61,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00034534400037955493
+    },
+    {
+      "message": "PROGRESS accepted=155648 compared_writes=7696 completed=2 cycles=415433",
+      "stream": "stdout",
+      "host_monotonic_s": 116595.977843317,
+      "elapsed_wall_s": 55.8236767740018,
+      "child_user_cpu_s": 55.79,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003917099966201931
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=12 accepted=160096 cycles=426358",
+      "stream": "stdout",
+      "host_monotonic_s": 116597.757108646,
+      "elapsed_wall_s": 57.60294210299617,
+      "child_user_cpu_s": 57.57,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00030803499976173043
+    },
+    {
+      "message": "LAYER_ACK token=2 layer=0 accepted=160432 cycles=427403",
+      "stream": "stdout",
+      "host_monotonic_s": 116597.821624761,
+      "elapsed_wall_s": 57.6674582179985,
+      "child_user_cpu_s": 57.63,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021689399727620184
+    },
+    {
+      "message": "PROGRESS accepted=163840 compared_writes=8104 completed=2 cycles=436033",
+      "stream": "stdout",
+      "host_monotonic_s": 116598.974109662,
+      "elapsed_wall_s": 58.81994311900053,
+      "child_user_cpu_s": 58.78,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0006242840026970953
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=2 accepted=165122 cycles=439159",
+      "stream": "stdout",
+      "host_monotonic_s": 116599.434434781,
+      "elapsed_wall_s": 59.280268237998825,
+      "child_user_cpu_s": 59.24,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00028149499848950654
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=3 accepted=165728 cycles=440641",
+      "stream": "stdout",
+      "host_monotonic_s": 116599.65628957,
+      "elapsed_wall_s": 59.502123027006746,
+      "child_user_cpu_s": 59.46,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021433999063447118
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=4 accepted=166334 cycles=442125",
+      "stream": "stdout",
+      "host_monotonic_s": 116599.878382844,
+      "elapsed_wall_s": 59.72421630100871,
+      "child_user_cpu_s": 59.69,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022005099162925035
+    },
+    {
+      "message": "PROGRESS accepted=172032 compared_writes=8425 completed=2 cycles=460699",
+      "stream": "stdout",
+      "host_monotonic_s": 116601.173688011,
+      "elapsed_wall_s": 61.01952146799886,
+      "child_user_cpu_s": 60.98,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00024299300275743008
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=6 accepted=177408 cycles=474927",
+      "stream": "stdout",
+      "host_monotonic_s": 116603.048751822,
+      "elapsed_wall_s": 62.894585279005696,
+      "child_user_cpu_s": 62.86,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003900680021615699
+    },
+    {
+      "message": "PROGRESS accepted=180224 compared_writes=8832 completed=2 cycles=482348",
+      "stream": "stdout",
+      "host_monotonic_s": 116604.074120409,
+      "elapsed_wall_s": 63.9199538660032,
+      "child_user_cpu_s": 63.88,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002244890056317672
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=9 accepted=182912 cycles=488923",
+      "stream": "stdout",
+      "host_monotonic_s": 116605.22684108,
+      "elapsed_wall_s": 65.07267453700479,
+      "child_user_cpu_s": 65.03,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00033047699253074825
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=10 accepted=187632 cycles=500479",
+      "stream": "stdout",
+      "host_monotonic_s": 116607.234857771,
+      "elapsed_wall_s": 67.08069122800953,
+      "child_user_cpu_s": 67.04,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00040568699478171766
+    },
+    {
+      "message": "PROGRESS accepted=188416 compared_writes=9176 completed=2 cycles=502648",
+      "stream": "stdout",
+      "host_monotonic_s": 116607.482095624,
+      "elapsed_wall_s": 67.32792908100237,
+      "child_user_cpu_s": 67.29,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021518199355341494
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=1 slot=12 accepted=192720 cycles=513220",
+      "stream": "stdout",
+      "host_monotonic_s": 116609.318462739,
+      "elapsed_wall_s": 69.1642961960024,
+      "child_user_cpu_s": 69.13,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00023087099543772638
+    },
+    {
+      "message": "LAYER_ACK token=2 layer=1 accepted=193056 cycles=514265",
+      "stream": "stdout",
+      "host_monotonic_s": 116609.38375972,
+      "elapsed_wall_s": 69.22959317700588,
+      "child_user_cpu_s": 69.19,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021595199359580874
+    },
+    {
+      "message": "PROGRESS accepted=196608 compared_writes=9504 completed=2 cycles=526655",
+      "stream": "stdout",
+      "host_monotonic_s": 116609.931724312,
+      "elapsed_wall_s": 69.77755776900449,
+      "child_user_cpu_s": 69.74,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021749599545728415
+    },
+    {
+      "message": "TOKEN completed=3 accepted=197760 cycles=530741",
+      "stream": "stdout",
+      "host_monotonic_s": 116610.137372944,
+      "elapsed_wall_s": 69.983206400997,
+      "child_user_cpu_s": 69.94,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021591300901491195
+    },
+    {
+      "message": "EMBEDDING_ACK token=3 accepted=197984 cycles=531439",
+      "stream": "stdout",
+      "host_monotonic_s": 116610.13759574,
+      "elapsed_wall_s": 69.98342919700372,
+      "child_user_cpu_s": 69.94,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00014208500215318054
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=2 accepted=202674 cycles=543193",
+      "stream": "stdout",
+      "host_monotonic_s": 116611.637046505,
+      "elapsed_wall_s": 71.48287996200088,
+      "child_user_cpu_s": 71.44,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022071199782658368
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=3 accepted=203280 cycles=544673",
+      "stream": "stdout",
+      "host_monotonic_s": 116611.845522982,
+      "elapsed_wall_s": 71.6913564389979,
+      "child_user_cpu_s": 71.65,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002165629994124174
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=4 accepted=203886 cycles=546154",
+      "stream": "stdout",
+      "host_monotonic_s": 116612.053113746,
+      "elapsed_wall_s": 71.89894720300799,
+      "child_user_cpu_s": 71.86,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021612299315165728
+    },
+    {
+      "message": "PROGRESS accepted=204800 compared_writes=10055 completed=3 cycles=549068",
+      "stream": "stdout",
+      "host_monotonic_s": 116612.235135369,
+      "elapsed_wall_s": 72.08096882600512,
+      "child_user_cpu_s": 72.04,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002165140031138435
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=6 accepted=210704 cycles=564978",
+      "stream": "stdout",
+      "host_monotonic_s": 116614.060973735,
+      "elapsed_wall_s": 73.90680719200463,
+      "child_user_cpu_s": 73.87,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003131440025754273
+    },
+    {
+      "message": "PROGRESS accepted=212992 compared_writes=10520 completed=3 cycles=571096",
+      "stream": "stdout",
+      "host_monotonic_s": 116614.813778802,
+      "elapsed_wall_s": 74.6596122589981,
+      "child_user_cpu_s": 74.62,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021744500554632396
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=9 accepted=216208 cycles=578973",
+      "stream": "stdout",
+      "host_monotonic_s": 116616.093589148,
+      "elapsed_wall_s": 75.93942260500626,
+      "child_user_cpu_s": 75.9,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00025793099484872073
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=10 accepted=220928 cycles=590546",
+      "stream": "stdout",
+      "host_monotonic_s": 116617.96947893,
+      "elapsed_wall_s": 77.81531238699972,
+      "child_user_cpu_s": 77.77,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00025861199537757784
+    },
+    {
+      "message": "PROGRESS accepted=221184 compared_writes=10821 completed=3 cycles=591339",
+      "stream": "stdout",
+      "host_monotonic_s": 116618.026866288,
+      "elapsed_wall_s": 77.87269974499941,
+      "child_user_cpu_s": 77.83,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005257500015432015
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=12 accepted=226016 cycles=603275",
+      "stream": "stdout",
+      "host_monotonic_s": 116619.916180358,
+      "elapsed_wall_s": 79.76201381500869,
+      "child_user_cpu_s": 79.72,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00026043599063996226
+    },
+    {
+      "message": "LAYER_ACK token=3 layer=0 accepted=226352 cycles=604320",
+      "stream": "stdout",
+      "host_monotonic_s": 116619.9834513,
+      "elapsed_wall_s": 79.82928475699737,
+      "child_user_cpu_s": 79.79,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021469101193360984
+    },
+    {
+      "message": "PROGRESS accepted=229376 compared_writes=11264 completed=3 cycles=612007",
+      "stream": "stdout",
+      "host_monotonic_s": 116621.002800069,
+      "elapsed_wall_s": 80.84863352600951,
+      "child_user_cpu_s": 80.81,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.000323432992445305
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=2 accepted=231042 cycles=616076",
+      "stream": "stdout",
+      "host_monotonic_s": 116621.601293086,
+      "elapsed_wall_s": 81.44712654300383,
+      "child_user_cpu_s": 81.41,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021821699920110404
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=3 accepted=231648 cycles=617560",
+      "stream": "stdout",
+      "host_monotonic_s": 116621.824413746,
+      "elapsed_wall_s": 81.67024720300105,
+      "child_user_cpu_s": 81.63,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021553199621848762
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=4 accepted=232254 cycles=619042",
+      "stream": "stdout",
+      "host_monotonic_s": 116622.048288273,
+      "elapsed_wall_s": 81.89412173000164,
+      "child_user_cpu_s": 81.85,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002180559968110174
+    },
+    {
+      "message": "PROGRESS accepted=237568 compared_writes=11680 completed=3 cycles=634161",
+      "stream": "stdout",
+      "host_monotonic_s": 116623.671644344,
+      "elapsed_wall_s": 83.51747780099686,
+      "child_user_cpu_s": 83.48,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0002483429998392239
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=6 accepted=239072 cycles=637850",
+      "stream": "stdout",
+      "host_monotonic_s": 116624.264516657,
+      "elapsed_wall_s": 84.11035011400236,
+      "child_user_cpu_s": 84.07,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022000000171829015
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=9 accepted=244576 cycles=651862",
+      "stream": "stdout",
+      "host_monotonic_s": 116626.465382598,
+      "elapsed_wall_s": 86.31121605500812,
+      "child_user_cpu_s": 86.27,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0003808699984801933
+    },
+    {
+      "message": "PROGRESS accepted=245760 compared_writes=12112 completed=3 cycles=654762",
+      "stream": "stdout",
+      "host_monotonic_s": 116626.96441373,
+      "elapsed_wall_s": 86.81024718700792,
+      "child_user_cpu_s": 86.77,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00021923899475950748
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=10 accepted=249296 cycles=663438",
+      "stream": "stdout",
+      "host_monotonic_s": 116628.48750546,
+      "elapsed_wall_s": 88.33333891700022,
+      "child_user_cpu_s": 88.29,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00022805600019637495
+    },
+    {
+      "message": "PROGRESS accepted=253952 compared_writes=12432 completed=3 cycles=675091",
+      "stream": "stdout",
+      "host_monotonic_s": 116630.412729129,
+      "elapsed_wall_s": 90.25856258600834,
+      "child_user_cpu_s": 90.22,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005095999949844554
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=1 slot=12 accepted=254384 cycles=676149",
+      "stream": "stdout",
+      "host_monotonic_s": 116630.599093221,
+      "elapsed_wall_s": 90.44492667799932,
+      "child_user_cpu_s": 90.4,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0005083580035716295
+    },
+    {
+      "message": "LAYER_ACK token=3 layer=1 accepted=254720 cycles=677191",
+      "stream": "stdout",
+      "host_monotonic_s": 116630.665108672,
+      "elapsed_wall_s": 90.51094212899625,
+      "child_user_cpu_s": 90.47,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.0004246820026310161
+    },
+    {
+      "message": "TOKEN completed=4 accepted=259424 cycles=693666",
+      "stream": "stdout",
+      "host_monotonic_s": 116631.38515111,
+      "elapsed_wall_s": 91.23098456699518,
+      "child_user_cpu_s": 91.19,
+      "child_system_cpu_s": 0.02,
+      "observation_work_s": 0.00025115901371464133
+    }
+  ],
+  "child_user_cpu_s": 91.19341199999997,
+  "child_system_cpu_s": 0.026996999999999938,
+  "cpu_sample_resolution_s": 0.01,
+  "cpu_sample_errors": [],
+  "observed_child_pids": [],
+  "cpu_scope": "invocation process group; final reaped child usage",
+  "process_group_settled": true
+}

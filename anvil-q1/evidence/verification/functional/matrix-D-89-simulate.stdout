@@ -1,0 +1,22 @@
+EMBEDDING_ACK token=0 accepted=16 cycles=53
+PROJECTION_ACK token=0 layer=0 slot=2 accepted=89 cycles=253
+PROJECTION_ACK token=0 layer=0 slot=3 accepted=130 cycles=350
+PROJECTION_ACK token=0 layer=0 slot=4 accepted=171 cycles=445
+PROJECTION_ACK token=0 layer=0 slot=6 accepted=380 cycles=1100
+PROJECTION_ACK token=0 layer=0 slot=9 accepted=469 cycles=1360
+PROJECTION_ACK token=0 layer=0 slot=10 accepted=502 cycles=1437
+PROJECTION_ACK token=0 layer=0 slot=12 accepted=559 cycles=1590
+LAYER_ACK token=0 layer=0 accepted=583 cycles=1667
+TOKEN completed=1 accepted=631 cycles=1833
+EMBEDDING_ACK token=1 accepted=647 cycles=1887
+PROJECTION_ACK token=1 layer=0 slot=2 accepted=720 cycles=2084
+PROJECTION_ACK token=1 layer=0 slot=3 accepted=761 cycles=2177
+PROJECTION_ACK token=1 layer=0 slot=4 accepted=802 cycles=2274
+PROJECTION_ACK token=1 layer=0 slot=6 accepted=1011 cycles=2929
+PROJECTION_ACK token=1 layer=0 slot=9 accepted=1100 cycles=3189
+PROJECTION_ACK token=1 layer=0 slot=10 accepted=1133 cycles=3266
+PROJECTION_ACK token=1 layer=0 slot=12 accepted=1190 cycles=3419
+LAYER_ACK token=1 layer=0 accepted=1214 cycles=3496
+TOKEN completed=2 accepted=1262 cycles=3661
+PASS public writes=304 transactions=1262 stalls=53 busy_holds=4 bubbles=6
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/matrix-D-89.sv:291: $finish called at 36630 (1s)

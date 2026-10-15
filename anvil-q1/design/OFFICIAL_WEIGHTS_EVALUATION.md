@@ -3,11 +3,11 @@
 ## Status, ownership and scope
 
 This is the design-side mapping and evaluation contract, not a result report.
-The Phase 2 objective requires complete official-model execution and independent
-verification. The supplied extraction cannot meet that prerequisite. Coverage
-below is read from the manifests, not computed by a provenance check or a
-simulation. No digest validation, numerical agreement, completed token, cycle
-measurement, synthesis result or tool-version availability is claimed here.
+The authoritative bounded-slice rule defines Phase 2 acceptance on the mounted
+54-tensor extraction, not an unmounted full checkpoint. Acceptance covers all
+14 official 64x64 projection submatrices and a four-token, two-layer top-level
+forward pass. This document specifies the mapping and independent verification
+method; measured results belong to the source-bound execution receipts.
 Repository intake is null; there is no linked intake source index. Historical
 parent acceptance does not certify this revision.
 
@@ -29,7 +29,7 @@ The exact ports, hierarchy, scratch slots, parameter checks, pre-edge/post-edge
 table and integer equations remain in [SPEC.md](SPEC.md) and
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Authoritative inputs and coverage prerequisite
+## Authoritative inputs and bounded coverage
 
 All paths are relative to the delivered project root:
 
@@ -64,17 +64,30 @@ two norms. Thus layers 1..22 lack 572 tensors. The original manifest's separate
 627-entry inventory, but do not require a duplicate head for configured tied
 execution or claim its unseen contents equal embedding contents.
 
-Coverage is not rescued by reducing dimensions, changing G128, composing
-layers 0 and 23 as a two-layer model, restricting logits to 64 rows, or supplying
-zeros/random/repeated/identity values. Those are explicitly partial diagnostics
-only, never complete official inference. Unknown model addresses must fail with
-tensor name and coordinate; do not silently default. The supplied data cannot
-execute even a complete official layer-0 GEMV over its full input dimension.
-Retain a failing/incomplete full-model obligation and a nonzero check exit.
-Do not download, install tools, modify authoritative inputs or manufacture
-missing weights. Continue usable coverage and submatrix integration without
-waiting for an operator, while leaving full execution blocked until authorized
-complete inputs with trusted provenance exist.
+The full-model inventory remains in the report as context, not a bounded-slice
+acceptance blocker. No missing weights are manufactured, padded or repeated.
+Unknown model addresses still fail with tensor name and coordinate. Do not
+download, install tools or modify authoritative inputs. The resulting experiment
+is official-slice inference, not a claim of full 24-layer checkpoint inference.
+
+The standalone sweep uses each of the seven projections in original layers
+0 and 23, input rows `[0:64]`, output channels `[0:64]`, packed columns `[0:8]`,
+and original metadata group zero. Its G64 hardware fixture visits precisely
+the same metadata as original G128 for these input rows. All 14 commands must
+complete, comparing 57,344 products and 896 ordered output writes.
+
+The end-to-end tuple, ordered as `(L,H,I,QH,KVH,D,G,V,SEQ)`, is
+`(2,56,56,14,2,4,56,64,4)`. Hardware layer 0 maps to checkpoint layer 0 and
+hardware layer 1 maps to checkpoint layer 23. Embedding/tied logits use rows
+`[0:64]`, components `[0:56]`; both layer norms and final norm use components
+`[0:56]`. Every projection uses input rows `[0:56]`; Q/O/gate/up/down use
+output channels `[0:56]` (packed columns `[0:7]`), while K/V use channels
+`[0:8]` (packed column zero). Bias channels match their projections.
+All metadata uses original group zero, identical under hardware G56 and original
+G128 for these rows. The fixture retains 14:2 / 7:1 GQA with head dimension 4,
+all seven projections, both decoder residuals, both norms, SwiGLU, causal KV,
+split-half RoPE and final tied projection. There are no skipped configured
+layers, synthetic model values, host arithmetic outputs or RTL changes.
 
 ## Raw-file validation and coordinate binding
 
@@ -125,7 +138,10 @@ Let `P(layer,proj)` be the following unmodified official tensor prefix:
 
 Every accepted model read uses this single mapping. All model accesses are
 read-only, read `wdata` is zero, and unused fields remain zero as in SPEC.
-The layer number is literal: layer 23 is not remapped to layer 1.
+The table uses physical checkpoint layer numbers. The standalone sweep uses
+literal layers 0/23; the top fixture translates logical layers 0/1 to physical
+layers 0/23 before applying this table. The identical explicit coordinate view
+is used by both independent arithmetic models and the raw-file RTL memory service.
 
 | kind | Bus fields | Parsed checkpoint element returned |
 | --- | --- | --- |
@@ -192,9 +208,10 @@ overflow and invalid denominators fail explicitly, not with clipped floats
 or a success-shaped default. A binary64 supplementary run must be labeled
 separately; it is not the FP32 baseline.
 
-Execute embedding, all 24 decoder layers, both RMSNorms per layer, all seven
-AWQ projections, QKV biases, 7:1 GQA, split-half theta=1e6 RoPE, causal actual
-KV history, both residuals, SwiGLU, final RMSNorm and all 151936 tied logits.
+Execute embedding, both configured decoder layers, both RMSNorms per layer,
+all seven AWQ projections, QKV biases, 7:1 GQA, split-half theta=1e6 RoPE,
+causal actual KV history, both residuals, SwiGLU, final RMSNorm and all 64
+configured tied logits.
 Use at least two prefill tokens followed by two sequential decode tokens.
 Record initial IDs and roles; choose decode IDs by the preceding official
 floating logits' argmax, ties to the lowest index. Feed identical IDs and
@@ -210,9 +227,16 @@ mismatches, explicit compared-element denominators, completed-token counts and
 successful final-logit/completion retirement. A timeout, early stop or an empty
 comparison is never a zero-mismatch success.
 
-The behavior command must emit
-`evidence/verification/functional/official_weights_comparison.json`, including
-incomplete coverage and explicit blockers if execution cannot proceed. Label
+The behavior command emits
+`evidence/verification/functional/official_weights_comparison.json` and, after
+the behavior check succeeds, the additional requested
+`evidence/verification/official_weights_comparison.json`. The latter destination
+must not already exist. Reports include the full inventory coverage but require
+only the declared bounded slice. A passed official comparison requires both
+the submatrix sweep and four successfully retired top-level tokens, nonempty
+ordered-write/logit comparisons and retained numerical tolerances, with
+`status="passed"` and `blockers=[]`. Failures retain their diagnostics; no
+unexecuted measurements are invented. Label
 the two sides exactly:
 `Software Layer (Official HuggingFace FP32/FP16 AWQ Weights)` and
 `Hardware RTL Output (Official HuggingFace W4A16 RTL Execution)`.
@@ -272,6 +296,11 @@ python3 tests/verify.py --check behavior --probe mutations --out evidence/verifi
 python3 tests/verify.py --check synthesis --out evidence/verification/synthesis
 python3 tests/verify.py --check portability --out evidence/verification/portability
 ```
+
+The existing `--probe official` behavior selector runs a focused preparation
+check of raw provenance, malformed-input sensitivity, all official submatrices
+and the four-token top fixture. Preparation results are advisory, not admitted
+engineering acceptance; the complete commands above remain runtime obligations.
 
 Normal functional/synthesis child limits are at least 3600 seconds within the
 shared runtime's admitted envelope, replacing historical tight watchdogs, not

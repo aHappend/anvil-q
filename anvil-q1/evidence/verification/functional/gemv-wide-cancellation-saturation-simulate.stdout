@@ -1,0 +1,2 @@
+PASS public writes=48 transactions=198 stalls=10 busy_holds=12 bubbles=18
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/gemv-wide-cancellation-saturation.sv:165: $finish called at 4950 (1s)

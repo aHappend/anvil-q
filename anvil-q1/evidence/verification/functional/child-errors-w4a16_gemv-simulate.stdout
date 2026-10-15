@@ -1,0 +1,2 @@
+PASS child w4a16_gemv errors=9 requests=59
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/child-errors-w4a16_gemv.sv:82: $finish called at 1730 (1s)

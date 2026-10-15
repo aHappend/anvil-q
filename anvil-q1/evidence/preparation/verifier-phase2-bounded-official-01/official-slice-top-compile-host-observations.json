@@ -1,0 +1,11 @@
+{
+  "start_monotonic_s": 116103.93734393,
+  "events": [],
+  "child_user_cpu_s": 0.0779040000000002,
+  "child_system_cpu_s": 0.03381099999999998,
+  "cpu_sample_resolution_s": 0.01,
+  "cpu_sample_errors": [],
+  "observed_child_pids": [],
+  "cpu_scope": "invocation process group; final reaped child usage",
+  "process_group_settled": true
+}

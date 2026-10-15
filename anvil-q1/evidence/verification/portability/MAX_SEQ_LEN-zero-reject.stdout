@@ -1,0 +1,18 @@
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv:25: ANVIL_Q1 PARAMETER ERROR: unsupported dimensions or address bounds
+       Time: 0  Scope: tb.dut.parameters_ok.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv:35: ANVIL_Q1 PARAMETER ERROR: RMSNorm dimensions
+       Time: 0  Scope: tb.dut.decoder.norm.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv:25: ANVIL_Q1 PARAMETER ERROR: unsupported dimensions or address bounds
+       Time: 0  Scope: tb.dut.decoder.gemv.parameters_ok.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv:25: ANVIL_Q1 PARAMETER ERROR: unsupported dimensions or address bounds
+       Time: 0  Scope: tb.dut.decoder.rope.parameters_ok.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv:25: ANVIL_Q1 PARAMETER ERROR: unsupported dimensions or address bounds
+       Time: 0  Scope: tb.dut.decoder.attention.parameters_ok.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv:25: ANVIL_Q1 PARAMETER ERROR: unsupported dimensions or address bounds
+       Time: 0  Scope: tb.dut.decoder.mlp.gemv.parameters_ok.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv:33: ANVIL_Q1 PARAMETER ERROR: elementwise dimensions
+       Time: 0  Scope: tb.dut.decoder.mlp.silu_product.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv:33: ANVIL_Q1 PARAMETER ERROR: elementwise dimensions
+       Time: 0  Scope: tb.dut.decoder.residual.invalid_parameters
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv:35: ANVIL_Q1 PARAMETER ERROR: RMSNorm dimensions
+       Time: 0  Scope: tb.dut.final_norm.invalid_parameters

@@ -1,0 +1,2 @@
+PASS public writes=48 transactions=45312 stalls=514 busy_holds=4 bubbles=6
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/attention-boundaries.sv:143: $finish called at 1556790 (1s)

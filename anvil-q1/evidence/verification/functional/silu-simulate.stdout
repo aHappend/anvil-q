@@ -1,0 +1,2 @@
+PASS public writes=8200 transactions=24600 stalls=2072 busy_holds=2 bubbles=3
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/silu.sv:133: $finish called at 762660 (1s)

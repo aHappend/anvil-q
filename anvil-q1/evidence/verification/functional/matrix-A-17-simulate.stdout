@@ -1,0 +1,94 @@
+EMBEDDING_ACK token=0 accepted=32 cycles=102
+PROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610
+PROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767
+PROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920
+PROJECTION_ACK token=0 layer=0 slot=6 accepted=772 cycles=2173
+PROJECTION_ACK token=0 layer=0 slot=9 accepted=1116 cycles=3070
+PROJECTION_ACK token=0 layer=0 slot=10 accepted=1348 cycles=3616
+PROJECTION_ACK token=0 layer=0 slot=12 accepted=1660 cycles=4429
+LAYER_ACK token=0 layer=0 accepted=1708 cycles=4581
+PROJECTION_ACK token=0 layer=1 slot=2 accepted=1904 cycles=5095
+PROJECTION_ACK token=0 layer=1 slot=3 accepted=1970 cycles=5250
+PROJECTION_ACK token=0 layer=1 slot=4 accepted=2036 cycles=5407
+PROJECTION_ACK token=0 layer=1 slot=6 accepted=2448 cycles=6661
+PROJECTION_ACK token=0 layer=1 slot=9 accepted=2792 cycles=7558
+PROJECTION_ACK token=0 layer=1 slot=10 accepted=3024 cycles=8108
+PROJECTION_ACK token=0 layer=1 slot=12 accepted=3336 cycles=8922
+LAYER_ACK token=0 layer=1 accepted=3384 cycles=9073
+TOKEN completed=1 accepted=3992 cycles=11226
+EMBEDDING_ACK token=1 accepted=4024 cycles=11327
+PROJECTION_ACK token=1 layer=0 slot=2 accepted=4220 cycles=11834
+PROJECTION_ACK token=1 layer=0 slot=3 accepted=4286 cycles=11987
+PROJECTION_ACK token=1 layer=0 slot=4 accepted=4352 cycles=12144
+PROJECTION_ACK token=1 layer=0 slot=6 accepted=4940 cycles=14001
+PROJECTION_ACK token=1 layer=0 slot=9 accepted=5284 cycles=14900
+PROJECTION_ACK token=1 layer=0 slot=10 accepted=5516 cycles=15453
+PROJECTION_ACK token=1 layer=0 slot=12 accepted=5828 cycles=16264
+LAYER_ACK token=1 layer=0 accepted=5876 cycles=16414
+PROJECTION_ACK token=1 layer=1 slot=2 accepted=6072 cycles=16929
+PROJECTION_ACK token=1 layer=1 slot=3 accepted=6138 cycles=17084
+PROJECTION_ACK token=1 layer=1 slot=4 accepted=6204 cycles=17239
+PROJECTION_ACK token=1 layer=1 slot=6 accepted=6792 cycles=19092
+PROJECTION_ACK token=1 layer=1 slot=9 accepted=7136 cycles=19992
+PROJECTION_ACK token=1 layer=1 slot=10 accepted=7368 cycles=20541
+PROJECTION_ACK token=1 layer=1 slot=12 accepted=7680 cycles=21355
+LAYER_ACK token=1 layer=1 accepted=7728 cycles=21507
+PROGRESS accepted=8192 compared_writes=1184 completed=1 cycles=23142
+TOKEN completed=2 accepted=8336 cycles=23663
+EMBEDDING_ACK token=2 accepted=8368 cycles=23764
+PROJECTION_ACK token=2 layer=0 slot=2 accepted=8564 cycles=24276
+PROJECTION_ACK token=2 layer=0 slot=3 accepted=8630 cycles=24431
+PROJECTION_ACK token=2 layer=0 slot=4 accepted=8696 cycles=24588
+PROJECTION_ACK token=2 layer=0 slot=6 accepted=9460 cycles=27052
+PROJECTION_ACK token=2 layer=0 slot=9 accepted=9804 cycles=27953
+PROJECTION_ACK token=2 layer=0 slot=10 accepted=10036 cycles=28498
+PROJECTION_ACK token=2 layer=0 slot=12 accepted=10348 cycles=29306
+LAYER_ACK token=2 layer=0 accepted=10396 cycles=29456
+PROJECTION_ACK token=2 layer=1 slot=2 accepted=10592 cycles=29967
+PROJECTION_ACK token=2 layer=1 slot=3 accepted=10658 cycles=30122
+PROJECTION_ACK token=2 layer=1 slot=4 accepted=10724 cycles=30277
+PROJECTION_ACK token=2 layer=1 slot=6 accepted=11488 cycles=32741
+PROJECTION_ACK token=2 layer=1 slot=9 accepted=11832 cycles=33640
+PROJECTION_ACK token=2 layer=1 slot=10 accepted=12064 cycles=34187
+PROJECTION_ACK token=2 layer=1 slot=12 accepted=12376 cycles=35000
+LAYER_ACK token=2 layer=1 accepted=12424 cycles=35150
+TOKEN completed=3 accepted=13032 cycles=37303
+EMBEDDING_ACK token=3 accepted=13064 cycles=37404
+PROJECTION_ACK token=3 layer=0 slot=2 accepted=13260 cycles=37913
+PROJECTION_ACK token=3 layer=0 slot=3 accepted=13326 cycles=38068
+PROJECTION_ACK token=3 layer=0 slot=4 accepted=13392 cycles=38223
+PROJECTION_ACK token=3 layer=0 slot=6 accepted=14332 cycles=41293
+PROJECTION_ACK token=3 layer=0 slot=9 accepted=14676 cycles=42196
+PROJECTION_ACK token=3 layer=0 slot=10 accepted=14908 cycles=42746
+PROJECTION_ACK token=3 layer=0 slot=12 accepted=15220 cycles=43556
+LAYER_ACK token=3 layer=0 accepted=15268 cycles=43706
+PROJECTION_ACK token=3 layer=1 slot=2 accepted=15464 cycles=44217
+PROJECTION_ACK token=3 layer=1 slot=3 accepted=15530 cycles=44374
+PROJECTION_ACK token=3 layer=1 slot=4 accepted=15596 cycles=44527
+PROGRESS accepted=16384 compared_writes=2175 completed=3 cycles=47193
+PROJECTION_ACK token=3 layer=1 slot=6 accepted=16536 cycles=47592
+PROJECTION_ACK token=3 layer=1 slot=9 accepted=16880 cycles=48491
+PROJECTION_ACK token=3 layer=1 slot=10 accepted=17112 cycles=49043
+PROJECTION_ACK token=3 layer=1 slot=12 accepted=17424 cycles=49855
+LAYER_ACK token=3 layer=1 accepted=17472 cycles=50006
+TOKEN completed=4 accepted=18080 cycles=52159
+EMBEDDING_ACK token=4 accepted=18112 cycles=52262
+PROJECTION_ACK token=4 layer=0 slot=2 accepted=18308 cycles=52771
+PROJECTION_ACK token=4 layer=0 slot=3 accepted=18374 cycles=52924
+PROJECTION_ACK token=4 layer=0 slot=4 accepted=18440 cycles=53079
+PROJECTION_ACK token=4 layer=0 slot=6 accepted=18852 cycles=54332
+PROJECTION_ACK token=4 layer=0 slot=9 accepted=19196 cycles=55233
+PROJECTION_ACK token=4 layer=0 slot=10 accepted=19428 cycles=55776
+PROJECTION_ACK token=4 layer=0 slot=12 accepted=19740 cycles=56590
+LAYER_ACK token=4 layer=0 accepted=19788 cycles=56742
+PROJECTION_ACK token=4 layer=1 slot=2 accepted=19984 cycles=57249
+PROJECTION_ACK token=4 layer=1 slot=3 accepted=20050 cycles=57402
+PROJECTION_ACK token=4 layer=1 slot=4 accepted=20116 cycles=57557
+PROJECTION_ACK token=4 layer=1 slot=6 accepted=20528 cycles=58812
+PROJECTION_ACK token=4 layer=1 slot=9 accepted=20872 cycles=59713
+PROJECTION_ACK token=4 layer=1 slot=10 accepted=21104 cycles=60261
+PROJECTION_ACK token=4 layer=1 slot=12 accepted=21416 cycles=61075
+LAYER_ACK token=4 layer=1 accepted=21464 cycles=61226
+TOKEN completed=5 accepted=22072 cycles=63378
+PASS public writes=2960 transactions=22072 stalls=896 busy_holds=10 bubbles=15
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/matrix-A-17.sv:294: $finish called at 633800 (1s)

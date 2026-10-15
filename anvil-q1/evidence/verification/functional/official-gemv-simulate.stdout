@@ -1,0 +1,2 @@
+PASS public writes=24 transactions=115 stalls=6 busy_holds=6 bubbles=9
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/official-gemv.sv:216: $finish called at 2810 (1s)

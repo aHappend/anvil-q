@@ -1,0 +1,1 @@
+module tb; anvil_q1_top #(.NUM_LAYERS(1),.HIDDEN_SIZE(24),.INTERMEDIATE_SIZE(24),.NUM_Q_HEADS(6),.NUM_KV_HEADS(4),.HEAD_DIM(4),.GROUP_SIZE(8),.VOCAB_SIZE(1),.MAX_SEQ_LEN(1)) dut(); initial #1 $finish; endmodule

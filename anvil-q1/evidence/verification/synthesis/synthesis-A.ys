@@ -1,0 +1,9 @@
+read_verilog -sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv /data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv
+chparam -set NUM_LAYERS 2 -set HIDDEN_SIZE 16 -set INTERMEDIATE_SIZE 32 -set NUM_Q_HEADS 4 -set NUM_KV_HEADS 2 -set HEAD_DIM 4 -set GROUP_SIZE 8 -set VOCAB_SIZE 17 -set MAX_SEQ_LEN 4 anvil_q1_top
+hierarchy -check -top anvil_q1_top
+proc
+opt
+memory
+opt
+check -assert
+write_json /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/synthesis/netlist-A.json

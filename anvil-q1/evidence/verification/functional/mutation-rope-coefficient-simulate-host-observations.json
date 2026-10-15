@@ -1,0 +1,48 @@
+{
+  "start_monotonic_s": 116660.473141061,
+  "events": [
+    {
+      "message": "EMBEDDING_ACK token=0 accepted=32 cycles=102",
+      "stream": "stdout",
+      "host_monotonic_s": 116660.583207175,
+      "elapsed_wall_s": 0.11006611400807742,
+      "child_user_cpu_s": 0.09,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.00035737598955165595
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610",
+      "stream": "stdout",
+      "host_monotonic_s": 116660.681046452,
+      "elapsed_wall_s": 0.2079053909983486,
+      "child_user_cpu_s": 0.19,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.0002167450002161786
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767",
+      "stream": "stdout",
+      "host_monotonic_s": 116660.720101537,
+      "elapsed_wall_s": 0.2469604759971844,
+      "child_user_cpu_s": 0.23,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.00021467100305017084
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920",
+      "stream": "stdout",
+      "host_monotonic_s": 116660.75816919,
+      "elapsed_wall_s": 0.28502812900114805,
+      "child_user_cpu_s": 0.27,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.00021791699691675603
+    }
+  ],
+  "child_user_cpu_s": 0.2727560000000153,
+  "child_system_cpu_s": 0.015985999999999834,
+  "cpu_sample_resolution_s": 0.01,
+  "cpu_sample_errors": [],
+  "observed_child_pids": [],
+  "cpu_scope": "invocation process group; final reaped child usage",
+  "process_group_settled": true
+}

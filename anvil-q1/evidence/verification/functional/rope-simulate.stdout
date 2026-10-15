@@ -1,0 +1,2 @@
+PASS public writes=72 transactions=216 stalls=13 busy_holds=6 bubbles=9
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/rope.sv:174: $finish called at 6810 (1s)

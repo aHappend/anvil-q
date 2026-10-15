@@ -1,0 +1,2 @@
+PASS child rmsnorm errors=10 requests=61
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/child-errors-rmsnorm.sv:83: $finish called at 2370 (1s)

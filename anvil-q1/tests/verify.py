@@ -432,12 +432,12 @@ def command_tb(instance, reader, expected, commands):
     pre-edge handshakes. The transactor adds deterministic bounded stalls.
     """
     return """module tb;
-""" + BUS_PORTS + """
+""" + BUS_PORTS + instance + """
 integer cycles=0, writes=0, accepted=0, pending=0, delay_count=0;
 integer stalls=0, responses=0, completions=0, busy_holds=0, bubbles=0;
 reg [136:0] held; reg was_stalled=0;
 reg [31:0] reply; reg [31:0] expected_value;
-""" + instance + reader + """
+""" + reader + """
 task automatic reset_check;
 begin
  if(cmd_ready !== 0 || done !== 0 || error !== 0 ||
@@ -3517,6 +3517,8 @@ def main():
                     if result["name"] in ("raw-official-submatrix", "synthetic-file-backed-top",
                                           "official-top-coverage")]
                 official.write_comparison(run, report)
+                official.evaluate_official(run, checkpoint, report,
+                                           command_tb, BUS_CONNECT, compile_sim)
             if args.probe in (None, "rms"):
                 rms_test(run)
             if args.probe in (None, "protocol"):
@@ -3536,8 +3538,6 @@ def main():
                     for seed in (17,43,89):
                         integrated(run,label,seed)
                 mutations(run)
-                official.evaluate_official(run, checkpoint, report,
-                                           command_tb, BUS_CONNECT, compile_sim)
         elif args.check == "synthesis":
             synthesis(run,args.configuration)
         else:
@@ -3552,6 +3552,8 @@ def main():
                 portability(run,selections=selections)
         require(run.source_hashes == hashes() | official_hashes(),
                 "verification source/checkpoint changed during execution")
+        if args.check == "behavior" and args.probe is None:
+            official.export_comparison(run, report)
         run.result("check", outcome="pass", scope=args.probe or args.check)
     except (AssertionError, ValueError, OSError, KeyError, struct.error,
             NameError, TypeError, IndexError) as exc:

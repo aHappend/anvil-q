@@ -1,0 +1,2 @@
+PASS child rope errors=3 requests=1
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/child-errors-rope.sv:76: $finish called at 170 (1s)

@@ -1,0 +1,3 @@
+EMBEDDING_ACK token=0 accepted=32 cycles=102
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/mutation-lane.sv:192: STACK write mismatch 33 kind 8 layer 0 row 2 col 1 got 00003b53 expected 8000000000000000200000001fffff74e
+       Time: 4435  Scope: tb

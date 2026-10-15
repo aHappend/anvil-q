@@ -1,0 +1,2 @@
+PASS child decoder_layer errors=6 requests=103
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/child-errors-decoder_layer.sv:79: $finish called at 3350 (1s)

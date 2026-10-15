@@ -1,0 +1,390 @@
+{
+  "start_monotonic_s": 116647.0760404,
+  "events": [
+    {
+      "message": "EMBEDDING_ACK token=0 accepted=48 cycles=151",
+      "stream": "stdout",
+      "host_monotonic_s": 116647.187582646,
+      "elapsed_wall_s": 0.1115422459988622,
+      "child_user_cpu_s": 0.1,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0003487009962555021
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=2 accepted=552 cycles=1358",
+      "stream": "stdout",
+      "host_monotonic_s": 116647.435194257,
+      "elapsed_wall_s": 0.3591538570035482,
+      "child_user_cpu_s": 0.34,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002157119888579473
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=3 accepted=688 cycles=1662",
+      "stream": "stdout",
+      "host_monotonic_s": 116647.507698851,
+      "elapsed_wall_s": 0.43165845099429134,
+      "child_user_cpu_s": 0.42,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021240599744487554
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=4 accepted=824 cycles=1966",
+      "stream": "stdout",
+      "host_monotonic_s": 116647.580973631,
+      "elapsed_wall_s": 0.5049332310009049,
+      "child_user_cpu_s": 0.49,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00032750099489931017
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=6 accepted=1624 cycles=4202",
+      "stream": "stdout",
+      "host_monotonic_s": 116647.960689931,
+      "elapsed_wall_s": 0.8846495309990132,
+      "child_user_cpu_s": 0.87,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021590199321508408
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=9 accepted=2560 cycles=6439",
+      "stream": "stdout",
+      "host_monotonic_s": 116648.524397166,
+      "elapsed_wall_s": 1.4483567659917753,
+      "child_user_cpu_s": 1.43,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021473001106642187
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=10 accepted=3328 cycles=8150",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.002071975,
+      "elapsed_wall_s": 1.9260315749997972,
+      "child_user_cpu_s": 1.91,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00022125299437902868
+    },
+    {
+      "message": "PROJECTION_ACK token=0 layer=0 slot=12 accepted=4216 cycles=10260",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.402200417,
+      "elapsed_wall_s": 2.3261600169935264,
+      "child_user_cpu_s": 2.31,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021127400395926088
+    },
+    {
+      "message": "LAYER_ACK token=0 layer=0 accepted=4288 cycles=10484",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.418756777,
+      "elapsed_wall_s": 2.342716376995668,
+      "child_user_cpu_s": 2.33,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002311610005563125
+    },
+    {
+      "message": "TOKEN completed=1 accepted=4912 cycles=12668",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.531269654,
+      "elapsed_wall_s": 2.4552292540029157,
+      "child_user_cpu_s": 2.44,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021199499315116554
+    },
+    {
+      "message": "EMBEDDING_ACK token=1 accepted=4960 cycles=12822",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.531488683,
+      "elapsed_wall_s": 2.4554482829989865,
+      "child_user_cpu_s": 2.44,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00013915900490246713
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=2 accepted=5464 cycles=14033",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.67714619,
+      "elapsed_wall_s": 2.601105790003203,
+      "child_user_cpu_s": 2.59,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021242599177639931
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=3 accepted=5600 cycles=14337",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.720347739,
+      "elapsed_wall_s": 2.644307338996441,
+      "child_user_cpu_s": 2.63,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002131770015694201
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=4 accepted=5736 cycles=14639",
+      "stream": "stdout",
+      "host_monotonic_s": 116649.76389897,
+      "elapsed_wall_s": 2.6878585700033,
+      "child_user_cpu_s": 2.67,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0003182629880029708
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=6 accepted=6800 cycles=17783",
+      "stream": "stdout",
+      "host_monotonic_s": 116650.049138012,
+      "elapsed_wall_s": 2.9730976119899424,
+      "child_user_cpu_s": 2.96,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021365800057537854
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=9 accepted=7736 cycles=20025",
+      "stream": "stdout",
+      "host_monotonic_s": 116650.377615641,
+      "elapsed_wall_s": 3.3015752409992274,
+      "child_user_cpu_s": 3.29,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021477100381162018
+    },
+    {
+      "message": "PROGRESS accepted=8192 compared_writes=752 completed=1 cycles=21037",
+      "stream": "stdout",
+      "host_monotonic_s": 116650.549412003,
+      "elapsed_wall_s": 3.473371603002306,
+      "child_user_cpu_s": 3.46,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021483999444171786
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=10 accepted=8504 cycles=21734",
+      "stream": "stdout",
+      "host_monotonic_s": 116650.670856528,
+      "elapsed_wall_s": 3.5948161279957276,
+      "child_user_cpu_s": 3.58,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00035878999915439636
+    },
+    {
+      "message": "PROJECTION_ACK token=1 layer=0 slot=12 accepted=9392 cycles=23840",
+      "stream": "stdout",
+      "host_monotonic_s": 116650.985847974,
+      "elapsed_wall_s": 3.909807574003935,
+      "child_user_cpu_s": 3.89,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.000309046998154372
+    },
+    {
+      "message": "LAYER_ACK token=1 layer=0 accepted=9464 cycles=24068",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.000769836,
+      "elapsed_wall_s": 3.924729435995687,
+      "child_user_cpu_s": 3.91,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021348800510168076
+    },
+    {
+      "message": "TOKEN completed=2 accepted=10088 cycles=26251",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.106708972,
+      "elapsed_wall_s": 4.030668571998831,
+      "child_user_cpu_s": 4.01,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021333800395950675
+    },
+    {
+      "message": "EMBEDDING_ACK token=2 accepted=10136 cycles=26402",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.106929413,
+      "elapsed_wall_s": 4.03088901299634,
+      "child_user_cpu_s": 4.01,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002313110016984865
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=2 accepted=10640 cycles=27609",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.253323033,
+      "elapsed_wall_s": 4.177282632997958,
+      "child_user_cpu_s": 4.16,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021376900258474052
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=3 accepted=10776 cycles=27913",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.29669498,
+      "elapsed_wall_s": 4.220654579999973,
+      "child_user_cpu_s": 4.2,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021304699475876987
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=4 accepted=10912 cycles=28215",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.34005837,
+      "elapsed_wall_s": 4.264017969995621,
+      "child_user_cpu_s": 4.25,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002144699974451214
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=6 accepted=12240 cycles=32260",
+      "stream": "stdout",
+      "host_monotonic_s": 116651.680742498,
+      "elapsed_wall_s": 4.604702098004054,
+      "child_user_cpu_s": 4.59,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021417898824438453
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=9 accepted=13176 cycles=34502",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.012396712,
+      "elapsed_wall_s": 4.936356311998679,
+      "child_user_cpu_s": 4.92,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002146199985872954
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=10 accepted=13944 cycles=36215",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.30678518,
+      "elapsed_wall_s": 5.230744779997622,
+      "child_user_cpu_s": 5.21,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021506099437829107
+    },
+    {
+      "message": "PROJECTION_ACK token=2 layer=0 slot=12 accepted=14832 cycles=38321",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.621667482,
+      "elapsed_wall_s": 5.545627081999555,
+      "child_user_cpu_s": 5.53,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00023219299328047782
+    },
+    {
+      "message": "LAYER_ACK token=2 layer=0 accepted=14904 cycles=38545",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.636597318,
+      "elapsed_wall_s": 5.560556918004295,
+      "child_user_cpu_s": 5.54,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021387898596003652
+    },
+    {
+      "message": "TOKEN completed=3 accepted=15528 cycles=40731",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.747641135,
+      "elapsed_wall_s": 5.671600735004176,
+      "child_user_cpu_s": 5.65,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021298798674251884
+    },
+    {
+      "message": "EMBEDDING_ACK token=3 accepted=15576 cycles=40882",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.747861015,
+      "elapsed_wall_s": 5.67182061499625,
+      "child_user_cpu_s": 5.65,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00024437600222881883
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=2 accepted=16080 cycles=42088",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.890332861,
+      "elapsed_wall_s": 5.81429246100015,
+      "child_user_cpu_s": 5.8,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021476000256370753
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=3 accepted=16216 cycles=42392",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.932809337,
+      "elapsed_wall_s": 5.85676893699565,
+      "child_user_cpu_s": 5.84,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00032008699781727046
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=4 accepted=16352 cycles=42694",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.975366724,
+      "elapsed_wall_s": 5.899326323997229,
+      "child_user_cpu_s": 5.88,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002131280052708462
+    },
+    {
+      "message": "PROGRESS accepted=16384 compared_writes=1442 completed=3 cycles=42796",
+      "stream": "stdout",
+      "host_monotonic_s": 116652.982050621,
+      "elapsed_wall_s": 5.906010220991448,
+      "child_user_cpu_s": 5.89,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.0002139690041076392
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=6 accepted=17152 cycles=44932",
+      "stream": "stdout",
+      "host_monotonic_s": 116653.193636507,
+      "elapsed_wall_s": 6.117596106996643,
+      "child_user_cpu_s": 6.1,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021430899505503476
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=9 accepted=18088 cycles=47168",
+      "stream": "stdout",
+      "host_monotonic_s": 116653.517303744,
+      "elapsed_wall_s": 6.4412633439933416,
+      "child_user_cpu_s": 6.42,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021468100021593273
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=10 accepted=18856 cycles=48878",
+      "stream": "stdout",
+      "host_monotonic_s": 116653.80639424,
+      "elapsed_wall_s": 6.730353840001044,
+      "child_user_cpu_s": 6.71,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021565199131146073
+    },
+    {
+      "message": "PROJECTION_ACK token=3 layer=0 slot=12 accepted=19744 cycles=50991",
+      "stream": "stdout",
+      "host_monotonic_s": 116654.120837233,
+      "elapsed_wall_s": 7.0447968329972355,
+      "child_user_cpu_s": 7.03,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00035233699600212276
+    },
+    {
+      "message": "LAYER_ACK token=3 layer=0 accepted=19816 cycles=51219",
+      "stream": "stdout",
+      "host_monotonic_s": 116654.136146678,
+      "elapsed_wall_s": 7.060106278004241,
+      "child_user_cpu_s": 7.04,
+      "child_system_cpu_s": 0.0,
+      "observation_work_s": 0.00021402898710221052
+    },
+    {
+      "message": "TOKEN completed=4 accepted=20440 cycles=53398",
+      "stream": "stdout",
+      "host_monotonic_s": 116654.235851435,
+      "elapsed_wall_s": 7.159811035002349,
+      "child_user_cpu_s": 7.14,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.00030832499032840133
+    }
+  ],
+  "child_user_cpu_s": 7.148614000000009,
+  "child_system_cpu_s": 0.010999999999999899,
+  "cpu_sample_resolution_s": 0.01,
+  "cpu_sample_errors": [],
+  "observed_child_pids": [],
+  "cpu_scope": "invocation process group; final reaped child usage",
+  "process_group_settled": true
+}

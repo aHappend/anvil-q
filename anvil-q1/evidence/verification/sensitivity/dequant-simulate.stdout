@@ -1,0 +1,2 @@
+PASS dequant comparisons=1200 official=192
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/dequant.sv:1204: $finish called at 1200 (1s)

@@ -1,0 +1,11 @@
+EMBEDDING_ACK token=0 accepted=32 cycles=102
+PROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610
+PROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767
+PROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920
+PROJECTION_ACK token=0 layer=0 slot=6 accepted=772 cycles=2173
+PROJECTION_ACK token=0 layer=0 slot=9 accepted=1116 cycles=3070
+PROJECTION_ACK token=0 layer=0 slot=10 accepted=1348 cycles=3616
+PROJECTION_ACK token=0 layer=0 slot=12 accepted=1660 cycles=4429
+LAYER_ACK token=0 layer=0 accepted=1708 cycles=4581
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer.sv:192: STACK write mismatch 296 kind 8 layer 0 row 14 col 0 got ffffe1d0 expected 8000000000000000100000000ffffe11d
+       Time: 46445  Scope: tb

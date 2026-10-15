@@ -1,0 +1,1767 @@
+{
+  "start_time": "2026-10-15T16:18:51.474221+00:00",
+  "updated_time": "2026-10-15T16:19:06.220361+00:00",
+  "argv": [
+    "/usr/bin/python3",
+    "tests/verify.py",
+    "--check",
+    "behavior",
+    "--probe",
+    "mutations",
+    "--out",
+    "evidence/verification/sensitivity"
+  ],
+  "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+  "source_sha256": {
+    "rtl/anvil_q1_00_pkg.sv": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+    "rtl/anvil_q1_awq_dequant.sv": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+    "rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+    "rtl/anvil_q1_decoder_layer.sv": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+    "rtl/anvil_q1_elementwise.sv": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+    "rtl/anvil_q1_gqa_attention.sv": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+    "rtl/anvil_q1_mem_port.sv": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+    "rtl/anvil_q1_parameters.sv": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+    "rtl/anvil_q1_rmsnorm.sv": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+    "rtl/anvil_q1_rope.sv": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+    "rtl/anvil_q1_swiglu_mlp.sv": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+    "rtl/anvil_q1_top.sv": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+    "rtl/anvil_q1_w4a16_gemv.sv": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+    "tests/occupied_output_refusal.py": "b5713d4dc87d15a4bd100ab2a6e6b7a8b04aed0d34ebcd295e8882375f78d81f",
+    "tests/official_weights.py": "5d83c0de5a843ebccb1fa59a0713a80116414df25ebd7d5a1717ab0ba0d5dffa",
+    "tests/verify.py": "4ed709f96fee2d48e3b73278cd86fbbc2b9642681710da3f0854e5491f3f69c3",
+    "design/ARCHITECTURE.md": "93d7570c25176a47839c326f2df3e6f4b9ed0a1427c131a94648a2f542f85938",
+    "design/OFFICIAL_WEIGHTS_EVALUATION.md": "9b080ce1c27ddce799b46facb72215985a8b5363f23e370393641ee9507b7a79",
+    "design/SPEC.md": "eaf3abf90189bbe132b35e593c089f9e22389ab57129969bcfe7f2d10cce1a9e",
+    "hf_qwen25_05b_awq_spec/config.json": "bd20ae34a91eb38230b870d39f56677d1cda1e8b6688ad627e6efb6ca9f44090",
+    "hf_qwen25_05b_awq_spec/generation_config.json": "091fc0fd8cf33ecb3ded1399ffe17cca80fefdb167ac4c241c1ca42c6bc116e5",
+    "hf_qwen25_05b_awq_spec/official_layer0_awq_slice.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/qwen25_05b_awq_tensors.json": "0060eb7c6278d94b28c0d1d2ac6f9a07de417f0bfedd3c2652eec19e0f3df237",
+    "hf_qwen25_05b_awq_spec/tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "hf_qwen25_05b_awq_spec/official_weights/official_hardware_slices_fp16_awq.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/official_weights/official_weights_manifest.json": "8f7565f128ad04ce19fb027c4b30c34ad42a921e201dcf2d454082efa1c920df",
+    "hf_qwen25_05b_awq_spec/official_weights/qwen25_05b_awq_official_slice.safetensors": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0"
+  },
+  "repair_of": null,
+  "python": {
+    "executable": "/usr/bin/python3",
+    "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+  },
+  "end_time": "2026-10-15T16:19:06.220377+00:00",
+  "exit_code": 0,
+  "process_groups_settled": true,
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "--version"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:51.633776+00:00",
+      "end_time": "2026-10-15T16:18:51.639171+00:00",
+      "elapsed_s": 0.005401214002631605,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/python3-version.stdout",
+      "stderr_path": "evidence/verification/sensitivity/python3-version.stderr",
+      "tool_path": "/usr/bin/python3",
+      "host_observations_path": "evidence/verification/sensitivity/python3-version-host-observations.json",
+      "child_user_cpu_s": 0.0,
+      "child_system_cpu_s": 0.004418,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/iverilog",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:51.640619+00:00",
+      "end_time": "2026-10-15T16:18:51.658016+00:00",
+      "elapsed_s": 0.017405575010343455,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/iverilog-version.stdout",
+      "stderr_path": "evidence/verification/sensitivity/iverilog-version.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/iverilog-version-host-observations.json",
+      "child_user_cpu_s": 0.002286,
+      "child_system_cpu_s": 0.014397,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/vvp",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:51.659467+00:00",
+      "end_time": "2026-10-15T16:18:51.667488+00:00",
+      "elapsed_s": 0.00804060700465925,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/vvp-version.stdout",
+      "stderr_path": "evidence/verification/sensitivity/vvp-version.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/vvp-version-host-observations.json",
+      "child_user_cpu_s": 0.001092,
+      "child_system_cpu_s": 0.005464,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/dequant.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/rtl/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/dequant.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:51.706538+00:00",
+      "end_time": "2026-10-15T16:18:51.848680+00:00",
+      "elapsed_s": 0.142144063996966,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/dequant-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/dequant-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/dequant-compile-host-observations.json",
+      "child_user_cpu_s": 0.12413699999999998,
+      "child_system_cpu_s": 0.035476999999999995,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/dequant.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:51.850628+00:00",
+      "end_time": "2026-10-15T16:18:51.983856+00:00",
+      "elapsed_s": 0.13323350499558728,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/dequant-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/dequant-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/dequant-simulate-host-observations.json",
+      "child_user_cpu_s": 0.12196599999999999,
+      "child_system_cpu_s": 0.009997000000000006,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:52.405448+00:00",
+      "end_time": "2026-10-15T16:18:52.502491+00:00",
+      "elapsed_s": 0.09704405500087887,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-lane-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-lane-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-lane-compile-host-observations.json",
+      "child_user_cpu_s": 0.07246100000000003,
+      "child_system_cpu_s": 0.031252,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:52.503857+00:00",
+      "end_time": "2026-10-15T16:18:52.670248+00:00",
+      "elapsed_s": 0.1664021100004902,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-lane-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-lane-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-lane-simulate-host-observations.json",
+      "child_user_cpu_s": 0.15457699999999996,
+      "child_system_cpu_s": 0.010969999999999994,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:53.092797+00:00",
+      "end_time": "2026-10-15T16:18:53.191473+00:00",
+      "elapsed_s": 0.09867927498999052,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-bias-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-bias-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-bias-compile-host-observations.json",
+      "child_user_cpu_s": 0.07283100000000003,
+      "child_system_cpu_s": 0.03103800000000001,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:53.193346+00:00",
+      "end_time": "2026-10-15T16:18:53.358355+00:00",
+      "elapsed_s": 0.1649983509996673,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-bias-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-bias-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-bias-simulate-host-observations.json",
+      "child_user_cpu_s": 0.151084,
+      "child_system_cpu_s": 0.013007999999999992,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:53.780875+00:00",
+      "end_time": "2026-10-15T16:18:53.878865+00:00",
+      "elapsed_s": 0.09799092100001872,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-gqa-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-gqa-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-gqa-compile-host-observations.json",
+      "child_user_cpu_s": 0.08075499999999991,
+      "child_system_cpu_s": 0.022710000000000008,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:53.880676+00:00",
+      "end_time": "2026-10-15T16:18:54.222886+00:00",
+      "elapsed_s": 0.3422182590002194,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-gqa-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-gqa-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-gqa-simulate-host-observations.json",
+      "child_user_cpu_s": 0.3312170000000001,
+      "child_system_cpu_s": 0.010005999999999987,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:54.646532+00:00",
+      "end_time": "2026-10-15T16:18:54.740964+00:00",
+      "elapsed_s": 0.09443240400287323,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-rope-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-rope-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-rope-compile-host-observations.json",
+      "child_user_cpu_s": 0.07868199999999992,
+      "child_system_cpu_s": 0.021779999999999994,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:54.742905+00:00",
+      "end_time": "2026-10-15T16:18:54.900386+00:00",
+      "elapsed_s": 0.1574938849953469,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-rope-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-rope-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-rope-simulate-host-observations.json",
+      "child_user_cpu_s": 0.14744900000000016,
+      "child_system_cpu_s": 0.008966000000000002,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:55.333752+00:00",
+      "end_time": "2026-10-15T16:18:55.429092+00:00",
+      "elapsed_s": 0.0953405980108073,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-rope-coefficient-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-rope-coefficient-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-rope-coefficient-compile-host-observations.json",
+      "child_user_cpu_s": 0.06684000000000001,
+      "child_system_cpu_s": 0.031734999999999985,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:55.431196+00:00",
+      "end_time": "2026-10-15T16:18:55.712970+00:00",
+      "elapsed_s": 0.2817895480111474,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-rope-coefficient-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-rope-coefficient-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-rope-coefficient-simulate-host-observations.json",
+      "child_user_cpu_s": 0.2705569999999997,
+      "child_system_cpu_s": 0.010021000000000002,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:56.137365+00:00",
+      "end_time": "2026-10-15T16:18:56.234324+00:00",
+      "elapsed_s": 0.09695984699646942,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-cache-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-cache-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-cache-compile-host-observations.json",
+      "child_user_cpu_s": 0.07518500000000028,
+      "child_system_cpu_s": 0.027754,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:56.236631+00:00",
+      "end_time": "2026-10-15T16:18:56.554216+00:00",
+      "elapsed_s": 0.31759208599396516,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-cache-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-cache-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-cache-simulate-host-observations.json",
+      "child_user_cpu_s": 0.3054709999999998,
+      "child_system_cpu_s": 0.010981000000000019,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:56.980249+00:00",
+      "end_time": "2026-10-15T16:18:57.078112+00:00",
+      "elapsed_s": 0.0978478629986057,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-stale-cache-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-stale-cache-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-stale-cache-compile-host-observations.json",
+      "child_user_cpu_s": 0.0812759999999999,
+      "child_system_cpu_s": 0.022442000000000017,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:57.080715+00:00",
+      "end_time": "2026-10-15T16:18:59.329175+00:00",
+      "elapsed_s": 2.2484689989942126,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-stale-cache-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-stale-cache-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-stale-cache-simulate-host-observations.json",
+      "child_user_cpu_s": 2.230391,
+      "child_system_cpu_s": 0.014995999999999954,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:59.771231+00:00",
+      "end_time": "2026-10-15T16:18:59.869296+00:00",
+      "elapsed_s": 0.09806568999192677,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-layer-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-layer-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-layer-compile-host-observations.json",
+      "child_user_cpu_s": 0.08454899999999999,
+      "child_system_cpu_s": 0.020008000000000026,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:18:59.872091+00:00",
+      "end_time": "2026-10-15T16:19:00.919052+00:00",
+      "elapsed_s": 1.0469674720079638,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-layer-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-layer-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-layer-simulate-host-observations.json",
+      "child_user_cpu_s": 1.035946,
+      "child_system_cpu_s": 0.00999899999999998,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:00.933177+00:00",
+      "end_time": "2026-10-15T16:19:01.069075+00:00",
+      "elapsed_s": 0.13590182199550327,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-dequant32-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-dequant32-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-dequant32-compile-host-observations.json",
+      "child_user_cpu_s": 0.11755000000000049,
+      "child_system_cpu_s": 0.03584599999999999,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:01.072617+00:00",
+      "end_time": "2026-10-15T16:19:01.179938+00:00",
+      "elapsed_s": 0.10733974799222779,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-dequant32-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-dequant32-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-dequant32-simulate-host-observations.json",
+      "child_user_cpu_s": 0.0949409999999995,
+      "child_system_cpu_s": 0.01099300000000003,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:01.194173+00:00",
+      "end_time": "2026-10-15T16:19:01.242593+00:00",
+      "elapsed_s": 0.048401398002170026,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-accumulator64-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-accumulator64-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-accumulator64-compile-host-observations.json",
+      "child_user_cpu_s": 0.04072600000000026,
+      "child_system_cpu_s": 0.013253999999999988,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:01.246169+00:00",
+      "end_time": "2026-10-15T16:19:03.573080+00:00",
+      "elapsed_s": 2.3269256250059698,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-accumulator64-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-accumulator64-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-accumulator64-simulate-host-observations.json",
+      "child_user_cpu_s": 2.317431,
+      "child_system_cpu_s": 0.00800099999999998,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "iverilog",
+        "-g2012",
+        "-Wall",
+        "-s",
+        "tb",
+        "-o",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53.vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_00_pkg.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_awq_dequant.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_bus_mux.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_decoder_layer.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_elementwise.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_gqa_attention.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_mem_port.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_parameters.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_rmsnorm.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_rope.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_swiglu_mlp.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_top.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53/anvil_q1_w4a16_gemv.sv",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53.sv"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:03.587957+00:00",
+      "end_time": "2026-10-15T16:19:03.635616+00:00",
+      "elapsed_s": 0.04764191999856848,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/sensitivity/mutation-product53-compile.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-product53-compile.stderr",
+      "tool_path": "/usr/bin/iverilog",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-product53-compile-host-observations.json",
+      "child_user_cpu_s": 0.033656999999999826,
+      "child_system_cpu_s": 0.01979700000000001,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "vvp",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53.vvp"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:03.639595+00:00",
+      "end_time": "2026-10-15T16:19:06.201365+00:00",
+      "elapsed_s": 2.56178497899964,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 1,
+      "stdout_path": "evidence/verification/sensitivity/mutation-product53-simulate.stdout",
+      "stderr_path": "evidence/verification/sensitivity/mutation-product53-simulate.stderr",
+      "tool_path": "/usr/bin/vvp",
+      "host_observations_path": "evidence/verification/sensitivity/mutation-product53-simulate-host-observations.json",
+      "child_user_cpu_s": 2.5502269999999996,
+      "child_system_cpu_s": 0.009997000000000034,
+      "process_group_settled": true
+    }
+  ],
+  "results": [
+    {
+      "name": "official-checkpoint",
+      "outcome": "provenance_validated",
+      "checkpoint_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "parsed_tensors": 54,
+      "raw_excerpt_values": 552,
+      "coverage_complete": false,
+      "missing_elements": 183550528
+    },
+    {
+      "name": "official-model-analytical-fixtures",
+      "outcome": "pass",
+      "scope": "synthetic mathematical self-tests, not official model inference",
+      "tokens": 4,
+      "fp32_sub_lsb_retained": true,
+      "max_absolute_error": 6.520748138427734e-05
+    },
+    {
+      "name": "checkpoint-mutation-payload-corruption",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/payload-corruption.safetensors",
+      "fixture_sha256": "32f1a255f4cd46c1e8584d91190b568974a8f8509d09afc1326e17afba50a7c0",
+      "assertion": "checkpoint SHA-256 mismatch",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-truncated-length",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/truncated-length.safetensors",
+      "fixture_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7",
+      "assertion": "safetensors truncated length",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-header-out-of-bounds",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/header-out-of-bounds.safetensors",
+      "fixture_sha256": "e6ad6c9a3a3b7658c35bacf6553fcb8ffe34387534a648fe18f875b8f7a86ddb",
+      "assertion": "safetensors invalid header length",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-duplicate-tensor",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/duplicate-tensor.safetensors",
+      "fixture_sha256": "d60828e4c6aed4dfcba59ba442aa560ce7ae38f3872ab6dc9afb136402e2d347",
+      "assertion": "duplicate JSON key: x",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-malformed-json",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/malformed-json.safetensors",
+      "fixture_sha256": "b8314cf758b9a79e791b4bdfc0fbfb40d3ef664a16c2d402f10bac671917443c",
+      "assertion": "safetensors malformed header: Expecting value: line 1 column 9 (char 8)",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-unsupported-dtype",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/unsupported-dtype.safetensors",
+      "fixture_sha256": "1b3604a1dfbb5bef684d773ce18d37183771968a69a9c06f97f66189735bc829",
+      "assertion": "safetensors unsupported dtype: x",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-shape-length",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/shape-length.safetensors",
+      "fixture_sha256": "e7d52b0bdf48665fcbe4a4e5e3b8b767355a1c5f343aff629437cd041e538d2d",
+      "assertion": "safetensors payload bounds/length: x",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-overlap",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/overlap.safetensors",
+      "fixture_sha256": "554b014f7b6192b4da8982b3af779f2d2c7a5729abbae9676cc0447afc0a332f",
+      "assertion": "safetensors overlapping or noncontiguous payload: y",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-metadata",
+      "outcome": "intended_rejection",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/metadata.safetensors",
+      "fixture_sha256": "95888b78cc46e249ca41a53466f1be040490a68761678fa5290dd29d07ddee28",
+      "assertion": "safetensors metadata structure",
+      "compilation": "not applicable: checkpoint parser negative test"
+    },
+    {
+      "name": "checkpoint-mutation-tensor-digest",
+      "outcome": "intended_rejection",
+      "assertion": "tensor SHA-256 mismatch: model.layers.23.mlp.down_proj.scales",
+      "fixture_sha256": "32f1a255f4cd46c1e8584d91190b568974a8f8509d09afc1326e17afba50a7c0",
+      "fixture_path": "evidence/verification/sensitivity/checkpoint-fixtures/tensor-digest.safetensors",
+      "fixture_manifest_path": "evidence/verification/sensitivity/checkpoint-fixtures/tensor-digest-manifest.json",
+      "fixture_manifest_sha256": "2c5abc5eacf5b0cda98e0e4274690a57836e5d1552be5a52ca2d9179396c4391",
+      "original_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0"
+    },
+    {
+      "name": "checkpoint-mutation-missing-coverage",
+      "outcome": "intended_rejection",
+      "assertion": "uncovered tensor model.layers.0.self_attn.q_proj.qweight coordinate (64, 0); loaded shape (64, 112)",
+      "source_sha256": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0",
+      "compilation": "not applicable: uncovered checkpoint coordinate"
+    },
+    {
+      "name": "authoritative_inputs",
+      "tensors": 627,
+      "quantized_modules": 168,
+      "raw_slice_values": 552,
+      "outcome": "pass"
+    },
+    {
+      "name": "dequant-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/dequant.sv",
+      "testbench_sha256": "a92ab3bc3ddadbcfaaeb3ae193653cde877cb2ca97208e05e87b4b32b50f7498"
+    },
+    {
+      "name": "dequant-artifacts",
+      "outcome": "pass",
+      "testbench": "evidence/verification/sensitivity/dequant.sv",
+      "testbench_sha256": "a92ab3bc3ddadbcfaaeb3ae193653cde877cb2ca97208e05e87b4b32b50f7498",
+      "executable": "evidence/verification/sensitivity/dequant.vvp",
+      "executable_sha256": "8faa498c48a95c558a1a10e26dc3fa54c55cc884ffcc0ccb8a9f29f014f64d6d"
+    },
+    {
+      "name": "dequant",
+      "comparisons": 1200,
+      "official_comparisons": 192,
+      "outcome": "pass",
+      "stdout": "PASS dequant comparisons=1200 official=192\n/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/dequant.sv:1204: $finish called at 1200 (1s)\n"
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-lane-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-lane.sv",
+      "testbench_sha256": "c70fb5cd7e1c346f007ee68c6bd996d12656794b6a826527ee902129c17e1353"
+    },
+    {
+      "name": "mutation-lane",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "b2ea667c2f9c5ceb6aa36b91db6eceefbebaf8e033df6f1b2ea52f599a6a45e0"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-lane: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-lane.sv:192: STACK write mismatch 33 kind 8 layer 0 row 2 col 1 got 00003b53 expected 8000000000000000200000001fffff74e\n       Time: 4435  Scope: tb\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-bias-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-bias.sv",
+      "testbench_sha256": "9e80924fe0150759bf91d08a121ebfa9f7430293968fddd5a67e506b86fe82ca"
+    },
+    {
+      "name": "mutation-bias",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "134c053113248dff950ab2afae0225dfd9d5f7a76f5b6a5c39b73aa3175f1b8a"
+        }
+      },
+      "assertion": "mutation-bias: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-bias.sv:192: STACK write mismatch 32 kind 8 layer 0 row 2 col 0 got 00002fe8 expected 8000000000000000200000000000018e8\n       Time: 4415  Scope: tb\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-gqa-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-gqa.sv",
+      "testbench_sha256": "ba47782a414e0effd434291cf28fc1d7e111a87950f977e9f97792e4600d7635"
+    },
+    {
+      "name": "mutation-gqa",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "818618a11db04187f785236d0fe10512cf117e88352dd20282d9da56844207d0"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-gqa: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nPROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610\nPROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767\nPROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-gqa.sv:192: STACK write mismatch 108 kind 8 layer 0 row 5 col 4 got ffffd7fb expected 8000000000000000500000004ffffc4af\n       Time: 14665  Scope: tb\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-rope-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-rope.sv",
+      "testbench_sha256": "1b37fc49b6ab017f5147131636d2d5734b1539cfe6cfe4544efdb9b93990c1fa"
+    },
+    {
+      "name": "mutation-rope",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "f41062936c99b6fcaeef33affc76e2634e404b793999c9bdd52ad2da90cf9610"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-rope: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nPROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610\nPROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767\nPROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope.sv:192: STACK write mismatch 65 kind 8 layer 0 row 2 col 1 got fffff74e expected 8000000000000000200000002000013e3\n       Time: 9385  Scope: tb\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-rope-coefficient-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-rope-coefficient.sv",
+      "testbench_sha256": "10e357a881e32045413b82ec5d86c3759c69a6b0f90874201812a4ce7f2d5096"
+    },
+    {
+      "name": "mutation-rope-coefficient",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "271215b023379622c1d430480c13a80db857a5909a2c82424932f5aebf7d82d8"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-rope-coefficient: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nPROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610\nPROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767\nPROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-rope-coefficient.sv:192: STACK write mismatch 64 kind 8 layer 0 row 2 col 0 got ffffec1d expected 8000000000000000200000000000018e8\n       Time: 9355  Scope: tb\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-cache-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-cache.sv",
+      "testbench_sha256": "4441503a5dbd70b9ea53a8a6b3e3dcdcd8f4193d2674598c7277a1a6df614138"
+    },
+    {
+      "name": "mutation-cache",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "bc560a85ee3c12e807387f4465c1a5c5c00b93270d1d80a1ce93c7405631616d"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-cache: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nPROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610\nPROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767\nPROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache.sv:101: CAUSAL future-cache read\n       Time: 12475  Scope: tb.read_memory\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-stale-cache-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-stale-cache.sv",
+      "testbench_sha256": "dd3e1df629cf4bcc8f8920beeca1a0ac5ee93b0cf29aa6a3d24adfcc1ca8c886"
+    },
+    {
+      "name": "mutation-stale-cache",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "c1b1a0764e1658996ab364a2f2b2098fd403fd82726996706b182562c719b756"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-stale-cache: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nPROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610\nPROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767\nPROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920\nPROJECTION_ACK token=0 layer=0 slot=6 accepted=772 cycles=2173\nPROJECTION_ACK token=0 layer=0 slot=9 accepted=1116 cycles=3070\nPROJECTION_ACK token=0 layer=0 slot=10 accepted=1348 cycles=3616\nPROJECTION_ACK token=0 layer=0 slot=12 accepted=1660 cycles=4429\nLAYER_ACK token=0 layer=0 accepted=1708 cycles=4581\nPROJECTION_ACK token=0 layer=1 slot=2 accepted=1904 cycles=5095\nPROJECTION_ACK token=0 layer=1 slot=3 accepted=1970 cycles=5250\nPROJECTION_ACK token=0 layer=1 slot=4 accepted=2036 cycles=5407\nPROJECTION_ACK token=0 layer=1 slot=6 accepted=2448 cycles=6661\nPROJECTION_ACK token=0 layer=1 slot=9 accepted=2792 cycles=7558\nPROJECTION_ACK token=0 layer=1 slot=10 accepted=3024 cycles=8108\nPROJECTION_ACK token=0 layer=1 slot=12 accepted=3336 cycles=8922\nLAYER_ACK token=0 layer=1 accepted=3384 cycles=9073\nTOKEN completed=1 accepted=3992 cycles=11226\nEMBEDDING_ACK token=1 accepted=4024 cycles=11327\nPROJECTION_ACK token=1 layer=0 slot=2 accepted=4220 cycles=11834\nPROJECTION_ACK token=1 layer=0 slot=3 accepted=4286 cycles=11987\nPROJECTION_ACK token=1 layer=0 slot=4 accepted=4352 cycles=12144\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-stale-cache.sv:192: STACK write mismatch 696 kind 8 layer 0 row 5 col 0 got ffffc4af expected 8000000000000000500000000ffffade7\n       Time: 125845  Scope: tb\n "
+    },
+    {
+      "name": "oracle-quality-A-43",
+      "outcome": "prediction",
+      "observed_rtl": false,
+      "final_max_error_q8_lsb": 0.01201948134141162,
+      "logit_max_absolute_error": 0.00011915390568217887,
+      "final_quality": true,
+      "logit_quality": true,
+      "violating_logits": []
+    },
+    {
+      "name": "mutation-layer-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-layer.sv",
+      "testbench_sha256": "8212d0fac69a04fe9cbf0a51017b7da2937ca8318740479b73d9319af47d0794"
+    },
+    {
+      "name": "mutation-layer",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "bf8ae24082602859c58d3bd09bcfc72cf939297c8a967ca9921c23b98c6153b1"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-layer: behavioral failure: EMBEDDING_ACK token=0 accepted=32 cycles=102\nPROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610\nPROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767\nPROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920\nPROJECTION_ACK token=0 layer=0 slot=6 accepted=772 cycles=2173\nPROJECTION_ACK token=0 layer=0 slot=9 accepted=1116 cycles=3070\nPROJECTION_ACK token=0 layer=0 slot=10 accepted=1348 cycles=3616\nPROJECTION_ACK token=0 layer=0 slot=12 accepted=1660 cycles=4429\nLAYER_ACK token=0 layer=0 accepted=1708 cycles=4581\nFATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-layer.sv:192: STACK write mismatch 296 kind 8 layer 0 row 14 col 0 got ffffe1d0 expected 8000000000000000100000000ffffe11d\n       Time: 46445  Scope: tb\n "
+    },
+    {
+      "name": "mutation-dequant32-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-dequant32.sv",
+      "testbench_sha256": "a92ab3bc3ddadbcfaaeb3ae193653cde877cb2ca97208e05e87b4b32b50f7498"
+    },
+    {
+      "name": "mutation-dequant32",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "999d9dcdba852088c9f99b424a9efa9eab3d1b1aed50498b3341b5ba5873293a"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630"
+        }
+      },
+      "assertion": "mutation-dequant32: behavioral failure: FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-dequant32.sv:508: AWQ case 504 expected 4026531840 invalid 0, got   -268435456 0\n       Time: 505  Scope: tb\n "
+    },
+    {
+      "name": "mutation-accumulator64-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-accumulator64.sv",
+      "testbench_sha256": "121fcab4a3136ad9eb375b6d7ea88b4507388abd50e28733ee2cfc028f755f98"
+    },
+    {
+      "name": "mutation-accumulator64",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "3d5be14571f7a73e74577c95b1be6159aeb9e03023f8ba4c56421504a8f4182d"
+        }
+      },
+      "assertion": "mutation-accumulator64: behavioral failure: FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-accumulator64.sv:119: GEMV widened cancellation write 1 got 80000000\n       Time: 685075  Scope: tb\n "
+    },
+    {
+      "name": "mutation-product53-source",
+      "outcome": "retained",
+      "testbench": "evidence/verification/sensitivity/mutation-product53.sv",
+      "testbench_sha256": "121fcab4a3136ad9eb375b6d7ea88b4507388abd50e28733ee2cfc028f755f98"
+    },
+    {
+      "name": "mutation-product53",
+      "outcome": "functional_kill",
+      "source_sha256": {
+        "anvil_q1_00_pkg.sv": {
+          "original": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+          "mutated": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5"
+        },
+        "anvil_q1_awq_dequant.sv": {
+          "original": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+          "mutated": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537"
+        },
+        "anvil_q1_bus_mux.sv": {
+          "original": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+          "mutated": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7"
+        },
+        "anvil_q1_decoder_layer.sv": {
+          "original": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+          "mutated": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b"
+        },
+        "anvil_q1_elementwise.sv": {
+          "original": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+          "mutated": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793"
+        },
+        "anvil_q1_gqa_attention.sv": {
+          "original": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+          "mutated": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb"
+        },
+        "anvil_q1_mem_port.sv": {
+          "original": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+          "mutated": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561"
+        },
+        "anvil_q1_parameters.sv": {
+          "original": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+          "mutated": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9"
+        },
+        "anvil_q1_rmsnorm.sv": {
+          "original": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+          "mutated": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd"
+        },
+        "anvil_q1_rope.sv": {
+          "original": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+          "mutated": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2"
+        },
+        "anvil_q1_swiglu_mlp.sv": {
+          "original": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+          "mutated": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce"
+        },
+        "anvil_q1_top.sv": {
+          "original": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+          "mutated": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef"
+        },
+        "anvil_q1_w4a16_gemv.sv": {
+          "original": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+          "mutated": "09bb865075f8b2dced8e318a6b8b27bff8be40124b696a85f28f513720476ce7"
+        }
+      },
+      "assertion": "mutation-product53: behavioral failure: FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-product53.sv:119: GEMV widened cancellation write 1 got 80000000\n       Time: 685075  Scope: tb\n "
+    },
+    {
+      "name": "check",
+      "outcome": "pass",
+      "scope": "mutations"
+    }
+  ]
+}

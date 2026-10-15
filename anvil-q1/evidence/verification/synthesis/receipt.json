@@ -1,0 +1,539 @@
+{
+  "start_time": "2026-10-15T16:19:09.012313+00:00",
+  "updated_time": "2026-10-15T16:20:37.831505+00:00",
+  "argv": [
+    "/usr/bin/python3",
+    "tests/verify.py",
+    "--check",
+    "synthesis",
+    "--out",
+    "evidence/verification/synthesis"
+  ],
+  "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+  "source_sha256": {
+    "rtl/anvil_q1_00_pkg.sv": "0402e27ea553398cad6464ce72f71c0e4fc47e61c2455f958fb5393a82f70bb5",
+    "rtl/anvil_q1_awq_dequant.sv": "288100e05780872313a9d2f485213959fc5809f56aae4b2c0d22cc61f8c91537",
+    "rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+    "rtl/anvil_q1_decoder_layer.sv": "2fc6e519adde2b04fc2c48e9dbd8968d5d212ff692514f4a822ea15cc4ad5f0b",
+    "rtl/anvil_q1_elementwise.sv": "07c092ddf26bd21053bed2996880bb38cdd22e7d9914fd6bfa3ff2fdf5dbe793",
+    "rtl/anvil_q1_gqa_attention.sv": "d0d1c9ebd91967347d4f4bb7c5f0b6b859a2876f945ac1e53def23617ca12edb",
+    "rtl/anvil_q1_mem_port.sv": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+    "rtl/anvil_q1_parameters.sv": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+    "rtl/anvil_q1_rmsnorm.sv": "f97472325fb321ceb39f7c8c9f44f0a8910b9f4ad4ad26a6b7e4b6ccae0666fd",
+    "rtl/anvil_q1_rope.sv": "ccc1066da5f6ab98d43cb408eda6de9c2c7ffc1598c479f25e4636380f81daf2",
+    "rtl/anvil_q1_swiglu_mlp.sv": "0e944b6e7bbbaaa28394432f449c50a966d6c3245ede6cf2a0ab6da05a20a4ce",
+    "rtl/anvil_q1_top.sv": "b95e15d3f67d336d91a31b9edb467e9fef6d8171faa11dbc8aa760f06c9114ef",
+    "rtl/anvil_q1_w4a16_gemv.sv": "86b9aaf74d99ca167e6370a3952739c1093f87f9eb03a1af623e279ff9ef3630",
+    "tests/occupied_output_refusal.py": "b5713d4dc87d15a4bd100ab2a6e6b7a8b04aed0d34ebcd295e8882375f78d81f",
+    "tests/official_weights.py": "5d83c0de5a843ebccb1fa59a0713a80116414df25ebd7d5a1717ab0ba0d5dffa",
+    "tests/verify.py": "4ed709f96fee2d48e3b73278cd86fbbc2b9642681710da3f0854e5491f3f69c3",
+    "design/ARCHITECTURE.md": "93d7570c25176a47839c326f2df3e6f4b9ed0a1427c131a94648a2f542f85938",
+    "design/OFFICIAL_WEIGHTS_EVALUATION.md": "9b080ce1c27ddce799b46facb72215985a8b5363f23e370393641ee9507b7a79",
+    "design/SPEC.md": "eaf3abf90189bbe132b35e593c089f9e22389ab57129969bcfe7f2d10cce1a9e",
+    "hf_qwen25_05b_awq_spec/config.json": "bd20ae34a91eb38230b870d39f56677d1cda1e8b6688ad627e6efb6ca9f44090",
+    "hf_qwen25_05b_awq_spec/generation_config.json": "091fc0fd8cf33ecb3ded1399ffe17cca80fefdb167ac4c241c1ca42c6bc116e5",
+    "hf_qwen25_05b_awq_spec/official_layer0_awq_slice.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/qwen25_05b_awq_tensors.json": "0060eb7c6278d94b28c0d1d2ac6f9a07de417f0bfedd3c2652eec19e0f3df237",
+    "hf_qwen25_05b_awq_spec/tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "hf_qwen25_05b_awq_spec/official_weights/official_hardware_slices_fp16_awq.json": "c3c1699b8458e9233f63e7f9eb427d3de1426bcd3649127e9295e39b7b23a436",
+    "hf_qwen25_05b_awq_spec/official_weights/official_weights_manifest.json": "8f7565f128ad04ce19fb027c4b30c34ad42a921e201dcf2d454082efa1c920df",
+    "hf_qwen25_05b_awq_spec/official_weights/qwen25_05b_awq_official_slice.safetensors": "f274ceb6f71ac3a9dd0f10ad68007da8dedfd102ac129b12411b26f885a67ef0"
+  },
+  "repair_of": null,
+  "python": {
+    "executable": "/usr/bin/python3",
+    "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+  },
+  "end_time": "2026-10-15T16:20:37.831516+00:00",
+  "exit_code": 0,
+  "process_groups_settled": true,
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "--version"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:09.012501+00:00",
+      "end_time": "2026-10-15T16:19:09.017342+00:00",
+      "elapsed_s": 0.004854664992308244,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/synthesis/python3-version.stdout",
+      "stderr_path": "evidence/verification/synthesis/python3-version.stderr",
+      "tool_path": "/usr/bin/python3",
+      "host_observations_path": "evidence/verification/synthesis/python3-version-host-observations.json",
+      "child_user_cpu_s": 0.000957,
+      "child_system_cpu_s": 0.002871,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "/usr/bin/yosys",
+        "-V"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:09.018538+00:00",
+      "end_time": "2026-10-15T16:19:09.027983+00:00",
+      "elapsed_s": 0.00943310500588268,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/synthesis/yosys-version.stdout",
+      "stderr_path": "evidence/verification/synthesis/yosys-version.stderr",
+      "tool_path": "/usr/bin/yosys",
+      "host_observations_path": "evidence/verification/synthesis/yosys-version-host-observations.json",
+      "child_user_cpu_s": 0.0032400000000000003,
+      "child_system_cpu_s": 0.0054009999999999996,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-T",
+        "-s",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/synthesis/synthesis-A.ys"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:09.029279+00:00",
+      "end_time": "2026-10-15T16:19:30.710600+00:00",
+      "elapsed_s": 21.681344054988585,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/synthesis/synthesis-A.stdout",
+      "stderr_path": "evidence/verification/synthesis/synthesis-A.stderr",
+      "tool_path": "/usr/bin/yosys",
+      "host_observations_path": "evidence/verification/synthesis/synthesis-A-host-observations.json",
+      "child_user_cpu_s": 21.428943999999998,
+      "child_system_cpu_s": 0.24194299999999996,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-T",
+        "-s",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/synthesis/synthesis-B.ys"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:30.874062+00:00",
+      "end_time": "2026-10-15T16:19:52.441720+00:00",
+      "elapsed_s": 21.567678046994843,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/synthesis/synthesis-B.stdout",
+      "stderr_path": "evidence/verification/synthesis/synthesis-B.stderr",
+      "tool_path": "/usr/bin/yosys",
+      "host_observations_path": "evidence/verification/synthesis/synthesis-B-host-observations.json",
+      "child_user_cpu_s": 21.184321000000004,
+      "child_system_cpu_s": 0.374935,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-T",
+        "-s",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/synthesis/synthesis-C.ys"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:19:52.612141+00:00",
+      "end_time": "2026-10-15T16:20:15.742072+00:00",
+      "elapsed_s": 23.12995042699913,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/synthesis/synthesis-C.stdout",
+      "stderr_path": "evidence/verification/synthesis/synthesis-C.stderr",
+      "tool_path": "/usr/bin/yosys",
+      "host_observations_path": "evidence/verification/synthesis/synthesis-C-host-observations.json",
+      "child_user_cpu_s": 22.89521599999999,
+      "child_system_cpu_s": 0.22698200000000002,
+      "process_group_settled": true
+    },
+    {
+      "argv": [
+        "yosys",
+        "-Q",
+        "-T",
+        "-s",
+        "/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/synthesis/synthesis-D.ys"
+      ],
+      "cwd": "/data/sufeng/anvil-q-line5/workspace_phase2/project",
+      "start_time": "2026-10-15T16:20:15.910313+00:00",
+      "end_time": "2026-10-15T16:20:37.662640+00:00",
+      "elapsed_s": 21.75235271800193,
+      "timeout_s": 3600,
+      "timed_out": false,
+      "exit_code": 0,
+      "stdout_path": "evidence/verification/synthesis/synthesis-D.stdout",
+      "stderr_path": "evidence/verification/synthesis/synthesis-D.stderr",
+      "tool_path": "/usr/bin/yosys",
+      "host_observations_path": "evidence/verification/synthesis/synthesis-D-host-observations.json",
+      "child_user_cpu_s": 21.386047000000005,
+      "child_system_cpu_s": 0.35791699999999993,
+      "process_group_settled": true
+    }
+  ],
+  "results": [
+    {
+      "name": "synthesis-A",
+      "outcome": "pass",
+      "sequential_cells": 110,
+      "zero_latches": true,
+      "hierarchy": [
+        "anvil_q1_awq_dequant",
+        "anvil_q1_bus_mux",
+        "anvil_q1_decoder_layer",
+        "anvil_q1_elementwise",
+        "anvil_q1_gqa_attention",
+        "anvil_q1_mem_port",
+        "anvil_q1_rmsnorm",
+        "anvil_q1_rope",
+        "anvil_q1_swiglu_mlp",
+        "anvil_q1_top",
+        "anvil_q1_w4a16_gemv"
+      ],
+      "required_connected_edges": [
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_gqa_attention"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rope"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_swiglu_mlp"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_swiglu_mlp",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_decoder_layer"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_w4a16_gemv",
+          "anvil_q1_awq_dequant"
+        ]
+      ],
+      "concrete_gemvs": [
+        {
+          "path": "anvil_q1_top/decoder/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        },
+        {
+          "path": "anvil_q1_top/decoder/mlp/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        }
+      ]
+    },
+    {
+      "name": "synthesis-B",
+      "outcome": "pass",
+      "sequential_cells": 110,
+      "zero_latches": true,
+      "hierarchy": [
+        "anvil_q1_awq_dequant",
+        "anvil_q1_bus_mux",
+        "anvil_q1_decoder_layer",
+        "anvil_q1_elementwise",
+        "anvil_q1_gqa_attention",
+        "anvil_q1_mem_port",
+        "anvil_q1_rmsnorm",
+        "anvil_q1_rope",
+        "anvil_q1_swiglu_mlp",
+        "anvil_q1_top",
+        "anvil_q1_w4a16_gemv"
+      ],
+      "required_connected_edges": [
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_gqa_attention"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rope"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_swiglu_mlp"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_swiglu_mlp",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_decoder_layer"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_w4a16_gemv",
+          "anvil_q1_awq_dequant"
+        ]
+      ],
+      "concrete_gemvs": [
+        {
+          "path": "anvil_q1_top/decoder/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        },
+        {
+          "path": "anvil_q1_top/decoder/mlp/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        }
+      ]
+    },
+    {
+      "name": "synthesis-C",
+      "outcome": "pass",
+      "sequential_cells": 110,
+      "zero_latches": true,
+      "hierarchy": [
+        "anvil_q1_awq_dequant",
+        "anvil_q1_bus_mux",
+        "anvil_q1_decoder_layer",
+        "anvil_q1_elementwise",
+        "anvil_q1_gqa_attention",
+        "anvil_q1_mem_port",
+        "anvil_q1_rmsnorm",
+        "anvil_q1_rope",
+        "anvil_q1_swiglu_mlp",
+        "anvil_q1_top",
+        "anvil_q1_w4a16_gemv"
+      ],
+      "required_connected_edges": [
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_gqa_attention"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rope"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_swiglu_mlp"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_swiglu_mlp",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_decoder_layer"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_w4a16_gemv",
+          "anvil_q1_awq_dequant"
+        ]
+      ],
+      "concrete_gemvs": [
+        {
+          "path": "anvil_q1_top/decoder/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        },
+        {
+          "path": "anvil_q1_top/decoder/mlp/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        }
+      ]
+    },
+    {
+      "name": "synthesis-D",
+      "outcome": "pass",
+      "sequential_cells": 113,
+      "zero_latches": true,
+      "hierarchy": [
+        "anvil_q1_awq_dequant",
+        "anvil_q1_bus_mux",
+        "anvil_q1_decoder_layer",
+        "anvil_q1_elementwise",
+        "anvil_q1_gqa_attention",
+        "anvil_q1_mem_port",
+        "anvil_q1_rmsnorm",
+        "anvil_q1_rope",
+        "anvil_q1_swiglu_mlp",
+        "anvil_q1_top",
+        "anvil_q1_w4a16_gemv"
+      ],
+      "required_connected_edges": [
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_gqa_attention"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_rope"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_swiglu_mlp"
+        ],
+        [
+          "anvil_q1_decoder_layer",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_swiglu_mlp",
+          "anvil_q1_w4a16_gemv"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_decoder_layer"
+        ],
+        [
+          "anvil_q1_top",
+          "anvil_q1_rmsnorm"
+        ],
+        [
+          "anvil_q1_w4a16_gemv",
+          "anvil_q1_awq_dequant"
+        ]
+      ],
+      "concrete_gemvs": [
+        {
+          "path": "anvil_q1_top/decoder/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        },
+        {
+          "path": "anvil_q1_top/decoder/mlp/gemv",
+          "logical_lanes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "consumed_output_bits_per_lane": 37
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "outcome": "pass",
+      "scope": "synthesis"
+    }
+  ]
+}

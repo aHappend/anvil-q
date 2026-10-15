@@ -1,0 +1,2 @@
+PASS child swiglu_mlp errors=4 requests=3
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/child-errors-swiglu_mlp.sv:77: $finish called at 290 (1s)

@@ -1,0 +1,6 @@
+EMBEDDING_ACK token=0 accepted=32 cycles=102
+PROJECTION_ACK token=0 layer=0 slot=2 accepted=228 cycles=610
+PROJECTION_ACK token=0 layer=0 slot=3 accepted=294 cycles=767
+PROJECTION_ACK token=0 layer=0 slot=4 accepted=360 cycles=920
+FATAL: /data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/sensitivity/mutation-cache.sv:101: CAUSAL future-cache read
+       Time: 12475  Scope: tb.read_memory

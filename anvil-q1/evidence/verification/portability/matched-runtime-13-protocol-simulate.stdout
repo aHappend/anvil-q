@@ -1,0 +1,2 @@
+PASS protocol invalid=4 reset_aborts=3 memory_errors=1
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/portability/matched-runtime-13-protocol.sv:110: $finish called at 440 (1s)

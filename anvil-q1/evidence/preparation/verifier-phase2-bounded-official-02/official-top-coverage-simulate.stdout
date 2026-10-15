@@ -1,0 +1,3 @@
+EXPECTED_COVERAGE_ERROR tensor=model.layers.0.self_attn.q_proj.qweight row=64 col=0
+PASS public writes=1792 transactions=5515 stalls=460 busy_holds=2 bubbles=3
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/preparation/verifier-phase2-bounded-official-02/official-top-coverage.sv:504: $finish called at 170340 (1s)

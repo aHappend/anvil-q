@@ -1,0 +1,2 @@
+PASS child elementwise errors=4 requests=1
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/child-errors-elementwise.sv:77: $finish called at 210 (1s)

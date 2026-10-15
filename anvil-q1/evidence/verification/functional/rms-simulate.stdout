@@ -1,0 +1,2 @@
+PASS public writes=16 transactions=64 stalls=4 busy_holds=2 bubbles=3
+/data/sufeng/anvil-q-line5/workspace_phase2/project/evidence/verification/functional/rms.sv:146: $finish called at 2070 (1s)

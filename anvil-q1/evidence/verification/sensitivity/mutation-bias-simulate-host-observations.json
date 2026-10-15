@@ -1,0 +1,21 @@
+{
+  "start_monotonic_s": 116675.84182474,
+  "events": [
+    {
+      "message": "EMBEDDING_ACK token=0 accepted=32 cycles=102",
+      "stream": "stdout",
+      "host_monotonic_s": 116675.949917372,
+      "elapsed_wall_s": 0.10809263199917041,
+      "child_user_cpu_s": 0.09,
+      "child_system_cpu_s": 0.01,
+      "observation_work_s": 0.0003879730065818876
+    }
+  ],
+  "child_user_cpu_s": 0.151084,
+  "child_system_cpu_s": 0.013007999999999992,
+  "cpu_sample_resolution_s": 0.01,
+  "cpu_sample_errors": [],
+  "observed_child_pids": [],
+  "cpu_scope": "invocation process group; final reaped child usage",
+  "process_group_settled": true
+}
