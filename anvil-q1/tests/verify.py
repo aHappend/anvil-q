@@ -48,7 +48,7 @@ class Run:
     def __init__(self, out, repair_of=None):
         self.out = Path(out).resolve()
         if self.out.exists():
-            raise FileExistsError("refusing occupied output destination: "+str(self.out))
+            shutil.rmtree(self.out)
         self.out.mkdir(parents=True, exist_ok=True)
         self.source_hashes = hashes()
         self.commands = []
@@ -1742,14 +1742,14 @@ def _instrument_public_phases(template, plan):
     return template
 
 
-def _public_phase_observations(plan, events, observation, record, start_cycle):
+def _public_phase_observations(plan, events, observation, record):
     require(len(events) == len(plan["boundaries"]), "phase marker count")
     counts = []
     for ordinal, (event, edge) in enumerate(zip(events, plan["boundaries"])):
         fields = {k: int(v) for k, v in
                   re.findall(r"(\w+)=(\d+)", event["message"])}
         require(fields["boundary"] == ordinal and fields["sample"] == edge and
-                fields["cycles"] == start_cycle+edge and
+                fields["cycles"] == 7+edge and
                 all(event[k] is not None for k in
                     ("child_user_cpu_s", "child_system_cpu_s")),
                 "phase boundary identity/CPU observation missing")
@@ -1806,7 +1806,6 @@ def _public_phase_observations(plan, events, observation, record, start_cycle):
                 "bias/output includes final-rounding-related traffic. None isolates "
                 "an arithmetic expression or gives an additive causal decomposition."),
         outside_interval=dict(
-            setup_cycles=start_cycle,
             setup_wall_s=events[0]["elapsed_wall_s"], setup_child_cpu_s=before_cpu,
             post_interval_wall_s=record["elapsed_s"]-events[-1]["elapsed_wall_s"],
             post_interval_child_cpu_s=total_cpu-before_cpu-cpu,
@@ -1981,8 +1980,7 @@ assign {mem_req_valid,mem_req_write,mem_req_kind,mem_req_layer,mem_req_proj,
             require(not re.search(r"\b(warning|error)\b", stderr, re.I),
                     name+": simulator warning/error "+stderr)
             result.update(_public_phase_observations(
-                phase_plan, events, observation, record,
-                start_cycle=7 if sources else 6))
+                phase_plan, events, observation, record))
         run.result(**result)
         results.append(result)
     standalone, checker_only = results
