@@ -3,8 +3,8 @@
   "target": "Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision)",
   "vulcan_version": "0.8.0",
   "status": "running",
-  "phase": "review_feedback",
-  "step_count": 175,
+  "phase": "verifier",
+  "step_count": 176,
   "started_cst": "2026-10-15 22:30:56 UTC+8",
-  "updated_cst": "2026-10-15 22:41:29 UTC+8"
+  "updated_cst": "2026-10-15 22:42:32 UTC+8"
 }
