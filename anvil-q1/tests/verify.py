@@ -454,6 +454,256 @@ if(mem_req_kind!==8 || mem_req_proj!==0 || mem_req_row!==1 ||
                threshold_q8_lsb=2, outcome="pass", stdout=stdout)
 
 
+def exp_integer(x):
+    if x < -16*65536:
+        return 0
+    if x >= 0:
+        return 1 << 24
+    n, r = divmod(-x*256, 11629080)
+    term = total = 1 << 24
+    for j in range(1,7):
+        numerator = -term*r
+        term = (-1 if numerator<0 else 1)*(abs(numerator)//(j*(1 << 24)))
+        total += term
+    return max(0,total) >> n
+
+
+def integrated(run, label, seed):
+    """Functional vector algebra oracle; no RTL state or timing is modeled."""
+    L,H,I,Q,K,D,G,V,S = MATRIX[label]
+    rng = random.Random(seed)
+    kv = K*D
+    dims = [(H,H),(H,kv),(H,kv),(H,H),(H,I),(H,I),(I,H)]
+    sizes = [V*H,L*7*I*(I//8),L*7*(I//G)*(I//8),
+             L*7*(I//G)*I,L*3*H,L*H,L*H,H,15*I,L*S*kv,L*S*kv,S*D]
+    offsets = [sum(sizes[:i]) for i in range(12)]
+
+    def address(kind,layer,proj,row,col):
+        stride = [row*H+col,
+                  ((layer*7+proj)*I+row)*(I//8)+col,
+                  ((layer*7+proj)*(I//G)+row)*(I//8)+col,
+                  ((layer*7+proj)*(I//G)+row)*I+col,
+                  (layer*3+proj)*H+col,layer*H+col,layer*H+col,col,
+                  row*I+col,(layer*S+row)*kv+col,(layer*S+row)*kv+col,row*D+col][kind]
+        return offsets[kind]+stride
+
+    memory = {}
+    def put(kind,l,p,r,c,v):
+        memory[address(kind,l,p,r,c)] = v & 0xffffffff
+    def get(kind,l,p,r,c):
+        return memory[address(kind,l,p,r,c)]
+    def fixed(kind,l,p,r,c):
+        return sat(half_fixed(get(kind,l,p,r,c)))
+    def half(x):
+        return struct.unpack("<H",struct.pack("<e",x))[0]
+
+    for r in range(V):
+        for c in range(H):
+            put(0,0,0,r,c,half(rng.randint(-256,256)/256))
+    for l in range(L):
+        for p,(ni,no) in enumerate(dims):
+            for r in range(ni):
+                for w in range(no//8):
+                    put(1,l,p,r,w,pack([rng.randint(5,11) for _ in range(8)]))
+            for group in range(ni//G):
+                for w in range(no//8):
+                    put(2,l,p,group,w,pack([rng.randint(7,9) for _ in range(8)]))
+                for c in range(no):
+                    put(3,l,p,group,c,half(rng.choice((1/128,1/64,3/128))))
+            if p<3:
+                for c in range(no):
+                    put(4,l,p,0,c,half(rng.randint(-24,24)/256))
+        for kind in (5,6):
+            for c in range(H):
+                put(kind,l,0,0,c,half(rng.randint(224,288)/256))
+        for pos in range(S):
+            for c in range(kv):
+                for kind in (9,10):
+                    put(kind,l,0,pos,c,0x7000+c)  # poisoned future storage
+    for c in range(H):
+        put(7,0,0,0,c,half(rng.randint(240,272)/256))
+    for pos in range(S):
+        for pair in range(D//2):
+            angle=pos*1000000**(-2*pair/D)
+            for bit,v in enumerate((math.cos(angle),math.sin(angle))):
+                put(11,0,0,pos,2*pair+bit,rounded(int(v*2**52),1 << 22))
+    initial = dict(memory)
+    expected_writes, logits = [], []
+    scratch = {}
+    def write(slot,c,value):
+        scratch[slot,c] = value
+        expected_writes.append((8,0,slot,c,value & 65535))
+    def vector(slot,n):
+        return [scratch[slot,c] for c in range(n)]
+    def norm(l,src,dst,kind):
+        x=vector(src,H)
+        inv=(1 << 32)//math.isqrt((sum(v*v for v in x) << 16)//H+4295)
+        for c,v in enumerate(x):
+            write(dst,c,sat(rounded(v*fixed(kind,l,0,0,c)*inv,1 << 24)))
+    def linear(l,p,src,dst):
+        ni,no=dims[p]
+        x=vector(src,ni)
+        for c in range(no):
+            total=0
+            for k,v in enumerate(x):
+                w,invalid=dequant(get(1,l,p,k,c//8),get(2,l,p,k//G,c//8),
+                                  get(3,l,p,k//G,c),c%8)
+                require(not invalid,"synthetic scale")
+                total+=v*w
+            if p<3:
+                total+=fixed(4,l,p,0,c)*65536
+            write(dst,c,sat(rounded(total,65536)))
+    positions = list(range(S))+[0]
+    for ordinal,pos in enumerate(positions):
+        token=(seed+ordinal)%V
+        for c in range(H):
+            write(0,c,fixed(0,0,0,token,c))
+        for l in range(L):
+            norm(l,0,1,5)
+            for p,src,dst in ((0,1,2),(1,1,3),(2,1,4)):
+                linear(l,p,src,dst)
+            for slot,heads in ((2,Q),(3,K)):
+                for head in range(heads):
+                    for pair in range(D//2):
+                        a,b=head*D+pair,head*D+pair+D//2
+                        x,y=scratch[slot,a],scratch[slot,b]
+                        co=get(11,0,0,pos,2*pair)
+                        si=get(11,0,0,pos,2*pair+1)
+                        co=co if co<2**31 else co-2**32
+                        si=si if si<2**31 else si-2**32
+                        write(slot,a,sat(rounded(x*co-y*si,1 << 30)))
+                        write(slot,b,sat(rounded(y*co+x*si,1 << 30)))
+            for slot,kind in ((3,9),(4,10)):
+                for c in range(kv):
+                    v=scratch[slot,c]
+                    put(kind,l,0,pos,c,v & 65535)
+                    expected_writes.append((kind,l,pos,c,v & 65535))
+            for head in range(Q):
+                kvhead=head//(Q//K)
+                scores=[]
+                for t in range(pos+1):
+                    dot=0
+                    for c in range(D):
+                        k=get(9,l,0,t,kvhead*D+c)
+                        k=k if k<32768 else k-65536
+                        dot+=scratch[2,head*D+c]*k
+                    scores.append(rounded(dot*65536,math.isqrt(D << 32)))
+                es=[exp_integer(s-max(scores)) for s in scores]
+                for c in range(D):
+                    weighted=0
+                    for t,e in enumerate(es):
+                        v=get(10,l,0,t,kvhead*D+c)
+                        weighted+=(v if v<32768 else v-65536)*e
+                    write(5,head*D+c,sat(rounded(weighted,sum(es))))
+            linear(l,3,5,6)
+            for c in range(H):
+                write(7,c,sat(scratch[0,c]+scratch[6,c]))
+            norm(l,7,8,6)
+            linear(l,4,8,9)
+            linear(l,5,8,10)
+            for c in range(I):
+                x=scratch[9,c]
+                e=exp_integer(-abs(x)*256)
+                sigmoid=((1 << 48) if x>=0 else e*(1 << 24))//((1 << 24)+e)
+                silu=sat(rounded(x*sigmoid,1 << 24))
+                write(11,c,sat(rounded(silu*scratch[10,c],256)))
+            linear(l,6,11,12)
+            for c in range(H):
+                write(0,c,sat(scratch[7,c]+scratch[12,c]))
+        norm(0,0,14,7)
+        for r in range(V):
+            logits.append(sat(sum(scratch[14,c]*fixed(0,0,0,r,c) for c in range(H)),32))
+    prefix=f"matrix-{label}-{seed}"
+    memfile=run.out/(prefix+"-memory.hex")
+    memfile.write_text("\n".join(f"@{a:x} {v:08x}" for a,v in sorted(initial.items()))+"\n")
+    expectedfile=run.out/(prefix+"-writes.hex")
+    expectedfile.write_text("\n".join(f"{kind:x}{l:08x}{r:08x}{c:08x}{v:08x}"
+                                     for kind,l,r,c,v in expected_writes)+"\n")
+    logitfile=run.out/(prefix+"-logits.hex")
+    logitfile.write_text("\n".join(f"{v&0xffffffff:08x}" for v in logits)+"\n")
+    addr_expr = [
+        "row*H+col","((layer*7+proj)*I+row)*(I/8)+col",
+        "((layer*7+proj)*(I/G)+row)*(I/8)+col",
+        "((layer*7+proj)*(I/G)+row)*I+col","(layer*3+proj)*H+col",
+        "layer*H+col","layer*H+col","col","row*I+col",
+        "(layer*S+row)*KV+col","(layer*S+row)*KV+col","row*D+col"]
+    cases="\n".join(f"{kind}: addr={offsets[kind]}+{expr};" for kind,expr in enumerate(addr_expr))
+    params=",".join(f".{k}({v})" for k,v in zip(KEYS,MATRIX[label]))
+    # Reuse the independently checked memory transactor, replacing only its
+    # command endpoint with the top's documented token and logit interface.
+    instance=f"""
+reg new_sequence=1; wire logit_valid; reg logit_ready=0;
+wire [31:0] logit_index; wire signed [31:0] logit_data;
+integer observed_logits=0, ordinal=0, output_stalls=0;
+reg was_logit_stalled=0; reg [63:0] held_logit;
+reg [31:0] expected_logits[0:{len(logits)-1}];
+initial $readmemh("{logitfile}",expected_logits);
+anvil_q1_top #({params}) dut(
+"""+BUS_CONNECT.replace(".cmd_valid(cmd_valid),.cmd_ready(cmd_ready)",".token_valid(cmd_valid),.token_ready(cmd_ready)").replace(
+        ".cmd_layer(cmd_layer),.cmd_pos(cmd_pos)",".token_id(cmd_layer),.token_pos(cmd_pos)")+"""
+,.new_sequence(new_sequence),.logit_valid(logit_valid),.logit_ready(logit_ready),
+.logit_index(logit_index),.logit_data(logit_data));
+always @(negedge clk) logit_ready=rst_n && cycles%5!=0;
+always @(posedge clk) if(rst_n) begin
+ if(was_logit_stalled && {logit_valid,logit_index,logit_data} !== {1'b1,held_logit})
+   $fatal(1,"LOGIT stall instability");
+ was_logit_stalled=logit_valid && !logit_ready;
+ held_logit={logit_index,logit_data};
+ if(was_logit_stalled) output_stalls=output_stalls+1;
+ if(logit_valid && logit_ready) begin
+   if(logit_index !== observed_logits%"""+str(V)+""" ||
+      logit_data !== expected_logits[observed_logits])
+     $fatal(1,"LOGIT mismatch index %0d expected %h got %h",
+       observed_logits,expected_logits[observed_logits],logit_data);
+   observed_logits=observed_logits+1;
+ end
+end
+"""
+    reader=f"""
+localparam H={H},I={I},G={G},S={S},KV={kv},D={D};
+reg [31:0] storage[0:{sum(sizes)-1}];
+reg [131:0] expected[0:{len(expected_writes)-1}];
+initial begin $readmemh("{memfile}",storage); $readmemh("{expectedfile}",expected); end
+function automatic integer addr(input [3:0] kind,input [31:0] layer,
+ input [2:0] proj,input [31:0] row,col);
+begin case(kind) {cases}
+default: begin $fatal(1,"invalid kind"); addr=0; end
+endcase end endfunction
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(kind==9 || kind==10) begin
+   if(row>cmd_pos) $fatal(1,"CAUSAL future-cache read");
+ end
+ if(kind==4 && proj>=3) $fatal(1,"FORBIDDEN O/MLP bias");
+ read_memory=storage[addr(kind,mem_req_layer,proj,row,col)];
+ if(^read_memory === 1'bx) $fatal(1,"uninitialized/illegal memory read");
+end endfunction
+"""
+    check=f"""
+if(writes>={len(expected_writes)} ||
+ {{mem_req_kind,mem_req_layer,mem_req_row,mem_req_col,mem_req_wdata}} !== expected[writes])
+ $fatal(1,"STACK write mismatch %0d kind %0d layer %0d row %0d col %0d got %h expected %h",
+ writes,mem_req_kind,mem_req_layer,mem_req_row,mem_req_col,mem_req_wdata,expected[writes]);
+if(mem_req_kind<8 || mem_req_kind>10 || mem_req_proj!==0)
+ $fatal(1,"illegal memory write");
+storage[addr(mem_req_kind,mem_req_layer,mem_req_proj,mem_req_row,mem_req_col)]=mem_req_wdata;
+"""
+    commands="\n".join(f"cmd_layer={(seed+n)%V}; new_sequence={int(pos==0)}; launch(0,{pos});"
+                        for n,pos in enumerate(positions))
+    commands+=f"""
+if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
+ completions!={len(positions)}) $fatal(1,"STACK coverage");
+"""
+    tb=command_tb(instance,reader,check,commands).replace(
+        'if(mem_req_layer!==0) $fatal(1,"unexpected layer");',
+        f'if(mem_req_layer>={L}) $fatal(1,"layer out of range");')
+    stdout=compile_sim(run,tb,prefix,timeout=25)
+    run.result(prefix,configuration=MATRIX[label],seed=seed,tokens=len(positions),
+               compared_writes=len(expected_writes),compared_logits=len(logits),
+               outcome="pass",stdout=stdout)
+
+
 def rope_test(run):
     d, qh, kvh = 4, 4, 2
     positions = (1, 3, 32767)
@@ -591,7 +841,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","rms"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","rms","matrix"), default=None)
+    parser.add_argument("--configuration", choices=tuple(MATRIX))
+    parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.out, args.repair_of)
@@ -611,6 +863,13 @@ def main():
                 gemv_extremes(run)
             if args.probe in (None, "rms"):
                 rms_test(run)
+            if args.probe=="matrix":
+                require(args.configuration is not None,"matrix probe requires configuration")
+                integrated(run,args.configuration,args.seed)
+            elif args.probe is None:
+                for label in MATRIX:
+                    for seed in (17,43,89):
+                        integrated(run,label,seed)
             if args.probe is None:
                 raise AssertionError("INCOMPLETE: mandatory layer-stack matrix, nonlinear quality, "
                                      "protocol/error/reset matrix and behavioral mutations not yet implemented")
