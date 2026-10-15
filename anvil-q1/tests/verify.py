@@ -1485,7 +1485,11 @@ def transactor_cost_discriminator(run):
     write_rows = [v for v in values
                   if v >> 172 & 1 and v >> 171 & 1 and v >> 170 & 1]
     require(len(write_rows) == 112 and
-            [(v >> 35) & ((1 << 132)-1) for v in write_rows] ==
+            [(((v >> 166) & 15) << 128) |
+             (((v >> 134) & 0xffffffff) << 96) |
+             (((v >> 99) & 0xffffffff) << 64) |
+             (((v >> 67) & 0xffffffff) << 32) |
+             ((v >> 35) & 0xffffffff) for v in write_rows] ==
             [(8 << 128) | (2 << 64) | (c << 32) | (expected[224+c] & 0xffffffff)
              for c in range(112)],
             "retained ordered Q writes")
