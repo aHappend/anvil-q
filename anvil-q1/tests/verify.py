@@ -533,7 +533,11 @@ if(writes>={len(writes)} || mem_req_kind!==8 || mem_req_proj!==0 ||
 """
     params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(8),.NUM_Q_HEADS(2),.NUM_KV_HEADS(2),.HEAD_DIM(4),.GROUP_SIZE(8),.MAX_SEQ_LEN(1))"
     instance = "anvil_q1_w4a16_gemv "+params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
-    commands = 'launch(0,0); launch(1,0); launch(4,0);'
+    commands = """
+launch(0,0); if(accepted!=41) $fatal(1,"GEMV Q transaction count");
+launch(1,0); if(accepted!=82) $fatal(1,"GEMV K transaction count");
+launch(4,0); if(accepted!=115) $fatal(1,"GEMV gate forbidden bias/count");
+"""
     commands += f'if(writes!={len(writes)}) $fatal(1,"official outputs missing");'
     stdout = compile_sim(run,command_tb(instance,reader,check,commands),
                          "official-gemv",timeout=30)
@@ -1174,6 +1178,8 @@ wire [31:0] logit_index; wire signed [31:0] logit_data;
 integer observed_logits=0, ordinal=0, output_stalls=0, residual_vectors=0;
 integer progress_kind=0, progress_slot=0, progress_layer=0, progress_token=0;
 integer active_gemv_proj=-1, active_gemv_layer=0;
+integer gemv_reads=0, gemv_zeros=0, gemv_scales=0, gemv_weights=0;
+integer gemv_inputs=0,gemv_outputs=0,gemv_biases=0,gemv_groups=0,gemv_tiles=0;
 reg was_logit_stalled=0; reg [63:0] held_logit;
 reg [31:0] expected_logits[0:{len(logits)-1}];
 initial $readmemh("{logitfile}",expected_logits);
@@ -1258,11 +1264,40 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
     tb=command_tb(instance,reader,check,commands).replace(
         'if(mem_req_layer!==0) $fatal(1,"unexpected layer");',
         f'if(mem_req_layer>={L}) $fatal(1,"layer out of range");')
-    tb=tb.replace("accepted=accepted+1; pending=1;",
-                  'if(!mem_req_write && mem_req_wdata!==0) $fatal(1,"ADDRESS read wdata");\n'
-                  "if(!mem_req_write && mem_req_kind==1) begin\n"
-                  " active_gemv_proj=mem_req_proj; active_gemv_layer=mem_req_layer;\nend\n"
-                  "accepted=accepted+1; pending=1;")
+    tb=tb.replace("accepted=accepted+1; pending=1;", f"""
+if(!mem_req_write && mem_req_wdata!==0) $fatal(1,"ADDRESS read wdata");
+if(!mem_req_write && mem_req_kind==2) begin
+ if(active_gemv_proj==-1) begin
+   active_gemv_proj=mem_req_proj; active_gemv_layer=mem_req_layer;
+   gemv_inputs=(mem_req_proj==6 ? {I} : {H});
+   gemv_outputs=((mem_req_proj==1 || mem_req_proj==2) ? {kv} :
+                  ((mem_req_proj==4 || mem_req_proj==5) ? {I} : {H}));
+   gemv_groups=gemv_inputs/{G}; gemv_tiles=gemv_outputs/8;
+   gemv_zeros=0; gemv_scales=0; gemv_weights=0; gemv_reads=0; gemv_biases=0;
+ end
+ if(mem_req_proj!==active_gemv_proj || mem_req_layer!==active_gemv_layer ||
+    mem_req_row!==(gemv_zeros%gemv_groups) ||
+    mem_req_col!==(gemv_zeros/gemv_groups))
+   $fatal(1,"GEMV group/block metadata reload");
+ gemv_zeros=gemv_zeros+1;
+end
+if(active_gemv_proj!=-1 && !mem_req_write) begin
+ if(mem_req_kind==8) gemv_reads=gemv_reads+1;
+ if(mem_req_kind==1) begin
+   if(mem_req_row!==(gemv_weights%gemv_inputs) ||
+      mem_req_col!==(gemv_weights/gemv_inputs))
+     $fatal(1,"GEMV packed weight reuse/order");
+   gemv_weights=gemv_weights+1;
+ end
+ if(mem_req_kind==3) begin
+   if(mem_req_row!==((gemv_scales/8)%gemv_groups) ||
+      mem_req_col!==((gemv_scales/(8*gemv_groups))*8+gemv_scales%8))
+     $fatal(1,"GEMV scale metadata reload/order");
+   gemv_scales=gemv_scales+1;
+ end
+ if(mem_req_kind==4) gemv_biases=gemv_biases+1;
+end
+accepted=accepted+1; pending=1;""")
     tb=tb.replace("accepted%262144==0","accepted%8192==0")
     tb=tb.replace("writes=writes+1; reply=0;",f"""
      if(mem_req_kind==8 &&
@@ -1295,6 +1330,12 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
    pending=0; responses=responses+1;
    if(progress_kind!=0) begin
      if(progress_kind==1) begin
+       if(gemv_zeros!=gemv_tiles*gemv_groups ||
+          gemv_scales!=8*gemv_tiles*gemv_groups ||
+          gemv_weights!=gemv_tiles*gemv_inputs ||
+          gemv_reads!=gemv_tiles*gemv_inputs ||
+          gemv_biases!=(active_gemv_proj<3 ? gemv_outputs : 0))
+         $fatal(1,"GEMV exact public transaction counts/reuse");
        $display("PROJECTION_ACK token=%0d layer=%0d slot=%0d accepted=%0d cycles=%0d",
          progress_token,progress_layer,progress_slot,accepted,cycles);
        active_gemv_proj=-1;
@@ -2030,9 +2071,9 @@ def main():
             if args.probe == "numerical-audit":
                 for seed in (17,89):
                     integrated(run,"B",seed,audit=True)
-                raise AssertionError("SPECIFICATION CONFLICT: retained nonsaturating B17/B89 "
-                                     "contract witnesses exceed unchanged logit quality limits; "
-                                     "independent replanning required, not an observed RTL mismatch")
+                require(all(r["final_quality"] and r["logit_quality"]
+                            for r in run.results if r["name"].startswith("oracle-quality")),
+                        "replacement equations fail retained B numerical quality witnesses")
             if args.probe == "progress":
                 require(args.configuration=="B" and args.seed==17,
                         "bounded progress diagnostic is B17 only")
