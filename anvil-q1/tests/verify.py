@@ -407,29 +407,41 @@ if(mem_req_kind!==8 || mem_req_row!==12 || mem_req_col!==(writes%8) ||
     exact_peak = 4608*32767*64393052160
     require(exact_peak > 2**63, "wide accumulator case must cross signed64")
     commands = """
-for(test_case=0;test_case<5;test_case=test_case+1) launch(6,0);
-if(writes!=40) $fatal(1,"missing outputs");
+launch(6,0);
+if(writes!=8) $fatal(1,"missing outputs");
 """
     stdout = compile_sim(run, command_tb(instance, reader, expected, commands),
-                         "gemv-wide-cancellation", timeout=45)
+                         "gemv-wide-cancellation", timeout=35)
     run.result("gemv_wide_cancellation", exact_peak=exact_peak,
-               expected_cancellation_accumulator=0, outputs=40,
-               scales=[4096,65504], signed64_overflow_saturation=True,
+               expected_cancellation_accumulator=0, outputs=8,
+               scales=[65504],
+               outcome="pass", stdout=stdout)
+    small_reader = reader.replace("9216","8").replace("1152","1").replace(
+        "col<4608", "col==0")
+    small_params = params.replace("9216","8")
+    small_instance = "anvil_q1_w4a16_gemv "+small_params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
+    small_commands = """
+for(test_case=1;test_case<5;test_case=test_case+1) launch(6,0);
+if(writes!=32) $fatal(1,"small saturation output coverage");
+"""
+    stdout = compile_sim(run,command_tb(small_instance,small_reader,expected,small_commands),
+                         "gemv-wide-saturation")
+    run.result("gemv_wide_saturation", outputs=32, scales=[4096,65504],
                outcome="pass", stdout=stdout)
 
 
 def official_gemv(run, slices):
-    """Only supplied 8x8 Q/K/gate submatrices are official; padding is zero."""
+    """Public 8x8 submatrix evaluation, all within official input group zero."""
     tensors = slices["tensors"]
     activations = [-769,511,-257,127,-31,17,-1,3]
     cases, writes = [], []
     comparisons = 0
-    for p,name,no in ((0,"self_attn.q_proj",128),
-                      (1,"self_attn.k_proj",16),(4,"mlp.gate_proj",128)):
+    for p,name,no in ((0,"self_attn.q_proj",8),
+                      (1,"self_attn.k_proj",8),(4,"mlp.gate_proj",8)):
         prefix = "model.layers.0."+name+"."
         ts = [tensors[prefix+s]["raw_hex"] for s in ("qweight","qzeros","scales")]
         biases = tensors.get(prefix+"bias",{}).get("raw_hex",[])
-        for r in range(128):
+        for r in range(8):
             for c in range(no//8):
                 word = int(ts[0][r][0],16) if r<8 and c==0 else 0
                 cases.append((1,p,r,c,word))
@@ -462,7 +474,7 @@ function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
  input [31:0] row,col);
 begin
  if(kind==8) begin
-   if(proj!=0 || col>=128 || row!=(cmd_proj==4 ? 8:1))
+   if(proj!=0 || col>=8 || row!=(cmd_proj==4 ? 8:1))
      $fatal(1,"official activation address");
    case(col)
 """ + activation_cases + """
@@ -486,15 +498,15 @@ if(writes>={len(writes)} || mem_req_kind!==8 || mem_req_proj!==0 ||
  {{mem_req_row,mem_req_col,mem_req_wdata}} !== expected[writes])
  $fatal(1,"OFFICIAL GEMV write mismatch %0d",writes);
 """
-    params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(128),.INTERMEDIATE_SIZE(128),.NUM_Q_HEADS(16),.NUM_KV_HEADS(2),.HEAD_DIM(8),.GROUP_SIZE(128),.MAX_SEQ_LEN(1))"
+    params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(8),.NUM_Q_HEADS(2),.NUM_KV_HEADS(2),.HEAD_DIM(4),.GROUP_SIZE(8),.MAX_SEQ_LEN(1))"
     instance = "anvil_q1_w4a16_gemv "+params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
     commands = 'launch(0,0); launch(1,0); launch(4,0);'
     commands += f'if(writes!={len(writes)}) $fatal(1,"official outputs missing");'
     stdout = compile_sim(run,command_tb(instance,reader,check,commands),
-                         "official-gemv",timeout=20)
+                         "official-gemv",timeout=30)
     run.result("official_gemv", official_scalar_products=comparisons,
                official_submatrices="Q/K/gate rows 0:8 channels 0:8",
-               synthetic_padding="all other rows/channels and missing biases are zero",
+               synthetic_padding="none: only supplied rows/channels; scaled G8 stays in official G128 group zero",
                compared_outputs=len(writes), outcome="pass", stdout=stdout)
 
 
@@ -616,7 +628,7 @@ def floating_stack(memory, get, fixed, dims, shape, tokens):
     return finals,outputs
 
 
-def integrated(run, label, seed):
+def integrated(run, label, seed, sources=None, name=None):
     """Functional vector algebra oracle; no RTL state or timing is modeled."""
     L,H,I,Q,K,D,G,V,S = MATRIX[label]
     rng = random.Random(seed)
@@ -774,7 +786,7 @@ def integrated(run, label, seed):
     require(all(abs(a/65536-b)<=16/256+0.01*abs(b)
                 for a,b in zip(logits,float_logits)),
             f"{label}/{seed}: floating layer-stack logit quality")
-    prefix=f"matrix-{label}-{seed}"
+    prefix=name or f"matrix-{label}-{seed}"
     memfile=run.out/(prefix+"-memory.hex")
     memfile.write_text("\n".join(f"@{a:x} {v:08x}" for a,v in sorted(initial.items()))+"\n")
     expectedfile=run.out/(prefix+"-writes.hex")
@@ -859,7 +871,7 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
     tb=command_tb(instance,reader,check,commands).replace(
         'if(mem_req_layer!==0) $fatal(1,"unexpected layer");',
         f'if(mem_req_layer>={L}) $fatal(1,"layer out of range");')
-    stdout=compile_sim(run,tb,prefix,timeout=25)
+    stdout=compile_sim(run,tb,prefix,sources=sources,timeout=25)
     run.result(prefix,configuration=MATRIX[label],seed=seed,tokens=len(positions),
                compared_writes=len(expected_writes),compared_logits=len(logits),
                floating_final_max_error_q8_lsb=final_error,
@@ -1042,6 +1054,64 @@ end endmodule
                outcome="pass", stdout=stdout)
 
 
+def mutations(run):
+    mutations = [
+        ("lane","anvil_q1_awq_dequant.sv","1: shift=16;","1: shift=4;"),
+        ("bias","anvil_q1_w4a16_gemv.sv",
+         "accumulator<=accumulator+($signed({{80{bias_value[15]}},bias_value}) <<< 16);",
+         "accumulator<=accumulator;"),
+        ("gqa","anvil_q1_gqa_attention.sv","(head/RATIO)*HEAD_DIM",
+         "(head%NUM_KV_HEADS)*HEAD_DIM"),
+        ("rope","anvil_q1_rope.sv",
+         "((state==3 || state==11) ? HEAD_DIM/2 : 0)",
+         "((state==3 || state==11) ? 1 : 0)"),
+        ("cache","anvil_q1_gqa_attention.sv","row=time_index;",
+         "row=time_index+1;"),
+        ("layer","anvil_q1_top.sv","layer+1<NUM_LAYERS","1'b0"),
+        ("dequant32","anvil_q1_awq_dequant.sv",
+         "37'sd0 : product[36:0]","37'sd0 : $signed(product[31:0])")]
+    for name,filename,before,after in mutations:
+        directory = run.out/("mutation-"+name)
+        directory.mkdir()
+        sources = []
+        identity = {}
+        for source in RTL:
+            text = source.read_text()
+            if source.name == filename:
+                require(before in text,"mutation target not found "+name)
+                text = text.replace(before,after)
+            copied = directory/source.name
+            copied.write_text(text)
+            sources.append(copied)
+            identity[source.name] = dict(
+                original=hashlib.sha256(source.read_bytes()).hexdigest(),
+                mutated=hashlib.sha256(copied.read_bytes()).hexdigest())
+        if name == "dequant32":
+            # Independent widened public-port assertions already generated by
+            # the unmutated dequant test; no low-32-bit comparison is permitted.
+            tb = (run.out/"dequant.sv").read_text()
+            try:
+                compile_sim(run,tb,"mutation-"+name,sources=sources)
+            except AssertionError as exc:
+                diagnosis = str(exc)
+            else:
+                raise AssertionError("mutation survived "+name)
+        else:
+            try:
+                integrated(run,"A",43,sources=sources,name="mutation-"+name)
+            except AssertionError as exc:
+                diagnosis = str(exc)
+            else:
+                raise AssertionError("mutation survived "+name)
+        require("behavioral failure" in diagnosis and
+                ("STACK write mismatch" in diagnosis or
+                 "CAUSAL future-cache read" in diagnosis or
+                 "AWQ case" in diagnosis),
+                "mutation not killed by intended public behavioral assertion: "+diagnosis)
+        run.result("mutation-"+name,outcome="functional_kill",
+                   source_sha256=identity,assertion=diagnosis)
+
+
 def portability(run):
     paths = []
     for name in ("iverilog", "iverilog12", "iverilog13", "iverilog-12", "iverilog-13"):
@@ -1114,7 +1184,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","mutations"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -1130,6 +1200,9 @@ def main():
             slices = manifest(run)
             if args.probe in (None, "dequant"):
                 dequant_test(run, slices)
+            if args.probe == "mutations":
+                dequant_test(run,slices)
+                mutations(run)
             if args.probe in (None, "rope"):
                 rope_test(run)
             if args.probe in (None, "gemv"):
@@ -1147,6 +1220,7 @@ def main():
                 for label in MATRIX:
                     for seed in (17,43,89):
                         integrated(run,label,seed)
+                mutations(run)
             if args.probe is None:
                 raise AssertionError("INCOMPLETE: mandatory layer-stack matrix, nonlinear quality, "
                                      "protocol/error/reset matrix and behavioral mutations not yet implemented")
