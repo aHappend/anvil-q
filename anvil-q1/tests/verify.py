@@ -889,6 +889,44 @@ def progress_probe(run,tb,prefix,sources,seconds):
                full_B_gemv_products=573440,minimum_B_gemv_reads=2293760,
                raw_stdout=str((run.out/(prefix+"-progress.stdout")).relative_to(ROOT)),
                raw_stderr=str((run.out/(prefix+"-progress.stderr")).relative_to(ROOT)))
+    import re
+    samples = [dict(accepted=int(a),writes=int(w),completed_tokens=int(t),cycles=int(c))
+               for a,w,t,c in re.findall(
+                   r"PROGRESS accepted=(\d+) compared_writes=(\d+) completed=(\d+) cycles=(\d+)",
+                   stdout)]
+    acknowledgements = [dict(token=int(t),layer=int(l),slot=int(s),accepted=int(a),cycles=int(c))
+                        for t,l,s,a,c in re.findall(
+                            r"PROJECTION_ACK token=(\d+) layer=(\d+) slot=(\d+) accepted=(\d+) cycles=(\d+)",
+                            stdout)]
+    require(samples,"progress diagnostic observed no public transactions")
+    observed = max([s["accepted"] for s in samples]+[a["accepted"] for a in acknowledgements])
+    elapsed = run.commands[-1]["elapsed_s"]
+    products = 4*2*(112*112*2+112*16*2+112*128*2+128*112)
+    require(products==573440,"B workload arithmetic")
+    report = dict(outcome="bounded_measurement_not_acceptance",
+        samples=samples,projection_final_write_acknowledgements=acknowledgements,
+        observed_public_transactions_at_least=observed,elapsed_wall_s=elapsed,
+        observed_floor_transaction_rate_per_s=observed/elapsed,
+        full_B_gemv_products=products,current_GEMV_reads_per_product=4,
+        full_B_GEMV_read_transactions=4*products,
+        extrapolated_B_GEMV_read_only_s=4*products/(observed/elapsed),
+        extrapolation_is_not_a_completion_bound=True,
+        unchanged_matrix_simulation_timeout_s=25,unchanged_aggregate_budget_s=120,
+        diagnosis="Simulation time and public handshakes advance. The observed run remains in "
+        "the first token and first layer. A GEMV product currently requires independent "
+        "scratch-activation, packed-weight, zero and scale transactions. Request/response "
+        "assertions and comparisons remain enabled; the memory service already returns "
+        "responses at its first legal subsequent edge except deterministic stalls. "
+        "No local checker optimization demonstrated closure of the transaction workload.",
+        designer_handoff="Consider an eight-output AWQ tile retaining eight signed 96-bit "
+        "accumulators, sharing each activation and packed weight across eight channels, "
+        "and caching one group's packed zeros and eight scales. For B's G=16, this "
+        "changes GEMV input reads from 4 per product to (2*16+9)/(8*16), or 183680 "
+        "for the four-token B workload, excluding bias/output/other engines. Preserve "
+        "37-bit weights, signed 53-bit products, all rounding boundaries, single-outstanding "
+        "protocol, errors, hierarchy and public functional results. This is an optimization "
+        "proposal, not an implementation, proven speedup or assurance of the total budget.")
+    (run.out/(prefix+"-execution-cost.json")).write_text(json.dumps(report,indent=2)+"\n")
 
 
 def integrated(run, label, seed, sources=None, name=None, audit=False,
@@ -1120,6 +1158,7 @@ reg new_sequence=1; wire logit_valid; reg logit_ready=0;
 wire [31:0] logit_index; wire signed [31:0] logit_data;
 integer observed_logits=0, ordinal=0, output_stalls=0, residual_vectors=0;
 integer progress_kind=0, progress_slot=0, progress_layer=0, progress_token=0;
+integer active_gemv_proj=-1, active_gemv_layer=0;
 reg was_logit_stalled=0; reg [63:0] held_logit;
 reg [31:0] expected_logits[0:{len(logits)-1}];
 initial $readmemh("{logitfile}",expected_logits);
@@ -1206,18 +1245,24 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
         f'if(mem_req_layer>={L}) $fatal(1,"layer out of range");')
     tb=tb.replace("accepted=accepted+1; pending=1;",
                   'if(!mem_req_write && mem_req_wdata!==0) $fatal(1,"ADDRESS read wdata");\n'
+                  "if(!mem_req_write && mem_req_kind==1) begin\n"
+                  " active_gemv_proj=mem_req_proj; active_gemv_layer=mem_req_layer;\nend\n"
                   "accepted=accepted+1; pending=1;")
     tb=tb.replace("accepted%262144==0","accepted%8192==0")
     tb=tb.replace("writes=writes+1; reply=0;",f"""
      if(mem_req_kind==8 &&
-        ((mem_req_row==2 || mem_req_row==3 || mem_req_row==4 ||
-          mem_req_row==6 || mem_req_row==9 || mem_req_row==10 ||
-          mem_req_row==12) &&
+        (((mem_req_row==2 && active_gemv_proj==0) ||
+          (mem_req_row==3 && active_gemv_proj==1) ||
+          (mem_req_row==4 && active_gemv_proj==2) ||
+          (mem_req_row==6 && active_gemv_proj==3) ||
+          (mem_req_row==9 && active_gemv_proj==4) ||
+          (mem_req_row==10 && active_gemv_proj==5) ||
+          (mem_req_row==12 && active_gemv_proj==6)) &&
          mem_req_col==((mem_req_row==3 || mem_req_row==4) ? {kv-1} :
            ((mem_req_row==9 || mem_req_row==10) ? {I-1} : {H-1}))))
        begin
          progress_kind=1; progress_slot=mem_req_row;
-         progress_layer=(residual_vectors-1)%{L+1}; progress_token=completions;
+         progress_layer=active_gemv_layer; progress_token=completions;
        end
      if(mem_req_kind==8 && mem_req_row==0 && mem_req_col=={H-1})
        begin
@@ -1234,9 +1279,11 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
     tb=tb.replace("pending=0; responses=responses+1;", """
    pending=0; responses=responses+1;
    if(progress_kind!=0) begin
-     if(progress_kind==1)
+     if(progress_kind==1) begin
        $display("PROJECTION_ACK token=%0d layer=%0d slot=%0d accepted=%0d cycles=%0d",
          progress_token,progress_layer,progress_slot,accepted,cycles);
+       active_gemv_proj=-1;
+     end
      else if(progress_kind==2)
        $display("EMBEDDING_ACK token=%0d accepted=%0d cycles=%0d",
          progress_token,accepted,cycles);
