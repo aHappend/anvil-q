@@ -306,6 +306,11 @@ always @(negedge clk) begin
  if(!rst_n) reset_check();
  else begin
  if(^{cmd_ready,done,error,mem_req_valid,mem_rsp_ready} === 1'bx)
+   $fatal(1,"ACTIVE unknown handshake at rising edge");
+ if(mem_req_valid && ^{mem_req_write,mem_req_kind,mem_req_layer,
+    mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} === 1'bx)
+   $fatal(1,"ACTIVE unknown request payload at rising edge");
+ if(^{cmd_ready,done,error,mem_req_valid,mem_rsp_ready} === 1'bx)
    $fatal(1,"ACTIVE unknown handshake");
  if(mem_req_valid && ^{mem_req_write,mem_req_kind,mem_req_layer,
     mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} === 1'bx)
@@ -372,7 +377,7 @@ begin
  repeat(2) @(negedge clk);
 end endtask
 initial begin
- #1; reset_check(); repeat(3) @(negedge clk); rst_n=1;
+ #0; reset_check(); #1; reset_check(); repeat(3) @(negedge clk); rst_n=1;
 """ + commands + """
  if(accepted!=responses || pending || writes==0 || stalls==0 ||
     busy_holds==0 || bubbles==0)
@@ -596,6 +601,124 @@ def exp_integer(x):
         term = (-1 if numerator<0 else 1)*(abs(numerator)//(j*(1 << 24)))
         total += term
     return max(0,total) >> n
+
+
+def conversion_test(run):
+    """Observe ordinary F16 conversion through top embedding writes only."""
+    raw = [sign | exponent*1024 | mantissa
+           for sign in (0,0x8000) for exponent in range(31)
+           for mantissa in (0,1,127,128,129,511,512,1023)]
+    require(len(raw)%8==0,"conversion block size")
+    expected = [sat(half_fixed(h)) for h in raw]
+    vector = run.out/"conversion.hex"
+    vector.write_text("\n".join(f"{h:04x}{v&0xffffffff:08x}"
+                                 for h,v in zip(raw,expected))+"\n")
+    params = dict(zip(KEYS,MATRIX["D"])) | {"VOCAB_SIZE":len(raw)//8}
+    connect = BUS_CONNECT.replace(
+        ".cmd_valid(cmd_valid),.cmd_ready(cmd_ready)",
+        ".token_valid(cmd_valid),.token_ready(cmd_ready)").replace(
+        ".cmd_layer(cmd_layer),.cmd_pos(cmd_pos)",
+        ".token_id(cmd_layer),.token_pos(cmd_pos)")
+    declarations = ",".join(f".{k}({v})" for k,v in params.items())
+    text = "module tb;\n"+BUS_PORTS+f"""
+reg [47:0] vectors[0:{len(raw)-1}];
+integer block_index=0,writes=0,reads=0,cycles=0;
+reg pending=0; reg [31:0] reply=0;
+wire logit_valid; wire [31:0] logit_index; wire signed [31:0] logit_data;
+initial $readmemh("{vector}",vectors);
+anvil_q1_top #({declarations}) dut("""+connect+"""
+,.new_sequence(1'b1),.logit_valid(logit_valid),.logit_ready(1'b0),
+.logit_index(logit_index),.logit_data(logit_data));
+always @(negedge clk) begin
+ mem_req_ready=rst_n; mem_rsp_valid=rst_n && pending; mem_rsp_rdata=reply;
+end
+always @(posedge clk) if(rst_n) begin
+ cycles=cycles+1; if(cycles>100000) $fatal(1,"CONVERSION watchdog");
+ if(done || error || logit_valid) $fatal(1,"CONVERSION unexpected completion");
+ if(mem_req_valid && mem_req_ready) begin
+   if(pending || mem_rsp_ready || mem_req_layer!==0 || mem_req_proj!==0 ||
+      mem_req_col>=8) $fatal(1,"CONVERSION protocol/address");
+   pending=1;
+   if(mem_req_write) begin
+     if(mem_req_kind!==8 || mem_req_row!==0 || mem_req_col!==(writes%8) ||
+        mem_req_wdata!==vectors[writes][31:0])
+       $fatal(1,"F16 conversion mismatch %0d got %h expected %h",
+         writes,mem_req_wdata,vectors[writes][31:0]);
+     writes=writes+1; reply=0;
+   end else begin
+     if(mem_req_kind!==0 || mem_req_row!==block_index ||
+        mem_req_col!==(reads%8) || mem_req_wdata!==0)
+       $fatal(1,"CONVERSION unexpected model request");
+     reply={16'd0,vectors[reads][47:32]}; reads=reads+1;
+   end
+ end else if(mem_rsp_valid && mem_rsp_ready) pending=0;
+end
+initial begin
+ #0; #1; repeat(3) @(negedge clk);
+"""+f"""
+ for(block_index=0;block_index<{len(raw)//8};block_index=block_index+1) begin
+   rst_n=1; cmd_layer=block_index;
+   @(negedge clk); if(cmd_ready!==1) $fatal(1,"CONVERSION not idle");
+   cmd_valid=1; @(negedge clk); cmd_valid=0;
+   while(writes<(block_index+1)*8) @(negedge clk);
+   // Abort after the observed final embedding write, before decoder work.
+   rst_n=0; pending=0; mem_rsp_valid=0; repeat(2) @(negedge clk);
+ end
+ if(writes!={len(raw)} || reads!={len(raw)}) $fatal(1,"CONVERSION coverage");
+ $display("PASS ordinary F16 conversions=%0d",writes); $finish;
+end endmodule
+"""
+    stdout = compile_sim(run,text,"conversion")
+    run.result("ordinary_f16_conversion",outcome="pass",compared=len(raw),
+               exponent_fields=list(range(31)),signed_zeros=True,subnormal_ties=True,
+               saturation=True,scope="embedding writes; reset aborts before decoder",
+               stdout=stdout)
+
+
+def elementwise_boundaries(run):
+    pairs = [(2**31-1,1),(-2**31,-1),(2**31-1,2**31-1),
+             (-2**31,-2**31),(1,-1),(-1,0),(32768,65537),(-32768,65537)]
+    product_pairs = [(2**31-1,2**31-1),(2**31-1,-2**31),
+                     (-2**31,2**31-1),(1,65536),(-1,65536),
+                     (65536,32768),(-65536,32768),(0,-2**31)]
+    expectations = [sat(a+b) for a,b in pairs]*2
+    for a,b in product_pairs:
+        e=exp_integer(-abs(a))
+        sigmoid=((1<<48) if a>=0 else e*(1<<24))//((1<<24)+e)
+        s=sat(rounded(a*sigmoid,1<<24))
+        expectations.append(sat(rounded(s*b,65536)))
+    inputs = pairs+pairs+product_pairs
+    vector = run.out/"elementwise-boundaries.hex"
+    vector.write_text("\n".join(f"{a&0xffffffff:08x}{b&0xffffffff:08x}{v&0xffffffff:08x}"
+                                 for (a,b),v in zip(inputs,expectations))+"\n")
+    reader = f"""
+reg [95:0] vectors[0:23]; initial $readmemh("{vector}",vectors);
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(kind!=8 || proj!=0 || col>=8 ||
+    (row!=(cmd_mode==0 ? 0 : (cmd_mode==1 ? 7 : 9)) &&
+     row!=(cmd_mode==0 ? 6 : (cmd_mode==1 ? 12 : 10))))
+   $fatal(1,"ELEMENTWISE boundary address");
+ read_memory=(row==(cmd_mode==0 ? 0 : (cmd_mode==1 ? 7 : 9))) ?
+   vectors[cmd_mode*8+col][95:64] : vectors[cmd_mode*8+col][63:32];
+end endfunction
+"""
+    check = """
+if(mem_req_kind!==8 || mem_req_proj!==0 || mem_req_col!==(writes%8) ||
+   mem_req_row!==(cmd_mode==0 ? 7 : (cmd_mode==1 ? 0 : 11)) ||
+   mem_req_wdata!==vectors[writes][31:0])
+ $fatal(1,"ELEMENTWISE boundary saturation/rounding mismatch %0d",writes);
+"""
+    instance = "anvil_q1_elementwise #(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(8),.MAX_SEQ_LEN(1)) dut("+BUS_CONNECT+",.cmd_mode(cmd_mode));"
+    commands = """
+cmd_mode=0; launch(0,0); cmd_mode=1; launch(0,0); cmd_mode=2; launch(0,0);
+if(writes!=24) $fatal(1,"ELEMENTWISE boundary coverage");
+"""
+    stdout=compile_sim(run,command_tb(instance,reader,check,commands),"elementwise-boundaries")
+    run.result("elementwise_boundaries",outcome="pass",compared=24,
+               boundaries="signed32 extrema, signed33 residual sums, signed64 products, signed ties",
+               stdout=stdout)
 
 
 def floating_stack(memory, get, fixed, dims, shape, tokens, trace=None):
@@ -904,7 +1027,7 @@ def progress_probe(run,tb,prefix,sources,seconds):
     require(code in (0,124),"progress unexpected tool failure "+stdout+stderr)
     run.result("bounded-progress",outcome="measurement_not_acceptance",exit_code=code,
                budget_s=seconds,completed_simulation=code==0,
-               full_B_gemv_products=573440,minimum_B_gemv_reads=2293760,
+               full_B_gemv_products=573440,minimum_B_gemv_reads=183680,
                raw_stdout=str((run.out/(prefix+"-progress.stdout")).relative_to(ROOT)),
                raw_stderr=str((run.out/(prefix+"-progress.stderr")).relative_to(ROOT)))
     import re
@@ -925,25 +1048,19 @@ def progress_probe(run,tb,prefix,sources,seconds):
         samples=samples,projection_final_write_acknowledgements=acknowledgements,
         observed_public_transactions_at_least=observed,elapsed_wall_s=elapsed,
         observed_floor_transaction_rate_per_s=observed/elapsed,
-        full_B_gemv_products=products,current_GEMV_reads_per_product=4,
-        full_B_GEMV_read_transactions=4*products,
-        extrapolated_B_GEMV_read_only_s=4*products/(observed/elapsed),
+        full_B_gemv_products=products,current_GEMV_input_metadata_reads_per_product=41/128,
+        full_B_GEMV_read_transactions=183680,
+        extrapolated_B_GEMV_read_only_s=183680/(observed/elapsed),
         extrapolation_is_not_a_completion_bound=True,
         unchanged_matrix_simulation_timeout_s=25,unchanged_aggregate_budget_s=120,
-        diagnosis="Simulation time and public handshakes advance. The observed run remains in "
-        "the first token and first layer. A GEMV product currently requires independent "
-        "scratch-activation, packed-weight, zero and scale transactions. Request/response "
-        "assertions and comparisons remain enabled; the memory service already returns "
-        "responses at its first legal subsequent edge except deterministic stalls. "
-        "No local checker optimization demonstrated closure of the transaction workload.",
-        designer_handoff="Consider an eight-output AWQ tile retaining eight signed 96-bit "
-        "accumulators, sharing each activation and packed weight across eight channels, "
-        "and caching one group's packed zeros and eight scales. For B's G=16, this "
-        "changes GEMV input reads from 4 per product to (2*16+9)/(8*16), or 183680 "
-        "for the four-token B workload, excluding bias/output/other engines. Preserve "
-        "37-bit weights, signed 53-bit products, all rounding boundaries, single-outstanding "
-        "protocol, errors, hierarchy and public functional results. This is an optimization "
-        "proposal, not an implementation, proven speedup or assurance of the total budget.")
+        diagnosis="Public request/response observations are retained with exact arithmetic "
+        "comparisons and deterministic stalls. The current eight-output scalar tile "
+        "analytically uses 183680 B input/metadata reads, excluding bias/output/other "
+        "engines. This diagnostic does not establish full workload completion.",
+        designer_handoff="Retain the Q16.16 contract, signed37 dequantization, signed69 "
+        "products, signed128 accumulation, scalar eight-output reuse and all public "
+        "comparisons. A timeout requires another admitted execution-cost repair, not "
+        "larger deadlines or reduced coverage.")
     (run.out/(prefix+"-execution-cost.json")).write_text(json.dumps(report,indent=2)+"\n")
 
 
@@ -1893,7 +2010,10 @@ def mutations(run):
         ("dequant32","anvil_q1_awq_dequant.sv",
          "37'sd0 : product[36:0]","37'sd0 : $signed(product[31:0])"),
         ("accumulator64","anvil_q1_w4a16_gemv.sv",
-         "reg signed [127:0] accumulators [0:7];","reg signed [63:0] accumulators [0:7];")]
+         "reg signed [127:0] accumulators [0:7];","reg signed [63:0] accumulators [0:7];"),
+        ("product53","anvil_q1_w4a16_gemv.sv",
+         "accumulators[lane]+{{59{product[68]}},product}",
+         "accumulators[lane]+{{75{product[52]}},product[52:0]}")]
     for name,filename,before,after in mutations:
         directory = run.out/("mutation-"+name)
         directory.mkdir()
@@ -1910,7 +2030,7 @@ def mutations(run):
             identity[source.name] = dict(
                 original=hashlib.sha256(source.read_bytes()).hexdigest(),
                 mutated=hashlib.sha256(copied.read_bytes()).hexdigest())
-        if name == "accumulator64":
+        if name in ("accumulator64","product53"):
             try:
                 gemv_extremes(run,sources=sources,name="mutation-"+name,small=False)
             except AssertionError as exc:
@@ -2096,6 +2216,8 @@ def main():
             if args.probe in (None, "errors"):
                 child_errors(run)
                 top_errors(run)
+                conversion_test(run)
+                elementwise_boundaries(run)
             if args.probe in (None, "nonlinear"):
                 nonlinear_test(run)
             if args.probe=="matrix":
