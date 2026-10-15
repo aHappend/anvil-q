@@ -418,6 +418,86 @@ if(writes!=40) $fatal(1,"missing outputs");
                outcome="pass", stdout=stdout)
 
 
+def official_gemv(run, slices):
+    """Only supplied 8x8 Q/K/gate submatrices are official; padding is zero."""
+    tensors = slices["tensors"]
+    activations = [-769,511,-257,127,-31,17,-1,3]
+    cases, writes = [], []
+    comparisons = 0
+    for p,name,no in ((0,"self_attn.q_proj",128),
+                      (1,"self_attn.k_proj",16),(4,"mlp.gate_proj",128)):
+        prefix = "model.layers.0."+name+"."
+        ts = [tensors[prefix+s]["raw_hex"] for s in ("qweight","qzeros","scales")]
+        biases = tensors.get(prefix+"bias",{}).get("raw_hex",[])
+        for r in range(128):
+            for c in range(no//8):
+                word = int(ts[0][r][0],16) if r<8 and c==0 else 0
+                cases.append((1,p,r,c,word))
+        for c in range(no//8):
+            cases.append((2,p,0,c,int(ts[1][0][0],16) if c==0 else 0))
+        for c in range(no):
+            scale = int(ts[2][0][c],16) if c<8 else 0
+            cases.append((3,p,0,c,scale))
+            total = 0
+            if c<8:
+                for r,x in enumerate(activations):
+                    value,invalid = dequant(int(ts[0][r][0],16),
+                                            int(ts[1][0][0],16),scale,c)
+                    require(not invalid,"official scale invalid")
+                    total += x*value
+                    comparisons += 1
+            if p<3:
+                bias = int(biases[c],16) if c<len(biases) else 0
+                cases.append((4,p,0,c,bias))
+                total += sat(half_fixed(bias))*65536
+            writes.append((2 if p==0 else 3 if p==1 else 9,c,
+                           sat(rounded(total,65536)) & 65535))
+    reader_cases = "\n".join(
+        f"71'h{((kind<<67)|(p<<64)|(r<<32)|c):018x}:read_memory=32'h{value:08x};"
+        for kind,p,r,c,value in cases)
+    activation_cases = "\n".join(f"{c}:read_memory=32'h{x&65535:08x};"
+                                  for c,x in enumerate(activations))
+    reader = """
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(kind==8) begin
+   if(proj!=0 || col>=128 || row!=(cmd_proj==4 ? 8:1))
+     $fatal(1,"official activation address");
+   case(col)
+""" + activation_cases + """
+   default:read_memory=0;
+   endcase
+ end else case({kind,proj,row,col})
+""" + reader_cases + """
+ default: begin $fatal(1,"official tensor address"); read_memory=0; end
+ endcase
+end endfunction
+"""
+    expected = run.out/"official-gemv-writes.hex"
+    expected.write_text("\n".join(f"{row:08x}{col:08x}{value:08x}"
+                                  for row,col,value in writes)+"\n")
+    reader += f"""
+reg [95:0] expected[0:{len(writes)-1}];
+initial $readmemh("{expected}",expected);
+"""
+    check = f"""
+if(writes>={len(writes)} || mem_req_kind!==8 || mem_req_proj!==0 ||
+ {{mem_req_row,mem_req_col,mem_req_wdata}} !== expected[writes])
+ $fatal(1,"OFFICIAL GEMV write mismatch %0d",writes);
+"""
+    params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(128),.INTERMEDIATE_SIZE(128),.NUM_Q_HEADS(16),.NUM_KV_HEADS(2),.HEAD_DIM(8),.GROUP_SIZE(128),.MAX_SEQ_LEN(1))"
+    instance = "anvil_q1_w4a16_gemv "+params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
+    commands = 'launch(0,0); launch(1,0); launch(4,0);'
+    commands += f'if(writes!={len(writes)}) $fatal(1,"official outputs missing");'
+    stdout = compile_sim(run,command_tb(instance,reader,check,commands),
+                         "official-gemv",timeout=20)
+    run.result("official_gemv", official_scalar_products=comparisons,
+               official_submatrices="Q/K/gate rows 0:8 channels 0:8",
+               synthetic_padding="all other rows/channels and missing biases are zero",
+               compared_outputs=len(writes), outcome="pass", stdout=stdout)
+
+
 def rms_test(run):
     rng = random.Random(43)
     values = [rng.randint(-700,700) for _ in range(16)]
@@ -857,7 +937,7 @@ storage[mem_req_row][mem_req_col]=mem_req_wdata[15:0];
 def protocol_test(run):
     """No model-service arithmetic: errors are injected at the first read."""
     params = ",".join(f".{k}({v})" for k,v in zip(KEYS,MATRIX["D"]))
-    ports = BUS_PORTS.replace("reg rst_n=0", "reg rst_n=0")
+    ports = BUS_PORTS
     connect = BUS_CONNECT.replace(
         ".cmd_valid(cmd_valid),.cmd_ready(cmd_ready)",
         ".token_valid(cmd_valid),.token_ready(cmd_ready)").replace(
@@ -874,7 +954,7 @@ task automatic zero_outputs;
 begin
  if({cmd_ready,done,error,logit_valid,logit_index,logit_data,
      mem_req_valid,mem_rsp_ready,mem_req_write,mem_req_kind,mem_req_layer,
-     mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} !== 204'd0)
+     mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} !== 206'd0)
    $fatal(1,"RESET public output leakage");
 end endtask
 always @(posedge clk) begin
@@ -919,7 +999,6 @@ task automatic reset_now;
 begin
  rst_n=0; #1; zero_outputs(); @(negedge clk);
  mem_rsp_valid=0; mem_rsp_error=0; mem_req_ready=0; rst_n=1;
- if(cmd_ready!==0) begin end
  @(negedge clk); if(cmd_ready!==1) $fatal(1,"reset recovery");
  aborts=aborts+1;
 end endtask
@@ -1035,7 +1114,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","rms","matrix","protocol"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -1055,6 +1134,8 @@ def main():
                 rope_test(run)
             if args.probe in (None, "gemv"):
                 gemv_extremes(run)
+            if args.probe in (None, "official"):
+                official_gemv(run,slices)
             if args.probe in (None, "rms"):
                 rms_test(run)
             if args.probe in (None, "protocol"):
