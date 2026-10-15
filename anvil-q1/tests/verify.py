@@ -2989,8 +2989,8 @@ def mutations(run):
         ("accumulator64","anvil_q1_w4a16_gemv.sv",
          "reg signed [127:0] accumulators [0:7];","reg signed [63:0] accumulators [0:7];"),
         ("product53","anvil_q1_w4a16_gemv.sv",
-         "accumulators[lane]+{{59{product[68]}},product}",
-         "accumulators[lane]+{{75{product[52]}},product[52:0]}")]
+         "accumulators[i]+{{59{product[i][68]}},product[i]}",
+         "accumulators[i]+{{75{product[i][52]}},product[i][52:0]}")]
     for name,filename,before,after in mutations:
         directory = run.out/("mutation-"+name)
         directory.mkdir()
