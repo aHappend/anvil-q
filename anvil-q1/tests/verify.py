@@ -407,7 +407,9 @@ begin
    1: read_memory=col<4608 ? 8388352 : 0;
    2: read_memory=col<4608 ? -8388352 : 0;
    3: read_memory=col==0 ? 256 : 0;
-   default: read_memory=col==0 ? -256 : 0;
+   4: read_memory=col==0 ? -256 : 0;
+   5: read_memory=col==0 ? 32'h7fffffff : 0;
+   default: read_memory=col==0 ? 32'h80000000 : 0;
    endcase
  end
  1: begin
@@ -424,7 +426,7 @@ begin
  end
  3: begin
    if(proj!=6 || row>=1152 || col>=8) $fatal(1,"scale address");
-   read_memory=test_case>=3 ? 16'h6c00 : 16'h7bff;
+   read_memory=(test_case==3 || test_case==4) ? 16'h6c00 : 16'h7bff;
  end
  default: begin $fatal(1,"illegal kind or forbidden down bias"); read_memory=0; end
  endcase
@@ -433,7 +435,8 @@ end endfunction
     expected = """
 expected_value=test_case==0 ?
  ((writes%8)==1 ? 32'h7fffffff : ((writes%8)==2 ? 32'h80000000 : 0)) :
- (test_case==1 ? 32'h7fffffff : (test_case==2 ? 32'h80000000 :
+ ((test_case==1 || test_case==5) ? 32'h7fffffff :
+  ((test_case==2 || test_case==6) ? 32'h80000000 :
   (test_case==3 ? 32'd15728640 : -32'sd15728640)));
 if(mem_req_kind!==8 || mem_req_row!==12 || mem_req_col!==(writes%8) ||
    mem_req_proj!==0 || mem_req_wdata!==expected_value)
@@ -459,12 +462,12 @@ if(writes!=8) $fatal(1,"missing outputs");
     small_params = params.replace("9216","8")
     small_instance = "anvil_q1_w4a16_gemv "+small_params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
     small_commands = """
-for(test_case=1;test_case<5;test_case=test_case+1) launch(6,0);
-if(writes!=32) $fatal(1,"small saturation output coverage");
+for(test_case=1;test_case<7;test_case=test_case+1) launch(6,0);
+if(writes!=48) $fatal(1,"small saturation output coverage");
 """
     stdout = compile_sim(run,command_tb(small_instance,small_reader,expected,small_commands),
-                         "gemv-wide-saturation")
-    run.result("gemv_wide_saturation", outputs=32, scales=[4096,65504],
+                         name+"-saturation",sources=sources)
+    run.result("gemv_wide_saturation", outputs=48, scales=[4096,65504],
                outcome="pass", stdout=stdout)
 
 
@@ -2032,7 +2035,8 @@ def mutations(run):
                 mutated=hashlib.sha256(copied.read_bytes()).hexdigest())
         if name in ("accumulator64","product53"):
             try:
-                gemv_extremes(run,sources=sources,name="mutation-"+name,small=False)
+                gemv_extremes(run,sources=sources,name="mutation-"+name,
+                              small=name=="product53")
             except AssertionError as exc:
                 diagnosis = str(exc)
             else:
