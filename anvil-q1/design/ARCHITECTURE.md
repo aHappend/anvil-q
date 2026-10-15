@@ -46,19 +46,25 @@ never bit-mask wrap. See SPEC for invalid-token versus memory-error recovery.
 Scale S is unsigned 32 bits (max 4292870144), explicitly nonnegative when
 extended into signed multiplication. Delta is signed in [-15,15]. Exact W is
 signed 37-bit Q21.16 despite its historical port name `weight_q16_16`.
-Activation*W is signed 53-bit Q24; GEMV accumulates sign-extended products and
-bias*65536 in signed 96 bits, then round-away shifts 16 and saturates to Q8.8.
-The exact sum stays below 2^84 even for unsigned-32-bit input dimensions.
+Activation*W is signed 69-bit Q32; GEMV accumulates sign-extended products and
+bias*65536 in signed 128 bits, then round-away shifts 16 and saturates to Q16.16.
+The exact sum stays below 2^100 even for unsigned-32-bit input dimensions.
 No signed-32-bit scale/dequant or signed-64-bit GEMV truncation is permitted.
 
-Other reductions use 64 bits with widened scaling temporaries: unsigned 96-bit
-RMS sum<<16 before dividing by H; wide attention score scaling before dividing
-by floor(sqrt(D<<32)). RMS denominator uses floor integer sqrt and reciprocal
-floor(2^32/denom); final triple product rounds by 24. Epsilon is 4295 Q32.32.
-Logits accumulate Q8.8*Q8.8 into signed Q16.16 64-bit sums, then saturate 32.
-RoPE products round by 30; residual additions saturate 16; SiLU rounds by 24
-and its up product by 8. Every signed rounding is nearest, ties away from zero.
-Binary16 ordinary data saturates Q8.8; nonfinite data is an explicit error.
+RMS accumulates squares in unsigned 96 bits and forms
+M=floor((T<<32)/H)+18446744073710 in unsigned 128 bits (Q64.64).
+Its 64-step restoring sqrt gives unsigned-64 Q32.32 D; R=floor(2^64/D)
+uses a numerator wider than 64 bits. The signed-128 triple product rounds by 48.
+Attention dots, scores and weighted sums are signed 96 bits; scores divide
+the Q32 dot directly by floor(sqrt(Dimension<<32)). A signed-97 max difference
+is clipped before narrowing for exp. Weighted division uses the full sum.
+Logits use signed-64 Q32 products and signed-96 sums, then round by 16 and
+saturate signed 32. RoPE has signed-64 products and signed-65 sums, rounded
+by 30; residual additions use signed 33 bits. SiLU rounds by 24 and its up
+product by 16. Every signed rounding is nearest, ties away from zero, with
+129-bit unsigned magnitude/carry temporaries for signed-128 helper inputs.
+Binary16 ordinary data saturates Q16.16; nonfinite data is an explicit error.
+Working scratch/cache use all 32 bits, without a legacy Q8.8 mode.
 Scale conversion has its separate unsaturated rule, including subnormal ties.
 Binary16 exponent arithmetic explicitly zero-extends the five-bit exponent to
 32 bits before applying `$signed` and subtracting the fixed-point exponent
@@ -70,7 +76,8 @@ mantissa widths, subnormal handling, rounding and output widths are unchanged.
 Softmax uses max subtraction and the six-term Q0.24 range-reduced exponential
 defined in SPEC (LN2=11629080, cutoff -16). Context uses the entire nonzero
 exponential sum, signed weighted accumulation and rounded division. SEQ is
-bounded by 16777215, proving weighted sum <2^63. SiLU shares this exponential.
+bounded by 16777215, proving weighted sum magnitude <2^79 and denominator
+<2^48. Zero divisors explicitly fail operations. SiLU shares this exponential.
 RoPE coefficient provisioning uses theta=1000000 and split-half pairing.
 
 ## Parameter matrix and integration
@@ -115,7 +122,7 @@ interval. A nonfinite tensor read is an operation error, not a successful zero.
 | Engine | State transitions and conditions |
 | --- | --- |
 | Memory port | 0 idle -> 1 on issue; 1 -> 2 on request-ready; 2 -> 0 on response-valid. Complete/fault are qualified by state 2 and response-valid. Payload registers load only on issue in state 0. |
-| GEMV | 0 accepts command -> 1, or 19 on invalid command. 1/3/5/7 issue activation/weight/zero/scale requests -> 2/4/6/8 respectively. Each response advances to the next issue, with 8 -> 9. State 9 checks dequant validity and adds one full 53-bit product -> 10. State 10 loops to 1 for another input; after last input selects QKV bias 11, otherwise output 13. Bias 11 request -> 12 response/check/add -> 13. Output 13 request -> 14 acknowledgement; 14 loops output channels or -> 20. 19 -> 20 -> 0. |
+| GEMV | 0 accepts command -> 16 block initialization, or 19 invalid. 16 clears eight accumulators -> 5 zero request -> 6 response -> 7 scale request -> 8 response; repeat scales for lanes 0..7. Then 1 activation request -> 2 response -> 3 weight request -> 4 response -> 9 scalar MAC. State 9 checks validity and loops eight lanes -> 10 input advance. State 10 loops to 1 within group or 5 at group boundary, or selects QKV bias 11 / unbiased output 13 after last input. 11 bias request -> 12 response/check/add -> 13 output request -> 14 acknowledgement. State 14 advances output lane (11 or 13), next block (16), or completion 20. 19 -> 20 -> 0. Completion/fault clears command-local metadata. |
 | RMSNorm | 0 -> 1 or invalid 14. 1 request -> 2 square-sum response; 2 loops components or -> 3 mean/epsilon -> 4 sqrt -> 5 reciprocal/check -> 6. 6 request x -> 7 response -> 8 request gamma -> 9 response/check -> 10 output request -> 11 acknowledgement. 11 loops to 6 or -> 15. 14 -> 15 -> 0. |
 | RoPE | 0 -> 1 or invalid 14. States 1/3/5/7 request x/y/cos/sin -> 2/4/6/8 responses respectively. 8 -> 9 first rotated write -> 10 ack -> 11 second rotated write -> 12 ack. State 12 advances pair, head, then Q-to-K vector, or -> 15. 14 -> 15 -> 0. |
 | Attention | 0 -> 1 or invalid 30. 1 scratch request -> 2 capture -> 3 cache write -> 4 ack; 4 loops components then K-to-V then -> 6. 6 Q request -> 7 response -> 8 K-cache request -> 9 dot response; 9 loops dimensions or -> 10 score -> 11. In max pass 11 updates max and loops time, then starts context pass. In context pass 11 evaluates exponential -> 12 denominator update -> 13 V-cache request -> 14 weighted response -> 15. State 15 loops time or -> 16 context write -> 17 acknowledgement. State 17 advances component, then head with new max pass, or -> 31. 30 -> 31 -> 0. |
@@ -124,10 +131,18 @@ interval. A nonfinite tensor read is an operation error, not a successful zero.
 | Decoder | 0 -> 1 or invalid 4. 1 launches selected step when child ready -> 2; 2 waits done, advances step and returns 1, or -> 3 on last step/error. 4 -> 3 -> 0. Steps 0..10 are input norm,Q,K,V,RoPE,attention,O,residual,post norm,MLP,residual. |
 | Top | 0 accepts valid token -> 1, invalid -> 30. 1 embedding request -> 2 conversion response -> 3 scratch write -> 4 ack. 4 loops components or -> 5 decoder launch -> 6 completion. 6 loops layers or -> 7 final norm launch -> 8 completion -> 9. 9 final-vector request -> 10 response -> 11 tied embedding request -> 12 conversion/MAC response -> 13. 13 loops components or -> 15 logit hold. State 15 advances vocabulary only on logit-ready; last transfer commits and enters 31. 30 -> 31 -> 0. Child error/nonfinite read/response fault enters 31 and invalidates sequence. |
 
-Per output channel GEMV executes exactly input_dimension activation products and
-one bias read only for Q/K/V, with four reads per input plus one output write.
+GEMV uses eight output accumulators and one scalar arithmetic path. Per block,
+each input group fetches one packed zero and eight scales; each input fetches
+one activation and one packed weight for eight successive scalar MACs.
+Exactly N*M products, (M/8)*(2*N+9*(N/G)) input/metadata reads, M optional
+QKV bias reads and M acknowledged writes occur. Group comparison uses division,
+not a power-of-two mask. Metadata is logically invalidated at every command
+boundary, reset and error. Storage is bounded independently of model dimensions.
+For the retained four-token B workload, analytical input/metadata reads become
+183680 rather than 2293760, excluding biases, writes and other engines. This
+does not prove completion within the unchanged execution budgets.
 RMSNorm executes H square terms, one mean, one square root, one reciprocal, then
-H output triple products; square root is a 48-step combinational restoring
+H output triple products; square root is a 64-step combinational restoring
 integer algorithm, without multipliers or data-dependent iteration count.
 RoPE executes (QH+KVH)*D/2 pair rotations, four reads and two writes per pair.
 Attention writes 2*KVH*D cache elements. Per Q head, it computes (position+1)

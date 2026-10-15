@@ -65,28 +65,37 @@ Scratch slots: residual 0, input norm 1, Q 2, K 3, V 4, attention context 5,
 O 6, post-attention residual 7, post norm 8, gate 9, up 10,
 SiLU(gate)*up 11, down 12, reserved 13, final norm 14.
 Tensor nonquantized reads use low-halfword IEEE binary16; scratch/cache use
-low-halfword signed Q8.8; coefficients are signed Q2.30.
+all 32 bits as signed Q16.16; coefficients are signed Q2.30. This intentionally
+replaces the former low-halfword Q8.8 working encoding with no legacy mode.
+Packed model words and binary16 model tensors are not rewritten.
 
 ## Numerical widths and boundaries
 
 | Quantity | Representation / rule |
 | --- | --- |
-| Activations, residuals, biases, cache, norm coefficients | signed 16-bit Q8.8 |
-| Ordinary binary16 conversion | nearest, ties away, saturate Q8.8; nonfinite error |
+| Activations, residuals, biases, cache, norm coefficients | signed 32-bit Q16.16 |
+| Ordinary binary16 conversion | nearest, ties away, saturate signed 32; nonfinite error |
 | Scale conversion S | unsigned 32-bit round-away(scale*65536), max 4292870144 |
 | Dequantized W | signed 37-bit Q21.16, exact delta*S, max magnitude 64393052160 |
-| Activation times W | signed 53-bit, 24 fractional bits |
-| GEMV accumulation | signed 96-bit; sum bound below 2^84 including bias |
-| Bias contribution | Q8.8 integer multiplied by 65536 into Q24 sum |
-| GEMV output | round-away by 16 bits, saturate Q8.8 |
-| Logits | signed 64-bit Q16.16 sum, bound H*2^30 < 2^62; saturate signed 32 |
-| RMS square sum | unsigned 64 bits; unsigned 96-bit shifted mean temporary |
-| RMS mean | floor((sum<<16)/H) unsigned Q32.32 plus epsilon 4295 |
-| RMS denominator / reciprocal | floor integer sqrt, then floor(2^32/denom), Q16.16 |
-| RMS output | round-away(x*gamma*reciprocal / 2^24), saturate Q8.8 |
-| RoPE rotation | signed wide products with Q2.30, round-away by 30, saturate |
-| Attention weighted sum | signed 64 bits, bound SEQ*32768*2^24 < 2^63 |
-| Residual / elementwise results | saturate, never wrap |
+| Activation times W | explicitly signed 69-bit product, 32 fractional bits |
+| GEMV accumulation | signed 128-bit; combined sum magnitude <2^100 |
+| Bias contribution | converted Q16.16 integer multiplied by 65536 into Q32 sum |
+| GEMV output | round-away by 16 bits, saturate signed-32 Q16.16 |
+| Logits | signed-64 products, signed-96 Q32 sum, magnitude <2^94; round by 16, saturate signed 32 |
+| RMS square sum T | unsigned 96 bits, T<2^94 |
+| RMS mean M | floor((T<<32)/H)+18446744073710, unsigned-128 Q64.64 |
+| RMS denominator D / reciprocal R | floor_integer_sqrt(M), then floor(2^64/D), unsigned-64 Q32.32 |
+| RMS output | signed-128 x*gamma*R, round-away by 48, saturate signed-32 Q16.16 |
+| RoPE rotation | signed-64 products, signed-65 sums/differences; round by 30, saturate signed 32 |
+| Attention dots / scores | signed-96 Q32 dot; round-away(dot/Dscale), signed-96 Q16.16 score |
+| Attention weighted sum | signed 96 bits, magnitude <2^79; complete rounded division, saturate signed 32 |
+| Residual / elementwise results | signed-33 addition / signed-64 multiplication; round product by 16, saturate signed 32 |
+
+Rounding helpers use unsigned magnitude/sign arithmetic and a carry bit beyond
+their signed-128 operands. Saturation occurs only at declared output boundaries,
+never on linear products or partial reductions. Division by zero is an explicit
+operation error; callers guard denominators before using division results.
+The working range is [-32768,32768-2^-16].
 
 Finite nonnegative AWQ scales are never rejected or saturated for old signed
 32-bit limits. Negative zero is zero. Negative nonzero scales and nonfinite
@@ -110,13 +119,20 @@ Both packed words preserve the I32 bit pattern. The equation is
 For scale 0x6c00 and delta 15 the full result is 4026531840; for 0x7bff
 and delta 15 it is 64393052160. Negative deltas produce exact negatives.
 
-RMS epsilon is 1e-6 with fixed integer 4295 as above. Qwen RoPE pairs i and
+RMS epsilon is 1e-6 with fixed integer round(1e-6*2^64)=18446744073710.
+The mean uses a widened unsigned temporary before shifting; the square root is
+a bounded 64-iteration restoring algorithm. D>0 by epsilon; zero is nonetheless
+an explicit error. R<2^43 and the output triple product has magnitude <2^105.
+Qwen RoPE pairs i and
 i+HEAD_DIM/2, theta=1000000. The external memory provisions independent rounded
 Q2.30 cosine/sine coefficients for position and pair.
 GQA maps h to floor(h/(QH/KVH)); attention includes positions zero through
 current position only. Scale is floor(sqrt(HEAD_DIM<<32)) in Q16.16.
-Score division uses nearest, ties away from zero on a signed 96-bit scaled
-numerator. Softmax is max-subtracted, with normalized full exponential sum.
+Score division uses nearest, ties away from zero on the complete dot integer,
+without an extra left shift. Max subtraction uses signed 97 bits and clips
+against the -16 cutoff before narrowing for the exponential. Softmax is
+max-subtracted, with normalized full exponential sum. Its unsigned-64
+denominator is <2^48 and must be nonzero.
 
 The shared exponential for nonpositive Q16.16 x returns zero below -16;
 otherwise u=(-x)<<8 is Q0.24, n=floor(u/11629080), r=u-n*11629080.
@@ -124,14 +140,34 @@ Starting term=2^24, evaluate six terms
 `term_j=trunc_zero(-term_(j-1)*r/(j*2^24))`; shift their nonnegative sum
 right by n. SiLU uses this E at -abs(x): sigmoid is floor(2^48/(2^24+E))
 for nonnegative x, floor((E<<24)/(2^24+E)) otherwise. Round x*sigmoid
-by 24 bits, then round SiLU*up by 8 bits, saturating each Q8.8 boundary.
+by 24 bits, then round SiLU*up by 16 bits, saturating each Q16.16 boundary.
+The SiLU exponential receives -abs(x) directly in Q16.16.
+
+## Bounded eight-output GEMV
+
+Process consecutive output blocks of eight with one reused scalar dequantizer
+and multiplier, not eight parallel arithmetic lanes. Each block clears eight
+signed-128 accumulators. At each input group load one packed zero word and
+eight binary16 scales; retain only this group's metadata. For each increasing
+input index read one activation and one packed weight, then perform eight
+scalar lane MACs without intermediate rounding. Reload metadata on arithmetic
+group transitions, including G=3. After all inputs, read/add one bias per lane
+only for Q/K/V and write eight final values in channel order, waiting for each
+acknowledgement. O and all MLP projections never request bias.
+
+All tile state is command-local and invalid on reset, completion, rejection or
+fault. For N inputs and M outputs there are exactly N*M products, M writes and
+(M/8)*(2*N+9*(N/G)) reads, plus M reads for biased projections. Eight
+accumulators, eight scales and scalar holds are independent of model/context
+dimensions. The four-token B analytical input/metadata count is 183680 versus
+2293760 previously; this is not a measured speedup or completion-time bound.
 
 ## Parameter boundary matrix
 
 All dimensions are positive unsigned-32-bit quantities; all address products
 must fit unsigned 32 bits using widened checks. H=QH*D; QH divisible by KVH;
 D even; H and I divisible by G; H,I,KVH*D divisible by eight; bits=4.
-SEQ <= 16777215 protects the signed attention accumulation bound. Unsupported
+SEQ <= 16777215 retains the admitted softmax denominator bound. Unsupported
 values require an explicit startup diagnostic before command acceptance.
 
 | Configuration | L,H,I,QH,KVH,D,G,V,SEQ | Intended boundary |
