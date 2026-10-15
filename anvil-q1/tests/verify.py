@@ -376,7 +376,8 @@ initial begin
  if(accepted!=responses || pending || writes==0 || stalls==0 ||
     busy_holds==0 || bubbles==0)
    $fatal(1,"COVERAGE missing transfer/write/stall");
- $display("PASS public writes=%0d transactions=%0d stalls=%0d",writes,accepted,stalls);
+ $display("PASS public writes=%0d transactions=%0d stalls=%0d busy_holds=%0d bubbles=%0d",
+   writes,accepted,stalls,busy_holds,bubbles);
  $finish;
 end endmodule
 """

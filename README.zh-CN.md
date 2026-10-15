@@ -38,7 +38,7 @@
 | **7:1 分组查询注意力（`self_attn` GQA）** | `num_attention_heads = 14`，`num_key_value_heads = 2`（`7:1` GQA），`q_proj [896->896]`、`k/v_proj [896->128]` 含 `F16` 偏置，`o_proj [896->896]` 无偏置 | 带偏置 QKV AWQ 投影、2 头 KV Cache 存储与 7 倍分组广播、因果掩码缩放点积注意力 |
 | **SwiGLU 前馈网络（`mlp`）** | `intermediate_size = 4864`（打包维度 `[896, 608]`），`gate_proj`、`up_proj`、`silu(gate) * up`、`down_proj [4864->896]`（无偏置） | 38 分组（`4864 / 128`）AWQ W4A16 双路门控投影、SiLU 激活与残差归约 |
 
-- **当前工程状态**：`In Progress — Step 6 (verifier) by Vulcan 0.8`（最近更新：`2026-10-15 19:15:11 UTC+8`）
+- **当前工程状态**：`In Progress — Step 6 (verifier) by Vulcan 0.8`（最近更新：`2026-10-15 19:16:14 UTC+8`）
 - **官方配置与第 0 层真实 AWQ 切片快照**：[`anvil-q1/hf_qwen25_05b_awq_spec/`](anvil-q1/hf_qwen25_05b_awq_spec/)
 - **交付包目录**：[`anvil-q1/`](anvil-q1/)（`rtl/`、`design/`、`tests/`）
 
