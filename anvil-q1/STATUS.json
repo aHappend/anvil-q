@@ -1,8 +1,44 @@
 {
+  "family": "Anvil",
+  "series": "Anvil-Q",
   "chip": "Anvil-Q1",
-  "target": "Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision)",
+  "target_model": "Alibaba Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision Edition)",
   "vulcan_version": "0.8.0",
-  "status": "running",
+  "github_repo": "https://github.com/aHappend/anvil-q",
+  "status": "settled",
+  "native_disposition": {
+    "workflow_phase": "blocked",
+    "feedback": "[{\"cause\": \"environment\", \"detail\": \"Executable unavailable: pdffonts\"}, {\"cause\": \"environment\", \"detail\": \"Executable unavailable: pdfinfo\"}, {\"cause\": \"environment\", \"detail\": \"Executable unavailable: pdftoppm\"}, {\"cause\": \"environment\", \"detail\": \"Executable unavailable: pdftotext\"}, {\"cause\": \"environment\", \"detail\": \"Executable unavailable: xelatex\"}]",
+    "run_status": "ready",
+    "closeout_status": null,
+    "driver_steps": [
+      {
+        "operation": "init",
+        "exit_code": 0
+      },
+      {
+        "operation": "run",
+        "exit_code": 2
+      }
+    ],
+    "driver_steps_ok": false,
+    "state_error": null,
+    "repairs_used": 0,
+    "designer_attempts": 0,
+    "model_call_count": 4,
+    "all_process_scopes_settled": false,
+    "reviewer_decisions": [],
+    "native_engineering_accepted": false,
+    "candidate_present": false,
+    "candidate_invalid_reason": null,
+    "final_candidate": null,
+    "initial_unrepaired_candidate": null,
+    "initial_candidate_invalid_reason": null,
+    "scientific_acceptance": false
+  },
+  "started_utc": "2026-10-15T10:38:54.451871+00:00",
+  "finished_utc": "2026-10-15T10:38:57.224408+00:00",
   "started_cst": "2026-10-15 18:38:54 UTC+8",
-  "updated_cst": "2026-10-15 18:38:54 UTC+8"
+  "finished_cst": "2026-10-15 18:38:57 UTC+8",
+  "elapsed_seconds": 0.05
 }
