@@ -1,11 +1,15 @@
-# Vulcan product report
+# Anvil-Q1 Phase 2 product report
 
 [Product report (PDF)](REPORT.pdf) | [LaTeX source](REPORT.tex)
 
-[English engineering journey](.vulcan/engineering/JOURNEY.md) | [Chinese companion](.vulcan/engineering/JOURNEY.zh-CN.md)
+This PDF is the independently reviewed Phase 2 report. It describes the accepted
+official-weight slice experiments and their explicit scope; it is not a claim
+that full-model inference or physical silicon signoff has been completed.
 
-[Source and evidence manifest](.vulcan/engineering/reports/report-0001/manifest.json)
+The repaired architecture drawing was rendered and reviewed again across all
+eight pages. Approved report content, RTL and verification sources were unchanged.
 
-[Rendered-PDF review](.vulcan/engineering/reports/report-0001/role-render-01-reviewer/response.json) | [Page-access and artifact binding](.vulcan/engineering/reports/report-0001/render-approval.json)
-
-Historical generation attempt: `report-0001`; this is not a hardware version number. The report reflects the independently accepted source/check identity recorded in its manifest. Later source changes require revalidation. Original failures and previous report attempts remain retained.
+Internal approval records and original failed report attempts remain retained in
+the engineering workspace, not in this public result package. Relative internal
+evidence references in the PDF describe provenance rather than public download
+links. A report-generation attempt is not a hardware revision.
