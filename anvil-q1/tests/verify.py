@@ -1119,6 +1119,7 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
 reg new_sequence=1; wire logit_valid; reg logit_ready=0;
 wire [31:0] logit_index; wire signed [31:0] logit_data;
 integer observed_logits=0, ordinal=0, output_stalls=0, residual_vectors=0;
+integer progress_kind=0, progress_slot=0, progress_layer=0, progress_token=0;
 reg was_logit_stalled=0; reg [63:0] held_logit;
 reg [31:0] expected_logits[0:{len(logits)-1}];
 initial $readmemh("{logitfile}",expected_logits);
@@ -1215,24 +1216,38 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
          mem_req_col==((mem_req_row==3 || mem_req_row==4) ? {kv-1} :
            ((mem_req_row==9 || mem_req_row==10) ? {I-1} : {H-1}))))
        begin
-         $display("PROJECTION token=%0d layer=%0d slot=%0d accepted=%0d cycles=%0d",
-           completions,(residual_vectors-1)%{L+1},mem_req_row,accepted,cycles);
-         $fflush();
+         progress_kind=1; progress_slot=mem_req_row;
+         progress_layer=(residual_vectors-1)%{L+1}; progress_token=completions;
        end
      if(mem_req_kind==8 && mem_req_row==0 && mem_req_col=={H-1})
        begin
          if(residual_vectors%{L+1}==0)
-           $display("EMBEDDING token=%0d accepted=%0d cycles=%0d",completions,accepted,cycles);
+           progress_kind=2;
          else
-           $display("LAYER token=%0d completed_layer=%0d accepted=%0d cycles=%0d",
-             completions,residual_vectors%{L+1}-1,accepted,cycles);
-         residual_vectors=residual_vectors+1;
-         $fflush();
+           progress_kind=3;
+         progress_layer=residual_vectors%{L+1}-1; progress_token=completions;
        end
      writes=writes+1; reply=0;""")
     tb=tb.replace("completions=completions+1;",
                   'completions=completions+1;\n'
                   '$display("TOKEN completed=%0d accepted=%0d cycles=%0d",completions,accepted,cycles);')
+    tb=tb.replace("pending=0; responses=responses+1;", """
+   pending=0; responses=responses+1;
+   if(progress_kind!=0) begin
+     if(progress_kind==1)
+       $display("PROJECTION_ACK token=%0d layer=%0d slot=%0d accepted=%0d cycles=%0d",
+         progress_token,progress_layer,progress_slot,accepted,cycles);
+     else if(progress_kind==2)
+       $display("EMBEDDING_ACK token=%0d accepted=%0d cycles=%0d",
+         progress_token,accepted,cycles);
+     else
+       $display("LAYER_ACK token=%0d layer=%0d accepted=%0d cycles=%0d",
+         progress_token,progress_layer,accepted,cycles);
+     if(progress_kind==2 || progress_kind==3) residual_vectors=residual_vectors+1;
+     progress_kind=0;
+     $fflush();
+   end
+""")
     if progress_seconds is not None:
         progress_probe(run,tb,prefix,sources,progress_seconds)
         return
