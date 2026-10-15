@@ -289,7 +289,7 @@ def command_tb(instance, reader, expected, commands):
     return """module tb;
 """ + BUS_PORTS + instance + """
 integer cycles=0, writes=0, accepted=0, pending=0, delay_count=0;
-integer stalls=0, responses=0, completions=0;
+integer stalls=0, responses=0, completions=0, busy_holds=0, bubbles=0;
 reg [136:0] held; reg was_stalled=0;
 reg [31:0] reply; reg [31:0] expected_value;
 """ + reader + """
@@ -304,7 +304,7 @@ end endtask
 always @(negedge clk) begin
  if(!rst_n) reset_check();
  else begin
-   mem_req_ready = cycles%4 != 0;
+   mem_req_ready = cycles%31 != 0;
    mem_rsp_valid = pending && delay_count==0;
    mem_rsp_rdata = reply;
  end
@@ -324,7 +324,7 @@ always @(posedge clk) begin
  if(mem_req_valid && mem_req_ready) begin
    if(pending || mem_rsp_ready) $fatal(1,"OUTSTANDING or request/response overlap");
    if(mem_req_layer!==0) $fatal(1,"unexpected layer");
-   accepted=accepted+1; pending=1; delay_count=2+cycles%3;
+   accepted=accepted+1; pending=1; delay_count=(accepted%127==0 ? 2 : 0);
    if(mem_req_write) begin
 """ + expected + """
      writes=writes+1; reply=0;
@@ -340,20 +340,31 @@ always @(posedge clk) begin
    if(error !== 0 || pending) $fatal(1,"unexpected completion error/outstanding");
    completions=completions+1;
  end
+ if(cmd_valid && !cmd_ready && !done) busy_holds=busy_holds+1;
+ if(!cmd_valid && cmd_ready) begin
+   if(mem_req_valid || done || error) $fatal(1,"IDLE bubble produced work");
+   bubbles=bubbles+1;
+ end
  end
 end
 task automatic launch(input integer projection, input integer position);
 begin
  @(negedge clk); while(cmd_ready !== 1) @(negedge clk);
  cmd_proj=projection; cmd_pos=position; cmd_valid=1;
- @(negedge clk); cmd_valid=0;
+ repeat(3) begin
+   @(negedge clk);
+   if(cmd_ready!==0) $fatal(1,"BUSY accepted held valid");
+ end
+ cmd_valid=0;
  while(done !== 1) @(negedge clk);
  @(negedge clk);
+ repeat(2) @(negedge clk);
 end endtask
 initial begin
  #1; reset_check(); repeat(3) @(negedge clk); rst_n=1;
 """ + commands + """
- if(accepted!=responses || pending || writes==0 || stalls==0)
+ if(accepted!=responses || pending || writes==0 || stalls==0 ||
+    busy_holds==0 || bubbles==0)
    $fatal(1,"COVERAGE missing transfer/write/stall");
  $display("PASS public writes=%0d transactions=%0d stalls=%0d",writes,accepted,stalls);
  $finish;
@@ -789,12 +800,10 @@ def integrated(run, label, seed, sources=None, name=None):
     final_error = max(abs(a-b*256) for actual,reference in zip(final_vectors,float_final)
                       for a,b in zip(actual,reference))
     logit_error = max(abs(a/65536-b) for a,b in zip(logits,float_logits))
-    require(all(abs(a-b*256)<=16 for actual,reference in zip(final_vectors,float_final)
-                for a,b in zip(actual,reference)),
-            f"{label}/{seed}: floating layer-stack final activation exceeds 16 LSB")
-    require(all(abs(a/65536-b)<=16/256+0.01*abs(b)
-                for a,b in zip(logits,float_logits)),
-            f"{label}/{seed}: floating layer-stack logit quality")
+    final_quality = all(abs(a-b*256)<=16 for actual,reference in zip(final_vectors,float_final)
+                        for a,b in zip(actual,reference))
+    logit_quality = all(abs(a/65536-b)<=16/256+0.01*abs(b)
+                        for a,b in zip(logits,float_logits))
     prefix=name or f"matrix-{label}-{seed}"
     memfile=run.out/(prefix+"-memory.hex")
     memfile.write_text("\n".join(f"@{a:x} {v:08x}" for a,v in sorted(initial.items()))+"\n")
@@ -848,7 +857,28 @@ reg [131:0] expected[0:{len(expected_writes)-1}];
 initial begin $readmemh("{memfile}",storage); $readmemh("{expectedfile}",expected); end
 function automatic integer addr(input [3:0] kind,input [31:0] layer,
  input [2:0] proj,input [31:0] row,col);
-begin case(kind) {cases}
+integer ni,no;
+begin
+ ni=(proj==6 ? I : H);
+ no=(proj==1 || proj==2 ? KV : (proj==4 || proj==5 ? I : H));
+ if(kind>11 || layer>={L}) $fatal(1,"ADDRESS kind/layer");
+ if(kind==0 && (layer!=0 || proj!=0 || row>={V} || col>=H))
+   $fatal(1,"ADDRESS embedding");
+ if(kind>=1 && kind<=3 && (proj>6 ||
+    row>=(kind==1 ? ni : ni/G) || col>=(kind==3 ? no : no/8)))
+   $fatal(1,"ADDRESS AWQ");
+ if(kind==4 && (proj>2 || row!=0 || col>=no))
+   $fatal(1,"ADDRESS QKV bias");
+ if(kind>=5 && kind<=7 && (proj!=0 || row!=0 || col>=H ||
+    (kind==7 && layer!=0))) $fatal(1,"ADDRESS norm");
+ if(kind==8 && (layer!=0 || proj!=0 || row>=15 || row==13 ||
+    col>=((row==3 || row==4) ? KV : ((row>=9 && row<=11) ? I : H))))
+   $fatal(1,"ADDRESS scratch");
+ if((kind==9 || kind==10) && (proj!=0 || row>=S || col>=KV))
+   $fatal(1,"ADDRESS cache");
+ if(kind==11 && (layer!=0 || proj!=0 || row>=S || col>=D))
+   $fatal(1,"ADDRESS RoPE");
+ case(kind) {cases}
 default: begin $fatal(1,"invalid kind"); addr=0; end
 endcase end endfunction
 function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
@@ -880,12 +910,18 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
     tb=command_tb(instance,reader,check,commands).replace(
         'if(mem_req_layer!==0) $fatal(1,"unexpected layer");',
         f'if(mem_req_layer>={L}) $fatal(1,"layer out of range");')
+    tb=tb.replace("accepted=accepted+1; pending=1;",
+                  'if(!mem_req_write && mem_req_wdata!==0) $fatal(1,"ADDRESS read wdata");\n'
+                  "accepted=accepted+1; pending=1;")
     stdout=compile_sim(run,tb,prefix,sources=sources,timeout=25)
     run.result(prefix,configuration=MATRIX[label],seed=seed,tokens=len(positions),
                compared_writes=len(expected_writes),compared_logits=len(logits),
                floating_final_max_error_q8_lsb=final_error,
                floating_logit_max_absolute_error=logit_error,
+               floating_final_quality=final_quality, floating_logit_quality=logit_quality,
                outcome="pass",stdout=stdout)
+    require(final_quality,f"{label}/{seed}: floating layer-stack final activation exceeds 16 LSB")
+    require(logit_quality,f"{label}/{seed}: floating layer-stack logit quality")
 
 
 def rope_test(run):
