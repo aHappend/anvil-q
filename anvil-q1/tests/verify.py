@@ -2225,6 +2225,10 @@ def synthesis(run, configuration=None):
         visited = set()
         state = 0
         types = set()
+        edges = set()
+
+        def module_name(name):
+            return modules[name].get("attributes",{}).get("hdlname",name).split()[0].lstrip("\\")
 
         def visit(name):
             nonlocal state
@@ -2232,7 +2236,8 @@ def synthesis(run, configuration=None):
                 return
             visited.add(name)
             module = modules[name]
-            types.add(module.get("attributes",{}).get("hdlname",name).split()[0].lstrip("\\"))
+            parent = module_name(name)
+            types.add(parent)
             for cell in module.get("cells",{}).values():
                 typ = cell["type"]
                 require("latch" not in typ.lower(), f"inferred latch: {name} {typ}")
@@ -2240,14 +2245,37 @@ def synthesis(run, configuration=None):
                     state += 1
                 if typ in modules:
                     require(any(cell["connections"].values()), "disconnected child")
+                    child = module_name(typ)
+                    edges.add((parent,child))
+                    if child in {"anvil_q1_decoder_layer","anvil_q1_rmsnorm",
+                                 "anvil_q1_w4a16_gemv","anvil_q1_rope",
+                                 "anvil_q1_gqa_attention","anvil_q1_swiglu_mlp"}:
+                        for port in ("cmd_valid","cmd_ready","done","error",
+                                     "mem_req_valid","mem_rsp_ready"):
+                            require(any(isinstance(bit,int) for bit in
+                                        cell["connections"].get(port,[])),
+                                    f"constant/disconnected {parent}->{child}.{port}")
+                    if child == "anvil_q1_awq_dequant":
+                        require(any(isinstance(bit,int) for bit in
+                                    cell["connections"].get("weight_q16_16",[])),
+                                "constant/disconnected dequantized weight")
                     visit(typ)
         visit("anvil_q1_top")
         required = {"anvil_q1_top","anvil_q1_decoder_layer","anvil_q1_rmsnorm",
                     "anvil_q1_w4a16_gemv","anvil_q1_awq_dequant","anvil_q1_rope",
                     "anvil_q1_gqa_attention","anvil_q1_swiglu_mlp"}
         require(required <= types and state>20, f"missing functional hierarchy/state {types}, {state}")
+        required_edges = {
+            ("anvil_q1_top","anvil_q1_decoder_layer"),
+            ("anvil_q1_top","anvil_q1_rmsnorm"),
+            *(("anvil_q1_decoder_layer","anvil_q1_"+child) for child in
+              ("rmsnorm","w4a16_gemv","rope","gqa_attention","swiglu_mlp")),
+            ("anvil_q1_swiglu_mlp","anvil_q1_w4a16_gemv"),
+            ("anvil_q1_w4a16_gemv","anvil_q1_awq_dequant")}
+        require(required_edges <= edges, f"missing literal hierarchy edges {required_edges-edges}")
         run.result(f"synthesis-{label}", outcome="pass", sequential_cells=state,
-                   zero_latches=True, hierarchy=sorted(types))
+                   zero_latches=True, hierarchy=sorted(types),
+                   required_connected_edges=sorted(required_edges))
 
 
 def main():
