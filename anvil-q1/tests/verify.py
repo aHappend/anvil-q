@@ -1447,6 +1447,60 @@ def transactor_cost_discriminator(run):
         if relative.startswith(("rtl/", "design/", "hf_qwen25_05b_awq_spec/")):
             require(run.source_hashes[relative] == digest,
                     "retained product/source binding changed: "+relative)
+    _transactor_cost_replay(run, prior, setup_tick)
+
+
+def mac_qualified_cost_discriminator(run):
+    """Current-source replay against immutable historical inputs; diagnostic only."""
+    setup_tick = time.monotonic()
+    current = ROOT / "evidence/preparation/verifier-mac-qualified-B17-01/receipt.json"
+    prior = ROOT / "evidence/preparation/verifier-packed-request-cost-discriminator-02"
+    historical = ROOT / "evidence/preparation/verifier-transactor-cost-discriminator-01/receipt.json"
+    require(run.repair_of == str(current.relative_to(ROOT)),
+            "current-source measurement requires the admitted mac-qualified B17 link")
+    current_receipt = json.loads(current.read_text())
+    product_prefixes = ("rtl/", "design/", "hf_qwen25_05b_awq_spec/")
+    expected_sources = {p: d for p, d in current_receipt["source_sha256"].items()
+                        if p.startswith(product_prefixes)}
+    require({p: d for p, d in run.source_hashes.items()
+             if p.startswith(product_prefixes)} == expected_sources,
+            "current product/source binding differs from mac-qualified B17")
+    historical_receipt = json.loads(historical.read_text())
+    input_records = [r for r in historical_receipt["results"]
+                     if r["name"] == "transactor-cost-inputs"]
+    require(len(input_records) == 1, "historical retained input bindings missing")
+    bindings = input_records[0]["retained_sha256"]
+    for relative, digest in bindings.items():
+        path = ROOT / relative
+        require(path.parent == prior and
+                hashlib.sha256(path.read_bytes()).hexdigest() == digest,
+                "original capture/vector binding changed: "+relative)
+    historical_arms = [r for r in historical_receipt["results"]
+                       if r["name"] in ("cost-standalone", "cost-checker-only")]
+    require(len(historical_arms) == 2 and
+            all(r["complete_trace_identical"] and r["final_acknowledgement"]
+                and r["compared_cycles"] == 10366 and r["transactions"] == 4242
+                and r["compared_Q_writes"] == 112 for r in historical_arms),
+            "historical matched-arm evidence incomplete")
+    run.result("mac-qualified-cost-bindings", outcome="advisory_inputs_checked",
+        linked_receipt_sha256={str(p.relative_to(ROOT)):
+                              hashlib.sha256(p.read_bytes()).hexdigest()
+                              for p in (current, prior/"receipt.json", historical)},
+        retained_sha256=bindings,
+        historical_observations=historical_arms,
+        scope="Current RTL/documentation bound to failed B17 receipt; original "
+              "capture and vectors bound to historical paired measurement.")
+    results = _transactor_cost_replay(run, prior, setup_tick)
+    run.result("mac-qualified-cost-comparison",
+        outcome="advisory_measurement_not_acceptance",
+        historical_observations=historical_arms, current_observations=results,
+        caveat="Cross-run observations do not establish causality or an exact "
+               "additive cost decomposition. Checker-only executes no DUT. "
+               "Four-token B17 completion and engineering acceptance remain open.")
+
+
+def _transactor_cost_replay(run, prior, setup_tick):
+    """Shared retained service, schedule, assertions and bounded paired execution."""
     for relative in run.source_hashes:
         target = run.out / "source-snapshot" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -1612,6 +1666,7 @@ assign {mem_req_valid,mem_req_write,mem_req_kind,mem_req_layer,mem_req_proj,
                "Pipe receipt timestamps and kernel-tick CPU samples are approximate. "
                "Differences are not an exact additive decomposition or identification "
                "of an expensive expression. Four-token completion remains unestablished.")
+    return results
 
 
 def integrated(run, label, seed, sources=None, name=None, audit=False,
@@ -2792,7 +2847,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator","mac-qualified-cost-discriminator"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -2800,7 +2855,8 @@ def main():
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
                      "protocol","errors","mutations","nonlinear","numerical-audit","progress",
-                     "cost-discriminator","transactor-cost-discriminator"},
+                     "cost-discriminator","transactor-cost-discriminator",
+                     "mac-qualified-cost-discriminator"},
         "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
@@ -2808,7 +2864,8 @@ def main():
     run = Run(args.out, args.repair_of)
     try:
         tools = (("python3", "iverilog", "vvp") if
-                 args.probe == "transactor-cost-discriminator" else
+                 args.probe in ("transactor-cost-discriminator",
+                                "mac-qualified-cost-discriminator") else
                  ("python3", "iverilog", "vvp", "yosys"))
         for name in tools:
             executable = shutil.which(name)
@@ -2821,6 +2878,10 @@ def main():
                 require(args.configuration == "B" and args.seed == 17,
                         "transactor cost discriminator is B17 only")
                 transactor_cost_discriminator(run)
+            if args.probe == "mac-qualified-cost-discriminator":
+                require(args.configuration == "B" and args.seed == 17,
+                        "current-source cost discriminator is B17 only")
+                mac_qualified_cost_discriminator(run)
             if args.probe == "numerical-audit":
                 for seed in (17,89):
                     integrated(run,"B",seed,audit=True)
