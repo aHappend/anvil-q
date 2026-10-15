@@ -305,6 +305,10 @@ def compile_sim(run, text, name, sources=None, timeout=3600, *,
     sv = run.out / (name+".sv")
     executable = run.out / (name+".vvp")
     sv.write_text(text)
+    if settled:
+        run.result(name+"-source", outcome="retained",
+                   testbench=str(sv.relative_to(ROOT)),
+                   testbench_sha256=hashlib.sha256(sv.read_bytes()).hexdigest())
     code, output, err = run.command(
         [compiler, *compiler_args, "-g2012", "-Wall", "-s", "tb", "-o", executable,
          *(sources or RTL), sv], name+"-compile", timeout,
@@ -2605,8 +2609,9 @@ end endmodule
 """
     stdout = compile_sim(run,text,name, compiler=compiler,
                          compiler_args=compiler_args, runtime=runtime, settled=settled)
-    require("PASS protocol invalid=4 reset_aborts=3 memory_errors=1" in stdout,
-            name+": missing protocol smoke coverage")
+    if settled:
+        require("PASS protocol invalid=4 reset_aborts=3 memory_errors=1" in stdout,
+                name+": missing protocol smoke coverage")
     run.result(name, invalid_tokens=4, reset_during_request=2,
                reset_during_response=1, injected_memory_errors=1,
                outcome="pass", stdout=stdout)
@@ -3064,34 +3069,198 @@ def mutations(run):
                    source_sha256=identity,assertion=diagnosis)
 
 
-def portability(run, elaborate=True):
-    paths = []
-    for name in ("iverilog", "iverilog12", "iverilog13", "iverilog-12", "iverilog-13"):
-        p = shutil.which(name)
-        if p and os.path.realpath(p) not in paths:
-            paths.append(os.path.realpath(p))
-    majors = set()
-    for index, compiler in enumerate(paths):
-        code, stdout, stderr = run.command([compiler, "-V"], f"compiler-{index}-version")
-        require(code == 0, "compiler version failed")
-        version = stdout+stderr
-        for major in (12, 13):
-            if f"Icarus Verilog version {major}." in version:
-                majors.add(major)
-        run.result(f"compiler-{index}", executable=compiler,version=version.strip(),
-                   outcome="discovered")
-        if not elaborate:
-            continue
+ICARUS_BANNERS = {
+    "driver": r"^Icarus Verilog version (\d+\.\d+[^\r\n]*)$",
+    "preprocessor": r"^Icarus Verilog Preprocessor version (\d+\.\d+[^\r\n]*)$",
+    "parser": r"^Icarus Verilog Parser/Elaborator version (\d+\.\d+[^\r\n]*)$",
+    "code_generator": r"^vvp\.tgt: Icarus Verilog VVP Code Generator (\d+\.\d+[^\r\n]*)$",
+    "runtime": r"^Icarus Verilog runtime version (\d+\.\d+[^\r\n]*)$",
+}
+
+
+def _icarus_version(text, component):
+    versions = re.findall(ICARUS_BANNERS[component], text, re.MULTILINE)
+    require(len(versions) == 1,
+            f"missing/ambiguous {component} version: {versions}")
+    return versions[0].strip()
+
+
+def _portability_command(run, argv, name, timeout=20):
+    code, stdout, stderr = run.command(argv, name, timeout=timeout,
+                                       observe_progress=True)
+    require(run.commands[-1].get("process_group_settled") is True,
+            name+": process group did not settle")
+    require(code == 0, f"{name}: timeout/exit failure {code}: {stdout} {stderr}")
+    return stdout, stderr
+
+
+def _installed_paths(names):
+    return sorted({str(Path(p).resolve()) for name in names
+                   if (p := shutil.which(str(name)))})
+
+
+def _icarus_file(path, executable=False):
+    path = Path(path).resolve()
+    require(path.is_file(), f"unavailable component: {path}")
+    require(not executable or os.access(path, os.X_OK),
+            f"component is not executable: {path}")
+    return dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+
+
+def _icarus_components(run, driver, directory, name, major):
+    """Pin -B and reject configs redirecting a target outside that directory."""
+    directory = Path(directory).resolve()
+    files = {"driver": _icarus_file(driver, executable=True)}
+    for component, filename in (("preprocessor", "ivlpp"), ("parser", "ivl"),
+                                ("code_generator", "vvp.tgt"),
+                                ("null_target", "null.tgt"),
+                                ("vvp_config", "vvp.conf"),
+                                ("null_config", "null.conf")):
+        files[component] = _icarus_file(directory/filename,
+                                        executable=component in ("preprocessor", "parser"))
+    for target in ("vvp", "null"):
+        config = directory/(target+".conf")
+        text = config.read_text()
+        destination = run.out/(name+"-"+target+".conf")
+        destination.write_bytes(config.read_bytes())
+        dlls = re.findall(r"^\s*flag:DLL=(\S+)\s*$", text, re.MULTILINE)
+        require(len(dlls) == 1, f"{config}: missing/ambiguous DLL selection {dlls}")
+        selected = Path(dlls[0])
+        if not selected.is_absolute():
+            selected = directory/selected
+        require(selected.resolve() == (directory/(target+".tgt")).resolve(),
+                f"{config}: mixed component path {selected}; expected {directory/(target+'.tgt')}")
+    args = ["-B", str(directory)]
+    stdout, stderr = _portability_command(run, [driver, *args, "-V"], name+"-version")
+    combined = stdout+stderr
+    versions = {component: _icarus_version(combined, component)
+                for component in ("driver", "preprocessor", "parser", "code_generator")}
+    for component in ("preprocessor", "parser"):
+        stdout, stderr = _portability_command(
+            run, [files[component]["path"], "-V"], name+"-"+component+"-version")
+        direct = _icarus_version(stdout+stderr, component)
+        require(direct == versions[component],
+                f"{name}: {component} direct/driver version mismatch")
+        files[component]["direct_version"] = direct
+    for component, version in versions.items():
+        files[component]["version"] = version
+    run.result(name+"-components", outcome="identified", component_directory=str(directory),
+               compiler_args=args, components=files)
+    require(len(set(versions.values())) == 1 and
+            versions["driver"].split(".")[0] == str(major),
+            f"{name}: mixed/incorrect Icarus {major} components: {versions}")
+    return dict(driver=str(driver), compiler_args=args,
+                component_directory=str(directory), components=files,
+                version=versions["driver"])
+
+
+def _matched_icarus_toolchains(run, selections):
+    pairs = {}
+    diagnostics = []
+    for major in (12, 13):
+        selected = selections.get(major, {})
+        drivers = _installed_paths([selected["driver"]] if selected.get("driver") else
+            ("iverilog", f"iverilog{major}", f"iverilog-{major}"))
+        runtimes = _installed_paths([selected["runtime"]] if selected.get("runtime") else
+            ("vvp", f"vvp{major}", f"vvp-{major}",
+             *(Path(driver).parent/"vvp" for driver in drivers)))
+        runtime_records = []
+        for index, runtime in enumerate(runtimes):
+            name = f"icarus-{major}-runtime-{index}"
+            try:
+                identity = _icarus_file(runtime, executable=True)
+                stdout, stderr = _portability_command(run, [runtime, "-V"], name+"-version")
+                version = _icarus_version(stdout+stderr, "runtime")
+                identity["version"] = version
+                run.result(name, outcome="identified", **identity)
+                require(version.split(".")[0] == str(major),
+                        f"{runtime}: runtime {version}, not required Icarus {major}")
+                runtime_records.append(identity)
+            except AssertionError as exc:
+                # Version/identity rejection is retained; process failures are fatal.
+                if run.commands and (run.commands[-1]["exit_code"] != 0 or
+                        run.commands[-1].get("process_group_settled") is not True):
+                    raise
+                diagnostics.append(str(exc))
+                run.result(name, outcome="rejected", diagnosis=str(exc))
+        candidates = []
+        for index, driver in enumerate(drivers):
+            prefix = Path(driver).parent.parent
+            directories = ([Path(selected["components"])] if selected.get("components") else
+                [prefix/"lib"/"ivl", prefix/"lib64"/"ivl",
+                 prefix/"lib"/"x86_64-linux-gnu"/"ivl",
+                 prefix/"lib"/"aarch64-linux-gnu"/"ivl"])
+            directories = sorted({str(path.resolve()) for path in directories})
+            for directory_index, directory in enumerate(directories):
+                name = f"icarus-{major}-driver-{index}-components-{directory_index}"
+                command_count = len(run.commands)
+                try:
+                    toolchain = _icarus_components(run, driver, directory, name, major)
+                except AssertionError as exc:
+                    if len(run.commands) > command_count and (
+                            run.commands[-1]["exit_code"] != 0 or
+                            run.commands[-1].get("process_group_settled") is not True):
+                        raise
+                    diagnostics.append(str(exc))
+                    run.result(name, outcome="rejected", driver=driver,
+                               component_directory=directory, diagnosis=str(exc))
+                    continue
+                for runtime in runtime_records:
+                    if runtime["version"] == toolchain["version"]:
+                        candidates.append(toolchain | {"runtime": runtime})
+        # A directory/driver/runtime identity must be selected, not a matching
+        # substring somewhere in a mixed installation's combined banner.
+        if len(candidates) != 1:
+            diagnosis = (f"UNMET prerequisite: Icarus {major} has {len(candidates)} "
+                         "unambiguous matching driver/component/runtime pairs; "
+                         "need exactly one. Use --icarus"
+                         f"{major}-driver/--icarus{major}-components/"
+                         f"--icarus{major}-runtime to select an installed pair.")
+            diagnostics.append(diagnosis)
+            run.result(f"icarus-{major}-prerequisite", outcome="unmet",
+                       diagnosis=diagnosis, drivers=drivers, runtimes=runtimes,
+                       requested=selected, candidates=candidates)
+        else:
+            pairs[major] = candidates[0]
+            run.result(f"icarus-{major}-matched-pair", outcome="identified",
+                       **candidates[0])
+    require(set(pairs) == {12, 13},
+            "UNMET dual-major matched-runtime prerequisite: "+"; ".join(diagnostics))
+    return pairs
+
+
+def portability(run, elaborate=True, selections=None):
+    toolchains = _matched_icarus_toolchains(run, selections or {})
+    if not elaborate:
+        return
+    smoke_hashes = []
+    for major, toolchain in toolchains.items():
+        compiler = toolchain["driver"]
+        args = toolchain["compiler_args"]
         for label, values in [("default", None), *MATRIX.items()]:
             overrides = [] if values is None else [
                 argument for key,value in zip(KEYS,values)
                 for argument in ("-P", f"anvil_q1_top.{key}={value}")]
-            code, _, stderr = run.command(
-                [compiler,"-g2012","-Wall","-t","null","-s","anvil_q1_top",
-                 *overrides,*RTL], f"elaborate-{index}-{label}", timeout=120)
-            require(code == 0 and not stderr.strip(), f"warning-clean elaboration {label}: {stderr}")
-            run.result(f"elaboration-{index}-{label}", outcome="pass", executable=compiler)
-    require(majors == {12,13}, f"UNMET prerequisite: installed Icarus majors {sorted(majors)}; need 12 and 13")
+            stdout, stderr = _portability_command(
+                run, [compiler, *args, "-g2012", "-Wall", "-t", "null",
+                      "-s", "anvil_q1_top", *overrides, *RTL],
+                f"elaborate-{major}-{label}", timeout=120)
+            require(not stdout.strip() and not stderr.strip(),
+                    f"warning-clean elaboration Icarus {major} {label}: {stdout} {stderr}")
+            run.result(f"elaboration-{major}-{label}", outcome="pass",
+                       executable=compiler, compiler_args=args, overrides=overrides)
+        name = f"matched-runtime-{major}-protocol"
+        protocol_test(run, name=name, compiler=compiler, compiler_args=args,
+                      runtime=toolchain["runtime"]["path"], settled=True)
+        smoke_hashes.append(hashlib.sha256((run.out/(name+".sv")).read_bytes()).hexdigest())
+    require(len(set(smoke_hashes)) == 1, "dual-major smoke stimulus/assertions differ")
+    run.result("dual-major-matched-runtime", outcome="pass", majors=[12, 13],
+               elaborations_per_major=["default", *MATRIX],
+               smoke="unchanged public-pin protocol_test, configuration D",
+               identical_testbench_sha256=smoke_hashes[0],
+               assertions=["invalid_tokens=4", "reset_aborts=3", "memory_errors=1",
+                           "reset leakage", "E0/R/completion timing",
+                           "request stalls", "error invalidation"])
 
 
 def parameter_test(run):
@@ -3195,26 +3364,37 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator","mac-qualified-cost-discriminator","standalone-phase-cost"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","dual-major-matched-runtime","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator","mac-qualified-cost-discriminator","standalone-phase-cost"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
+    for major in (12, 13):
+        for component in ("driver", "components", "runtime"):
+            parser.add_argument(f"--icarus{major}-{component}",
+                                help="Select an existing Icarus installation; no installation is performed")
     args = parser.parse_args()
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
                      "protocol","errors","mutations","nonlinear","numerical-audit","progress",
                      "cost-discriminator","transactor-cost-discriminator",
                      "mac-qualified-cost-discriminator","standalone-phase-cost"},
-        "portability": {None,"parameters","toolchain"},
+        "portability": {None,"parameters","toolchain","dual-major-matched-runtime"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
         parser.error("probe incompatible with check")
+    selections = {major: {component: getattr(args, f"icarus{major}_{component}")
+                          for component in ("driver", "components", "runtime")
+                          if getattr(args, f"icarus{major}_{component}") is not None}
+                  for major in (12, 13)}
+    if any(selections.values()) and (args.check != "portability" or args.probe == "parameters"):
+        parser.error("Icarus installation selections require portability toolchain checks")
     try:
         run = Run(args.out, args.repair_of)
     except FileExistsError:
         parser.exit(2, f"error: refusing occupied output destination: {args.out}\n")
     try:
-        tools = (("python3", "iverilog", "vvp") if
+        tools = (("python3",) if args.check == "portability" else
+                 ("python3", "iverilog", "vvp") if
                  args.probe in ("transactor-cost-discriminator",
                                 "mac-qualified-cost-discriminator",
                                 "standalone-phase-cost") else
@@ -3289,10 +3469,12 @@ def main():
             if args.probe == "parameters":
                 parameter_test(run)
             elif args.probe == "toolchain":
-                portability(run,elaborate=False)
+                portability(run,elaborate=False,selections=selections)
+            elif args.probe == "dual-major-matched-runtime":
+                portability(run,selections=selections)
             else:
                 parameter_test(run)
-                portability(run)
+                portability(run,selections=selections)
         run.result("check", outcome="pass", scope=args.probe or args.check)
     except (AssertionError, ValueError, OSError, KeyError) as exc:
         run.result("check", outcome="fail", diagnosis=str(exc))
