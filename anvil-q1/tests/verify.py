@@ -413,12 +413,12 @@ def command_tb(instance, reader, expected, commands):
     pre-edge handshakes. The transactor adds deterministic bounded stalls.
     """
     return """module tb;
-""" + BUS_PORTS + instance + """
+""" + BUS_PORTS + """
 integer cycles=0, writes=0, accepted=0, pending=0, delay_count=0;
 integer stalls=0, responses=0, completions=0, busy_holds=0, bubbles=0;
 reg [136:0] held; reg was_stalled=0;
 reg [31:0] reply; reg [31:0] expected_value;
-""" + reader + """
+""" + instance + reader + """
 task automatic reset_check;
 begin
  if(cmd_ready !== 0 || done !== 0 || error !== 0 ||
