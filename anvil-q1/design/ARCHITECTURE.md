@@ -42,11 +42,12 @@ write acknowledgements, cannot toggle those arithmetic inputs with their data.
 All consuming edges, arithmetic widths, rounding, transaction counts and error
 priority remain unchanged. This removes avoidable inactive-data fanout; it is
 not a measured execution-time improvement. The accepted dequantizer dependency
-partition is retained. Following packed-request selection, independent B17
+partition and packed-request selection are retained. Following GEMV multiplier
+operand isolation, independent B17
 four-token completion must first be established
 against the unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-dequant-partition-B17-01/receipt.json`, using
-fresh `evidence/preparation/verifier-packed-request-B17-01` output (or a fresh
+`evidence/preparation/verifier-packed-request-B17-01/receipt.json`, using
+fresh `evidence/preparation/verifier-mac-qualified-B17-01` output (or a fresh
 suffix if occupied), before
 the remaining seeds and complete 120-second checks can establish coverage.
 Failure or timeout requires retained evidence and an independently admitted
@@ -100,6 +101,16 @@ extended into signed multiplication. Delta is signed in [-15,15]. Exact W is
 signed 37-bit Q21.16 despite its historical port name `weight_q16_16`.
 Activation*W is signed 69-bit Q32; GEMV accumulates sign-extended products and
 bias*65536 in signed 128 bits, then round-away shifts 16 and saturates to Q16.16.
+Both multiplier operand paths in each of the eight GEMV lanes are qualified
+by `rst_n && state==9` before multiplication. At MAC consumption they forward
+the existing signed-69 sign-extended activation and lane weight unchanged,
+including X/Z; outside that state they drive signed-69 zeros. This is operand
+isolation, not post-product masking. The resetless dequantizers, invalid-scale
+priority, signed-128 accumulators and increasing-input order are unchanged.
+No clock gating, new register, pipeline state, FSM transition or public cycle
+is introduced. This scheduling-neutral execution-cost hypothesis does not
+establish a measured speedup; the retained B17 timeout remains unresolved until
+independent four-token completion under its unchanged watchdog.
 The exact sum stays below 2^100 even for unsigned-32-bit input dimensions.
 No signed-32-bit scale/dequant or signed-64-bit GEMV truncation is permitted.
 

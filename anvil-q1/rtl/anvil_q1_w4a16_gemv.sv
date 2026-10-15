@@ -47,13 +47,16 @@ module anvil_q1_w4a16_gemv #(
   generate
     for(arithmetic_lane=0;arithmetic_lane<8;arithmetic_lane=arithmetic_lane+1) begin: lanes
       localparam [2:0] LOGICAL_LANE = arithmetic_lane;
+      wire signed [68:0] activation_operand, weight_operand;
       anvil_q1_awq_dequant dequant(
         .qweight_word(qw),.qzero_word(qz),.scale_f16(scales[arithmetic_lane]),
         .lane(LOGICAL_LANE),.weight_q16_16(weight[arithmetic_lane]),
         .invalid(invalid[arithmetic_lane]));
-      assign product[arithmetic_lane] =
-        $signed({{37{activation[31]}},activation}) *
-        $signed({{32{weight[arithmetic_lane][36]}},weight[arithmetic_lane]});
+      assign activation_operand = (rst_n && state==9) ?
+        $signed({{37{activation[31]}},activation}) : 69'sd0;
+      assign weight_operand = (rst_n && state==9) ?
+        $signed({{32{weight[arithmetic_lane][36]}},weight[arithmetic_lane]}) : 69'sd0;
+      assign product[arithmetic_lane] = activation_operand * weight_operand;
     end
   endgenerate
   assign cmd_ready = rst_n && state == 0;

@@ -249,6 +249,17 @@ group transitions, including G=3. After all inputs, read/add one bias per lane
 only for Q/K/V and write eight final values in channel order, waiting for each
 acknowledgement. O and all MLP projections never request bias.
 
+Each lane isolates both multiplier operands before multiplication with
+`rst_n && state==9`. During MAC consumption, the activation and that lane's
+dequantized weight retain their explicit signed-69 sign extensions unchanged,
+including active X/Z bits; otherwise both operands are signed-69 zero.
+The product is not merely masked afterward. The eight dequantizers remain
+resetless and unchanged, and invalid-scale priority and signed-128 accumulation
+are retained. This adds no clock gating, storage, pipeline state, FSM transition,
+request or acknowledgement; every public cycle and increasing-input accumulation
+order is unchanged. Operand isolation is an execution-cost hypothesis, not a
+demonstrated speedup or proof of four-token completion.
+
 All tile state is command-local and invalid on reset, completion, rejection or
 fault. For N inputs and M outputs there are exactly N*M scalar products through
 (M/8)*N parallel MAC edges, M writes and
@@ -320,8 +331,8 @@ budgets. Missing Icarus13 remains an external unmet prerequisite, not a waiver.
 Engineering acceptance remains INCOMPLETE until all applicable obligations
 close. Verifier first establishes actual four-token B17 completion with the
 existing matrix probe and unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-dequant-partition-B17-01/receipt.json`,
-using fresh `evidence/preparation/verifier-packed-request-B17-01` output
+`evidence/preparation/verifier-packed-request-B17-01/receipt.json`,
+using fresh `evidence/preparation/verifier-mac-qualified-B17-01` output
 (or a fresh suffix if occupied). Preserve all four token completions, write/logit
 comparisons, stalls and deterministic vectors, comparing those vectors against
 retained artifacts. A failure or timeout requires retained evidence and another
