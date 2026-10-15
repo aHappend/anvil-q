@@ -385,13 +385,13 @@ begin
  1: begin
    if(proj!=6 || row>=9216 || col!=0) $fatal(1,"qweight address");
    if(test_case==0)
-     read_memory=row<4608 ? 32'hffffff0f : 32'hfff0ffff;
+     read_memory=row<4608 ? 32'hffffff0f : 32'hfff0ff0f;
    else read_memory=32'hffffffff;
  end
  2: begin
    if(proj!=6 || row>=1152 || col!=0) $fatal(1,"qzero address");
    if(test_case==0)
-     read_memory=row<576 ? 32'h000000f0 : 32'h000f0000;
+     read_memory=row<576 ? 32'h000000f0 : 32'h00000000;
    else read_memory=0;
  end
  3: begin
@@ -1368,6 +1368,13 @@ def main():
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
+    valid_probes = {
+        "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
+                     "protocol","mutations","nonlinear"},
+        "portability": {None,"parameters"},
+        "synthesis": {None}}
+    if args.probe not in valid_probes[args.check]:
+        parser.error("probe incompatible with check")
     run = Run(args.out, args.repair_of)
     try:
         for name in ("python3", "iverilog", "vvp", "yosys"):
@@ -1403,8 +1410,15 @@ def main():
                         integrated(run,label,seed)
                 mutations(run)
             if args.probe is None:
-                raise AssertionError("INCOMPLETE: mandatory layer-stack matrix, nonlinear quality, "
-                                     "protocol/error/reset matrix and behavioral mutations not yet implemented")
+                run.result("acceptance_gaps",outcome="incomplete",
+                           remaining=[
+                               "standalone invalid-command matrix for every child",
+                               "nonfinite activation/bias/norm and invalid-scale integrated errors",
+                               "memory errors after writes and partial logit output",
+                               "explicit busy-held-valid and idle-bubble event coverage",
+                               "full kind/address/unused-field legality matrix",
+                               "total mandatory execution within admitted 120-second budget"])
+                raise AssertionError("INCOMPLETE: see acceptance_gaps; focused passes are not full acceptance")
         elif args.check == "synthesis":
             synthesis(run,args.configuration)
         else:
