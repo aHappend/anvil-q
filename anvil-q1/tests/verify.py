@@ -1436,6 +1436,180 @@ integer cycles=0""",1)
               "GEMV arithmetic from transactor cost. Not four-token completion.")
 
 
+def transactor_cost_discriminator(run):
+    """Checker-cost measurement without DUT execution in one arm; not acceptance."""
+    setup_tick = time.monotonic()
+    prior = ROOT / "evidence/preparation/verifier-packed-request-cost-discriminator-02"
+    require(run.repair_of == str((prior/"receipt.json").relative_to(ROOT)),
+            "transactor measurement requires the admitted discriminator-02 link")
+    previous = json.loads((prior/"receipt.json").read_text())
+    for relative, digest in previous["source_sha256"].items():
+        if relative.startswith(("rtl/", "design/", "hf_qwen25_05b_awq_spec/")):
+            require(run.source_hashes[relative] == digest,
+                    "retained product/source binding changed: "+relative)
+    for relative in run.source_hashes:
+        target = run.out / "source-snapshot" / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT/relative, target)
+    names = ("receipt.json", "cost-standalone.sv", "capture-pins.hex",
+             "replay-pins.hex", "capture-normalized.hex", "replay-normalized.hex",
+             "matrix-B-17-memory.hex", "matrix-B-17-writes.hex",
+             "matrix-B-17-logits.hex")
+    bindings = {}
+    retained = run.out / "retained-inputs"
+    retained.mkdir()
+    for name in names:
+        data = (prior/name).read_bytes()
+        (retained/name).write_bytes(data)
+        bindings[str((prior/name).relative_to(ROOT))] = hashlib.sha256(data).hexdigest()
+    require((retained/"capture-pins.hex").read_bytes() ==
+            (retained/"replay-pins.hex").read_bytes(), "prior trace pair differs")
+    require((retained/"capture-normalized.hex").read_bytes() ==
+            (retained/"replay-normalized.hex").read_bytes(), "prior scratch pair differs")
+    rows = (retained/"capture-pins.hex").read_text().splitlines()
+    require(len(rows) == 10366 and
+            all(re.fullmatch("[0-9a-fA-F]{44}", row) for row in rows),
+            "retained complete trace missing/XZ")
+    values = [int(row, 16) for row in rows]
+    require(sum(bool(v >> 172 & 1) and bool(v >> 171 & 1) for v in values) == 4242
+            and sum(bool(v >> 34 & 1) and bool(v >> 33 & 1) for v in values) == 4242,
+            "retained transaction count")
+    expected = [int(row, 16) for row in
+                (retained/"matrix-B-17-writes.hex").read_text().splitlines()]
+    normalized = [int(row, 16) for row in
+                  (retained/"capture-normalized.hex").read_text().splitlines()]
+    require(len(normalized) == 112 and
+            expected[112:224] == [(8 << 128) | (1 << 64) | (c << 32) | value
+                                  for c, value in enumerate(normalized)],
+            "retained normalized snapshot differs from independent expected writes")
+    write_rows = [v for v in values
+                  if v >> 172 & 1 and v >> 171 & 1 and v >> 170 & 1]
+    require(len(write_rows) == 112 and
+            [(v >> 35) & ((1 << 132)-1) for v in write_rows] ==
+            [(8 << 128) | (2 << 64) | (c << 32) | (expected[224+c] & 0xffffffff)
+             for c in range(112)],
+            "retained ordered Q writes")
+    require(values[-1] >> 34 & 1 and values[-1] >> 33 & 1,
+            "retained interval lacks final response acknowledgement")
+    template = (retained/"cost-standalone.sv").read_text()
+    template = template.replace(str(prior), str(retained))
+    # Both arms run the same service, not captured read results. Captured response
+    # pins remain the comparison oracle, including idle data and stall timing.
+    old_drive = """     mem_rsp_valid=cost_schedule[cost_index][34];
+     mem_rsp_rdata=cost_schedule[cost_index][32:1];
+     mem_rsp_error=cost_schedule[cost_index][0];"""
+    new_drive = """     mem_rsp_valid=pending && delay_count==0;
+     mem_rsp_rdata=reply;
+     mem_rsp_error=0;"""
+    require(template.count(old_drive) == 1, "response service hook ambiguity")
+    template = template.replace(old_drive, new_drive)
+    template = template.replace(" responses=672;",
+        f" responses=672; reply=32'h{(values[0] >> 1) & 0xffffffff:08x};", 1)
+    require("responses=672; reply=" in template, "initial service state hook missing")
+    endpoint = re.search(r"anvil_q1_w4a16_gemv #\(.*?\.cmd_proj\(cmd_proj\)\);\n",
+                         template, re.S)
+    require(endpoint is not None, "standalone public endpoint missing")
+    checker = template[:endpoint.start()] + template[endpoint.end():]
+    checker_pins = """
+reg checker_busy=0;
+always @(posedge clk)
+ if(!rst_n) checker_busy<=0;
+ else if(cmd_valid && cmd_ready) checker_busy<=1;
+assign cmd_ready=rst_n && !checker_busy;
+assign done=1'b0;
+assign error=1'b0;
+assign {mem_req_valid,mem_req_write,mem_req_kind,mem_req_layer,mem_req_proj,
+        mem_req_row,mem_req_col,mem_req_wdata,mem_rsp_ready} =
+ (rst_n && cost_index>=0) ?
+ {cost_schedule[cost_index][172],cost_schedule[cost_index][170:35],
+  cost_schedule[cost_index][33]} : 138'd0;
+"""
+    checker = checker.replace("integer cost_index=-1;",
+                              "integer cost_index=-1;\n"+checker_pins, 1)
+    checker = checker.replace("else if(mem_req_valid) cost_index=0;",
+                              "else if(checker_busy) cost_index=0;", 1)
+    require("anvil_q1_" not in checker, "checker-only arm unexpectedly contains RTL")
+    run.result("transactor-cost-inputs", outcome="advisory_inputs_checked",
+               retained_sha256=bindings, prior_receipt=run.repair_of,
+               normalized_values_compared=112, ordered_Q_writes_checked=112,
+               preparation_wall_s=time.monotonic()-setup_tick,
+               scope="Retained independent vectors and public capture, not new inference")
+    run.command(["timeout", "--version"], "timeout-version", timeout=2)
+    results = []
+    for name, text, sources in (("cost-standalone", template, RTL),
+                                ("cost-checker-only", checker, [])):
+        trace = run.out/(name+"-pins.hex")
+        norm = run.out/(name+"-normalized.hex")
+        text = text.replace(str(retained/"replay-pins.hex"), str(trace)).replace(
+            str(retained/"replay-normalized.hex"), str(norm))
+        # Check interval and final acknowledgement before the retained finish.
+        text = text.replace('         $display("COST_END', """
+         if(cost_index!=10365 || cycles-cost_start!=10365 ||
+            accepted!=4914 || responses!=4914 || writes!=336 || pending)
+           $fatal(1,"COST entire interval/count/final acknowledgement");
+         $display("COST_END""", 1)
+        sv, exe = run.out/(name+".sv"), run.out/(name+".vvp")
+        sv.write_text(text)
+        code, _, err = run.command(
+            ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o", exe, *sources, sv],
+            name+"-compile", timeout=5)
+        require(code == 0 and not err.strip(), name+": compile/warning failure "+err)
+        compile_record = run.commands[-1]
+        code, stdout, stderr = run.command(
+            ["timeout", "--signal=INT", "--kill-after=1s", "6",
+             "vvp", "-n", "-v", exe], name+"-simulate",
+            timeout=9, observe_progress=True)
+        record = run.commands[-1]
+        require(record["process_group_settled"], name+": unsettled process group")
+        require(code == 0 and "PASS diagnostic Q final write acknowledged" in stdout,
+                name+": failed or exceeded six-second cap: "+stdout+stderr)
+        require(trace.read_bytes() == (retained/"capture-pins.hex").read_bytes(),
+                name+": complete trace mismatch")
+        require(norm.read_bytes() == (retained/"capture-normalized.hex").read_bytes(),
+                name+": normalized scratch mismatch")
+        observation = json.loads((ROOT/record["host_observations_path"]).read_text())
+        events = [e for e in observation["events"] if e["message"].startswith("COST_")]
+        require(len(events) == 2 and not observation["cpu_sample_errors"],
+                name+": interval CPU observations missing")
+        start, end = events
+        wall = end["elapsed_wall_s"]-start["elapsed_wall_s"]
+        cpu = sum(end[k]-start[k] for k in ("child_user_cpu_s", "child_system_cpu_s"))
+        scheduler = {}
+        for key, pattern in (
+                ("time_steps", r"(\d+) time steps"),
+                ("thread_schedule_events", r"(\d+) thread schedule events"),
+                ("assign_events", r"(\d+) assign events"),
+                ("other_events", r"(\d+) other events")):
+            match = re.search(pattern, stdout+stderr)
+            require(match is not None, name+": missing scheduler statistic "+key)
+            scheduler[key] = int(match.group(1))
+        result = dict(name=name, outcome="advisory_measurement_not_acceptance",
+            executes_DUT=bool(sources), matched_wall_s=wall, matched_child_cpu_s=cpu,
+            compared_cycles=10366, transactions=4242, compared_Q_writes=112,
+            final_acknowledgement=True, complete_trace_identical=True,
+            compile_wall_s=compile_record["elapsed_s"],
+            simulator_setup_wall_s=start["elapsed_wall_s"],
+            simulator_setup_child_cpu_s=start["child_user_cpu_s"]+start["child_system_cpu_s"],
+            total_wall_s=record["elapsed_s"],
+            total_child_cpu_s=record["child_user_cpu_s"]+record["child_system_cpu_s"],
+            scheduler_statistics=scheduler,
+            scheduler_scope="complete simulator invocation, including setup",
+            host_observations=record["host_observations_path"])
+        run.result(**result)
+        results.append(result)
+    standalone, checker_only = results
+    run.result("transactor-cost-discriminator", outcome="advisory_measurement_not_acceptance",
+        standalone_to_checker_wall_ratio=standalone["matched_wall_s"]/checker_only["matched_wall_s"],
+        standalone_to_checker_cpu_ratio=standalone["matched_child_cpu_s"]/checker_only["matched_child_cpu_s"],
+        observed_wall_difference_s=standalone["matched_wall_s"]-checker_only["matched_wall_s"],
+        observed_cpu_difference_s=standalone["matched_child_cpu_s"]-checker_only["matched_child_cpu_s"],
+        caveat="Checker-only arm executes no DUT and establishes no accelerator functionality. "
+               "Both arms include matching trace I/O, service and public assertions. "
+               "Pipe receipt timestamps and kernel-tick CPU samples are approximate. "
+               "Differences are not an exact additive decomposition or identification "
+               "of an expensive expression. Four-token completion remains unestablished.")
+
+
 def integrated(run, label, seed, sources=None, name=None, audit=False,
                progress_seconds=None, discriminate_cost=False):
     """Functional vector algebra oracle; no RTL state or timing is modeled."""
@@ -2614,7 +2788,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -2622,20 +2796,27 @@ def main():
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
                      "protocol","errors","mutations","nonlinear","numerical-audit","progress",
-                     "cost-discriminator"},
+                     "cost-discriminator","transactor-cost-discriminator"},
         "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
         parser.error("probe incompatible with check")
     run = Run(args.out, args.repair_of)
     try:
-        for name in ("python3", "iverilog", "vvp", "yosys"):
+        tools = (("python3", "iverilog", "vvp") if
+                 args.probe == "transactor-cost-discriminator" else
+                 ("python3", "iverilog", "vvp", "yosys"))
+        for name in tools:
             executable = shutil.which(name)
             if executable:
                 run.command([executable, "-V" if name in ("iverilog","yosys","vvp") else "--version"],
                             name+"-version", timeout=5)
         if args.check == "behavior":
             slices = manifest(run)
+            if args.probe == "transactor-cost-discriminator":
+                require(args.configuration == "B" and args.seed == 17,
+                        "transactor cost discriminator is B17 only")
+                transactor_cost_discriminator(run)
             if args.probe == "numerical-audit":
                 for seed in (17,89):
                     integrated(run,"B",seed,audit=True)
