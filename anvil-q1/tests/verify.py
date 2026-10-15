@@ -682,6 +682,215 @@ def floating_stack(memory, get, fixed, dims, shape, tokens, trace=None):
     return finals,outputs
 
 
+def numerical_audit(run,label,seed,get,fixed,dims,positions,integer_trace,
+                    float_trace,saturation,violations,logits,files):
+    """Replay stage equations from public vectors, not implementation helpers.
+
+    Rational rounding and separately decoded halfwords cross-check the integer
+    oracle. Accurate floating reductions cross-check the unrounded layer stack.
+    This is a mathematical contract witness, not an observed RTL result.
+    """
+    from fractions import Fraction
+    L,H,I,Q,K,D,G,V,S = MATRIX[label]
+    def nearest(value):
+        magnitude = abs(value)
+        result = (magnitude+Fraction(1,2)).numerator // (magnitude+Fraction(1,2)).denominator
+        return -result if value<0 else result
+    def clipped(value):
+        return min(32767,max(-32768,value))
+    def raw_half(kind,layer,proj,row,col):
+        raw = get(kind,layer,proj,row,col)
+        return Fraction.from_float(struct.unpack("<e",struct.pack("<H",raw))[0])
+    def coefficient(kind,layer,proj,row,col):
+        return clipped(nearest(raw_half(kind,layer,proj,row,col)*256))
+    def exponential(score):
+        if score < -1048576:
+            return 0
+        magnitude = -min(score,0)*256
+        n,remainder = divmod(magnitude,11629080)
+        terms = [16777216]
+        for order in range(1,7):
+            value = Fraction(-terms[-1]*remainder,order*16777216)
+            terms.append(int(value))
+        return max(0,sum(terms))//(2**n)
+    weights = {}
+    for layer in range(L):
+        for projection,(ni,no) in enumerate(dims):
+            matrix = []
+            for channel in range(no):
+                nibble = 4*(channel%2)+(channel%8)//2
+                matrix.append([
+                    (((get(1,layer,projection,k,channel//8)//(16**nibble))%16)-
+                     ((get(2,layer,projection,k//G,channel//8)//(16**nibble))%16))*
+                    nearest(raw_half(3,layer,projection,k//G,channel)*65536)
+                    for k in range(ni)])
+            weights[layer,projection] = matrix
+    records = []
+    checks = []
+    def check(ordinal,layer,stage,expected,float_expected):
+        key = ordinal,layer,stage
+        actual,reference = integer_trace[key],float_trace[key]
+        require(actual==expected,f"AUDIT integer equation {key}")
+        float_residual = max(abs(a-b) for a,b in zip(reference,float_expected))
+        require(float_residual<1e-10,f"AUDIT floating equation {key}: {float_residual}")
+        errors = [a/256-b for a,b in zip(actual,reference)]
+        records.append(dict(token_ordinal=ordinal,position=positions[ordinal],
+                            layer=layer,stage=stage,integer_q8_8=actual,
+                            floating=reference,error_q8_lsb=[x*256 for x in errors],
+                            max_absolute_error_q8_lsb=max(abs(x)*256 for x in errors),
+                            rms_error_q8_lsb=math.sqrt(math.fsum(x*x for x in errors)/len(errors))*256,
+                            saturation_count=saturation.get(key,0),
+                            integer_min=min(actual),integer_max=max(actual),
+                            floating_equation_residual=float_residual))
+        checks.append(len(actual))
+    for ordinal,pos in enumerate(positions):
+        def iv(layer,stage):
+            return integer_trace[ordinal,layer,stage]
+        def fv(layer,stage):
+            return float_trace[ordinal,layer,stage]
+        token = (seed+ordinal)%V
+        embedding = [coefficient(0,0,0,token,c) for c in range(H)]
+        check(ordinal,-1,"embedding",embedding,[x/256 for x in embedding])
+        def norm(layer,stage,source_layer,source_stage,kind):
+            x,y = iv(source_layer,source_stage),fv(source_layer,source_stage)
+            mean = sum(a*a for a in x)*65536//H+4295
+            denominator = math.isqrt(mean)
+            require(denominator**2<=mean<(denominator+1)**2,"AUDIT sqrt interval")
+            reciprocal = 4294967296//denominator
+            gamma = [coefficient(kind,max(layer,0),0,0,c) for c in range(H)]
+            result = [clipped(nearest(Fraction(a*g*reciprocal,16777216)))
+                      for a,g in zip(x,gamma)]
+            root = math.sqrt(math.fsum(a*a for a in y)/H+1e-6)
+            check(ordinal,layer,stage,result,[a*g/(256*root) for a,g in zip(y,gamma)])
+        def linear(layer,projection,stage,source_stage):
+            x,y = iv(layer,source_stage),fv(layer,source_stage)
+            expected,reference = [],[]
+            for c,row in enumerate(weights[layer,projection]):
+                bias = coefficient(4,layer,projection,0,c) if projection<3 else 0
+                total = sum(a*w for a,w in zip(x,row))+bias*65536
+                expected.append(clipped(nearest(Fraction(total,65536))))
+                reference.append(math.fsum(a*w/65536 for a,w in zip(y,row))+bias/256)
+            check(ordinal,layer,stage,expected,reference)
+        for layer in range(L):
+            source_layer,source_stage = (-1,"embedding") if layer==0 else (layer-1,"residual_mlp")
+            norm(layer,"norm_input",source_layer,source_stage,5)
+            for projection,stage in enumerate(("q","k","v")):
+                linear(layer,projection,stage,"norm_input")
+            for stage,heads in (("q",Q),("k",K)):
+                a,b = iv(layer,stage),fv(layer,stage)
+                actual,reference = list(a),list(b)
+                for head in range(heads):
+                    for pair in range(D//2):
+                        lo,hi = head*D+pair,head*D+pair+D//2
+                        co,si = [get(11,0,0,pos,2*pair+bit) for bit in (0,1)]
+                        co,si = [v if v<2**31 else v-2**32 for v in (co,si)]
+                        actual[lo] = clipped(nearest(Fraction(a[lo]*co-a[hi]*si,2**30)))
+                        actual[hi] = clipped(nearest(Fraction(a[hi]*co+a[lo]*si,2**30)))
+                        angle = pos/(1000000.0**(2*pair/D))
+                        reference[lo] = b[lo]*math.cos(angle)-b[hi]*math.sin(angle)
+                        reference[hi] = b[hi]*math.cos(angle)+b[lo]*math.sin(angle)
+                check(ordinal,layer,stage+"_rope",actual,reference)
+            actual,reference = [],[]
+            start = ordinal-pos
+            for head in range(Q):
+                mapped = (head*K)//Q
+                query,query_float = iv(layer,"q_rope"),fv(layer,"q_rope")
+                keys = [integer_trace[t,layer,"k_rope"] for t in range(start,ordinal+1)]
+                values = [integer_trace[t,layer,"v"] for t in range(start,ordinal+1)]
+                fk = [float_trace[t,layer,"k_rope"] for t in range(start,ordinal+1)]
+                fvalues = [float_trace[t,layer,"v"] for t in range(start,ordinal+1)]
+                scores = [nearest(Fraction(sum(query[head*D+c]*k[mapped*D+c]
+                          for c in range(D))*65536,math.isqrt(D*2**32))) for k in keys]
+                es = [exponential(s-max(scores)) for s in scores]
+                fscores = [math.fsum(query_float[head*D+c]*k[mapped*D+c]
+                           for c in range(D))/math.sqrt(D) for k in fk]
+                fes = [math.exp(s-max(fscores)) for s in fscores]
+                for c in range(D):
+                    actual.append(clipped(nearest(Fraction(sum(e*v[mapped*D+c]
+                                  for e,v in zip(es,values)),sum(es)))))
+                    reference.append(math.fsum(e*v[mapped*D+c]
+                                     for e,v in zip(fes,fvalues))/math.fsum(fes))
+            check(ordinal,layer,"context",actual,reference)
+            linear(layer,3,"o","context")
+            check(ordinal,layer,"residual_attention",
+                  [clipped(a+b) for a,b in zip(iv(source_layer,source_stage),iv(layer,"o"))],
+                  [a+b for a,b in zip(fv(source_layer,source_stage),fv(layer,"o"))])
+            norm(layer,"norm_post",layer,"residual_attention",6)
+            linear(layer,4,"gate","norm_post")
+            linear(layer,5,"up","norm_post")
+            silu = []
+            for x in iv(layer,"gate"):
+                e = exponential(-abs(x)*256)
+                sigmoid = ((2**48) if x>=0 else e*2**24)//(2**24+e)
+                silu.append(clipped(nearest(Fraction(x*sigmoid,2**24))))
+            check(ordinal,layer,"silu",silu,[x/(1+math.exp(-x)) for x in fv(layer,"gate")])
+            check(ordinal,layer,"product",
+                  [clipped(nearest(Fraction(a*b,256))) for a,b in zip(silu,iv(layer,"up"))],
+                  [a*b for a,b in zip(fv(layer,"silu"),fv(layer,"up"))])
+            linear(layer,6,"down","product")
+            check(ordinal,layer,"residual_mlp",
+                  [clipped(a+b) for a,b in zip(iv(layer,"residual_attention"),iv(layer,"down"))],
+                  [a+b for a,b in zip(fv(layer,"residual_attention"),fv(layer,"down"))])
+        norm(-1,"final",L-1,"residual_mlp",7)
+    contributions = []
+    if violations:
+        first = violations[0]
+        ordinal,vocabulary = divmod(first["index"],V)
+        running_integer,running_float = 0,0.0
+        for c,(a,b) in enumerate(zip(integer_trace[ordinal,-1,"final"],
+                                   float_trace[ordinal,-1,"final"])):
+            embedding = coefficient(0,0,0,vocabulary,c)
+            running_integer += a*embedding
+            running_float += b*embedding/256
+            contributions.append(dict(component=c,embedding_q8_8=embedding,
+                integer_final_q8_8=a,floating_final=b,integer_product_q16_16=a*embedding,
+                floating_product=b*embedding/256,error=(a/256-b)*embedding/256,
+                accumulated_integer=running_integer/65536,accumulated_floating=running_float,
+                accumulated_error=running_integer/65536-running_float))
+        require(running_integer==logits[first["index"]],"AUDIT exact logit reduction")
+        require(abs(running_float-first["floating_logit"])<1e-12,"AUDIT floating logit reduction")
+    prior = ROOT/"evidence/preparation"/(
+        "verifier-B17-throughput-diagnostic-04" if seed==17 else "verifier-B89-throughput-diagnostic-01")
+    bindings = []
+    for path in files:
+        original = prior/path.name
+        require(original.read_bytes()==path.read_bytes(),"AUDIT changed deterministic vector "+path.name)
+        bindings.append(dict(path=str(path.relative_to(ROOT)),prior=str(original.relative_to(ROOT)),
+                             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),byte_identical=True))
+    report = dict(configuration=label,seed=seed,observed_rtl=False,
+                  stage_records=records,stage_equation_comparisons=sum(checks),
+                  saturation_count=sum(saturation.values()),violating_logits=violations,
+                  first_violating_logit_component_contributions=contributions,
+                  unchanged_vector_bindings=bindings,
+                  diagnosis="Prescribed integer stage equations and floating equations independently "
+                  "replay without discrepancy; nonsaturating quantization accumulation violates "
+                  "the unchanged end-to-end logit threshold. This is a specification-contract "
+                  "witness, not a completed RTL simulation or an observed RTL mismatch.")
+    path = run.out/f"audit-{label}-{seed}.json"
+    path.write_text(json.dumps(report,indent=2)+"\n")
+    run.result("numerical-audit",configuration=label,seed=seed,
+               report=str(path.relative_to(ROOT)),observed_rtl=False,
+               stage_equation_comparisons=sum(checks),saturation_count=sum(saturation.values()),
+               violating_logits=violations,outcome="specification_conflict")
+
+
+def progress_probe(run,tb,prefix,sources,seconds):
+    sv,executable = run.out/(prefix+".sv"),run.out/(prefix+".vvp")
+    sv.write_text(tb)
+    code,_,err = run.command(["iverilog","-g2012","-Wall","-s","tb","-o",
+                             executable,*(sources or RTL),sv],prefix+"-compile",timeout=5)
+    require(code==0 and not err.strip(),"progress compile failure "+err)
+    run.command(["timeout","--version"],"timeout-version",timeout=2)
+    code,stdout,stderr = run.command(["timeout",str(seconds),"vvp","-v",executable],
+                                     prefix+"-progress",timeout=seconds+3)
+    require(code in (0,124),"progress unexpected tool failure "+stdout+stderr)
+    run.result("bounded-progress",outcome="measurement_not_acceptance",exit_code=code,
+               budget_s=seconds,completed_simulation=code==0,
+               full_B_gemv_products=573440,minimum_B_gemv_reads=2293760,
+               raw_stdout=str((run.out/(prefix+"-progress.stdout")).relative_to(ROOT)),
+               raw_stderr=str((run.out/(prefix+"-progress.stderr")).relative_to(ROOT)))
+
+
 def integrated(run, label, seed, sources=None, name=None, audit=False,
                progress_seconds=None):
     """Functional vector algebra oracle; no RTL state or timing is modeled."""
@@ -909,7 +1118,7 @@ def integrated(run, label, seed, sources=None, name=None, audit=False,
     instance=f"""
 reg new_sequence=1; wire logit_valid; reg logit_ready=0;
 wire [31:0] logit_index; wire signed [31:0] logit_data;
-integer observed_logits=0, ordinal=0, output_stalls=0;
+integer observed_logits=0, ordinal=0, output_stalls=0, residual_vectors=0;
 reg was_logit_stalled=0; reg [63:0] held_logit;
 reg [31:0] expected_logits[0:{len(logits)-1}];
 initial $readmemh("{logitfile}",expected_logits);
@@ -1008,7 +1217,15 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
        $display("PROJECTION token=%0d slot=%0d accepted=%0d cycles=%0d",
          completions,mem_req_row,accepted,cycles);
      if(mem_req_kind==8 && mem_req_row==0 && mem_req_col=={H-1})
-       $display("RESIDUAL token=%0d accepted=%0d cycles=%0d",completions,accepted,cycles);
+       begin
+         if(residual_vectors%{L+1}==0)
+           $display("EMBEDDING token=%0d accepted=%0d cycles=%0d",completions,accepted,cycles);
+         else
+           $display("LAYER token=%0d completed_layer=%0d accepted=%0d cycles=%0d",
+             completions,residual_vectors%{L+1}-1,accepted,cycles);
+         residual_vectors=residual_vectors+1;
+         $fflush();
+       end
      writes=writes+1; reply=0;""")
     tb=tb.replace("completions=completions+1;",
                   'completions=completions+1;\n'
@@ -1710,14 +1927,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
-                     "protocol","errors","mutations","nonlinear"},
+                     "protocol","errors","mutations","nonlinear","numerical-audit","progress"},
         "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
@@ -1731,6 +1948,16 @@ def main():
                             name+"-version", timeout=5)
         if args.check == "behavior":
             slices = manifest(run)
+            if args.probe == "numerical-audit":
+                for seed in (17,89):
+                    integrated(run,"B",seed,audit=True)
+                raise AssertionError("SPECIFICATION CONFLICT: retained nonsaturating B17/B89 "
+                                     "contract witnesses exceed unchanged logit quality limits; "
+                                     "independent replanning required, not an observed RTL mismatch")
+            if args.probe == "progress":
+                require(args.configuration=="B" and args.seed==17,
+                        "bounded progress diagnostic is B17 only")
+                integrated(run,"B",17,progress_seconds=6)
             if args.probe in (None, "dequant"):
                 dequant_test(run, slices)
             if args.probe == "mutations":
