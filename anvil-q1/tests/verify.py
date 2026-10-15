@@ -299,17 +299,35 @@ def manifest(run):
     return slices
 
 
-def compile_sim(run, text, name, sources=None, timeout=3600):
+def compile_sim(run, text, name, sources=None, timeout=3600, *,
+                compiler="iverilog", compiler_args=(), runtime="vvp",
+                settled=False):
     sv = run.out / (name+".sv")
     executable = run.out / (name+".vvp")
     sv.write_text(text)
-    code, _, err = run.command(
-        ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o", executable,
-         *(sources or RTL), sv], name+"-compile", timeout)
-    require(code == 0 and not err.strip(), f"{name}: compile/warning failure: {err}")
-    code, stdout, stderr = run.command(["vvp", executable], name+"-simulate", timeout)
+    code, output, err = run.command(
+        [compiler, *compiler_args, "-g2012", "-Wall", "-s", "tb", "-o", executable,
+         *(sources or RTL), sv], name+"-compile", timeout,
+        observe_progress=settled)
+    if settled:
+        require(run.commands[-1].get("process_group_settled") is True,
+                f"{name}: compiler process group did not settle")
+    require(code == 0 and not err.strip() and (not settled or not output.strip()),
+            f"{name}: compile/warning failure: {output} {err}")
+    code, stdout, stderr = run.command([runtime, executable], name+"-simulate", timeout,
+                                       observe_progress=settled)
+    if settled:
+        require(run.commands[-1].get("process_group_settled") is True,
+                f"{name}: runtime process group did not settle")
+        require(not stderr.strip(), f"{name}: runtime warning/error: {stderr}")
     require(code == 0 and "PASS" in stdout,
             f"{name}: {'subprocess timeout' if code is None else 'behavioral failure'}: {stdout} {stderr}")
+    if settled:
+        run.result(name+"-artifacts", outcome="pass",
+                   testbench=str(sv.relative_to(ROOT)),
+                   testbench_sha256=hashlib.sha256(sv.read_bytes()).hexdigest(),
+                   executable=str(executable.relative_to(ROOT)),
+                   executable_sha256=hashlib.sha256(executable.read_bytes()).hexdigest())
     return stdout
 
 
@@ -2482,7 +2500,8 @@ storage[mem_req_row][mem_req_col]=mem_req_wdata;
                outcome="pass", stdout=stdout)
 
 
-def protocol_test(run):
+def protocol_test(run, *, name="protocol", compiler="iverilog",
+                  compiler_args=(), runtime="vvp", settled=False):
     """No model-service arithmetic: errors are injected at the first read."""
     params = ",".join(f".{k}({v})" for k,v in zip(KEYS,MATRIX["D"]))
     ports = BUS_PORTS
@@ -2584,8 +2603,11 @@ initial begin
  $finish;
 end endmodule
 """
-    stdout = compile_sim(run,text,"protocol")
-    run.result("protocol", invalid_tokens=4, reset_during_request=2,
+    stdout = compile_sim(run,text,name, compiler=compiler,
+                         compiler_args=compiler_args, runtime=runtime, settled=settled)
+    require("PASS protocol invalid=4 reset_aborts=3 memory_errors=1" in stdout,
+            name+": missing protocol smoke coverage")
+    run.result(name, invalid_tokens=4, reset_during_request=2,
                reset_during_response=1, injected_memory_errors=1,
                outcome="pass", stdout=stdout)
 
