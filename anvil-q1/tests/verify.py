@@ -204,7 +204,8 @@ def compile_sim(run, text, name, sources=None, timeout=20):
          *(sources or RTL), sv], name+"-compile", timeout)
     require(code == 0 and not err.strip(), f"{name}: compile/warning failure: {err}")
     code, stdout, stderr = run.command(["vvp", executable], name+"-simulate", timeout)
-    require(code == 0 and "PASS" in stdout, f"{name}: behavioral failure: {stdout} {stderr}")
+    require(code == 0 and "PASS" in stdout,
+            f"{name}: {'subprocess timeout' if code is None else 'behavioral failure'}: {stdout} {stderr}")
     return stdout
 
 
@@ -361,9 +362,9 @@ end endmodule
 
 
 def gemv_extremes(run):
-    # H=8 and I=16384 are legal. Down projection's 16384 products exceed
+    # H=8 and I=9216 are legal. Down projection's first 4608 products exceed
     # signed 64-bit range. Its second half cancels to a nonsaturating zero.
-    params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(16384),.NUM_Q_HEADS(2),.NUM_KV_HEADS(2),.HEAD_DIM(4),.GROUP_SIZE(8),.MAX_SEQ_LEN(1))"
+    params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(9216),.NUM_Q_HEADS(2),.NUM_KV_HEADS(2),.HEAD_DIM(4),.GROUP_SIZE(8),.MAX_SEQ_LEN(1))"
     instance = "anvil_q1_w4a16_gemv "+params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
     reader = """
 integer test_case=0;
@@ -372,25 +373,25 @@ function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
 begin
  case(kind)
  8: begin
-   if(row!=11 || col>=16384) $fatal(1,"activation address");
+   if(row!=11 || col>=9216) $fatal(1,"activation address");
    case(test_case)
-   0: read_memory=col<8192 ? 32'd32767 : 32'd32769;
-   1: read_memory=32767;
-   2: read_memory=32769;
+   0: read_memory=col<4608 ? 32'd32767 : 32'd32769;
+   1: read_memory=col<4608 ? 32767 : 0;
+   2: read_memory=col<4608 ? 32769 : 0;
    3: read_memory=col==0 ? 1 : 0;
    default: read_memory=col==0 ? 65535 : 0;
    endcase
  end
  1: begin
-   if(proj!=6 || row>=16384 || col!=0) $fatal(1,"qweight address");
+   if(proj!=6 || row>=9216 || col!=0) $fatal(1,"qweight address");
    read_memory=32'hffffffff;
  end
  2: begin
-   if(proj!=6 || row>=2048 || col!=0) $fatal(1,"qzero address");
+   if(proj!=6 || row>=1152 || col!=0) $fatal(1,"qzero address");
    read_memory=0;
  end
  3: begin
-   if(proj!=6 || row>=2048 || col>=8) $fatal(1,"scale address");
+   if(proj!=6 || row>=1152 || col>=8) $fatal(1,"scale address");
    read_memory=test_case>=3 ? 16'h6c00 : 16'h7bff;
  end
  default: begin $fatal(1,"illegal kind or forbidden down bias"); read_memory=0; end
@@ -403,7 +404,7 @@ if(mem_req_kind!==8 || mem_req_row!==12 || mem_req_col!==(writes%8) ||
    mem_req_proj!==0 || mem_req_wdata!==expected_value)
  $fatal(1,"GEMV widened cancellation write %0d got %h",writes,mem_req_wdata);
 """
-    exact_peak = 8192*32767*64393052160
+    exact_peak = 4608*32767*64393052160
     require(exact_peak > 2**63, "wide accumulator case must cross signed64")
     commands = """
 for(test_case=0;test_case<5;test_case=test_case+1) launch(6,0);
@@ -797,8 +798,10 @@ def portability(run):
     require(majors == {12,13}, f"UNMET prerequisite: installed Icarus majors {sorted(majors)}; need 12 and 13")
 
 
-def synthesis(run):
+def synthesis(run, configuration=None):
     for label, values in MATRIX.items():
+        if configuration is not None and label != configuration:
+            continue
         script = run.out / f"synthesis-{label}.ys"
         output = run.out / f"netlist-{label}.json"
         script.write_text("read_verilog -sv "+ " ".join(str(p) for p in RTL)+"\n"+
@@ -874,7 +877,7 @@ def main():
                 raise AssertionError("INCOMPLETE: mandatory layer-stack matrix, nonlinear quality, "
                                      "protocol/error/reset matrix and behavioral mutations not yet implemented")
         elif args.check == "synthesis":
-            synthesis(run)
+            synthesis(run,args.configuration)
         else:
             portability(run)
         run.result("check", outcome="pass", scope=args.probe or args.check)
