@@ -304,6 +304,11 @@ end endtask
 always @(negedge clk) begin
  if(!rst_n) reset_check();
  else begin
+ if(^{cmd_ready,done,error,mem_req_valid,mem_rsp_ready} === 1'bx)
+   $fatal(1,"ACTIVE unknown handshake");
+ if(mem_req_valid && ^{mem_req_write,mem_req_kind,mem_req_layer,
+    mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} === 1'bx)
+   $fatal(1,"ACTIVE unknown request payload");
    mem_req_ready = cycles%31 != 0;
    mem_rsp_valid = pending && delay_count==0;
    mem_rsp_rdata = reply;
@@ -804,6 +809,15 @@ def integrated(run, label, seed, sources=None, name=None):
                         for a,b in zip(actual,reference))
     logit_quality = all(abs(a/65536-b)<=16/256+0.01*abs(b)
                         for a,b in zip(logits,float_logits))
+    violations = [dict(index=n,integer_logit=a/65536,floating_logit=b,
+                       absolute_error=abs(a/65536-b),limit=16/256+0.01*abs(b))
+                  for n,(a,b) in enumerate(zip(logits,float_logits))
+                  if abs(a/65536-b)>16/256+0.01*abs(b)]
+    run.result(f"oracle-quality-{label}-{seed}",outcome="prediction",
+               observed_rtl=False,final_max_error_q8_lsb=final_error,
+               logit_max_absolute_error=logit_error,
+               final_quality=final_quality,logit_quality=logit_quality,
+               violating_logits=violations)
     prefix=name or f"matrix-{label}-{seed}"
     memfile=run.out/(prefix+"-memory.hex")
     memfile.write_text("\n".join(f"@{a:x} {v:08x}" for a,v in sorted(initial.items()))+"\n")
@@ -919,7 +933,7 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
                floating_final_max_error_q8_lsb=final_error,
                floating_logit_max_absolute_error=logit_error,
                floating_final_quality=final_quality, floating_logit_quality=logit_quality,
-               outcome="pass",stdout=stdout)
+               outcome="pass" if final_quality and logit_quality else "fail",stdout=stdout)
     require(final_quality,f"{label}/{seed}: floating layer-stack final activation exceeds 16 LSB")
     require(logit_quality,f"{label}/{seed}: floating layer-stack logit quality")
 
@@ -1284,7 +1298,8 @@ end
 always @(posedge clk) if(rst_n) begin
  cycles=cycles+1; if(cycles>100000) $fatal(1,"TOP fault watchdog");
  if(logit_valid && logit_ready) begin
-   if(scenario!=2 || logits!=0 || logit_index!==0 || logit_data!==524288)
+   if((scenario!=2 && scenario!=9) || logits!=0 ||
+      logit_index!==0 || logit_data!==524288)
      $fatal(1,"PARTIAL logit mismatch/scenario");
    logits=logits+1;
  end
@@ -1310,6 +1325,14 @@ always @(posedge clk) if(rst_n) begin
    if(scenario==3 && mem_req_kind==0) begin
      injected=1; reply=16'h7c00;
    end
+   if((scenario==4 && mem_req_kind==4) ||
+      (scenario==5 && mem_req_kind==3) ||
+      (scenario==6 && mem_req_kind==5) ||
+      (scenario==7 && mem_req_kind==6) ||
+      (scenario==8 && mem_req_kind==7) ||
+      (scenario==9 && logits==1)) begin
+     injected=1; reply=(scenario==5 ? 16'hbc00 : 16'h7e00);
+   end
  end else if(mem_rsp_valid && mem_rsp_ready) begin
    pending=0; replies=replies+1;
    if(writes>0) acks=writes;
@@ -1330,24 +1353,25 @@ begin
 end endtask
 initial begin
  repeat(3) @(negedge clk); rst_n=1;
- for(scenario=1;scenario<=3;scenario=scenario+1) begin
+ for(scenario=1;scenario<=9;scenario=scenario+1) begin
    writes=0; acks=0; logits=0; injected=0;
    launch(1); retire_error();
-   if(!injected || (scenario==1 && acks==0) || (scenario==2 && logits!=1))
+   if(!injected || (scenario==1 && acks==0) ||
+      ((scenario==2 || scenario==9) && logits!=1))
      $fatal(1,"TOP missing directed fault event");
    checks=checks+1;
    // A fault must invalidate the sequence even though token position is zero.
    launch(0); retire_error(); checks=checks+1;
  end
- if(checks!=6 || requests!=replies) $fatal(1,"TOP fault coverage");
- $display("PASS top errors after_write=1 partial_logit=1 nonfinite_embedding=1 invalidated=3");
+ if(checks!=18 || requests!=replies) $fatal(1,"TOP fault coverage");
+ $display("PASS top errors after_write=1 partial_logit=2 nonfinite_boundaries=7 invalidated=9");
  $finish;
 end endmodule
 """
     stdout = compile_sim(run,text,"top-errors")
     run.result("top-errors",outcome="pass",post_write_errors=1,
-               partial_logit_errors=1,nonfinite_embeddings=1,
-               invalidated_sequence_rejections=3,stdout=stdout)
+               partial_logit_errors=2,nonfinite_or_invalid_scale_boundaries=7,
+               invalidated_sequence_rejections=9,stdout=stdout)
 
 
 def attention_test(run):
