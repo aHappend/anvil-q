@@ -23,7 +23,7 @@
 
 | 代际 | 芯片型号 | 目标模型与混合精度规范 | 已交付 RTL | 当前状态 |
 | --- | --- | --- | --- | --- |
-| **第一代** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 混合精度**（24 层、`896d` 隐藏维、14Q:2KV 7:1 GQA 含 QKV 偏置、`4864d` SwiGLU MLP、`rope_theta = 1e6`、全模型 168 个 AWQ 4-bit 在线反量化线性层） | `13` 个模块 / `1146` 行 | In Progress — Step 8 (recovery_review) by Vulcan 0.8 |
+| **第一代** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 混合精度**（24 层、`896d` 隐藏维、14Q:2KV 7:1 GQA 含 QKV 偏置、`4864d` SwiGLU MLP、`rope_theta = 1e6`、全模型 168 个 AWQ 4-bit 在线反量化线性层） | `13` 个模块 / `1146` 行 | In Progress — Step 8 (verifier) by Vulcan 0.8 |
 | **第二代** | **Anvil-Q2** | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · 多 Bank W4A16 AWQ 与 KV-Cache 压缩加速引擎 | — | 规划中 |
 
 ## Anvil-Q1 · 第一代（`Qwen/Qwen2.5-0.5B-Instruct-AWQ` W4A16 混合精度版）
@@ -38,7 +38,7 @@
 | **7:1 分组查询注意力（`self_attn` GQA）** | `num_attention_heads = 14`，`num_key_value_heads = 2`（`7:1` GQA），`q_proj [896->896]`、`k/v_proj [896->128]` 含 `F16` 偏置，`o_proj [896->896]` 无偏置 | 带偏置 QKV AWQ 投影、2 头 KV Cache 存储与 7 倍分组广播、因果掩码缩放点积注意力 |
 | **SwiGLU 前馈网络（`mlp`）** | `intermediate_size = 4864`（打包维度 `[896, 608]`），`gate_proj`、`up_proj`、`silu(gate) * up`、`down_proj [4864->896]`（无偏置） | 38 分组（`4864 / 128`）AWQ W4A16 双路门控投影、SiLU 激活与残差归约 |
 
-- **当前工程状态**：`In Progress — Step 8 (recovery_review) by Vulcan 0.8`（最近更新：`2026-10-15 19:20:24 UTC+8`）
+- **当前工程状态**：`In Progress — Step 8 (verifier) by Vulcan 0.8`（最近更新：`2026-10-15 19:21:27 UTC+8`）
 - **官方配置与第 0 层真实 AWQ 切片快照**：[`anvil-q1/hf_qwen25_05b_awq_spec/`](anvil-q1/hf_qwen25_05b_awq_spec/)
 - **交付包目录**：[`anvil-q1/`](anvil-q1/)（`rtl/`、`design/`、`tests/`）
 
