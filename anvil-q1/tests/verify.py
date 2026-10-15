@@ -1584,9 +1584,17 @@ def standalone_phase_cost(run):
             observed_cpu_difference_s=cpu, attribution="inconclusive",
             reason="Pipe buffering, tick quantization and uncalibrated instrumentation "
                    "prevent expression-level or exact additive attribution."))
+    invocation_wall = time.monotonic()-run.started_tick
+    command_wall = sum(r["elapsed_s"] for r in run.commands)
     run.result("standalone-phase-cost", outcome="advisory_measurement_not_acceptance",
         comparisons=comparisons, preparation_through_pair_wall_s=time.monotonic()-setup_tick,
-        invocation_through_pair_wall_s=time.monotonic()-run.started_tick,
+        invocation_through_pair_wall_s=invocation_wall,
+        recorded_command_wall_s=command_wall,
+        outside_commands_wall_s=invocation_wall-command_wall,
+        outside_commands_scope="Binding, source snapshots, phase derivation, retained "
+            "input copies, harness generation, postprocessing and receipt I/O; "
+            "not simulator arithmetic. Final receipt serialization/interpreter exit "
+            "are outside this timestamp and owned by the shared runtime.",
         scope="Exactly one standalone/checker-only pair; no concrete RTL-expression "
               "hypothesis established by scheduling-region differences alone.")
 
@@ -1688,6 +1696,124 @@ def _public_phase_partition(path):
             "intervening gaps belong to the current span until the next public "
             "request's first valid appearance. Input regions include observable "
             "packed-weight-to-next-request gaps, not inferred internal MAC states.")
+
+
+def _instrument_public_phases(template, plan):
+    boundaries = plan["boundaries"]
+    declarations = (
+        f"integer cost_boundary[0:{len(boundaries)-1}];\n"
+        "integer cost_boundary_next=0;\ninitial begin\n"+
+        "\n".join(f" cost_boundary[{i}]={edge};"
+                  for i, edge in enumerate(boundaries))+"\nend\n")
+    require(template.count("integer cycles=0") == 1,
+            "phase declaration hook ambiguity")
+    template = template.replace("integer cycles=0",
+                                declarations+"integer cycles=0", 1)
+    hook = " if(cost_start>=0) $fdisplay(cost_fd"
+    require(template.count(hook) == 1, "phase boundary hook ambiguity")
+    marker = f"""
+ if(cost_index>=0 && cost_boundary_next<{len(boundaries)}) begin
+   if(cost_index==cost_boundary[cost_boundary_next]) begin
+     $display("COST_PHASE boundary=%0d sample=%0d cycles=%0d accepted=%0d writes=%0d",
+       cost_boundary_next,cost_index,cycles,accepted,writes);
+     $fflush();
+     cost_boundary_next=cost_boundary_next+1;
+   end
+ end
+"""
+    # Replace only diagnostic messages, retaining every assertion and service step.
+    for label in ("COST_START", "COST_END", "PROGRESS", "PROJECTION_ACK",
+                  "EMBEDDING_ACK", "LAYER_ACK", "TOKEN"):
+        pattern = r'\$display\("'+label+r' [^;]*;'
+        template, count = re.subn(pattern, ";", template)
+        require(count == 1, "phase diagnostic message hook ambiguity: "+label)
+    final = '         $fclose(cost_fd); $fflush();'
+    require(template.count(final) == 1, "phase final boundary hook ambiguity")
+    template = template.replace(final,
+        '         if(cost_index!=10365 || cycles-cost_start!=10365 ||\n'
+        '            accepted!=4914 || responses!=4914 || writes!=336 || pending)\n'
+        '           $fatal(1,"COST entire interval/count/final acknowledgement");\n'
+        f'         if(cost_boundary_next!={len(boundaries)}) '
+        '$fatal(1,"COST phase boundary coverage");\n'+final, 1)
+    template = template.replace("$fflush();", ";")
+    template = template.replace(hook, marker+hook, 1)
+    return template
+
+
+def _public_phase_observations(plan, events, observation, record):
+    require(len(events) == len(plan["boundaries"]), "phase marker count")
+    counts = []
+    for ordinal, (event, edge) in enumerate(zip(events, plan["boundaries"])):
+        fields = {k: int(v) for k, v in
+                  re.findall(r"(\w+)=(\d+)", event["message"])}
+        require(fields["boundary"] == ordinal and fields["sample"] == edge and
+                fields["cycles"] == 7+edge and
+                all(event[k] is not None for k in
+                    ("child_user_cpu_s", "child_system_cpu_s")),
+                "phase boundary identity/CPU observation missing")
+        counts.append(fields)
+    require(counts[0]["accepted"] == 672 and counts[-1]["accepted"] == 4914 and
+            counts[0]["writes"] == 224 and counts[-1]["writes"] == 336,
+            "phase marker endpoint accounting")
+    phases, totals = [], {}
+    for span, start, end, left, right in zip(
+            plan["spans"], events, events[1:], counts, counts[1:]):
+        wall = end["elapsed_wall_s"]-start["elapsed_wall_s"]
+        cpu = sum(end[k]-start[k] for k in
+                  ("child_user_cpu_s", "child_system_cpu_s"))
+        require(wall >= 0 and cpu >= 0 and
+                right["accepted"]-left["accepted"] == span["transactions"],
+                "phase nonmonotonic observation/transaction ownership")
+        measured = dict(span, wall_s=wall, child_cpu_s=cpu,
+            attribution="inconclusive",
+            resolution_limited=(cpu <= 2*observation["cpu_sample_resolution_s"]),
+            observation_work_lower_bound_s=start["observation_work_s"],
+            limitation="Timestamp at pipe receipt, followed by sampled child CPU; "
+                       "simulator can advance while the observer handles a marker.")
+        phases.append(measured)
+        total = totals.setdefault(span["category"], dict(
+            wall_s=0.0, child_cpu_s=0.0, elapsed_edges=0, transactions=0,
+            responses=0, intervals=0, resolution_limited_intervals=0))
+        for key in ("wall_s", "child_cpu_s", "elapsed_edges", "transactions", "responses"):
+            total[key] += measured[key]
+        total["intervals"] += 1
+        total["resolution_limited_intervals"] += measured["resolution_limited"]
+    wall = events[-1]["elapsed_wall_s"]-events[0]["elapsed_wall_s"]
+    cpu = sum(events[-1][k]-events[0][k] for k in
+              ("child_user_cpu_s", "child_system_cpu_s"))
+    total_cpu = record["child_user_cpu_s"]+record["child_system_cpu_s"]
+    before_cpu = events[0]["child_user_cpu_s"]+events[0]["child_system_cpu_s"]
+    clock = time.get_clock_info("monotonic")
+    return dict(phase_intervals=phases, phase_totals=totals,
+        elapsed_edges=plan["elapsed_edges"], marker_count=len(events),
+        boundary_ownership=plan["convention"],
+        measurement_limits=dict(
+            host_clock=clock.implementation, host_clock_resolution_s=clock.resolution,
+            cpu_tick_resolution_s=observation["cpu_sample_resolution_s"],
+            pipe_buffering="Simulator stdout is a pipe; $fflush at every boundary. "
+                "OS buffering/read batching may deliver multiple markers together. "
+                "Flushing does not synchronize the simulator and host sampler.",
+            observation_work_lower_bound_s=sum(e["observation_work_s"] for e in events),
+            instrumentation_overhead_s=None,
+            overhead_limit="Only host marker parsing/CPU-sampling work after timestamp "
+                "is timed; pipe reads, decoding, scheduling, simulator marker formatting, "
+                "flush and boundary dispatch are not isolated. No calibration or "
+                "overhead subtraction. Exact overhead and upper bound are unknown.",
+            classification="Scheduling regions only; metadata includes dequant-related "
+                "traffic, input regions include product/accumulation progression gaps, "
+                "bias/output includes final-rounding-related traffic. None isolates "
+                "an arithmetic expression or gives an additive causal decomposition."),
+        outside_interval=dict(
+            setup_wall_s=events[0]["elapsed_wall_s"], setup_child_cpu_s=before_cpu,
+            post_interval_wall_s=record["elapsed_s"]-events[-1]["elapsed_wall_s"],
+            post_interval_child_cpu_s=total_cpu-before_cpu-cpu,
+            post_interval_scope="Final endpoint assertions, acknowledgement, finish, "
+                "scheduler statistics, drain and process settlement.",
+            matched_wall_s=wall, matched_child_cpu_s=cpu,
+            unclassified_inside_wall_s=wall-sum(t["wall_s"] for t in totals.values()),
+            unclassified_inside_child_cpu_s=cpu-sum(t["child_cpu_s"] for t in totals.values()),
+            caveat="CPU scope is timeout plus child, with tick samples inside and "
+                "reaped usage outside; residual differences can reflect quantization."))
 
 
 def _transactor_cost_replay(run, prior, setup_tick, phase_plan=None):
@@ -3047,7 +3173,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator","mac-qualified-cost-discriminator"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","errors","mutations","nonlinear","parameters","toolchain","numerical-audit","progress","cost-discriminator","transactor-cost-discriminator","mac-qualified-cost-discriminator","standalone-phase-cost"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -3056,7 +3182,7 @@ def main():
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
                      "protocol","errors","mutations","nonlinear","numerical-audit","progress",
                      "cost-discriminator","transactor-cost-discriminator",
-                     "mac-qualified-cost-discriminator"},
+                     "mac-qualified-cost-discriminator","standalone-phase-cost"},
         "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
@@ -3065,7 +3191,8 @@ def main():
     try:
         tools = (("python3", "iverilog", "vvp") if
                  args.probe in ("transactor-cost-discriminator",
-                                "mac-qualified-cost-discriminator") else
+                                "mac-qualified-cost-discriminator",
+                                "standalone-phase-cost") else
                  ("python3", "iverilog", "vvp", "yosys"))
         for name in tools:
             executable = shutil.which(name)
@@ -3073,7 +3200,12 @@ def main():
                 run.command([executable, "-V" if name in ("iverilog","yosys","vvp") else "--version"],
                             name+"-version", timeout=5)
         if args.check == "behavior":
-            slices = manifest(run)
+            if args.probe != "standalone-phase-cost":
+                slices = manifest(run)
+            if args.probe == "standalone-phase-cost":
+                require(args.configuration == "B" and args.seed == 17,
+                        "standalone phase cost is B17 only")
+                standalone_phase_cost(run)
             if args.probe == "transactor-cost-discriminator":
                 require(args.configuration == "B" and args.seed == 17,
                         "transactor cost discriminator is B17 only")
