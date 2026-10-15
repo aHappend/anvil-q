@@ -27,7 +27,7 @@ self-checking verification suites and reproducible delivery packages.
 | Generation | Design | Target model & precision contract | Delivered RTL | Status |
 | --- | --- | --- | --- | --- |
 | **Gen-1** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 Mixed-Precision** (24 layers, `896d` hidden, 14Q:2KV 7:1 GQA with QKV bias, `4864d` SwiGLU MLP, `rope_theta = 1e6`, 168 AWQ INT4 group-128 linear projections) | `13` modules / `1223` lines | Completed & Verified — Full W4A16 AWQ RTL Delivery Package & Official Report (REPORT.pdf) Published |
-| **Gen-2** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · Multi-bank W4A16 AWQ + KV-cache compression engine | Pending | In progress (designer) |
+| **Gen-2** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · Multi-bank W4A16 AWQ + KV-cache compression engine | Pending | In progress (verifier) |
 
 ## Anvil-Q1 · Generation 1 (`Qwen/Qwen2.5-0.5B-Instruct-AWQ` W4A16 Edition)
 
