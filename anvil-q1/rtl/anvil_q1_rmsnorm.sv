@@ -34,7 +34,7 @@ module anvil_q1_rmsnorm #(
               128'(NUM_LAYERS)>128'd4294967295) begin: invalid_parameters
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: RMSNorm dimensions");
   end endgenerate
-  assign read_x = rd;
+  assign read_x = (complete && state==2) ? rd : 32'sd0;
   assign square = $signed({{32{read_x[31]}},read_x}) *
                   $signed({{32{read_x[31]}},read_x});
   assign norm_product = $signed({{32{x[31]}},x}) *

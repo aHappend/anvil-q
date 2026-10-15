@@ -21,7 +21,9 @@ module anvil_q1_top #(
   reg [31:0] token, position, next_position, component, vocabulary, layer;
   reg signed [31:0] activation;
   reg signed [95:0] logit_sum;
+  wire [15:0] tensor_f16;
   wire signed [31:0] tensor_value;
+  wire signed [31:0] logit_activation, logit_weight;
   wire signed [63:0] logit_product;
   wire [1:0] ready, finished, faults;
   wire [2:0] reqv, reqr, reqw, rspv, rspr, rspe;
@@ -38,9 +40,12 @@ module anvil_q1_top #(
     NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,VOCAB_SIZE,MAX_SEQ_LEN) parameters_ok();
   assign selected=(state==5 || state==6) ? 1 : ((state==7 || state==8) ? 2 : 0);
-  assign tensor_value=anvil_q1_pkg::f16_q16(rd[15:0]);
-  assign logit_product=$signed({{32{activation[31]}},activation})*
-                       $signed({{32{tensor_value[31]}},tensor_value});
+  assign tensor_f16=(own_complete && (state==2 || state==12)) ? rd[15:0] : 16'd0;
+  assign tensor_value=anvil_q1_pkg::f16_q16(tensor_f16);
+  assign logit_activation=(own_complete && state==12) ? activation : 32'sd0;
+  assign logit_weight=(own_complete && state==12) ? tensor_value : 32'sd0;
+  assign logit_product=$signed({{32{logit_activation[31]}},logit_activation})*
+                       $signed({{32{logit_weight[31]}},logit_weight});
   assign token_ready=rst_n && state==0;
   assign logit_valid=rst_n && state==15;
   assign logit_index=rst_n ? vocabulary : 0;

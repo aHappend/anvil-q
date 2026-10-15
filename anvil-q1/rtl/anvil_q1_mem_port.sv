@@ -23,7 +23,7 @@ module anvil_q1_mem_port(
   assign idle = rst_n && state == 0;
   assign complete = rst_n && state == 2 && mem_rsp_valid;
   assign fault = complete && mem_rsp_error;
-  assign rdata = rst_n ? mem_rsp_rdata : 0;
+  assign rdata = complete ? mem_rsp_rdata : 0;
   assign mem_req_valid = rst_n && state == 1;
   assign mem_rsp_ready = rst_n && state == 2;
   assign mem_req_write = rst_n ? wr : 0;

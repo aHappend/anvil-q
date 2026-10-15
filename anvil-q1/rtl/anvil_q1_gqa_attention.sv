@@ -21,7 +21,7 @@ module anvil_q1_gqa_attention #(
   reg signed [95:0] dot, max_score, current_score, weighted;
   reg [63:0] denominator;
   reg [31:0] exponential;
-  wire signed [31:0] read_value;
+  wire signed [31:0] read_key, read_value;
   wire signed [63:0] dot_product;
   wire signed [127:0] scaled_score;
   wire signed [64:0] weighted_product;
@@ -37,9 +37,10 @@ module anvil_q1_gqa_attention #(
   anvil_q1_parameters #(
     NUM_LAYERS,HIDDEN_SIZE,HIDDEN_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,1,4,1,MAX_SEQ_LEN) parameters_ok();
-  assign read_value=rd;
+  assign read_key=(complete && state==9) ? rd : 32'sd0;
+  assign read_value=(complete && state==14) ? rd : 32'sd0;
   assign dot_product=$signed({{32{q[31]}},q})*
-                     $signed({{32{read_value[31]}},read_value});
+                     $signed({{32{read_key[31]}},read_key});
   assign dim_scaled=128'(HEAD_DIM)<<32;
   assign sqrt_dim=anvil_q1_pkg::isqrt128(dim_scaled);
   assign scaled_score=anvil_q1_pkg::round_div(

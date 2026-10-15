@@ -29,9 +29,11 @@ module anvil_q1_w4a16_gemv #(
   integer i;
   wire idle, complete, fault;
   wire [31:0] rd;
+  wire [15:0] bias_f16;
   wire signed [31:0] bias_value;
   wire signed [31:0] output_value;
-  assign bias_value = anvil_q1_pkg::f16_q16(rd[15:0]);
+  assign bias_f16 = (complete && state==12) ? rd[15:0] : 16'd0;
+  assign bias_value = anvil_q1_pkg::f16_q16(bias_f16);
   assign output_value = anvil_q1_pkg::sat32(
     anvil_q1_pkg::round_shift(accumulators[lane],16));
   anvil_q1_parameters #(

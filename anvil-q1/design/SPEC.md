@@ -88,6 +88,19 @@ or scalar scale channel. Norm/bias use row zero. Cache uses layer, row=position,
 col=flattened KV component. Scratch uses row=slot, col=component.
 RoPE uses row=position and col=2*pair+cos/sin selector, pair local to a head.
 
+Internal response-data isolation does not change this public interface.
+Each bus mux forwards response data only to its selected child, driving zero
+to the others. Each memory-port helper exposes data only on its existing
+response transfer (`complete`); no response is registered or delayed.
+Response-dependent arithmetic operands are zero outside their consuming
+response states: top binary16 conversion in states 2/12 and logit multiply
+in 12, RMSNorm square in 2, attention K-dot in 9 and V-weighted product in 14,
+and GEMV binary16 bias conversion in 12. Valid consuming data, including X/Z
+bits, is not sanitized; response errors retain their existing priority.
+Standalone engines retain the same behavior without a parent mux.
+This local activity isolation adds no clock gating, storage, arithmetic lanes,
+protocol cycles or transaction changes and makes no measured speedup claim.
+
 Top ports remain `clk,rst_n,token_valid,token_ready,token_id[31:0],
 token_pos[31:0],new_sequence,logit_valid,logit_ready,logit_index[31:0],
 signed logit_data[31:0],done,error` and the memory interface.

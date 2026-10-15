@@ -7,6 +7,28 @@ allocated. A parent exclusively routes its active child's memory transaction.
 External scratch retains intermediate vectors, external KV retains committed
 history, and external coefficients implement mathematical Qwen RoPE angles.
 
+Response data is routed only to the selected child at each bus mux; unselected
+children receive zero. The memory-port helper exposes read data only during
+its existing response transfer (`complete`, state 2 and response-valid).
+Neither isolation point changes request/response valid, ready or error routing.
+On an active response, data bits, including X/Z, pass through unchanged.
+Standalone engines use the same memory-port qualification without depending on
+a parent mux. No clock gating, additional registers or FSM edges are introduced.
+
+Response-dependent arithmetic has separate consuming-state operand isolation:
+top converts binary16 only on its state-2 embedding or state-12 tied-weight
+response and enables logit multiplication operands only on state 12; each
+RMSNorm squares response data only in state 2; attention feeds K to its dot
+product only on the state-9 response and V to its weighted product only on
+state 14; GEMV converts bias only on state 12. Other response types, including
+write acknowledgements, cannot toggle those arithmetic inputs with their data.
+All consuming edges, arithmetic widths, rounding, transaction counts and error
+priority remain unchanged. This removes avoidable inactive-data fanout; it is
+not a measured execution-time improvement. Independent B17 completion must
+first be established against the unchanged 25-second simulation watchdog,
+linked to `evidence/preparation/verifier-q16-B17-01/receipt.json`, before the
+remaining seeds and complete 120-second checks establish acceptance.
+
 Required hierarchy: top -> decoder_layer + final rmsnorm; decoder_layer ->
 rmsnorm, w4a16_gemv, rope, gqa_attention, swiglu_mlp; swiglu_mlp ->
 w4a16_gemv; each GEMV -> awq_dequant. Shared helpers may implement arithmetic
@@ -127,7 +149,7 @@ interval. A nonfinite tensor read is an operation error, not a successful zero.
 
 | Engine | State transitions and conditions |
 | --- | --- |
-| Memory port | 0 idle -> 1 on issue; 1 -> 2 on request-ready; 2 -> 0 on response-valid. Complete/fault are qualified by state 2 and response-valid. Payload registers load only on issue in state 0. |
+| Memory port | 0 idle -> 1 on issue; 1 -> 2 on request-ready; 2 -> 0 on response-valid. Complete/fault are qualified by state 2 and response-valid. Read data passes through only when complete; otherwise zero. Payload registers load only on issue in state 0. |
 | GEMV | 0 accepts command -> 16 block initialization, or 19 invalid. 16 clears eight accumulators -> 5 zero request -> 6 response -> 7 scale request -> 8 response; repeat scales for lanes 0..7. Then 1 activation request -> 2 response -> 3 weight request -> 4 response -> 9 scalar MAC. State 9 checks validity and loops eight lanes -> 10 input advance. State 10 loops to 1 within group or 5 at group boundary, or selects QKV bias 11 / unbiased output 13 after last input. 11 bias request -> 12 response/check/add; loop eight biases then reset lane -> 13 output request -> 14 acknowledgement. State 14 advances output lane (13), next block (16), or completion 20. 19 -> 20 -> 0. Completion/fault invalidates command-local metadata. |
 | RMSNorm | 0 -> 1 or invalid 14. 1 request -> 2 square-sum response; 2 loops components or -> 3 mean/epsilon -> 4 sqrt -> 5 reciprocal/check -> 6. 6 request x -> 7 response -> 8 request gamma -> 9 response/check -> 10 output request -> 11 acknowledgement. 11 loops to 6 or -> 15. 14 -> 15 -> 0. |
 | RoPE | 0 -> 1 or invalid 14. States 1/3/5/7 request x/y/cos/sin -> 2/4/6/8 responses respectively. 8 -> 9 first rotated write -> 10 ack -> 11 second rotated write -> 12 ack. State 12 advances pair, head, then Q-to-K vector, or -> 15. 14 -> 15 -> 0. |

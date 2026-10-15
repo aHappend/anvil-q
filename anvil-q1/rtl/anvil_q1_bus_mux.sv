@@ -28,7 +28,7 @@ module anvil_q1_bus_mux #(parameter N=2)(
   generate for(g=0;g<N;g=g+1) begin: routes
     assign c_req_ready[g]=active && select==g && mem_req_ready;
     assign c_rsp_valid[g]=active && select==g && mem_rsp_valid;
-    assign c_rsp_rdata[g*32+:32]=rst_n ? mem_rsp_rdata : 0;
+    assign c_rsp_rdata[g*32+:32]=(active && select==g) ? mem_rsp_rdata : 0;
     assign c_rsp_error[g]=active && select==g && mem_rsp_error;
   end endgenerate
 endmodule
