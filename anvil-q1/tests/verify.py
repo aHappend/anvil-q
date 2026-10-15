@@ -469,6 +469,73 @@ def exp_integer(x):
     return max(0,total) >> n
 
 
+def floating_stack(memory, get, fixed, dims, shape, tokens):
+    """Floating tensor algebra, independent of all integer nonlinear helpers."""
+    L,H,I,Q,K,D,G,V,S = shape
+    cache = {}
+    finals, outputs = [], []
+    def norm(x, kind, layer):
+        denominator = math.sqrt(sum(v*v for v in x)/H+1e-6)
+        return [v*(fixed(kind,layer,0,0,c)/256)/denominator
+                for c,v in enumerate(x)]
+    def linear(x, layer, projection):
+        ni,no = dims[projection]
+        result = []
+        for c in range(no):
+            total = 0.0
+            for k in range(ni):
+                qw = get(1,layer,projection,k,c//8)
+                qz = get(2,layer,projection,k//G,c//8)
+                w = ((qw >> SHIFTS[c%8]) & 15)-((qz >> SHIFTS[c%8]) & 15)
+                scale = half_fixed(get(3,layer,projection,k//G,c),16)/65536
+                total += x[k]*w*scale
+            if projection < 3:
+                total += fixed(4,layer,projection,0,c)/256
+            result.append(total)
+        return result
+    def rotate(x, heads, position):
+        result = list(x)
+        for h in range(heads):
+            for i in range(D//2):
+                angle = position*1000000.0**(-2*i/D)
+                a,b = h*D+i,h*D+i+D//2
+                co,si = math.cos(angle),math.sin(angle)
+                result[a],result[b] = x[a]*co-x[b]*si,x[b]*co+x[a]*si
+        return result
+    for token,position in tokens:
+        if position == 0:
+            cache.clear()
+        x = [fixed(0,0,0,token,c)/256 for c in range(H)]
+        for layer in range(L):
+            normalized = norm(x,5,layer)
+            q = rotate(linear(normalized,layer,0),Q,position)
+            k = rotate(linear(normalized,layer,1),K,position)
+            v = linear(normalized,layer,2)
+            cache[layer,position] = k,v
+            context = []
+            for head in range(Q):
+                kh = head//(Q//K)
+                scores = [sum(q[head*D+c]*cache[layer,t][0][kh*D+c]
+                              for c in range(D))/math.sqrt(D)
+                          for t in range(position+1)]
+                es = [math.exp(s-max(scores)) for s in scores]
+                context.extend(sum(e*cache[layer,t][1][kh*D+c]
+                                   for t,e in enumerate(es))/sum(es)
+                               for c in range(D))
+            projected = linear(context,layer,3)
+            residual = [a+b for a,b in zip(x,projected)]
+            normalized = norm(residual,6,layer)
+            gate,up = linear(normalized,layer,4),linear(normalized,layer,5)
+            product = [a/(1+math.exp(-a))*b for a,b in zip(gate,up)]
+            down = linear(product,layer,6)
+            x = [a+b for a,b in zip(residual,down)]
+        x = norm(x,7,0)
+        finals.append(x)
+        outputs.extend(sum(x[c]*fixed(0,0,0,r,c)/256 for c in range(H))
+                       for r in range(V))
+    return finals,outputs
+
+
 def integrated(run, label, seed):
     """Functional vector algebra oracle; no RTL state or timing is modeled."""
     L,H,I,Q,K,D,G,V,S = MATRIX[label]
@@ -529,7 +596,7 @@ def integrated(run, label, seed):
             for bit,v in enumerate((math.cos(angle),math.sin(angle))):
                 put(11,0,0,pos,2*pair+bit,rounded(int(v*2**52),1 << 22))
     initial = dict(memory)
-    expected_writes, logits = [], []
+    expected_writes, logits, final_vectors = [], [], []
     scratch = {}
     def write(slot,c,value):
         scratch[slot,c] = value
@@ -612,8 +679,21 @@ def integrated(run, label, seed):
             for c in range(H):
                 write(0,c,sat(scratch[7,c]+scratch[12,c]))
         norm(0,0,14,7)
+        final_vectors.append(vector(14,H))
         for r in range(V):
             logits.append(sat(sum(scratch[14,c]*fixed(0,0,0,r,c) for c in range(H)),32))
+    float_final,float_logits = floating_stack(
+        memory,get,fixed,dims,MATRIX[label],
+        [((seed+n)%V,pos) for n,pos in enumerate(positions)])
+    final_error = max(abs(a-b*256) for actual,reference in zip(final_vectors,float_final)
+                      for a,b in zip(actual,reference))
+    logit_error = max(abs(a/65536-b) for a,b in zip(logits,float_logits))
+    require(all(abs(a-b*256)<=16 for actual,reference in zip(final_vectors,float_final)
+                for a,b in zip(actual,reference)),
+            f"{label}/{seed}: floating layer-stack final activation exceeds 16 LSB")
+    require(all(abs(a/65536-b)<=16/256+0.01*abs(b)
+                for a,b in zip(logits,float_logits)),
+            f"{label}/{seed}: floating layer-stack logit quality")
     prefix=f"matrix-{label}-{seed}"
     memfile=run.out/(prefix+"-memory.hex")
     memfile.write_text("\n".join(f"@{a:x} {v:08x}" for a,v in sorted(initial.items()))+"\n")
@@ -702,6 +782,8 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
     stdout=compile_sim(run,tb,prefix,timeout=25)
     run.result(prefix,configuration=MATRIX[label],seed=seed,tokens=len(positions),
                compared_writes=len(expected_writes),compared_logits=len(logits),
+               floating_final_max_error_q8_lsb=final_error,
+               floating_logit_max_absolute_error=logit_error,
                outcome="pass",stdout=stdout)
 
 
@@ -769,6 +851,115 @@ storage[mem_req_row][mem_req_col]=mem_req_wdata[15:0];
     stdout = compile_sim(run, command_tb(instance,reader,check,commands), "rope")
     run.result("rope", positions=list(positions), theta=1000000,
                compared_writes=len(writes), floating_tolerance_q8_lsb=2,
+               outcome="pass", stdout=stdout)
+
+
+def protocol_test(run):
+    """No model-service arithmetic: errors are injected at the first read."""
+    params = ",".join(f".{k}({v})" for k,v in zip(KEYS,MATRIX["D"]))
+    ports = BUS_PORTS.replace("reg rst_n=0", "reg rst_n=0")
+    connect = BUS_CONNECT.replace(
+        ".cmd_valid(cmd_valid),.cmd_ready(cmd_ready)",
+        ".token_valid(cmd_valid),.token_ready(cmd_ready)").replace(
+        ".cmd_layer(cmd_layer),.cmd_pos(cmd_pos)",
+        ".token_id(cmd_layer),.token_pos(cmd_pos)")
+    text = "module tb;\n"+ports+"""
+reg new_sequence=0; wire logit_valid; wire [31:0] logit_index;
+wire signed [31:0] logit_data;
+integer failures=0, aborts=0, cycle=0;
+""" + f"anvil_q1_top #({params}) dut("+connect+"""
+,.new_sequence(new_sequence),.logit_valid(logit_valid),.logit_ready(1'b0),
+.logit_index(logit_index),.logit_data(logit_data));
+task automatic zero_outputs;
+begin
+ if({cmd_ready,done,error,logit_valid,logit_index,logit_data,
+     mem_req_valid,mem_rsp_ready,mem_req_write,mem_req_kind,mem_req_layer,
+     mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata} !== 204'd0)
+   $fatal(1,"RESET public output leakage");
+end endtask
+always @(posedge clk) begin
+ cycle=cycle+1;
+ if(cycle>1000) $fatal(1,"PROTOCOL watchdog");
+ if(!rst_n) zero_outputs();
+end
+always @(negedge clk) if(!rst_n) zero_outputs();
+task automatic accept(input [31:0] token,position,input ns);
+begin
+ @(negedge clk); if(cmd_ready!==1) $fatal(1,"not idle");
+ cmd_layer=token; cmd_pos=position; new_sequence=ns; cmd_valid=1;
+ @(posedge clk);
+ if(mem_req_valid!==0 || mem_rsp_ready!==0)
+   $fatal(1,"request accepted on E0");
+ @(negedge clk); cmd_valid=0;
+ if(cmd_ready!==0 || done!==0 || error!==0)
+   $fatal(1,"post E0 busy contract");
+end endtask
+task automatic rejected(input [31:0] token,position,input ns);
+begin
+ accept(token,position,ns);
+ while(done!==1) begin
+   if(mem_req_valid!==0 || logit_valid!==0)
+     $fatal(1,"INVALID token produced memory/logits");
+   @(negedge clk);
+ end
+ if(error!==1 || cmd_ready!==0) $fatal(1,"INVALID completion");
+ failures=failures+1;
+ @(negedge clk);
+ if(done!==0 || error!==0 || cmd_ready!==1)
+   $fatal(1,"completion pulse/retire contract");
+end endtask
+task automatic wait_request;
+begin
+ while(mem_req_valid!==1) @(negedge clk);
+ if(mem_req_write!==0 || mem_req_kind!==0 ||
+    mem_req_layer!==0 || mem_req_proj!==0 || mem_req_row!==0 || mem_req_col!==0)
+   $fatal(1,"first embedding request address");
+end endtask
+task automatic reset_now;
+begin
+ rst_n=0; #1; zero_outputs(); @(negedge clk);
+ mem_rsp_valid=0; mem_rsp_error=0; mem_req_ready=0; rst_n=1;
+ if(cmd_ready!==0) begin end
+ @(negedge clk); if(cmd_ready!==1) $fatal(1,"reset recovery");
+ aborts=aborts+1;
+end endtask
+initial begin
+ #0; #1; zero_outputs(); repeat(3) @(negedge clk); rst_n=1;
+ rejected(1,0,0); rejected(0,1,0); rejected(0,1,1);
+ // Invalid submissions must leave the initial committed position unchanged.
+ accept(0,0,0); wait_request();
+ repeat(3) begin
+   @(negedge clk);
+   if(mem_req_valid!==1 || mem_rsp_ready!==0)
+     $fatal(1,"stalled request handshake");
+ end
+ reset_now();
+ accept(0,0,1); wait_request(); mem_req_ready=1;
+ @(negedge clk); mem_req_ready=0;
+ if(mem_req_valid!==0 || mem_rsp_ready!==1)
+   $fatal(1,"post R response phase");
+ reset_now();
+ accept(0,0,0); wait_request(); mem_req_ready=1;
+ @(negedge clk); mem_req_ready=0;
+ mem_rsp_rdata=0; mem_rsp_error=1; mem_rsp_valid=1;
+ @(negedge clk); mem_rsp_valid=0; mem_rsp_error=0;
+ while(done!==1) begin
+   if(mem_req_valid!==0 || logit_valid!==0)
+     $fatal(1,"ERROR generated subsequent traffic");
+   @(negedge clk);
+ end
+ if(error!==1) $fatal(1,"memory error not reported");
+ @(negedge clk);
+ rejected(0,0,0);
+ accept(0,0,1); wait_request(); reset_now();
+ if(failures!=4 || aborts!=3) $fatal(1,"PROTOCOL coverage");
+ $display("PASS protocol invalid=%0d reset_aborts=%0d memory_errors=1",failures,aborts);
+ $finish;
+end endmodule
+"""
+    stdout = compile_sim(run,text,"protocol")
+    run.result("protocol", invalid_tokens=4, reset_during_request=2,
+               reset_during_response=1, injected_memory_errors=1,
                outcome="pass", stdout=stdout)
 
 
@@ -844,7 +1035,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","rms","matrix"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","rms","matrix","protocol"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -866,6 +1057,8 @@ def main():
                 gemv_extremes(run)
             if args.probe in (None, "rms"):
                 rms_test(run)
+            if args.probe in (None, "protocol"):
+                protocol_test(run)
             if args.probe=="matrix":
                 require(args.configuration is not None,"matrix probe requires configuration")
                 integrated(run,args.configuration,args.seed)
