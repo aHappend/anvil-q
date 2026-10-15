@@ -592,11 +592,14 @@ def exp_integer(x):
     return max(0,total) >> n
 
 
-def floating_stack(memory, get, fixed, dims, shape, tokens):
+def floating_stack(memory, get, fixed, dims, shape, tokens, trace=None):
     """Floating tensor algebra, independent of all integer nonlinear helpers."""
     L,H,I,Q,K,D,G,V,S = shape
     cache = {}
     finals, outputs = [], []
+    def capture(ordinal, layer, stage, values):
+        if trace is not None:
+            trace[ordinal,layer,stage] = list(values)
     def norm(x, kind, layer):
         denominator = math.sqrt(sum(v*v for v in x)/H+1e-6)
         return [v*(fixed(kind,layer,0,0,c)/256)/denominator
@@ -625,15 +628,23 @@ def floating_stack(memory, get, fixed, dims, shape, tokens):
                 co,si = math.cos(angle),math.sin(angle)
                 result[a],result[b] = x[a]*co-x[b]*si,x[b]*co+x[a]*si
         return result
-    for token,position in tokens:
+    for ordinal,(token,position) in enumerate(tokens):
         if position == 0:
             cache.clear()
         x = [fixed(0,0,0,token,c)/256 for c in range(H)]
+        capture(ordinal,-1,"embedding",x)
         for layer in range(L):
             normalized = norm(x,5,layer)
-            q = rotate(linear(normalized,layer,0),Q,position)
-            k = rotate(linear(normalized,layer,1),K,position)
+            capture(ordinal,layer,"norm_input",normalized)
+            q = linear(normalized,layer,0)
+            k = linear(normalized,layer,1)
             v = linear(normalized,layer,2)
+            for stage,values in (("q",q),("k",k),("v",v)):
+                capture(ordinal,layer,stage,values)
+            q = rotate(q,Q,position)
+            k = rotate(k,K,position)
+            capture(ordinal,layer,"q_rope",q)
+            capture(ordinal,layer,"k_rope",k)
             cache[layer,position] = k,v
             context = []
             for head in range(Q):
@@ -646,20 +657,33 @@ def floating_stack(memory, get, fixed, dims, shape, tokens):
                                    for t,e in enumerate(es))/sum(es)
                                for c in range(D))
             projected = linear(context,layer,3)
+            capture(ordinal,layer,"context",context)
+            capture(ordinal,layer,"o",projected)
             residual = [a+b for a,b in zip(x,projected)]
+            capture(ordinal,layer,"residual_attention",residual)
             normalized = norm(residual,6,layer)
+            capture(ordinal,layer,"norm_post",normalized)
             gate,up = linear(normalized,layer,4),linear(normalized,layer,5)
-            product = [a/(1+math.exp(-a))*b for a,b in zip(gate,up)]
+            capture(ordinal,layer,"gate",gate)
+            capture(ordinal,layer,"up",up)
+            silu = [a/(1+math.exp(-a)) for a in gate]
+            capture(ordinal,layer,"silu",silu)
+            product = [a*b for a,b in zip(silu,up)]
+            capture(ordinal,layer,"product",product)
             down = linear(product,layer,6)
+            capture(ordinal,layer,"down",down)
             x = [a+b for a,b in zip(residual,down)]
+            capture(ordinal,layer,"residual_mlp",x)
         x = norm(x,7,0)
+        capture(ordinal,-1,"final",x)
         finals.append(x)
         outputs.extend(sum(x[c]*fixed(0,0,0,r,c)/256 for c in range(H))
                        for r in range(V))
     return finals,outputs
 
 
-def integrated(run, label, seed, sources=None, name=None):
+def integrated(run, label, seed, sources=None, name=None, audit=False,
+               progress_seconds=None):
     """Functional vector algebra oracle; no RTL state or timing is modeled."""
     L,H,I,Q,K,D,G,V,S = MATRIX[label]
     rng = random.Random(seed)
@@ -721,17 +745,34 @@ def integrated(run, label, seed, sources=None, name=None):
     initial = dict(memory)
     expected_writes, logits, final_vectors = [], [], []
     scratch = {}
+    integer_trace, float_trace, saturation = {}, {}, {}
+    active_stage = None
+    def capture(layer,stage,slot=None,n=None,values=None):
+        if audit:
+            integer_trace[ordinal,layer,stage] = (
+                list(values) if values is not None else vector(slot,n))
+    def bounded(value):
+        if audit and (value < -32768 or value > 32767):
+            saturation[active_stage] = saturation.get(active_stage,0)+1
+        return sat(value)
     def write(slot,c,value):
         scratch[slot,c] = value
         expected_writes.append((8,0,slot,c,value & 65535))
     def vector(slot,n):
         return [scratch[slot,c] for c in range(n)]
     def norm(l,src,dst,kind):
+        nonlocal active_stage
+        stage = {5:"norm_input",6:"norm_post",7:"final"}[kind]
+        active_stage = ordinal,(-1 if kind==7 else l),stage
         x=vector(src,H)
         inv=(1 << 32)//math.isqrt((sum(v*v for v in x) << 16)//H+4295)
         for c,v in enumerate(x):
-            write(dst,c,sat(rounded(v*fixed(kind,l,0,0,c)*inv,1 << 24)))
+            write(dst,c,bounded(rounded(v*fixed(kind,l,0,0,c)*inv,1 << 24)))
+        capture(active_stage[1],stage,dst,H)
     def linear(l,p,src,dst):
+        nonlocal active_stage
+        stage = ("q","k","v","o","gate","up","down")[p]
+        active_stage = ordinal,l,stage
         ni,no=dims[p]
         x=vector(src,ni)
         for c in range(no):
@@ -743,17 +784,21 @@ def integrated(run, label, seed, sources=None, name=None):
                 total+=v*w
             if p<3:
                 total+=fixed(4,l,p,0,c)*65536
-            write(dst,c,sat(rounded(total,65536)))
+            write(dst,c,bounded(rounded(total,65536)))
+        capture(l,stage,dst,no)
     positions = list(range(S))+[0]
     for ordinal,pos in enumerate(positions):
         token=(seed+ordinal)%V
         for c in range(H):
             write(0,c,fixed(0,0,0,token,c))
+        capture(-1,"embedding",0,H)
         for l in range(L):
             norm(l,0,1,5)
             for p,src,dst in ((0,1,2),(1,1,3),(2,1,4)):
                 linear(l,p,src,dst)
             for slot,heads in ((2,Q),(3,K)):
+                stage = "q_rope" if slot==2 else "k_rope"
+                active_stage = ordinal,l,stage
                 for head in range(heads):
                     for pair in range(D//2):
                         a,b=head*D+pair,head*D+pair+D//2
@@ -762,13 +807,15 @@ def integrated(run, label, seed, sources=None, name=None):
                         si=get(11,0,0,pos,2*pair+1)
                         co=co if co<2**31 else co-2**32
                         si=si if si<2**31 else si-2**32
-                        write(slot,a,sat(rounded(x*co-y*si,1 << 30)))
-                        write(slot,b,sat(rounded(y*co+x*si,1 << 30)))
+                        write(slot,a,bounded(rounded(x*co-y*si,1 << 30)))
+                        write(slot,b,bounded(rounded(y*co+x*si,1 << 30)))
+                capture(l,stage,slot,heads*D)
             for slot,kind in ((3,9),(4,10)):
                 for c in range(kv):
                     v=scratch[slot,c]
                     put(kind,l,0,pos,c,v & 65535)
                     expected_writes.append((kind,l,pos,c,v & 65535))
+            active_stage = ordinal,l,"context"
             for head in range(Q):
                 kvhead=head//(Q//K)
                 scores=[]
@@ -785,29 +832,41 @@ def integrated(run, label, seed, sources=None, name=None):
                     for t,e in enumerate(es):
                         v=get(10,l,0,t,kvhead*D+c)
                         weighted+=(v if v<32768 else v-65536)*e
-                    write(5,head*D+c,sat(rounded(weighted,sum(es))))
+                    write(5,head*D+c,bounded(rounded(weighted,sum(es))))
+            capture(l,"context",5,H)
             linear(l,3,5,6)
+            active_stage = ordinal,l,"residual_attention"
             for c in range(H):
-                write(7,c,sat(scratch[0,c]+scratch[6,c]))
+                write(7,c,bounded(scratch[0,c]+scratch[6,c]))
+            capture(l,"residual_attention",7,H)
             norm(l,7,8,6)
             linear(l,4,8,9)
             linear(l,5,8,10)
+            silus = []
             for c in range(I):
                 x=scratch[9,c]
                 e=exp_integer(-abs(x)*256)
                 sigmoid=((1 << 48) if x>=0 else e*(1 << 24))//((1 << 24)+e)
-                silu=sat(rounded(x*sigmoid,1 << 24))
-                write(11,c,sat(rounded(silu*scratch[10,c],256)))
+                active_stage = ordinal,l,"silu"
+                silu=bounded(rounded(x*sigmoid,1 << 24))
+                silus.append(silu)
+                active_stage = ordinal,l,"product"
+                write(11,c,bounded(rounded(silu*scratch[10,c],256)))
+            capture(l,"silu",values=silus)
+            capture(l,"product",11,I)
             linear(l,6,11,12)
+            active_stage = ordinal,l,"residual_mlp"
             for c in range(H):
-                write(0,c,sat(scratch[7,c]+scratch[12,c]))
+                write(0,c,bounded(scratch[7,c]+scratch[12,c]))
+            capture(l,"residual_mlp",0,H)
         norm(0,0,14,7)
         final_vectors.append(vector(14,H))
         for r in range(V):
             logits.append(sat(sum(scratch[14,c]*fixed(0,0,0,r,c) for c in range(H)),32))
     float_final,float_logits = floating_stack(
         memory,get,fixed,dims,MATRIX[label],
-        [((seed+n)%V,pos) for n,pos in enumerate(positions)])
+        [((seed+n)%V,pos) for n,pos in enumerate(positions)],
+        trace=float_trace if audit else None)
     final_error = max(abs(a-b*256) for actual,reference in zip(final_vectors,float_final)
                       for a,b in zip(actual,reference))
     logit_error = max(abs(a/65536-b) for a,b in zip(logits,float_logits))
@@ -832,6 +891,11 @@ def integrated(run, label, seed, sources=None, name=None):
                                      for kind,l,r,c,v in expected_writes)+"\n")
     logitfile=run.out/(prefix+"-logits.hex")
     logitfile.write_text("\n".join(f"{v&0xffffffff:08x}" for v in logits)+"\n")
+    if audit:
+        numerical_audit(run,label,seed,get,fixed,dims,positions,integer_trace,
+                        float_trace,saturation,violations,logits,
+                        (memfile,expectedfile,logitfile))
+        return
     addr_expr = [
         "row*H+col","((layer*7+proj)*I+row)*(I/8)+col",
         "((layer*7+proj)*(I/G)+row)*(I/8)+col",
@@ -933,6 +997,25 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
     tb=tb.replace("accepted=accepted+1; pending=1;",
                   'if(!mem_req_write && mem_req_wdata!==0) $fatal(1,"ADDRESS read wdata");\n'
                   "accepted=accepted+1; pending=1;")
+    tb=tb.replace("accepted%262144==0","accepted%8192==0")
+    tb=tb.replace("writes=writes+1; reply=0;",f"""
+     if(mem_req_kind==8 &&
+        ((mem_req_row==2 || mem_req_row==3 || mem_req_row==4 ||
+          mem_req_row==6 || mem_req_row==9 || mem_req_row==10 ||
+          mem_req_row==12) &&
+         mem_req_col==((mem_req_row==3 || mem_req_row==4) ? {kv-1} :
+           ((mem_req_row==9 || mem_req_row==10) ? {I-1} : {H-1}))))
+       $display("PROJECTION token=%0d slot=%0d accepted=%0d cycles=%0d",
+         completions,mem_req_row,accepted,cycles);
+     if(mem_req_kind==8 && mem_req_row==0 && mem_req_col=={H-1})
+       $display("RESIDUAL token=%0d accepted=%0d cycles=%0d",completions,accepted,cycles);
+     writes=writes+1; reply=0;""")
+    tb=tb.replace("completions=completions+1;",
+                  'completions=completions+1;\n'
+                  '$display("TOKEN completed=%0d accepted=%0d cycles=%0d",completions,accepted,cycles);')
+    if progress_seconds is not None:
+        progress_probe(run,tb,prefix,sources,progress_seconds)
+        return
     stdout=compile_sim(run,tb,prefix,sources=sources,timeout=25)
     run.result(prefix,configuration=MATRIX[label],seed=seed,tokens=len(positions),
                compared_writes=len(expected_writes),compared_logits=len(logits),
