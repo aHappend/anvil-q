@@ -32,11 +32,15 @@ module anvil_q1_gqa_attention #(
   reg issue, wr;
   reg [3:0] kind;
   reg [31:0] row, col, wd, ml;
+  anvil_q1_parameters #(
+    NUM_LAYERS,HIDDEN_SIZE,HIDDEN_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
+    HEAD_DIM,1,4,1,MAX_SEQ_LEN) parameters_ok();
   assign read_value=rd[15:0];
   assign dot_product=$signed(q)*$signed(read_value);
   assign dim_scaled=96'(HEAD_DIM)<<32;
   assign sqrt_dim=isqrt96(dim_scaled);
-  assign scaled_score=($signed({{32{dot[63]}},dot}) <<< 16)/$signed({48'd0,sqrt_dim});
+  assign scaled_score=round_div(
+    $signed({{32{dot[63]}},dot}) <<< 16,{16'd0,sqrt_dim});
   assign weighted_product=$signed(read_value)*$signed({1'b0,exponential});
   assign cmd_ready=rst_n && state==0;
   assign done=rst_n && state==31;
@@ -88,7 +92,7 @@ module anvil_q1_gqa_attention #(
         head<=0; time_index<=0; dim<=0; component<=0; context_pass<=0;
         dot<=0; max_score<=64'sh8000000000000000; weighted<=0; denominator<=0;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN || sqrt_dim==0)
-          begin failed<=1; state<=31; end
+          begin failed<=1; state<=30; end
         else state<=1;
       end
       1: if(issue) state<=2;
@@ -129,6 +133,7 @@ module anvil_q1_gqa_attention #(
           max_score<=64'sh8000000000000000; state<=6;
         end else state<=31;
       end
+      30: state<=31;
       31: state<=0;
       default: state<=0;
     endcase

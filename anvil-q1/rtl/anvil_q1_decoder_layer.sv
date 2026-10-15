@@ -12,7 +12,7 @@ module anvil_q1_decoder_layer #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  reg [1:0] state;
+  reg [2:0] state;
   reg [3:0] step;
   reg failed;
   reg [31:0] layer, position;
@@ -90,7 +90,7 @@ module anvil_q1_decoder_layer #(
       0: if(cmd_valid) begin
         layer<=cmd_layer; position<=cmd_pos; failed<=0; step<=0;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN)
-          begin failed<=1; state<=3; end
+          begin failed<=1; state<=4; end
         else state<=1;
       end
       1: if(ready[selected]) state<=2;
@@ -100,6 +100,7 @@ module anvil_q1_decoder_layer #(
         else begin step<=step+1; state<=1; end
       end
       3: state<=0;
+      4: state<=3;
       default: state<=0;
     endcase
   end

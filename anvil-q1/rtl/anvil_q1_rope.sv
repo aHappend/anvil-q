@@ -23,6 +23,9 @@ module anvil_q1_rope #(
   reg issue, wr;
   reg [3:0] kind;
   reg [31:0] row, col, wd;
+  anvil_q1_parameters #(
+    NUM_LAYERS,HIDDEN_SIZE,HIDDEN_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
+    HEAD_DIM,1,4,1,MAX_SEQ_LEN) parameters_ok();
   assign rotated_x = $signed(x)*$signed(cosine)-$signed(y)*$signed(sine);
   assign rotated_y = $signed(y)*$signed(cosine)+$signed(x)*$signed(sine);
   assign cmd_ready = rst_n && state==0;
@@ -61,7 +64,7 @@ module anvil_q1_rope #(
       0: if(cmd_valid) begin
         failed<=0; position<=cmd_pos; head<=0; pair_index<=0; key_vector<=0;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN)
-          begin failed<=1; state<=15; end
+          begin failed<=1; state<=14; end
         else state<=1;
       end
       1: if(issue) state<=2;
@@ -82,6 +85,7 @@ module anvil_q1_rope #(
         end else if(!key_vector) begin key_vector<=1; head<=0; pair_index<=0; state<=1; end
         else state<=15;
       end
+      14: state<=15;
       15: state<=0;
       default: state<=0;
     endcase

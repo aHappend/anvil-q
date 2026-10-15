@@ -23,6 +23,14 @@ module anvil_q1_elementwise #(
   wire [31:0] rd;
   reg issue, wr;
   reg [31:0] row, wd;
+  generate if(NUM_LAYERS<=0 || HIDDEN_SIZE<=0 || INTERMEDIATE_SIZE<=0 ||
+              MAX_SEQ_LEN<=0 || MAX_SEQ_LEN>16777215 ||
+              HIDDEN_SIZE%8!=0 || INTERMEDIATE_SIZE%8!=0 ||
+              128'(NUM_LAYERS)>128'd4294967295 ||
+              128'(HIDDEN_SIZE)>128'd4294967295 ||
+              128'(INTERMEDIATE_SIZE)*15>128'd4294967295) begin: invalid_parameters
+    initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: elementwise dimensions");
+  end endgenerate
   assign sum=$signed(a)+$signed(b);
   assign product=$signed(silu_q8(a))*$signed(b);
   assign cmd_ready=rst_n && state==0;
@@ -57,7 +65,7 @@ module anvil_q1_elementwise #(
       0: if(cmd_valid) begin
         failed<=0; mode<=cmd_mode; index<=0;
         if(cmd_mode>2 || cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN)
-          begin failed<=1; state<=15; end
+          begin failed<=1; state<=14; end
         else state<=1;
       end
       1: if(issue) state<=2;
@@ -70,6 +78,7 @@ module anvil_q1_elementwise #(
           begin index<=index+1; state<=1; end
         else state<=15;
       end
+      14: state<=15;
       15: state<=0;
       default: state<=0;
     endcase

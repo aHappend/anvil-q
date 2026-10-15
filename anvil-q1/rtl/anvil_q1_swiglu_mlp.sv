@@ -48,7 +48,7 @@ module anvil_q1_swiglu_mlp #(
       0: if(cmd_valid) begin
         failed<=0; layer<=cmd_layer; position<=cmd_pos; projection<=4;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN)
-          begin failed<=1; state<=15; end
+          begin failed<=1; state<=14; end
         else state<=1;
       end
       1: if(ready[0]) state<=2;
@@ -67,6 +67,7 @@ module anvil_q1_swiglu_mlp #(
       end
       7: if(ready[0]) state<=8;
       8: if(finished[0]) begin failed<=faults[0]; state<=15; end
+      14: state<=15;
       15: state<=0;
       default: state<=0;
     endcase

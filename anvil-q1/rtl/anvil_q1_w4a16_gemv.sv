@@ -30,6 +30,9 @@ module anvil_q1_w4a16_gemv #(
   wire [31:0] rd;
   wire signed [15:0] bias_value;
   assign bias_value = f16_q8(rd[15:0]);
+  anvil_q1_parameters #(
+    NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
+    HEAD_DIM,GROUP_SIZE,AWQ_BITS,1,MAX_SEQ_LEN) parameters_ok();
   reg issue, wr;
   reg [3:0] kind;
   reg [31:0] row, col, wd, ml;
@@ -77,7 +80,7 @@ module anvil_q1_w4a16_gemv #(
         failed<=0; layer<=cmd_layer; pos<=cmd_pos; projection<=cmd_proj;
         k<=0; c<=0; accumulator<=0;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN || cmd_proj>6)
-          begin failed<=1; state<=20; end
+          begin failed<=1; state<=19; end
         else begin
           inputs<=cmd_proj==6 ? INTERMEDIATE_SIZE : HIDDEN_SIZE;
           case(cmd_proj)
@@ -118,6 +121,7 @@ module anvil_q1_w4a16_gemv #(
         if(c+1<outputs) begin c<=c+1; k<=0; accumulator<=0; state<=1; end
         else state<=20;
       end
+      19: state<=20;
       20: state<=0;
       default: state<=0;
     endcase

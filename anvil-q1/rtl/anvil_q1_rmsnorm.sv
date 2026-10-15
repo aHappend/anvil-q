@@ -29,6 +29,12 @@ module anvil_q1_rmsnorm #(
   reg issue, wr;
   reg [3:0] kind;
   reg [31:0] row, col, wd, ml;
+  generate if(NUM_LAYERS<=0 || HIDDEN_SIZE<=0 || HIDDEN_SIZE%8!=0 ||
+              MAX_SEQ_LEN<=0 || MAX_SEQ_LEN>16777215 ||
+              128'(HIDDEN_SIZE)>128'd4294967295 ||
+              128'(NUM_LAYERS)>128'd4294967295) begin: invalid_parameters
+    initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: RMSNorm dimensions");
+  end endgenerate
   assign read_x = rd[15:0];
   assign square = $signed(read_x) * $signed(read_x);
   assign result = $signed(x) * $signed(gamma) * $signed({1'b0,reciprocal});
@@ -66,7 +72,7 @@ module anvil_q1_rmsnorm #(
       0: if(cmd_valid) begin
         failed<=0; layer<=cmd_layer; index<=0; sum<=0;
         if(cmd_mode>2 || cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN)
-          begin failed<=1; state<=15; end
+          begin failed<=1; state<=14; end
         else begin
           src<=cmd_mode==1 ? 7 : 0;
           dst<=cmd_mode==0 ? 1 : (cmd_mode==1 ? 8 : 14);
@@ -96,6 +102,7 @@ module anvil_q1_rmsnorm #(
         if(index+1<HIDDEN_SIZE) begin index<=index+1; state<=6; end
         else state<=15;
       end
+      14: state<=15;
       15: state<=0;
       default: state<=0;
     endcase
