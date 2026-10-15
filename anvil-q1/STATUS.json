@@ -1,15 +1,14 @@
 {
-  "family": "Anvil",
-  "series": "Anvil-Q",
   "chip": "Anvil-Q1",
-  "target_model": "Alibaba Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision Edition)",
-  "vulcan_version": "0.8.0",
+  "elapsed_seconds": 724.796,
+  "family": "Anvil",
+  "finished_cst": "2026-10-15 23:12:46 UTC+8",
+  "finished_utc": "2026-10-15T15:12:46.302360+00:00",
   "github_repo": "https://github.com/aHappend/anvil-q",
-  "status": "settled",
   "native_disposition": {
     "workflow_phase": "completed",
     "feedback": "",
-    "run_status": "ready",
+    "run_status": "accepted",
     "closeout_status": "blocked",
     "driver_steps": [
       {
@@ -24,10 +23,23 @@
     "driver_steps_ok": false,
     "state_error": null,
     "repairs_used": 60,
-    "designer_attempts": 2,
+    "designer_attempts": 1,
     "model_call_count": 78,
     "all_process_scopes_settled": false,
-    "reviewer_decisions": [],
+    "reviewer_decisions": [
+      {
+        "status": "continue",
+        "reason": "Acceptance remains open because the verification runner deletes existing evidence. In `tests/verify.py:48–52`, `Run.__init__` calls `shutil.rmtree(self.out)` whenever the requested output already exists. This directly violates the admitted append-only requirement and explains why the same behavior destination could run twice instead of being refused.\n\nThe original host attempt’s `.vulcan/engineering/run-0007/attempt-0003/stderr.log` records `mutation target not found product53`. The behavior receipt now at `evidence/verification/recovery-cost-profile-01/behavior/receipt.json` starts at 2026-10-15 13:57:14 UTC and contains the subsequent run, not that failed execution. The supplied host ledger independently records both attempts using that identical destination. This is a historical-retention defect, not evidence that the accelerator arithmetic failed. The later successful execution cannot restore the original receipt and raw artifacts contemporaneously.\n\nThere is useful progress: the repaired product53 selector matches the actual eight-lane accumulation in `rtl/anvil_q1_w4a16_gemv.sv`, and the retained `mutation-product53-simulate.stdout` contains the intended `GEMV widened cancellation` assertion. The mutation checker requires that functional rejection rather than accepting a compilation failure or timeout. The host also records completed behavior, synthesis and portability commands. Those results remain useful, but I have not completed their full technical acceptance audit; this review stops at the concrete evidence-retention violation.\n\nRepair only the verification output handling: reject an occupied destination before deleting or writing anything, with an explicit error. Preserve all current evidence and accepted RTL. Have the shared runtime record one named occupied-output refusal regression through the real `tests/verify.py` CLI, using a clearly labelled project-local fixture containing placeholder sentinel files; require nonzero exit, unchanged sentinel contents and no compilation or simulation. Retain and expose that test’s source and raw result for review. Do not rerun the unchanged full suites merely to demonstrate this guard.\n\nIdentify any already-retained contemporaneous copy of the original failed behavior receipt and raw outputs, without modifying runtime-owned files or reconstructing the record. If no such copy exists, state exactly what was lost and carry that historical-integrity limitation to the Coordinator for resolution; a new archive or rerun must not be represented as the original evidence. This review used reads and searches only; no files changed and no checks were executed."
+      },
+      {
+        "status": "continue",
+        "reason": "The occupied-output repair is supported, but Anvil-Q1 is not ready for acceptance: the portability check accepts a mixed Icarus toolchain instead of establishing the required matching version-12 and version-13 compiler/runtime pairs.\n\nBoth `evidence/verification/recovery-cost-profile-01/portability/compiler-1-version.stdout` and `compiler-2-version.stdout` identify the parser/elaborator as 13.0 but identify `vvp.tgt` as the 12.0 code generator. In `tests/verify.py:3045–3072`, portability merely searches the combined version text for a major number and runs null-target elaboration. It neither verifies the matching runtime nor executes generated simulation code with it. Thus the recorded successful portability command does not close the admitted requirement for Icarus 12/13 with matching runtimes. This is a verification gap, not evidence of an accelerator arithmetic failure.\n\nRepair that check to identify the actual compiler components and corresponding runtime for each major and reject mixed pairs. Have the shared runtime record one focused `dual-major-matched-runtime` check at a fresh append-only destination: warning-clean default/A/B/C/D elaboration using the correctly configured toolchains, plus an existing public-pin self-checking smoke compiled and executed with each matching runtime. Retain exact executable paths, versions, arguments and raw results. Reuse existing stimulus and assertions; do not rerun the unchanged full behavior or synthesis suites, install tools, overwrite evidence or alter RTL. If a genuine version-13 pair is unavailable, report that precise prerequisite rather than counting the mixed installation as passing.\n\nThere is useful verified progress. I read `tests/occupied_output_refusal.py`, the repaired exclusive directory creation and CLI error handling, and the retained refusal result. The real CLI exited 2 with the explicit refusal message; the recorded assertions require unchanged fixture contents, an armed audit hook, no subprocess/tool invocation and settled execution. The host independently records this regression completing successfully. The original failed behavior receipt also remains readable under `.vulcan/engineering/run-0007/attempt-0003/outputs/evidence/verification/recovery-cost-profile-01/behavior/receipt.json`, recording `mutation target not found product53`, consistent with that attempt's raw stderr. The repaired product53 run reaches the intended `GEMV widened cancellation` assertion. These observations preserve useful failure/repair evidence without excusing the historical overwrite. Full technical acceptance remains open; this review used reads and searches only and changed no files."
+      },
+      {
+        "status": "done",
+        "reason": "Approve the supplemental dual-major portability check: the recorded result closes the specific mixed-toolchain finding. The command has already run through the shared runtime, so no duplicate proposal or rerun is needed. This approval covers that repair and its focused verification, not a new claim of complete accelerator acceptance.\n\nI read the component-selection code, CLI dispatch, compilation helper, public-pin protocol test and retained generated testbench. The previous compiler-1-version.stdout really identifies version-13 parser components with a version-12 code generator. The repaired code pins the component directory with -B, checks target configuration paths, compares driver/preprocessor/parser/code-generator versions, and selects a matching runtime while retaining rejected candidates. In evidence/verification/dual-major-matched-runtime-01/receipt.json, the actual commands use /usr/bin/iverilog with /usr/lib/x86_64-linux-gnu/ivl and /usr/bin/vvp for version 12, and /home/v-sufengguo/.local/bin/iverilog13 with /home/v-sufengguo/.local/lib/ivl and /home/v-sufengguo/.local/bin/vvp13 for version 13. Their raw version output consistently identifies the respective major versions. All ten default/A/B/C/D elaborations use -g2012 -Wall and have empty diagnostic streams. Both compiled protocol tests execute with their selected runtimes, exit successfully, and exercise four invalid-token completions, three reset aborts and an injected memory error, with explicit public-output, timing and recovery assertions. This is more than compile-only evidence; it is a bounded protocol smoke, not a full numerical simulation under both majors.\n\nThe host records the exact admitted supplemental command completing in 2.096 seconds, within its 3,600-second budget, with settled processes. The receipt likewise records successful exits, no timeouts and settled child groups. The original mixed-component evidence remains available; the new result does not retroactively validate it. No RTL repair, tool installation, behavior/synthesis rerun or final product report is required by this portability repair. I used only file reads and searches and changed no files."
+      }
+    ],
     "native_engineering_accepted": false,
     "candidate_present": false,
     "candidate_invalid_reason": null,
@@ -36,9 +48,54 @@
     "initial_candidate_invalid_reason": null,
     "scientific_acceptance": false
   },
-  "started_utc": "2026-10-15T15:00:37.516741+00:00",
-  "finished_utc": "2026-10-15T15:12:46.302360+00:00",
+  "series": "Anvil-Q",
   "started_cst": "2026-10-15 23:00:37 UTC+8",
-  "finished_cst": "2026-10-15 23:12:46 UTC+8",
-  "elapsed_seconds": 724.796
+  "started_utc": "2026-10-15T15:00:37.516741+00:00",
+  "status": "completed",
+  "target_model": "Alibaba Qwen/Qwen2.5-0.5B-Instruct-AWQ (W4A16 G128 Mixed-Precision Edition)",
+  "vulcan_version": "0.8.0",
+  "disposition": {
+    "workflow_phase": "completed",
+    "feedback": "",
+    "run_status": "accepted",
+    "closeout_status": "blocked",
+    "driver_steps": [
+      {
+        "operation": "init",
+        "exit_code": 0
+      },
+      {
+        "operation": "run",
+        "exit_code": 2
+      }
+    ],
+    "driver_steps_ok": false,
+    "state_error": null,
+    "repairs_used": 60,
+    "designer_attempts": 1,
+    "model_call_count": 78,
+    "all_process_scopes_settled": false,
+    "reviewer_decisions": [
+      {
+        "status": "continue",
+        "reason": "Acceptance remains open because the verification runner deletes existing evidence. In `tests/verify.py:48–52`, `Run.__init__` calls `shutil.rmtree(self.out)` whenever the requested output already exists. This directly violates the admitted append-only requirement and explains why the same behavior destination could run twice instead of being refused.\n\nThe original host attempt’s `.vulcan/engineering/run-0007/attempt-0003/stderr.log` records `mutation target not found product53`. The behavior receipt now at `evidence/verification/recovery-cost-profile-01/behavior/receipt.json` starts at 2026-10-15 13:57:14 UTC and contains the subsequent run, not that failed execution. The supplied host ledger independently records both attempts using that identical destination. This is a historical-retention defect, not evidence that the accelerator arithmetic failed. The later successful execution cannot restore the original receipt and raw artifacts contemporaneously.\n\nThere is useful progress: the repaired product53 selector matches the actual eight-lane accumulation in `rtl/anvil_q1_w4a16_gemv.sv`, and the retained `mutation-product53-simulate.stdout` contains the intended `GEMV widened cancellation` assertion. The mutation checker requires that functional rejection rather than accepting a compilation failure or timeout. The host also records completed behavior, synthesis and portability commands. Those results remain useful, but I have not completed their full technical acceptance audit; this review stops at the concrete evidence-retention violation.\n\nRepair only the verification output handling: reject an occupied destination before deleting or writing anything, with an explicit error. Preserve all current evidence and accepted RTL. Have the shared runtime record one named occupied-output refusal regression through the real `tests/verify.py` CLI, using a clearly labelled project-local fixture containing placeholder sentinel files; require nonzero exit, unchanged sentinel contents and no compilation or simulation. Retain and expose that test’s source and raw result for review. Do not rerun the unchanged full suites merely to demonstrate this guard.\n\nIdentify any already-retained contemporaneous copy of the original failed behavior receipt and raw outputs, without modifying runtime-owned files or reconstructing the record. If no such copy exists, state exactly what was lost and carry that historical-integrity limitation to the Coordinator for resolution; a new archive or rerun must not be represented as the original evidence. This review used reads and searches only; no files changed and no checks were executed."
+      },
+      {
+        "status": "continue",
+        "reason": "The occupied-output repair is supported, but Anvil-Q1 is not ready for acceptance: the portability check accepts a mixed Icarus toolchain instead of establishing the required matching version-12 and version-13 compiler/runtime pairs.\n\nBoth `evidence/verification/recovery-cost-profile-01/portability/compiler-1-version.stdout` and `compiler-2-version.stdout` identify the parser/elaborator as 13.0 but identify `vvp.tgt` as the 12.0 code generator. In `tests/verify.py:3045–3072`, portability merely searches the combined version text for a major number and runs null-target elaboration. It neither verifies the matching runtime nor executes generated simulation code with it. Thus the recorded successful portability command does not close the admitted requirement for Icarus 12/13 with matching runtimes. This is a verification gap, not evidence of an accelerator arithmetic failure.\n\nRepair that check to identify the actual compiler components and corresponding runtime for each major and reject mixed pairs. Have the shared runtime record one focused `dual-major-matched-runtime` check at a fresh append-only destination: warning-clean default/A/B/C/D elaboration using the correctly configured toolchains, plus an existing public-pin self-checking smoke compiled and executed with each matching runtime. Retain exact executable paths, versions, arguments and raw results. Reuse existing stimulus and assertions; do not rerun the unchanged full behavior or synthesis suites, install tools, overwrite evidence or alter RTL. If a genuine version-13 pair is unavailable, report that precise prerequisite rather than counting the mixed installation as passing.\n\nThere is useful verified progress. I read `tests/occupied_output_refusal.py`, the repaired exclusive directory creation and CLI error handling, and the retained refusal result. The real CLI exited 2 with the explicit refusal message; the recorded assertions require unchanged fixture contents, an armed audit hook, no subprocess/tool invocation and settled execution. The host independently records this regression completing successfully. The original failed behavior receipt also remains readable under `.vulcan/engineering/run-0007/attempt-0003/outputs/evidence/verification/recovery-cost-profile-01/behavior/receipt.json`, recording `mutation target not found product53`, consistent with that attempt's raw stderr. The repaired product53 run reaches the intended `GEMV widened cancellation` assertion. These observations preserve useful failure/repair evidence without excusing the historical overwrite. Full technical acceptance remains open; this review used reads and searches only and changed no files."
+      },
+      {
+        "status": "done",
+        "reason": "Approve the supplemental dual-major portability check: the recorded result closes the specific mixed-toolchain finding. The command has already run through the shared runtime, so no duplicate proposal or rerun is needed. This approval covers that repair and its focused verification, not a new claim of complete accelerator acceptance.\n\nI read the component-selection code, CLI dispatch, compilation helper, public-pin protocol test and retained generated testbench. The previous compiler-1-version.stdout really identifies version-13 parser components with a version-12 code generator. The repaired code pins the component directory with -B, checks target configuration paths, compares driver/preprocessor/parser/code-generator versions, and selects a matching runtime while retaining rejected candidates. In evidence/verification/dual-major-matched-runtime-01/receipt.json, the actual commands use /usr/bin/iverilog with /usr/lib/x86_64-linux-gnu/ivl and /usr/bin/vvp for version 12, and /home/v-sufengguo/.local/bin/iverilog13 with /home/v-sufengguo/.local/lib/ivl and /home/v-sufengguo/.local/bin/vvp13 for version 13. Their raw version output consistently identifies the respective major versions. All ten default/A/B/C/D elaborations use -g2012 -Wall and have empty diagnostic streams. Both compiled protocol tests execute with their selected runtimes, exit successfully, and exercise four invalid-token completions, three reset aborts and an injected memory error, with explicit public-output, timing and recovery assertions. This is more than compile-only evidence; it is a bounded protocol smoke, not a full numerical simulation under both majors.\n\nThe host records the exact admitted supplemental command completing in 2.096 seconds, within its 3,600-second budget, with settled processes. The receipt likewise records successful exits, no timeouts and settled child groups. The original mixed-component evidence remains available; the new result does not retroactively validate it. No RTL repair, tool installation, behavior/synthesis rerun or final product report is required by this portability repair. I used only file reads and searches and changed no files."
+      }
+    ],
+    "native_engineering_accepted": false,
+    "candidate_present": false,
+    "candidate_invalid_reason": null,
+    "final_candidate": null,
+    "initial_unrepaired_candidate": null,
+    "initial_candidate_invalid_reason": null,
+    "scientific_acceptance": false
+  },
+  "accepted": true
 }
