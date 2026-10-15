@@ -62,15 +62,19 @@ package anvil_q1_pkg;
     end
   endfunction
   function automatic [47:0] isqrt96(input [95:0] x);
-    reg [47:0] root, candidate;
-    reg [95:0] square;
+    reg [47:0] root;
+    reg [97:0] remainder, trial;
     integer i;
     begin
       root = 0;
+      remainder = 0;
       for (i=47; i>=0; i=i-1) begin
-        candidate = root | (48'd1 << i);
-        square = {48'd0,candidate} * {48'd0,candidate};
-        if (square <= x) root = candidate;
+        remainder = (remainder << 2) | {96'd0,x[i*2+:2]};
+        trial = ({50'd0,root} << 2) | 98'd1;
+        if (remainder >= trial) begin
+          remainder = remainder-trial;
+          root = (root << 1) | 48'd1;
+        end else root = root << 1;
       end
       isqrt96 = root;
     end

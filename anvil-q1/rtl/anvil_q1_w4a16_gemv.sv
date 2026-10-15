@@ -13,7 +13,6 @@ module anvil_q1_w4a16_gemv #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  import anvil_q1_pkg::*;
   localparam SAFE_GROUP = GROUP_SIZE > 0 ? GROUP_SIZE : 1;
   reg [4:0] state;
   reg failed;
@@ -29,7 +28,7 @@ module anvil_q1_w4a16_gemv #(
   wire idle, complete, fault;
   wire [31:0] rd;
   wire signed [15:0] bias_value;
-  assign bias_value = f16_q8(rd[15:0]);
+  assign bias_value = anvil_q1_pkg::f16_q8(rd[15:0]);
   anvil_q1_parameters #(
     NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,1,MAX_SEQ_LEN) parameters_ok();
@@ -64,7 +63,7 @@ module anvil_q1_w4a16_gemv #(
       11: begin issue=1; kind=4; ml=layer; mp=projection; col=c; end
       13: begin
         issue=1; wr=1; kind=8; row=target_slot; col=c;
-        wd={16'd0,sat16(round_shift(accumulator,16))};
+        wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(accumulator,16))};
       end
       default: begin end
     endcase
@@ -110,7 +109,7 @@ module anvil_q1_w4a16_gemv #(
           else state<=13;
       11: if(issue) state<=12;
       12: if(complete) begin
-        if(f16_invalid(rd[15:0])) begin failed<=1; state<=20; end
+        if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; state<=20; end
         else begin
           accumulator<=accumulator+($signed({{80{bias_value[15]}},bias_value}) <<< 16);
           state<=13;

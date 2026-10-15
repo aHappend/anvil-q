@@ -11,7 +11,6 @@ module anvil_q1_gqa_attention #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  import anvil_q1_pkg::*;
   localparam RATIO = NUM_KV_HEADS>0 && NUM_Q_HEADS>=NUM_KV_HEADS ?
                       NUM_Q_HEADS/NUM_KV_HEADS : 1;
   localparam KV_SIZE = NUM_KV_HEADS*HEAD_DIM;
@@ -38,8 +37,8 @@ module anvil_q1_gqa_attention #(
   assign read_value=rd[15:0];
   assign dot_product=$signed(q)*$signed(read_value);
   assign dim_scaled=96'(HEAD_DIM)<<32;
-  assign sqrt_dim=isqrt96(dim_scaled);
-  assign scaled_score=round_div(
+  assign sqrt_dim=anvil_q1_pkg::isqrt96(dim_scaled);
+  assign scaled_score=anvil_q1_pkg::round_div(
     $signed({{32{dot[63]}},dot}) <<< 16,{16'd0,sqrt_dim});
   assign weighted_product=$signed(read_value)*$signed({1'b0,exponential});
   assign cmd_ready=rst_n && state==0;
@@ -74,7 +73,8 @@ module anvil_q1_gqa_attention #(
       end
       16: begin
         issue=1; wr=1; kind=8; row=5; col=head*HEAD_DIM+component;
-        wd={16'd0,sat16(round_div($signed({{32{weighted[63]}},weighted}),denominator))};
+        wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_div(
+          $signed({{32{weighted[63]}},weighted}),denominator))};
       end
       default: begin end
     endcase
@@ -116,7 +116,7 @@ module anvil_q1_gqa_attention #(
         if(current_score>max_score) max_score<=current_score;
         if(time_index<position) begin time_index<=time_index+1; dim<=0; dot<=0; state<=6; end
         else begin context_pass<=1; time_index<=0; dim<=0; dot<=0; state<=6; end
-      end else begin exponential<=exp_q24(current_score-max_score); state<=12; end
+      end else begin exponential<=anvil_q1_pkg::exp_q24(current_score-max_score); state<=12; end
       12: begin denominator<=denominator+exponential; state<=13; end
       13: if(issue) state<=14;
       14: if(complete) begin weighted<=weighted+weighted_product[63:0]; state<=15; end

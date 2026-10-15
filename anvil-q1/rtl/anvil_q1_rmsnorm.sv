@@ -11,7 +11,6 @@ module anvil_q1_rmsnorm #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  import anvil_q1_pkg::*;
   localparam SAFE_H = HIDDEN_SIZE > 0 ? HIDDEN_SIZE : 1;
   reg [3:0] state;
   reg failed;
@@ -58,7 +57,7 @@ module anvil_q1_rmsnorm #(
       8: begin issue=1; kind=norm_kind; ml=norm_kind==7 ? 0 : layer; col=index; end
       10: begin
         issue=1; wr=1; kind=8; row=dst; col=index;
-        wd={16'd0,sat16(round_shift(result,24))};
+        wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(result,24))};
       end
       default: begin end
     endcase
@@ -87,15 +86,15 @@ module anvil_q1_rmsnorm #(
         else state<=3;
       end
       3: begin mean<=(({32'd0,sum}<<16)/SAFE_H)+96'd4295; state<=4; end
-      4: begin denominator<=isqrt96(mean); state<=5; end
+      4: begin denominator<=anvil_q1_pkg::isqrt96(mean); state<=5; end
       5: if(denominator==0) begin failed<=1; state<=15; end
          else begin reciprocal<=64'd4294967296/denominator; index<=0; state<=6; end
       6: if(issue) state<=7;
       7: if(complete) begin x<=rd[15:0]; state<=8; end
       8: if(issue) state<=9;
       9: if(complete) begin
-        if(f16_invalid(rd[15:0])) begin failed<=1; state<=15; end
-        else begin gamma<=f16_q8(rd[15:0]); state<=10; end
+        if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; state<=15; end
+        else begin gamma<=anvil_q1_pkg::f16_q8(rd[15:0]); state<=10; end
       end
       10: if(issue) state<=11;
       11: if(complete) begin

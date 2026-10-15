@@ -16,7 +16,6 @@ module anvil_q1_top #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  import anvil_q1_pkg::*;
   reg [4:0] state;
   reg failed, sequence_valid;
   reg [31:0] token, position, next_position, component, vocabulary, layer;
@@ -39,12 +38,12 @@ module anvil_q1_top #(
     NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,VOCAB_SIZE,MAX_SEQ_LEN) parameters_ok();
   assign selected=(state==5 || state==6) ? 1 : ((state==7 || state==8) ? 2 : 0);
-  assign tensor_value=f16_q8(rd[15:0]);
+  assign tensor_value=anvil_q1_pkg::f16_q8(rd[15:0]);
   assign logit_product=$signed(activation)*$signed(tensor_value);
   assign token_ready=rst_n && state==0;
   assign logit_valid=rst_n && state==15;
   assign logit_index=rst_n ? vocabulary : 0;
-  assign logit_data=rst_n ? sat32($signed({{32{logit_sum[63]}},logit_sum})) : 0;
+  assign logit_data=rst_n ? anvil_q1_pkg::sat32($signed({{32{logit_sum[63]}},logit_sum})) : 0;
   assign done=rst_n && state==31;
   assign error=done && failed;
   anvil_q1_mem_port memory_port(
@@ -102,7 +101,7 @@ module anvil_q1_top #(
       end
       1: if(issue) state<=2;
       2: if(own_complete) begin
-        if(f16_invalid(rd[15:0])) begin failed<=1; sequence_valid<=0; state<=31; end
+        if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; sequence_valid<=0; state<=31; end
         else begin activation<=tensor_value; state<=3; end
       end
       3: if(issue) state<=4;
@@ -125,7 +124,7 @@ module anvil_q1_top #(
       10: if(own_complete) begin activation<=rd[15:0]; state<=11; end
       11: if(issue) state<=12;
       12: if(own_complete) begin
-        if(f16_invalid(rd[15:0])) begin failed<=1; sequence_valid<=0; state<=31; end
+        if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; sequence_valid<=0; state<=31; end
         else begin logit_sum<=logit_sum+{{32{logit_product[31]}},logit_product}; state<=13; end
       end
       13: if(component+1<HIDDEN_SIZE) begin component<=component+1; state<=9; end

@@ -115,7 +115,8 @@ i+HEAD_DIM/2, theta=1000000. The external memory provisions independent rounded
 Q2.30 cosine/sine coefficients for position and pair.
 GQA maps h to floor(h/(QH/KVH)); attention includes positions zero through
 current position only. Scale is floor(sqrt(HEAD_DIM<<32)) in Q16.16.
-Softmax is max-subtracted, with normalized full exponential sum.
+Score division uses nearest, ties away from zero on a signed 96-bit scaled
+numerator. Softmax is max-subtracted, with normalized full exponential sum.
 
 The shared exponential for nonpositive Q16.16 x returns zero below -16;
 otherwise u=(-x)<<8 is Q0.24, n=floor(u/11629080), r=u-n*11629080.
@@ -149,3 +150,9 @@ No default-sized activation or cache arrays may be instantiated internally.
 Verification sources are independently owned `tests/*.py`; generated harnesses
 and evidence are not RTL inputs. Functional, numerical, mutation, zero-latch
 synthesis and both Icarus-major portability acceptance remain independent work.
+
+The concrete state-transition conditions and arithmetic iteration counts in
+[ARCHITECTURE.md, Concrete state transition and iteration inventory](ARCHITECTURE.md#concrete-state-transition-and-iteration-inventory)
+are part of this contract. They specify each issue/response state and each
+component/head/group/layer/vocabulary loop rather than promising a fixed token
+latency independent of memory backpressure.

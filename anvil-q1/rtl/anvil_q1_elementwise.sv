@@ -12,12 +12,12 @@ module anvil_q1_elementwise #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  import anvil_q1_pkg::*;
   reg [3:0] state;
   reg [1:0] mode;
   reg failed;
   reg [31:0] index;
   reg signed [15:0] a,b;
+  wire signed [15:0] silu_value;
   wire signed [95:0] sum, product;
   wire idle, complete, fault;
   wire [31:0] rd;
@@ -32,7 +32,8 @@ module anvil_q1_elementwise #(
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: elementwise dimensions");
   end endgenerate
   assign sum=$signed(a)+$signed(b);
-  assign product=$signed(silu_q8(a))*$signed(b);
+  assign silu_value=anvil_q1_pkg::silu_q8(a);
+  assign product=$signed(silu_value)*$signed(b);
   assign cmd_ready=rst_n && state==0;
   assign done=rst_n && state==15;
   assign error=done && failed;
@@ -53,7 +54,7 @@ module anvil_q1_elementwise #(
       3: begin issue=1; row=mode==0 ? 6 : (mode==1 ? 12 : 10); end
       5: begin
         issue=1; wr=1; row=mode==0 ? 7 : (mode==1 ? 0 : 11);
-        wd={16'd0,sat16(mode==2 ? round_shift(product,8) : sum)};
+        wd={16'd0,anvil_q1_pkg::sat16(mode==2 ? anvil_q1_pkg::round_shift(product,8) : sum)};
       end
       default: begin end
     endcase

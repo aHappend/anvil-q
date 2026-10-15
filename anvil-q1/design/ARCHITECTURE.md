@@ -95,3 +95,48 @@ document. The independent Verifier owns all behavioral/synthesis harnesses and
 actual executable/version records. Advisory lessons exp-6d5cc92e6f5a86894eaae275
 (meaningful parameter rejection) and exp-652f89e7783eeb1726867f05 (reachable
 singleton coverage) motivate boundaries, not evidence of current correctness.
+
+## Concrete state transition and iteration inventory
+
+States below are the numeric state registers in the corresponding RTL files.
+All unspecified states recover to idle. Reset takes priority over every listed
+transition. Any active transaction fault takes priority over normal completion,
+sets failure and enters the completion state. Completion lasts exactly one
+cycle and unconditionally returns idle. For a rejected command, an intermediate
+error-pending state preserves the required no-completion-immediately-after-E0
+interval. A nonfinite tensor read is an operation error, not a successful zero.
+
+| Engine | State transitions and conditions |
+| --- | --- |
+| Memory port | 0 idle -> 1 on issue; 1 -> 2 on request-ready; 2 -> 0 on response-valid. Complete/fault are qualified by state 2 and response-valid. Payload registers load only on issue in state 0. |
+| GEMV | 0 accepts command -> 1, or 19 on invalid command. 1/3/5/7 issue activation/weight/zero/scale requests -> 2/4/6/8 respectively. Each response advances to the next issue, with 8 -> 9. State 9 checks dequant validity and adds one full 53-bit product -> 10. State 10 loops to 1 for another input; after last input selects QKV bias 11, otherwise output 13. Bias 11 request -> 12 response/check/add -> 13. Output 13 request -> 14 acknowledgement; 14 loops output channels or -> 20. 19 -> 20 -> 0. |
+| RMSNorm | 0 -> 1 or invalid 14. 1 request -> 2 square-sum response; 2 loops components or -> 3 mean/epsilon -> 4 sqrt -> 5 reciprocal/check -> 6. 6 request x -> 7 response -> 8 request gamma -> 9 response/check -> 10 output request -> 11 acknowledgement. 11 loops to 6 or -> 15. 14 -> 15 -> 0. |
+| RoPE | 0 -> 1 or invalid 14. States 1/3/5/7 request x/y/cos/sin -> 2/4/6/8 responses respectively. 8 -> 9 first rotated write -> 10 ack -> 11 second rotated write -> 12 ack. State 12 advances pair, head, then Q-to-K vector, or -> 15. 14 -> 15 -> 0. |
+| Attention | 0 -> 1 or invalid 30. 1 scratch request -> 2 capture -> 3 cache write -> 4 ack; 4 loops components then K-to-V then -> 6. 6 Q request -> 7 response -> 8 K-cache request -> 9 dot response; 9 loops dimensions or -> 10 score -> 11. In max pass 11 updates max and loops time, then starts context pass. In context pass 11 evaluates exponential -> 12 denominator update -> 13 V-cache request -> 14 weighted response -> 15. State 15 loops time or -> 16 context write -> 17 acknowledgement. State 17 advances component, then head with new max pass, or -> 31. 30 -> 31 -> 0. |
+| Elementwise | 0 -> 1 or invalid 14. 1 first-source request -> 2 response -> 3 second-source request -> 4 response -> 5 result write -> 6 acknowledgement. 6 loops vector or -> 15. 14 -> 15 -> 0. Mode 0 adds residual/O, mode 1 post residual/down, mode 2 SiLU(gate)*up. |
+| MLP | 0 -> 1 or invalid 14. 1 gate-command accepted -> 2 completion; 2 -> 3 up launch -> 4 completion -> 5 SiLU/product launch -> 6 completion -> 7 down launch -> 8 completion -> 15. Each launch waits child ready and each completion waits child done; child error instead enters 15. 14 -> 15 -> 0. |
+| Decoder | 0 -> 1 or invalid 4. 1 launches selected step when child ready -> 2; 2 waits done, advances step and returns 1, or -> 3 on last step/error. 4 -> 3 -> 0. Steps 0..10 are input norm,Q,K,V,RoPE,attention,O,residual,post norm,MLP,residual. |
+| Top | 0 accepts valid token -> 1, invalid -> 30. 1 embedding request -> 2 conversion response -> 3 scratch write -> 4 ack. 4 loops components or -> 5 decoder launch -> 6 completion. 6 loops layers or -> 7 final norm launch -> 8 completion -> 9. 9 final-vector request -> 10 response -> 11 tied embedding request -> 12 conversion/MAC response -> 13. 13 loops components or -> 15 logit hold. State 15 advances vocabulary only on logit-ready; last transfer commits and enters 31. 30 -> 31 -> 0. Child error/nonfinite read/response fault enters 31 and invalidates sequence. |
+
+Per output channel GEMV executes exactly input_dimension activation products and
+one bias read only for Q/K/V, with four reads per input plus one output write.
+RMSNorm executes H square terms, one mean, one square root, one reciprocal, then
+H output triple products; square root is a 48-step combinational restoring
+integer algorithm, without multipliers or data-dependent iteration count.
+RoPE executes (QH+KVH)*D/2 pair rotations, four reads and two writes per pair.
+Attention writes 2*KVH*D cache elements. Per Q head, it computes (position+1)
+dots for max, then (position+1) dots for each of D output components. Each dot
+has D product iterations. Recomputing scores avoids a default-context array;
+this deliberately trades memory traffic for bounded internal storage.
+Every exp evaluation has exactly six polynomial terms, not six clock delays.
+Elementwise executes H residual additions or I SiLU/products. Top computes
+V*H tied output products after all L real decoder invocations.
+
+Each memory transaction's latency is actual issue/request-stall/response-stall
+progress, not a free-running delay counter. Square-root and polynomial loops
+are combinational arithmetic structures; no clock latency is inferred from a
+source-level for-loop. All state waits depend on public handshakes or actual
+arithmetic stage completion. `anvil_q1_mem_port` and `anvil_q1_bus_mux` provide
+single-outstanding service and exclusive child ownership; neither calculates
+tensor arithmetic. `anvil_q1_elementwise` is the shared saturating residual/MLP
+element helper and `anvil_q1_parameters` owns widened startup diagnostics.

@@ -11,7 +11,6 @@ module anvil_q1_rope #(
   input wire mem_rsp_valid, output wire mem_rsp_ready,
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
-  import anvil_q1_pkg::*;
   reg [3:0] state;
   reg failed, key_vector;
   reg [31:0] position, head, pair_index;
@@ -48,8 +47,8 @@ module anvil_q1_rope #(
         issue=1; kind=8; row=key_vector ? 3 : 2;
         col=head*HEAD_DIM+pair_index+((state==3 || state==11) ? HEAD_DIM/2 : 0);
         wr=state==9 || state==11;
-        if(state==9) wd={16'd0,sat16(round_shift(rotated_x,30))};
-        if(state==11) wd={16'd0,sat16(round_shift(rotated_y,30))};
+        if(state==9) wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(rotated_x,30))};
+        if(state==11) wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(rotated_y,30))};
       end
       5,7: begin issue=1; kind=11; row=position; col=2*pair_index+(state==7); end
       default: begin end
