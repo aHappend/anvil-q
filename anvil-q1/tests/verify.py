@@ -366,13 +366,20 @@ def gemv_extremes(run):
     params = "#(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(16384),.NUM_Q_HEADS(2),.NUM_KV_HEADS(2),.HEAD_DIM(4),.GROUP_SIZE(8),.MAX_SEQ_LEN(1))"
     instance = "anvil_q1_w4a16_gemv "+params+" dut("+BUS_CONNECT+",.cmd_proj(cmd_proj));"
     reader = """
+integer test_case=0;
 function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
  input [31:0] row,col);
 begin
  case(kind)
  8: begin
    if(row!=11 || col>=16384) $fatal(1,"activation address");
-   read_memory=col<8192 ? 32'd32767 : 32'd32769;
+   case(test_case)
+   0: read_memory=col<8192 ? 32'd32767 : 32'd32769;
+   1: read_memory=32767;
+   2: read_memory=32769;
+   3: read_memory=col==0 ? 1 : 0;
+   default: read_memory=col==0 ? 65535 : 0;
+   endcase
  end
  1: begin
    if(proj!=6 || row>=16384 || col!=0) $fatal(1,"qweight address");
@@ -384,24 +391,67 @@ begin
  end
  3: begin
    if(proj!=6 || row>=2048 || col>=8) $fatal(1,"scale address");
-   read_memory=16'h7bff;
+   read_memory=test_case>=3 ? 16'h6c00 : 16'h7bff;
  end
  default: begin $fatal(1,"illegal kind or forbidden down bias"); read_memory=0; end
  endcase
 end endfunction
 """
     expected = """
-if(mem_req_kind!==8 || mem_req_row!==12 || mem_req_col!==writes ||
-   mem_req_proj!==0 || mem_req_wdata!==0)
+expected_value=test_case==0 ? 0 : ((test_case==1 || test_case==3) ? 32767 : 32768);
+if(mem_req_kind!==8 || mem_req_row!==12 || mem_req_col!==(writes%8) ||
+   mem_req_proj!==0 || mem_req_wdata!==expected_value)
  $fatal(1,"GEMV widened cancellation write %0d got %h",writes,mem_req_wdata);
 """
     exact_peak = 8192*32767*64393052160
     require(exact_peak > 2**63, "wide accumulator case must cross signed64")
-    stdout = compile_sim(run, command_tb(instance, reader, expected,
-                         'launch(6,0); if(writes!=8) $fatal(1,"missing outputs");'),
-                         "gemv-wide-cancellation", timeout=35)
+    commands = """
+for(test_case=0;test_case<5;test_case=test_case+1) launch(6,0);
+if(writes!=40) $fatal(1,"missing outputs");
+"""
+    stdout = compile_sim(run, command_tb(instance, reader, expected, commands),
+                         "gemv-wide-cancellation", timeout=45)
     run.result("gemv_wide_cancellation", exact_peak=exact_peak,
-               expected_final_accumulator=0, outputs=8, outcome="pass", stdout=stdout)
+               expected_cancellation_accumulator=0, outputs=40,
+               scales=[4096,65504], signed64_overflow_saturation=True,
+               outcome="pass", stdout=stdout)
+
+
+def rms_test(run):
+    rng = random.Random(43)
+    values = [rng.randint(-700,700) for _ in range(16)]
+    gammas = [0x3c00,0xbc00,0x3800,0x4000,0x0001,0x03ff,0x8000,0x3bff]*2
+    reciprocal = (1 << 32)//math.isqrt((sum(x*x for x in values) << 16)//16+4295)
+    expected = [sat(rounded(x*sat(half_fixed(h))*reciprocal,1 << 24))
+                for x,h in zip(values,gammas)]
+    denom = math.sqrt(sum((x/256)**2 for x in values)/16+1e-6)
+    errors = [abs(y-x/256*sat(half_fixed(g))/denom)
+              for x,g,y in zip(values,gammas,expected)]
+    require(max(errors)<=2, "floating RMS quality")
+    initial = "\n".join(f"activation[{i}]=16'h{x&65535:04x}; gamma[{i}]=16'h{g:04x}; exp_data[{i}]=16'h{e&65535:04x};"
+                        for i,(x,g,e) in enumerate(zip(values,gammas,expected)))
+    reader = f"""
+reg [15:0] activation[0:15],gamma[0:15],exp_data[0:15];
+initial begin {initial} end
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(proj!=0 || row!=0 || col>=16) $fatal(1,"RMS address");
+ if(kind==8) read_memory={{16'd0,activation[col]}};
+ else if(kind==5) read_memory={{16'd0,gamma[col]}};
+ else begin $fatal(1,"RMS illegal kind"); read_memory=0; end
+end endfunction
+"""
+    check = """
+if(mem_req_kind!==8 || mem_req_proj!==0 || mem_req_row!==1 ||
+   mem_req_col!==writes || mem_req_wdata!=={16'd0,exp_data[writes]})
+ $fatal(1,"RMS write mismatch %0d got %h",writes,mem_req_wdata);
+"""
+    instance = "anvil_q1_rmsnorm #(.NUM_LAYERS(1),.HIDDEN_SIZE(16)) dut("+BUS_CONNECT+",.cmd_mode(cmd_mode));"
+    stdout = compile_sim(run, command_tb(instance,reader,check,
+                         'launch(0,0); if(writes!=16) $fatal(1,"RMS missing outputs");'), "rms")
+    run.result("rms", exact_comparisons=16, floating_max_error_q8_lsb=max(errors),
+               threshold_q8_lsb=2, outcome="pass", stdout=stdout)
 
 
 def rope_test(run):
@@ -541,7 +591,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","rms"), default=None)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.out, args.repair_of)
@@ -559,6 +609,8 @@ def main():
                 rope_test(run)
             if args.probe in (None, "gemv"):
                 gemv_extremes(run)
+            if args.probe in (None, "rms"):
+                rms_test(run)
             if args.probe is None:
                 raise AssertionError("INCOMPLETE: mandatory layer-stack matrix, nonlinear quality, "
                                      "protocol/error/reset matrix and behavioral mutations not yet implemented")
