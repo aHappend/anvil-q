@@ -3,8 +3,8 @@
   "chip": "Anvil-Q1",
   "phase": "Phase 2 — Official Weights & Software-vs-RTL Comparison",
   "vulcan_version": "0.8.0",
-  "started_utc": "2026-10-15T16:06:47.178169+00:00",
-  "started_cst": "2026-10-16 00:06:47 UTC+8",
+  "started_utc": "2026-10-15T16:07:52.868302+00:00",
+  "started_cst": "2026-10-16 00:07:52 UTC+8",
   "status": "running",
   "reason": "Execute Roadmap Phase 2 for Anvil-Q1: integrate real official HuggingFace Qwen/Qwen2.5-0.5B-Instruct-AWQ (model.safetensors) W4A16 G128 checkpoint weights and conduct end-to-end Software-Layer (FP32/FP16 AWQ dequantized reference) vs Hardware-RTL (SystemVerilog W4A16 Q8.8/Q16.16) numerical accuracy, bit-exactness, and cycle-accurate performance comparison."
 }
