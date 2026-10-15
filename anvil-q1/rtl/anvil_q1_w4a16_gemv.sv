@@ -28,6 +28,8 @@ module anvil_q1_w4a16_gemv #(
   reg signed [95:0] accumulator;
   wire idle, complete, fault;
   wire [31:0] rd;
+  wire signed [15:0] bias_value;
+  assign bias_value = f16_q8(rd[15:0]);
   reg issue, wr;
   reg [3:0] kind;
   reg [31:0] row, col, wd, ml;
@@ -107,7 +109,7 @@ module anvil_q1_w4a16_gemv #(
       12: if(complete) begin
         if(f16_invalid(rd[15:0])) begin failed<=1; state<=20; end
         else begin
-          accumulator<=accumulator+($signed({{80{f16_q8(rd[15:0])[15]}},f16_q8(rd[15:0])}) <<< 16);
+          accumulator<=accumulator+($signed({{80{bias_value[15]}},bias_value}) <<< 16);
           state<=13;
         end
       end
