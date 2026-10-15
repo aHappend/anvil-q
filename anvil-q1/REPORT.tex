@@ -1,0 +1,475 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=22mm,headheight=14pt]{geometry}
+
+\usepackage{longtable,booktabs,array,hyperref,xcolor,tikz,fancyhdr}
+
+\usepackage{fontspec,xeCJK}
+
+\setmainfont[Ligatures=TeXOff]{Times New Roman}
+
+\setsansfont[Ligatures=TeXOff]{Times New Roman}
+
+\setmonofont[Ligatures=TeXOff,WordSpace={1,1,1}]{Times New Roman}
+
+\setCJKmainfont{Noto Serif CJK SC}
+
+\setCJKsansfont{Noto Serif CJK SC}
+
+\setCJKmonofont{Noto Serif CJK SC}
+
+\XeTeXgenerateactualtext=1
+
+\definecolor{vulcan}{HTML}{BB3E23}
+
+\pgfdeclarelayer{connections}\pgfdeclarelayer{edge labels}\pgfsetlayers{connections,main,edge labels}
+
+\hypersetup{hidelinks}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\setlength{\emergencystretch}{5em}\tolerance=2000\hbadness=10000
+
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\sffamily VULCAN}
+
+\fancyhead[R]{\small Product design and verification}\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+{\sffamily\huge\raggedright\textbf{Anvil-Q1: Qwen2.5-0.5B AWQ W4A16 Accelerator RTL}\par}
+
+{\large Technical Design and Verification Report}\par
+
+15 October 2026 (\allowbreak{}UTC+\allowbreak{}8)\allowbreak{}\par\textcolor{vulcan}{\rule{\textwidth}{0.5pt}}
+
+\begin{abstract}
+
+Anvil-Q1 is a modular,\allowbreak{} synthesizable SystemVerilog accelerator core targeting Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ. It implements token embedding,\allowbreak{} all configured decoder layers,\allowbreak{} persistent causal attention history,\allowbreak{} final normalization and tied vocabulary projection. Four-bit packed weights and binary16 model data feed a deterministic fixed-point datapath with widened accumulation.
+
+
+Independent public-pin verification passed 12 configuration/\allowbreak{}seed combinations,\allowbreak{} completing 45 tokens with 53,\allowbreak{}184 exactly compared scratch/\allowbreak{}cache writes and 621 logits. The largest measured nonsaturating logit error was 0.000375346 in real units. Four scaled configurations passed generic synthesis with zero inferred latches; Icarus Verilog 12 and 13 passed matched-toolchain elaboration and protocol smoke tests. These results establish functional RTL behavior within the exercised scope,\allowbreak{} not full-checkpoint inference or physical-chip performance.
+
+
+\end{abstract}
+
+\section{Architecture and design rationale}
+
+The architecture favors bounded internal storage and explicit numerical behavior over throughput. One token is active at a time,\allowbreak{} and one decoder engine is reused across layers. External storage holds model tensors,\allowbreak{} intermediate vectors,\allowbreak{} KV history and RoPE coefficients. Each GEMV contains eight actual arithmetic lanes,\allowbreak{} retaining only current-group metadata and eight complete accumulators. Hierarchical bus selection grants the active engine exclusive ownership of a single-outstanding memory interface. Response and multiplier operand isolation limit inactive arithmetic dependencies without adding protocol cycles. The diagram represents command and ownership relationships,\allowbreak{} not a pipeline in which all blocks execute concurrently.
+
+\begin{center}\begin{tikzpicture}[every node/.style={font=\small\sffamily},>=latex]
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b0) at (0.0,0.0) {B1: Token controller};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b1) at (5.4,0.0) {B2: Decoder engine};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b2) at (10.8,0.0) {B3: Final normalization};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b3) at (0.0,-4.6) {B4: Norm and residual};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b4) at (5.4,-4.6) {B5: Attention path};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b5) at (10.8,-4.6) {B6: SwiGLU MLP};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b6) at (0.0,-9.2) {B7: Eight-lane GEMV};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b7) at (5.4,-9.2) {B8: Memory routing};
+
+\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b8) at (10.8,-9.2) {B9: External storage};
+
+\begin{pgfonlayer}{connections}
+
+\draw[->,black!65] ([yshift=-0.160cm]b0.east) -- coordinate[pos=0.25] (e0) ([yshift=0.000cm]b1.west);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b0.east) -- (2.380,0.000) -- (2.380,-3.340) -- coordinate[midway] (e1) (10.800,-3.340) -- ([xshift=0.000cm]b2.south);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=-0.192cm]b1.east) -- (7.860,-0.192) -- (7.860,-3.080) -- coordinate[midway] (e2) (0.000,-3.080) -- ([xshift=0.000cm]b3.north);
+
+\draw[->,black!65] ([xshift=0.000cm]b1.south) -- coordinate[pos=0.25] (e3) ([xshift=0.000cm]b4.north);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=-0.064cm]b1.east) -- (8.020,-0.064) -- (8.020,-2.560) -- coordinate[midway] (e4) (10.800,-2.560) -- ([xshift=0.000cm]b5.north);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=0.064cm]b1.east) -- (8.100,0.064) -- (8.100,-6.900) -- coordinate[midway] (e5) (-0.107,-6.900) -- ([xshift=-0.107cm]b6.north);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b5.east) -- (13.580,-4.600) -- (13.580,-6.640) -- coordinate[midway] (e6) (0.107,-6.640) -- ([xshift=0.107cm]b6.north);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=0.160cm]b0.east) -- (2.860,0.160) -- (2.860,-6.380) -- coordinate[midway] (e7) (5.240,-6.380) -- ([xshift=-0.160cm]b7.north);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=0.192cm]b1.east) -- (8.340,0.192) -- (8.340,-6.120) -- coordinate[midway] (e8) (5.400,-6.120) -- ([xshift=0.000cm]b7.north);
+
+\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b2.east) -- (13.820,0.000) -- (13.820,-5.860) -- coordinate[midway] (e9) (5.560,-5.860) -- ([xshift=0.160cm]b7.north);
+
+\draw[->,black!65] ([yshift=0.000cm]b7.east) -- coordinate[pos=0.25] (e10) ([yshift=0.000cm]b8.west);
+
+\end{pgfonlayer}
+
+\begin{pgfonlayer}{edge labels}
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e0) {E1};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e1) {E2};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e2) {E3};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e3) {E4};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e4) {E5};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e5) {E6};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e6) {E7};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e7) {E8};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e8) {E9};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e9) {E10};
+
+\node[fill=white,inner sep=1pt,font=\scriptsize] at (e10) {E11};
+
+\end{pgfonlayer}
+
+\end{tikzpicture}\end{center}
+
+{\small Functional block map, not a gate-level netlist. Edge identifiers match the directed relationships below. Crossings do not denote junctions; separate attachment points preserve arrow directions.}
+
+{\small\begin{longtable}{@{}L{0.24\textwidth}L{0.7\textwidth}@{}}\toprule
+
+\textbf{Block} & \textbf{Responsibility}\\\midrule\endhead
+
+B1: Token controller & anvil\_\allowbreak{}q1\_\allowbreak{}top accepts tokens,\allowbreak{} loads embeddings,\allowbreak{} iterates layers,\allowbreak{} invokes final normalization and computes tied vocabulary logits.\\[3pt]
+
+B2: Decoder engine & anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer sequences normalization,\allowbreak{} attention projections,\allowbreak{} RoPE,\allowbreak{} attention,\allowbreak{} output projection,\allowbreak{} residual additions and MLP.\\[3pt]
+
+B3: Final normalization & A separate anvil\_\allowbreak{}q1\_\allowbreak{}rmsnorm instance normalizes the completed residual vector before vocabulary projection.\\[3pt]
+
+B4: Norm and residual & Decoder RMSNorm and elementwise engines implement both pre-normalizations and both residual additions.\\[3pt]
+
+B5: Attention path & RoPE rotates Q/\allowbreak{}K; grouped-query attention stores rotated K and unrotated V,\allowbreak{} then computes causal context.\\[3pt]
+
+B6: SwiGLU MLP & anvil\_\allowbreak{}q1\_\allowbreak{}swiglu\_\allowbreak{}mlp sequences gate/\allowbreak{}up projections,\allowbreak{} SiLU multiplication and down projection.\\[3pt]
+
+B7: Eight-lane GEMV & Decoder and MLP GEMV instances each connect eight AWQ dequantizers to signed-69-bit products and signed-128-bit accumulators.\\[3pt]
+
+B8: Memory routing & Bus muxes and memory-port helpers route requests,\allowbreak{} responses and acknowledgements while isolating inactive children.\\[3pt]
+
+B9: External storage & Integrator-provided model,\allowbreak{} scratch,\allowbreak{} KV and RoPE storage; supplies data rather than replacement accelerator arithmetic.\\[3pt]
+
+\bottomrule\end{longtable}}
+
+{\small\begin{longtable}{@{}L{0.24\textwidth}L{0.7\textwidth}@{}}\toprule
+
+\textbf{Directed relationship} & \textbf{Meaning}\\\midrule\endhead
+
+E1: B1 to B2 & Layer commands and completion\\[3pt]
+
+E2: B1 to B3 & Final RMSNorm command\\[3pt]
+
+E3: B2 to B4 & Normalization and residual commands\\[3pt]
+
+E4: B2 to B5 & RoPE and attention commands\\[3pt]
+
+E5: B2 to B6 & MLP command\\[3pt]
+
+E6: B2 to B7 & Q/\allowbreak{}K/\allowbreak{}V/\allowbreak{}O projections\\[3pt]
+
+E7: B6 to B7 & Gate/\allowbreak{}up/\allowbreak{}down projections\\[3pt]
+
+E8: B1 to B8 & Top-level memory ownership\\[3pt]
+
+E9: B2 to B8 & Active decoder child traffic\\[3pt]
+
+E10: B3 to B8 & Final normalization traffic\\[3pt]
+
+E11: B8 to B9 & Requests; responses and acknowledgements return\\[3pt]
+
+\bottomrule\end{longtable}}
+
+\section{Interfaces and configuration}
+
+{\small\begin{longtable}{@{}L{0.2\textwidth}L{0.12\textwidth}L{0.1\textwidth}L{0.48\textwidth}@{}}\toprule
+
+\textbf{Signal /\allowbreak{} group} & \textbf{Direction} & \textbf{Width} & \textbf{Contract}\\\midrule\endhead
+
+clk,\allowbreak{} rst\_\allowbreak{}n & Input & 1 bit each & Rising-edge clock and synchronous active-low reset. Assertion combinationally gates outward handshakes,\allowbreak{} status and payloads to zero; a rising edge clears state. The resetless combinational dequantizer is exempt.\\[3pt]
+
+token\_\allowbreak{}valid,\allowbreak{} token\_\allowbreak{}ready,\allowbreak{} token\_\allowbreak{}id,\allowbreak{} token\_\allowbreak{}pos,\allowbreak{} new\_\allowbreak{}sequence & Input except token\_\allowbreak{}ready output & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} 32,\allowbreak{} 1 bits & Accept on pre-edge valid AND ready. Position must equal the next committed position,\allowbreak{} initially zero. new\_\allowbreak{}sequence requires position zero. Busy-held valid is not accepted.\\[3pt]
+
+logit\_\allowbreak{}valid,\allowbreak{} logit\_\allowbreak{}ready,\allowbreak{} logit\_\allowbreak{}index,\allowbreak{} logit\_\allowbreak{}data & Output except logit\_\allowbreak{}ready input & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} signed 32 bits & Streams vocabulary-indexed Q16.16 logits. Valid,\allowbreak{} index and data remain stable under backpressure. The final transfer commits the token position.\\[3pt]
+
+done,\allowbreak{} error & Output & 1 bit each & One completion cycle with readiness low; error qualifies failed completion. The following edge returns idle.\\[3pt]
+
+mem\_\allowbreak{}req\_\allowbreak{}valid,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}ready,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}write & Output,\allowbreak{} input,\allowbreak{} output & 1 bit each & Single-outstanding request channel. Hold every request field while stalled. Every accepted read or write requires exactly one strictly later response.\\[3pt]
+
+mem\_\allowbreak{}req\_\allowbreak{}kind,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}layer,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}proj,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}row,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}col,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}wdata & Output & 4,\allowbreak{} 32,\allowbreak{} 3,\allowbreak{} 32,\allowbreak{} 32,\allowbreak{} 32 bits & Logical tensor addressing,\allowbreak{} not a byte-addressed DRAM interface. Read write-data and unused address fields are zero. Only scratch and K/\allowbreak{}V cache writes are permitted.\\[3pt]
+
+mem\_\allowbreak{}rsp\_\allowbreak{}valid,\allowbreak{} mem\_\allowbreak{}rsp\_\allowbreak{}ready,\allowbreak{} mem\_\allowbreak{}rsp\_\allowbreak{}rdata,\allowbreak{} mem\_\allowbreak{}rsp\_\allowbreak{}error & Input except mem\_\allowbreak{}rsp\_\allowbreak{}ready output & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} 1 bits & Response transfer consumes data or a write acknowledgement. Error dominates capture and stops subsequent work. Reset integration must discard obsolete responses.\\[3pt]
+
+Child command interfaces & Inputs and outputs at standalone engine boundaries & 1-bit valid/\allowbreak{}ready/\allowbreak{}done/\allowbreak{}error; 32-bit layer/\allowbreak{}position; GEMV projection 3 bits; RMS mode 2 bits & cmd\_\allowbreak{}valid/\allowbreak{}cmd\_\allowbreak{}ready acceptance follows the same edge convention. Invalid layer,\allowbreak{} position,\allowbreak{} projection or mode fails before memory effects.\\[3pt]
+
+\bottomrule\end{longtable}}
+
+{\small\begin{longtable}{@{}L{0.23\textwidth}L{0.12\textwidth}L{0.57\textwidth}@{}}\toprule
+
+\textbf{Parameter} & \textbf{Default} & \textbf{Meaning /\allowbreak{} supported values}\\\midrule\endhead
+
+NUM\_\allowbreak{}LAYERS & 24 & Positive; reused decoder iteration count.\\[3pt]
+
+HIDDEN\_\allowbreak{}SIZE & 896 & H=\allowbreak{}NUM\_\allowbreak{}Q\_\allowbreak{}HEADS*\allowbreak{}HEAD\_\allowbreak{}DIM; divisible by GROUP\_\allowbreak{}SIZE and 8.\\[3pt]
+
+INTERMEDIATE\_\allowbreak{}SIZE & 4864 & Positive; divisible by GROUP\_\allowbreak{}SIZE and 8.\\[3pt]
+
+NUM\_\allowbreak{}Q\_\allowbreak{}HEADS & 14 & Positive and divisible by NUM\_\allowbreak{}KV\_\allowbreak{}HEADS.\\[3pt]
+
+NUM\_\allowbreak{}KV\_\allowbreak{}HEADS & 2 & Positive; NUM\_\allowbreak{}KV\_\allowbreak{}HEADS*\allowbreak{}HEAD\_\allowbreak{}DIM divisible by 8.\\[3pt]
+
+HEAD\_\allowbreak{}DIM & 64 & Positive and even for split-half RoPE.\\[3pt]
+
+GROUP\_\allowbreak{}SIZE & 128 & Positive divisor of hidden and intermediate dimensions; non-power-of-two groups supported.\\[3pt]
+
+AWQ\_\allowbreak{}BITS & 4 & Exactly 4; no lane padding or alternative quantization width.\\[3pt]
+
+VOCAB\_\allowbreak{}SIZE & 151936 & Positive; tied embedding/\allowbreak{}output row count.\\[3pt]
+
+MAX\_\allowbreak{}SEQ\_\allowbreak{}LEN & 32768 & 1 through 16777215,\allowbreak{} subject to address bounds.\\[3pt]
+
+Collective address bounds & Unsigned-32 logical addressing & Dimensions fit unsigned 32 bits. Unsigned-128 checks require V*\allowbreak{}H,\allowbreak{} H*\allowbreak{}H,\allowbreak{} H*\allowbreak{}I,\allowbreak{} H*\allowbreak{}K*\allowbreak{}D,\allowbreak{} L*\allowbreak{}S*\allowbreak{}K*\allowbreak{}D,\allowbreak{} S*\allowbreak{}D,\allowbreak{} 2*\allowbreak{}D,\allowbreak{} 15*\allowbreak{}H and 15*\allowbreak{}I <=\allowbreak{}4294967295. Illegal configurations explicitly reject.\\[3pt]
+
+\bottomrule\end{longtable}}
+
+\section{Behavior and corner cases}
+
+\subsection{Transformer execution}
+
+Each layer executes input RMSNorm; biased Q/\allowbreak{}K/\allowbreak{}V projections; split-half RoPE; causal attention; unbiased O projection; residual addition; post-attention RMSNorm; gate/\allowbreak{}up projections; SiLU(\allowbreak{}gate)\allowbreak{}*\allowbreak{}up; down projection; and the second residual addition. Final RMSNorm precedes tied embedding-table projection. At defaults,\allowbreak{} Q/\allowbreak{}O are 896->896,\allowbreak{} K/\allowbreak{}V 896->128,\allowbreak{} gate/\allowbreak{}up 896->4864 and down 4864->896.
+
+\subsection{AWQ format and accumulation}
+
+qweight uses [\allowbreak{}N,\allowbreak{}M/\allowbreak{}8]\allowbreak{},\allowbreak{} qzeros [\allowbreak{}N/\allowbreak{}G,\allowbreak{}M/\allowbreak{}8]\allowbreak{} and scales [\allowbreak{}N/\allowbreak{}G,\allowbreak{}M]\allowbreak{}. Both packed words use lane shifts [\allowbreak{}0,\allowbreak{}16,\allowbreak{}4,\allowbreak{}20,\allowbreak{}8,\allowbreak{}24,\allowbreak{}12,\allowbreak{}28]\allowbreak{}. Dequantization is W=\allowbreak{}(\allowbreak{}u4\_\allowbreak{}weight-u4\_\allowbreak{}zero)\allowbreak{}*\allowbreak{}round\_\allowbreak{}away(\allowbreak{}scale*\allowbreak{}65536)\allowbreak{},\allowbreak{} without GPTQ +\allowbreak{}1. Scale conversion is unsigned-32 and unsaturated; signed-37 Q21.16 weights reach magnitude 64393052160. Eight signed-69 products accumulate in increasing input order into signed-128 sums,\allowbreak{} including bias*\allowbreak{}65536. Only the complete sum rounds by 16 and saturates to signed-32.
+
+\subsection{Working precision}
+
+Scratch,\allowbreak{} residuals,\allowbreak{} KV and logits are signed-32 Q16.16,\allowbreak{} with range [\allowbreak{}-32768,\allowbreak{}32768-2\textasciicircum{}-16]\allowbreak{}. Ordinary low-halfword binary16 data converts with nearest/\allowbreak{}ties-away rounding,\allowbreak{} subnormal handling and saturation; both zero encodings convert to numerical zero. Nonfinite values fail explicitly. Negative nonzero or nonfinite scales are invalid; either signed-zero scale is valid. Logits use signed-64 products and signed-96 sums. Residual addition uses signed-33; elementwise products use signed-64.
+
+\subsection{Normalization and nonlinear arithmetic}
+
+RMSNorm forms unsigned-96 T=\allowbreak{}sum(\allowbreak{}x*\allowbreak{}x)\allowbreak{},\allowbreak{} unsigned-128 M=\allowbreak{}floor(\allowbreak{}(\allowbreak{}T<<32)\allowbreak{}/\allowbreak{}H)\allowbreak{}+\allowbreak{}18446744073710,\allowbreak{} D=\allowbreak{}floor(\allowbreak{}sqrt(\allowbreak{}M)\allowbreak{})\allowbreak{} and R=\allowbreak{}floor(\allowbreak{}2\textasciicircum{}64/\allowbreak{}D)\allowbreak{}. It rounds signed-128 x*\allowbreak{}gamma*\allowbreak{}R by 48. The shared exponential uses Q0.24 range reduction with ln(\allowbreak{}2)\allowbreak{} constant 11629080,\allowbreak{} six correction terms and a cutoff below -16. SiLU forms a Q0.24 sigmoid,\allowbreak{} rounds x*\allowbreak{}sigmoid by 24,\allowbreak{} then rounds its product with up by 16. Zero denominators are explicit errors.
+
+\subsection{RoPE and causal GQA}
+
+RoPE pairs components i and i+\allowbreak{}D/\allowbreak{}2 using externally supplied Q2.30 coefficients derived with theta=\allowbreak{}1000000. Signed-64 products combine at signed-65 width and round by 30. Query head h maps to floor(\allowbreak{}h/\allowbreak{}(\allowbreak{}QH/\allowbreak{}KVH)\allowbreak{})\allowbreak{}; default sharing is 7:1. Attention reads positions zero through the current position without sliding-window truncation. Signed-96 dots divide by floor(\allowbreak{}sqrt(\allowbreak{}HEAD\_\allowbreak{}DIM<<32)\allowbreak{})\allowbreak{}; max-subtracted softmax and signed-96 weighted sums produce rounded context. Cache stores rotated K and unrotated V.
+
+\subsection{Memory namespaces}
+
+Kinds 0..11 are embedding,\allowbreak{} qweight,\allowbreak{} qzeros,\allowbreak{} scales,\allowbreak{} QKV bias,\allowbreak{} input norm,\allowbreak{} post norm,\allowbreak{} final norm,\allowbreak{} scratch,\allowbreak{} K cache,\allowbreak{} V cache and RoPE. Projection codes 0..6 are Q,\allowbreak{}K,\allowbreak{}V,\allowbreak{}O,\allowbreak{}gate,\allowbreak{}up,\allowbreak{}down. Packed-weight row is input index; metadata row is group; scales use scalar-channel columns. Cache row is position and column flattened KV component. RoPE column is 2*\allowbreak{}head-local-pair+\allowbreak{}cos/\allowbreak{}sin selector. Norm/\allowbreak{}bias row is zero.
+
+\subsection{Scratch and sequencing}
+
+Scratch slots 0..14 are residual,\allowbreak{} input-normalized,\allowbreak{} Q,\allowbreak{} K,\allowbreak{} V,\allowbreak{} context,\allowbreak{} O,\allowbreak{} post-residual,\allowbreak{} post-normalized,\allowbreak{} gate,\allowbreak{} up,\allowbreak{} product,\allowbreak{} down,\allowbreak{} reserved and final-normalized. GEMV reloads zero/\allowbreak{}eight-scale metadata per tile/\allowbreak{}group. For N inputs and M outputs it performs (\allowbreak{}M/\allowbreak{}8)\allowbreak{}*\allowbreak{}(\allowbreak{}2*\allowbreak{}N+\allowbreak{}9*\allowbreak{}N/\allowbreak{}G)\allowbreak{} input/\allowbreak{}metadata reads,\allowbreak{} QKV-only M bias reads,\allowbreak{} M acknowledged writes and N*\allowbreak{}M products.
+
+\subsection{Commitment and recovery}
+
+Acceptance makes the engine busy without a same-edge request. Responses are strictly later than requests; packed-weight capture precedes an eight-lane MAC edge. Singleton layer,\allowbreak{} context and vocabulary execute once. Invalid tokens produce no writes/\allowbreak{}logits and preserve commitment. Memory/\allowbreak{}nonfinite failures invalidate the sequence and require new\_\allowbreak{}sequence at position zero. Earlier writes or logits are not rolled back and do not certify completion.
+
+\section{Verification methods and measured results}
+
+\subsection{Authoritative model compatibility}
+
+\textbf{Method.} Independent manifest and raw-slice validation; standalone public-port dequantization and supplied-submatrix GEMV.
+
+\textbf{Result.} Validated 627 tensors,\allowbreak{} 168 quantized modules and 552 raw slice values. Passed 1200 dequant comparisons,\allowbreak{} including 192 official comparisons; official Q/\allowbreak{}K/\allowbreak{}gate GEMV compared 24 outputs from 192 supplied scalar products.
+
+{\small Evidence: E138,\allowbreak{} E002,\allowbreak{} E013}
+
+\subsection{Multilayer prefill/\allowbreak{}decode and exact stage results}
+
+\textbf{Method.} Public-pin transactors and independent integer/\allowbreak{}floating models; seeds 17,\allowbreak{}43,\allowbreak{}89 for each tuple (\allowbreak{}L,\allowbreak{}H,\allowbreak{}I,\allowbreak{}QH,\allowbreak{}KVH,\allowbreak{}D,\allowbreak{}G,\allowbreak{}V,\allowbreak{}S)\allowbreak{}: A=\allowbreak{}(\allowbreak{}2,\allowbreak{}16,\allowbreak{}32,\allowbreak{}4,\allowbreak{}2,\allowbreak{}4,\allowbreak{}8,\allowbreak{}17,\allowbreak{}4)\allowbreak{},\allowbreak{} B=\allowbreak{}(\allowbreak{}2,\allowbreak{}112,\allowbreak{}128,\allowbreak{}14,\allowbreak{}2,\allowbreak{}8,\allowbreak{}16,\allowbreak{}19,\allowbreak{}3)\allowbreak{},\allowbreak{} C=\allowbreak{}(\allowbreak{}1,\allowbreak{}24,\allowbreak{}48,\allowbreak{}6,\allowbreak{}2,\allowbreak{}4,\allowbreak{}3,\allowbreak{}11,\allowbreak{}3)\allowbreak{},\allowbreak{} D=\allowbreak{}(\allowbreak{}1,\allowbreak{}8,\allowbreak{}8,\allowbreak{}2,\allowbreak{}2,\allowbreak{}4,\allowbreak{}8,\allowbreak{}1,\allowbreak{}1)\allowbreak{}.
+
+\textbf{Result.} All 12 runs passed. Per seed,\allowbreak{} A completed 5 tokens/\allowbreak{}2960 writes/\allowbreak{}85 logits; B 4/\allowbreak{}12672/\allowbreak{}76; C 4/\allowbreak{}1792/\allowbreak{}44; D 2/\allowbreak{}304/\allowbreak{}2. Totals are 45 tokens,\allowbreak{} 53184 writes and 621 logits,\allowbreak{} excluding mutations and oracle-only predictions. B17 completed all four tokens.
+
+{\small Evidence: E138,\allowbreak{} E012}
+
+\subsection{Nonsaturating numerical quality}
+
+\textbf{Method.} Exact RTL-to-integer comparisons followed by independent floating-reference error checks. Detailed per-seed results reside in evidence/\allowbreak{}verification/\allowbreak{}recovery-cost-profile-01/\allowbreak{}behavior/\allowbreak{}receipt.json.
+
+\textbf{Result.} Maximum final-normalized error by A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D was 0.0120195/\allowbreak{}0.0140380/\allowbreak{}0.00732814/\allowbreak{}0.00586218 Q8.8-LSB units,\allowbreak{} below the limit 16; these units equal real error*\allowbreak{}256,\allowbreak{} not Q16.16 LSBs. Corresponding maximum absolute logit errors were 0.000119154/\allowbreak{}0.000375346/\allowbreak{}0.0000871610/\allowbreak{}0.0000121622. Every logit met 16/\allowbreak{}256+\allowbreak{}0.01*\allowbreak{}abs(\allowbreak{}floating reference)\allowbreak{}.
+
+{\small Evidence: E138}
+
+\subsection{Isolated normalization,\allowbreak{} nonlinear and attention accuracy}
+
+\textbf{Method.} Public write comparisons,\allowbreak{} independent floating models and mathematical exponential audit.
+
+\textbf{Result.} RMSNorm maximum error was 0.00173650,\allowbreak{} SiLU 0.00327189 and 7:1 attention 0.00236016 Q8.8-LSB units,\allowbreak{} each below 2. SiLU compared 8200 outputs; exponential audit compared 4199 values with maximum absolute error 1.4008043e-5 below 3e-5. RoPE compared 72 writes at positions 1,\allowbreak{}3,\allowbreak{}32767 and met 2/\allowbreak{}256 real tolerance. Exponential error is an algorithm audit; RTL observation is through SiLU.
+
+{\small Evidence: E138,\allowbreak{} E009,\allowbreak{} E010,\allowbreak{} E006}
+
+\subsection{Full-range arithmetic and defect sensitivity}
+
+\textbf{Method.} Directed saturation/\allowbreak{}cancellation vectors and disposable source mutations with successful compilation and intended functional assertions.
+
+\textbf{Result.} Cancellation reached accumulator magnitude 2489018516916204994560 and returned the expected zero; separate wide-scale saturation passed. All nine mutations were functionally killed: lane mapping,\allowbreak{} omitted bias,\allowbreak{} GQA mapping,\allowbreak{} RoPE pairing,\allowbreak{} future-cache access,\allowbreak{} skipped layer,\allowbreak{} signed-32 dequantization,\allowbreak{} signed-64 accumulation and signed-53 product truncation. The product-truncation selector targets the current eight-lane accumulation expression.
+
+{\small Evidence: E138,\allowbreak{} E013,\allowbreak{} E015}
+
+\subsection{Protocol,\allowbreak{} faults and parameter boundaries}
+
+\textbf{Method.} Stalls,\allowbreak{} busy-held valid,\allowbreak{} bubbles,\allowbreak{} invalid inputs,\allowbreak{} reset interruption,\allowbreak{} memory/\allowbreak{}nonfinite faults and illegal-parameter execution.
+
+\textbf{Result.} Passed four invalid-token cases,\allowbreak{} three reset aborts,\allowbreak{} seven child-engine error suites,\allowbreak{} post-write/\allowbreak{}partial-logit failures and sequence invalidation checks. Portability evidence records 17 expected illegal-parameter rejections. C exercises G=\allowbreak{}3 transitions; D exercises sole-logit retirement.
+
+{\small Evidence: E138,\allowbreak{} E140}
+
+\subsection{Synthesizable structure without latches}
+
+\textbf{Method.} Yosys hierarchy checking,\allowbreak{} process/\allowbreak{}memory lowering,\allowbreak{} optimization,\allowbreak{} check assertions and netlist inspection for A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D.
+
+\textbf{Result.} All four configurations passed with zero inferred latches and required connected hierarchy/\allowbreak{}eight-lane structure. The recorded sequential-cell metric was 110 for A/\allowbreak{}B/\allowbreak{}C and 113 for D; it is not technology-mapped area. Explicit exponent extension preserves binary16 conversion while avoiding unsupported frontend cast syntax.
+
+{\small Evidence: E139,\allowbreak{} E001,\allowbreak{} E013}
+
+\subsection{Dual-major compiler/\allowbreak{}runtime portability}
+
+\textbf{Method.} Explicitly matched Icarus driver,\allowbreak{} preprocessor,\allowbreak{} parser/\allowbreak{}code-generator and runtime selection; warning-clean default/\allowbreak{}A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D elaboration and identical configuration-D protocol smoke.
+
+\textbf{Result.} Five elaborations passed per major,\allowbreak{} 12 and 13. Both matched runtimes passed four invalid-token cases,\allowbreak{} three reset aborts and one injected memory error. Explicit component binding resolved mixed-major discovery ambiguity; this does not represent a full numerical-matrix rerun under version 13.
+
+{\small Evidence: E148,\allowbreak{} E015}
+
+\subsection{Evidence preservation}
+
+\textbf{Method.} Dedicated occupied-output refusal check.
+
+\textbf{Result.} Passed refusal behavior for occupied destinations; retained results are not overwritten by an ordinary verification invocation.
+
+{\small Evidence: E141,\allowbreak{} E014}
+
+\section{Integration and use}
+
+Use rtl/\allowbreak{}*\allowbreak{}.sv with anvil\_\allowbreak{}q1\_\allowbreak{}top as the integration module; compile anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv before consumers. design/\allowbreak{}SPEC.md and design/\allowbreak{}ARCHITECTURE.md document numerical and memory contracts. Keep hf\_\allowbreak{}qwen25\_\allowbreak{}05b\_\allowbreak{}awq\_\allowbreak{}spec/\allowbreak{}*\allowbreak{}.json with tests/\allowbreak{}*\allowbreak{}.py for verification.
+
+
+Provide the logical tensor memory service,\allowbreak{} including write acknowledgements,\allowbreak{} persistent KV storage and mathematical RoPE coefficients. Preserve AWQ signed-word bit patterns and low-halfword binary16 model encoding. Embedding and vocabulary projection must access the same tied storage.
+
+
+Assert rst\_\allowbreak{}n low across a rising edge,\allowbreak{} discard obsolete responses,\allowbreak{} then submit a position-zero token. Hold token payload through acceptance,\allowbreak{} service one outstanding memory transaction and accept every vocabulary logit. Wait for completion retirement before the next token.
+
+
+Reproduction entry points are python3 tests/\allowbreak{}verify.py --check behavior --out <fresh-directory>,\allowbreak{} with synthesis or portability substituted for the other suites. Dependencies are Python 3,\allowbreak{} Icarus Verilog/\allowbreak{}vvp and Yosys. Dual-major verification additionally requires matched version-12/\allowbreak{}version-13 components. Existing evidence directories must remain untouched.
+
+
+\section{Limitations and acceptance boundary}
+
+The deliverable is functional accelerator RTL,\allowbreak{} not fabricated silicon,\allowbreak{} FPGA deployment,\allowbreak{} timing closure,\allowbreak{} power characterization,\allowbreak{} physical area or guaranteed token throughput. Serialization and wide arithmetic require implementation-specific optimization.
+
+
+Default dimensions were elaborated; complete functional and synthesis measurements cover scaled configurations. The full 24-layer checkpoint and 32768-position end-to-end inference were not demonstrated.
+
+
+Official Layer-0 slices are partial. Unsupplied tensors/\allowbreak{}channels and integration data are synthetic. Manifest entries alone do not prove equality of unavailable embedding and lm\_\allowbreak{}head contents.
+
+
+Binary16 model storage does not make this an IEEE FP16 arithmetic implementation: execution follows the specified Q16.16 approximations,\allowbreak{} rounding and saturation. Extreme/\allowbreak{}saturating checks are separate from nonsaturating quality measurements.
+
+
+No formal all-state/\allowbreak{}all-parameter proof or clean-directory portable-delivery reproduction is established. Historical timeout notes in design documentation are not current result ledgers; the retained completed checks support the measured claims above.
+
+
+Tokenization,\allowbreak{} sampling,\allowbreak{} checkpoint download,\allowbreak{} a physical memory controller and multi-clock integration are outside scope. Scheduling-neutral isolation changes do not establish measured hardware or simulator speedup.
+
+
+\appendix\section{Source inventory}
+
+Production inventory: 13 Verilog/\allowbreak{}SystemVerilog files; 1223 nonblank,\allowbreak{} non-comment lines. Source size is not a correctness or quality metric.
+
+{\small\begin{longtable}{@{}L{0.61\textwidth}L{0.15\textwidth}L{0.15\textwidth}@{}}\toprule
+
+\textbf{Production file} & \textbf{Physical lines} & \textbf{Code lines}\\\midrule\endhead
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv & 106 & 106\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}awq\_\allowbreak{}dequant.sv & 38 & 38\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}bus\_\allowbreak{}mux.sv & 35 & 35\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer.sv & 107 & 107\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}elementwise.sv & 91 & 91\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}gqa\_\allowbreak{}attention.sv & 151 & 151\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}mem\_\allowbreak{}port.sv & 49 & 49\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}parameters.sv & 27 & 27\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rmsnorm.sv & 113 & 113\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rope.sv & 97 & 97\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}swiglu\_\allowbreak{}mlp.sv & 75 & 75\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv & 151 & 151\\[3pt]
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}w4a16\_\allowbreak{}gemv.sv & 183 & 183\\[3pt]
+
+\bottomrule\end{longtable}}
+
+\section{Verification record index}
+
+{\small\begin{longtable}{@{}L{0.57\textwidth}L{0.16\textwidth}L{0.17\textwidth}@{}}\toprule
+
+\textbf{Recorded check} & \textbf{Outcome} & \textbf{Execution time (\allowbreak{}s)\allowbreak{}}\\\midrule\endhead
+
+behavior & passed & 365.947\\[3pt]
+
+synthesis & passed & 89.980\\[3pt]
+
+portability & passed & 5.377\\[3pt]
+
+\bottomrule\end{longtable}}
+
+Execution times include tool and provider waiting; they are not hardware latency or model utilization.
+
+{\small\begin{longtable}{@{}L{0.12\textwidth}L{0.82\textwidth}@{}}\toprule
+
+\textbf{Reference} & \textbf{Original project-relative record}\\\midrule\endhead
+
+E001 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv\\[3pt]
+
+E002 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}awq\_\allowbreak{}dequant.sv\\[3pt]
+
+E006 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}gqa\_\allowbreak{}attention.sv\\[3pt]
+
+E009 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rmsnorm.sv\\[3pt]
+
+E010 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rope.sv\\[3pt]
+
+E012 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv\\[3pt]
+
+E013 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}w4a16\_\allowbreak{}gemv.sv\\[3pt]
+
+E014 & tests/\allowbreak{}occupied\_\allowbreak{}output\_\allowbreak{}refusal.py\\[3pt]
+
+E015 & tests/\allowbreak{}verify.py\\[3pt]
+
+E138 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0007/\allowbreak{}attempt-0011/\allowbreak{}stdout.log\\[3pt]
+
+E139 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0007/\allowbreak{}attempt-0012/\allowbreak{}stdout.log\\[3pt]
+
+E140 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0007/\allowbreak{}attempt-0013/\allowbreak{}stdout.log\\[3pt]
+
+E141 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0007/\allowbreak{}attempt-0014/\allowbreak{}stdout.log\\[3pt]
+
+E148 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0007/\allowbreak{}attempt-0018/\allowbreak{}stdout.log\\[3pt]
+
+\bottomrule\end{longtable}}
+
+\section{Document provenance}
+
+Engineering was independently accepted for the recorded source and evidence identity. This is not exhaustive proof, hardware deployment or physical signoff. The companion REPORT.md records the exact report approval and source manifest, and links the English/Chinese journeys containing original failures and interventions. A report number identifies a generation attempt, not a new hardware revision.
+
+No developer attribution was supplied; none has been inferred.
+
+\end{document}
