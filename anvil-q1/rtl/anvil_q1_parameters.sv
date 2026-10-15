@@ -19,7 +19,8 @@ module anvil_q1_parameters #(
     HIDDEN_SIZE%SG==0 && INTERMEDIATE_SIZE%SG==0 &&
     HIDDEN_SIZE%8==0 && INTERMEDIATE_SIZE%8==0 && (K*D)%8==0 &&
     V*H<=LIMIT && H*H<=LIMIT && H*I<=LIMIT && H*K*D<=LIMIT &&
-    L*S*K*D<=LIMIT && 2*D<=LIMIT && 15*I<=LIMIT;
+    L*S*K*D<=LIMIT && S*D<=LIMIT && 2*D<=LIMIT &&
+    15*H<=LIMIT && 15*I<=LIMIT;
   generate if(!VALID) begin: invalid_parameters
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: unsupported dimensions or address bounds");
   end endgenerate

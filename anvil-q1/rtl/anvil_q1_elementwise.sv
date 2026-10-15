@@ -28,7 +28,7 @@ module anvil_q1_elementwise #(
               MAX_SEQ_LEN<=0 || MAX_SEQ_LEN>16777215 ||
               HIDDEN_SIZE%8!=0 || INTERMEDIATE_SIZE%8!=0 ||
               128'(NUM_LAYERS)>128'd4294967295 ||
-              128'(HIDDEN_SIZE)>128'd4294967295 ||
+              128'(HIDDEN_SIZE)*15>128'd4294967295 ||
               128'(INTERMEDIATE_SIZE)*15>128'd4294967295) begin: invalid_parameters
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: elementwise dimensions");
   end endgenerate

@@ -18,6 +18,25 @@ The manifest lists both embedding and lm_head; this does not establish equality
 of unavailable full tensors. The Layer-0 slice contains partial real data only;
 unsupplied integration tensors and padding must be explicitly synthetic.
 
+The authoritative configuration is `model_type=qwen2`,
+`architectures=["Qwen2ForCausalLM"]`, activation SiLU and AWQ GEMM W4 G128
+with zero points. The manifest covers 627 tensors and 168 quantized modules.
+For each layer, Q/O have (N,M)=(896,896), K/V=(896,128),
+gate/up=(896,4864), down=(4864,896). Storage is I32 qweight[N,M/8],
+I32 qzeros[N/128,M/8], F16 scales[N/128,M]; only Q/K/V have F16 bias[M].
+The independent Verifier must validate all manifest entries, not infer them
+from the partial slice. All 24 layers and the tied vocabulary projection
+execute in RTL, without sliding-window truncation or host arithmetic.
+
+The supplied Layer-0 Q/K/gate qweight excerpts are input rows 0..7 and packed
+output columns 0..7 (logical channels 0..63). Their zero excerpts cover groups
+0..6, packed columns 0..7. Q/K scale excerpts cover groups 0..6 and scalar
+channels 0..7; gate scales cover only groups 0..5 and scalar channels 0..7.
+Q/K biases, Layer-0 input norm and final model norm cover components 0..7.
+Thus weight/zero availability for 64 channels does not imply matching supplied
+scales for 64 channels. V/O/up/down, other components/groups and padded
+integration data are synthetic unless separately supplied.
+
 ## Cycle and degenerate-boundary table
 
 All transfers sample **pre-edge** valid and ready. State changes are post-edge.
@@ -47,6 +66,14 @@ Writes also require responses. An errored response stops the active operation.
 Top-level memory errors invalidate sequence state; a new-sequence position-zero
 token is required. Invalid tokens cause no memory writes or logits and do not
 change committed sequence state. Busy valid inputs are not accepted.
+Position must equal the next committed position, initially zero. Token ID must
+be below V and position below SEQ, without wrapping. `new_sequence` is sampled
+only on acceptance and requires position zero. Only the final logit transfer
+commits the position; readiness stays low until completion retires. Any child
+error, memory error or nonfinite required model value stops further requests
+and logits and invalidates the sequence. Acknowledged writes are not rolled
+back and transferred logits are not retractable, but neither constitutes a
+successfully completed token. Valid bubbles do nothing.
 
 ## Public memory and scratch contract
 
@@ -61,6 +88,19 @@ or scalar scale channel. Norm/bias use row zero. Cache uses layer, row=position,
 col=flattened KV component. Scratch uses row=slot, col=component.
 RoPE uses row=position and col=2*pair+cos/sin selector, pair local to a head.
 
+Top ports remain `clk,rst_n,token_valid,token_ready,token_id[31:0],
+token_pos[31:0],new_sequence,logit_valid,logit_ready,logit_index[31:0],
+signed logit_data[31:0],done,error` and the memory interface.
+Each memory master outputs `mem_req_valid,mem_req_write,mem_req_kind[3:0],
+mem_req_layer[31:0],mem_req_proj[2:0],mem_req_row[31:0],
+mem_req_col[31:0],mem_req_wdata[31:0],mem_rsp_ready` and receives
+`mem_req_ready,mem_rsp_valid,mem_rsp_rdata[31:0],mem_rsp_error`.
+Read write-data is zero; every accepted read or write gets one strictly later
+response. Clocked children use `cmd_valid,cmd_ready,cmd_layer[31:0],
+cmd_pos[31:0],done,error` with the same memory interface; GEMV additionally
+uses `cmd_proj[2:0]` and RMSNorm `cmd_mode[1:0]`. Reserved projection/mode
+and invalid layer/position fail before any memory effects.
+
 Scratch slots: residual 0, input norm 1, Q 2, K 3, V 4, attention context 5,
 O 6, post-attention residual 7, post norm 8, gate 9, up 10,
 SiLU(gate)*up 11, down 12, reserved 13, final norm 14.
@@ -68,6 +108,10 @@ Tensor nonquantized reads use low-halfword IEEE binary16; scratch/cache use
 all 32 bits as signed Q16.16; coefficients are signed Q2.30. This intentionally
 replaces the former low-halfword Q8.8 working encoding with no legacy mode.
 Packed model words and binary16 model tensors are not rewritten.
+GEMV source->target slots are Q 1->2, K 1->3, V 1->4, O 5->6,
+gate 8->9, up 8->10, down 11->12. RMS modes 0,1,2 select
+0->1/input norm, 7->8/post norm and 0->14/final norm respectively.
+RoPE updates Q/K; attention caches rotated K and unrotated V and writes context.
 
 ## Numerical widths and boundaries
 
@@ -118,14 +162,17 @@ Both packed words preserve the I32 bit pattern. The equation is
 `(u4_weight-u4_zero)*round_away(binary16_scale*65536)`.
 For scale 0x6c00 and delta 15 the full result is 4026531840; for 0x7bff
 and delta 15 it is 64393052160. Negative deltas produce exact negatives.
+At 0x6c00, deltas +/-8 give +/-2147483648 and +/-7 give +/-1879048192;
+0x77ff with +/-1 gives +/-2146435072; 0x7800 with +/-1 gives +/-2147483648.
+These are full signed-37 values, not signed-32 aliases.
 
 RMS epsilon is 1e-6 with fixed integer round(1e-6*2^64)=18446744073710.
 The mean uses a widened unsigned temporary before shifting; the square root is
 a bounded 64-iteration restoring algorithm. D>0 by epsilon; zero is nonetheless
 an explicit error. R<2^43 and the output triple product has magnitude <2^105.
-Qwen RoPE pairs i and
-i+HEAD_DIM/2, theta=1000000. The external memory provisions independent rounded
-Q2.30 cosine/sine coefficients for position and pair.
+Qwen RoPE pairs i and i+HEAD_DIM/2, theta=1000000. The external memory provisions
+independent rounded Q2.30 cos(position*theta^(-2*i/HEAD_DIM)) and sine,
+clipped only to the coefficient representation.
 GQA maps h to floor(h/(QH/KVH)); attention includes positions zero through
 current position only. Scale is floor(sqrt(HEAD_DIM<<32)) in Q16.16.
 Score division uses nearest, ties away from zero on the complete dot integer,
@@ -169,6 +216,11 @@ must fit unsigned 32 bits using widened checks. H=QH*D; QH divisible by KVH;
 D even; H and I divisible by G; H,I,KVH*D divisible by eight; bits=4.
 SEQ <= 16777215 retains the admitted softmax denominator bound. Unsupported
 values require an explicit startup diagnostic before command acceptance.
+Widened unsigned-128 calculations bound V*H (embedding), H*H, H*I and
+H*KVH*D (projection entries), L*SEQ*KVH*D (cache), SEQ*D and 2*D
+(RoPE), and 15*H and 15*I (scratch) by 4294967295.
+Zero group/head divisors are guarded for diagnostic-only elaboration; they
+are never substituted as legal parameter values or used to clamp commands.
 
 | Configuration | L,H,I,QH,KVH,D,G,V,SEQ | Intended boundary |
 | --- | --- | --- |
@@ -186,9 +238,49 @@ No default-sized activation or cache arrays may be instantiated internally.
 Verification sources are independently owned `tests/*.py`; generated harnesses
 and evidence are not RTL inputs. Functional, numerical, mutation, zero-latch
 synthesis and both Icarus-major portability acceptance remain independent work.
+All A/B/C/D cases require seeds 17,43,89, unchanged stimulus distributions,
+exact stage/cache/logit integer comparisons and public-pin reference arithmetic.
+Quality limits remain exponential absolute error <=3e-5; isolated nonsaturating
+RMSNorm/RoPE/SiLU/attention error <=2/256 real units; final norm <=16/256;
+logits <=16/256+0.01*abs(floating reference). These are not new-format LSB
+counts. Prior Q8.8-directed working inputs preserve real values by multiplying
+their integer encodings by 256. Full-range saturation and cancellation cases
+use exact integer expectations. All eight mutation categories, protocol/fault
+coverage, actual Yosys zero-latch checks and Icarus 12/13 remain required.
+Retain the existing 25-second matrix simulation and 120-second complete-check
+budgets. Missing Icarus13 remains an external unmet prerequisite, not a waiver.
 
 The concrete state-transition conditions and arithmetic iteration counts in
 [ARCHITECTURE.md, Concrete state transition and iteration inventory](ARCHITECTURE.md#concrete-state-transition-and-iteration-inventory)
 are part of this contract. They specify each issue/response state and each
 component/head/group/layer/vocabulary loop rather than promising a fixed token
 latency independent of memory backpressure.
+
+GEMV transitions are 0 acceptance -> 16 tile clear -> 5/6 zero
+request/response -> 7/8 eight scale request/response pairs -> 1/2 activation
+-> 3/4 packed weight -> 9 eight scalar MAC edges -> 10 input advance.
+State 10 selects 1 within a group, 5 on a group transition, or 11 for biased
+completion / 13 for unbiased completion. States 11/12 read/add all eight
+biases before 13/14 issue/acknowledge eight writes. State 14 selects another
+lane, 16 for the next block, or 20 completion. Invalid command uses 19->20;
+20 invalidates tile state and returns idle. Faults enter 20 without more issue.
+Thus there are N*M MACs, eight clears per block and nine metadata reads per
+group/block, not an arithmetic lane parallelism assumption.
+
+RMSNorm transitions are 0 -> 1/2 H square reads -> 3 mean -> 4 bounded
+64-step combinational sqrt -> 5 checked reciprocal -> 6/7 x read -> 8/9
+gamma read/check -> 10/11 write/ack. Repeat the output loop H times, then
+15 completion -> 0; invalid commands use 14->15. The square-root loop is
+combinational, not 64 artificial wait cycles.
+
+Unchanged RoPE iterates (QH+KVH)*D/2 pairs, with x/y/cos/sin reads and two
+acknowledged writes per pair. Attention caches 2*KVH*D components and, per
+query head, computes (position+1) D-product dots for max, then that many dots
+for each of D context components, with six-term exponentials and complete
+normalized weighted division. No context-sized score array is allocated.
+Elementwise loops H residual additions or I SiLU/products. MLP launches/waits
+gate, up, elementwise, down; decoder launches/waits input norm, Q,K,V,RoPE,
+attention,O,residual,post norm,MLP,residual. Top embeds H components, invokes
+each of L layers, final norm and V*H tied output products. Every launch waits
+child ready, every retirement waits done, and every memory loop waits the
+strictly later response. The sole V=1 logit still transfers before commitment.

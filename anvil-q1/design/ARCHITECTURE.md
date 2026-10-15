@@ -17,14 +17,16 @@ and transaction control, but must not substitute host-computed results.
 | Edge/event | Pre-edge sampling | Post-edge state |
 | --- | --- | --- |
 | rst_n=0 | All outward handshakes/status/payload zero | Synchronous state clear |
+| Idle after reset deassertion | token_ready or cmd_ready high | Remain idle absent valid |
 | E0 | Accept idle token/command | Busy, no request acceptance |
 | E1 | Startup edge | First request permitted |
+| Request stall | Request valid && !ready | Every request payload stable |
 | R | Request valid && ready | Wait response, no second request |
 | S, strictly after R | Response valid && ready | Consume data/ack or error |
 | Output stall | Logit valid && !ready | Hold index and data |
-| F | Final logit valid && ready | Commit position; one done pulse |
+| F | Final logit valid && ready | Commit position; one done pulse, ready low |
 | Following edge | Completion retires | Return idle |
-| Error completion | Invalid input or errored response | One done+error pulse |
+| Error completion | Invalid input or errored response | One done+error pulse, never immediately after E0 |
 | V=1 | First logit is last | Still wait for its F transfer |
 | L=1 / SEQ=1 | First iteration is last | Perform it once |
 | New sequence / reset | Invalidate logical history | Never reuse old cache |
@@ -94,6 +96,10 @@ Reject zero/overflow dimensions, odd D, H != QH*D, nonintegral GQA ratio,
 nondividing group, non-eight-aligned packed channels, bits !=4, address-product
 overflow and SEQ>16777215. Widen checks themselves to prevent wrapped approval.
 Legal grouping need not be a power of two.
+Address-product checks use unsigned 128 bits: V*H, H*H, H*I, H*KVH*D,
+L*SEQ*KVH*D, SEQ*D, 2*D, 15*H and 15*I must fit unsigned 32 bits.
+Zero dimensions, odd D, head mismatch, bad GQA ratio, nondividing G, bits!=4,
+overflow and excessive sequence length are illegal, with explicit diagnostics.
 
 Compile design inputs as `rtl/*.sv` in SystemVerilog-2012 mode, using package
 source first where required. Standalone clocked engines accept cmd_valid/ready
