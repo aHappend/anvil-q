@@ -26,10 +26,10 @@ state 14; GEMV converts bias only on state 12. Other response types, including
 write acknowledgements, cannot toggle those arithmetic inputs with their data.
 All consuming edges, arithmetic widths, rounding, transaction counts and error
 priority remain unchanged. This removes avoidable inactive-data fanout; it is
-not a measured execution-time improvement. Following the eight-lane amendment,
-independent B17 four-token completion must first be established against the
-unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-response-isolation-B17-01/receipt.json`, before
+not a measured execution-time improvement. Following the dequantizer dependency
+partition, independent B17 four-token completion must first be established
+against the unchanged 25-second simulation watchdog, linked to
+`evidence/preparation/verifier-eight-lane-cost-localization-01/receipt.json`, before
 the remaining seeds and complete 120-second checks can establish coverage.
 Engineering acceptance remains INCOMPLETE, including the independently unmet
 Icarus13 prerequisite; static elaboration does not establish acceptance.
@@ -104,6 +104,20 @@ offset. This preserves the nonnegative exponent and signed shift calculation
 without the `integer'(...)` cast syntax rejected by the Yosys 0.33 frontend.
 The same form is used in the package conversions and standalone dequantizer;
 mantissa widths, subnormal handling, rounding and output widths are unchanged.
+
+The dequantizer partitions combinational work by actual dependencies. A complete
+`always_comb` lane case executes at initialization and whenever the dynamic lane
+changes, preserving its default shift of 28 for lane 7 or an X/Z-containing lane.
+Separate continuous assignments extract weight and zero nibbles, compute their
+signed delta, convert/extend the scale, validate the scale, multiply and select
+the output. Thus packed-weight changes do not procedurally rerun scale conversion,
+scale validation, lane decoding or zero extraction. The conversion function,
+signed widths, four-state operators and invalid-output ternary are unchanged.
+There is no added state, converted-scale cache, clock gating or extra MAC edge.
+Advisory lesson exp-5dd4ad6a286d88a13fd9565b motivates dependency separation,
+not a diagnosis of a scheduling hang or proof of speedup here. The retained B17
+timeout and CPU-bound progress receipt establish unfinished execution only;
+functional correctness and execution-budget closure require independent checks.
 
 Softmax uses max subtraction and the six-term Q0.24 range-reduced exponential
 defined in SPEC (LN2=11629080, cutoff -16). Context uses the entire nonzero

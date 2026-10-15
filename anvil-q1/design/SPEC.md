@@ -184,6 +184,17 @@ At 0x6c00, deltas +/-8 give +/-2147483648 and +/-7 give +/-1879048192;
 0x77ff with +/-1 gives +/-2146435072; 0x7800 with +/-1 gives +/-2147483648.
 These are full signed-37 values, not signed-32 aliases.
 
+The resetless dequantizer remains purely combinational, with independently
+driven lane mapping, weight/zero extraction, scale conversion/validation,
+signed delta/product and output selection. Its complete `always_comb` lane
+case runs at initialization and retains the default shift 28 for lane 7 and
+X/Z-containing lanes. Continuous assignments retain the existing four-state
+expressions, full widths and invalid-output ternary; active unknowns are not
+sanitized. A packed-weight change does not procedurally reevaluate held-scale
+conversion/validation or lane/zero decoding. No state, converted-scale register,
+clock gating, configuration shortcut or cycle-contract change is introduced.
+This dependency partition is an execution-cost hypothesis, not measured speedup.
+
 RMS epsilon is 1e-6 with fixed integer round(1e-6*2^64)=18446744073710.
 The mean uses a widened unsigned temporary before shifting; the square root is
 a bounded 64-iteration restoring algorithm. D>0 by epsilon; zero is nonetheless
@@ -296,7 +307,12 @@ budgets. Missing Icarus13 remains an external unmet prerequisite, not a waiver.
 Engineering acceptance remains INCOMPLETE until all applicable obligations
 close. Verifier first establishes actual four-token B17 completion with the
 existing matrix probe and unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-response-isolation-B17-01/receipt.json`.
+`evidence/preparation/verifier-eight-lane-cost-localization-01/receipt.json`,
+using fresh `evidence/preparation/verifier-dequant-partition-B17-01` output
+(or a fresh suffix if occupied). Preserve all four token completions, write/logit
+comparisons, stalls and deterministic vectors, comparing those vectors against
+retained artifacts. A failure or timeout requires retained evidence and another
+independently admitted diagnosis, not a broader repair or progress-only rerun.
 Predicted arithmetic quality, transaction progress and static elaboration do
 not certify that completion. New parallel-lane synthesis must independently
 check eight connected dequantizers and lane-result consumption in each concrete
