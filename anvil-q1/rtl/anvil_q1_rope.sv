@@ -14,9 +14,10 @@ module anvil_q1_rope #(
   reg [3:0] state;
   reg failed, key_vector;
   reg [31:0] position, head, pair_index;
-  reg signed [15:0] x, y;
+  reg signed [31:0] x, y;
   reg signed [31:0] cosine, sine;
-  wire signed [95:0] rotated_x, rotated_y;
+  wire signed [63:0] x_cos, y_sin, y_cos, x_sin;
+  wire signed [64:0] rotated_x, rotated_y;
   wire idle, complete, fault;
   wire [31:0] rd;
   reg issue, wr;
@@ -25,8 +26,12 @@ module anvil_q1_rope #(
   anvil_q1_parameters #(
     NUM_LAYERS,HIDDEN_SIZE,HIDDEN_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,1,4,1,MAX_SEQ_LEN) parameters_ok();
-  assign rotated_x = $signed(x)*$signed(cosine)-$signed(y)*$signed(sine);
-  assign rotated_y = $signed(y)*$signed(cosine)+$signed(x)*$signed(sine);
+  assign x_cos = $signed({{32{x[31]}},x})*$signed({{32{cosine[31]}},cosine});
+  assign y_sin = $signed({{32{y[31]}},y})*$signed({{32{sine[31]}},sine});
+  assign y_cos = $signed({{32{y[31]}},y})*$signed({{32{cosine[31]}},cosine});
+  assign x_sin = $signed({{32{x[31]}},x})*$signed({{32{sine[31]}},sine});
+  assign rotated_x = $signed({x_cos[63],x_cos})-$signed({y_sin[63],y_sin});
+  assign rotated_y = $signed({y_cos[63],y_cos})+$signed({x_sin[63],x_sin});
   assign cmd_ready = rst_n && state==0;
   assign done = rst_n && state==15;
   assign error = done && failed;
@@ -47,8 +52,8 @@ module anvil_q1_rope #(
         issue=1; kind=8; row=key_vector ? 3 : 2;
         col=head*HEAD_DIM+pair_index+((state==3 || state==11) ? HEAD_DIM/2 : 0);
         wr=state==9 || state==11;
-        if(state==9) wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(rotated_x,30))};
-        if(state==11) wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(rotated_y,30))};
+        if(state==9) wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_shift({{63{rotated_x[64]}},rotated_x},30));
+        if(state==11) wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_shift({{63{rotated_y[64]}},rotated_y},30));
       end
       5,7: begin issue=1; kind=11; row=position; col=2*pair_index+(state==7); end
       default: begin end
@@ -67,9 +72,9 @@ module anvil_q1_rope #(
         else state<=1;
       end
       1: if(issue) state<=2;
-      2: if(complete) begin x<=rd[15:0]; state<=3; end
+      2: if(complete) begin x<=rd; state<=3; end
       3: if(issue) state<=4;
-      4: if(complete) begin y<=rd[15:0]; state<=5; end
+      4: if(complete) begin y<=rd; state<=5; end
       5: if(issue) state<=6;
       6: if(complete) begin cosine<=rd; state<=7; end
       7: if(issue) state<=8;

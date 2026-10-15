@@ -16,9 +16,10 @@ module anvil_q1_elementwise #(
   reg [1:0] mode;
   reg failed;
   reg [31:0] index;
-  reg signed [15:0] a,b;
-  wire signed [15:0] silu_value;
-  wire signed [95:0] sum, product;
+  reg signed [31:0] a,b;
+  wire signed [31:0] silu_value;
+  wire signed [32:0] sum;
+  wire signed [63:0] product;
   wire idle, complete, fault;
   wire [31:0] rd;
   reg issue, wr;
@@ -31,9 +32,10 @@ module anvil_q1_elementwise #(
               128'(INTERMEDIATE_SIZE)*15>128'd4294967295) begin: invalid_parameters
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: elementwise dimensions");
   end endgenerate
-  assign sum=$signed(a)+$signed(b);
-  assign silu_value=anvil_q1_pkg::silu_q8(a);
-  assign product=$signed(silu_value)*$signed(b);
+  assign sum=$signed({a[31],a})+$signed({b[31],b});
+  assign silu_value=anvil_q1_pkg::silu_q16(a);
+  assign product=$signed({{32{silu_value[31]}},silu_value})*
+                 $signed({{32{b[31]}},b});
   assign cmd_ready=rst_n && state==0;
   assign done=rst_n && state==15;
   assign error=done && failed;
@@ -54,7 +56,9 @@ module anvil_q1_elementwise #(
       3: begin issue=1; row=mode==0 ? 6 : (mode==1 ? 12 : 10); end
       5: begin
         issue=1; wr=1; row=mode==0 ? 7 : (mode==1 ? 0 : 11);
-        wd={16'd0,anvil_q1_pkg::sat16(mode==2 ? anvil_q1_pkg::round_shift(product,8) : sum)};
+        if(mode==2)
+          wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_shift({{64{product[63]}},product},16));
+        else wd=anvil_q1_pkg::sat32({{95{sum[32]}},sum});
       end
       default: begin end
     endcase
@@ -70,9 +74,9 @@ module anvil_q1_elementwise #(
         else state<=1;
       end
       1: if(issue) state<=2;
-      2: if(complete) begin a<=rd[15:0]; state<=3; end
+      2: if(complete) begin a<=rd; state<=3; end
       3: if(issue) state<=4;
-      4: if(complete) begin b<=rd[15:0]; state<=5; end
+      4: if(complete) begin b<=rd; state<=5; end
       5: if(issue) state<=6;
       6: if(complete) begin
         if(index+1<(mode==2 ? INTERMEDIATE_SIZE : HIDDEN_SIZE))

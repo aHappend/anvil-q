@@ -19,10 +19,10 @@ module anvil_q1_top #(
   reg [4:0] state;
   reg failed, sequence_valid;
   reg [31:0] token, position, next_position, component, vocabulary, layer;
-  reg signed [15:0] activation;
-  reg signed [63:0] logit_sum;
-  wire signed [15:0] tensor_value;
-  wire signed [31:0] logit_product;
+  reg signed [31:0] activation;
+  reg signed [95:0] logit_sum;
+  wire signed [31:0] tensor_value;
+  wire signed [63:0] logit_product;
   wire [1:0] ready, finished, faults;
   wire [2:0] reqv, reqr, reqw, rspv, rspr, rspe;
   wire [11:0] reqk;
@@ -38,12 +38,14 @@ module anvil_q1_top #(
     NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,VOCAB_SIZE,MAX_SEQ_LEN) parameters_ok();
   assign selected=(state==5 || state==6) ? 1 : ((state==7 || state==8) ? 2 : 0);
-  assign tensor_value=anvil_q1_pkg::f16_q8(rd[15:0]);
-  assign logit_product=$signed(activation)*$signed(tensor_value);
+  assign tensor_value=anvil_q1_pkg::f16_q16(rd[15:0]);
+  assign logit_product=$signed({{32{activation[31]}},activation})*
+                       $signed({{32{tensor_value[31]}},tensor_value});
   assign token_ready=rst_n && state==0;
   assign logit_valid=rst_n && state==15;
   assign logit_index=rst_n ? vocabulary : 0;
-  assign logit_data=rst_n ? anvil_q1_pkg::sat32($signed({{32{logit_sum[63]}},logit_sum})) : 0;
+  assign logit_data=rst_n ? anvil_q1_pkg::sat32(
+    anvil_q1_pkg::round_shift({{32{logit_sum[95]}},logit_sum},16)) : 0;
   assign done=rst_n && state==31;
   assign error=done && failed;
   anvil_q1_mem_port memory_port(
@@ -75,7 +77,7 @@ module anvil_q1_top #(
     issue=0; wr=0; kind=0; row=0; col=0; wd=0;
     if(rst_n && own_idle) case(state)
       1: begin issue=1; kind=0; row=token; col=component; end
-      3: begin issue=1; wr=1; kind=8; col=component; wd={16'd0,activation}; end
+      3: begin issue=1; wr=1; kind=8; col=component; wd=activation; end
       9: begin issue=1; kind=8; row=14; col=component; end
       11: begin issue=1; kind=0; row=vocabulary; col=component; end
       default: begin end
@@ -121,11 +123,11 @@ module anvil_q1_top #(
         else begin component<=0; vocabulary<=0; logit_sum<=0; state<=9; end
       end
       9: if(issue) state<=10;
-      10: if(own_complete) begin activation<=rd[15:0]; state<=11; end
+      10: if(own_complete) begin activation<=rd; state<=11; end
       11: if(issue) state<=12;
       12: if(own_complete) begin
         if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; sequence_valid<=0; state<=31; end
-        else begin logit_sum<=logit_sum+{{32{logit_product[31]}},logit_product}; state<=13; end
+        else begin logit_sum<=logit_sum+{{32{logit_product[63]}},logit_product}; state<=13; end
       end
       13: if(component+1<HIDDEN_SIZE) begin component<=component+1; state<=9; end
           else state<=15;

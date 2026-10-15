@@ -16,13 +16,13 @@ module anvil_q1_rmsnorm #(
   reg failed;
   reg [31:0] layer, index, src, dst;
   reg [3:0] norm_kind;
-  reg [63:0] sum, reciprocal;
-  reg [95:0] mean;
-  reg [47:0] denominator;
-  reg signed [15:0] x, gamma;
-  wire signed [15:0] read_x;
-  wire signed [31:0] square;
-  wire signed [95:0] result;
+  reg [95:0] sum;
+  reg [63:0] reciprocal, denominator;
+  reg [127:0] mean;
+  reg signed [31:0] x, gamma;
+  wire signed [31:0] read_x;
+  wire signed [63:0] square, norm_product;
+  wire signed [127:0] result;
   wire idle, complete, fault;
   wire [31:0] rd;
   reg issue, wr;
@@ -34,9 +34,13 @@ module anvil_q1_rmsnorm #(
               128'(NUM_LAYERS)>128'd4294967295) begin: invalid_parameters
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: RMSNorm dimensions");
   end endgenerate
-  assign read_x = rd[15:0];
-  assign square = $signed(read_x) * $signed(read_x);
-  assign result = $signed(x) * $signed(gamma) * $signed({1'b0,reciprocal});
+  assign read_x = rd;
+  assign square = $signed({{32{read_x[31]}},read_x}) *
+                  $signed({{32{read_x[31]}},read_x});
+  assign norm_product = $signed({{32{x[31]}},x}) *
+                        $signed({{32{gamma[31]}},gamma});
+  assign result = $signed({{64{norm_product[63]}},norm_product}) *
+                  $signed({64'd0,reciprocal});
   assign cmd_ready = rst_n && state==0;
   assign done = rst_n && state==15;
   assign error = done && failed;
@@ -57,7 +61,7 @@ module anvil_q1_rmsnorm #(
       8: begin issue=1; kind=norm_kind; ml=norm_kind==7 ? 0 : layer; col=index; end
       10: begin
         issue=1; wr=1; kind=8; row=dst; col=index;
-        wd={16'd0,anvil_q1_pkg::sat16(anvil_q1_pkg::round_shift(result,24))};
+        wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_shift(result,48));
       end
       default: begin end
     endcase
@@ -85,16 +89,16 @@ module anvil_q1_rmsnorm #(
         if(index+1<HIDDEN_SIZE) begin index<=index+1; state<=1; end
         else state<=3;
       end
-      3: begin mean<=(({32'd0,sum}<<16)/SAFE_H)+96'd4295; state<=4; end
-      4: begin denominator<=anvil_q1_pkg::isqrt96(mean); state<=5; end
+      3: begin mean<=(({32'd0,sum}<<32)/SAFE_H)+128'd18446744073710; state<=4; end
+      4: begin denominator<=anvil_q1_pkg::isqrt128(mean); state<=5; end
       5: if(denominator==0) begin failed<=1; state<=15; end
-         else begin reciprocal<=64'd4294967296/denominator; index<=0; state<=6; end
+         else begin reciprocal<=128'd18446744073709551616/denominator; index<=0; state<=6; end
       6: if(issue) state<=7;
-      7: if(complete) begin x<=rd[15:0]; state<=8; end
+      7: if(complete) begin x<=rd; state<=8; end
       8: if(issue) state<=9;
       9: if(complete) begin
         if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; state<=15; end
-        else begin gamma<=anvil_q1_pkg::f16_q8(rd[15:0]); state<=10; end
+        else begin gamma<=anvil_q1_pkg::f16_q16(rd[15:0]); state<=10; end
       end
       10: if(issue) state<=11;
       11: if(complete) begin
