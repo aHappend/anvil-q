@@ -106,11 +106,11 @@ def rounded(n, d):
     return (-1 if n < 0 else 1) * ((2*abs(n)+d)//(2*d))
 
 
-def sat(x, bits=16):
+def sat(x, bits=32):
     return min((1 << (bits-1))-1, max(-(1 << (bits-1)), x))
 
 
-def half_fixed(raw, bits=8):
+def half_fixed(raw, bits=16):
     n, d = half_fraction(raw)
     return rounded(n*(1 << bits), d)
 
