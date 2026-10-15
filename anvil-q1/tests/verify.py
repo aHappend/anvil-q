@@ -1264,7 +1264,7 @@ def mutations(run):
                    source_sha256=identity,assertion=diagnosis)
 
 
-def portability(run):
+def portability(run, elaborate=True):
     paths = []
     for name in ("iverilog", "iverilog12", "iverilog13", "iverilog-12", "iverilog-13"):
         p = shutil.which(name)
@@ -1278,6 +1278,10 @@ def portability(run):
         for major in (12, 13):
             if f"Icarus Verilog version {major}." in version:
                 majors.add(major)
+        run.result(f"compiler-{index}", executable=compiler,version=version.strip(),
+                   outcome="discovered")
+        if not elaborate:
+            continue
         for label, values in [("default", None), *MATRIX.items()]:
             overrides = [] if values is None else [
                 argument for key,value in zip(KEYS,values)
@@ -1363,7 +1367,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","mutations","nonlinear","parameters"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","mutations","nonlinear","parameters","toolchain"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -1371,7 +1375,7 @@ def main():
     valid_probes = {
         "behavior": {None,"dequant","rope","gemv","official","rms","matrix",
                      "protocol","mutations","nonlinear"},
-        "portability": {None,"parameters"},
+        "portability": {None,"parameters","toolchain"},
         "synthesis": {None}}
     if args.probe not in valid_probes[args.check]:
         parser.error("probe incompatible with check")
@@ -1424,6 +1428,8 @@ def main():
         else:
             if args.probe == "parameters":
                 parameter_test(run)
+            elif args.probe == "toolchain":
+                portability(run,elaborate=False)
             else:
                 parameter_test(run)
                 portability(run)
