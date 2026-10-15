@@ -26,7 +26,7 @@ self-checking verification suites and reproducible delivery packages.
 
 | Generation | Design | Target model & precision contract | Delivered RTL | Status |
 | --- | --- | --- | --- | --- |
-| **Gen-1** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 Mixed-Precision** (24 layers, `896d` hidden, 14Q:2KV 7:1 GQA with QKV bias, `4864d` SwiGLU MLP, `rope_theta = 1e6`, 168 AWQ INT4 group-128 linear projections) | `10` modules / `837` lines | In Progress — Step 4 (designer) by Vulcan 0.8 |
+| **Gen-1** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 Mixed-Precision** (24 layers, `896d` hidden, 14Q:2KV 7:1 GQA with QKV bias, `4864d` SwiGLU MLP, `rope_theta = 1e6`, 168 AWQ INT4 group-128 linear projections) | `13` modules / `1114` lines | In Progress — Step 4 (designer) by Vulcan 0.8 |
 | **Gen-2** | **Anvil-Q2** | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · Multi-bank W4A16 AWQ + KV-cache compression engine | — | Planned |
 
 ## Anvil-Q1 · Generation 1 (`Qwen/Qwen2.5-0.5B-Instruct-AWQ` W4A16 Edition)
@@ -42,7 +42,7 @@ autonomously engineered with **Vulcan 0.8**:
 | **7:1 Grouped-Query Attention (`self_attn`)** | `num_attention_heads = 14`, `num_key_value_heads = 2` (`7:1` GQA), `q_proj [896->896]` + bias, `k_proj [896->128]` + bias, `v_proj [896->128]` + bias, `o_proj [896->896]` (no bias) | QKV biased AWQ projections, 2-head KV cache storage with 7× head broadcast, causal scaled dot-product attention |
 | **SwiGLU Feed-Forward (`mlp`)** | `intermediate_size = 4864` (`[896, 608]` packed `I32`), `gate_proj`, `up_proj`, `silu(gate) * up`, `down_proj [4864->896]` (no bias) | 38-group (`4864 / 128`) AWQ W4A16 dual-projection SwiGLU datapath and residual accumulation |
 
-- **Current engineering status**: `In Progress — Step 4 (designer) by Vulcan 0.8` (updated `2026-10-15 18:44:52 UTC+8`)
+- **Current engineering status**: `In Progress — Step 4 (designer) by Vulcan 0.8` (updated `2026-10-15 18:45:55 UTC+8`)
 - **Authoritative HuggingFace configs & Layer-0 AWQ slice**: [`anvil-q1/hf_qwen25_05b_awq_spec/`](anvil-q1/hf_qwen25_05b_awq_spec/)
 - **Deliverable directory**: [`anvil-q1/`](anvil-q1/) (`rtl/`, `design/`, `tests/`)
 
@@ -53,12 +53,15 @@ autonomously engineered with **Vulcan 0.8**:
 | [`anvil-q1/rtl/anvil_q1_00_pkg.sv`](anvil-q1/rtl/anvil_q1_00_pkg.sv) | `112` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_awq_dequant.sv`](anvil-q1/rtl/anvil_q1_awq_dequant.sv) | `38` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_bus_mux.sv`](anvil-q1/rtl/anvil_q1_bus_mux.sv) | `34` lines | Synthesizable SystemVerilog RTL module |
+| [`anvil-q1/rtl/anvil_q1_decoder_layer.sv`](anvil-q1/rtl/anvil_q1_decoder_layer.sv) | `106` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_elementwise.sv`](anvil-q1/rtl/anvil_q1_elementwise.sv) | `77` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_gqa_attention.sv`](anvil-q1/rtl/anvil_q1_gqa_attention.sv) | `136` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_mem_port.sv`](anvil-q1/rtl/anvil_q1_mem_port.sv) | `49` lines | Synthesizable SystemVerilog RTL module |
+| [`anvil-q1/rtl/anvil_q1_parameters.sv`](anvil-q1/rtl/anvil_q1_parameters.sv) | `26` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_rmsnorm.sv`](anvil-q1/rtl/anvil_q1_rmsnorm.sv) | `103` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_rope.sv`](anvil-q1/rtl/anvil_q1_rope.sv) | `89` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_swiglu_mlp.sv`](anvil-q1/rtl/anvil_q1_swiglu_mlp.sv) | `74` lines | Synthesizable SystemVerilog RTL module |
+| [`anvil-q1/rtl/anvil_q1_top.sv`](anvil-q1/rtl/anvil_q1_top.sv) | `145` lines | Synthesizable SystemVerilog RTL module |
 | [`anvil-q1/rtl/anvil_q1_w4a16_gemv.sv`](anvil-q1/rtl/anvil_q1_w4a16_gemv.sv) | `125` lines | Synthesizable SystemVerilog RTL module |
 
 ## License
