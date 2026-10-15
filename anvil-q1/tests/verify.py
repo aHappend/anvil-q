@@ -1214,8 +1214,11 @@ if(writes!={len(expected_writes)} || observed_logits!={len(logits)} ||
           mem_req_row==12) &&
          mem_req_col==((mem_req_row==3 || mem_req_row==4) ? {kv-1} :
            ((mem_req_row==9 || mem_req_row==10) ? {I-1} : {H-1}))))
-       $display("PROJECTION token=%0d slot=%0d accepted=%0d cycles=%0d",
-         completions,mem_req_row,accepted,cycles);
+       begin
+         $display("PROJECTION token=%0d layer=%0d slot=%0d accepted=%0d cycles=%0d",
+           completions,(residual_vectors-1)%{L+1},mem_req_row,accepted,cycles);
+         $fflush();
+       end
      if(mem_req_kind==8 && mem_req_row==0 && mem_req_col=={H-1})
        begin
          if(residual_vectors%{L+1}==0)
@@ -1957,7 +1960,7 @@ def main():
             if args.probe == "progress":
                 require(args.configuration=="B" and args.seed==17,
                         "bounded progress diagnostic is B17 only")
-                integrated(run,"B",17,progress_seconds=6)
+                integrated(run,"B",17,progress_seconds=12)
             if args.probe in (None, "dequant"):
                 dequant_test(run, slices)
             if args.probe == "mutations":
