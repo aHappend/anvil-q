@@ -590,6 +590,46 @@ if(mem_req_kind!==8 || mem_req_proj!==0 || mem_req_row!==1 ||
                          'launch(0,0); if(writes!=16) $fatal(1,"RMS missing outputs");'), "rms")
     run.result("rms", exact_comparisons=16, floating_max_error_q8_lsb=max(errors),
                threshold_q8_lsb=2, outcome="pass", stdout=stdout)
+    rms_boundaries(run)
+
+
+def rms_boundaries(run):
+    cases = [[0]*8, [1,-1,127,-127,128,-128,129,-129],
+             [2**31-1,-2**31]*4, [2**31-1]+[0]*7]
+    gammas = [0x3c00,0xbc00,0x7bff,0xfbff,0x0001,0x0080,0x8080,0x8000]
+    rows = []
+    for values in cases:
+        reciprocal=(1<<64)//math.isqrt((sum(x*x for x in values)<<32)//8+18446744073710)
+        for x,g in zip(values,gammas):
+            expected=sat(rounded(x*sat(half_fixed(g))*reciprocal,1<<48))
+            rows.append((x,g,expected))
+    vector=run.out/"rms-boundaries.hex"
+    vector.write_text("\n".join(f"{x&0xffffffff:08x}{g:04x}{v&0xffffffff:08x}"
+                                 for x,g,v in rows)+"\n")
+    reader=f"""
+reg [79:0] vectors[0:31]; initial $readmemh("{vector}",vectors);
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(proj!=0 || row!=0 || col>=8 || (kind!=8 && kind!=5))
+   $fatal(1,"RMS boundary address");
+ read_memory=kind==8 ? vectors[completions*8+col][79:48] :
+   {{16'd0,vectors[completions*8+col][47:32]}};
+end endfunction
+"""
+    check="""
+if(mem_req_kind!==8 || mem_req_row!==1 || mem_req_col!==(writes%8) ||
+   mem_req_wdata!==vectors[writes][31:0])
+ $fatal(1,"RMS widened sum/epsilon/rounding mismatch %0d",writes);
+"""
+    instance="anvil_q1_rmsnorm #(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.MAX_SEQ_LEN(1)) dut("+BUS_CONNECT+",.cmd_mode(cmd_mode));"
+    stdout=compile_sim(run,command_tb(instance,reader,check,
+        'repeat(4) launch(0,0); if(writes!=32) $fatal(1,"RMS boundary coverage");'),
+        "rms-boundaries")
+    run.result("rms_boundaries",outcome="pass",compared=32,
+               maximum_square_sum=max(sum(x*x for x in values) for values in cases),
+               boundaries="zero denominator input with epsilon, sub-LSB input, signed32 extrema, saturation",
+               stdout=stdout)
 
 
 def exp_integer(x):
@@ -1714,6 +1754,49 @@ if(writes>={len(values)} || mem_req_kind!==8 || mem_req_proj!==0 ||
                exponential_scope="independent integer algorithm versus float, RTL observed via public SiLU",
                outcome="pass", stdout=stdout)
     attention_test(run)
+    attention_boundaries(run)
+
+
+def attention_boundaries(run):
+    """Large exact dot/weighted reductions and wide max-subtraction clipping."""
+    reader="""
+integer test_case=0;
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(proj!=0 || col>=8) $fatal(1,"ATTENTION wide component");
+ if(kind==8) begin
+   if(row==2) read_memory=test_case==0 ? 0 : 32'h7fffffff;
+   else if(row==3) read_memory=32'h7fffffff;
+   else if(row==4) read_memory=test_case==0 ? 32'h7fffffff : 32'd65536000;
+   else begin $fatal(1,"ATTENTION wide scratch"); read_memory=0; end
+ end else if((kind==9 || kind==10) && row<=256) begin
+   if(kind==9) read_memory=test_case==0 || row%2==0 ?
+     32'h7fffffff : -32'sd2147483647;
+   else read_memory=test_case==0 ? 32'h7fffffff :
+     (row%2==0 ? 32'd65536000 : -32'sd65536000);
+ end else begin $fatal(1,"ATTENTION wide causal/address"); read_memory=0; end
+end endfunction
+"""
+    check="""
+expected_value=32'h7fffffff;
+if(test_case==1 && mem_req_kind!=9) expected_value=65536000;
+if(mem_req_col!==(writes%8) || mem_req_proj!==0 ||
+   (writes%24<8 ? (mem_req_kind!==9 || mem_req_row!==256) :
+    (writes%24<16 ? (mem_req_kind!==10 || mem_req_row!==256) :
+     (mem_req_kind!==8 || mem_req_row!==5))) ||
+   mem_req_wdata!==expected_value)
+ $fatal(1,"ATTENTION widened dot/weighted reduction mismatch %0d",writes);
+"""
+    instance="anvil_q1_gqa_attention #(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.NUM_Q_HEADS(2),.NUM_KV_HEADS(2),.HEAD_DIM(4),.MAX_SEQ_LEN(257)) dut("+BUS_CONNECT+");"
+    stdout=compile_sim(run,command_tb(instance,reader,check,
+        'launch(0,256); test_case=1; launch(0,256); if(writes!=48) $fatal(1,"wide attention coverage");'),
+        "attention-boundaries")
+    run.result("attention_boundaries",outcome="pass",compared_writes=48,
+               uniform_weighted_sum=257*(2**31-1)*2**24,
+               positive_dot=4*(2**31-1)**2,
+               scope="exact extremes, uniform normalized softmax, huge positive/negative scores",
+               stdout=stdout)
 
 
 def child_errors(run):
