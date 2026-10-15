@@ -42,7 +42,7 @@ autonomously engineered with **Vulcan 0.8**:
 | **7:1 Grouped-Query Attention (`self_attn`)** | `num_attention_heads = 14`, `num_key_value_heads = 2` (`7:1` GQA), `q_proj [896->896]` + bias, `k_proj [896->128]` + bias, `v_proj [896->128]` + bias, `o_proj [896->896]` (no bias) | QKV biased AWQ projections, 2-head KV cache storage with 7× head broadcast, causal scaled dot-product attention |
 | **SwiGLU Feed-Forward (`mlp`)** | `intermediate_size = 4864` (`[896, 608]` packed `I32`), `gate_proj`, `up_proj`, `silu(gate) * up`, `down_proj [4864->896]` (no bias) | 38-group (`4864 / 128`) AWQ W4A16 dual-projection SwiGLU datapath and residual accumulation |
 
-- **Current engineering status**: `In Progress — Step 31 (recovery_feedback) by Vulcan 0.8` (updated `2026-10-15 20:44:13 UTC+8`)
+- **Current engineering status**: `In Progress — Step 31 (recovery_feedback) by Vulcan 0.8` (updated `2026-10-15 20:45:16 UTC+8`)
 - **Authoritative HuggingFace configs & Layer-0 AWQ slice**: [`anvil-q1/hf_qwen25_05b_awq_spec/`](anvil-q1/hf_qwen25_05b_awq_spec/)
 - **Deliverable directory**: [`anvil-q1/`](anvil-q1/) (`rtl/`, `design/`, `tests/`)
 
