@@ -1054,6 +1054,139 @@ end endmodule
                outcome="pass", stdout=stdout)
 
 
+def nonlinear_test(run):
+    arguments = set(range(-16*65536,1,257))
+    for n in range(24):
+        boundary = rounded(n*11629080,256)
+        arguments.update(-boundary+offset for offset in (-2,-1,0,1,2)
+                         if -boundary+offset<=0)
+    arguments.update((-16*65536-1,-16*65536,0))
+    error = max(abs(exp_integer(x)/(1 << 24)-math.exp(x/65536))
+                for x in arguments)
+    require(error<=3e-5,"exponential floating maximum error")
+    values = list(range(-4096,4097))
+    values.extend([0]*(8-len(values)%8))
+    expected = []
+    quality = []
+    for x in values:
+        e = exp_integer(-abs(x)*256)
+        sigmoid = ((1 << 48) if x>=0 else e*(1 << 24))//((1 << 24)+e)
+        actual = sat(rounded(x*sigmoid,1 << 24))
+        reference = x/(1+math.exp(-x/256))
+        quality.append(abs(actual-reference))
+        expected.append(actual & 65535)
+    require(max(quality)<=2,"SiLU floating quality")
+    expfile = run.out/"silu-expected.hex"
+    expfile.write_text("\n".join(f"{x:04x}" for x in expected)+"\n")
+    reader = f"""
+reg [15:0] expected[0:{len(expected)-1}];
+initial $readmemh("{expfile}",expected);
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(kind!=8 || proj!=0 || col>={len(values)} || (row!=9 && row!=10))
+   $fatal(1,"SiLU address");
+ if(row==10) read_memory=256;
+ else if(col<8193) read_memory=(col-4096)&65535;
+ else read_memory=0;
+end endfunction
+"""
+    check = f"""
+if(writes>={len(values)} || mem_req_kind!==8 || mem_req_proj!==0 ||
+ mem_req_row!==11 || mem_req_col!==writes ||
+ mem_req_wdata!=={{16'd0,expected[writes]}})
+ $fatal(1,"SILU public write mismatch %0d",writes);
+"""
+    instance = f"anvil_q1_elementwise #(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE({len(values)}),.MAX_SEQ_LEN(1)) dut("+BUS_CONNECT+",.cmd_mode(cmd_mode));"
+    stdout = compile_sim(run,command_tb(instance,reader,check,
+        f'cmd_mode=2; launch(0,0); if(writes!={len(values)}) $fatal(1,"SiLU coverage");'),
+        "silu")
+    run.result("silu_and_exponential_quality", public_silu_comparisons=len(values),
+               silu_max_error_q8_lsb=max(quality), silu_threshold_q8_lsb=2,
+               exponential_mathematical_comparisons=len(arguments),
+               exponential_max_absolute_error=error,
+               exponential_threshold=3e-5,
+               exponential_scope="independent integer algorithm versus float, RTL observed via public SiLU",
+               outcome="pass", stdout=stdout)
+    attention_test(run)
+
+
+def attention_test(run):
+    H,Q,K,D,S,pos = 112,14,2,8,4,2
+    rng = random.Random(89)
+    storage = {}
+    def put(kind,row,col,value):
+        storage[kind,row,col] = value
+    for slot,n in ((2,H),(3,K*D),(4,K*D)):
+        for c in range(n):
+            put(8,slot,c,rng.randint(-500,500))
+    for kind in (9,10):
+        for t in range(S):
+            for c in range(K*D):
+                put(kind,t,c,30000 if t>pos else rng.randint(-600,600))
+    initial = dict(storage)
+    writes = []
+    for slot,kind in ((3,9),(4,10)):
+        for c in range(K*D):
+            value = storage[8,slot,c]
+            put(kind,pos,c,value)
+            writes.append((kind,pos,c,value & 65535))
+    quality = []
+    for head in range(Q):
+        kh = head//7
+        dots = [sum(storage[8,2,head*D+c]*storage[9,t,kh*D+c]
+                    for c in range(D)) for t in range(pos+1)]
+        scores = [rounded(dot*65536,math.isqrt(D << 32)) for dot in dots]
+        es = [exp_integer(score-max(scores)) for score in scores]
+        f_scores = [dot/65536/math.sqrt(D) for dot in dots]
+        f_es = [math.exp(score-max(f_scores)) for score in f_scores]
+        for c in range(D):
+            actual = sat(rounded(sum(e*storage[10,t,kh*D+c]
+                                    for t,e in enumerate(es)),sum(es)))
+            reference = sum(e*storage[10,t,kh*D+c]
+                            for t,e in enumerate(f_es))/sum(f_es)
+            quality.append(abs(actual-reference))
+            writes.append((8,5,head*D+c,actual & 65535))
+    require(max(quality)<=2,"standalone softmax attention floating quality")
+    cases = "\n".join(f"72'h{((kind<<64)|(row<<32)|col):018x}:read_memory=32'h{value&65535:08x};"
+                      for (kind,row,col),value in initial.items())
+    expfile = run.out/"attention-expected.hex"
+    expfile.write_text("\n".join(f"{kind:02x}{row:08x}{col:08x}{value:08x}"
+                                for kind,row,col,value in writes)+"\n")
+    reader = f"""
+reg [103:0] expected[0:{len(writes)-1}];
+reg [15:0] keys[0:15], vals[0:15];
+initial $readmemh("{expfile}",expected);
+function automatic [31:0] read_memory(input [3:0] kind,input [2:0] proj,
+ input [31:0] row,col);
+begin
+ if(proj!=0 || ((kind==9 || kind==10) && row>2))
+   $fatal(1,"CAUSAL future-cache read or projection");
+ if(kind==9 && row==2 && col<16) read_memory={{16'd0,keys[col]}};
+ else if(kind==10 && row==2 && col<16) read_memory={{16'd0,vals[col]}};
+ else case({{4'd0,kind,row,col}})
+ {cases}
+ default: begin $fatal(1,"attention illegal address"); read_memory=0; end
+ endcase
+end endfunction
+"""
+    check = f"""
+if(writes>={len(writes)} || mem_req_proj!==0 ||
+ {{4'd0,mem_req_kind,mem_req_row,mem_req_col,mem_req_wdata}} !== expected[writes])
+ $fatal(1,"ATTENTION write mismatch %0d",writes);
+if(mem_req_kind==9) keys[mem_req_col]=mem_req_wdata[15:0];
+if(mem_req_kind==10) vals[mem_req_col]=mem_req_wdata[15:0];
+"""
+    instance = "anvil_q1_gqa_attention #(.NUM_LAYERS(1),.HIDDEN_SIZE(112),.NUM_Q_HEADS(14),.NUM_KV_HEADS(2),.HEAD_DIM(8),.MAX_SEQ_LEN(4)) dut("+BUS_CONNECT+");"
+    stdout = compile_sim(run,command_tb(instance,reader,check,
+        f'launch(0,2); if(writes!={len(writes)}) $fatal(1,"attention coverage");'),
+        "attention")
+    run.result("attention", q_to_kv_ratio=7, poisoned_future_position=3,
+               compared_contexts=H, compared_cache_writes=K*D*2,
+               floating_max_error_q8_lsb=max(quality),threshold_q8_lsb=2,
+               outcome="pass",stdout=stdout)
+
+
 def mutations(run):
     mutations = [
         ("lane","anvil_q1_awq_dequant.sv","1: shift=16;","1: shift=4;"),
@@ -1184,7 +1317,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", choices=("behavior","synthesis","portability"), required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","mutations"), default=None)
+    parser.add_argument("--probe", choices=("dequant","rope","gemv","official","rms","matrix","protocol","mutations","nonlinear"), default=None)
     parser.add_argument("--configuration", choices=tuple(MATRIX))
     parser.add_argument("--seed",type=int,default=17)
     parser.add_argument("--repair-of")
@@ -1213,6 +1346,8 @@ def main():
                 rms_test(run)
             if args.probe in (None, "protocol"):
                 protocol_test(run)
+            if args.probe in (None, "nonlinear"):
+                nonlinear_test(run)
             if args.probe=="matrix":
                 require(args.configuration is not None,"matrix probe requires configuration")
                 integrated(run,args.configuration,args.seed)
