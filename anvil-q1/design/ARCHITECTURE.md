@@ -7,6 +7,21 @@ allocated. A parent exclusively routes its active child's memory transaction.
 External scratch retains intermediate vectors, external KV retains committed
 history, and external coefficients implement mathematical Qwen RoPE angles.
 
+Each bus mux packs a child's request into a 137-bit vector, ordered from MSB
+to LSB as valid [136], write [135], kind [134:131], layer [130:99],
+projection [98:96], row [95:64], column [63:32] and write-data [31:0].
+One dynamically selected packed-vector conditional uses the unchanged
+`active=rst_n && select<N`, then unpacks onto the unchanged public outputs.
+Reset or an out-of-range selection drives zero; an active selection forwards
+payloads even when request-valid is low. Four-state conditional bit merging,
+including active X/Z data, is preserved without sanitizing unknowns.
+Request-ready and all response-routing equations, including selected-child
+data isolation, are unchanged. No register, engine state, arithmetic,
+transaction count or edge behavior changes; stalled request stability remains
+the child's responsibility. This reduces separate dynamic request-field
+selections, an execution-cost hypothesis rather than a proven bottleneck or
+measured speedup.
+
 Response data is routed only to the selected child at each bus mux; unselected
 children receive zero. The memory-port helper exposes read data only during
 its existing response transfer (`complete`, state 2 and response-valid).
@@ -26,11 +41,16 @@ state 14; GEMV converts bias only on state 12. Other response types, including
 write acknowledgements, cannot toggle those arithmetic inputs with their data.
 All consuming edges, arithmetic widths, rounding, transaction counts and error
 priority remain unchanged. This removes avoidable inactive-data fanout; it is
-not a measured execution-time improvement. Following the dequantizer dependency
-partition, independent B17 four-token completion must first be established
+not a measured execution-time improvement. The accepted dequantizer dependency
+partition is retained. Following packed-request selection, independent B17
+four-token completion must first be established
 against the unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-eight-lane-cost-localization-01/receipt.json`, before
+`evidence/preparation/verifier-dequant-partition-B17-01/receipt.json`, using
+fresh `evidence/preparation/verifier-packed-request-B17-01` output (or a fresh
+suffix if occupied), before
 the remaining seeds and complete 120-second checks can establish coverage.
+Failure or timeout requires retained evidence and an independently admitted
+diagnosis, without additional seeds or another speculative repair loop.
 Engineering acceptance remains INCOMPLETE, including the independently unmet
 Icarus13 prerequisite; static elaboration does not establish acceptance.
 

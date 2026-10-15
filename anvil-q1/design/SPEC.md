@@ -89,6 +89,19 @@ or scalar scale channel. Norm/bias use row zero. Cache uses layer, row=position,
 col=flattened KV component. Scratch uses row=slot, col=component.
 RoPE uses row=position and col=2*pair+cos/sin selector, pair local to a head.
 
+Each bus mux packs each child's request into exactly 137 bits, MSB first:
+valid [136], write [135], kind [134:131], layer [130:99], projection [98:96],
+row [95:64], column [63:32], write-data [31:0]. One selected packed-vector
+conditional retains `active=rst_n && select<N`; its result is unpacked onto
+the unchanged public request outputs. Reset and out-of-range selection yield
+zero. Payloads still pass for an active child even when request-valid is low.
+Preserve four-state conditional bit merging and active X/Z without sanitizing.
+Request-ready and every response-routing equation, including selected-child
+data isolation, remain unchanged. No registers, FSM changes, arithmetic changes,
+extra cycles or transaction changes are introduced; stalled payloads remain
+stable under the same child ownership. The packed selection targets repeated
+request-routing dependencies only, not a proven bottleneck or promised speedup.
+
 Internal response-data isolation does not change this public interface.
 Each bus mux forwards response data only to its selected child, driving zero
 to the others. Each memory-port helper exposes data only on its existing
@@ -307,12 +320,13 @@ budgets. Missing Icarus13 remains an external unmet prerequisite, not a waiver.
 Engineering acceptance remains INCOMPLETE until all applicable obligations
 close. Verifier first establishes actual four-token B17 completion with the
 existing matrix probe and unchanged 25-second simulation watchdog, linked to
-`evidence/preparation/verifier-eight-lane-cost-localization-01/receipt.json`,
-using fresh `evidence/preparation/verifier-dequant-partition-B17-01` output
+`evidence/preparation/verifier-dequant-partition-B17-01/receipt.json`,
+using fresh `evidence/preparation/verifier-packed-request-B17-01` output
 (or a fresh suffix if occupied). Preserve all four token completions, write/logit
 comparisons, stalls and deterministic vectors, comparing those vectors against
 retained artifacts. A failure or timeout requires retained evidence and another
-independently admitted diagnosis, not a broader repair or progress-only rerun.
+independently admitted diagnosis, without additional seeds or another
+speculative repair loop, not a broader repair or progress-only rerun.
 Predicted arithmetic quality, transaction progress and static elaboration do
 not certify that completion. New parallel-lane synthesis must independently
 check eight connected dequantizers and lane-result consumption in each concrete
