@@ -1,6 +1,6 @@
 {
   "chip": "ANVIL-Q2",
-  "phase": "plan_review",
+  "phase": "checks",
   "engineering_accepted": false,
   "report_published": false,
   "checks": []
