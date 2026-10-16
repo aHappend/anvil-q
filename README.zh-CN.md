@@ -24,7 +24,7 @@
 | 代际 | 芯片型号 | 目标模型与混合精度规范 | 已交付 RTL | 当前状态 |
 | --- | --- | --- | --- | --- |
 | **第一代** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 混合精度**（24 层、`896d` 隐藏维、14Q:2KV 7:1 GQA 含 QKV 偏置、`4864d` SwiGLU MLP、`rope_theta = 1e6`、全模型 168 个 AWQ 4-bit 在线反量化线性层） | `13` 个模块 / `1223` 行 | Completed & Verified — Full W4A16 AWQ RTL Delivery Package & Official Report (REPORT.pdf) Published |
-| **第二代** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · 多 Bank W4A16 AWQ 与 KV-Cache 压缩加速引擎 | Pending | In progress (checks) |
+| **第二代** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · 多 Bank W4A16 AWQ 与 KV-Cache 压缩加速引擎 | Pending | In progress (verifier) |
 
 ## Anvil-Q1 · 第一代（`Qwen/Qwen2.5-0.5B-Instruct-AWQ` W4A16 混合精度版）
 
