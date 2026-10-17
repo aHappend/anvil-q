@@ -1,6 +1,6 @@
 {
   "chip": "ANVIL-Q2",
-  "phase": "recovery_feedback",
+  "phase": "verifier",
   "engineering_accepted": false,
   "report_published": false,
   "checks": []
