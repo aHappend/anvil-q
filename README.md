@@ -13,7 +13,7 @@
   <a href="https://ahappend.github.io/vulcan/">Visit the website</a>
   · <a href="https://github.com/aHappend/vulcan-showcase">Vulcan Showcase</a>
   · <a href="README.zh-CN.md">中文</a>
-  · <a href="anvil-q1/">Anvil-Q1 package</a> · <a href="anvil-q1/REPORT.pdf">Anvil-Q1 Report (PDF)</a>
+  · <a href="anvil-q1/">Anvil-Q1 package</a> · <a href="anvil-q1/SHOWCASE_REPORT.pdf">Anvil-Q1 Showcase Whitepaper (PDF)</a> · <a href="anvil-q1/REPORT.pdf">Anvil-Q1 Developer Report (PDF)</a>
   · <a href="brand/">Brand assets</a>
 </p>
 
@@ -22,12 +22,28 @@ is the dedicated **quantized causal LLM inference series** within the family, tu
 HuggingFace AWQ mixed-precision model specifications into synthesizable SystemVerilog RTL,
 self-checking verification suites and reproducible delivery packages.
 
+## Dual-Track Reports (双轨制报告导读：对外通俗高级版 + 面向开发者专业版)
+
+For every accepted chip, **Vulcan** natively generates and publishes **two complementary reports**:
+
+| Chip | Executive & Public Showcase Whitepaper (对外通俗高级版：亮点卡片、四步造芯图解、24 层五大领域真实对话对比、7B 扩容路线图) | Developer Engineering Signoff Report (面向开发者专业版：RTL 架构图、接口位宽、AWQ W4A16 定点边界、Quartus STA 与上板寄存器台账) | Physical Arria 10 FPGA (`netsys17`) |
+| --- | --- | --- | --- |
+| **Anvil-Q1** (`Qwen2.5-0.5B-AWQ`) | [**`SHOWCASE_REPORT.pdf`**](anvil-q1/SHOWCASE_REPORT.pdf) · [`SHOWCASE_REPORT.md`](anvil-q1/SHOWCASE_REPORT.md) | [**`REPORT.pdf`**](anvil-q1/REPORT.pdf) · [`REPORT.md`](anvil-q1/REPORT.md) | **PASSED** (`21,890 ALMs / 5.12%`, `219 DSPs / 14.43%`, `WNS +27.218 ns`, `46/46 Top-1 Dialogue Match`) |
+
+### Visual Preview · Anvil-Q1 Dual-Track Reports
+
+<p align="center">
+  <img src="anvil-q1/showcase_figures/page-1.png" width="32%" alt="Anvil-Q1 Showcase Page 1">
+  <img src="anvil-q1/showcase_figures/page-2.png" width="32%" alt="Anvil-Q1 Showcase Page 2">
+  <img src="anvil-q1/showcase_figures/page-3.png" width="32%" alt="Anvil-Q1 Showcase Page 3">
+</p>
+
 ## Series roadmap
 
 | Generation | Design | Target model & precision contract | Delivered RTL | Status |
 | --- | --- | --- | --- | --- |
-| **Gen-1** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 Mixed-Precision** (24 layers, `896d` hidden, 14Q:2KV 7:1 GQA with QKV bias, `4864d` SwiGLU MLP, `rope_theta = 1e6`, 168 AWQ INT4 group-128 linear projections) | `13` modules / `1223` lines | Completed & Verified — Full W4A16 AWQ RTL Delivery Package & Official Report (REPORT.pdf) Published |
-| **Gen-2** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · Multi-bank W4A16 AWQ + KV-cache compression engine | Pending | In progress (checks) |
+| **Gen-1** | **[Anvil-Q1](anvil-q1/)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 Mixed-Precision** (24 layers, `896d` hidden, 14Q:2KV 7:1 GQA with QKV bias, `4864d` SwiGLU MLP, `rope_theta = 1e6`, 168 AWQ INT4 group-128 linear projections) | `16` modules / `1434` code lines | Completed & Verified (16/16 Checks + Physical Arria 10 HIL) — [Showcase (`SHOWCASE_REPORT.pdf`)](anvil-q1/SHOWCASE_REPORT.pdf) · [Developer (`REPORT.pdf`)](anvil-q1/REPORT.pdf) |
+| **Gen-2** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · Multi-bank W4A16 AWQ + KV-cache compression engine | In progress | In progress (`check:behavior` running after `check:configuration_and_elaboration` passed) |
 
 ## Anvil-Q1 · Generation 1 (`Qwen/Qwen2.5-0.5B-Instruct-AWQ` W4A16 Edition)
 
