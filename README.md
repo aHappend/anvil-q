@@ -22,20 +22,20 @@ is the dedicated **quantized causal LLM inference series** within the family, tu
 HuggingFace AWQ mixed-precision model specifications into synthesizable SystemVerilog RTL,
 self-checking verification suites and reproducible delivery packages.
 
-## Dual-Track Reports (双轨制报告导读：对外通俗高级版 + 面向开发者专业版)
+## Product Whitepapers & Developer Engineering Reports
 
-For every accepted chip, **Vulcan** natively generates and publishes **two complementary reports**:
+For every verified accelerator in the series, **Vulcan** publishes a dual-track documentation suite:
 
-| Chip | Executive & Public Showcase Whitepaper (对外通俗高级版：亮点卡片、四步造芯图解、24 层五大领域真实对话对比、7B 扩容路线图) | Developer Engineering Signoff Report (面向开发者专业版：RTL 架构图、接口位宽、AWQ W4A16 定点边界、Quartus STA 与上板寄存器台账) | Physical Arria 10 FPGA (`netsys17`) |
+| Accelerator | Product Whitepaper & Benchmark Evaluation | Developer Engineering Signoff Report | Intel Arria 10 GX Silicon Signoff |
 | --- | --- | --- | --- |
-| **Anvil-Q1** (`Qwen2.5-0.5B-AWQ`) | [**`SHOWCASE_REPORT.pdf`**](anvil-q1/SHOWCASE_REPORT.pdf) · [`SHOWCASE_REPORT.md`](anvil-q1/SHOWCASE_REPORT.md) | [**`REPORT.pdf`**](anvil-q1/REPORT.pdf) · [`REPORT.md`](anvil-q1/REPORT.md) | **PASSED** (`21,890 ALMs / 5.12%`, `219 DSPs / 14.43%`, `WNS +27.218 ns`, `46/46 Top-1 Dialogue Match`) |
+| **Anvil-Q1** (`Qwen2.5-0.5B-AWQ`) | [**`SHOWCASE_REPORT.pdf`**](anvil-q1/SHOWCASE_REPORT.pdf) · [`SHOWCASE_REPORT.md`](anvil-q1/SHOWCASE_REPORT.md) | [**`REPORT.pdf`**](anvil-q1/REPORT.pdf) · [`REPORT.md`](anvil-q1/REPORT.md) | **PASSED** (`21,890 ALMs / 5.12%`, `219 DSPs / 14.43%`, `WNS +27.218 ns`, `46/46 Top-1 Token Parity`) |
 
-### Visual Preview · Anvil-Q1 Dual-Track Reports
+### Whitepaper Page Preview · Anvil-Q1
 
 <p align="center">
-  <img src="anvil-q1/showcase_figures/page-1.png" width="32%" alt="Anvil-Q1 Showcase Page 1">
-  <img src="anvil-q1/showcase_figures/page-2.png" width="32%" alt="Anvil-Q1 Showcase Page 2">
-  <img src="anvil-q1/showcase_figures/page-3.png" width="32%" alt="Anvil-Q1 Showcase Page 3">
+  <img src="anvil-q1/showcase_figures/page-1.png" width="32%" alt="Anvil-Q1 Product Whitepaper Page 1">
+  <img src="anvil-q1/showcase_figures/page-2.png" width="32%" alt="Anvil-Q1 Product Whitepaper Page 2">
+  <img src="anvil-q1/showcase_figures/page-3.png" width="32%" alt="Anvil-Q1 Product Whitepaper Page 3">
 </p>
 
 ## Series roadmap
@@ -58,8 +58,10 @@ autonomously engineered with **Vulcan 0.8**:
 | **7:1 Grouped-Query Attention (`self_attn`)** | `num_attention_heads = 14`, `num_key_value_heads = 2` (`7:1` GQA), `q_proj [896->896]` + bias, `k_proj [896->128]` + bias, `v_proj [896->128]` + bias, `o_proj [896->896]` (no bias) | QKV biased AWQ projections, 2-head KV cache storage with 7× head broadcast, causal scaled dot-product attention |
 | **SwiGLU Feed-Forward (`mlp`)** | `intermediate_size = 4864` (`[896, 608]` packed `I32`), `gate_proj`, `up_proj`, `silu(gate) * up`, `down_proj [4864->896]` (no bias) | 38-group (`4864 / 128`) AWQ W4A16 dual-projection SwiGLU datapath and residual accumulation |
 
-- **Current engineering status**: `Completed & Verified — Full W4A16 AWQ RTL Delivery Package & Official Report (REPORT.pdf) Published` (updated `-`)
-- **Authoritative HuggingFace configs & Layer-0 AWQ slice**: [`anvil-q1/hf_qwen25_05b_awq_spec/`](anvil-q1/hf_qwen25_05b_awq_spec/)
+- **Current engineering status**: `Completed & Verified — Full W4A16 AWQ RTL Delivery Package & Dual-Track Reports Published`
+- **Product Whitepaper**: [`anvil-q1/SHOWCASE_REPORT.pdf`](anvil-q1/SHOWCASE_REPORT.pdf)
+- **Developer Engineering Report**: [`anvil-q1/REPORT.pdf`](anvil-q1/REPORT.pdf)
+- **Authoritative HuggingFace configuration**: [`anvil-q1/hf_qwen25_05b_awq_spec/`](anvil-q1/hf_qwen25_05b_awq_spec/)
 - **Deliverable directory**: [`anvil-q1/`](anvil-q1/) (`rtl/`, `design/`, `tests/`)
 
 ## Delivered RTL Inventory (`Anvil-Q1`)
