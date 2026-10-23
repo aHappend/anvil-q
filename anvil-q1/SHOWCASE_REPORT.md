@@ -15,11 +15,11 @@
 
 | Benchmark Domain | Input Prompt | Official FP32 Baseline Output | Anvil W4A16 Hardware Output | Top-1 Agreement | 151,936-Vocab Logit Cosine |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Mathematics / 数学算术** | `What is 15 + 27? Answer briefly.` | `The answer is 42.` | `The answer is 42.` | **8/8 (100%)** | `0.999992` |
-| **Code Generation / Python代码** | `Write a one-line Python function add(a, b) that returns their sum.` | `def add(a, b):     return a + b` | `def add(a, b):     return a + b` | **17/17 (100%)** | `0.999986` |
-| **General Knowledge / 百科常识** | `What is the capital of France? Answer in one sentence.` | `The capital of France is Paris.` | `The capital of France is Paris.` | **8/8 (100%)** | `0.999997` |
-| **Logical Reasoning / 逻辑推理** | `If all cats are mammals and Tom is a cat, what is Tom? Answer briefly.` | `Tom is a mammal.` | `Tom is a mammal.` | **7/7 (100%)** | `0.999995` |
-| **Chinese Dialogue / 中文问答** | `中国的首都是哪里？请用一句话回答。` | `中国的首都是北京。` | `中国的首都是北京。` | **6/6 (100%)** | `0.999994` |
+| **Mathematics** | `What is 15 + 27? Answer briefly.` | `The answer is 42.` | `The answer is 42.` | **8/8 (100%)** | `0.999992` |
+| **Code Generation** | `Write a one-line Python function add(a, b) that returns their sum.` | `def add(a, b):     return a + b` | `def add(a, b):     return a + b` | **17/17 (100%)** | `0.999986` |
+| **General Knowledge** | `What is the capital of France? Answer in one sentence.` | `The capital of France is Paris.` | `The capital of France is Paris.` | **8/8 (100%)** | `0.999997` |
+| **Logical Reasoning** | `If all cats are mammals and Tom is a cat, what is Tom? Answer briefly.` | `Tom is a mammal.` | `Tom is a mammal.` | **7/7 (100%)** | `0.999995` |
+| **Chinese Dialogue** | `中国的首都是哪里？请用一句话回答。` | `中国的首都是北京。` | `中国的首都是北京。` | **6/6 (100%)** | `0.999994` |
 
 - **24-Layer Time-Multiplexed Hardware Execution**: Executed **120 hardware Transformer layers** and **1,259,748 clock cycles** across all five domains on Intel Arria 10 GX (`10AX115N3F40E2SG`) with **0 bit errors**.
 

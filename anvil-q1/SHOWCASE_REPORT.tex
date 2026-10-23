@@ -52,7 +52,7 @@
 
 \vspace{4pt}
 
-{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.24\textwidth}L{0.72\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Accelerator \& Model} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}\\\textbf{Target Silicon Platform} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (427,200 ALMs, 8 GB DDR4)\\\textbf{Companion Datasheet} & Paired with \texttt{REPORT.pdf} (Developer Engineering Signoff Report) \textperiodcentered{} 23 October 2026 (\allowbreak{}2026-10-23 22:21 UTC+\allowbreak{}8)\allowbreak{}\\\bottomrule\end{tabular}\par}
+{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.24\textwidth}L{0.72\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Accelerator \& Model} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}\\\textbf{Target Silicon Platform} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (427,200 ALMs, 8 GB DDR4)\\\textbf{Companion Datasheet} & Paired with \texttt{REPORT.pdf} (Developer Engineering Signoff Report) \textperiodcentered{} 23 October 2026 (\allowbreak{}2026-10-23 22:26 UTC+\allowbreak{}8)\allowbreak{}\\\bottomrule\end{tabular}\par}
 
 \vspace{6pt}
 
@@ -62,7 +62,7 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcan!90!black] at (0.14,2.08) {1. OUTPUT FIDELITY};
 
-\node[anchor=west,font=\footnotesize\bfseries,text=black] at (0.14,1.25) {100\% Top-1 Match (\allowbreak{}46/\allowbreak{}46 Tokens)\allowbreak{}};
+\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (0.14,1.25) {100\% Top-1 Match (\allowbreak{}46/\allowbreak{}46 Tokens)\allowbreak{}};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (0.14,0.14) {24-layer multi-domain autoregressive generation parity};
 
@@ -78,7 +78,7 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcangreen] at (8.74,2.08) {3. PHYSICAL FPGA HIL};
 
-\node[anchor=west,font=\footnotesize\bfseries,text=black] at (8.74,1.25) {Intel Arria 10 GX};
+\node[anchor=west,font=\scriptsize\bfseries,text=black] at (8.74,1.25) {Intel Arria 10 GX};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (8.74,0.14) {PCIe Gen3x8 hardware execution with 0 bit errors, WNS +27.22 ns};
 
@@ -86,7 +86,7 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcanamber!90!black] at (13.04,2.08) {4. SILICON SCALABILITY};
 
-\node[anchor=west,font=\footnotesize\bfseries,text=black] at (13.04,1.25) {5.12\% ALMs | 14.43\% DSPs};
+\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (13.04,1.25) {5.12\% ALMs | 14.43\% DSPs};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (13.04,0.14) {>85\% fabric headroom \& 8 GB DDR4 scales up to 7B--8B AWQ LLMs};
 
@@ -128,15 +128,15 @@ Table 1 and Figure 3 present the end-to-end autoregressive generation benchmark 
 
 \textbf{Benchmark Domain} & \textbf{Input Prompt} & \textbf{Official FP32 Baseline Output} & \textbf{Anvil W4A16 Hardware Output} & \textbf{Top-1 Match \& Logit Cosine}\\\midrule\endhead
 
-Mathematics /\allowbreak{} 数学算术 & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
+Mathematics & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
 
-Code Generation /\allowbreak{} Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 17/\allowbreak{}17 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999986\\[3pt]
+Code Generation & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 17/\allowbreak{}17 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999986\\[3pt]
 
-General Knowledge /\allowbreak{} 百科常识 & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999997\\[3pt]
+General Knowledge & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999997\\[3pt]
 
-Logical Reasoning /\allowbreak{} 逻辑推理 & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 7/\allowbreak{}7 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
+Logical Reasoning & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 7/\allowbreak{}7 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
 
-Chinese Dialogue /\allowbreak{} 中文问答 & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 6/\allowbreak{}6 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+Chinese Dialogue & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 6/\allowbreak{}6 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
 \bottomrule\end{longtable}}
 
@@ -168,19 +168,19 @@ Chinese Dialogue /\allowbreak{} 中文问答 & 中国的首都是哪里？请用
 
 \node[anchor=west,font=\tiny\bfseries,text=vulcangreen] at (-0.2,-1.82) {Total: 46/46 Generated Tokens 100\% Identical | Mean Cosine: 0.999993};
 
-\draw[draw=black!25,fill=vulcanblue!3,rounded corners=3pt] (8.0,-2.10) rectangle (16.2,2.20);
+\draw[draw=black!25,fill=vulcanblue!3,rounded corners=3pt] (8.0,-2.10) rectangle (16.5,2.20);
 
-\node[anchor=north west,font=\footnotesize\bfseries,text=vulcanblue] at (8.2,2.05) {(b) Layer-Folded 24-Layer Hardware Execution on Arria 10};
+\node[anchor=north west,font=\scriptsize\bfseries,text=vulcanblue] at (8.2,2.05) {(b) Layer-Folded 24-Layer Hardware Execution on Arria 10};
 
-\node[draw=vulcanblue,fill=white,rounded corners=2pt,minimum width=3.4cm,minimum height=0.85cm,align=center] (h1) at (10.0,0.85) {\textbf{W4A16 Weight \& KV Store}\\{\tiny 350 MB AWQ G128 Checkpoint}};
+\node[draw=vulcanblue,fill=white,rounded corners=2pt,minimum width=3.1cm,minimum height=0.85cm,align=center] (h1) at (9.85,0.85) {\textbf{W4A16 Weight \& KV Store}\\{\tiny 350 MB AWQ G128 Checkpoint}};
 
-\node[draw=vulcan,fill=white,rounded corners=2pt,minimum width=3.6cm,minimum height=0.85cm,align=center] (h2) at (14.1,0.85) {\textbf{Anvil-Q1 Decoder Core}\\{\tiny 8-Lane AWQ + GQA + SwiGLU}};
+\node[draw=vulcan,fill=white,rounded corners=2pt,minimum width=3.2cm,minimum height=0.85cm,align=center] (h2) at (14.35,0.85) {\textbf{Anvil-Q1 Decoder Core}\\{\tiny 8-Lane AWQ + GQA + SwiGLU}};
 
-\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.05,-0.55) {\textbf{24-Layer Time-Multiplexed Hardware Execution}\\{\tiny \textbf{120 Hardware Layer Executions} across 5 Domains | \textbf{1,259,748 Cycles} | \textbf{0 Bit Errors}}};
+\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.1,-0.55) {\textbf{24-Layer Time-Multiplexed Hardware Execution}\\{\tiny \textbf{120 Hardware Layer Executions} across 5 Domains | \textbf{1,259,748 Cycles} | \textbf{0 Bit Errors}}};
 
 \draw[->,thick,black!70] (h1.east) -- node[above,font=\tiny] {AXI/PCIe} (h2.west);
 
-\draw[->,thick,black!70] (h2.south) -- (14.1,-0.07);
+\draw[->,thick,black!70] (h2.south) -- (14.35,-0.07);
 
 \node[anchor=west,font=\tiny,text=black!75] at (8.2,-1.82) {Platform: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) | 16/16 Verification Suites Passed};
 
@@ -232,9 +232,9 @@ On-Board DDR4 Capacity & 0.35 GB (\allowbreak{}0.5B W4A16)\allowbreak{} & 8.0 GB
 
 \node[anchor=west,font=\tiny,text width=7.6cm,text=black!80] at (-0.1,-1.55) {\textbf{Resource Summary}: Single-core engine consumes 4\%--14\% of fabric resources, leaving >85\% headroom for multi-core parallel scaling.};
 
-\draw[draw=black!25,fill=vulcangreen!3,rounded corners=3pt] (8.1,-2.20) rectangle (16.3,2.25);
+\draw[draw=black!25,fill=vulcangreen!3,rounded corners=3pt] (8.1,-2.20) rectangle (16.5,2.25);
 
-\node[anchor=north west,font=\footnotesize\bfseries,text=vulcangreen] at (8.3,2.10) {(b) Single-Card 8 GB DDR4 LLM Capacity Roadmap (W4A16)};
+\node[anchor=north west,font=\scriptsize\bfseries,text=vulcangreen] at (8.3,2.10) {(b) Single-Card 8 GB DDR4 LLM Capacity Roadmap (W4A16)};
 
 \node[anchor=west,font=\tiny\bfseries] at (8.3,1.30) {Anvil-Q1 (0.5B)};
 

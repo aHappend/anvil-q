@@ -52,7 +52,7 @@
 
 \vspace{4pt}
 
-{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.22\textwidth}L{0.74\textwidth}@{}}\toprule\textbf{研发作者与联系方式} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{芯片型号与目标模型} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ（24 层，896 维隐藏层，14Q:2KV 分组注意力，151,\allowbreak{}936 词表）\\\textbf{物理硬件验证平台} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 加速卡（427,200 ALMs，8 GB DDR4）\\\textbf{配套工程签核文档} & 配套开发者架构与签核报告 \texttt{REPORT.pdf} \textperiodcentered{} 发布时间：2026年10月23日 22:21 (\allowbreak{}UTC+\allowbreak{}8 北京时间)\allowbreak{}\\\bottomrule\end{tabular}\par}
+{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.22\textwidth}L{0.74\textwidth}@{}}\toprule\textbf{研发作者与联系方式} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{芯片型号与目标模型} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ（24 层，896 维隐藏层，14Q:2KV 分组注意力，151,\allowbreak{}936 词表）\\\textbf{物理硬件验证平台} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 加速卡（427,200 ALMs，8 GB DDR4）\\\textbf{配套工程签核文档} & 配套开发者架构与签核报告 \texttt{REPORT.pdf} \textperiodcentered{} 发布时间：2026年10月23日 22:26 (\allowbreak{}UTC+\allowbreak{}8 北京时间)\allowbreak{}\\\bottomrule\end{tabular}\par}
 
 \vspace{6pt}
 
@@ -62,7 +62,7 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcan!90!black] at (0.14,2.08) {1. 推理输出一致性};
 
-\node[anchor=west,font=\footnotesize\bfseries,text=black] at (0.14,1.25) {100\% 逐词精确匹配 (\allowbreak{}46/\allowbreak{}46 词)\allowbreak{}};
+\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (0.14,1.25) {100\% 逐词精确匹配 (\allowbreak{}46/\allowbreak{}46 词)\allowbreak{}};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (0.14,0.14) {24 层全网络五大领域自回归对话生成完全一致};
 
@@ -78,7 +78,7 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcangreen] at (8.74,2.08) {3. 物理 FPGA 板级闭环};
 
-\node[anchor=west,font=\footnotesize\bfseries,text=black] at (8.74,1.25) {Intel Arria 10 GX};
+\node[anchor=west,font=\scriptsize\bfseries,text=black] at (8.74,1.25) {Intel Arria 10 GX};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (8.74,0.14) {PCIe Gen3x8 物理板卡实测零比特误差，时序裕量 +27.22 ns};
 
@@ -86,7 +86,7 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcanamber!90!black] at (13.04,2.08) {4. 硬件资源与扩展容量};
 
-\node[anchor=west,font=\footnotesize\bfseries,text=black] at (13.04,1.25) {5.12\% ALMs | 14.43\% DSPs};
+\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (13.04,1.25) {5.12\% ALMs | 14.43\% DSPs};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (13.04,0.14) {单核精简架构，8 GB 板载显存最高支持 7B–8B 量化模型};
 
@@ -128,15 +128,15 @@
 
 \textbf{评测领域} & \textbf{输入提示词 (\allowbreak{}Prompt)\allowbreak{}} & \textbf{官方 FP32 浮点基准输出} & \textbf{Anvil 硬件 W4A16 输出} & \textbf{Top-1 匹配率与余弦相似度}\\\midrule\endhead
 
-Mathematics /\allowbreak{} 数学算术 & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
+数学算术 & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
 
-Code Generation /\allowbreak{} Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 17/\allowbreak{}17 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999986\\[3pt]
+Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 17/\allowbreak{}17 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999986\\[3pt]
 
-General Knowledge /\allowbreak{} 百科常识 & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999997\\[3pt]
+百科常识 & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999997\\[3pt]
 
-Logical Reasoning /\allowbreak{} 逻辑推理 & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 7/\allowbreak{}7 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
+逻辑推理 & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 7/\allowbreak{}7 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
 
-Chinese Dialogue /\allowbreak{} 中文问答 & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 6/\allowbreak{}6 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+中文问答 & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 6/\allowbreak{}6 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
 \bottomrule\end{longtable}}
 
@@ -168,19 +168,19 @@ Chinese Dialogue /\allowbreak{} 中文问答 & 中国的首都是哪里？请用
 
 \node[anchor=west,font=\tiny\bfseries,text=vulcangreen] at (-0.2,-1.82) {累计: 46/46 生成词 100\% 精确匹配 | 全词表平均余弦相似度: 0.999993};
 
-\draw[draw=black!25,fill=vulcanblue!3,rounded corners=3pt] (8.0,-2.10) rectangle (16.2,2.20);
+\draw[draw=black!25,fill=vulcanblue!3,rounded corners=3pt] (8.0,-2.10) rectangle (16.5,2.20);
 
-\node[anchor=north west,font=\footnotesize\bfseries,text=vulcanblue] at (8.2,2.05) {(b) 24 层时分复用硬件加速引擎执行架构};
+\node[anchor=north west,font=\scriptsize\bfseries,text=vulcanblue] at (8.2,2.05) {(b) 24 层时分复用硬件加速引擎执行架构};
 
-\node[draw=vulcanblue,fill=white,rounded corners=2pt,minimum width=3.4cm,minimum height=0.85cm,align=center] (h1) at (10.0,0.85) {\textbf{W4A16 权重与 KV 存储}\\{\tiny 350 MB AWQ G128 量化参数}};
+\node[draw=vulcanblue,fill=white,rounded corners=2pt,minimum width=3.1cm,minimum height=0.85cm,align=center] (h1) at (9.85,0.85) {\textbf{W4A16 权重与 KV 存储}\\{\tiny 350 MB AWQ G128 量化参数}};
 
-\node[draw=vulcan,fill=white,rounded corners=2pt,minimum width=3.6cm,minimum height=0.85cm,align=center] (h2) at (14.1,0.85) {\textbf{Anvil-Q1 硬件解码核}\\{\tiny 8 通道 AWQ + GQA + SwiGLU}};
+\node[draw=vulcan,fill=white,rounded corners=2pt,minimum width=3.2cm,minimum height=0.85cm,align=center] (h2) at (14.35,0.85) {\textbf{Anvil-Q1 硬件解码核}\\{\tiny 8 通道 AWQ + GQA + SwiGLU}};
 
-\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.05,-0.55) {\textbf{24 层全深度硬件级联执行（Layer-Folded Execution）}\\{\tiny 5 大领域累计完成 \textbf{120 个硬件层执行} | \textbf{1,259,748 时钟周期} | \textbf{0 比特误差}}};
+\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.1,-0.55) {\textbf{24 层全深度硬件级联执行 (Layer-Folded Execution)}\\{\tiny 5 大领域累计完成 \textbf{120 个硬件层执行} | \textbf{1,259,748 时钟周期} | \textbf{0 比特误差}}};
 
 \draw[->,thick,black!70] (h1.east) -- node[above,font=\tiny] {AXI/PCIe} (h2.west);
 
-\draw[->,thick,black!70] (h2.south) -- (14.1,-0.07);
+\draw[->,thick,black!70] (h2.south) -- (14.35,-0.07);
 
 \node[anchor=west,font=\tiny,text=black!75] at (8.2,-1.82) {硬件平台: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) | 16/16 项工程验证通过};
 

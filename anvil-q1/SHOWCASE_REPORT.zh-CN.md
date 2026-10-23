@@ -15,11 +15,11 @@
 
 | 评测领域 | 输入提示词 (Prompt) | 官方 FP32 浮点基准输出 | Anvil 硬件 W4A16 输出 | Top-1 匹配率 | 151,936 词表余弦相似度 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Mathematics / 数学算术** | `What is 15 + 27? Answer briefly.` | `The answer is 42.` | `The answer is 42.` | **8/8 (100%)** | `0.999992` |
-| **Code Generation / Python代码** | `Write a one-line Python function add(a, b) that returns their sum.` | `def add(a, b):     return a + b` | `def add(a, b):     return a + b` | **17/17 (100%)** | `0.999986` |
-| **General Knowledge / 百科常识** | `What is the capital of France? Answer in one sentence.` | `The capital of France is Paris.` | `The capital of France is Paris.` | **8/8 (100%)** | `0.999997` |
-| **Logical Reasoning / 逻辑推理** | `If all cats are mammals and Tom is a cat, what is Tom? Answer briefly.` | `Tom is a mammal.` | `Tom is a mammal.` | **7/7 (100%)** | `0.999995` |
-| **Chinese Dialogue / 中文问答** | `中国的首都是哪里？请用一句话回答。` | `中国的首都是北京。` | `中国的首都是北京。` | **6/6 (100%)** | `0.999994` |
+| **数学算术** | `What is 15 + 27? Answer briefly.` | `The answer is 42.` | `The answer is 42.` | **8/8 (100%)** | `0.999992` |
+| **Python代码** | `Write a one-line Python function add(a, b) that returns their sum.` | `def add(a, b):     return a + b` | `def add(a, b):     return a + b` | **17/17 (100%)** | `0.999986` |
+| **百科常识** | `What is the capital of France? Answer in one sentence.` | `The capital of France is Paris.` | `The capital of France is Paris.` | **8/8 (100%)** | `0.999997` |
+| **逻辑推理** | `If all cats are mammals and Tom is a cat, what is Tom? Answer briefly.` | `Tom is a mammal.` | `Tom is a mammal.` | **7/7 (100%)** | `0.999995` |
+| **中文问答** | `中国的首都是哪里？请用一句话回答。` | `中国的首都是北京。` | `中国的首都是北京。` | **6/6 (100%)** | `0.999994` |
 
 - **24 层时分复用硬件加速实测**：在 Intel Arria 10 GX (`10AX115N3F40E2SG`) 上完成五大领域累计 **120 个硬件 Transformer 层执行**、**1,259,748 个时钟周期**，实现 **0 比特误差**。
 
