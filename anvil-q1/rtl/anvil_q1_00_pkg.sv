@@ -15,15 +15,6 @@ package anvil_q1_pkg;
       round_shift = x < 0 ? -$signed(mag) : $signed(mag);
     end
   endfunction
-  function automatic signed [127:0] round_div(
-    input signed [127:0] x, input [63:0] divisor);
-    reg [128:0] mag;
-    begin
-      mag = x < 0 ? -$signed({x[127],x}) : {1'b0,x};
-      mag = (mag + ({65'd0,divisor} >> 1)) / divisor;
-      round_div = x < 0 ? -$signed(mag) : $signed(mag);
-    end
-  endfunction
   function automatic f16_invalid(input [15:0] h);
     begin f16_invalid = h[14:10] == 5'd31; end
   endfunction
@@ -67,40 +58,6 @@ package anvil_q1_pkg;
         end else root = root << 1;
       end
       isqrt128 = root;
-    end
-  endfunction
-  function automatic [31:0] exp_q24(input signed [63:0] x);
-    reg [63:0] u, n, r;
-    reg signed [63:0] term, total;
-    integer j;
-    begin
-      if (x < -64'sd1048576) exp_q24 = 0;
-      else if (x >= 0) exp_q24 = 32'd16777216;
-      else begin
-        u = (-x) << 8;
-        n = u / 64'd11629080;
-        r = u % 64'd11629080;
-        term = 64'sd16777216;
-        total = term;
-        for (j=1; j<=6; j=j+1) begin
-          term = (-term * $signed(r)) / (64'sd16777216*j);
-          total = total + term;
-        end
-        exp_q24 = total < 0 ? 0 : (total >> n);
-      end
-    end
-  endfunction
-  function automatic signed [31:0] silu_q16(input signed [31:0] x);
-    reg [31:0] e;
-    reg [63:0] sigmoid, magnitude;
-    reg signed [64:0] prod;
-    begin
-      magnitude = x < 0 ? -$signed({{32{x[31]}},x}) : {32'd0,x};
-      e = exp_q24(-$signed(magnitude));
-      if (x >= 0) sigmoid = 64'd281474976710656 / (64'd16777216+e);
-      else sigmoid = ({32'd0,e} << 24) / (64'd16777216+e);
-      prod = $signed({{33{x[31]}},x}) * $signed({1'b0,sigmoid});
-      silu_q16 = sat32(round_shift({{63{prod[64]}},prod},24));
     end
   endfunction
 endpackage

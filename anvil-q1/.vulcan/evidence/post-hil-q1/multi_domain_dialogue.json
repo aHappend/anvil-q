@@ -1,0 +1,117 @@
+[
+  {
+    "domain": "Math / Arithmetic",
+    "prompt": "1+1=",
+    "prompt_ids": [
+      16,
+      10,
+      16,
+      28
+    ],
+    "generated_reply": "\\\\\\",
+    "decode_top5_candidates": [
+      "\\",
+      "N",
+      "<",
+      "=",
+      "("
+    ],
+    "total_cycles_6steps": 1899338,
+    "total_latency_ms": 75.97,
+    "hw_vs_fixed_bit_mismatches": 0,
+    "hw_vs_fp32_mean_cosine": 0.999999,
+    "hw_vs_fp32_top1_agreement": "6/6"
+  },
+  {
+    "domain": "Code / Syntax",
+    "prompt": "A=B;",
+    "prompt_ids": [
+      32,
+      28,
+      33,
+      26
+    ],
+    "generated_reply": "\\\\\\",
+    "decode_top5_candidates": [
+      "\\",
+      "N",
+      "<",
+      "(",
+      "="
+    ],
+    "total_cycles_6steps": 1899325,
+    "total_latency_ms": 75.97,
+    "hw_vs_fixed_bit_mismatches": 0,
+    "hw_vs_fp32_mean_cosine": 0.999999,
+    "hw_vs_fp32_top1_agreement": "6/6"
+  },
+  {
+    "domain": "Natural Lang / QA",
+    "prompt": "HI!?",
+    "prompt_ids": [
+      39,
+      40,
+      0,
+      30
+    ],
+    "generated_reply": "\\\\\\",
+    "decode_top5_candidates": [
+      "\\",
+      "N",
+      "(",
+      "<",
+      "="
+    ],
+    "total_cycles_6steps": 1897652,
+    "total_latency_ms": 75.91,
+    "hw_vs_fixed_bit_mismatches": 0,
+    "hw_vs_fp32_mean_cosine": 0.999999,
+    "hw_vs_fp32_top1_agreement": "6/6"
+  },
+  {
+    "domain": "Numeric Sequence",
+    "prompt": "2468",
+    "prompt_ids": [
+      17,
+      19,
+      21,
+      23
+    ],
+    "generated_reply": "\\\\\\",
+    "decode_top5_candidates": [
+      "\\",
+      "N",
+      "(",
+      "<",
+      "="
+    ],
+    "total_cycles_6steps": 1899312,
+    "total_latency_ms": 75.97,
+    "hw_vs_fixed_bit_mismatches": 0,
+    "hw_vs_fp32_mean_cosine": 0.999999,
+    "hw_vs_fp32_top1_agreement": "6/6"
+  },
+  {
+    "domain": "Logic / Relational",
+    "prompt": "X>Y:",
+    "prompt_ids": [
+      55,
+      29,
+      56,
+      25
+    ],
+    "generated_reply": "\\\\\\",
+    "decode_top5_candidates": [
+      "\\",
+      "N",
+      "(",
+      "<",
+      "="
+    ],
+    "total_cycles_6steps": 1899326,
+    "total_latency_ms": 75.97,
+    "hw_vs_fixed_bit_mismatches": 0,
+    "hw_vs_fp32_mean_cosine": 0.999999,
+    "hw_vs_fp32_top1_agreement": "6/6"
+  }
+]

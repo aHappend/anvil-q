@@ -20,6 +20,7 @@ module anvil_q1_elementwise #(
   wire signed [31:0] silu_value;
   wire signed [32:0] sum;
   wire signed [63:0] product;
+  wire silu_ready, silu_done, silu_error;
   wire idle, complete, fault;
   wire [31:0] rd;
   reg issue, wr;
@@ -33,7 +34,9 @@ module anvil_q1_elementwise #(
     initial $fatal(1,"ANVIL_Q1 PARAMETER ERROR: elementwise dimensions");
   end endgenerate
   assign sum=$signed({a[31],a})+$signed({b[31],b});
-  assign silu_value=anvil_q1_pkg::silu_q16(a);
+  anvil_q1_silu silu(
+    .clk(clk),.rst_n(rst_n),.start(state==7),.ready(silu_ready),
+    .done(silu_done),.error(silu_error),.argument(a),.value(silu_value));
   assign product=$signed({{32{silu_value[31]}},silu_value})*
                  $signed({{32{b[31]}},b});
   assign cmd_ready=rst_n && state==0;
@@ -76,7 +79,16 @@ module anvil_q1_elementwise #(
       1: if(issue) state<=2;
       2: if(complete) begin a<=rd; state<=3; end
       3: if(issue) state<=4;
-      4: if(complete) begin b<=rd; state<=5; end
+      4: if(complete) begin
+        b<=rd;
+        if(mode==2) state<=7;
+        else state<=5;
+      end
+      7: if(silu_ready) state<=8;
+      8: if(silu_done) begin
+        if(silu_error) begin failed<=1; state<=15; end
+        else state<=5;
+      end
       5: if(issue) state<=6;
       6: if(complete) begin
         if(index+1<(mode==2 ? INTERMEDIATE_SIZE : HIDDEN_SIZE))

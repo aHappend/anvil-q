@@ -17,13 +17,20 @@ module anvil_q1_gqa_attention #(
   reg [4:0] state;
   reg failed, value_cache, context_pass;
   reg [31:0] layer, position, index, head, time_index, dim, component;
+  reg [31:0] kv_head, head_in_group;
+  reg signed [31:0] context_value;
   reg signed [31:0] q, cache_data;
   reg signed [95:0] dot, max_score, current_score, weighted;
   reg [63:0] denominator;
   reg [31:0] exponential;
   wire signed [31:0] read_key, read_value;
   wire signed [63:0] dot_product;
-  wire signed [127:0] scaled_score;
+  wire signed [127:0] division_input, division_result;
+  wire [128:0] division_magnitude, division_numerator, division_quotient;
+  wire [63:0] division_denominator;
+  wire div_ready, div_done, div_error;
+  wire exp_ready, exp_done, exp_error;
+  wire [31:0] exp_value;
   wire signed [64:0] weighted_product;
   wire signed [96:0] score_difference;
   wire signed [63:0] exp_argument;
@@ -43,8 +50,21 @@ module anvil_q1_gqa_attention #(
                      $signed({{32{read_key[31]}},read_key});
   assign dim_scaled=128'(HEAD_DIM)<<32;
   assign sqrt_dim=anvil_q1_pkg::isqrt128(dim_scaled);
-  assign scaled_score=anvil_q1_pkg::round_div(
-    $signed({{32{dot[95]}},dot}),sqrt_dim);
+  assign division_input=state==10 || state==18 ?
+    $signed({{32{dot[95]}},dot}) : $signed({{32{weighted[95]}},weighted});
+  assign division_denominator=state==10 || state==18 ? sqrt_dim : denominator;
+  assign division_magnitude=division_input<0 ?
+    -$signed({division_input[127],division_input}) : {1'b0,division_input};
+  assign division_numerator=division_magnitude+({65'd0,division_denominator}>>1);
+  assign division_result=division_input<0 ?
+    -$signed(division_quotient[127:0]) : $signed(division_quotient[127:0]);
+  anvil_q1_unsigned_divider #(129) division(
+    .clk(clk),.rst_n(rst_n),.start(state==10 || state==20),.ready(div_ready),
+    .done(div_done),.error(div_error),.numerator(division_numerator),
+    .divisor(division_denominator),.quotient(division_quotient));
+  anvil_q1_exp exponential_unit(
+    .clk(clk),.rst_n(rst_n),.start(state==22),.ready(exp_ready),
+    .done(exp_done),.error(exp_error),.argument(exp_argument),.value(exp_value));
   assign weighted_product=$signed({{33{read_value[31]}},read_value})*
                           $signed({33'd0,exponential});
   assign score_difference=$signed({current_score[95],current_score})-
@@ -75,16 +95,15 @@ module anvil_q1_gqa_attention #(
       6: begin issue=1; kind=8; row=2; col=head*HEAD_DIM+dim; end
       8: begin
         issue=1; kind=9; ml=layer; row=time_index;
-        col=(head/RATIO)*HEAD_DIM+dim;
+        col=kv_head*HEAD_DIM+dim;
       end
       13: begin
         issue=1; kind=10; ml=layer; row=time_index;
-        col=(head/RATIO)*HEAD_DIM+component;
+        col=kv_head*HEAD_DIM+component;
       end
       16: begin
         issue=1; wr=1; kind=8; row=5; col=head*HEAD_DIM+component;
-        wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_div(
-          $signed({{32{weighted[95]}},weighted}),denominator));
+        wd=context_value;
       end
       default: begin end
     endcase
@@ -95,11 +114,13 @@ module anvil_q1_gqa_attention #(
       layer<=0; position<=0; index<=0; head<=0; time_index<=0; dim<=0;
       component<=0; q<=0; cache_data<=0; dot<=0; max_score<=0;
       current_score<=0; weighted<=0; denominator<=0; exponential<=0;
+      kv_head<=0; head_in_group<=0; context_value<=0;
     end else if(fault) begin failed<=1; state<=31; end
     else case(state)
       0: if(cmd_valid) begin
         failed<=0; layer<=cmd_layer; position<=cmd_pos; index<=0; value_cache<=0;
         head<=0; time_index<=0; dim<=0; component<=0; context_pass<=0;
+        kv_head<=0; head_in_group<=0;
         dot<=0; max_score<={1'b1,95'd0}; weighted<=0; denominator<=0;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN || sqrt_dim==0)
           begin failed<=1; state<=30; end
@@ -121,25 +142,42 @@ module anvil_q1_gqa_attention #(
         if(dim+1<HEAD_DIM) begin dim<=dim+1; state<=6; end
         else state<=10;
       end
-      10: begin current_score<=scaled_score[95:0]; state<=11; end
+      10: if(div_ready) state<=18;
+      18: if(div_done) begin
+        if(div_error) begin failed<=1; state<=31; end
+        else begin current_score<=division_result[95:0]; state<=11; end
+      end
       11: if(!context_pass) begin
         if(current_score>max_score) max_score<=current_score;
         if(time_index<position) begin time_index<=time_index+1; dim<=0; dot<=0; state<=6; end
         else begin context_pass<=1; time_index<=0; dim<=0; dot<=0; state<=6; end
-      end else begin exponential<=anvil_q1_pkg::exp_q24(exp_argument); state<=12; end
+      end else state<=22;
+      22: if(exp_ready) state<=23;
+      23: if(exp_done) begin
+        if(exp_error) begin failed<=1; state<=31; end
+        else begin exponential<=exp_value; state<=12; end
+      end
       12: begin denominator<=denominator+exponential; state<=13; end
       13: if(issue) state<=14;
       14: if(complete) begin weighted<=weighted+{{31{weighted_product[64]}},weighted_product}; state<=15; end
       15: if(time_index<position) begin
         time_index<=time_index+1; dim<=0; dot<=0; state<=6;
       end else if(denominator==0) begin failed<=1; state<=31; end
-      else state<=16;
+      else state<=20;
+      20: if(div_ready) state<=21;
+      21: if(div_done) begin
+        if(div_error) begin failed<=1; state<=31; end
+        else begin context_value<=anvil_q1_pkg::sat32(division_result); state<=16; end
+      end
       16: if(issue) state<=17;
       17: if(complete) begin
         time_index<=0; dim<=0; dot<=0; weighted<=0; denominator<=0;
         if(component+1<HEAD_DIM) begin component<=component+1; state<=6; end
         else if(head+1<NUM_Q_HEADS) begin
           head<=head+1; component<=0; context_pass<=0;
+          if(head_in_group==RATIO-1) begin
+            head_in_group<=0; kv_head<=kv_head+1;
+          end else head_in_group<=head_in_group+1;
           max_score<={1'b1,95'd0}; state<=6;
         end else state<=31;
       end

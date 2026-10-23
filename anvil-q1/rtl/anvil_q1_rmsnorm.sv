@@ -12,22 +12,38 @@ module anvil_q1_rmsnorm #(
   input wire [31:0] mem_rsp_rdata, input wire mem_rsp_error
 );
   localparam SAFE_H = HIDDEN_SIZE > 0 ? HIDDEN_SIZE : 1;
-  reg [3:0] state;
+  reg [4:0] state;
   reg failed;
   reg [31:0] layer, index, src, dst;
   reg [3:0] norm_kind;
   reg [95:0] sum;
   reg [63:0] reciprocal, denominator;
   reg [127:0] mean;
+  reg [63:0] sqrt_root;
+  reg [65:0] sqrt_remainder;
+  reg [6:0] sqrt_bits_left;
+  reg signed [63:0] norm_product;
   reg signed [31:0] x, gamma;
   wire signed [31:0] read_x;
-  wire signed [63:0] square, norm_product;
+  wire signed [63:0] square;
+  wire [65:0] sqrt_shifted, sqrt_trial;
+  wire sqrt_subtract;
+  wire [63:0] sqrt_next_root;
   wire signed [127:0] result;
   wire idle, complete, fault;
   wire [31:0] rd;
+  wire div_ready, div_done, div_error;
+  wire [127:0] div_numerator, div_quotient;
+  wire [63:0] div_denominator;
   reg issue, wr;
   reg [3:0] kind;
   reg [31:0] row, col, wd, ml;
+  assign div_numerator=state==3 ? ({32'd0,sum}<<32) : 128'd18446744073709551616;
+  assign div_denominator=state==3 ? 64'(SAFE_H) : denominator;
+  anvil_q1_unsigned_divider #(128) division(
+    .clk(clk),.rst_n(rst_n),.start(state==3 || state==5),.ready(div_ready),
+    .done(div_done),.error(div_error),.numerator(div_numerator),
+    .divisor(div_denominator),.quotient(div_quotient));
   generate if(NUM_LAYERS<=0 || HIDDEN_SIZE<=0 || HIDDEN_SIZE%8!=0 ||
               MAX_SEQ_LEN<=0 || MAX_SEQ_LEN>16777215 ||
               128'(HIDDEN_SIZE)*15>128'd4294967295 ||
@@ -37,8 +53,10 @@ module anvil_q1_rmsnorm #(
   assign read_x = (complete && state==2) ? rd : 32'sd0;
   assign square = $signed({{32{read_x[31]}},read_x}) *
                   $signed({{32{read_x[31]}},read_x});
-  assign norm_product = $signed({{32{x[31]}},x}) *
-                        $signed({{32{gamma[31]}},gamma});
+  assign sqrt_shifted = {sqrt_remainder[63:0],mean[127:126]};
+  assign sqrt_trial = {sqrt_root,2'b01};
+  assign sqrt_subtract = sqrt_shifted >= sqrt_trial;
+  assign sqrt_next_root = {sqrt_root[62:0],sqrt_subtract};
   assign result = $signed({{64{norm_product[63]}},norm_product}) *
                   $signed({64'd0,reciprocal});
   assign cmd_ready = rst_n && state==0;
@@ -70,6 +88,7 @@ module anvil_q1_rmsnorm #(
     if(!rst_n) begin
       state<=0; failed<=0; layer<=0; index<=0; src<=0; dst<=0;
       norm_kind<=0; sum<=0; reciprocal<=0; mean<=0; denominator<=0; x<=0; gamma<=0;
+      sqrt_root<=0; sqrt_remainder<=0; sqrt_bits_left<=0; norm_product<=0;
     end else if(fault) begin failed<=1; state<=15; end
     else case(state)
       0: if(cmd_valid) begin
@@ -89,16 +108,39 @@ module anvil_q1_rmsnorm #(
         if(index+1<HIDDEN_SIZE) begin index<=index+1; state<=1; end
         else state<=3;
       end
-      3: begin mean<=(({32'd0,sum}<<32)/SAFE_H)+128'd18446744073710; state<=4; end
-      4: begin denominator<=anvil_q1_pkg::isqrt128(mean); state<=5; end
+      3: if(div_ready) state<=12;
+      12: if(div_done) begin
+        if(div_error) begin failed<=1; state<=15; end
+        else begin mean<=div_quotient+128'd18446744073710; state<=4; end
+      end
+      4: begin
+        sqrt_root<=0; sqrt_remainder<=0; sqrt_bits_left<=64; state<=16;
+      end
+      16: begin
+        if(sqrt_subtract) sqrt_remainder<=sqrt_shifted-sqrt_trial;
+        else sqrt_remainder<=sqrt_shifted;
+        sqrt_root<=sqrt_next_root;
+        mean<=mean<<2;
+        sqrt_bits_left<=sqrt_bits_left-1;
+        if(sqrt_bits_left==1) begin denominator<=sqrt_next_root; state<=5; end
+      end
       5: if(denominator==0) begin failed<=1; state<=15; end
-         else begin reciprocal<=128'd18446744073709551616/denominator; index<=0; state<=6; end
+         else if(div_ready) state<=13;
+      13: if(div_done) begin
+        if(div_error) begin failed<=1; state<=15; end
+        else begin reciprocal<=div_quotient[63:0]; index<=0; state<=6; end
+      end
       6: if(issue) state<=7;
       7: if(complete) begin x<=rd; state<=8; end
       8: if(issue) state<=9;
       9: if(complete) begin
         if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; state<=15; end
-        else begin gamma<=anvil_q1_pkg::f16_q16(rd[15:0]); state<=10; end
+        else begin gamma<=anvil_q1_pkg::f16_q16(rd[15:0]); state<=17; end
+      end
+      17: begin
+        norm_product<=$signed({{32{x[31]}},x}) *
+                      $signed({{32{gamma[31]}},gamma});
+        state<=10;
       end
       10: if(issue) state<=11;
       11: if(complete) begin

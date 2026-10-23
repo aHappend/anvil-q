@@ -1,8 +1,8 @@
 \documentclass[11pt,a4paper]{article}
 
-\usepackage[margin=22mm,headheight=14pt]{geometry}
+\usepackage[top=20mm,bottom=26mm,left=20mm,right=20mm,headheight=15pt,footskip=12mm]{geometry}
 
-\usepackage{longtable,booktabs,array,hyperref,xcolor,tikz,fancyhdr}
+\usepackage{longtable,booktabs,array,hyperref,xcolor,tikz,fancyhdr,needspace}
 
 \usepackage{fontspec,xeCJK}
 
@@ -18,6 +18,8 @@
 
 \setCJKmonofont{Noto Serif CJK SC}
 
+\newfontfamily\vulcanmathsymbols{Noto Serif CJK SC}
+
 \XeTeXgenerateactualtext=1
 
 \definecolor{vulcan}{HTML}{BB3E23}
@@ -26,416 +28,638 @@
 
 \hypersetup{hidelinks}
 
-\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash\hspace{0pt}}p{#1}}
 
-\setlength{\emergencystretch}{5em}\tolerance=2000\hbadness=10000
+\setlength{\emergencystretch}{5em}\tolerance=2000\hbadness=10000\hyphenpenalty=50\exhyphenpenalty=50
 
 \setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
 
-\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\sffamily VULCAN}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\sffamily\textbf{VULCAN SILICON ENGINEERING}}
 
-\fancyhead[R]{\small Product design and verification}\fancyfoot[C]{\thepage}
+\fancyhead[R]{\small\sffamily Technical Design and Verification Report}\fancyfoot[C]{\small\sffamily Page \thepage}
 
 \begin{document}
 
-{\sffamily\huge\raggedright\textbf{Anvil-Q1 Phase 2: Official AWQ Checkpoint-Slice Integration and RTL Evaluation}\par}
+{\footnotesize\sffamily\textcolor{vulcan}{\textbf{VULCAN AUTONOMOUS CHIP DESIGN \& HARDWARE SIGNOFF SERIES \hfill DOCUMENT CLASS: ENGINEERING VERIFICATION REPORT}}\par}
 
-{\large Technical Design and Verification Report}\par
+\vspace{2pt}\textcolor{vulcan}{\rule{\textwidth}{1.2pt}}\vspace{4pt}
 
-16 October 2026 (\allowbreak{}UTC+\allowbreak{}8)\allowbreak{}\par\textcolor{vulcan}{\rule{\textwidth}{0.5pt}}
+{\sffamily\LARGE\raggedright\textbf{Anvil-Q1 Phase 2: Official AWQ Weight Integration and Software–RTL Evaluation}\par}
 
-\begin{abstract}
+\vspace{4pt}
 
-Anvil-Q1 is a modular,\allowbreak{} serialized SystemVerilog accelerator for Qwen2.5 AWQ transformer operations. Phase 2 integrates authentic binary16 and packed I32 checkpoint data through the existing external-memory interface,\allowbreak{} preserving the eight-lane GEMV datapath,\allowbreak{} reused decoder engine and Q16.16 numerical contract.
+{\footnotesize\sffamily\renewcommand{\arraystretch}{1.22}\begin{tabular}{@{}L{0.22\textwidth}L{0.74\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn,\allowbreak{} v-sufengguo@microsoft.com)\allowbreak{}\\\textbf{Target Platform} & Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) \textemdash{} Microsoft Catapult Longs Peak (Bedrock 2.1)\\\textbf{Verification Stack} & Icarus Verilog 12.0 \textperiodcentered{} Yosys 0.33 \textperiodcentered{} Intel Quartus Prime 17.1 TimeQuest STA \textperiodcentered{} PCIe Gen3x8 HIL\\\textbf{Release Timestamp} & 23 October 2026 (\allowbreak{}2026-10-23 19:40 UTC+\allowbreak{}8 Beijing Time)\allowbreak{}\\\bottomrule\end{tabular}\par}
+
+\vspace{4pt}
+
+\begin{abstract}\noindent 
+
+Anvil-Q1 is a modular SystemVerilog inference core with eight-lane W4A16 matrix-vector execution,\allowbreak{} signed Q16.16 working data and external model,\allowbreak{} scratch and KV storage. Phase 2 integrates authentic Qwen2.5-0.5B-Instruct-AWQ checkpoint slices through the public memory interface,\allowbreak{} without host-computed accelerator results.
 
 
-The bounded official-checkpoint evaluation completed all 14 selected 64x64 projection submatrices from layers 0 and 23,\allowbreak{} covering 57,\allowbreak{}344 products and 896 output writes with zero integer-oracle mismatches. Four-token,\allowbreak{} two-layer top-level execution also matched 6,\allowbreak{}144 scratch/\allowbreak{}cache writes and 256 logits bit-for-bit. Against the independent FP32 baseline,\allowbreak{} aggregate logit cosine similarity was 0.999999299592,\allowbreak{} MAE 0.000706030267 and RMSE 0.000841981995; every token matched the software top-1 and top-5 set. These results establish authentic official-slice execution,\allowbreak{} not full-checkpoint inference [\allowbreak{}E015,\allowbreak{} E024]\allowbreak{}.
+The bounded four-token,\allowbreak{} two-layer evaluation completed with zero mismatches across 6,\allowbreak{}144 scratch/\allowbreak{}KV writes and 256 logits. Official FP32 software versus RTL achieved cosine similarity 0.9999992996,\allowbreak{} maximum absolute error 0.00187933445,\allowbreak{} MAE 0.000706030267 and RMSE 0.000841981995. Top-1 and exact top-5 sets agreed for all four tokens; all 14 official projection submatrices also passed [\allowbreak{}E043]\allowbreak{}.
+
+
+L1 RTL timing lint passed. L2 Intel Quartus Prime 17.1 TimeQuest post-map analysis recorded WNS\_\allowbreak{}setup=\allowbreak{}+\allowbreak{}27.218 ns at a 40 ns clock period,\allowbreak{} but retained negative hold slack. L3 physical Arria 10 FPGA HIL passed three deterministic runs. These outcomes establish their recorded configurations,\allowbreak{} not complete setup-and-hold closure or full-model deployment [\allowbreak{}E040–E042]\allowbreak{}.
 
 
 \end{abstract}
 
-\section{Architecture and design rationale}
+\needspace{10\baselineskip}\section{Architecture and design rationale}
 
-The core processes one token at a time,\allowbreak{} serializing external model,\allowbreak{} scratch and cache accesses through one outstanding memory transaction. A single decoder engine is reused across configured layers; intermediate vectors and context remain external rather than occupying model-sized internal arrays. Each concrete GEMV computes eight output channels concurrently through eight connected dequantizers and wide arithmetic. The decoder and SwiGLU block have separate GEMV instances,\allowbreak{} selected sequentially by control. This architecture prioritizes bounded internal storage and explicit arithmetic over throughput. Packed request selection and operand isolation preserve protocol behavior without establishing a measured power or speed benefit [\allowbreak{}E003,\allowbreak{} E004,\allowbreak{} E011,\allowbreak{} E012,\allowbreak{} E013]\allowbreak{}.
+The architecture prioritizes bounded internal storage and explicit integration over throughput. One token is active,\allowbreak{} one decoder engine is reused across configured layers,\allowbreak{} and only one external-memory transaction is outstanding. Intermediate vectors and causal KV history reside externally rather than in model- or context-sized internal arrays. Two concrete GEMV engines,\allowbreak{} one directly under the decoder and one inside SwiGLU,\allowbreak{} each contain eight connected AWQ dequantization lanes. Hierarchical request selection and response isolation preserve transaction ownership; operand isolation limits inactive switching. Clocked restoring division and sequential RMSNorm square-root calculation shorten combinational arithmetic paths while retaining the integer equations,\allowbreak{} at increased latency [\allowbreak{}E004,\allowbreak{} E010,\allowbreak{} E014–E016]\allowbreak{}.
 
-\begin{center}\begin{tikzpicture}[every node/.style={font=\small\sffamily},>=latex]
+\begin{center}\begin{minipage}{\textwidth}\centering\begin{tikzpicture}[scale=0.78,transform shape,every node/.style={font=\footnotesize\sffamily},>=latex]
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b0) at (0.0,0.0) {B1: Token and logit control};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b0) at (0.0,0.0) {\textbf{B1:} Token controller};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b1) at (5.4,0.0) {B2: Decoder engine};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b1) at (5.3,0.0) {\textbf{B2:} Decoder engine};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b2) at (10.8,0.0) {B3: Final normalization};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b2) at (10.6,0.0) {\textbf{B3:} Final norm and logits};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b3) at (0.0,-4.6) {B4: Norm and residual operations};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b3) at (0.0,-3.1) {\textbf{B4:} RMSNorm};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b4) at (5.4,-4.6) {B5: Attention GEMV};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b4) at (5.3,-3.1) {\textbf{B5:} Eight-lane GEMV};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b5) at (10.8,-4.6) {B6: RoPE and GQA};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b5) at (10.6,-3.1) {\textbf{B6:} RoPE and GQA};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b6) at (0.0,-9.2) {B7: SwiGLU engine};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b6) at (0.0,-6.2) {\textbf{B7:} SwiGLU};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b7) at (5.4,-9.2) {B8: Memory routing};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b7) at (5.3,-6.2) {\textbf{B8:} Memory routing};
 
-\node[draw=vulcan,rounded corners,fill=vulcan!4,text width=3.8cm,minimum height=1cm,align=center] (b8) at (10.8,-9.2) {B9: External memory service};
+\node[draw=vulcan!85!black,thick,rounded corners=3pt,fill=vulcan!6,text width=3.9cm,minimum height=1.05cm,align=center] (b8) at (10.6,-6.2) {\textbf{B9:} External storage};
 
 \begin{pgfonlayer}{connections}
 
-\draw[->,black!65] ([yshift=-0.160cm]b0.east) -- coordinate[pos=0.25] (e0) ([yshift=0.000cm]b1.west);
+\draw[->,thick,black!65] ([yshift=-0.160cm]b0.east) -- coordinate[pos=0.25] (e0) ([yshift=0.000cm]b1.west);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b0.east) -- (2.380,0.000) -- (2.380,-3.340) -- coordinate[midway] (e1) (10.400,-3.340) -- ([xshift=-0.400cm]b2.south);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.000cm]b0.east) -- (2.290,0.000) -- (2.290,-1.850) -- coordinate[pos=0.25] (e1) (10.200,-1.850) -- ([xshift=-0.400cm]b2.south);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=-0.192cm]b1.east) -- (7.860,-0.192) -- (7.860,-3.080) -- coordinate[midway] (e2) (-0.267,-3.080) -- ([xshift=-0.267cm]b3.north);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=-0.192cm]b1.east) -- (7.680,-0.192) -- (7.680,-1.550) -- coordinate[pos=0.50] (e2) (-0.267,-1.550) -- ([xshift=-0.267cm]b3.north);
 
-\draw[->,black!65] ([xshift=-0.571cm]b1.south) -- coordinate[pos=0.25] (e3) ([xshift=-0.343cm]b4.north);
+\draw[->,thick,black!65] ([xshift=-0.571cm]b1.south) -- coordinate[pos=0.25] (e3) ([xshift=-0.343cm]b4.north);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=-0.064cm]b1.east) -- (8.020,-0.064) -- (8.020,-2.560) -- coordinate[midway] (e4) (10.800,-2.560) -- ([xshift=0.000cm]b5.north);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=-0.064cm]b1.east) -- (7.860,-0.064) -- (7.860,-1.250) -- coordinate[pos=0.75] (e4) (10.600,-1.250) -- ([xshift=0.000cm]b5.north);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.064cm]b1.east) -- (8.100,0.064) -- (8.100,-6.900) -- coordinate[midway] (e5) (0.267,-6.900) -- ([xshift=0.267cm]b6.north);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.064cm]b1.east) -- (7.950,0.064) -- (7.950,-5.100) -- coordinate[pos=0.25] (e5) (0.267,-5.100) -- ([xshift=0.267cm]b6.north);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.160cm]b0.east) -- (2.780,0.160) -- (2.780,-6.640) -- coordinate[midway] (e6) (5.286,-6.640) -- ([xshift=-0.114cm]b7.north);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.160cm]b0.east) -- (2.740,0.160) -- (2.740,-4.800) -- coordinate[pos=0.42] (e6) (5.186,-4.800) -- ([xshift=-0.114cm]b7.north);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.192cm]b1.east) -- (8.260,0.192) -- (8.260,-6.380) -- coordinate[midway] (e7) (5.514,-6.380) -- ([xshift=0.114cm]b7.north);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.192cm]b1.east) -- (8.130,0.192) -- (8.130,-4.500) -- coordinate[pos=0.58] (e7) (5.414,-4.500) -- ([xshift=0.114cm]b7.north);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b2.east) -- (13.740,0.000) -- (13.740,-6.120) -- coordinate[midway] (e8) (5.743,-6.120) -- ([xshift=0.343cm]b7.north);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.000cm]b2.east) -- (13.520,0.000) -- (13.520,-4.200) -- coordinate[pos=0.75] (e8) (5.643,-4.200) -- ([xshift=0.343cm]b7.north);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b7.east) -- (8.420,-9.200) -- (8.420,-10.460) -- coordinate[midway] (e9) (11.200,-10.460) -- ([xshift=0.400cm]b8.south);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.000cm]b7.east) -- (8.310,-6.200) -- (8.310,-7.900) -- coordinate[pos=0.25] (e9) (11.000,-7.900) -- ([xshift=0.400cm]b8.south);
 
-\draw[->,black!65,rounded corners=2pt] ([yshift=0.000cm]b8.east) -- (13.900,-9.200) -- (13.900,-10.200) -- coordinate[midway] (e10) (5.971,-10.200) -- ([xshift=0.571cm]b7.south);
+\draw[->,thick,black!65,rounded corners=2pt] ([yshift=0.000cm]b8.east) -- (13.700,-6.200) -- (13.700,-7.600) -- coordinate[pos=0.75] (e10) (5.871,-7.600) -- ([xshift=0.571cm]b7.south);
 
 \end{pgfonlayer}
 
 \begin{pgfonlayer}{edge labels}
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e0) {E1};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e0) {E1};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e1) {E2};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e1) {E2};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e2) {E3};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e2) {E3};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e3) {E4};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e3) {E4};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e4) {E5};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e4) {E5};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e5) {E6};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e5) {E6};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e6) {E7};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e6) {E7};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e7) {E8};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e7) {E8};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e8) {E9};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e8) {E9};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e9) {E10};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e9) {E10};
 
-\node[fill=white,inner sep=1pt,font=\scriptsize] at (e10) {E11};
+\node[fill=white,inner sep=1pt,font=\scriptsize\bfseries,text=vulcan!90!black] at (e10) {E11};
 
 \end{pgfonlayer}
 
-\end{tikzpicture}\end{center}
+\end{tikzpicture}\par\vspace{3pt}
 
-{\small Functional block map, not a gate-level netlist. Edge identifiers match the directed relationships below. Crossings do not denote junctions; separate attachment points preserve arrow directions.}
+{\small\textbf{Figure 1:} Top-level microarchitectural functional block map and directed inter-module bus topology.}\end{minipage}\end{center}
 
-{\small\begin{longtable}{@{}L{0.24\textwidth}L{0.7\textwidth}@{}}\toprule
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.24\textwidth}|L{0.7\textwidth}@{}}\toprule
 
-\textbf{Block} & \textbf{Responsi\allowbreak{}bility}\\\midrule\endhead
+\textbf{Block} & \textbf{Responsibility}\\\midrule\endhead
 
-B1: Token and logit control & anvil\_\allowbreak{}q1\_\allowbreak{}top accepts tokens,\allowbreak{} validate\allowbreak{}s sequence position\allowbreak{}s,\allowbreak{} loads embeddin\allowbreak{}gs,\allowbreak{} schedule\allowbreak{}s layers and streams tied-projecti\allowbreak{}on logits.\\[3pt]
+B1: Token controller & Accepts token commands,\allowbreak{} loads embeddings,\allowbreak{} sequences layers and commits position after the final logit transfer.\\[2pt]\hline
 
-B2: Decoder engine & anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer schedule\allowbreak{}s normaliz\allowbreak{}ation,\allowbreak{} attentio\allowbreak{}n projecti\allowbreak{}ons,\allowbreak{} RoPE,\allowbreak{} GQA,\allowbreak{} residual addition\allowbreak{}s and SwiGLU.\\[3pt]
+B2: Decoder engine & Reuses normalization,\allowbreak{} projection,\allowbreak{} attention,\allowbreak{} residual and MLP resources for every configured layer.\\[2pt]\hline
 
-B3: Final normaliz\allowbreak{}ation & The top-level RMSNorm instance normaliz\allowbreak{}es the final residual before vocabula\allowbreak{}ry projecti\allowbreak{}on.\\[3pt]
+B3: Final norm and logits & Applies final RMSNorm and projects against the same embedding storage to emit ordered logits.\\[2pt]\hline
 
-B4: Norm and residual operatio\allowbreak{}ns & Decoder-local RMSNorm and elementw\allowbreak{}ise hardware operate on external scratch vectors with defined rounding and saturati\allowbreak{}on.\\[3pt]
+B4: RMSNorm & Accumulates wide squares,\allowbreak{} performs clocked division and a 64-step integer square root,\allowbreak{} then scales components.\\[2pt]\hline
 
-B5: Attentio\allowbreak{}n GEMV & The decoder GEMV executes Q,\allowbreak{} K,\allowbreak{} V and O projecti\allowbreak{}ons in eight-output tiles,\allowbreak{} includin\allowbreak{}g QKV biases.\\[3pt]
+B5: Eight-lane GEMV & Executes Q/\allowbreak{}K/\allowbreak{}V/\allowbreak{}O projections using exact AWQ dequantization,\allowbreak{} wide products and complete accumulations.\\[2pt]\hline
 
-B6: RoPE and GQA & Split-half rotation and causal grouped-query attentio\allowbreak{}n update external KV storage and produce attentio\allowbreak{}n context.\\[3pt]
+B6: RoPE and GQA & Rotates Q/\allowbreak{}K,\allowbreak{} stores causal KV history and computes grouped-query attention with stable softmax.\\[2pt]\hline
 
-B7: SwiGLU engine & anvil\_\allowbreak{}q1\_\allowbreak{}swiglu\_\allowbreak{}mlp contains a separate eight-lane GEMV for gate,\allowbreak{} up and down projecti\allowbreak{}ons,\allowbreak{} plus SiLU and elementw\allowbreak{}ise multipli\allowbreak{}cation.\\[3pt]
+B7: SwiGLU & Uses its own eight-lane GEMV for gate/\allowbreak{}up/\allowbreak{}down projections,\allowbreak{} with SiLU and gated elementwise multiplication.\\[2pt]\hline
 
-B8: Memory routing & Hierarch\allowbreak{}ical muxes and transact\allowbreak{}ion controll\allowbreak{}ers select the active client and isolate inactive response\allowbreak{}s.\\[3pt]
+B8: Memory routing & Selects the owning requester and qualifies responses across the hierarchy.\\[2pt]\hline
 
-B9: External memory service & Supplies immutabl\allowbreak{}e checkpoi\allowbreak{}nt words,\allowbreak{} mutable scratch/\allowbreak{}KV storage and independ\allowbreak{}ently generate\allowbreak{}d RoPE coeffici\allowbreak{}ents,\allowbreak{} never computed layer outputs.\\[3pt]
-
-\bottomrule\end{longtable}}
-
-{\small\begin{longtable}{@{}L{0.24\textwidth}L{0.7\textwidth}@{}}\toprule
-
-\textbf{Directed relation\allowbreak{}ship} & \textbf{Meaning}\\\midrule\endhead
-
-E1: B1 to B2 & Layer command and completi\allowbreak{}on\\[3pt]
-
-E2: B1 to B3 & Final-normaliz\allowbreak{}ation command\\[3pt]
-
-E3: B2 to B4 & Norm and residual scheduli\allowbreak{}ng\\[3pt]
-
-E4: B2 to B5 & Projecti\allowbreak{}on commands\\[3pt]
-
-E5: B2 to B6 & Rotation and attentio\allowbreak{}n commands\\[3pt]
-
-E6: B2 to B7 & MLP command and completi\allowbreak{}on\\[3pt]
-
-E7: B1 to B8 & Embeddin\allowbreak{}g and tied-logit requests\\[3pt]
-
-E8: B2 to B8 & Selected decoder-subtree requests\\[3pt]
-
-E9: B3 to B8 & Final-norm requests\\[3pt]
-
-E10: B8 to B9 & Serializ\allowbreak{}ed memory requests\\[3pt]
-
-E11: B9 to B8 & Read response\allowbreak{}s and write acknowle\allowbreak{}dgements\\[3pt]
+B9: External storage & Supplies raw checkpoint tensors,\allowbreak{} mutable scratch/\allowbreak{}KV and independently generated RoPE coefficients.\\[2pt]\hline
 
 \bottomrule\end{longtable}}
 
-\section{Interfaces and configuration}
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.24\textwidth}|L{0.7\textwidth}@{}}\toprule
 
-{\small\begin{longtable}{@{}L{0.2\textwidth}L{0.12\textwidth}L{0.1\textwidth}L{0.48\textwidth}@{}}\toprule
+\textbf{Directed relationship} & \textbf{Meaning}\\\midrule\endhead
 
-\textbf{Signal /\allowbreak{} group} & \textbf{Directio\allowbreak{}n} & \textbf{Width} & \textbf{Contract}\\\midrule\endhead
+E1: B1 to B2 & Layer commands\\[2pt]\hline
 
-clk,\allowbreak{} rst\_\allowbreak{}n & Input & 1 bit each & Rising-edge clock and synchron\allowbreak{}ous active-low reset. Asserted reset combinat\allowbreak{}ionally gates outward handshak\allowbreak{}es,\allowbreak{} status and payloads to zero; a rising edge clears state. The resetles\allowbreak{}s combinat\allowbreak{}ional dequanti\allowbreak{}zer is exempt.\\[3pt]
+E2: B1 to B3 & Final-stage sequencing\\[2pt]\hline
 
-token\_\allowbreak{}valid,\allowbreak{} token\_\allowbreak{}ready,\allowbreak{} token\_\allowbreak{}id,\allowbreak{} token\_\allowbreak{}pos,\allowbreak{} new\_\allowbreak{}sequence & Input except token\_\allowbreak{}ready output & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} 32,\allowbreak{} 1 bits & Transfer\allowbreak{}s sample pre-edge valid \&\& ready. IDs and position\allowbreak{}s must be in range; continua\allowbreak{}tion must use the next committe\allowbreak{}d position. new\_\allowbreak{}sequence is sampled only on acceptan\allowbreak{}ce and requires position zero.\\[3pt]
+E3: B2 to B4 & Normalization commands\\[2pt]\hline
 
-logit\_\allowbreak{}valid,\allowbreak{} logit\_\allowbreak{}ready,\allowbreak{} logit\_\allowbreak{}index,\allowbreak{} logit\_\allowbreak{}data & Output except logit\_\allowbreak{}ready input & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} signed 32 bits & Ordered vocabula\allowbreak{}ry-index stream carrying signed Q16.16 logits. Valid,\allowbreak{} index and data remain stable under backpres\allowbreak{}sure. Every configur\allowbreak{}ed logit must transfer,\allowbreak{} includin\allowbreak{}g a singleto\allowbreak{}n first/\allowbreak{}last logit.\\[3pt]
+E4: B2 to B5 & Q/\allowbreak{}K/\allowbreak{}V/\allowbreak{}O commands\\[2pt]\hline
 
-done,\allowbreak{} error & Output & 1 bit each & One-cycle completi\allowbreak{}on with error qualifie\allowbreak{}d by done. Successf\allowbreak{}ul final-logit transfer commits sequence position. Readines\allowbreak{}s remains low during completi\allowbreak{}on.\\[3pt]
+E5: B2 to B6 & Rotation and attention commands\\[2pt]\hline
 
-mem\_\allowbreak{}req\_\allowbreak{}valid,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}ready,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}write & Output except mem\_\allowbreak{}req\_\allowbreak{}ready input & 1 bit each & One outstand\allowbreak{}ing transact\allowbreak{}ion; acceptan\allowbreak{}ce samples valid \&\& ready. All request fields remain frozen during stalls. Writes require acknowle\allowbreak{}dgements.\\[3pt]
+E6: B2 to B7 & MLP command\\[2pt]\hline
 
-mem\_\allowbreak{}req\_\allowbreak{}kind,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}layer,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}proj,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}row,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}col,\allowbreak{} mem\_\allowbreak{}req\_\allowbreak{}wdata & Output & 4,\allowbreak{} 32,\allowbreak{} 3,\allowbreak{} 32,\allowbreak{} 32,\allowbreak{} 32 bits & Kinds 0..11 identify embeddin\allowbreak{}g,\allowbreak{} qweight,\allowbreak{} qzeros,\allowbreak{} scales,\allowbreak{} QKV bias,\allowbreak{} input norm,\allowbreak{} post norm,\allowbreak{} final norm,\allowbreak{} scratch,\allowbreak{} K cache,\allowbreak{} V cache and RoPE. Projecti\allowbreak{}ons 0..6 identify Q/\allowbreak{}K/\allowbreak{}V/\allowbreak{}O/\allowbreak{}gate/\allowbreak{}up/\allowbreak{}down. Only kinds 8..10 are writable. Unused fields and read write-data are zero.\\[3pt]
+E7: B1 to B8 & Embedding requests\\[2pt]\hline
 
-mem\_\allowbreak{}rsp\_\allowbreak{}valid,\allowbreak{} mem\_\allowbreak{}rsp\_\allowbreak{}ready,\allowbreak{} mem\_\allowbreak{}rsp\_\allowbreak{}rdata,\allowbreak{} mem\_\allowbreak{}rsp\_\allowbreak{}error & Input except mem\_\allowbreak{}rsp\_\allowbreak{}ready output & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} 1 bits & Exactly one strictly later response follows each accepted request. Request and response transfer\allowbreak{}s never coincide. Model F16 values occupy the low halfword; packed words and scratch/\allowbreak{}cache values use all 32 bits.\\[3pt]
+E8: B2 to B8 & Owned child transactions\\[2pt]\hline
 
-\bottomrule\end{longtable}}
+E9: B3 to B8 & Norm and tied-weight requests\\[2pt]\hline
 
-{\small\begin{longtable}{@{}L{0.23\textwidth}L{0.12\textwidth}L{0.57\textwidth}@{}}\toprule
+E10: B8 to B9 & Read/\allowbreak{}write requests\\[2pt]\hline
 
-\textbf{Paramete\allowbreak{}r} & \textbf{Default} & \textbf{Meaning /\allowbreak{} supporte\allowbreak{}d values}\\\midrule\endhead
-
-NUM\_\allowbreak{}LAYERS & 24 & Positive,\allowbreak{} with checked address-product bounds; decoder hardware is reused.\\[3pt]
-
-HIDDEN\_\allowbreak{}SIZE & 896 & Positive; equals NUM\_\allowbreak{}Q\_\allowbreak{}HEADS*\allowbreak{}HEAD\_\allowbreak{}DIM; divisibl\allowbreak{}e by eight and GROUP\_\allowbreak{}SIZE.\\[3pt]
-
-INTERMED\allowbreak{}IATE\_\allowbreak{}SIZE & 4864 & Positive; divisibl\allowbreak{}e by eight and GROUP\_\allowbreak{}SIZE.\\[3pt]
-
-NUM\_\allowbreak{}Q\_\allowbreak{}HEADS & 14 & Positive integer multiple of NUM\_\allowbreak{}KV\_\allowbreak{}HEADS.\\[3pt]
-
-NUM\_\allowbreak{}KV\_\allowbreak{}HEADS & 2 & Positive; NUM\_\allowbreak{}KV\_\allowbreak{}HEADS*\allowbreak{}HEAD\_\allowbreak{}DIM is eight-aligned.\\[3pt]
-
-HEAD\_\allowbreak{}DIM & 64 & Positive and even for split-half RoPE.\\[3pt]
-
-GROUP\_\allowbreak{}SIZE & 128 & Positive divisor of hidden and intermed\allowbreak{}iate dimensio\allowbreak{}ns; need not be a power of two.\\[3pt]
-
-AWQ\_\allowbreak{}BITS & 4 & Only four-bit AWQ GEMM is supporte\allowbreak{}d.\\[3pt]
-
-VOCAB\_\allowbreak{}SIZE & 151936 & Positive; embeddin\allowbreak{}g address product must fit unsigned 32 bits.\\[3pt]
-
-MAX\_\allowbreak{}SEQ\_\allowbreak{}LEN & 32768 & 1..16777215,\allowbreak{} addition\allowbreak{}ally constrai\allowbreak{}ned by cache and coeffici\allowbreak{}ent address products. Paramete\allowbreak{}r products use unsigned 128-bit checks.\\[3pt]
+E11: B9 to B8 & Data,\allowbreak{} acknowle\allowbreak{}dgements and errors\\[2pt]\hline
 
 \bottomrule\end{longtable}}
 
-\section{Behavior and corner cases}
+\needspace{9\baselineskip}\section{Interfaces and configuration}
 
-\subsection{Transformer execution}
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.21\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|L{0.45\textwidth}@{}}\toprule
 
-Each configured layer executes input RMSNorm,\allowbreak{} biased QKV projections,\allowbreak{} split-half RoPE with theta=\allowbreak{}1000000,\allowbreak{} causal GQA,\allowbreak{} O projection,\allowbreak{} residual addition,\allowbreak{} post-attention RMSNorm,\allowbreak{} SwiGLU and a second residual. Final RMSNorm precedes projection through the same embedding storage. RMSNorm epsilon is 1e-6; query head h maps to KV head floor(\allowbreak{}h/\allowbreak{}(\allowbreak{}QH/\allowbreak{}KVH)\allowbreak{})\allowbreak{}.
+\textbf{Signal /\allowbreak{} group} & \textbf{Direction} & \textbf{Width} & \textbf{Contract}\\\midrule\endhead
 
-\subsection{Official coordinate mapping}
+clk,\allowbreak{} rst\_\allowbreak{}n & Input & 1 bit each & Rising-edge clock and synchronous active-low state reset. Asserted reset combinationally zeros outward handshakes,\allowbreak{} status and payloads; a rising edge clears state.\\[2pt]\hline
 
-The top fixture uses (\allowbreak{}L,\allowbreak{}H,\allowbreak{}I,\allowbreak{}QH,\allowbreak{}KVH,\allowbreak{}D,\allowbreak{}G,\allowbreak{}V,\allowbreak{}SEQ)\allowbreak{}=\allowbreak{}(\allowbreak{}2,\allowbreak{}56,\allowbreak{}56,\allowbreak{}14,\allowbreak{}2,\allowbreak{}4,\allowbreak{}56,\allowbreak{}64,\allowbreak{}4)\allowbreak{},\allowbreak{} mapping hardware layers 0/\allowbreak{}1 to checkpoint layers 0/\allowbreak{}23. Embedding rows are [\allowbreak{}0,\allowbreak{}64)\allowbreak{},\allowbreak{} components and norm coordinates [\allowbreak{}0,\allowbreak{}56)\allowbreak{}. Projection inputs are [\allowbreak{}0,\allowbreak{}56)\allowbreak{}; Q/\allowbreak{}O/\allowbreak{}MLP outputs are [\allowbreak{}0,\allowbreak{}56)\allowbreak{},\allowbreak{} K/\allowbreak{}V outputs [\allowbreak{}0,\allowbreak{}8)\allowbreak{}. Metadata accesses select original G128 group zero,\allowbreak{} so fixture G56 changes no accessed metadata. The standalone 64x64 sweeps likewise use group zero. No padding or synthetic model values are supplied.
+token\_\allowbreak{}valid,\allowbreak{} token\_\allowbreak{}ready,\allowbreak{} token\_\allowbreak{}id,\allowbreak{} token\_\allowbreak{}pos,\allowbreak{} new\_\allowbreak{}sequence & Input except token\_\allowbreak{}ready output & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} 32,\allowbreak{} 1 bits & Acceptance samples pre-edge valid\&\&ready. One token is active; IDs and positions must be in range. new\_\allowbreak{}sequence is sampled only on acceptance and requires position zero.\\[2pt]\hline
 
-\subsection{AWQ and fixed-point arithmetic}
+logit\_\allowbreak{}valid,\allowbreak{} logit\_\allowbreak{}ready,\allowbreak{} logit\_\allowbreak{}index,\allowbreak{} logit\_\allowbreak{}data & Output except logit\_\allowbreak{}ready input & 1,\allowbreak{} 1,\allowbreak{} 32,\allowbreak{} signed 32 bits & Ascending vocabulary indices accompany signed Q16.16 logits. Valid,\allowbreak{} index and data remain stable under backpressure. The final transfer commits the token.\\[2pt]\hline
 
-Packed qweight/\allowbreak{}qzeros use shifts [\allowbreak{}0,\allowbreak{}16,\allowbreak{}4,\allowbreak{}20,\allowbreak{}8,\allowbreak{}24,\allowbreak{}12,\allowbreak{}28]\allowbreak{} and w=\allowbreak{}(\allowbreak{}q-z)\allowbreak{}*\allowbreak{}s without GPTQ +\allowbreak{}1. Ordinary finite F16 values convert to signed Q16.16 with nearest/\allowbreak{}ties-away rounding and saturation; scales retain unsigned-32 conversion range. Exact signed-37 dequantized weights feed signed-69 products and signed-128 GEMV sums,\allowbreak{} including bias before final rounding. Tied logits use signed-96 accumulation. Partial reductions do not saturate.
+done,\allowbreak{} error & Output & 1 bit each & A single completion cycle follows execution; error qualifies unsuccessful completion. Readiness returns after completion retirement.\\[2pt]\hline
 
-\subsection{Nonlinear arithmetic}
+mem\_\allowbreak{}req\_\allowbreak{}*\allowbreak{} & Output except mem\_\allowbreak{}req\_\allowbreak{}ready input & valid/\allowbreak{}write/\allowbreak{}ready: 1; kind: 4; layer: 32; proj: 3; row/\allowbreak{}col/\allowbreak{}wdata: 32 bits & One outstanding request; all fields freeze during stalls. Kinds 0–7 select embedding,\allowbreak{} qweight,\allowbreak{} qzeros,\allowbreak{} scales,\allowbreak{} QKV bias,\allowbreak{} input norm,\allowbreak{} post-attention norm and final norm; 8–10 select scratch/\allowbreak{}K/\allowbreak{}V; 11 selects RoPE. Only scratch and KV are writable. Projection codes Q/\allowbreak{}K/\allowbreak{}V/\allowbreak{}O/\allowbreak{}gate/\allowbreak{}up/\allowbreak{}down are 0–6.\\[2pt]\hline
 
-RMSNorm uses widened square sums,\allowbreak{} integer square root and reciprocal. RoPE coefficients are signed Q2.30. Attention uses max-subtracted softmax and a range-reduced six-term exponential,\allowbreak{} zero below -16. SiLU uses a sign-stable sigmoid formulation. Required nonfinite data,\allowbreak{} invalid scales and zero denominators produce explicit errors rather than sanitized outputs.
-
-\subsection{Independent floating baseline}
-
-The official FP32 path decodes original F16 bytes directly,\allowbreak{} avoiding the earlier floating baseline's fixed-point-converted model inputs. struct-based binary32 rounding follows every elementary arithmetic operation,\allowbreak{} with separate multiply/\allowbreak{}add and increasing-index reductions. Host math transcendental results are rounded to FP32. Floating RoPE coefficients are generated independently of Q2.30 coefficients; binary64 is used for metric postprocessing.
-
-\subsection{Ordering and recovery}
-
-Acceptance enters busy without immediate request transfer or completion. A request precedes its response by at least one edge. GEMV consumes all eight lane products on the edge following the packed-weight response. Invalid tokens preserve committed sequence state. Memory,\allowbreak{} child or nonfinite-data failures invalidate continuation and require a fresh position-zero sequence. Acknowledged writes are not rolled back; integration must discard obsolete responses after reset.
-
-\section{Verification methods and measured results}
-
-\subsection{Authentic raw-checkpoint provenance}
-
-\textbf{Method.} Standard-library safetensors parsing,\allowbreak{} whole-file and per-tensor SHA-256 validation,\allowbreak{} shape/\allowbreak{}offset checks,\allowbreak{} original-manifest reconciliation and raw-hex excerpt comparison.
-
-\textbf{Result.} Validated 54 extracted tensors against the 627-tensor,\allowbreak{} 168-linear-module inventory and cross-checked 552 excerpt values. Checkpoint SHA-256: f274ceb6\allowbreak{}f71ac3a9\allowbreak{}dd0f10ad\allowbreak{}68007da8\allowbreak{}dedfd102\allowbreak{}ac129b12\allowbreak{}411b26f8\allowbreak{}85a67ef0.
-
-{\small Evidence: E015,\allowbreak{} E024}
-
-\subsection{All official projection submatrices}
-
-\textbf{Method.} Public-interface Icarus simulation of seven 64x64 projections in each of checkpoint layers 0 and 23,\allowbreak{} with independent integer and FP32 calculations.
-
-\textbf{Result.} 14 commands completed; 57,\allowbreak{}344 products and 896 output writes covered; zero bit mismatches. Aggregate projection-component cosine=\allowbreak{}0.999999999973,\allowbreak{} MAE=\allowbreak{}0.0000412546506,\allowbreak{} RMSE=\allowbreak{}0.0000633708054 and maximum absolute error=\allowbreak{}0.000299543142. These are projection metrics,\allowbreak{} not vocabulary-logit metrics.
-
-{\small Evidence: E013,\allowbreak{} E015,\allowbreak{} E024}
-
-\subsection{Four-token official-slice top-level execution}
-
-\textbf{Method.} Software Layer (\allowbreak{}Official HuggingFace FP32/\allowbreak{}FP16 AWQ Weights)\allowbreak{} versus Hardware RTL Output (\allowbreak{}Official HuggingFace W4A16 RTL Execution)\allowbreak{},\allowbreak{} with every ordered write and logit compared to the integer oracle. Tokens 0,\allowbreak{}1 are prefill; tokens 59,\allowbreak{}59 are software-argmax-selected decode at positions 2,\allowbreak{}3.
-
-\textbf{Result.} 4/\allowbreak{}4 tokens completed; zero mismatches across 6,\allowbreak{}144 writes and 256 logits. Concatenated-logit cosine=\allowbreak{}0.999999299592,\allowbreak{} MAE=\allowbreak{}0.000706030267,\allowbreak{} RMSE=\allowbreak{}0.000841981995 and maximum absolute error=\allowbreak{}0.001879334450. Top-1 agreement,\allowbreak{} top-5 overlap/\allowbreak{}5 and exact top-5-set agreement were 1.0 for every token,\allowbreak{} with ascending-index tie-breaking. No saturation or numerical violations were recorded.
-
-{\small Evidence: E012,\allowbreak{} E015,\allowbreak{} E024}
-
-\subsection{Cycle and transaction accounting}
-
-\textbf{Method.} Count elapsed rising-edge intervals from token acceptance to final-logit transfer,\allowbreak{} recording completion retirement separately and partitioning accepted memory traffic by token,\allowbreak{} kind,\allowbreak{} access,\allowbreak{} layer and projection.
-
-\textbf{Result.} Token latencies were 62,\allowbreak{}782; 67,\allowbreak{}013; 71,\allowbreak{}255; and 75,\allowbreak{}507 cycles: 276,\allowbreak{}557 active-token cycles total,\allowbreak{} averaging 69,\allowbreak{}139.25 cycles/\allowbreak{}token. Retirement was one cycle later per token. The stalled run accepted 90,\allowbreak{}952 memory transactions,\allowbreak{} with 4,\allowbreak{}143 request-stall cycles and 58 logit-stall cycles. These are observed stalled timings,\allowbreak{} not a no-stall baseline.
-
-{\small Evidence: E015,\allowbreak{} E024}
-
-\subsection{Retained parameter and numerical regressions}
-
-\textbf{Method.} A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D each ran seeds 17,\allowbreak{}43,\allowbreak{}89. In L,\allowbreak{}H,\allowbreak{}I,\allowbreak{}QH,\allowbreak{}KVH,\allowbreak{}D,\allowbreak{}G,\allowbreak{}V,\allowbreak{}SEQ order: A=\allowbreak{}(\allowbreak{}2,\allowbreak{}16,\allowbreak{}32,\allowbreak{}4,\allowbreak{}2,\allowbreak{}4,\allowbreak{}8,\allowbreak{}17,\allowbreak{}4)\allowbreak{},\allowbreak{} B=\allowbreak{}(\allowbreak{}2,\allowbreak{}112,\allowbreak{}128,\allowbreak{}14,\allowbreak{}2,\allowbreak{}8,\allowbreak{}16,\allowbreak{}19,\allowbreak{}3)\allowbreak{},\allowbreak{} C=\allowbreak{}(\allowbreak{}1,\allowbreak{}24,\allowbreak{}48,\allowbreak{}6,\allowbreak{}2,\allowbreak{}4,\allowbreak{}3,\allowbreak{}11,\allowbreak{}3)\allowbreak{},\allowbreak{} D=\allowbreak{}(\allowbreak{}1,\allowbreak{}8,\allowbreak{}8,\allowbreak{}2,\allowbreak{}2,\allowbreak{}4,\allowbreak{}8,\allowbreak{}1,\allowbreak{}1)\allowbreak{}. Directed arithmetic,\allowbreak{} protocol,\allowbreak{} reset,\allowbreak{} error and cache tests supplemented these 12 runs.
-
-\textbf{Result.} All passed,\allowbreak{} including non-power-of-two grouping and singleton boundaries. Limits remained 2/\allowbreak{}256 for isolated nonsaturating operations,\allowbreak{} 16/\allowbreak{}256 for final-normalized components and 16/\allowbreak{}256+\allowbreak{}0.01*\allowbreak{}abs(\allowbreak{}reference)\allowbreak{} per nonsaturating logit. Exponential maximum absolute error was 0.0000140080433 against 0.00003 over 4,\allowbreak{}199 comparisons; public SiLU covered 8,\allowbreak{}200 comparisons.
-
-{\small Evidence: E016,\allowbreak{} E024}
-
-\subsection{Sensitivity to meaningful defects}
-
-\textbf{Method.} Disposable mutations exercised wrong lanes,\allowbreak{} omitted biases,\allowbreak{} GQA/\allowbreak{}RoPE errors,\allowbreak{} future/\allowbreak{}stale cache,\allowbreak{} skipped layers and narrowed dequantizer/\allowbreak{}product/\allowbreak{}accumulator arithmetic. Separate fixtures tested corrupted or malformed checkpoint inputs and uncovered coordinates.
-
-\textbf{Result.} The sensitivity check passed with intended functional kills and parser/\allowbreak{}coverage rejections. Compilation failure or timeout was not accepted as a hardware mutation kill; authoritative checkpoint files remained unchanged.
-
-{\small Evidence: E015,\allowbreak{} E016,\allowbreak{} E025}
-
-\subsection{Synthesizable connected hardware}
-
-\textbf{Method.} Yosys hierarchy checking,\allowbreak{} process and memory lowering,\allowbreak{} optimization,\allowbreak{} check -assert and JSON inspection for A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D.
-
-\textbf{Result.} All four configurations passed with zero latches and substantive sequential state. Both concrete GEMVs retained eight connected lanes consuming all 37 dequantized output bits per lane. These findings establish generic structural integrity,\allowbreak{} not technology-mapped area,\allowbreak{} timing or physical performance.
-
-{\small Evidence: E002,\allowbreak{} E004,\allowbreak{} E011,\allowbreak{} E013,\allowbreak{} E016,\allowbreak{} E026}
-
-\subsection{Icarus toolchain portability}
-
-\textbf{Method.} Matched Icarus 12 and 13 drivers,\allowbreak{} compiler components and runtimes; warning-clean default/\allowbreak{}A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D elaboration and an identical public-pin configuration-D protocol test on each.
-
-\textbf{Result.} Both majors passed ten elaborations in total and matched-runtime protocol tests,\allowbreak{} including four invalid tokens,\allowbreak{} three reset aborts and one injected memory error per runtime. Explicit component matching prevented incompatible installed tool components from being mixed.
-
-{\small Evidence: E016,\allowbreak{} E027}
-
-\section{Integration and use}
-
-Use rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv as the integration boundary,\allowbreak{} compiling rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv before the remaining RTL. Exact arithmetic,\allowbreak{} scratch slots and addresses are documented in design/\allowbreak{}SPEC.md; official-coordinate mapping and precision semantics are in design/\allowbreak{}OFFICIAL\_\allowbreak{}WEIGHTS\_\allowbreak{}EVALUATION.md.
-
-
-Preserve the mounted official\_\allowbreak{}weights directory and model JSONs. Serve packed I32 words unchanged and F16 values as original low-halfword bits. Embedding and tied-logit reads must resolve to the same storage. Unknown coordinates must fail explicitly,\allowbreak{} never return synthetic defaults.
-
-
-Provide external scratch,\allowbreak{} KV and RoPE services with stable stalled requests and strictly later responses,\allowbreak{} including write acknowledgements. Apply reset across a rising edge and discard obsolete responses. Submit tokens only on token\_\allowbreak{}ready; drain every logit and require done without error.
-
-
-Recorded entry commands are \texttt{python3 tests/\allowbreak{}verify.py --check behavior --out evidence/\allowbreak{}verification/\allowbreak{}functional},\allowbreak{} \texttt{python3 tests/\allowbreak{}verify.py --check behavior --probe mutations --out evidence/\allowbreak{}verification/\allowbreak{}sensitivity},\allowbreak{} \texttt{python3 tests/\allowbreak{}verify.py --check synthesis --out evidence/\allowbreak{}verification/\allowbreak{}synthesis} and \texttt{python3 tests/\allowbreak{}verify.py --check portability --out evidence/\allowbreak{}verification/\allowbreak{}portability}. Occupied destinations are refused and must not be overwritten.
-
-
-Dependencies are Python standard library,\allowbreak{} Icarus iverilog/\allowbreak{}vvp and Yosys; portability additionally requires matched Icarus 12/\allowbreak{}13 toolchains. Read evidence/\allowbreak{}verification/\allowbreak{}official\_\allowbreak{}weights\_\allowbreak{}comparison.json or its functional-directory counterpart for the passed bounded comparison,\allowbreak{} exact provenance,\allowbreak{} per-token metrics and transaction ledger. The checks ran in the supplied environment; separate clean-directory reproduction is not established.
-
-
-\section{Limitations and acceptance boundary}
-
-The mounted slice is the authoritative Phase 2 evaluation scope,\allowbreak{} not a complete model checkpoint. Layers 1..22,\allowbreak{} most packed input rows and embedding rows beyond 63 were not evaluated. The two-layer fixture preserves authentic selected coordinates and 7:1 GQA but changes head dimension and geometry; it does not establish full 24-layer inference or language-generation quality.
-
-
-The FP32 baseline specifies reduction and rounding order,\allowbreak{} not equivalence to an unspecified GPU AWQ kernel. Reported RTL greedy agreement is one-step agreement at shared software-selected prefixes,\allowbreak{} not a separately executed autonomous rollout.
-
-
-Default dimensions were elaborated; functional and generic-synthesis coverage used bounded configurations. No formal all-parameter proof,\allowbreak{} physical implementation,\allowbreak{} clock-frequency measurement,\allowbreak{} timing closure,\allowbreak{} power estimate or silicon throughput claim is provided.
-
-
-Tokenization,\allowbreak{} sampling,\allowbreak{} physical memory transport and system-level recovery remain external responsibilities. The serialized interface assumes reliable response association and obsolete-response disposal after reset. Completed writes and already transferred logits cannot be retracted.
-
-
-\appendix\section{Source inventory}
-
-Production inventory: 13 Verilog/\allowbreak{}SystemVerilog files; 1223 nonblank,\allowbreak{} non-comment lines. Source size is not a correctness or quality metric.
-
-{\small\begin{longtable}{@{}L{0.61\textwidth}L{0.15\textwidth}L{0.15\textwidth}@{}}\toprule
-
-\textbf{Producti\allowbreak{}on file} & \textbf{Physical lines} & \textbf{Code lines}\\\midrule\endhead
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv & 106 & 106\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}awq\_\allowbreak{}dequant.sv & 38 & 38\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}bus\_\allowbreak{}mux.sv & 35 & 35\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer.sv & 107 & 107\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}elementw\allowbreak{}ise.sv & 91 & 91\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}gqa\_\allowbreak{}attentio\allowbreak{}n.sv & 151 & 151\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}mem\_\allowbreak{}port.sv & 49 & 49\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}paramete\allowbreak{}rs.sv & 27 & 27\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rmsnorm.sv & 113 & 113\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rope.sv & 97 & 97\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}swiglu\_\allowbreak{}mlp.sv & 75 & 75\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv & 151 & 151\\[3pt]
-
-rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}w4a16\_\allowbreak{}gemv.sv & 183 & 183\\[3pt]
+mem\_\allowbreak{}rsp\_\allowbreak{}*\allowbreak{} & Input except mem\_\allowbreak{}rsp\_\allowbreak{}ready output & valid/\allowbreak{}ready/\allowbreak{}error: 1; rdata: 32 bits & Every accepted request,\allowbreak{} including a write,\allowbreak{} receives exactly one strictly later response. Request and response transfers never coincide. Packed I32 words remain intact; F16 model values occupy the low halfword.\\[2pt]\hline
 
 \bottomrule\end{longtable}}
 
-\section{Verification record index}
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.22\textwidth}|L{0.21\textwidth}|L{0.49\textwidth}@{}}\toprule
 
-{\small\begin{longtable}{@{}L{0.57\textwidth}L{0.16\textwidth}L{0.17\textwidth}@{}}\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Meaning /\allowbreak{} supported values}\\\midrule\endhead
 
-\textbf{Recorded check} & \textbf{Outcome} & \textbf{Executio\allowbreak{}n time (\allowbreak{}s)\allowbreak{}}\\\midrule\endhead
+NUM\_\allowbreak{}LAYERS & 24 & Positive; the reused decoder executes every configured layer.\\[2pt]\hline
 
-behavior & passed & 419.328\\[3pt]
+HIDDEN\_\allowbreak{}SIZE,\allowbreak{} INTERMEDIATE\_\allowbreak{}SIZE & 896,\allowbreak{} 4864 & Positive,\allowbreak{} eight-aligned and divisible by GROUP\_\allowbreak{}SIZE; HIDDEN\_\allowbreak{}SIZE equals NUM\_\allowbreak{}Q\_\allowbreak{}HEADS*\allowbreak{}HEAD\_\allowbreak{}DIM.\\[2pt]\hline
 
-sensitiv\allowbreak{}ity & passed & 15.016\\[3pt]
+NUM\_\allowbreak{}Q\_\allowbreak{}HEADS,\allowbreak{} NUM\_\allowbreak{}KV\_\allowbreak{}HEADS,\allowbreak{} HEAD\_\allowbreak{}DIM & 14,\allowbreak{} 2,\allowbreak{} 64 & Positive; integral query/\allowbreak{}KV ratio,\allowbreak{} even head dimension and eight-aligned flattened KV channels.\\[2pt]\hline
 
-synthesi\allowbreak{}s & passed & 89.119\\[3pt]
+GROUP\_\allowbreak{}SIZE,\allowbreak{} AWQ\_\allowbreak{}BITS & 128,\allowbreak{} 4 & Positive group size; only four-bit AWQ is supported. Legal non-power-of-two groups are supported.\\[2pt]\hline
 
-portabil\allowbreak{}ity & passed & 5.315\\[3pt]
+VOCAB\_\allowbreak{}SIZE,\allowbreak{} MAX\_\allowbreak{}SEQ\_\allowbreak{}LEN & 151936,\allowbreak{} 32768 & Positive; context is at most 16777215. Unsigned-128 validation rejects dimensions and checked address products exceeding declared 32-bit limits.\\[2pt]\hline
+
+\bottomrule\end{longtable}}
+
+\needspace{16\baselineskip}\section{Behavior and corner cases}
+
+\subsection{Transformer computation}
+
+Each layer performs RMSNorm,\allowbreak{} biased Q/\allowbreak{}K/\allowbreak{}V projections,\allowbreak{} split-half RoPE with theta=\allowbreak{}1e6,\allowbreak{} causal GQA,\allowbreak{} O projection and residual addition,\allowbreak{} followed by post-attention RMSNorm,\allowbreak{} SwiGLU and the second residual. Normalization uses epsilon=\allowbreak{}1e-6. Final RMSNorm precedes tied vocabulary projection,\allowbreak{} which rereads embedding storage. Tokenization and sampling remain external.
+
+\needspace{10\baselineskip}\subsection{Exact fixed-point semantics}
+
+Both packed AWQ words use lane shifts [\allowbreak{}0,\allowbreak{}16,\allowbreak{}4,\allowbreak{}20,\allowbreak{}8,\allowbreak{}24,\allowbreak{}12,\allowbreak{}28]\allowbreak{},\allowbreak{} with w=\allowbreak{}(\allowbreak{}q-z)\allowbreak{}*\allowbreak{}s and no GPTQ +\allowbreak{}1. Ordinary finite F16 values convert to signed Q16.16 using nearest/\allowbreak{}ties-away rounding and saturation. Scales instead convert to unsigned-32 without signed-range clipping. Dequantized weights are signed-37,\allowbreak{} activation products signed-69 and complete GEMV sums signed-128,\allowbreak{} including bias before final rounding. Tied logits use signed-96 sums; RoPE coefficients use Q2.30. Partial sums are not saturated,\allowbreak{} and required nonfinite model values fail explicitly.
+
+\needspace{10\baselineskip}\subsection{Independent software baseline}
+
+The official floating path decodes raw binary16 directly rather than passing model values through Q16.16. struct-based binary32 rounding follows elementary operations,\allowbreak{} with separate multiplication/\allowbreak{}addition and increasing-index reductions. Host square-root,\allowbreak{} exponential and trigonometric results are rounded to FP32. Max-subtracted softmax and stable SiLU branches avoid avoidable overflow. This defines a reproducible FP32 reference,\allowbreak{} not equivalence to an unspecified GPU reduction kernel.
+
+\needspace{10\baselineskip}\subsection{Sequence and error handling}
+
+Acceptance enters busy before any request transfers. Position advances only at the final logit transfer. A new sequence logically isolates old KV without clearing physical storage. Invalid tokens enter pending-error completion without memory effects or committed-position changes. Memory,\allowbreak{} child or nonfinite-data failures invalidate the sequence and require fresh position-zero new\_\allowbreak{}sequence recovery; acknowledged writes are not rolled back. Integration must discard obsolete responses after reset.
+
+\needspace{10\baselineskip}\subsection{Official checkpoint mapping}
+
+The top fixture uses (\allowbreak{}L,\allowbreak{}H,\allowbreak{}I,\allowbreak{}QH,\allowbreak{}KVH,\allowbreak{}D,\allowbreak{}G,\allowbreak{}V,\allowbreak{}SEQ)\allowbreak{}=\allowbreak{}(\allowbreak{}2,\allowbreak{}56,\allowbreak{}56,\allowbreak{}14,\allowbreak{}2,\allowbreak{}4,\allowbreak{}56,\allowbreak{}64,\allowbreak{}4)\allowbreak{}. Logical layers 0/\allowbreak{}1 map to checkpoint layers 0/\allowbreak{}23. Embedding rows are [\allowbreak{}0:64]\allowbreak{},\allowbreak{} with components [\allowbreak{}0:56]\allowbreak{}; norms and projection inputs use [\allowbreak{}0:56]\allowbreak{}. Q/\allowbreak{}O/\allowbreak{}MLP outputs use [\allowbreak{}0:56]\allowbreak{},\allowbreak{} K/\allowbreak{}V outputs [\allowbreak{}0:8]\allowbreak{}. Original G128 metadata group zero applies throughout these input rows despite the reduced fixture geometry. Standalone 64x64 projection tests likewise use original group zero. No missing weights are padded or manufactured; uncovered addresses fail with tensor coordinates.
+
+\needspace{10\baselineskip}\subsection{Timing-path resolution}
+
+Runtime combinational division was replaced by clocked restoring dividers and explicit group/\allowbreak{}head counters. RMSNorm's long unrolled square-root path became 64 clocked iterations,\allowbreak{} and an exact registered x*\allowbreak{}gamma product separates chained multipliers. Integer equations and ordered transactions remain unchanged,\allowbreak{} while latency increases. Fresh functional,\allowbreak{} synthesis and portability results cover these repaired sources [\allowbreak{}E010,\allowbreak{} E015,\allowbreak{} E035–E038]\allowbreak{}.
+
+\needspace{16\baselineskip}\section{Verification methods and measured results}
+
+\subsection{Authentic checkpoint provenance}
+
+\textbf{Method.} Whole-file and per-tensor SHA-256 verification; direct safetensors parsing; dtype,\allowbreak{} shape,\allowbreak{} offset,\allowbreak{} range and excerpt-coordinate validation.
+
+\textbf{Result.} All 54 extracted tensors validated; 552 raw excerpt values cross-checked. The original inventory contains 627 tensors and 168 quantized linear modules. Integrity verification passed without substituting JSON decimal excerpts for raw payloads.
+
+{\small Evidence: E018,\allowbreak{} E035,\allowbreak{} E043}
+
+\needspace{12\baselineskip}\subsection{All official projection submatrices}
+
+\textbf{Method.} 14 completed 64x64 GEMV commands covering seven projections in each of checkpoint layers 0 and 23; independent FP32,\allowbreak{} integer oracle and public-pin RTL comparison.
+
+\textbf{Result.} 57,\allowbreak{}344 products and zero mismatches across 896 output writes. Aggregate cosine=\allowbreak{}0.9999999999730884,\allowbreak{} maximum absolute error=\allowbreak{}0.000299543142,\allowbreak{} MAE=\allowbreak{}0.0000412546506 and RMSE=\allowbreak{}0.0000633708054.
+
+{\small Evidence: E043}
+
+\needspace{12\baselineskip}\subsection{Software Layer versus Hardware RTL Output}
+
+\textbf{Method.} Software Layer (\allowbreak{}Official HuggingFace FP32/\allowbreak{}FP16 AWQ Weights)\allowbreak{} versus Hardware RTL Output (\allowbreak{}Official HuggingFace W4A16 RTL Execution)\allowbreak{},\allowbreak{} using two prefill and two decode tokens with retained KV and identical software-selected IDs [\allowbreak{}0,\allowbreak{}1,\allowbreak{}59,\allowbreak{}59]\allowbreak{}.
+
+\textbf{Result.} 4/\allowbreak{}4 tokens completed. Zero mismatches across 6,\allowbreak{}144 ordered scratch/\allowbreak{}KV writes and 256 logits. Aggregate cosine=\allowbreak{}0.9999992995916652,\allowbreak{} maximum absolute error=\allowbreak{}0.00187933445,\allowbreak{} MAE=\allowbreak{}0.000706030267 and RMSE=\allowbreak{}0.000841981995. Top-1 agreement,\allowbreak{} top-5 overlap/\allowbreak{}5 and exact top-5-set agreement were 100\%,\allowbreak{} with lowest-index tie-breaking. No saturation or numerical violations were recorded.
+
+{\small Evidence: E043}
+
+\needspace{12\baselineskip}\subsection{Cycle and memory accounting}
+
+\textbf{Method.} Public token-acceptance to final-logit rising-edge intervals F-A,\allowbreak{} with separate retirement latency and accepted transaction ledgers by token,\allowbreak{} kind,\allowbreak{} access,\allowbreak{} layer and projection.
+
+\textbf{Result.} Token cycles were 150100,\allowbreak{} 209524,\allowbreak{} 270721 and 325267: total 955612,\allowbreak{} mean 238903 cycles/\allowbreak{}token. Retirement adds one interval. Recorded timing includes 4514 request-stall and 54 logit-stall cycles; it is not a no-stall baseline.
+
+{\small Evidence: E043}
+
+\needspace{12\baselineskip}\subsection{Retained functional and numerical coverage}
+
+\textbf{Method.} A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D configurations at seeds 17,\allowbreak{}43,\allowbreak{}89,\allowbreak{} including protocol stalls,\allowbreak{} reset,\allowbreak{} errors,\allowbreak{} active-X/\allowbreak{}Z rejection,\allowbreak{} causal-cache isolation and arithmetic boundaries.
+
+\textbf{Result.} All 12 configuration/\allowbreak{}seed cells passed. Exponential maximum mathematical error=\allowbreak{}1.40080433e-5 against 3e-5; 8,\allowbreak{}200 public SiLU comparisons passed. Nonsaturating isolated-stage,\allowbreak{} final-normalized and logit limits remain 2/\allowbreak{}256,\allowbreak{} 16/\allowbreak{}256 and 16/\allowbreak{}256+\allowbreak{}0.01*\allowbreak{}abs(\allowbreak{}reference)\allowbreak{},\allowbreak{} respectively.
+
+{\small Evidence: E035}
+
+\needspace{12\baselineskip}\subsection{Fault sensitivity and input rejection}
+
+\textbf{Method.} Disposable lane,\allowbreak{} bias,\allowbreak{} GQA,\allowbreak{} RoPE,\allowbreak{} cache,\allowbreak{} skipped-layer and former narrow-arithmetic mutations,\allowbreak{} plus corrupt/\allowbreak{}malformed checkpoint and missing-coverage fixtures.
+
+\textbf{Result.} Sensitivity passed through intended functional assertions after successful compilation,\allowbreak{} not timeout-based kills. Parser fixtures produced explicit intended rejections without modifying authoritative inputs.
+
+{\small Evidence: E035,\allowbreak{} E036}
+
+\needspace{12\baselineskip}\subsection{Synthesis and simulator portability}
+
+\textbf{Method.} Yosys A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D lowering,\allowbreak{} optimization,\allowbreak{} hierarchy/\allowbreak{}connectivity assertions and netlist inspection; matched Icarus 12/\allowbreak{}13 elaboration and runtime checks.
+
+\textbf{Result.} All four netlists had zero latches and zero combinational division/\allowbreak{}modulus. Sequential-cell counts were A/\allowbreak{}B/\allowbreak{}C=\allowbreak{}155 and D=\allowbreak{}158. Both concrete GEMVs consumed all eight 37-bit lane outputs. Default and A/\allowbreak{}B/\allowbreak{}C/\allowbreak{}D portability checks passed.
+
+{\small Evidence: E037,\allowbreak{} E038}
+
+\needspace{12\baselineskip}\subsection{L1 RTL timing lint}
+
+\textbf{Method.} Inspection of all 16 RTL files for combinational divider/\allowbreak{}modulo,\allowbreak{} LUT clock-gate and mixed-assignment hazards.
+
+\textbf{Result.} Passed with no listed hazards; maximum combinational-divider width=\allowbreak{}0.
+
+{\small Evidence: E040}
+
+\needspace{12\baselineskip}\subsection{L2 Quartus TimeQuest setup timing}
+
+\textbf{Method.} Intel Quartus Prime 17.1 post-map STA at a 40 ns clock period,\allowbreak{} using reduced two-layer H=\allowbreak{}I=\allowbreak{}16 hardware.
+
+\textbf{Result.} Recorded gate passed: WNS\_\allowbreak{}setup=\allowbreak{}+\allowbreak{}27.218 ns with zero failing setup paths. WNS\_\allowbreak{}hold=\allowbreak{}-0.173 ns with 20 failing hold paths; complete setup-and-hold closure is not established.
+
+{\small Evidence: E041}
+
+\needspace{12\baselineskip}\subsection{L3 physical Arria 10 FPGA HIL}
+
+\textbf{Method.} Physical FPGA programming/\allowbreak{}reconfiguration followed by repeated register-level execution and readback.
+
+\textbf{Result.} 3/\allowbreak{}3 runs passed deterministically with matching readbacks and no missing expected or forbidden result markers. This physical HIL result is separate from the official-slice simulation comparison denominator.
+
+{\small Evidence: E042}
+
+\needspace{12\baselineskip}\subsection{Supplemental dialogue material: outside verified results}
+
+\textbf{Method.} Documentary inspection of retained dialogue arrays and sample telemetry,\allowbreak{} without new execution.
+
+\textbf{Result.} E044 and E045 are unverified supplemental summaries. They do not establish a linked executed model implementation,\allowbreak{} checkpoint inputs,\allowbreak{} comparison procedure and raw execution receipt sufficient to substantiate their numerical claims. Their token-agreement,\allowbreak{} layer-execution,\allowbreak{} cosine and mismatch assertions are therefore excluded from verified measurements and do not establish full-model inference or language quality.
+
+{\small Evidence: E044,\allowbreak{} E045}
+
+\needspace{18\baselineskip}\section{Software-vs-Hardware Evaluation, Quartus 17.1 STA and Physical FPGA Verification}
+
+\subsection{Official Weights Software-Layer vs Hardware-RTL Simulation Comparison}
+
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.38\textwidth}|L{0.26\textwidth}|L{0.28\textwidth}@{}}\toprule
+
+\textbf{Metric} & \textbf{Measured Value} & \textbf{Signoff Notes}\\\midrule\endhead
+
+Completed Official Tokens & 4 & Status: PASSED\\[2pt]\hline
+
+Aggregate Cosine Similarity (\allowbreak{}FP32 vs RTL)\allowbreak{} & 0.99999929\allowbreak{}96 & Top-1 /\allowbreak{} Top-5 agreement =\allowbreak{} 1.000\\[2pt]\hline
+
+Max /\allowbreak{} Mean Absolute Error & 1.879334e-03 /\allowbreak{} 7.060303e-04 & RMSE: 8.419820e-04 (\allowbreak{}RTL simulation vs FP32)\allowbreak{}\\[2pt]\hline
+
+Exact Bit Mismatches (\allowbreak{}RTL vs Integer Oracle)\allowbreak{} & 0 & 100\% bit-exact RTL simulation match\\[2pt]\hline
+
+\bottomrule\end{longtable}}
+
+\needspace{8\baselineskip}\subsection{Unified Hardware Signoff Gates (L1 Lint, L2 Quartus STA, L3 Physical FPGA)}
+
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.34\textwidth}|L{0.12\textwidth}|L{0.46\textwidth}@{}}\toprule
+
+\textbf{Hardware Signoff Gate} & \textbf{Status} & \textbf{Measured Verification Summary}\\\midrule\endhead
+
+L1 Static RTL Timing \& Synthesis Lint & PASSED & Combinational div/\allowbreak{}mod hazards: 0; mixed sequential assignments (\allowbreak{}10268)\allowbreak{}: 0\\[2pt]\hline
+
+L2 Quartus 17.1 TimeQuest STA (\allowbreak{}Arria 10 10AX115N\allowbreak{}3F40E2SG)\allowbreak{} & PASSED & WNS\_\allowbreak{}setup =\allowbreak{} +\allowbreak{}27.218 ns,\allowbreak{} failing setup endpoints =\allowbreak{} 0,\allowbreak{} WNS\_\allowbreak{}hold =\allowbreak{} -0.173 ns (\allowbreak{}hold violations =\allowbreak{} 20)\allowbreak{},\allowbreak{} lpm\_\allowbreak{}divide errors =\allowbreak{} 0,\allowbreak{} 10268 warnings =\allowbreak{} 0\\[2pt]\hline
+
+L3 Physical Arria 10 FPGA HIL (\allowbreak{}netsys17 Bedrock 2.1)\allowbreak{} & PASSED & ChipId 23645547\allowbreak{}32299776\allowbreak{}5: 3 runs,\allowbreak{} deterministic\_\allowbreak{}across\_\allowbreak{}runs =\allowbreak{} True\\[2pt]\hline
+
+\bottomrule\end{longtable}}
+
+\begin{center}\begin{minipage}{\textwidth}\centering\begin{tikzpicture}[font=\scriptsize\sffamily]
+
+\draw[draw=black!25,fill=vulcan!2,rounded corners=3pt] (-0.5,-2.1) rectangle (7.5,2.2);
+
+\node[anchor=north west,font=\footnotesize\sffamily\bfseries,text=vulcan!90!black] at (-0.3,2.05) {(a) Quartus 17.1 TimeQuest Setup Timing Closure};
+
+\node[anchor=west,font=\tiny\bfseries] at (-0.3,1.35) {Target Clock: 40.0 ns (25.0 MHz) | WNS = +27.218 ns (TNS = 0.000 ns)};
+
+\node[anchor=south west,font=\tiny\bfseries,text=blue!70!black] at (-0.2,0.82) {Delay: 12.782 ns};
+
+\node[anchor=south east,font=\tiny\bfseries,text=green!45!black] at (5.600,0.82) {Setup Slack: +27.218 ns};
+
+\fill[blue!60!black] (-0.2,0.28) rectangle (1.653,0.78);
+
+\fill[green!55!black] (1.653,0.28) rectangle (5.600,0.78);
+
+\draw[black!70,thick] (-0.2,0.28) rectangle (5.600,0.78);
+
+\node[text=white,font=\tiny\bfseries] at (0.727,0.53) {32\%};
+
+\node[text=white,font=\tiny\bfseries] at (3.627,0.53) {68\%};
+
+\node[anchor=west,font=\tiny,text=green!45!black] at (-0.3,-0.15) {\textbullet{} Failing Setup Endpoints: \textbf{0} \quad \textbullet{} Unrolled \texttt{lpm\_divide} Cores: \textbf{0}};
+
+\node[anchor=west,font=\tiny,text=green!45!black] at (-0.3,-0.65) {\textbullet{} Mixed Blocking/Non-Blocking Warnings (10268): \textbf{0}};
+
+\node[anchor=west,font=\tiny,text=black!75] at (-0.3,-1.25) {Device: \textbf{Intel Arria 10 GX (10AX115N3F40E2SG)} | Netlist: Post-Synthesis STA};
+
+\draw[draw=black!25,fill=vulcan!2,rounded corners=3pt] (7.8,-2.1) rectangle (15.6,2.2);
+
+\node[anchor=north west,font=\footnotesize\sffamily\bfseries,text=vulcan!90!black] at (8.0,2.05) {(b) Arria 10 Resource Utilization (0--100\% Scale)};
+
+\node[anchor=west,font=\tiny] at (8.0,1.15) {ALMs (Logic)};
+
+\draw[black!25] (10.1,1.02) rectangle (12.3,1.28);
+
+\fill[vulcan!80] (10.1,1.02) rectangle (10.21273,1.28);
+
+\node[anchor=west,font=\tiny\bfseries] at (12.4,1.15) {21,890 / 427,200 (5.12\%)};
+
+\node[anchor=west,font=\tiny] at (8.0,0.45) {Dedicated Regs};
+
+\draw[black!25] (10.1,0.32) rectangle (12.3,0.58);
+
+\fill[blue!65!black] (10.1,0.32) rectangle (10.11187,0.58);
+
+\node[anchor=west,font=\tiny\bfseries] at (12.4,0.45) {9,221 / 1,708,800 (0.54\%)};
+
+\node[anchor=west,font=\tiny] at (8.0,-0.25) {M20K BRAMs};
+
+\draw[black!25] (10.1,-0.38) rectangle (12.3,-0.12);
+
+\fill[teal!75!black] (10.1,-0.38) rectangle (10.10081,-0.12);
+
+\node[anchor=west,font=\tiny\bfseries] at (12.4,-0.25) {1 / 2,713 (0.04\%)};
+
+\node[anchor=west,font=\tiny] at (8.0,-0.95) {18x19 DSPs};
+
+\draw[black!25] (10.1,-1.08) rectangle (12.3,-0.82);
+
+\fill[orange!80!black] (10.1,-1.08) rectangle (10.41739,-0.82);
+
+\node[anchor=west,font=\tiny\bfseries] at (12.4,-0.95) {219 / 1,518 (14.43\%)};
+
+\node[anchor=west,font=\tiny,text=black!70] at (8.0,-1.65) {Linear 0\%--100\% capacity bars; sub-1\% values shown at right.};
+
+\end{tikzpicture}\par\vspace{3pt}
+
+{\small\textbf{Figure 3:} (a) Intel Quartus Prime 17.1 TimeQuest static timing budget showing positive setup slack (\texttt{WNS\_setup > 0 ns}) and zero failing endpoints; (b) synthesized Intel Arria 10 GX resource utilization on a linear 0\%--100\% capacity scale.}\end{minipage}\end{center}
+
+\needspace{8\baselineskip}\subsection{Physical FPGA On-Board Register Readback (netsys17)}
+
+\begin{center}\begin{minipage}{\textwidth}\centering\begin{tikzpicture}[font=\scriptsize\sffamily,>=latex]
+
+\draw[draw=black!25,fill=vulcan!2,rounded corners=3pt] (-0.4,-1.45) rectangle (15.6,1.55);
+
+\node[anchor=north west,font=\footnotesize\sffamily\bfseries,text=vulcan!90!black] at (-0.2,1.42) {Physical Hardware-in-the-Loop Diagnostic Pipeline (netsys17 — Arria 10 GX)};
+
+\node[draw=blue!70!black,fill=blue!6,rounded corners=2pt,minimum width=2.8cm,minimum height=1.1cm,align=center] (h) at (1.3,-0.1) {\textbf{Host Server}\\{\tiny \texttt{netsys17} WinServer}\\{\tiny \texttt{FpgaDiagnostics}}};
+
+\node[draw=vulcan,fill=vulcan!8,rounded corners=2pt,minimum width=3.0cm,minimum height=1.1cm,align=center] (s) at (5.3,-0.1) {\textbf{Bedrock 2.1 Shell}\\{\tiny PCIe Gen3x8 \texttt{BAR0}}\\{\tiny \texttt{Reg57=0xb2} @ 100 MHz}};
+
+\node[draw=teal!75!black,fill=teal!8,rounded corners=2pt,minimum width=3.1cm,minimum height=1.1cm,align=center] (r) at (9.5,-0.1) {\textbf{Role CDC \& BRAM}\\{\tiny RSU Slot 1 (\texttt{.rpd} 128 MB)}\\{\tiny 4096\texttimes{}32 M20K @ 25 MHz}};
+
+\node[draw=green!50!black,fill=green!8,rounded corners=2pt,minimum width=3.1cm,minimum height=1.1cm,align=center] (c) at (13.6,-0.1) {\textbf{Recorded Board HIL}\\{\tiny 3 Runs Executed}\\{\tiny \textbf{Deterministic Across Runs}}};
+
+\draw[<->,thick,black!70] (h.east) -- node[above,font=\tiny] {PCIe MMIO} (s.west);
+
+\draw[<->,thick,black!70] (s.east) -- node[above,font=\tiny] {SoftReg} (r.west);
+
+\draw[<->,thick,black!70] (r.east) -- node[above,font=\tiny] {Mem/Job} (c.west);
+
+\end{tikzpicture}\par\vspace{3pt}
+
+{\small\textbf{Figure 4:} Recorded physical FPGA hardware-in-the-loop diagnostic pipeline on \texttt{netsys17} (ChipId \texttt{23645547322997765}) across three deterministic runs (\texttt{board-hil.json}).}\end{minipage}\end{center}
+
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.44\textwidth}|L{0.48\textwidth}@{}}\toprule
+
+\textbf{PCIe BAR0 SoftReg Operation} & \textbf{Physical Arria 10 Readback Value (\allowbreak{}3/\allowbreak{}3 Runs Identical)\allowbreak{}}\\\midrule\endhead
+
+Wrote soft shell register 3 (\allowbreak{}0x000000\allowbreak{}03)\allowbreak{} & 2 (\allowbreak{}0x000000\allowbreak{}00000000\allowbreak{}02)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 0 (\allowbreak{}0x000000\allowbreak{}00)\allowbreak{} & 47057935\allowbreak{}33462663\allowbreak{}473 (\allowbreak{}0x414e56\allowbreak{}494c5f51\allowbreak{}31)\allowbreak{}\\[2pt]\hline
+
+Wrote soft shell register 3 (\allowbreak{}0x000000\allowbreak{}03)\allowbreak{} & 256 (\allowbreak{}0x000000\allowbreak{}00000001\allowbreak{}00)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 2 (\allowbreak{}0x000000\allowbreak{}02)\allowbreak{} & 43116298\allowbreak{}38 (\allowbreak{}0x000000\allowbreak{}0100fe40\allowbreak{}0e)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 11 (\allowbreak{}0x000000\allowbreak{}0b)\allowbreak{} & 1040580 (\allowbreak{}0x000000\allowbreak{}00000fe0\allowbreak{}c4)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 12 (\allowbreak{}0x000000\allowbreak{}0c)\allowbreak{} & 26388279\allowbreak{}151432 (\allowbreak{}0x000018\allowbreak{}0000014b\allowbreak{}48)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 13 (\allowbreak{}0x000000\allowbreak{}0d)\allowbreak{} & 16607277\allowbreak{}03286585\allowbreak{}1 (\allowbreak{}0x003b00\allowbreak{}3b003b00\allowbreak{}3b)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 16 (\allowbreak{}0x000000\allowbreak{}10)\allowbreak{} & 18446744\allowbreak{}07370951\allowbreak{}7846 (\allowbreak{}0xffffff\allowbreak{}ffffff7c\allowbreak{}16)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 17 (\allowbreak{}0x000000\allowbreak{}11)\allowbreak{} & 3705 (\allowbreak{}0x000000\allowbreak{}0000000e\allowbreak{}79)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 18 (\allowbreak{}0x000000\allowbreak{}12)\allowbreak{} & 18446744\allowbreak{}07370954\allowbreak{}0389 (\allowbreak{}0xffffff\allowbreak{}ffffffd4\allowbreak{}25)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 19 (\allowbreak{}0x000000\allowbreak{}13)\allowbreak{} & 51154 (\allowbreak{}0x000000\allowbreak{}000000c7\allowbreak{}d2)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 20 (\allowbreak{}0x000000\allowbreak{}14)\allowbreak{} & 40191 (\allowbreak{}0x000000\allowbreak{}0000009c\allowbreak{}ff)\allowbreak{}\\[2pt]\hline
+
+Read soft shell register 21 (\allowbreak{}0x000000\allowbreak{}15)\allowbreak{} & 62422 (\allowbreak{}0x000000\allowbreak{}000000f3\allowbreak{}d6)\allowbreak{}\\[2pt]\hline
+
+\bottomrule\end{longtable}}
+
+\needspace{9\baselineskip}\section{Integration and use}
+
+Compile rtl/\allowbreak{}*\allowbreak{}.sv with anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv first and anvil\_\allowbreak{}q1\_\allowbreak{}top selected as top. Verification enters through tests/\allowbreak{}verify.py; tests/\allowbreak{}official\_\allowbreak{}weights.py supplies raw-checkpoint parsing and independent arithmetic models. Dependencies are Python standard library,\allowbreak{} iverilog/\allowbreak{}vvp and Yosys; NumPy is not required.
+
+
+Implement the tensor-address mapping and scratch contract in design/\allowbreak{}SPEC.md and design/\allowbreak{}OFFICIAL\_\allowbreak{}WEIGHTS\_\allowbreak{}EVALUATION.md. Scratch slots 0–12 hold residual and decoder intermediates,\allowbreak{} 13 is reserved and 14 holds final normalization. KV uses layer,\allowbreak{} position and flattened component; RoPE uses position and head-local pair/\allowbreak{}cosine-sine selection.
+
+
+Assert reset across a rising edge,\allowbreak{} then submit an in-range position-zero token with new\_\allowbreak{}sequence asserted. Hold command fields until acceptance,\allowbreak{} acknowledge every memory request including writes,\allowbreak{} and consume every logit before relying on completion. Apply fresh-sequence recovery after execution errors.
+
+
+Recorded verification entry points are python3 tests/\allowbreak{}verify.py --check behavior,\allowbreak{} python3 tests/\allowbreak{}verify.py --check behavior --probe mutations,\allowbreak{} python3 tests/\allowbreak{}verify.py --check synthesis and python3 tests/\allowbreak{}verify.py --check portability. Each requires --out followed by its admitted fresh destination; occupied evidence destinations must not be reused.
+
+
+The official comparison is retained in evidence/\allowbreak{}verification/\allowbreak{}official\_\allowbreak{}weights\_\allowbreak{}comparison.json. Existing receipts preserve commands,\allowbreak{} tool versions,\allowbreak{} source inventories and per-case results. These are recorded executions,\allowbreak{} not a newly performed clean-directory reproduction.
+
+
+\needspace{9\baselineskip}\section{Limitations and acceptance boundary}
+
+The verified official result is bounded slice execution,\allowbreak{} not a complete 24-layer,\allowbreak{} 151936-logit RTL forward pass. Mounted data supplies 64 embedding rows,\allowbreak{} checkpoint layers 0/\allowbreak{}23 and the first 64 qweight input rows. Reduced head dimensions and group geometry preserve the stated coordinate mapping,\allowbreak{} not complete-model equivalence.
+
+
+Software-versus-RTL ranking agreement is measured at identical software-selected prefixes,\allowbreak{} not an independently executed autonomous RTL rollout. The supplemental dialogue summaries E044/\allowbreak{}E045 remain unverified and provide no additional accepted numerical or full-model execution coverage.
+
+
+L1 lint,\allowbreak{} L2 Quartus setup analysis and L3 physical Arria 10 HIL passed within their recorded scopes. L2 is post-map and retains negative hold slack and 20 failing hold paths. Physical register-readback success does not extend the official-slice simulation denominator or establish unrestricted full-model hardware deployment.
+
+
+Simulation cycles are not silicon throughput; the STA clock constraint is not an inferred maximum operating frequency. No power measurement,\allowbreak{} complete fitted resource budget,\allowbreak{} ASIC area or larger-model scaling performance is established.
+
+
+External memory control,\allowbreak{} tokenization and sampling remain integration responsibilities. Matched Icarus portability was demonstrated,\allowbreak{} but clean-directory portable-delivery reproduction was not established by the cited checks.
+
+
+\appendix\needspace{9\baselineskip}\section{Source inventory}
+
+Production inventory: 16 Verilog/\allowbreak{}SystemVerilog files; 1434 nonblank,\allowbreak{} non-comment lines. Source size is not a correctness or quality metric.
+
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.55\textwidth}|L{0.18\textwidth}|L{0.18\textwidth}@{}}\toprule
+
+\textbf{Production file} & \textbf{Physical lines} & \textbf{Code lines}\\\midrule\endhead
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}00\_\allowbreak{}pkg.sv & 63 total & 63 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}awq\_\allowbreak{}dequant.sv & 38 total & 38 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}bus\_\allowbreak{}mux.sv & 35 total & 35 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer.sv & 107 total & 107 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}elementwise.sv & 103 total & 103 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}exp.sv & 61 total & 61 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}gqa\_\allowbreak{}attention.sv & 189 total & 189 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}mem\_\allowbreak{}port.sv & 49 total & 49 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}parameters.sv & 27 total & 27 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rmsnorm.sv & 155 total & 155 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rope.sv & 97 total & 97 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}silu.sv & 52 total & 52 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}swiglu\_\allowbreak{}mlp.sv & 75 total & 75 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv & 151 total & 151 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}unsigned\_\allowbreak{}divider.sv & 45 total & 45 code\\[2pt]\hline
+
+rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}w4a16\_\allowbreak{}gemv.sv & 187 total & 187 code\\[2pt]\hline
+
+\bottomrule\end{longtable}}
+
+\needspace{9\baselineskip}\section{Verification record index}
+
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.57\textwidth}|L{0.16\textwidth}|L{0.17\textwidth}@{}}\toprule
+
+\textbf{Recorded check} & \textbf{Outcome} & \textbf{Execution time (\allowbreak{}s)\allowbreak{}}\\\midrule\endhead
+
+behavior & passed & 615.587\\[2pt]\hline
+
+sensitivity & passed & 17.082\\[2pt]\hline
+
+synthesis & passed & 53.554\\[2pt]\hline
+
+portability & passed & 5.914\\[2pt]\hline
+
+timing-repair-01-behavior & passed & 637.655\\[2pt]\hline
+
+timing-repair-01-sensitivity & passed & 17.351\\[2pt]\hline
+
+timing-repair-01-synthesis & passed & 52.962\\[2pt]\hline
+
+timing-repair-01-portability & passed & 5.961\\[2pt]\hline
+
+timing-repair-02-behavior & passed & 644.465\\[2pt]\hline
+
+timing-repair-02-sensitivity & passed & 18.401\\[2pt]\hline
+
+timing-repair-02-synthesis & passed & 56.983\\[2pt]\hline
+
+timing-repair-02-portability & passed & 6.004\\[2pt]\hline
+
+rmsnorm-sequential-01-behavior & passed & 643.769\\[2pt]\hline
+
+rmsnorm-sequential-01-sensitivity & passed & 17.483\\[2pt]\hline
+
+rmsnorm-sequential-01-synthesis & passed & 54.057\\[2pt]\hline
+
+rmsnorm-sequential-01-portability & passed & 6.021\\[2pt]\hline
 
 \bottomrule\end{longtable}}
 
 Execution times include tool and provider waiting; they are not hardware latency or model utilization.
 
-{\small\begin{longtable}{@{}L{0.12\textwidth}L{0.82\textwidth}@{}}\toprule
+{\small\renewcommand{\arraystretch}{1.18}\begin{longtable}{@{}L{0.12\textwidth}|L{0.82\textwidth}@{}}\toprule
 
-\textbf{Referenc\allowbreak{}e} & \textbf{Original project-relative record}\\\midrule\endhead
+\textbf{Reference} & \textbf{Original project-relative record}\\\midrule\endhead
 
-E002 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}awq\_\allowbreak{}dequant.sv\\[3pt]
+E004 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer.sv\\[2pt]\hline
 
-E004 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}decoder\_\allowbreak{}layer.sv\\[3pt]
+E010 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}rmsnorm.sv\\[2pt]\hline
 
-E011 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}swiglu\_\allowbreak{}mlp.sv\\[3pt]
+E014 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv\\[2pt]\hline
 
-E012 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}top.sv\\[3pt]
+E015 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}unsigned\_\allowbreak{}divider.sv\\[2pt]\hline
 
-E013 & rtl/\allowbreak{}anvil\_\allowbreak{}q1\_\allowbreak{}w4a16\_\allowbreak{}gemv.sv\\[3pt]
+E018 & tests/\allowbreak{}official\_\allowbreak{}weights.py\\[2pt]\hline
 
-E015 & tests/\allowbreak{}official\_\allowbreak{}weights.py\\[3pt]
+E035 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}attempt-0996/\allowbreak{}stdout.log\\[2pt]\hline
 
-E016 & tests/\allowbreak{}verify.py\\[3pt]
+E036 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}attempt-0997/\allowbreak{}stdout.log\\[2pt]\hline
 
-E024 & .vulcan/\allowbreak{}engineer\allowbreak{}ing/\allowbreak{}run-0001/\allowbreak{}attempt-0004/\allowbreak{}stdout.log\\[3pt]
+E037 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}attempt-0998/\allowbreak{}stdout.log\\[2pt]\hline
 
-E025 & .vulcan/\allowbreak{}engineer\allowbreak{}ing/\allowbreak{}run-0001/\allowbreak{}attempt-0005/\allowbreak{}stdout.log\\[3pt]
+E038 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}attempt-0999/\allowbreak{}stdout.log\\[2pt]\hline
 
-E026 & .vulcan/\allowbreak{}engineer\allowbreak{}ing/\allowbreak{}run-0001/\allowbreak{}attempt-0006/\allowbreak{}stdout.log\\[3pt]
+E040 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}rtl-timing-lint.json\\[2pt]\hline
 
-E027 & .vulcan/\allowbreak{}engineer\allowbreak{}ing/\allowbreak{}run-0001/\allowbreak{}attempt-0007/\allowbreak{}stdout.log\\[3pt]
+E041 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}quartus-sta.json\\[2pt]\hline
+
+E042 & .vulcan/\allowbreak{}engineering/\allowbreak{}run-0002/\allowbreak{}board-hil.json\\[2pt]\hline
+
+E043 & evidence/\allowbreak{}verification/\allowbreak{}official\_\allowbreak{}weights\_\allowbreak{}comparison.json\\[2pt]\hline
+
+E044 & .vulcan/\allowbreak{}evidence/\allowbreak{}post-hil-q1/\allowbreak{}formal\_\allowbreak{}24layer\_\allowbreak{}dialogue.json\\[2pt]\hline
+
+E045 & .vulcan/\allowbreak{}evidence/\allowbreak{}post-hil-q1/\allowbreak{}multi\_\allowbreak{}domain\_\allowbreak{}dialogue.json\\[2pt]\hline
 
 \bottomrule\end{longtable}}
 
@@ -443,6 +667,6 @@ E027 & .vulcan/\allowbreak{}engineer\allowbreak{}ing/\allowbreak{}run-0001/\allo
 
 Engineering was independently accepted for the recorded source and evidence identity. This is not exhaustive proof, hardware deployment or physical signoff. The companion REPORT.md records the exact report approval and source manifest, and links the English/Chinese journeys containing original failures and interventions. A report number identifies a generation attempt, not a new hardware revision.
 
-No developer attribution was supplied; none has been inferred.
+Developer attribution is explicitly supplied project metadata, not inferred affiliation or institutional endorsement.
 
 \end{document}

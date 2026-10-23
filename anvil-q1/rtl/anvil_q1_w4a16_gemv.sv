@@ -17,6 +17,7 @@ module anvil_q1_w4a16_gemv #(
   reg [4:0] state;
   reg failed;
   reg [31:0] layer, pos, k, c, inputs, outputs, source_slot, target_slot;
+  reg [31:0] group_index, group_offset;
   reg [2:0] projection;
   reg [31:0] qw, qz;
   reg [15:0] scales [0:7];
@@ -80,9 +81,9 @@ module anvil_q1_w4a16_gemv #(
     request_valid=0; wr=0; kind=0; row=0; col=0; wd=0; ml=0; mp=0;
     if (rst_n) case(state)
       1: begin request_valid=1; kind=8; row=source_slot; col=k; end
-      3: begin request_valid=1; kind=1; ml=layer; mp=projection; row=k; col=c/8; end
-      5: begin request_valid=1; kind=2; ml=layer; mp=projection; row=k/SAFE_GROUP; col=c/8; end
-      7: begin request_valid=1; kind=3; ml=layer; mp=projection; row=k/SAFE_GROUP; col=c+{29'd0,lane}; end
+      3: begin request_valid=1; kind=1; ml=layer; mp=projection; row=k; col=c>>3; end
+      5: begin request_valid=1; kind=2; ml=layer; mp=projection; row=group_index; col=c>>3; end
+      7: begin request_valid=1; kind=3; ml=layer; mp=projection; row=group_index; col=c+{29'd0,lane}; end
       11: begin request_valid=1; kind=4; ml=layer; mp=projection; col=c+{29'd0,lane}; end
       13: begin
         request_valid=1; wr=1; kind=8; row=target_slot; col=c+{29'd0,lane};
@@ -94,6 +95,7 @@ module anvil_q1_w4a16_gemv #(
   always @(posedge clk) begin
     if (!rst_n) begin
       state<=0; failed<=0; layer<=0; pos<=0; k<=0; c<=0;
+      group_index<=0; group_offset<=0;
       inputs<=0; outputs<=0; source_slot<=0; target_slot<=0;
       projection<=0; qw<=0; qz<=0; lane<=0; activation<=0;
       for(i=0;i<8;i=i+1) begin scales[i]<=0; accumulators[i]<=0; end
@@ -141,8 +143,9 @@ module anvil_q1_w4a16_gemv #(
            lane<=0;
            if(k+1<inputs) begin
              k<=k+1;
-             if((k+1)/SAFE_GROUP!=k/SAFE_GROUP) state<=5;
-             else state<=1;
+             if(group_offset==SAFE_GROUP-1) begin
+               group_offset<=0; group_index<=group_index+1; state<=5;
+             end else begin group_offset<=group_offset+1; state<=1; end
            end
            else if(projection<3) state<=11;
            else state<=13;
@@ -168,6 +171,7 @@ module anvil_q1_w4a16_gemv #(
       end
       16: begin
         qw<=0; qz<=0; activation<=0; lane<=0;
+        group_index<=0; group_offset<=0;
         for(i=0;i<8;i=i+1) begin scales[i]<=0; accumulators[i]<=0; end
         state<=5;
       end
