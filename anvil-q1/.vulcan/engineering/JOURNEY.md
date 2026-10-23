@@ -10,7 +10,7 @@ This is a milestone/tool-boundary record, not a token transcript or independent 
 
 New backend tool streams: .vulcan/runtime/agent_io.jsonl. Historical records remain at their original locations.
 
-**Last event:** 108
+**Last event:** 109
 
 ## Workflow setup
 
@@ -2193,4 +2193,35 @@ Full checkpoint and selection details remain in journal.jsonl.
 > ["vulcan-workflow.json", ".vulcan/engineering/state.json", ".vulcan/engineering/reports/report-0006/manifest.json", ".vulcan/engineering/reports/published.json", ".vulcan/engineering/run-0002"]
 **scope:**
 > Recorded stage snapshot, not current acceptance or external issue/campaign closure. Retained failures are historical; experience history is not revalidated admission.
+Full checkpoint and selection details remain in journal.jsonl.
+
+### 0109 - Report stage paused
+**UTC:** 2026-10-23T16:26:07+00:00 | **Beijing:** 2026-10-24T00:26:07+08:00
+
+**status:** blocked
+
+**summary:**
+> Product reports require a completed, currently independently accepted work order
+
+**Task checkpoint**
+**kind:**
+> report_blocked
+**reason:**
+> Product reports require a completed, currently independently accepted work order
+**owner:**
+> operator
+**engineering_status:**
+> null
+**independently_accepted:**
+> null
+**delivery_status:**
+> null
+**report_candidate_status:**
+> null
+**next_action:**
+> Resolve the recorded prerequisite or report/input failure, then retry report generation. Recheck current engineering acceptance before continuing.
+**evidence:**
+> ["vulcan-workflow.json", ".vulcan/engineering"]
+**scope:**
+> Failure observation only. Current acceptance and delivery are not re-evaluated: their status reader may have caused this failure. Null fields are unavailable, not approval.
 Full checkpoint and selection details remain in journal.jsonl.

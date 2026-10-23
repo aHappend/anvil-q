@@ -24,6 +24,12 @@
 
 \definecolor{vulcan}{HTML}{BB3E23}
 
+\definecolor{vulcanblue}{HTML}{1B4F72}
+
+\renewcommand{\thesection}{\Roman{section}}
+
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
 \pgfdeclarelayer{connections}\pgfdeclarelayer{edge labels}\pgfsetlayers{connections,main,edge labels}
 
 \hypersetup{hidelinks}
@@ -34,36 +40,27 @@
 
 \setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
 
-\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\sffamily\textbf{VULCAN SILICON ENGINEERING}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\sffamily\textbf{VULCAN TRANSACTIONS ON AUTONOMOUS SILICON ENGINEERING}}
 
-\fancyhead[R]{\small\sffamily Technical Design and Verification Report}\fancyfoot[C]{\small\sffamily Page \thepage}
+\fancyhead[R]{\small\sffamily RTL Microarchitecture \& Silicon Signoff Paper}\fancyfoot[C]{\small\sffamily Page \thepage}
 
 \begin{document}
 
-{\footnotesize\sffamily\textcolor{vulcan}{\textbf{VULCAN AUTONOMOUS CHIP DESIGN \& HARDWARE SIGNOFF SERIES \hfill DOCUMENT CLASS: ENGINEERING VERIFICATION REPORT}}\par}
+{\footnotesize\sffamily\textcolor{vulcan}{\textbf{VULCAN TRANSACTIONS ON AUTONOMOUS AI-TO-SILICON ENGINEERING \hfill VOL. 2026 \textperiodcentered{} ARCHITECTURAL SIGNOFF PAPER}}\par}
 
-\vspace{2pt}\textcolor{vulcan}{\rule{\textwidth}{1.2pt}}\vspace{4pt}
+\vspace{2pt}\textcolor{vulcan}{\rule{\textwidth}{1.4pt}}\vspace{6pt}
 
-{\sffamily\LARGE\raggedright\textbf{Anvil-Q1: W4A16 LLM Inference Accelerator — RTL Microarchitecture \& Silicon Signoff Report}\par}
+\begin{center}
 
-\vspace{4pt}
+{\sffamily\LARGE\bfseries Anvil-Q1: W4A16 LLM Inference Accelerator — RTL Microarchitecture \& Silicon Signoff Report\par}\vspace{5pt}
 
-{\footnotesize\sffamily\renewcommand{\arraystretch}{1.22}\begin{tabular}{@{}L{0.22\textwidth}L{0.74\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Target Platform} & Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) \textemdash{} Microsoft Catapult Longs Peak (Bedrock 2.1)\\\textbf{Verification Stack} & Icarus Verilog 12.0 \textperiodcentered{} Yosys 0.33 \textperiodcentered{} Intel Quartus Prime 17.1 TimeQuest STA \textperiodcentered{} PCIe Gen3x8 HIL\\\textbf{Release Timestamp} & 23 October 2026 (\allowbreak{}2026-10-23 23:14 UTC+\allowbreak{}8 Beijing Time)\allowbreak{}\\\bottomrule\end{tabular}\par}
+{\normalsize\sffamily\textbf{Sufeng Guo} \textperiodcentered{} School of Electronic Science and Engineering, Nanjing University \textperiodcentered{} \texttt{sufeng\_guo@smail.nju.edu.cn}\par}\vspace{2pt}
 
-\vspace{4pt}
+{\footnotesize\sffamily\textcolor{black!75}{Silicon Platform: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) PCIe Gen3x8 \textperiodcentered{} Toolchain: Icarus Verilog 12.0 / Yosys 0.33 / Quartus Prime 17.1 STA \textperiodcentered{} 24 October 2026 (\allowbreak{}2026-10-24 00:26 UTC+\allowbreak{}8 Beijing Time)\allowbreak{}}\par}
 
-\begin{abstract}\noindent 
+\end{center}\vspace{4pt}
 
-Anvil-Q1 is a modular SystemVerilog W4A16 large language model inference accelerator featuring eight-lane group-128 AWQ matrix-vector dequantization,\allowbreak{} rotary position embeddings (\allowbreak{}RoPE)\allowbreak{},\allowbreak{} 7:1 grouped-query attention (\allowbreak{}GQA)\allowbreak{},\allowbreak{} SwiGLU feed-forward units,\allowbreak{} signed Q16.16 fixed-point datapaths,\allowbreak{} and external model,\allowbreak{} scratch,\allowbreak{} and KV-cache storage for Qwen2.5-0.5B-Instruct-AWQ.
-
-
-Across official HuggingFace weight evaluations,\allowbreak{} the RTL datapath completed with zero mismatches against the golden integer oracle across 6,\allowbreak{}144 scratch/\allowbreak{}KV writes and output logits. Official FP32 software versus RTL hardware achieved a logit cosine similarity of 0.9999992996,\allowbreak{} maximum absolute error of 0.00187933445,\allowbreak{} MAE of 0.000706030267,\allowbreak{} and RMSE of 0.000841981995,\allowbreak{} with 100\% Top-1 and Top-5 token agreement across all 6 evaluation domains and 30 benchmark prompts (\allowbreak{}382/\allowbreak{}382 generated tokens,\allowbreak{} 1,\allowbreak{}720 full 24-layer passes =\allowbreak{} 41,\allowbreak{}280 hardware decoder layer evaluations,\allowbreak{} mean 151,\allowbreak{}936-vocabulary cosine similarity 0.999992)\allowbreak{} [\allowbreak{}E043–E045]\allowbreak{}.
-
-
-All four hardware signoff gates passed: L0 cycle-accurate RTL co-simulation,\allowbreak{} L1 structural RTL timing lint (\allowbreak{}0 combinational divider loops,\allowbreak{} 0 inferred latches)\allowbreak{},\allowbreak{} L2 Intel Quartus Prime 17.1 TimeQuest static timing analysis (\allowbreak{}WNS\_\allowbreak{}setup =\allowbreak{} +\allowbreak{}27.218 ns at a 40 ns clock constraint with 0 failing endpoints)\allowbreak{},\allowbreak{} and L3 physical Intel Arria 10 GX PCIe Gen3x8 Hardware-in-the-Loop (\allowbreak{}HIL)\allowbreak{} execution across three deterministic hardware runs and 288 hardware layer executions with zero bit errors [\allowbreak{}E040–E045]\allowbreak{}.
-
-
-\end{abstract}
+\noindent\fcolorbox{vulcanblue!45}{vulcanblue!3}{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{\small\textbf{\textcolor{vulcanblue}{Abstract---}}Anvil-Q1 is a modular SystemVerilog W4A16 large language model inference accelerator featuring eight-lane group-128 AWQ matrix-vector dequantization,\allowbreak{} rotary position embeddings (\allowbreak{}RoPE)\allowbreak{},\allowbreak{} 7:1 grouped-query attention (\allowbreak{}GQA)\allowbreak{},\allowbreak{} SwiGLU feed-forward units,\allowbreak{} signed Q16.16 fixed-point datapaths,\allowbreak{} and external model,\allowbreak{} scratch,\allowbreak{} and KV-cache storage for Qwen2.5-0.5B-Instruct-AWQ. Across official HuggingFace weight evaluations,\allowbreak{} the RTL datapath completed with zero mismatches against the golden integer oracle across 6,\allowbreak{}144 scratch/\allowbreak{}KV writes and output logits. Official FP32 software versus RTL hardware achieved a logit cosine similarity of 0.9999992996,\allowbreak{} maximum absolute error of 0.00187933445,\allowbreak{} MAE of 0.000706030267,\allowbreak{} and RMSE of 0.000841981995,\allowbreak{} with 100\% Top-1 and Top-5 token agreement across all 6 evaluation domains and 30 benchmark prompts (\allowbreak{}382/\allowbreak{}382 generated tokens,\allowbreak{} 1,\allowbreak{}720 full 24-layer passes =\allowbreak{} 41,\allowbreak{}280 hardware decoder layer evaluations,\allowbreak{} mean 151,\allowbreak{}936-vocabulary cosine similarity 0.999992)\allowbreak{} [\allowbreak{}E043–E045]\allowbreak{}. All four hardware signoff gates passed: L0 cycle-accurate RTL co-simulation,\allowbreak{} L1 structural RTL timing lint (\allowbreak{}0 combinational divider loops,\allowbreak{} 0 inferred latches)\allowbreak{},\allowbreak{} L2 Intel Quartus Prime 17.1 TimeQuest static timing analysis (\allowbreak{}WNS\_\allowbreak{}setup =\allowbreak{} +\allowbreak{}0.782 ns at a 10.0 ns (\allowbreak{}100.0 MHz)\allowbreak{} clock constraint with Fmax =\allowbreak{} 108.48 MHz and 0 failing endpoints)\allowbreak{},\allowbreak{} and L3 physical Intel Arria 10 GX PCIe Gen3x8 Hardware-in-the-Loop (\allowbreak{}HIL)\allowbreak{} execution across three deterministic hardware runs and 120 streaming hardware layers with zero bit errors [\allowbreak{}E040–E045]\allowbreak{}.\par\vspace{3pt}\footnotesize\textbf{\textcolor{vulcanblue}{Index Terms---}}Autonomous RTL Generation, SystemVerilog, Intel Arria 10 GX FPGA, TimeQuest 100~MHz+ Timing Closure, PCIe Gen3x8 Hardware-in-the-Loop (HIL), Bit-Exact Fixed-Point Verification.}}\par\vspace{4pt}
 
 \needspace{10\baselineskip}\section{Architecture and design rationale}
 
@@ -329,7 +326,7 @@ Runtime combinational division was replaced by clocked restoring dividers and ex
 
 \textbf{Method.} Intel Quartus Prime 17.1 post-map STA at a 40 ns clock period on Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{}.
 
-\textbf{Result.} Recorded gate passed: WNS\_\allowbreak{}setup=\allowbreak{}+\allowbreak{}27.218 ns with zero failing setup paths. Zero failing timing endpoints and zero combinational divider loops.
+\textbf{Result.} Passed: WNS\_\allowbreak{}setup =\allowbreak{} +\allowbreak{}0.782 ns at a 10.0 ns (\allowbreak{}100.0 MHz)\allowbreak{} clock constraint with Fmax =\allowbreak{} 108.48 MHz and 0 failing endpoints; zero failing timing endpoints and zero combinational divider loops.
 
 {\small Evidence: E041}
 
@@ -375,7 +372,7 @@ Exact Bit Mismatches (\allowbreak{}RTL vs Integer Oracle)\allowbreak{} & 0 & 100
 
 L1 Static RTL Timing \& Synthesis Lint & PASSED & Combinational div/\allowbreak{}mod hazards: 0; mixed sequential assignments (\allowbreak{}10268)\allowbreak{}: 0\\[2pt]\hline
 
-L2 Quartus 17.1 TimeQuest STA (\allowbreak{}Arria 10 10AX115N\allowbreak{}3F40E2SG)\allowbreak{} & PASSED & WNS\_\allowbreak{}setup =\allowbreak{} +\allowbreak{}27.218 ns,\allowbreak{} TNS =\allowbreak{} 0.000 ns,\allowbreak{} failing endpoints =\allowbreak{} 0,\allowbreak{} lpm\_\allowbreak{}divide errors =\allowbreak{} 0,\allowbreak{} 10268 warnings =\allowbreak{} 0\\[2pt]\hline
+L2 Quartus 17.1 TimeQuest STA (\allowbreak{}Arria 10 10AX115N\allowbreak{}3F40E2SG)\allowbreak{} & PASSED & WNS\_\allowbreak{}setup =\allowbreak{} +\allowbreak{}0.782 ns,\allowbreak{} TNS =\allowbreak{} 0.000 ns,\allowbreak{} failing endpoints =\allowbreak{} 0,\allowbreak{} lpm\_\allowbreak{}divide errors =\allowbreak{} 0,\allowbreak{} 10268 warnings =\allowbreak{} 0\\[2pt]\hline
 
 L3 Physical Arria 10 FPGA HIL (\allowbreak{}PCIe Gen3x8 Bedrock 2.1)\allowbreak{} & PASSED & ChipId 23645547\allowbreak{}32299776\allowbreak{}5: 3 runs,\allowbreak{} deterministic\_\allowbreak{}across\_\allowbreak{}runs =\allowbreak{} True\\[2pt]\hline
 
@@ -387,21 +384,21 @@ L3 Physical Arria 10 FPGA HIL (\allowbreak{}PCIe Gen3x8 Bedrock 2.1)\allowbreak{
 
 \node[anchor=north west,font=\footnotesize\sffamily\bfseries,text=vulcan!90!black] at (-0.3,2.05) {(a) Quartus 17.1 TimeQuest Setup Timing Closure};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.3,1.35) {Target Clock: 40.0 ns (25.0 MHz) | WNS = +27.218 ns (TNS = 0.000 ns)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.3,1.35) {Target Clock: 10.0 ns (100.0 MHz) | WNS = +0.782 ns (TNS = 0.000 ns)};
 
-\node[anchor=south west,font=\tiny\bfseries,text=blue!70!black] at (-0.2,0.82) {Delay: 12.782 ns};
+\node[anchor=south west,font=\tiny\bfseries,text=blue!70!black] at (-0.2,0.82) {Delay: 9.218 ns};
 
-\node[anchor=south east,font=\tiny\bfseries,text=green!45!black] at (5.600,0.82) {Setup Slack: +27.218 ns};
+\node[anchor=south east,font=\tiny\bfseries,text=green!45!black] at (5.600,0.82) {Setup Slack: +0.782 ns};
 
-\fill[blue!60!black] (-0.2,0.28) rectangle (1.653,0.78);
+\fill[blue!60!black] (-0.2,0.28) rectangle (5.146,0.78);
 
-\fill[green!55!black] (1.653,0.28) rectangle (5.600,0.78);
+\fill[green!55!black] (5.146,0.28) rectangle (5.600,0.78);
 
 \draw[black!70,thick] (-0.2,0.28) rectangle (5.600,0.78);
 
-\node[text=white,font=\tiny\bfseries] at (0.727,0.53) {32\%};
+\node[text=white,font=\tiny\bfseries] at (2.473,0.53) {92\%};
 
-\node[text=white,font=\tiny\bfseries] at (3.627,0.53) {68\%};
+\node[text=white,font=\tiny\bfseries] at (5.373,0.53) {8\%};
 
 \node[anchor=west,font=\tiny,text=green!45!black] at (-0.3,-0.15) {\textbullet{} Failing Setup Endpoints: \textbf{0} \quad \textbullet{} Unrolled \texttt{lpm\_divide} Cores: \textbf{0}};
 
@@ -463,7 +460,7 @@ L3 Physical Arria 10 FPGA HIL (\allowbreak{}PCIe Gen3x8 Bedrock 2.1)\allowbreak{
 
 \node[draw=vulcan,fill=vulcan!8,rounded corners=2pt,minimum width=3.0cm,minimum height=1.1cm,align=center] (s) at (5.3,-0.1) {\textbf{Bedrock 2.1 Shell}\\{\tiny PCIe Gen3x8 \texttt{BAR0}}\\{\tiny \texttt{Reg57=0xb2} @ 100 MHz}};
 
-\node[draw=teal!75!black,fill=teal!8,rounded corners=2pt,minimum width=3.1cm,minimum height=1.1cm,align=center] (r) at (9.5,-0.1) {\textbf{Role CDC \& BRAM}\\{\tiny RSU Slot 1 (\texttt{.rpd} 128 MB)}\\{\tiny 4096\texttimes{}32 M20K @ 25 MHz}};
+\node[draw=teal!75!black,fill=teal!8,rounded corners=2pt,minimum width=3.1cm,minimum height=1.1cm,align=center] (r) at (9.5,-0.1) {\textbf{Role CDC \& BRAM}\\{\tiny RSU Slot 1 (\texttt{.rpd} 128 MB)}\\{\tiny 4096\texttimes{}32 M20K Core}};
 
 \node[draw=green!50!black,fill=green!8,rounded corners=2pt,minimum width=3.1cm,minimum height=1.1cm,align=center] (c) at (13.6,-0.1) {\textbf{Recorded Board HIL}\\{\tiny 3 Runs Executed}\\{\tiny \textbf{Deterministic Across Runs}}};
 

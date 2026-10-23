@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-10-21T17:00:50.851401+00:00",
+  "timestamp_utc": "2026-10-23T16:13:26.518482+00:00",
   "project_dir": "/data/sufeng/anvil-q-line5/workspace_phase2/project/.vulcan/engineering/run-0002/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -23,153 +23,153 @@
     "clocks": [
       {
         "name": "clk_main",
-        "period_ns": 40.0
+        "period_ns": 10.0
       }
     ],
-    "wns_setup_ns": 27.218,
+    "wns_setup_ns": 0.782,
     "wns_hold_ns": -0.173,
     "failing_setup_count": 0,
     "failing_hold_count": 20,
     "setup_paths": [
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[7][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[7][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[29]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[7][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[7][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[29]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[6][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[6][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[15]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[6][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[6][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[15]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[5][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[5][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[28]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[5][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[5][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[28]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[4][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[4][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[9]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[4][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[4][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[9]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[0][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[0][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[16]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[0][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[0][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[16]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[2][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[2][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[0]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[2][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[2][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[0]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[1][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[1][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[20]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[1][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[1][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[20]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[3][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[3][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[4]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[3][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[3][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[4]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[4][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[4][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[7]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|scales[4][10]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|accumulators[4][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[7]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[2][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[2][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[22]"
       },
       {
-        "slack_ns": 27.218,
+        "slack_ns": 0.782,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_w4a16_gemv:gemv|scales[2][10]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|accumulators[2][127]"
+        "to_node": "anvil_q1_rope:rope|Mult2~506~reg0|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|wd[22]"
       }
     ],
     "hold_paths": [
@@ -178,35 +178,35 @@
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "position[18]|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|position[18]"
+        "to_node": "position[7]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|position[7]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_rmsnorm:norm|index[15]|anvil_q1_decoder_layer:decoder|anvil_q1_rmsnorm:norm|anvil_q1_mem_port:memory_port|cl[15]"
+        "to_node": "layer[12]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|layer[12]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "layer[14]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|layer[14]"
+        "from_node": "layer[18]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[18]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
-        "from_node": "layer[0]",
-        "to_node": "anvil_q1_decoder_layer:decoder|layer[0]"
+        "from_node": "layer[9]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[9]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_elementwise:residual|index[23]|anvil_q1_decoder_layer:decoder|anvil_q1_elementwise:residual|anvil_q1_mem_port:memory_port|cl[23]"
+        "from_node": "layer[11]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[11]"
       },
       {
         "slack_ns": -0.173,
@@ -220,106 +220,109 @@
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "layer[25]|anvil_q1_decoder_layer:decoder|anvil_q1_rmsnorm:norm|layer[25]"
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|index[19]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_q1_mem_port:memory_port|cl[19]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "position[1]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|position[1]"
+        "to_node": "anvil_q1_rmsnorm:norm|layer[1]|anvil_q1_decoder_layer:decoder|anvil_q1_rmsnorm:norm|anvil_q1_mem_port:memory_port|ly[1]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "layer[25]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[25]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "layer[26]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[26]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "layer[27]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|layer[27]"
+        "to_node": "anvil_q1_elementwise:residual|index[28]|anvil_q1_decoder_layer:decoder|anvil_q1_elementwise:residual|anvil_q1_mem_port:memory_port|cl[28]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "layer[31]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[31]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "layer[15]",
+        "to_node": "anvil_q1_decoder_layer:decoder|layer[15]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "layer[30]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|layer[30]"
+        "to_node": "anvil_q1_gqa_attention:attention|layer[1]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|anvil_q1_mem_port:memory_port|ly[1]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "position[11]",
+        "to_node": "anvil_q1_decoder_layer:decoder|position[11]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "position[13]",
+        "to_node": "anvil_q1_decoder_layer:decoder|position[13]"
+      },
+      {
+        "slack_ns": -0.173,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "position[9]",
+        "to_node": "anvil_q1_decoder_layer:decoder|position[9]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
         "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "position[17]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|position[17]"
+        "to_node": "anvil_q1_swiglu_mlp:mlp|layer[16]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|layer[16]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "position[21]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|position[21]"
+        "from_node": "position[5]",
+        "to_node": "anvil_q1_decoder_layer:decoder|position[5]"
       },
       {
         "slack_ns": -0.173,
         "from_clock": "clk_main",
         "to_clock": "clk_main",
-        "from_node": "layer[4]",
-        "to_node": "anvil_q1_decoder_layer:decoder|layer[4]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "position[30]|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|position[30]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_rope:rope|position[18]|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|anvil_q1_mem_port:memory_port|rw[18]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "layer[2]|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|layer[2]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "position[10]|anvil_q1_decoder_layer:decoder|anvil_q1_rope:rope|position[10]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_elementwise:residual|index[22]|anvil_q1_decoder_layer:decoder|anvil_q1_elementwise:residual|anvil_q1_mem_port:memory_port|cl[22]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "anvil_q1_decoder_layer:decoder",
-        "to_node": "anvil_q1_swiglu_mlp:mlp|layer[4]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|layer[4]"
-      },
-      {
-        "slack_ns": -0.173,
-        "from_clock": "clk_main",
-        "to_clock": "clk_main",
-        "from_node": "layer[28]",
-        "to_node": "anvil_q1_decoder_layer:decoder|layer[28]"
+        "from_node": "position[16]",
+        "to_node": "anvil_q1_decoder_layer:decoder|position[16]"
       }
     ],
     "stderr_tail": []
   },
-  "detail": "Timing closed: Setup WNS = 27.218 ns",
+  "detail": "Timing closed: Setup WNS = 0.782 ns",
   "top_module": "anvil_q1_top",
   "clock_port": "clk",
-  "clock_period_ns": 40.0,
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 108.48,
+  "critical_path_delay_ns": 9.218,
   "parameters": {
     "VOCAB_SIZE": 16,
     "HIDDEN_SIZE": 16,
@@ -330,7 +333,5 @@
     "HEAD_DIM": 8,
     "GROUP_SIZE": 8,
     "MAX_SEQ_LEN": 8
-  },
-  "source_sha256": "f834111c5b631cd37f51157428d8d4ed992b824b18fcecf4b0dc5713baa9df16",
-  "applicable": true
+  }
 }

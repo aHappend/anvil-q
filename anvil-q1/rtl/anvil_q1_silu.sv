@@ -15,7 +15,7 @@ module anvil_q1_silu(
   assign magnitude=x<0 ? -$signed({{32{x[31]}},x}) : {32'd0,x};
   assign numerator=x>=0 ? 64'd281474976710656 : ({32'd0,exponential}<<24);
   assign divisor=64'd16777216+{32'd0,exponential};
-  assign product=$signed({{33{x[31]}},x})*$signed({1'b0,sigmoid});
+  assign product=$signed({{33{x[31]}},x})*$signed({39'd0,sigmoid[25:0]});
   assign ready=rst_n && state==0;
   assign done=rst_n && state==6;
   assign error=done && failed;

@@ -23,6 +23,7 @@ module anvil_q1_top #(
   reg signed [95:0] logit_sum;
   wire [15:0] tensor_f16;
   wire signed [31:0] tensor_value;
+  reg signed [31:0] logit_weight_reg;
   wire signed [31:0] logit_activation, logit_weight;
   wire signed [63:0] logit_product;
   wire [1:0] ready, finished, faults;
@@ -42,8 +43,8 @@ module anvil_q1_top #(
   assign selected=(state==5 || state==6) ? 1 : ((state==7 || state==8) ? 2 : 0);
   assign tensor_f16=(own_complete && (state==2 || state==12)) ? rd[15:0] : 16'd0;
   assign tensor_value=anvil_q1_pkg::f16_q16(tensor_f16);
-  assign logit_activation=(own_complete && state==12) ? activation : 32'sd0;
-  assign logit_weight=(own_complete && state==12) ? tensor_value : 32'sd0;
+  assign logit_activation=(state==13) ? activation : 32'sd0;
+  assign logit_weight=(state==13) ? logit_weight_reg : 32'sd0;
   assign logit_product=$signed({{32{logit_activation[31]}},logit_activation})*
                        $signed({{32{logit_weight[31]}},logit_weight});
   assign token_ready=rst_n && state==0;
@@ -92,7 +93,7 @@ module anvil_q1_top #(
     if(!rst_n) begin
       state<=0; failed<=0; sequence_valid<=1; token<=0; position<=0;
       next_position<=0; component<=0; vocabulary<=0; layer<=0;
-      activation<=0; logit_sum<=0;
+      activation<=0; logit_weight_reg<=0; logit_sum<=0;
     end else if(own_fault) begin failed<=1; sequence_valid<=0; state<=31; end
     else case(state)
       0: if(token_valid) begin
@@ -132,10 +133,13 @@ module anvil_q1_top #(
       11: if(issue) state<=12;
       12: if(own_complete) begin
         if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; sequence_valid<=0; state<=31; end
-        else begin logit_sum<=logit_sum+{{32{logit_product[63]}},logit_product}; state<=13; end
+        else begin logit_weight_reg<=tensor_value; state<=13; end
       end
-      13: if(component+1<HIDDEN_SIZE) begin component<=component+1; state<=9; end
-          else state<=15;
+      13: begin
+        logit_sum<=logit_sum+{{32{logit_product[63]}},logit_product};
+        if(component+1<HIDDEN_SIZE) begin component<=component+1; state<=9; end
+        else state<=15;
+      end
       15: if(logit_ready) begin
         if(vocabulary+1<VOCAB_SIZE) begin
           vocabulary<=vocabulary+1; component<=0; logit_sum<=0; state<=9;

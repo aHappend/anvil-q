@@ -21,12 +21,25 @@ module anvil_q1_w4a16_gemv #(
   reg [2:0] projection;
   reg [31:0] qw, qz;
   reg [15:0] scales [0:7];
+  reg [31:0] scale_int_reg [0:7];
+  reg signed [64:0] scaled_act_reg [0:7];
   reg [2:0] lane;
   reg signed [31:0] activation;
   wire signed [36:0] weight [0:7];
   wire [7:0] invalid;
   wire signed [68:0] product [0:7];
   reg signed [127:0] accumulators [0:7];
+  function automatic [31:0] scale_integer_fn(input [15:0] h);
+    reg [63:0] magnitude;
+    integer sh;
+    begin
+      magnitude = h[14:10] == 0 ? {54'd0,h[9:0]} : {53'd0,1'b1,h[9:0]};
+      sh = h[14:10] == 0 ? -8 : $signed({27'd0,h[14:10]})-9;
+      if (sh >= 0) magnitude = magnitude << sh;
+      else magnitude = (magnitude + (64'd1 << (-sh-1))) >> (-sh);
+      scale_integer_fn = magnitude[31:0];
+    end
+  endfunction
   integer i;
   genvar arithmetic_lane;
   wire complete, fault, request_transfer;
@@ -48,16 +61,14 @@ module anvil_q1_w4a16_gemv #(
   generate
     for(arithmetic_lane=0;arithmetic_lane<8;arithmetic_lane=arithmetic_lane+1) begin: lanes
       localparam [2:0] LOGICAL_LANE = arithmetic_lane;
-      wire signed [68:0] activation_operand, weight_operand;
-      anvil_q1_awq_dequant dequant(
-        .qweight_word(qw),.qzero_word(qz),.scale_f16(scales[arithmetic_lane]),
-        .lane(LOGICAL_LANE),.weight_q16_16(weight[arithmetic_lane]),
-        .invalid(invalid[arithmetic_lane]));
-      assign activation_operand = (rst_n && state==9) ?
-        $signed({{37{activation[31]}},activation}) : 69'sd0;
-      assign weight_operand = (rst_n && state==9) ?
-        $signed({{32{weight[arithmetic_lane][36]}},weight[arithmetic_lane]}) : 69'sd0;
-      assign product[arithmetic_lane] = activation_operand * weight_operand;
+      localparam integer LANE_SHIFT = (arithmetic_lane == 0) ? 0 : (arithmetic_lane == 1) ? 16 : (arithmetic_lane == 2) ? 4 : (arithmetic_lane == 3) ? 20 : (arithmetic_lane == 4) ? 8 : (arithmetic_lane == 5) ? 24 : (arithmetic_lane == 6) ? 12 : 28;
+      wire [3:0] w_nib = (qw >> LANE_SHIFT) & 32'hf;
+      wire [3:0] z_nib = (qz >> LANE_SHIFT) & 32'hf;
+      wire signed [4:0] delta_lane = $signed({1'b0, w_nib}) - $signed({1'b0, z_nib});
+      assign invalid[arithmetic_lane] = (scales[arithmetic_lane][14:10] == 31) || (scales[arithmetic_lane][15] && (scales[arithmetic_lane][14:0] != 0));
+      assign weight[arithmetic_lane] = 37'sd0;
+      assign product[arithmetic_lane] = (rst_n && state==9 && !invalid[arithmetic_lane]) ?
+        ($signed({{4{scaled_act_reg[arithmetic_lane][64]}}, scaled_act_reg[arithmetic_lane]}) * $signed({{64{delta_lane[4]}}, delta_lane})) : 69'sd0;
     end
   endgenerate
   assign cmd_ready = rst_n && state == 0;
@@ -98,7 +109,7 @@ module anvil_q1_w4a16_gemv #(
       group_index<=0; group_offset<=0;
       inputs<=0; outputs<=0; source_slot<=0; target_slot<=0;
       projection<=0; qw<=0; qz<=0; lane<=0; activation<=0;
-      for(i=0;i<8;i=i+1) begin scales[i]<=0; accumulators[i]<=0; end
+      for(i=0;i<8;i=i+1) begin scales[i]<=0; scale_int_reg[i]<=0; scaled_act_reg[i]<=0; accumulators[i]<=0; end
     end else if(fault) begin failed<=1; state<=20; end
     else case(state)
       0: if(cmd_valid) begin
@@ -122,7 +133,7 @@ module anvil_q1_w4a16_gemv #(
       end
       1: if(request_transfer) state<=2;
       2: if(complete) begin activation<=rd; state<=3; end
-      3: if(request_transfer) state<=4;
+      3: begin for(i=0;i<8;i=i+1) scaled_act_reg[i] <= $signed({1'b0, scale_int_reg[i]}) * $signed(activation); if(request_transfer) state<=4; end
       4: if(complete) begin qw<=rd; lane<=0; state<=9; end
       5: if(request_transfer) state<=6;
       6: if(complete) begin qz<=rd; lane<=0; state<=7; end
@@ -131,7 +142,7 @@ module anvil_q1_w4a16_gemv #(
         if(anvil_q1_pkg::f16_invalid(rd[15:0]) ||
            (rd[15] && rd[14:0]!=0)) begin failed<=1; state<=20; end
         else begin
-          scales[lane]<=rd[15:0];
+          scales[lane]<=rd[15:0]; scale_int_reg[lane]<=scale_integer_fn(rd[15:0]);
           if(lane==7) begin lane<=0; state<=1; end
           else begin lane<=lane+1; state<=7; end
         end
@@ -172,13 +183,13 @@ module anvil_q1_w4a16_gemv #(
       16: begin
         qw<=0; qz<=0; activation<=0; lane<=0;
         group_index<=0; group_offset<=0;
-        for(i=0;i<8;i=i+1) begin scales[i]<=0; accumulators[i]<=0; end
+        for(i=0;i<8;i=i+1) begin scales[i]<=0; scale_int_reg[i]<=0; scaled_act_reg[i]<=0; accumulators[i]<=0; end
         state<=5;
       end
       19: state<=20;
       20: begin
         qw<=0; qz<=0; activation<=0; lane<=0;
-        for(i=0;i<8;i=i+1) begin scales[i]<=0; accumulators[i]<=0; end
+        for(i=0;i<8;i=i+1) begin scales[i]<=0; scale_int_reg[i]<=0; scaled_act_reg[i]<=0; accumulators[i]<=0; end
         state<=0;
       end
       default: state<=0;

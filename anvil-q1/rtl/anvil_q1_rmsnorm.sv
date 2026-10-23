@@ -22,7 +22,9 @@ module anvil_q1_rmsnorm #(
   reg [63:0] sqrt_root;
   reg [65:0] sqrt_remainder;
   reg [6:0] sqrt_bits_left;
-  reg signed [63:0] norm_product;
+  reg signed [64:0] x_recip_lo, x_recip_hi;
+  reg signed [95:0] x_recip_reg;
+  reg signed [127:0] result_reg;
   reg signed [31:0] x, gamma;
   wire signed [31:0] read_x;
   wire signed [63:0] square;
@@ -57,8 +59,8 @@ module anvil_q1_rmsnorm #(
   assign sqrt_trial = {sqrt_root,2'b01};
   assign sqrt_subtract = sqrt_shifted >= sqrt_trial;
   assign sqrt_next_root = {sqrt_root[62:0],sqrt_subtract};
-  assign result = $signed({{64{norm_product[63]}},norm_product}) *
-                  $signed({64'd0,reciprocal});
+  assign result = $signed({{32{x_recip_reg[95]}},x_recip_reg}) *
+                  $signed({{96{gamma[31]}},gamma});
   assign cmd_ready = rst_n && state==0;
   assign done = rst_n && state==15;
   assign error = done && failed;
@@ -79,7 +81,7 @@ module anvil_q1_rmsnorm #(
       8: begin issue=1; kind=norm_kind; ml=norm_kind==7 ? 0 : layer; col=index; end
       10: begin
         issue=1; wr=1; kind=8; row=dst; col=index;
-        wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_shift(result,48));
+        wd=anvil_q1_pkg::sat32(anvil_q1_pkg::round_shift(result_reg,48));
       end
       default: begin end
     endcase
@@ -88,7 +90,7 @@ module anvil_q1_rmsnorm #(
     if(!rst_n) begin
       state<=0; failed<=0; layer<=0; index<=0; src<=0; dst<=0;
       norm_kind<=0; sum<=0; reciprocal<=0; mean<=0; denominator<=0; x<=0; gamma<=0;
-      sqrt_root<=0; sqrt_remainder<=0; sqrt_bits_left<=0; norm_product<=0;
+      sqrt_root<=0; sqrt_remainder<=0; sqrt_bits_left<=0; x_recip_lo<=0; x_recip_hi<=0; x_recip_reg<=0; result_reg<=0;
     end else if(fault) begin failed<=1; state<=15; end
     else case(state)
       0: if(cmd_valid) begin
@@ -132,14 +134,14 @@ module anvil_q1_rmsnorm #(
       end
       6: if(issue) state<=7;
       7: if(complete) begin x<=rd; state<=8; end
-      8: if(issue) state<=9;
+      8: begin x_recip_lo <= $signed(x) * $signed({1'b0,reciprocal[31:0]}); x_recip_hi <= $signed(x) * $signed({1'b0,reciprocal[63:32]}); if(issue) state<=9; end
       9: if(complete) begin
+        x_recip_reg <= $signed({{31{x_recip_hi[64]}},x_recip_hi,32'd0}) + $signed({{63{x_recip_lo[64]}},x_recip_lo});
         if(anvil_q1_pkg::f16_invalid(rd[15:0])) begin failed<=1; state<=15; end
         else begin gamma<=anvil_q1_pkg::f16_q16(rd[15:0]); state<=17; end
       end
       17: begin
-        norm_product<=$signed({{32{x[31]}},x}) *
-                      $signed({{32{gamma[31]}},gamma});
+        result_reg <= result;
         state<=10;
       end
       10: if(issue) state<=11;
