@@ -52,7 +52,7 @@
 
 \vspace{4pt}
 
-{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.24\textwidth}L{0.72\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Accelerator \& Model} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}\\\textbf{Target Silicon Platform} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (427,200 ALMs, 8 GB DDR4)\\\textbf{Companion Datasheet} & Paired with \texttt{REPORT.pdf} (Developer Engineering Signoff Report) \textperiodcentered{} 23 October 2026 (\allowbreak{}2026-10-23 23:12 UTC+\allowbreak{}8)\allowbreak{}\\\bottomrule\end{tabular}\par}
+{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.24\textwidth}L{0.72\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Accelerator \& Model} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}\\\textbf{Target Silicon Platform} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (427,200 ALMs, 8 GB DDR4)\\\textbf{Companion Datasheet} & Paired with \texttt{REPORT.pdf} (Developer Engineering Signoff Report) \textperiodcentered{} 23 October 2026 (\allowbreak{}2026-10-23 23:14 UTC+\allowbreak{}8)\allowbreak{}\\\bottomrule\end{tabular}\par}
 
 \vspace{6pt}
 
@@ -138,7 +138,7 @@ Logical Reasoning (\allowbreak{}5 Prompts)\allowbreak{} & If all cats are mammal
 
 Hardware \& Architecture (\allowbreak{}5 Prompts)\allowbreak{} & What does FPGA stand for? Answer in one sentence. & FPGA stands for Field-Programmable Gate Array. & FPGA stands for Field-Programmable Gate Array. & 78/\allowbreak{}78 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
-Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 44/\allowbreak{}44 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & Capital of China? (\allowbreak{}One-sentence QA)\allowbreak{} & The capital of China is Beijing. & The capital of China is Beijing. & 44/\allowbreak{}44 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
 \bottomrule\end{longtable}}
 
@@ -148,27 +148,27 @@ Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & 中国的首都是哪�
 
 \node[anchor=north west,font=\footnotesize\bfseries,text=vulcan!90!black] at (-0.2,2.05) {(a) 6-Domain 30-Prompt Top-1 Parity (151,936 Vocab)};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,1.45) {1. Mathematics (5 Prompts)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,1.45) {1. Mathematics (5)};
 
 \fill[vulcangreen] (2.5,1.33) rectangle (5.8,1.57); \node[text=white,font=\tiny\bfseries] at (4.15,1.45) {100\% (71/71 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,1.45) {cos=0.999994};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.92) {2. Python Code (5 Prompts)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.92) {2. Python Code (5)};
 
 \fill[vulcanblue] (2.5,0.80) rectangle (5.8,1.04); \node[text=white,font=\tiny\bfseries] at (4.15,0.92) {100\% (81/81 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,0.92) {cos=0.999984};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.39) {3. General STEM (5 Prompts)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.39) {3. General STEM (5)};
 
 \fill[teal!80!black] (2.5,0.27) rectangle (5.8,0.51); \node[text=white,font=\tiny\bfseries] at (4.15,0.39) {100\% (58/58 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,0.39) {cos=0.999995};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.14) {4. Deductive Logic (5 Prompts)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.14) {4. Deductive Logic (5)};
 
 \fill[vulcan!90] (2.5,-0.26) rectangle (5.8,-0.02); \node[text=white,font=\tiny\bfseries] at (4.15,-0.14) {100\% (50/50 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-0.14) {cos=0.999992};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.67) {5. Hardware Arch (5 Prompts)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.67) {5. Hardware Arch (5)};
 
 \fill[vulcangreen!85!black] (2.5,-0.79) rectangle (5.8,-0.55); \node[text=white,font=\tiny\bfseries] at (4.15,-0.67) {100\% (78/78 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-0.67) {cos=0.999994};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-1.20) {6. Multilingual QA (5 Prompts)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-1.20) {6. Multilingual QA (5)};
 
 \fill[vulcanamber] (2.5,-1.32) rectangle (5.8,-1.08); \node[text=white,font=\tiny\bfseries] at (4.15,-1.20) {100\% (44/44 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-1.20) {cos=0.999994};
 
