@@ -68,6 +68,3 @@
 
 ### 第 3 页
 ![产品白皮书第 3 页](showcase_figures_zh/page-3.png)
-
-### 第 4 页
-![产品白皮书第 4 页](showcase_figures_zh/page-4.png)

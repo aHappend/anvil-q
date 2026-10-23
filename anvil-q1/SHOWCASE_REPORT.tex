@@ -1,6 +1,6 @@
 \documentclass[11pt,a4paper]{article}
 
-\usepackage[margin=18mm,headheight=15pt]{geometry}
+\usepackage[margin=15mm,headheight=14pt]{geometry}
 
 \usepackage{longtable,booktabs,array,hyperref,xcolor,tikz,fancyhdr,needspace}
 
@@ -40,29 +40,29 @@
 
 \setlength{\emergencystretch}{5em}\tolerance=2000\hbadness=10000\hyphenpenalty=50\exhyphenpenalty=50
 
-\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{3.5pt}
 
-\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\small\sffamily\textbf{VULCAN TRANSACTIONS ON AUTONOMOUS SILICON ENGINEERING}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{\footnotesize\sffamily\textbf{VULCAN TRANSACTIONS ON SILICON ENGINEERING}}
 
-\fancyhead[R]{\small\sffamily Academic Technical Paper \& Benchmark Evaluation}\fancyfoot[C]{\small\sffamily Page \thepage}
+\fancyhead[R]{\footnotesize\sffamily Academic Paper \& Silicon Evaluation}\fancyfoot[C]{\footnotesize\sffamily Page \thepage}
 
 \begin{document}
 
-{\footnotesize\sffamily\textcolor{vulcan}{\textbf{VULCAN TRANSACTIONS ON AUTONOMOUS AI-TO-SILICON ENGINEERING \hfill VOL. 2026 \textperiodcentered{} ACADEMIC BENCHMARK \& SILICON PAPER}}\par}
+{\scriptsize\sffamily\textcolor{vulcan}{\textbf{VULCAN TRANSACTIONS ON AUTONOMOUS AI-TO-SILICON ENGINEERING \hfill VOL. 2026 \textperiodcentered{} ACADEMIC BENCHMARK \& SILICON PAPER}}\par}
 
-\vspace{2pt}\textcolor{vulcan}{\rule{\textwidth}{1.4pt}}\vspace{5pt}
+\vspace{1pt}\textcolor{vulcan}{\rule{\textwidth}{1.2pt}}\vspace{3pt}
 
 \begin{center}
 
-{\sffamily\LARGE\bfseries Anvil-Q1 · W4A16 Quantized LLM Inference Accelerator: Microarchitecture, 100~MHz+ Timing Closure, and Physical Arria 10 FPGA Evaluation\par}\vspace{5pt}
+{\sffamily\LARGE\bfseries Anvil-Q1 · W4A16 Quantized LLM Inference Accelerator: Microarchitecture, 100~MHz+ Timing Closure, and Physical Arria 10 FPGA Evaluation\par}\vspace{3pt}
 
-{\normalsize\sffamily\textbf{Sufeng Guo} \textperiodcentered{} School of Electronic Science and Engineering, Nanjing University \textperiodcentered{} \texttt{sufeng\_guo@smail.nju.edu.cn}\par}\vspace{2pt}
+{\small\sffamily\textbf{Sufeng Guo} \textperiodcentered{} School of Electronic Science and Engineering, Nanjing University \textperiodcentered{} \texttt{sufeng\_guo@smail.nju.edu.cn}\par}\vspace{1pt}
 
-{\footnotesize\sffamily\textcolor{black!75}{Silicon Platform: Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (Chip ID \texttt{23645547322997765}) \textperiodcentered{} Companion Signoff Paper: \texttt{REPORT.pdf} \textperiodcentered{} 24 October 2026 (\allowbreak{}2026-10-24 00:26 UTC+\allowbreak{}8)\allowbreak{}}\par}
+{\scriptsize\sffamily\textcolor{black!75}{Silicon Platform: Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (Chip ID \texttt{23645547322997765}) \textperiodcentered{} Companion Signoff Paper: \texttt{REPORT.pdf} \textperiodcentered{} 24 October 2026 (\allowbreak{}2026-10-24 00:29 UTC+\allowbreak{}8)\allowbreak{}}\par}
 
-\end{center}\vspace{3pt}
+\end{center}\vspace{2pt}
 
-\noindent\fcolorbox{vulcanblue!45}{vulcanblue!3}{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{\small\textbf{\textcolor{vulcanblue}{Abstract---}}This paper presents the microarchitecture,\allowbreak{} 100 MHz+\allowbreak{} timing closure,\allowbreak{} and physical Intel Arria 10 GX FPGA hardware-in-the-loop (\allowbreak{}HIL)\allowbreak{} evaluation of Anvil-Q1,\allowbreak{} an accelerator autonomously designed and verified by the Vulcan silicon engineering platform for Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}. Through zero-cycle-overhead critical-path pipelining across dequantization MAC arrays,\allowbreak{} split-half reciprocal multiplication in RMSNorm,\allowbreak{} and bit-width-pruned nonlinear units,\allowbreak{} the design closes timing above the 100.0 MHz (\allowbreak{}10.0 ns)\allowbreak{} constraint in Intel Quartus Prime 17.1 TimeQuest STA at Fmax =\allowbreak{} 108.48 MHz (\allowbreak{}critical-path delay 9.218 ns,\allowbreak{} setup slack WNS =\allowbreak{} +\allowbreak{}0.782 ns,\allowbreak{} 0 failing endpoints)\allowbreak{}. Physical on-board execution over PCIe Gen3x8 on an Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG,\allowbreak{} Chip ID 23645547322997765)\allowbreak{} achieves 100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{} and 0.999992 cosine similarity against the official FP32 software baseline with zero bit errors.\par\vspace{3pt}\footnotesize\textbf{\textcolor{vulcanblue}{Index Terms---}}Autonomous AI-to-Silicon Engineering, Anvil-Q1, Intel Arria 10 GX FPGA, 100~MHz+ Static Timing Closure, PCIe Gen3x8 Hardware-in-the-Loop (HIL), Bit-Exact Hardware Verification.}}\par\vspace{5pt}
+\noindent\fcolorbox{vulcanblue!45}{vulcanblue!3}{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{\footnotesize\textbf{\textcolor{vulcanblue}{Abstract---}}This paper presents the microarchitecture,\allowbreak{} 100 MHz+\allowbreak{} timing closure,\allowbreak{} and physical Intel Arria 10 GX FPGA hardware-in-the-loop (\allowbreak{}HIL)\allowbreak{} evaluation of Anvil-Q1,\allowbreak{} an accelerator autonomously designed and verified by the Vulcan silicon engineering platform for Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}. Through zero-cycle-overhead critical-path pipelining across dequantization MAC arrays,\allowbreak{} split-half reciprocal multiplication in RMSNorm,\allowbreak{} and bit-width-pruned nonlinear units,\allowbreak{} the design closes timing above the 100.0 MHz (\allowbreak{}10.0 ns)\allowbreak{} constraint in Intel Quartus Prime 17.1 TimeQuest STA at Fmax =\allowbreak{} 108.48 MHz (\allowbreak{}critical-path delay 9.218 ns,\allowbreak{} setup slack WNS =\allowbreak{} +\allowbreak{}0.782 ns,\allowbreak{} 0 failing endpoints)\allowbreak{}. Physical on-board execution over PCIe Gen3x8 on an Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG,\allowbreak{} Chip ID 23645547322997765)\allowbreak{} achieves 100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{} and 0.999992 cosine similarity against the official FP32 software baseline with zero bit errors.\par\vspace{2pt}\scriptsize\textbf{\textcolor{vulcanblue}{Index Terms---}}Autonomous AI-to-Silicon Engineering, Anvil-Q1, Intel Arria 10 GX FPGA, 100~MHz+ Static Timing Closure, PCIe Gen3x8 Hardware-in-the-Loop (HIL), Bit-Exact Hardware Verification.}}\par\vspace{3pt}
 
 \begin{center}\begin{minipage}{\textwidth}\centering\begin{tikzpicture}[scale=0.95,transform shape,font=\sffamily,>=latex]
 
@@ -132,21 +132,21 @@
 
 Table 1 and Figure 3 present the end-to-end autoregressive generation benchmark of \textbf{Anvil-Q1} across the complete \textbf{24-layer Qwen2.5-0.5B-Instruct} architecture over \textbf{six benchmark domains and 30 evaluation prompts (1,720 full 24-layer forward passes = 41,280 hardware decoder layer executions)}, comparing the official HuggingFace FP32 software baseline against the W4A16 hardware accelerator output token-by-token:
 
-{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.16\textwidth}L{0.2\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.16\textwidth}@{}}\toprule
+{\footnotesize\renewcommand{\arraystretch}{1.14}\begin{longtable}{@{}L{0.16\textwidth}L{0.2\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.16\textwidth}@{}}\toprule
 
 \textbf{Benchmark Domain} & \textbf{Representative Prompt} & \textbf{Official FP32 Baseline Output} & \textbf{Anvil W4A16 Hardware Output} & \textbf{Domain Parity \& Cosine}\\\midrule\endhead
 
-Mathematics (\allowbreak{}5 Prompts)\allowbreak{} & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 71/\allowbreak{}71 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+Mathematics (\allowbreak{}5 Prompts)\allowbreak{} & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 71/\allowbreak{}71 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[2pt]
 
-Code Generation (\allowbreak{}5 Prompts)\allowbreak{} & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 81/\allowbreak{}81 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999984\\[3pt]
+Code Generation (\allowbreak{}5 Prompts)\allowbreak{} & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 81/\allowbreak{}81 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999984\\[2pt]
 
-General Knowledge (\allowbreak{}5 Prompts)\allowbreak{} & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 58/\allowbreak{}58 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
+General Knowledge (\allowbreak{}5 Prompts)\allowbreak{} & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 58/\allowbreak{}58 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[2pt]
 
-Logical Reasoning (\allowbreak{}5 Prompts)\allowbreak{} & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 50/\allowbreak{}50 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
+Logical Reasoning (\allowbreak{}5 Prompts)\allowbreak{} & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 50/\allowbreak{}50 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[2pt]
 
-Hardware \& Architecture (\allowbreak{}5 Prompts)\allowbreak{} & What does FPGA stand for? Answer in one sentence. & FPGA stands for Field-Programmable Gate Array. & FPGA stands for Field-Programmable Gate Array. & 78/\allowbreak{}78 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+Hardware \& Architecture (\allowbreak{}5 Prompts)\allowbreak{} & What does FPGA stand for? Answer in one sentence. & FPGA stands for Field-Programmable Gate Array. & FPGA stands for Field-Programmable Gate Array. & 78/\allowbreak{}78 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[2pt]
 
-Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & Capital of China? (\allowbreak{}One-sentence QA)\allowbreak{} & The capital of China is Beijing. & The capital of China is Beijing. & 44/\allowbreak{}44 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & Capital of China? (\allowbreak{}One-sentence QA)\allowbreak{} & The capital of China is Beijing. & The capital of China is Beijing. & 44/\allowbreak{}44 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[2pt]
 
 \bottomrule\end{longtable}}
 
@@ -206,19 +206,19 @@ Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & Capital of China? (\all
 
 Table 2 details the \textbf{100~MHz+ critical-path pipelining trajectory} in Intel Quartus Prime 17.1 TimeQuest STA and the physical \textbf{Intel Arria 10 GX (10AX115N3F40E2SG, Chip ID 23645547322997765)} PCIe Gen3x8 Hardware-in-the-Loop (HIL) execution telemetry:
 
-{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.23\textwidth}L{0.27\textwidth}L{0.24\textwidth}L{0.16\textwidth}@{}}\toprule
+{\footnotesize\renewcommand{\arraystretch}{1.14}\begin{longtable}{@{}L{0.23\textwidth}L{0.27\textwidth}L{0.24\textwidth}L{0.16\textwidth}@{}}\toprule
 
 \textbf{Engineering Stage /\allowbreak{} HIL Test} & \textbf{Architectural Optimization \& Method} & \textbf{Critical Path /\allowbreak{} Silicon Telemetry} & \textbf{Measured Fmax /\allowbreak{} Signoff}\\\midrule\endhead
 
-Stage 1: W4A16 \& LM-Head Pipelining & Split dequant multiply \& logit MAC stages & 12.782 ns -> 10.642 ns (\allowbreak{}decoupled DSP chain)\allowbreak{} & 78.24 -> 93.97 MHz\\[3pt]
+Stage 1: W4A16 \& LM-Head Pipelining & Split dequant multiply \& logit MAC stages & 12.782 ns -> 10.642 ns (\allowbreak{}decoupled DSP chain)\allowbreak{} & 78.24 -> 93.97 MHz\\[2pt]
 
-Stage 2: Zero-Overhead RMSNorm Split & 32x32 partial products during gamma fetch & 10.642 ns -> 9.570 ns (\allowbreak{}0 cycle overhead)\allowbreak{} & 93.97 -> 104.49 MHz\\[3pt]
+Stage 2: Zero-Overhead RMSNorm Split & 32x32 partial products during gamma fetch & 10.642 ns -> 9.570 ns (\allowbreak{}0 cycle overhead)\allowbreak{} & 93.97 -> 104.49 MHz\\[2pt]
 
-Stage 3: SiLU Bit-Width Pruning & Pruned sigmoid [\allowbreak{}0,\allowbreak{} 2\textasciicircum{}24]\allowbreak{} to 26-bit multiplier & 9.570 ns -> 9.218 ns (\allowbreak{}WNS +\allowbreak{}0.782 ns)\allowbreak{} & Fmax =\allowbreak{} 108.48 MHz (\allowbreak{}PASS)\allowbreak{}\\[3pt]
+Stage 3: SiLU Bit-Width Pruning & Pruned sigmoid [\allowbreak{}0,\allowbreak{} 2\textasciicircum{}24]\allowbreak{} to 26-bit multiplier & 9.570 ns -> 9.218 ns (\allowbreak{}WNS +\allowbreak{}0.782 ns)\allowbreak{} & Fmax =\allowbreak{} 108.48 MHz (\allowbreak{}PASS)\allowbreak{}\\[2pt]
 
-PCIe Gen3x8 BAR0 Multi-Run HIL & Arria 10 GX (\allowbreak{}Chip ID 23645547\allowbreak{}32299776\allowbreak{}5)\allowbreak{} SoftReg MMIO & 3/\allowbreak{}3 deterministic hardware runs identical & 0 Bit Errors (\allowbreak{}PASS)\allowbreak{}\\[3pt]
+PCIe Gen3x8 BAR0 Multi-Run HIL & Arria 10 GX (\allowbreak{}Chip ID 23645547\allowbreak{}32299776\allowbreak{}5)\allowbreak{} SoftReg MMIO & 3/\allowbreak{}3 deterministic hardware runs identical & 0 Bit Errors (\allowbreak{}PASS)\allowbreak{}\\[2pt]
 
-24-Layer Streaming Board Execution & JTAG/\allowbreak{}PCIe physical Arria 10 layer scheduling & 120 physical layers (\allowbreak{}1,\allowbreak{}259,\allowbreak{}748 cycles)\allowbreak{} & 100\% Parity (\allowbreak{}PASS)\allowbreak{}\\[3pt]
+24-Layer Streaming Board Execution & JTAG/\allowbreak{}PCIe physical Arria 10 layer scheduling & 120 physical layers (\allowbreak{}1,\allowbreak{}259,\allowbreak{}748 cycles)\allowbreak{} & 100\% Parity (\allowbreak{}PASS)\allowbreak{}\\[2pt]
 
 \bottomrule\end{longtable}}
 
@@ -226,19 +226,19 @@ PCIe Gen3x8 BAR0 Multi-Run HIL & Arria 10 GX (\allowbreak{}Chip ID 23645547\allo
 
 Table 3 and Figure 4 detail the post-synthesis resource utilization on the Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) alongside the multi-core parallel throughput and 8 GB DDR4 model-capacity scaling roadmap:
 
-{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.21\textwidth}L{0.16\textwidth}L{0.16\textwidth}L{0.15\textwidth}L{0.22\textwidth}@{}}\toprule
+{\footnotesize\renewcommand{\arraystretch}{1.14}\begin{longtable}{@{}L{0.21\textwidth}L{0.16\textwidth}L{0.16\textwidth}L{0.15\textwidth}L{0.22\textwidth}@{}}\toprule
 
 \textbf{Hardware Resource /\allowbreak{} Dimension} & \textbf{Single-Core Utilization} & \textbf{Arria 10 GX Capacity} & \textbf{Utilization /\allowbreak{} Headroom} & \textbf{Multi-Core \& LLM Scaling Target}\\\midrule\endhead
 
-Adaptive Logic Modules (\allowbreak{}ALMs)\allowbreak{} & 21,\allowbreak{}890 ALMs & 427,\allowbreak{}200 ALMs & 5.12\% (\allowbreak{}94.9\% free)\allowbreak{} & Scales to 8--16x parallel compute engines\\[3pt]
+Adaptive Logic Modules (\allowbreak{}ALMs)\allowbreak{} & 21,\allowbreak{}890 ALMs & 427,\allowbreak{}200 ALMs & 5.12\% (\allowbreak{}94.9\% free)\allowbreak{} & Scales to 8--16x parallel compute engines\\[2pt]
 
-On-Chip Memory (\allowbreak{}M20K BRAM)\allowbreak{} & 384 M20K & 2,\allowbreak{}713 M20K (\allowbreak{}6.7 MB)\allowbreak{} & 14.15\% (\allowbreak{}85.8\% free)\allowbreak{} & Deep on-chip KV cache \& ping-pong weight buffers\\[3pt]
+On-Chip Memory (\allowbreak{}M20K BRAM)\allowbreak{} & 384 M20K & 2,\allowbreak{}713 M20K (\allowbreak{}6.7 MB)\allowbreak{} & 14.15\% (\allowbreak{}85.8\% free)\allowbreak{} & Deep on-chip KV cache \& ping-pong weight buffers\\[2pt]
 
-Precision DSP Blocks (\allowbreak{}18x19)\allowbreak{} & 219 DSPs & 1,\allowbreak{}518 DSPs & 14.43\% (\allowbreak{}85.6\% free)\allowbreak{} & 1,\allowbreak{}024+\allowbreak{} DSP MAC array for >100x throughput\\[3pt]
+Precision DSP Blocks (\allowbreak{}18x19)\allowbreak{} & 219 DSPs & 1,\allowbreak{}518 DSPs & 14.43\% (\allowbreak{}85.6\% free)\allowbreak{} & 1,\allowbreak{}024+\allowbreak{} DSP MAC array for >100x throughput\\[2pt]
 
-Clock Frequency \& Timing (\allowbreak{}STA)\allowbreak{} & Fmax 108.48 MHz (\allowbreak{}WNS +\allowbreak{}0.782 ns)\allowbreak{} & 100.0 MHz Baseline (\allowbreak{}10.0 ns)\allowbreak{} & 0 Failing Endpoints & Surpassed 100 MHz baseline; scales to 150--250 MHz\\[3pt]
+Clock Frequency \& Timing (\allowbreak{}STA)\allowbreak{} & Fmax 108.48 MHz (\allowbreak{}WNS +\allowbreak{}0.782 ns)\allowbreak{} & 100.0 MHz Baseline (\allowbreak{}10.0 ns)\allowbreak{} & 0 Failing Endpoints & Surpassed 100 MHz baseline; scales to 150--250 MHz\\[2pt]
 
-On-Board DDR4 Capacity & 0.35 GB (\allowbreak{}0.5B W4A16)\allowbreak{} & 8.0 GB On-Board DDR4 & 4.4\% used (\allowbreak{}95.6\% free)\allowbreak{} & Supports up to 7B--8B W4A16 LLM fully resident\\[3pt]
+On-Board DDR4 Capacity & 0.35 GB (\allowbreak{}0.5B W4A16)\allowbreak{} & 8.0 GB On-Board DDR4 & 4.4\% used (\allowbreak{}95.6\% free)\allowbreak{} & Supports up to 7B--8B W4A16 LLM fully resident\\[2pt]
 
 \bottomrule\end{longtable}}
 
@@ -294,17 +294,17 @@ On-Board DDR4 Capacity & 0.35 GB (\allowbreak{}0.5B W4A16)\allowbreak{} & 8.0 GB
 
 \needspace{8\baselineskip}\section{Hardware Verification \& Silicon Signoff Summary}
 
-{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.34\textwidth}@{}}\toprule
+{\footnotesize\renewcommand{\arraystretch}{1.14}\begin{longtable}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.34\textwidth}@{}}\toprule
 
 \textbf{Verification Gate} & \textbf{Toolchain \& Methodology} & \textbf{Measured Signoff Result}\\\midrule\endhead
 
-L0 Cycle-Accurate Co-Sim & Icarus Verilog 12.0 +\allowbreak{} Official HuggingFace Checkpoint & PASSED (\allowbreak{}100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{},\allowbreak{} Cosine 0.999992)\allowbreak{}\\[3pt]
+L0 Cycle-Accurate Co-Sim & Icarus Verilog 12.0 +\allowbreak{} Official HuggingFace Checkpoint & PASSED (\allowbreak{}100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{},\allowbreak{} Cosine 0.999992)\allowbreak{}\\[2pt]
 
-L1 Static RTL \& Synthesis & Yosys 0.33 Synthesis \& Structural Lint & PASSED (\allowbreak{}0 inferred latches,\allowbreak{} 0 combinational div loops,\allowbreak{} 0 hazards)\allowbreak{}\\[3pt]
+L1 Static RTL \& Synthesis & Yosys 0.33 Synthesis \& Structural Lint & PASSED (\allowbreak{}0 inferred latches,\allowbreak{} 0 combinational div loops,\allowbreak{} 0 hazards)\allowbreak{}\\[2pt]
 
-L2 Static Timing (\allowbreak{}STA)\allowbreak{} & Intel Quartus Prime 17.1 TimeQuest Timing Analyzer & PASSED (\allowbreak{}WNS =\allowbreak{} +\allowbreak{}0.782 ns setup slack,\allowbreak{} 0 failing endpoints)\allowbreak{}\\[3pt]
+L2 Static Timing (\allowbreak{}STA)\allowbreak{} & Intel Quartus Prime 17.1 TimeQuest Timing Analyzer & PASSED (\allowbreak{}WNS =\allowbreak{} +\allowbreak{}0.782 ns setup slack,\allowbreak{} 0 failing endpoints)\allowbreak{}\\[2pt]
 
-L3 Physical Silicon HIL & Intel Arria 10 GX (\allowbreak{}10AX115N\allowbreak{}3F40E2SG)\allowbreak{} PCIe Gen3x8 & PASSED (\allowbreak{}3/\allowbreak{}3 deterministic hardware runs,\allowbreak{} 0 bit errors)\allowbreak{}\\[3pt]
+L3 Physical Silicon HIL & Intel Arria 10 GX (\allowbreak{}10AX115N\allowbreak{}3F40E2SG)\allowbreak{} PCIe Gen3x8 & PASSED (\allowbreak{}3/\allowbreak{}3 deterministic hardware runs,\allowbreak{} 0 bit errors)\allowbreak{}\\[2pt]
 
 \bottomrule\end{longtable}}
 

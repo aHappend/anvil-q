@@ -68,6 +68,3 @@
 
 ### Page 3
 ![Whitepaper Page 3](showcase_figures/page-3.png)
-
-### Page 4
-![Whitepaper Page 4](showcase_figures/page-4.png)
