@@ -13,34 +13,67 @@
   <a href="https://ahappend.github.io/vulcan/">访问官网</a>
   · <a href="https://github.com/aHappend/vulcan-showcase">Vulcan 作品集</a>
   · <a href="README.md">English</a>
-  · <a href="anvil-q1/README.zh-CN.md">Anvil-Q1 交付包</a> · <a href="anvil-q1/SHOWCASE_REPORT.zh-CN.pdf">Anvil-Q1 产品白皮书 (PDF)</a> · <a href="anvil-q1/REPORT.pdf">Anvil-Q1 开发者工程报告 (PDF)</a>
+  · <a href="anvil-q1/README.zh-CN.md">Anvil-Q1 交付包</a> · <a href="anvil-q1/SHOWCASE_REPORT.zh-CN.pdf">Anvil-Q1 学术白皮书 (PDF)</a> · <a href="anvil-q1/REPORT.pdf">Anvil-Q1 工程报告 (PDF)</a>
+  · <a href="anvil-q2/README.zh-CN.md">Anvil-Q2 交付包</a> · <a href="anvil-q2/SHOWCASE_REPORT.zh-CN.pdf">Anvil-Q2 学术白皮书 (PDF)</a> · <a href="anvil-q2/REPORT.pdf">Anvil-Q2 工程报告 (PDF)</a>
   · <a href="brand/">品牌素材</a>
 </p>
 
-**Anvil** 是基于 **Vulcan 0.8** 研发的 AI 加速芯片家族。**Anvil-Q** 是家族中的**量化大语言模型（Quantized LLM）专用推理芯片系列**，将 HuggingFace 权威 AWQ 混合精度模型规范转化为可综合 SystemVerilog RTL、自检验证套件与可复现的工程交付包。
+**Anvil** 是基于 **Vulcan 0.8** 研发的旗舰 AI 与大模型计算芯片家族。**Anvil-Q** 是家族中的**量化大语言模型（Quantized LLM）专用推理芯片系列**，将 HuggingFace 权威 AWQ 混合精度模型规范转化为 `100 MHz+` 可综合 SystemVerilog RTL、自检验证套件、Intel Arria 10 GX PCIe Gen3x8 物理板级在环（HIL）实测与 IEEE/ACM 学术论文级双轨交付包。
 
-## 双轨制技术文档与实测白皮书
+## 双轨制学术技术白皮书与开发者工程报告
 
-针对每一颗通过四级硬件签核的芯片，**Vulcan** 自动生成并同步**中文产品技术白皮书**与**开发者工程签核报告**：
+针对每一颗通过四级硬件签核的芯片，**Vulcan** 自动编译并同步**单语学术产品白皮书**与**开发者工程签核报告**：
 
-| 芯片型号 | 产品技术白皮书与实测评测报告 | 开发者工程签核报告 | Intel Arria 10 GX 板级实测签核 |
+| 芯片型号 | 学术级产品技术白皮书 | 开发者工程签核报告 | Intel Arria 10 GX (`10AX115N3F40E2SG`) 板级与 STA 实测签核 |
 | --- | --- | --- | --- |
-| **Anvil-Q1** (`Qwen2.5-0.5B-AWQ`) | [**`SHOWCASE_REPORT.zh-CN.pdf`**](anvil-q1/SHOWCASE_REPORT.zh-CN.pdf) · [`SHOWCASE_REPORT.zh-CN.md`](anvil-q1/SHOWCASE_REPORT.zh-CN.md) | [**`REPORT.pdf`**](anvil-q1/REPORT.pdf) · [`REPORT.md`](anvil-q1/REPORT.md) | **通过**（`21,890 ALMs / 5.12%`，`219 DSPs / 14.43%`，`WNS +27.218 ns`，五大领域 `46/46` Token 100% 一致） |
+| **Anvil-Q1** (`Qwen2.5-0.5B-AWQ`) | [**`SHOWCASE_REPORT.zh-CN.pdf`**](anvil-q1/SHOWCASE_REPORT.zh-CN.pdf) · [`SHOWCASE_REPORT.zh-CN.md`](anvil-q1/SHOWCASE_REPORT.zh-CN.md) | [**`REPORT.pdf`**](anvil-q1/REPORT.pdf) · [`REPORT.md`](anvil-q1/REPORT.md) | **通过**（**`Fmax 108.48 MHz`**，`WNS +0.782 ns`，`21,890 ALMs / 5.12%`，`219 DSPs / 14.43%`，24 层 30 提示词基准 + `46/46` Token 100% 一致） |
+| **Anvil-Q2** (`Qwen2.5-1.5B-AWQ`) | [**`SHOWCASE_REPORT.zh-CN.pdf`**](anvil-q2/SHOWCASE_REPORT.zh-CN.pdf) · [`SHOWCASE_REPORT.zh-CN.md`](anvil-q2/SHOWCASE_REPORT.zh-CN.md) | [**`REPORT.pdf`**](anvil-q2/REPORT.pdf) · [`REPORT.md`](anvil-q2/REPORT.md) | **通过**（**`Fmax 101.39 MHz`**，`WNS +0.137 ns`，`34,200 ALMs / 8.01%`，`384 DSPs / 25.30%`，`1/2/4-Bank AWQ + INT8 KV Cache`，最小余弦 `0.999999953`） |
 
-### 产品白皮书图文预览 · Anvil-Q1
+### 学术白皮书图文预览 · Anvil-Q1 与 Anvil-Q2
 
 <p align="center">
   <img src="anvil-q1/showcase_figures_zh/page-1.png" width="32%" alt="Anvil-Q1 中文产品白皮书第 1 页">
   <img src="anvil-q1/showcase_figures_zh/page-2.png" width="32%" alt="Anvil-Q1 中文产品白皮书第 2 页">
   <img src="anvil-q1/showcase_figures_zh/page-3.png" width="32%" alt="Anvil-Q1 中文产品白皮书第 3 页">
 </p>
+<p align="center">
+  <img src="anvil-q2/showcase_figures_zh/page-1.png" width="32%" alt="Anvil-Q2 中文产品白皮书第 1 页">
+  <img src="anvil-q2/showcase_figures_zh/page-2.png" width="32%" alt="Anvil-Q2 中文产品白皮书第 2 页">
+  <img src="anvil-q2/showcase_figures_zh/page-3.png" width="32%" alt="Anvil-Q2 中文产品白皮书第 3 页">
+</p>
 
-## 系列路线图
+## 系列路线图（`100 MHz+` 时序签核基线）
 
-| 代际 | 芯片型号 | 目标模型与混合精度规范 | 已交付 RTL | 当前状态 |
+**Anvil-Q** 全系芯片默认执行 **`100.0 MHz` (`10.0 ns`)** 布局布线后静态时序（TimeQuest STA）签核基线（当受物理结构约束无法达到时，支持由 Coordinator 依据 STA 证据进行协调豁免）与物理 FPGA 板级在环（HIL）验证：
+
+| 代际 | 芯片型号 | 目标模型与混合精度规范 | 已交付 RTL | 当前状态与实测签核 |
 | --- | --- | --- | --- | --- |
-| **第一代** | **[Anvil-Q1](anvil-q1/README.zh-CN.md)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 混合精度**（24 层、`896d` 隐藏维、14Q:2KV 7:1 GQA 含 QKV 偏置、`4864d` SwiGLU MLP、`rope_theta = 1e6`、全模型 168 个 AWQ 4-bit 在线反量化线性层） | `16` 个模块 / `1434` 行 | 已完成并验证（16/16 项验证通过 + Intel Arria 10 GX 板级实测签核）— [中文白皮书 (`SHOWCASE_REPORT.zh-CN.pdf`)](anvil-q1/SHOWCASE_REPORT.zh-CN.pdf) · [工程报告 (`REPORT.pdf`)](anvil-q1/REPORT.pdf) |
-| **第二代** | [Anvil-Q2](anvil-q2/) | `Qwen/Qwen2.5-1.5B-Instruct-AWQ` · 多 Bank W4A16 AWQ 与 KV-Cache 压缩加速引擎 | 进行中 | 进行中（RTL 行为级协同仿真验证中） |
+| **第一代** | **[Anvil-Q1](anvil-q1/README.zh-CN.md)** | [Alibaba `Qwen/Qwen2.5-0.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-AWQ) · **W4A16 AWQ G128 混合精度**（24 层、`896d` 隐藏维、14Q:2KV 7:1 GQA 含 QKV 偏置、`4864d` SwiGLU MLP、`rope_theta = 1e6`、全模型 168 个 AWQ 4-bit 在线反量化线性层） | `16` 个模块 / `1,451` 行 | **已完成并验证（`108.48 MHz`，`WNS +0.782 ns`，物理 Arria 10 HIL 通过）** — [中文白皮书 (`SHOWCASE_REPORT.zh-CN.pdf`)](anvil-q1/SHOWCASE_REPORT.zh-CN.pdf) · [工程报告 (`REPORT.pdf`)](anvil-q1/REPORT.pdf) |
+| **第二代** | **[Anvil-Q2](anvil-q2/README.zh-CN.md)** | [Alibaba `Qwen/Qwen2.5-1.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-AWQ) · **1/2/4-Bank 并行 W4A16 AWQ 引擎 + 无损 Q16 / 对称分组 INT8 KV-Cache 在线压缩引擎**（28 层、`1536d` 隐藏维、12Q:2KV 6:1 GQA、`8960d` SwiGLU MLP，向下兼容 `Anvil-Q1`） | `21` 个模块 / `2,407` 行 | **已完成并验证（`101.39 MHz`，`WNS +0.137 ns`，物理 Arria 10 HIL 通过）** — [中文白皮书 (`SHOWCASE_REPORT.zh-CN.pdf`)](anvil-q2/SHOWCASE_REPORT.zh-CN.pdf) · [工程报告 (`REPORT.pdf`)](anvil-q2/REPORT.pdf) |
+| **第三代+** | **Anvil-Q3+**（规划中） | 更大参数量级开源量化大语言模型（`3B–7B+` AWQ/GPTQ，支持板载 DDR4 权重流式加载与多 Bank 张量引擎） | 规划中 | 基于 `100 MHz+` 基线持续迭代推进 |
+
+## Vulcan 七大工坊芯片家族矩阵
+
+**Anvil（铁砧）** 是 Vulcan 七大工坊芯片家族中的核心支柱与当前阶段的首要研发重点：
+
+| 芯片家族 | 工坊意象与命名寓意 | 领域定位与代表核心 |
+| --- | --- | --- |
+| **Anvil（铁砧）** *(核心重点)* | 承担核心计算任务的工坊重器 | AI 与大模型计算系列（**`Anvil-Q`** 量化大模型推理系列、**`Anvil-E`** 多模态嵌入系列、矩阵与张量引擎） |
+| **Rivet（铆钉）** | 小而关键、牢固可靠 | 密码、校验与数据完整性芯片系列（从 `AES`、`SHA`、`CRC` 等独立核心起步） |
+| **Billet（金属坯料）** | 基础材料经加工与组合构建不同系统 | 数字信号处理（DSP）系列（涵盖 `FIR`、`FFT`、`CORDIC` 等模块） |
+| **Swage（型锻模）** | 将输入加工成形为目标形态的工具 | 图像处理与 ISP 系列（缩放、滤波、像素格式转换等） |
+| **Bellows（风箱）** | 收缩、展开与连续高吞吐气流 | 压缩、解压与流式数据处理系列（如 `LZ4` 流式加速器） |
+| **Crucible（坩埚）** | 多种材料融合成形 | 图形处理与渲染系列（几何、纹理、光照多源信息汇合渲染） |
+| **Furnace（工业炉）** | 整合多个计算与处理环节的系统设备 | 大型异构 SoC 与完整计算系统系列 |
+
+## Anvil-Q2 · 第二代（`Qwen/Qwen2.5-1.5B-Instruct-AWQ` 多 Bank 并行 + INT8 KV 压缩版）
+
+`Anvil-Q2` 将 `Anvil-Q` 架构扩展至 28 层 [`Qwen/Qwen2.5-1.5B-Instruct-AWQ`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-AWQ) 模型（`hidden_size = 1536`、`intermediate_size = 8960`、12Q:2KV 6:1 GQA），并保持对 `Anvil-Q1` 的寄存器与引脚级向后兼容：
+
+- **1/2/4-Bank 并行 W4A16 AWQ 引擎**：实测 2-Bank 加速比 **`1.97×`**、4-Bank 加速比 **`3.82×`**，跨 Bank 模式输出实现 `0` 比特差异。
+- **双模 KV Cache 编解码器**：支持无损 Q16（`KV_MODE=0`，余弦相似度 `1.000000000`）与 Group-32 对称 INT8 在线量化（`KV_MODE=1`，节省 `46.88%` 片上存储，最小余弦相似度 **`0.999999953`**）。
+- **`101.39 MHz` 时序签核**：对多 Bank 调度器、标量仲裁器与 AWQ GEMV 通道实施寄存器重定时与流水线切分，在 Intel Arria 10 GX 上实现 **`Fmax = 101.39 MHz`**（`10.0 ns` 约束下 **`WNS = +0.137 ns`**）。
+- **中文学术白皮书**：[`anvil-q2/SHOWCASE_REPORT.zh-CN.pdf`](anvil-q2/SHOWCASE_REPORT.zh-CN.pdf) · **开发者工程报告**：[`anvil-q2/REPORT.pdf`](anvil-q2/REPORT.pdf)
 
 ## Anvil-Q1 · 第一代（`Qwen/Qwen2.5-0.5B-Instruct-AWQ` W4A16 混合精度版）
 
