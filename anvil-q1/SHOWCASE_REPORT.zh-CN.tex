@@ -52,7 +52,7 @@
 
 \vspace{4pt}
 
-{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.22\textwidth}L{0.74\textwidth}@{}}\toprule\textbf{研发作者与联系方式} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{芯片型号与目标模型} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ（24 层，896 维隐藏层，14Q:2KV 分组注意力，151,\allowbreak{}936 词表）\\\textbf{物理硬件验证平台} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 加速卡（427,200 ALMs，8 GB DDR4）\\\textbf{配套工程签核文档} & 配套开发者架构与签核报告 \texttt{REPORT.pdf} \textperiodcentered{} 发布时间：2026年10月23日 22:26 (\allowbreak{}UTC+\allowbreak{}8 北京时间)\allowbreak{}\\\bottomrule\end{tabular}\par}
+{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.22\textwidth}L{0.74\textwidth}@{}}\toprule\textbf{研发作者与联系方式} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{芯片型号与目标模型} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ（24 层，896 维隐藏层，14Q:2KV 分组注意力，151,\allowbreak{}936 词表）\\\textbf{物理硬件验证平台} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 加速卡（427,200 ALMs，8 GB DDR4）\\\textbf{配套工程签核文档} & 配套开发者架构与签核报告 \texttt{REPORT.pdf} \textperiodcentered{} 发布时间：2026年10月23日 23:12 (\allowbreak{}UTC+\allowbreak{}8 北京时间)\allowbreak{}\\\bottomrule\end{tabular}\par}
 
 \vspace{6pt}
 
@@ -62,15 +62,15 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcan!90!black] at (0.14,2.08) {1. 推理输出一致性};
 
-\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (0.14,1.25) {100\% 逐词精确匹配 (\allowbreak{}46/\allowbreak{}46 词)\allowbreak{}};
+\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (0.14,1.25) {100\% 逐词精确匹配 (\allowbreak{}382/\allowbreak{}382 词)\allowbreak{}};
 
-\node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (0.14,0.14) {24 层全网络五大领域自回归对话生成完全一致};
+\node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (0.14,0.14) {24 层全网络 30 组跨领域提示词自回归生成完全一致 (\allowbreak{}41,\allowbreak{}280 层执行)\allowbreak{}};
 
 \draw[draw=vulcanblue!85!black,thick,fill=vulcanblue!5,rounded corners=4pt] (4.30,0) rectangle (8.35,2.25);
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcanblue] at (4.44,2.08) {2. 数值余弦相似度};
 
-\node[anchor=west,font=\normalsize\bfseries,text=black] at (4.44,1.25) {0.999993};
+\node[anchor=west,font=\normalsize\bfseries,text=black] at (4.44,1.25) {0.999992};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (4.44,0.14) {151,\allowbreak{}936 全词表 Logits 相对官方 FP32 平均余弦相似度};
 
@@ -96,7 +96,7 @@
 
 \needspace{8\baselineskip}\section{产品架构概述与全自动硅片设计闭环}
 
-\textbf{Anvil-Q1} 是由 \textbf{Vulcan 全自动硬件设计系统} 面向开源大语言模型 Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ（24 层，896 维隐藏层，14Q:2KV 分组注意力，151,\allowbreak{}936 词表） 构建的专用 W4A16 混合精度硬件推理加速架构。系统通过四比特分组非对称权重量化（AWQ Group-128）、在线硬件反量化阵列、旋转位置编码（RoPE）、7:1 分组查询注意力（GQA）与 SwiGLU 前馈计算引擎，在 Intel Arria 10 GX FPGA 上实现了高精度的端到端Transformer 层计算。在涵盖数学计算、代码生成、事实问答、逻辑推理与中文交互的多领域评测中，硬件生成序列与 HuggingFace 官方 FP32 浮点基准达到 \textbf{100\% 逐词精确匹配 (\allowbreak{}46/\allowbreak{}46 词)\allowbreak{}}，151,936 词表 Logits 平均余弦相似度达 \textbf{0.999993}。
+\textbf{Anvil-Q1} 是由 \textbf{Vulcan 全自动硬件设计系统} 面向开源大语言模型 Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ（24 层，896 维隐藏层，14Q:2KV 分组注意力，151,\allowbreak{}936 词表） 构建的专用 W4A16 混合精度硬件推理加速架构。系统通过四比特分组非对称权重量化（AWQ Group-128）、在线硬件反量化阵列、旋转位置编码（RoPE）、7:1 分组查询注意力（GQA）与 SwiGLU 前馈计算引擎，在 Intel Arria 10 GX FPGA 上实现了高精度的端到端Transformer 层计算。在涵盖数学计算、代码生成、事实问答、逻辑推理与中文交互的多领域评测中，硬件生成序列与 HuggingFace 官方 FP32 浮点基准达到 \textbf{100\% 逐词精确匹配 (\allowbreak{}382/\allowbreak{}382 词)\allowbreak{}}，151,936 词表 Logits 平均余弦相似度达 \textbf{0.999992}。
 
 \vspace{2pt}
 
@@ -122,21 +122,23 @@
 
 \needspace{10\baselineskip}\section{官方权重基准测试与多场景端到端实测对比}
 
-表 1 与图 3 展示了 \textbf{Anvil-Q1} 在完整 \textbf{24 层 Qwen2.5-0.5B-Instruct} 模型下，横跨数学计算、Python 编程、事实问答、逻辑推理与中文交互五大领域的自回归生成结果与官方 FP32 浮点基准的逐词对比：
+表 1 与图 3 展示了 \textbf{Anvil-Q1} 在完整 \textbf{24 层 Qwen2.5-0.5B-Instruct} 模型下，横跨数学算术、Python 编程、百科科学、逻辑推理、硬件体系结构与中文问答 \textbf{6 大评测领域、30 组基准提示词（累计 1,720 次 24 层前向推理 = 41,280 次硬件解码层执行）}的自回归生成结果与官方 FP32 浮点基准的逐词对比：
 
-{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.14\textwidth}L{0.21\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.17\textwidth}@{}}\toprule
+{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.15\textwidth}L{0.2\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.17\textwidth}@{}}\toprule
 
-\textbf{评测领域} & \textbf{输入提示词 (\allowbreak{}Prompt)\allowbreak{}} & \textbf{官方 FP32 浮点基准输出} & \textbf{Anvil 硬件 W4A16 输出} & \textbf{Top-1 匹配率与余弦相似度}\\\midrule\endhead
+\textbf{评测领域 (\allowbreak{}题量)\allowbreak{}} & \textbf{代表性输入提示词} & \textbf{官方 FP32 浮点基准输出} & \textbf{Anvil 硬件 W4A16 输出} & \textbf{领域累计匹配率与余弦}\\\midrule\endhead
 
-数学算术 & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
+数学算术 (\allowbreak{}5 题)\allowbreak{} & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 71/\allowbreak{}71 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
-Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 17/\allowbreak{}17 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999986\\[3pt]
+Python代码 (\allowbreak{}5 题)\allowbreak{} & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 81/\allowbreak{}81 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999984\\[3pt]
 
-百科常识 & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999997\\[3pt]
+百科常识 (\allowbreak{}5 题)\allowbreak{} & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 58/\allowbreak{}58 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
 
-逻辑推理 & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 7/\allowbreak{}7 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
+逻辑推理 (\allowbreak{}5 题)\allowbreak{} & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 50/\allowbreak{}50 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
 
-中文问答 & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 6/\allowbreak{}6 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+硬件体系结构 (\allowbreak{}5 题)\allowbreak{} & What does FPGA stand for? Answer in one sentence. & FPGA stands for Field-Programmable Gate Array. & FPGA stands for Field-Programmable Gate Array. & 78/\allowbreak{}78 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+
+中文问答 (\allowbreak{}5 题)\allowbreak{} & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 44/\allowbreak{}44 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
 \bottomrule\end{longtable}}
 
@@ -144,29 +146,33 @@ Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{}
 
 \draw[draw=black!25,fill=vulcan!3,rounded corners=3pt] (-0.4,-2.10) rectangle (7.7,2.20);
 
-\node[anchor=north west,font=\footnotesize\bfseries,text=vulcan!90!black] at (-0.2,2.05) {(a) 五大领域自回归生成 Top-1 匹配率 (151,936 词表)};
+\node[anchor=north west,font=\footnotesize\bfseries,text=vulcan!90!black] at (-0.2,2.05) {(a) 六大领域 30 题自回归 Top-1 匹配率 (151,936 词表)};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,1.30) {1. 数学计算 (15+27=42)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,1.45) {1. 数学算术 (5 题)};
 
-\fill[vulcangreen] (2.5,1.16) rectangle (5.8,1.44); \node[text=white,font=\tiny\bfseries] at (4.15,1.30) {100\% (8/8 词)}; \node[anchor=west,font=\tiny] at (5.9,1.30) {cos=0.999992};
+\fill[vulcangreen] (2.5,1.33) rectangle (5.8,1.57); \node[text=white,font=\tiny\bfseries] at (4.15,1.45) {100\% (71/71 词)}; \node[anchor=west,font=\tiny] at (5.9,1.45) {cos=0.999994};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.65) {2. Python 代码生成};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.92) {2. Python 编程 (5 题)};
 
-\fill[vulcanblue] (2.5,0.51) rectangle (5.8,0.79); \node[text=white,font=\tiny\bfseries] at (4.15,0.65) {100\% (17/17 词)}; \node[anchor=west,font=\tiny] at (5.9,0.65) {cos=0.999986};
+\fill[vulcanblue] (2.5,0.80) rectangle (5.8,1.04); \node[text=white,font=\tiny\bfseries] at (4.15,0.92) {100\% (81/81 词)}; \node[anchor=west,font=\tiny] at (5.9,0.92) {cos=0.999984};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.00) {3. 事实问答 (Paris)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.39) {3. 百科科学 (5 题)};
 
-\fill[teal!80!black] (2.5,-0.14) rectangle (5.8,0.14); \node[text=white,font=\tiny\bfseries] at (4.15,0.00) {100\% (8/8 词)}; \node[anchor=west,font=\tiny] at (5.9,0.00) {cos=0.999997};
+\fill[teal!80!black] (2.5,0.27) rectangle (5.8,0.51); \node[text=white,font=\tiny\bfseries] at (4.15,0.39) {100\% (58/58 词)}; \node[anchor=west,font=\tiny] at (5.9,0.39) {cos=0.999995};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.65) {4. 逻辑推理 (Mammal)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.14) {4. 逻辑推理 (5 题)};
 
-\fill[vulcan!90] (2.5,-0.79) rectangle (5.8,-0.51); \node[text=white,font=\tiny\bfseries] at (4.15,-0.65) {100\% (7/7 词)}; \node[anchor=west,font=\tiny] at (5.9,-0.65) {cos=0.999995};
+\fill[vulcan!90] (2.5,-0.26) rectangle (5.8,-0.02); \node[text=white,font=\tiny\bfseries] at (4.15,-0.14) {100\% (50/50 词)}; \node[anchor=west,font=\tiny] at (5.9,-0.14) {cos=0.999992};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-1.30) {5. 中文交互 (北京)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.67) {5. 硬件体系结构 (5 题)};
 
-\fill[vulcanamber] (2.5,-1.44) rectangle (5.8,-1.16); \node[text=white,font=\tiny\bfseries] at (4.15,-1.30) {100\% (6/6 词)}; \node[anchor=west,font=\tiny] at (5.9,-1.30) {cos=0.999994};
+\fill[vulcangreen!85!black] (2.5,-0.79) rectangle (5.8,-0.55); \node[text=white,font=\tiny\bfseries] at (4.15,-0.67) {100\% (78/78 词)}; \node[anchor=west,font=\tiny] at (5.9,-0.67) {cos=0.999994};
 
-\node[anchor=west,font=\tiny\bfseries,text=vulcangreen] at (-0.2,-1.82) {累计: 46/46 生成词 100\% 精确匹配 | 全词表平均余弦相似度: 0.999993};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-1.20) {6. 中文问答 (5 题)};
+
+\fill[vulcanamber] (2.5,-1.32) rectangle (5.8,-1.08); \node[text=white,font=\tiny\bfseries] at (4.15,-1.20) {100\% (44/44 词)}; \node[anchor=west,font=\tiny] at (5.9,-1.20) {cos=0.999994};
+
+\node[anchor=west,font=\tiny\bfseries,text=vulcangreen] at (-0.2,-1.82) {累计: 30 题 382/382 生成词 100\% 精确匹配 | 全词表余弦: 0.999992};
 
 \draw[draw=black!25,fill=vulcanblue!3,rounded corners=3pt] (8.0,-2.10) rectangle (16.5,2.20);
 
@@ -176,17 +182,17 @@ Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{}
 
 \node[draw=vulcan,fill=white,rounded corners=2pt,minimum width=3.2cm,minimum height=0.85cm,align=center] (h2) at (14.35,0.85) {\textbf{Anvil-Q1 硬件解码核}\\{\tiny 8 通道 AWQ + GQA + SwiGLU}};
 
-\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.1,-0.55) {\textbf{24 层全深度硬件级联执行 (Layer-Folded Execution)}\\{\tiny 5 大领域累计完成 \textbf{120 个硬件层执行} | \textbf{1,259,748 时钟周期} | \textbf{0 比特误差}}};
+\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.1,-0.55) {\textbf{24 层全深度硬件级联执行 (Layer-Folded Execution)}\\{\tiny 6 大领域 30 题累计 \textbf{41,280 次层评估} | 板级实测 \textbf{0 比特误差}}};
 
 \draw[->,thick,black!70] (h1.east) -- node[above,font=\tiny] {AXI/PCIe} (h2.west);
 
 \draw[->,thick,black!70] (h2.south) -- (14.35,-0.07);
 
-\node[anchor=west,font=\tiny,text=black!75] at (8.2,-1.82) {硬件平台: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) | 16/16 项工程验证通过};
+\node[anchor=west,font=\tiny,text=black!75] at (8.2,-1.82) {硬件平台: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) | Fmax 78.24 MHz (16/16 通过)};
 
 \end{tikzpicture}\par\vspace{3pt}
 
-{\small\textbf{图 3：}(a) 24 层 Qwen2.5-0.5B-Instruct 在五大对话领域的硬件生成匹配率与余弦相似度；(b) 时分复用硬件加速架构与板级执行统计。}\end{minipage}\end{center}
+{\small\textbf{图 3：}(a) 24 层 Qwen2.5-0.5B-Instruct 在六大领域 30 组基准提示词下的硬件生成匹配率与余弦相似度；(b) 时分复用硬件加速架构与板级执行统计。}\end{minipage}\end{center}
 
 \needspace{10\baselineskip}\section{Intel Arria 10 GX 资源利用率与 7B–8B 大模型扩展路线图}
 
@@ -264,7 +270,7 @@ Python代码 & Write a one-line Python function add(\allowbreak{}a,\allowbreak{}
 
 \textbf{验证阶段} & \textbf{验证方法与工具链} & \textbf{实测签核结论}\\\midrule\endhead
 
-L0 周期精确协同仿真 & Icarus Verilog 12.0 +\allowbreak{} 官方 HuggingFace 权重对比 & 通过 (\allowbreak{}100\% 逐词精确匹配 (\allowbreak{}46/\allowbreak{}46 词)\allowbreak{}，余弦相似度 0.999993)\allowbreak{}\\[3pt]
+L0 周期精确协同仿真 & Icarus Verilog 12.0 +\allowbreak{} 官方 HuggingFace 权重对比 & 通过 (\allowbreak{}100\% 逐词精确匹配 (\allowbreak{}382/\allowbreak{}382 词)\allowbreak{}，余弦相似度 0.999992)\allowbreak{}\\[3pt]
 
 L1 静态 RTL 与综合门禁 & Yosys 0.33 逻辑综合与可综合性静态检查 & 通过 (\allowbreak{}0 锁存器推断，0 组合逻辑除法环路，0 多驱动冲突)\allowbreak{}\\[3pt]
 

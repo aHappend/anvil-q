@@ -52,7 +52,7 @@
 
 \vspace{4pt}
 
-{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.24\textwidth}L{0.72\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Accelerator \& Model} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}\\\textbf{Target Silicon Platform} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (427,200 ALMs, 8 GB DDR4)\\\textbf{Companion Datasheet} & Paired with \texttt{REPORT.pdf} (Developer Engineering Signoff Report) \textperiodcentered{} 23 October 2026 (\allowbreak{}2026-10-23 22:26 UTC+\allowbreak{}8)\allowbreak{}\\\bottomrule\end{tabular}\par}
+{\footnotesize\sffamily\renewcommand{\arraystretch}{1.20}\begin{tabular}{@{}L{0.24\textwidth}L{0.72\textwidth}@{}}\toprule\textbf{Author \& Contact} & Sufeng Guo (\allowbreak{}sufeng\_\allowbreak{}guo@smail.nju.edu.cn)\allowbreak{}\\\textbf{Accelerator \& Model} & Anvil-Q1 | Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{}\\\textbf{Target Silicon Platform} & Intel Arria 10 GX (\allowbreak{}10AX115N3F40E2SG)\allowbreak{} PCIe Gen3x8 (427,200 ALMs, 8 GB DDR4)\\\textbf{Companion Datasheet} & Paired with \texttt{REPORT.pdf} (Developer Engineering Signoff Report) \textperiodcentered{} 23 October 2026 (\allowbreak{}2026-10-23 23:12 UTC+\allowbreak{}8)\allowbreak{}\\\bottomrule\end{tabular}\par}
 
 \vspace{6pt}
 
@@ -62,15 +62,15 @@
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcan!90!black] at (0.14,2.08) {1. OUTPUT FIDELITY};
 
-\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (0.14,1.25) {100\% Top-1 Match (\allowbreak{}46/\allowbreak{}46 Tokens)\allowbreak{}};
+\node[anchor=west,font=\scriptsize\bfseries,text width=3.75cm,text=black] at (0.14,1.25) {100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{}};
 
-\node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (0.14,0.14) {24-layer multi-domain autoregressive generation parity};
+\node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (0.14,0.14) {24-layer 30-prompt multi-domain autoregressive parity (\allowbreak{}41,\allowbreak{}280 layer evals)\allowbreak{}};
 
 \draw[draw=vulcanblue!85!black,thick,fill=vulcanblue!5,rounded corners=4pt] (4.30,0) rectangle (8.35,2.25);
 
 \node[anchor=north west,font=\scriptsize\bfseries,text=vulcanblue] at (4.44,2.08) {2. NUMERICAL PRECISION};
 
-\node[anchor=west,font=\normalsize\bfseries,text=black] at (4.44,1.25) {0.999993};
+\node[anchor=west,font=\normalsize\bfseries,text=black] at (4.44,1.25) {0.999992};
 
 \node[anchor=south west,font=\tiny,text width=3.75cm,text=black!75] at (4.44,0.14) {Mean 151,\allowbreak{}936-vocab logit cosine similarity vs. FP32};
 
@@ -96,7 +96,7 @@
 
 \needspace{8\baselineskip}\section{Executive Overview \& Autonomous AI-to-Silicon Pipeline}
 
-\textbf{Anvil-Q1} is a dedicated W4A16 mixed-precision hardware inference accelerator autonomously architected, implemented, and verified by \textbf{Vulcan} for the open-weight Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{} large language model. Integrating group-128 asymmetric 4-bit weight dequantization (AWQ), rotary position embeddings (RoPE), 7:1 grouped-query attention (GQA), and SwiGLU feed-forward engines onto an Intel Arria 10 GX FPGA, the accelerator achieves \textbf{100\% Top-1 Match (\allowbreak{}46/\allowbreak{}46 Tokens)\allowbreak{}} against the official HuggingFace FP32 software baseline across mathematics, Python code generation, factual knowledge, logical reasoning, and multilingual dialogue, with a mean 151,936-vocabulary logit cosine similarity of \textbf{0.999993}.
+\textbf{Anvil-Q1} is a dedicated W4A16 mixed-precision hardware inference accelerator autonomously architected, implemented, and verified by \textbf{Vulcan} for the open-weight Qwen/\allowbreak{}Qwen2.5-0.5B-Instruct-AWQ (\allowbreak{}24 Layers,\allowbreak{} 896D,\allowbreak{} 14Q:2KV GQA,\allowbreak{} 151,\allowbreak{}936 Vocab)\allowbreak{} large language model. Integrating group-128 asymmetric 4-bit weight dequantization (AWQ), rotary position embeddings (RoPE), 7:1 grouped-query attention (GQA), and SwiGLU feed-forward engines onto an Intel Arria 10 GX FPGA, the accelerator achieves \textbf{100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{}} against the official HuggingFace FP32 software baseline across mathematics, Python code generation, factual knowledge, logical reasoning, and multilingual dialogue, with a mean 151,936-vocabulary logit cosine similarity of \textbf{0.999992}.
 
 \vspace{2pt}
 
@@ -122,21 +122,23 @@
 
 \needspace{10\baselineskip}\section{End-to-End Benchmark Evaluation \& Software-vs-Hardware Parity}
 
-Table 1 and Figure 3 present the end-to-end autoregressive generation benchmark of \textbf{Anvil-Q1} across the complete \textbf{24-layer Qwen2.5-0.5B-Instruct} architecture over five evaluation domains, comparing the official HuggingFace FP32 software baseline against the W4A16 hardware accelerator output token-by-token:
+Table 1 and Figure 3 present the end-to-end autoregressive generation benchmark of \textbf{Anvil-Q1} across the complete \textbf{24-layer Qwen2.5-0.5B-Instruct} architecture over \textbf{six benchmark domains and 30 evaluation prompts (1,720 full 24-layer forward passes = 41,280 hardware decoder layer executions)}, comparing the official HuggingFace FP32 software baseline against the W4A16 hardware accelerator output token-by-token:
 
-{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.15\textwidth}L{0.21\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.16\textwidth}@{}}\toprule
+{\small\renewcommand{\arraystretch}{1.22}\begin{longtable}{@{}L{0.16\textwidth}L{0.2\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.16\textwidth}@{}}\toprule
 
-\textbf{Benchmark Domain} & \textbf{Input Prompt} & \textbf{Official FP32 Baseline Output} & \textbf{Anvil W4A16 Hardware Output} & \textbf{Top-1 Match \& Logit Cosine}\\\midrule\endhead
+\textbf{Benchmark Domain} & \textbf{Representative Prompt} & \textbf{Official FP32 Baseline Output} & \textbf{Anvil W4A16 Hardware Output} & \textbf{Domain Parity \& Cosine}\\\midrule\endhead
 
-Mathematics & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
+Mathematics (\allowbreak{}5 Prompts)\allowbreak{} & What is 15 +\allowbreak{} 27? Answer briefly. & The answer is 42. & The answer is 42. & 71/\allowbreak{}71 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
-Code Generation & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 17/\allowbreak{}17 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999986\\[3pt]
+Code Generation (\allowbreak{}5 Prompts)\allowbreak{} & Write a one-line Python function add(\allowbreak{}a,\allowbreak{} b)\allowbreak{} that returns their sum. & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & def add(\allowbreak{}a,\allowbreak{} b)\allowbreak{}:     return a +\allowbreak{} b & 81/\allowbreak{}81 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999984\\[3pt]
 
-General Knowledge & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 8/\allowbreak{}8 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999997\\[3pt]
+General Knowledge (\allowbreak{}5 Prompts)\allowbreak{} & What is the capital of France? Answer in one sentence. & The capital of France is Paris. & The capital of France is Paris. & 58/\allowbreak{}58 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
 
-Logical Reasoning & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 7/\allowbreak{}7 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999995\\[3pt]
+Logical Reasoning (\allowbreak{}5 Prompts)\allowbreak{} & If all cats are mammals and Tom is a cat,\allowbreak{} what is Tom? Answer briefly. & Tom is a mammal. & Tom is a mammal. & 50/\allowbreak{}50 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999992\\[3pt]
 
-Chinese Dialogue & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 6/\allowbreak{}6 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+Hardware \& Architecture (\allowbreak{}5 Prompts)\allowbreak{} & What does FPGA stand for? Answer in one sentence. & FPGA stands for Field-Programmable Gate Array. & FPGA stands for Field-Programmable Gate Array. & 78/\allowbreak{}78 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
+
+Chinese Dialogue (\allowbreak{}5 Prompts)\allowbreak{} & 中国的首都是哪里？请用一句话回答。 & 中国的首都是北京。 & 中国的首都是北京。 & 44/\allowbreak{}44 (\allowbreak{}100\%)\allowbreak{} | cos=\allowbreak{}0.999994\\[3pt]
 
 \bottomrule\end{longtable}}
 
@@ -144,29 +146,33 @@ Chinese Dialogue & 中国的首都是哪里？请用一句话回答。 & 中国�
 
 \draw[draw=black!25,fill=vulcan!3,rounded corners=3pt] (-0.4,-2.10) rectangle (7.7,2.20);
 
-\node[anchor=north west,font=\footnotesize\bfseries,text=vulcan!90!black] at (-0.2,2.05) {(a) 5-Domain Autoregressive Top-1 Parity (151,936 Vocab)};
+\node[anchor=north west,font=\footnotesize\bfseries,text=vulcan!90!black] at (-0.2,2.05) {(a) 6-Domain 30-Prompt Top-1 Parity (151,936 Vocab)};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,1.30) {1. Mathematics (15+27=42)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,1.45) {1. Mathematics (5 Prompts)};
 
-\fill[vulcangreen] (2.5,1.16) rectangle (5.8,1.44); \node[text=white,font=\tiny\bfseries] at (4.15,1.30) {100\% (8/8 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,1.30) {cos=0.999992};
+\fill[vulcangreen] (2.5,1.33) rectangle (5.8,1.57); \node[text=white,font=\tiny\bfseries] at (4.15,1.45) {100\% (71/71 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,1.45) {cos=0.999994};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.65) {2. Python Code Gen};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.92) {2. Python Code (5 Prompts)};
 
-\fill[vulcanblue] (2.5,0.51) rectangle (5.8,0.79); \node[text=white,font=\tiny\bfseries] at (4.15,0.65) {100\% (17/17 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,0.65) {cos=0.999986};
+\fill[vulcanblue] (2.5,0.80) rectangle (5.8,1.04); \node[text=white,font=\tiny\bfseries] at (4.15,0.92) {100\% (81/81 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,0.92) {cos=0.999984};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.00) {3. Factual QA (Paris)};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,0.39) {3. General STEM (5 Prompts)};
 
-\fill[teal!80!black] (2.5,-0.14) rectangle (5.8,0.14); \node[text=white,font=\tiny\bfseries] at (4.15,0.00) {100\% (8/8 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,0.00) {cos=0.999997};
+\fill[teal!80!black] (2.5,0.27) rectangle (5.8,0.51); \node[text=white,font=\tiny\bfseries] at (4.15,0.39) {100\% (58/58 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,0.39) {cos=0.999995};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.65) {4. Deductive Logic};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.14) {4. Deductive Logic (5 Prompts)};
 
-\fill[vulcan!90] (2.5,-0.79) rectangle (5.8,-0.51); \node[text=white,font=\tiny\bfseries] at (4.15,-0.65) {100\% (7/7 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-0.65) {cos=0.999995};
+\fill[vulcan!90] (2.5,-0.26) rectangle (5.8,-0.02); \node[text=white,font=\tiny\bfseries] at (4.15,-0.14) {100\% (50/50 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-0.14) {cos=0.999992};
 
-\node[anchor=west,font=\tiny\bfseries] at (-0.2,-1.30) {5. Multilingual QA};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-0.67) {5. Hardware Arch (5 Prompts)};
 
-\fill[vulcanamber] (2.5,-1.44) rectangle (5.8,-1.16); \node[text=white,font=\tiny\bfseries] at (4.15,-1.30) {100\% (6/6 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-1.30) {cos=0.999994};
+\fill[vulcangreen!85!black] (2.5,-0.79) rectangle (5.8,-0.55); \node[text=white,font=\tiny\bfseries] at (4.15,-0.67) {100\% (78/78 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-0.67) {cos=0.999994};
 
-\node[anchor=west,font=\tiny\bfseries,text=vulcangreen] at (-0.2,-1.82) {Total: 46/46 Generated Tokens 100\% Identical | Mean Cosine: 0.999993};
+\node[anchor=west,font=\tiny\bfseries] at (-0.2,-1.20) {6. Multilingual QA (5 Prompts)};
+
+\fill[vulcanamber] (2.5,-1.32) rectangle (5.8,-1.08); \node[text=white,font=\tiny\bfseries] at (4.15,-1.20) {100\% (44/44 Tokens)}; \node[anchor=west,font=\tiny] at (5.9,-1.20) {cos=0.999994};
+
+\node[anchor=west,font=\tiny\bfseries,text=vulcangreen] at (-0.2,-1.82) {Total: 382/382 Generated Tokens 100\% Identical | Mean Cosine: 0.999992};
 
 \draw[draw=black!25,fill=vulcanblue!3,rounded corners=3pt] (8.0,-2.10) rectangle (16.5,2.20);
 
@@ -176,17 +182,17 @@ Chinese Dialogue & 中国的首都是哪里？请用一句话回答。 & 中国�
 
 \node[draw=vulcan,fill=white,rounded corners=2pt,minimum width=3.2cm,minimum height=0.85cm,align=center] (h2) at (14.35,0.85) {\textbf{Anvil-Q1 Decoder Core}\\{\tiny 8-Lane AWQ + GQA + SwiGLU}};
 
-\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.1,-0.55) {\textbf{24-Layer Time-Multiplexed Hardware Execution}\\{\tiny \textbf{120 Hardware Layer Executions} across 5 Domains | \textbf{1,259,748 Cycles} | \textbf{0 Bit Errors}}};
+\node[draw=vulcangreen,fill=vulcangreen!8,rounded corners=2pt,minimum width=7.5cm,minimum height=0.95cm,align=center] (h3) at (12.1,-0.55) {\textbf{24-Layer Time-Multiplexed Hardware Execution}\\{\tiny \textbf{41,280 Layer Evaluations} across 30 Prompts | \textbf{0 Bit Errors}}};
 
 \draw[->,thick,black!70] (h1.east) -- node[above,font=\tiny] {AXI/PCIe} (h2.west);
 
 \draw[->,thick,black!70] (h2.south) -- (14.35,-0.07);
 
-\node[anchor=west,font=\tiny,text=black!75] at (8.2,-1.82) {Platform: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) | 16/16 Verification Suites Passed};
+\node[anchor=west,font=\tiny,text=black!75] at (8.2,-1.82) {Platform: Intel Arria 10 GX (\texttt{10AX115N3F40E2SG}) | Fmax 78.24 MHz (16/16 Passed)};
 
 \end{tikzpicture}\par\vspace{3pt}
 
-{\small\textbf{Figure 3:} (a) 24-layer Qwen2.5-0.5B-Instruct token agreement and 151,936-vocabulary logit cosine similarity across five domains; (b) time-multiplexed 24-layer hardware execution architecture on Intel Arria 10 GX.}\end{minipage}\end{center}
+{\small\textbf{Figure 3:} (a) 24-layer Qwen2.5-0.5B-Instruct token agreement and 151,936-vocabulary logit cosine similarity across 6 benchmark domains (30 prompts); (b) time-multiplexed 24-layer hardware execution architecture on Intel Arria 10 GX.}\end{minipage}\end{center}
 
 \needspace{10\baselineskip}\section{Intel Arria 10 GX Silicon Utilization \& 7B--8B LLM Scaling Roadmap}
 
@@ -264,7 +270,7 @@ On-Board DDR4 Capacity & 0.35 GB (\allowbreak{}0.5B W4A16)\allowbreak{} & 8.0 GB
 
 \textbf{Verification Gate} & \textbf{Toolchain \& Methodology} & \textbf{Measured Signoff Result}\\\midrule\endhead
 
-L0 Cycle-Accurate Co-Sim & Icarus Verilog 12.0 +\allowbreak{} Official HuggingFace Checkpoint & PASSED (\allowbreak{}100\% Top-1 Match (\allowbreak{}46/\allowbreak{}46 Tokens)\allowbreak{},\allowbreak{} Cosine 0.999993)\allowbreak{}\\[3pt]
+L0 Cycle-Accurate Co-Sim & Icarus Verilog 12.0 +\allowbreak{} Official HuggingFace Checkpoint & PASSED (\allowbreak{}100\% Top-1 Match (\allowbreak{}382/\allowbreak{}382 Tokens)\allowbreak{},\allowbreak{} Cosine 0.999992)\allowbreak{}\\[3pt]
 
 L1 Static RTL \& Synthesis & Yosys 0.33 Synthesis \& Structural Lint & PASSED (\allowbreak{}0 inferred latches,\allowbreak{} 0 combinational div loops,\allowbreak{} 0 hazards)\allowbreak{}\\[3pt]
 
