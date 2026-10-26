@@ -1,0 +1,192 @@
+# Anvil-Q2-FP implementation architecture
+
+## Design handoff
+
+The design sources connect the complete token path: embedding, every decoder,
+final normalization and output projection. The numerical operators implement
+IEEE encoding/rounding primitives, exactly three-stage eight-row tensor lanes,
+registered/iterative scalar arithmetic, the frozen exponential, AWQ
+dequantization, packed native and block-scaled cache control, causal GQA,
+banked GEMV, RMSNorm, residual/SwiGLU operations and split-half RoPE.
+The parent scheduler, bus mux, scalar arbiter and memory-port sources are
+copied without changes. The top has no Q1 compatibility mode; the reference
+retains that separate product.
+
+The complete required behavior is in `SPEC.md`, and integration instructions
+are in `INTEGRATION.md`. This is a source handoff for independent verification,
+not functional, synthesis, benchmark, timing or hardware acceptance.
+
+## Arithmetic boundaries
+
+Selected-format inputs expand exactly to FP32 bit encodings; they do not
+pass through the parent's Q16.16 format. A product record carries a sign,
+classification, exact 48-bit integer significand and signed binary exponent.
+Normalization/rounding is a separate operation. The fixed-width rounders
+handle normals, gradual underflow, overflow, ties and canonical NaNs.
+FP32 addition aligns with guard/round/sticky information and rounds once.
+
+The tensor lane uses three elastic occupied stages. S1 holds eight exact
+products and first/last markers. S2 holds eight rounded FP32 products.
+S3 holds eight running sums and the output marker, sharing its arithmetic
+result with the persistent per-dot accumulators. S3 advancement, not output
+consumption, updates accumulator state. An occupied stalled S3 cannot
+reapply its product. A first marker resets the addition base to +0.
+
+Scalar arithmetic shares one command slot. Add uses a registered FP32
+adder; multiply registers its exact product before rounding. Divide performs
+one restoring quotient bit per cycle, and square root performs one radix-4
+digit per cycle. Both carry remainder information into final RNE rounding.
+No behavioral real arithmetic, vendor-only floating primitive, combinational
+divide or unrolled reciprocal is used.
+
+The exponential controller issues separate scalar operations for range
+reduction and each Horner multiply/add. Its constants and operation ordering
+are the frozen specification, not an independently selectable approximation.
+Its single output slot holds a result through backpressure.
+
+Scalar command operation codes are 0 add, 1 multiply, 2 divide, 3 square
+root and 4 scale by two to the signed exponent in in_b[12:0].
+Inputs/outputs are unsigned FP32 encodings, except that scale exponent.
+The unit serializes commands and holds out_data/out_error while stalled.
+out_error denotes a nonfinite result; callers additionally reject nonfinite
+model inputs before invoking arithmetic. Unsupported operation codes return
+canonical NaN with error rather than successful zero.
+
+The AWQ stream continuously maps lane bits to nibble shifts
+[0,16,4,20,8,24,12,28], including a lane held constant since startup.
+It registers the nibble delta and expanded scale, uses a shared
+scalar multiplier and then rounds to the selected format. Both signs of
+zero scale use this same path to preserve the IEEE product's signed zero
+rather than bypassing arithmetic with a forced +0. Invalid scales
+and overflowing effective weights produce an explicit error response.
+The codec similarly has one complete block command/result slot. Its decode
+flag selects packed signed-byte/exponent input instead of native values.
+It scans selected-format magnitudes for the minimum admissible exponent;
+scaling, integer rounding, reconstruction and selected-format conversion
+are separated by registers. Every output includes an error flag; failed
+outputs cannot commit cache validity. Codec command dimensions are bounded
+by the legal Q2 geometry, whose hidden-size squared bound implies
+HEAD_DIM<65536. The cache controller below owns packing, transactions and
+atomic token visibility.
+
+## Banked and scratch-memory operators
+
+`anvil_q2_fp_gemv` contains the required `banks[b].lane` instance in every
+bank. A separate controller per bank owns its scalar memory client, row
+group, input column, group offset, native/AWQ weight assembly and final
+write acknowledgements. No bank shares another bank's accumulator or memory
+reservation. The external-client path exposes all banks to the unchanged
+tagged scheduler; a standalone scalar-memory path uses the parent arbiter.
+The memory-fetch schedule does not claim a sustained one-beat-per-clock
+end-to-end GEMV rate: only the tensor lane's arithmetic interface has that
+initiation interval. Bank utilization and throughput remain measurements
+for the independent suite and hardware gates.
+
+Each bank reads one FP32 activation and eight native weights or one packed
+AWQ word per input column, dequantizes AWQ rows, feeds the lane and observes
+its running-sum response before advancing. The source/target scratch slots
+are the parent slots in SPEC.md. AWQ scales/zeros are reused within a group,
+with explicit GROUP_SIZE wrap counters. Inactive banks finish without memory
+traffic; tail rows are masked. Q/K/V add each selected-format bias once.
+Every active running sum is checked for nonfinite execution results.
+
+RMSNorm performs an ascending square-and-sum pass and a reread/output pass.
+Mean, epsilon addition, square root, reciprocal and output multiplications
+are separate FP32 operations. Elementwise modes retain the parent's three
+slot pairs for the two residuals and SiLU-times-up. RoPE keeps independent
+head-base/pair counters, uses external FP32 tables and four multiply plus
+two add/subtract commands per split-half pair. Every scratch/model/table
+read is checked for the applicable finite encoding before arithmetic, and
+all writes wait for acknowledgements.
+
+## Cache lifetime and attention
+
+The cache keeps a committed-position count and a prefill/decode cursor per
+layer, rather than a validity bit for every external component. Serial
+contiguous token commits make this sufficient: the only readable positions
+are strictly below that layer's committed count. Invalidation, reset and failed
+commits make partial or stale external writes unreachable. No external RAM
+clear is needed. K and V have separate transactions, but share one final
+visibility event after all successful write acknowledgements.
+
+Mode 0 collects two adjacent FP32 scratch components, rounds each to the
+selected native format and emits one packed word. Mode 1 collects a native
+block, invokes `codec`, writes its padded data words and then its sign-extended
+exponent word. The controller advances dimension/block, KV head and K/V
+selection explicitly. It reads and validates an entire compressed block before
+returning a requested component; any reserved byte, malformed metadata,
+nonzero padding or failed reconstruction fails the read.
+
+The standalone cache's `invalidate` suppresses new work and completions but
+does not withdraw a held memory request. Its ABORT state drains that port and
+any running codec command before exposing readiness. At the integrated top,
+cancellation instead resets numerical clients and uses the unchanged scheduler
+to drain tagged external transactions. A new sequence resets all cache counts.
+Repeated invalidation cannot resurrect old visibility.
+
+Attention first computes the FP32 square root of HEAD_DIM and commits current
+K/V. For each query head it walks causal positions in ascending order, and
+components in ascending order within each dot. Q is rounded to the selected
+format; cached K/V already crossed the same boundary. Separate FP32 multiply
+and add operations produce each dot; one FP32 division by the registered
+square root produces its score. Explicit head-within-group counters implement
+contiguous GQA without a run-time divider.
+
+One MAX_SEQ_LEN-by-32-bit RAM holds the current head's scores. The score pass
+tracks the maximum. A second pass reads each score, computes the frozen
+exponential of its difference from the maximum, overwrites that entry with
+the exponential and accumulates the denominator. Finally, for each output
+component, an ascending causal-position pass accumulates FP32(exp*V) and
+divides by that same denominator. This is not an online/reassociated softmax.
+All score/exponential RAM entries read by a command have first been written
+by that command. The RAM has synchronous accesses and no physical reset;
+asynchronously reset control prevents stale reads.
+
+At native geometry this temporary RAM contains 32768*32 bits, reused across
+heads, layers and tokens. A compressed block buffer contains
+CACHE_BLOCK*16 native bits, ceil(CACHE_BLOCK/4)*32 packed bits and one
+32-bit exponent. These are architectural capacities, not measured FPGA
+resources. Cache contents and all model/scratch tensors reside behind the
+external transaction interface.
+
+## Orchestration and ownership
+
+Each bank has an independent memory client and eight-row dot lane; no global
+one-outstanding shortcut is permitted. Parent arbitration and tagged scheduler
+retain original names. Commands, responses and arithmetic have distinct
+ownership lifetimes. Accepted memory writes require responses before cache
+visibility commits. Cancellation resets numerical clients while the parent
+scheduler drains accepted memory traffic.
+
+The decoder retains the parent's eleven-step order. The MLP sequences gate,
+up, SiLU-times-up and down operations using its own instance of the same
+banked floating-point GEMV, not the fixed-point parent. Direct decoder
+projections and MLP projection clients share the top scheduler's bank-client
+slices through the unchanged bus mux. There are BANKS independent projection
+clients plus one scalar-operation client at the top. The parent's arbitration,
+tag allocation and completion ordering remain in that scheduler.
+
+The top retains the parent's serial vocabulary projection: for each logit,
+it walks normalized components in ascending order, rounds the linear input
+to the selected format and issues separate FP32 multiply/add commands.
+Output weights and embeddings share the parent's kind-0 table, now selected
+BF16/FP16. AWQ applies to decoder projection kinds 1/2/3, not kind 0.
+The logit sum and index remain unchanged while logit_valid && !logit_ready.
+
+Top faults annul numerical clients and invalidate sequence state, then flush
+and drain the scheduler before the error completion. Cancellation suppresses
+logits immediately and retains the parent's cancel_done behavior. Accepted
+requests retain scheduler ownership even when numerical clients are reset;
+there is no path from a drained old response into a new token.
+
+## Reproduction and ownership
+
+Source order is the package before modules, using `rtl/*.sv`.
+No tool installation is authorized. Independent Verifier supplies exact
+supported tool versions, executable portable L1 commands and benchmark-vector
+entrypoints under `tests/`; Designer does not author those harnesses.
+The required entrypoints are listed in `SPEC.md`, but are not claimed present
+or executable until the Verifier handoff.
+The shared runtime supplies the native hardware bridge and final report.
+Device-specific cable identities, private host paths and runtime metadata
+are not product inputs.
