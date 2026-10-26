@@ -92,7 +92,7 @@ module anvil_q2_ht_integer_math (
             (b[63:0]==0 || (|b[127:64]))) begin
           failed<=1; state<=RESPONSE;
         end
-        if (operation==M_ROUND && b>127) begin failed<=1; state<=RESPONSE; end
+        if (operation==M_ROUND && (b<0 || b>127)) begin failed<=1; state<=RESPONSE; end
       end
       ADD: begin
         sum[limb*32+:32]<=limb_sum[31:0];

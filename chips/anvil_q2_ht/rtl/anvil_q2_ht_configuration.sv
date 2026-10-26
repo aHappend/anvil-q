@@ -271,6 +271,7 @@ module anvil_q2_ht_configuration #(
           descriptor_valid<=1;
           descriptor_error<=desc_req_index>=ENTRIES;
         end
+        if (annul) begin descriptor_valid<=0; descriptor_error<=0; end
         if (annul && busy) begin
           state<=IDLE;
           response_valid<=1; response_error<=1; response_data<=0;
@@ -287,7 +288,7 @@ module anvil_q2_ht_configuration #(
                   if (cfg_wdata==1) begin
                     state<=START; response_valid<=0; index<=0;
                   end else if (cfg_wdata==2) begin
-                    loaded<=0; changed<=1;
+                    loaded<=0; changed<=1; descriptor_valid<=0;
                   end else if (cfg_wdata!=0) response_error<=1;
                 end
                 16'h0010: if (cfg_wdata>1) response_error<=1;
@@ -413,6 +414,7 @@ module anvil_q2_ht_configuration #(
             else begin
               state<=IDLE; response_valid<=1; response_error<=0;
               loaded<=1; active_bank<=!active_bank; changed<=1;
+              descriptor_valid<=0;
               committed_weight<=shadow_weight; committed_cache<=shadow_cache;
               committed_base<=shadow_base; committed_length<=shadow_length;
             end

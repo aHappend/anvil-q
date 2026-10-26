@@ -196,10 +196,10 @@ module anvil_q2_ht_top #(
     assign logit_valid=rst_n && !inhibit && seq_logit_valid;
     assign logit_index=logit_valid ? seq_logit_index : 32'd0;
     assign logit_data=logit_valid ? seq_logit_data : 32'sd0;
-    assign done=rst_n && !cancel && ((!draining && seq_done) ||
+    assign done=rst_n && ((!inhibit && seq_done) ||
       (abort_completed && aborted_token));
     assign error=done && (abort_completed || seq_error);
-    assign cancel_done=rst_n && !cancel && cancellation_completed;
+    assign cancel_done=rst_n && cancellation_completed;
     assign kv_invalidate=flush || sequence_invalidate;
     assign tile_ready=array_input_ready && !direct_active && !inhibit;
     assign direct_ready=array_input_ready && direct_active && !inhibit;

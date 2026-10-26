@@ -1,22 +1,21 @@
 # HT implementation architecture
 
-## Boundaries and current increment
+## Connected implementation and evidence boundary
 
 The saved implementation includes the fixed-latency physical tensor datapath,
 ordered read prefetcher, banked tile store, dense-record KV codec/cache,
 configuration validator, shared DDR fabric, host port, scalar coefficient
-reader, format converter and multi-tile projection controller.
-This is an incremental source handoff, not a complete accelerator or an
-acceptance claim. Subsequent increments must supply the full numerical token
-sequencer and connected top without changing the admitted contract.
-In particular, the five required named top-level instances do not yet exist:
-module declarations and internal projection interfaces are not a substitute
-for their actual connected hierarchy. Integration and independent checks remain
-pending for every component.
+reader, format converter, multi-tile projection controller, banked vector
+storage, iterative integer/exp services, complete numerical token sequencer,
+KV burst read-ahead and the connected `anvil_q2_ht_top`. Its legal-parameter
+branch contains the five actual named instances `prefetcher`, `tile_buffers`,
+`tensor_array`, `kv_cache` and `sequencer`. This is a design handoff, not an
+acceptance claim. Independent functional, synthesis and physical checks remain
+pending for every component and their integration.
 
 The parent source tree remains unchanged. Its numerical rules inform W4
 compatibility; its combinational reciprocal and square-root functions must not
-be placed in a production single-cycle HT path. Nonlinear control needs
+be placed in a production single-cycle HT path. Nonlinear control uses
 bounded multi-cycle arithmetic rather than large unrolled replacements.
 
 ## Tensor issue and reduction
@@ -130,7 +129,7 @@ must hold the drain-complete indication long enough for this edge.
 `anvil_q2_ht_kv_codec` is a serial, bounded-depth record encoder/decoder. It
 accepts one block at a time and holds its response
 until a later accepting edge. `annul` discards in-progress local codec work; the
-future cache controller remains responsible for external transaction draining.
+cache controller remains responsible for external transaction draining.
 Block size is a power of two in 1..128. `WORDS` is a diagnostic port-size helper
 and must equal `CACHE_BLOCK` for a legal instance.
 
@@ -250,8 +249,10 @@ upstream acceptance edge. The prefetcher's tile reservation remains live
 through both levels of ownership.
 
 Read-client capacity is reserved at capture: one private held response for
-each single-beat client and the already-reserved tile storage for prefetch
-bursts. No second request for a client is accepted before its response retires.
+each single-beat client, already-reserved tile storage for weight prefetch,
+and sixteen reserved lines for KV read-ahead. The fabric has separate
+unbackpressurable return ports for those two burst owners. No second request
+for a single-beat client is accepted before its response retires.
 The read ring tracks accepted bursts, and the beat counter advances only on
 actual `avm_readdatavalid`. Physical write acceptance instead records an
 independent write owner, released only on `avm_writeresponsevalid`. Read and
@@ -264,7 +265,7 @@ all admitted outstanding counts. A command register is not withdrawn on a
 DDR fault or cancellation; its owner must drain the actual response. The
 fabric reports unexpected/non-OK responses and malformed requests through
 `fault`. A misaligned single-beat client request returns an error without
-touching DDR. The prefetcher is responsible for legal burst construction;
+touching DDR. The weight prefetcher and KV burst adapter construct legal bursts;
 an illegally formed internal burst faults and is not issued.
 
 The host frontend owns an accepted request through physical completion and
@@ -284,7 +285,7 @@ generation. The main cursor can enqueue future tile bursts while the execution
 cursor issues a different slot; neither cursor owns the other's storage.
 Release precedes reuse by a registered edge.
 
-An activation request obtains 128 Q16 words from the future sequencer's
+An activation request obtains 128 Q16 words from the sequencer's
 on-chip vector store. The projection engine derives the column keep mask from
 the logical dimensions rather than trusting a memory payload mask. In W4 mode
 the metadata cursor reads output-major/group-minor zeros and scales, expands
@@ -311,10 +312,128 @@ Results become externally available only after all chunk sums for that group
 have been written back. Row/result order is independent of downstream stalls.
 
 The emitted sums are deliberately **before bias and final conversion**.
-The remaining sequencer must add Q/K/V bias at the admitted scale/format,
-then apply the sole final conversion. It must also implement embedding,
-nonlinear operations, attention, residuals and complete token control. The
-projection engine alone is not D5 or complete model execution.
+The sequencer adds Q/K/V bias at the admitted scale/format, then applies the
+sole final conversion before writing the destination vector. Numerical or
+memory faults propagate to global draining instead of returning a successful
+partial row. The projection engine alone is not D5 or complete model execution.
+
+## Numerical token sequence and vector storage
+
+The sequencer is a registered controller with one outstanding scalar helper
+request at a time. Generic request/wait states preserve the request's return
+state and operands; a helper's newly created response is consumed on a later
+edge. Projection allocation, DDR prefetch, metadata loading, array issue and
+cross-chunk accumulation remain independent of this scalar controller.
+
+The logical vectors are X (residual hidden state), N (normalized hidden state),
+Q, K, V, A (attention context), O (projection output), G (gate), U (up) and
+M (SwiGLU). Twelve physical vector identities of `max(H,I)` words are allocated.
+Logical lane `bank+16*slice` has a dedicated 32-bit RAM slice. One RAM port
+writes scalar results; one shared read port obtains all 128 activation lanes
+or a scalar read. Simultaneous scalar/tile requests give scalar priority.
+The RAM output is selected through registered eight-slice and sixteen-bank
+muxes for scalar reads. A blocked tile response prevents scalar reads from
+overwriting its data. No RAM payload reset is required: embedding and each
+operator initialize all logically consumed values before use. Tail activations
+are explicitly masked to zero before array transfer.
+
+The token program performs embedding and then, for each layer, first RMSNorm,
+Q/K/V projection/bias, split-half RoPE, K/V store/commit, causal GQA,
+O projection and residual, second RMSNorm, gate/up projections, SwiGLU,
+down projection and residual. After all layers it performs final RMSNorm and
+the complete LM head. Layer/vector counters wrap at their actual dimensions;
+no runtime division is used for head grouping or block indexing.
+
+Q/K/V projection biases are FP16-to-Q16 plus exact shifted addition in W4
+mode, or actual BF16-to-FP32 plus rounded FP32 addition in BF16 mode.
+There is only one final result conversion. Non-AWQ FP16 LM-head words preserve
+the parent's signed Q16 dot rule through exact scalar accumulation. BF16
+LM-head rows load 128 activations and actual BF16 weights and arbitrate the
+same physical tensor array after tiled projection work is complete. Its chunk
+tag is `{vocabulary,input_column}`; fixed-tree chunk results accumulate in
+increasing column order before one Q16 conversion. No second array or
+floating-point software fallback is hidden behind that interface.
+
+RMSNorm performs an exact square sum, floor mean, epsilon addition, floor
+integer square root, floor reciprocal and full-width normalization products.
+RoPE reads both split-half components before writing either result. SwiGLU
+uses the six-term integer exponential, integer sigmoid quotient, Q24 SiLU
+rounding and Q16 gate/up rounding. Residuals saturate only at their output
+boundary. The exact equations are specified in `design/SPEC.md`.
+
+The shared integer service adds/subtracts 128-bit values through four
+registered 32-bit carry stages. Signed multiplication decomposes operands
+into signed-top/unsigned-low 16-bit limbs, forms a registered 17-by-17 partial
+product and accumulates its shifted signed value through that segmented
+adder. Division consumes one dividend bit per trial and serializes every
+wide subtract; square root consumes two radicand bits per trial with the
+same bounded subtract. RHAZ separates magnitude formation, two shift stages,
+round increment and sign restoration. There is no unrolled Newton reciprocal,
+unrolled square-root datapath, runtime division/remainder operator or
+`real`/`shortreal` computation.
+
+For each query head, attention stores exact rounded scores for all causal
+positions in synchronous RAM and finds their maximum. A second pass stores
+the specified exponentials and exact denominator. Each context component
+then reads V blocks, forms the exact weighted sum and performs one signed
+rounded division. KV-head selection uses an explicit consecutive group
+counter. Score/exponent RAM entries are overwritten before the corresponding
+head reads them; reset/invalidation clears control visibility rather than
+bulk-clearing these RAMs.
+
+## KV DDR burst read-ahead
+
+The block cache's single-logical-beat backing interface connects to
+`anvil_q2_ht_kv_burst`, not directly to a one-beat-only DDR implementation.
+A miss reserves sixteen 512-bit line slots and issues a real Avalon read
+burst of 1..16 beats. Its start is the requested beat and its end is bounded
+by the configured allocation and 4 KiB page. The first returned beat is the
+requested result; later beats populate a synchronous read-ahead buffer.
+The adapter completes the logical backing request only after every burst
+response has returned and all response codes have been checked.
+
+Subsequent backing-beat hits avoid another Avalon read; independently,
+resident decoded-block hits avoid even a backing request. The adapter clears
+its read-ahead validity before every masked write and forwards writes through
+the fabric's real write-response ownership. These are byte-coalesced
+single-beat writes, not a claim of multi-beat write aggregation. Invalidation
+clears read-ahead validity but leaves accepted backing requests live until
+their actual response retires, so the block cache cannot deadlock while
+draining. Future speculative bytes do not expose uncommitted tokens.
+Measurements must distinguish fetched bytes from useful consumed bytes.
+
+## Global configuration, sequence and cancellation ownership
+
+Configuration requests take priority over host requests, which take priority
+over new tokens. Token acceptance requires a committed model, DDR readiness
+and quiescent host, projection, KV and DDR services. Configuration changes
+invalidate sequence, KV and coefficient-cache visibility. Host writes are
+possible only with invalidated configuration and invalidate immutable
+coefficient reads before subsequent inference.
+Annul also discards an internal held descriptor-lookup response; otherwise
+a canceled lookup could retain the single response slot and block the next
+token's descriptor request. Public configuration responses are not discarded.
+
+The sequencer enforces position, new-sequence and prefill/decode rules.
+The prefill cursor advances only after a completed prefill token; the first
+decode freezes it. K and V blocks are written for every head/block of a layer
+and acknowledged before that layer's commit. No logit generation starts
+before all layers have completed. `done` follows acceptance of the last
+vocabulary logit, including vocabulary one.
+
+Cancellation or any module fault generates a global annul pulse. It clears
+compute validity, vector helper work and sequence/KV visibility without
+resetting DDR ownership or contents. Every already-held Avalon command stays
+live until acceptance; its recorded read/write owner drains its actual
+responses. Completed host responses remain externally held until accepted.
+The drain waits for fabric, both burst owners, coefficient readers, projection
+and KV services, followed by registered settling edges. A canceled active
+token receives one error completion; idle cancellation never invents one.
+Repeated assertion while a cancel is pending does not multiply completions.
+Once a drain-completion pulse is published, a subsequent cancel does not mask
+it; a simultaneous fresh fault suppresses normal token completion in favor
+of the single post-drain error completion.
+No token/host/configuration request is accepted during cancellation/draining.
 
 ## Format boundaries
 
@@ -384,9 +503,26 @@ against the supplied one/four-bank parent.
 Product commands and source paths are project-relative. Verification outputs
 belong in fresh generated directories, never in `rtl/` or `tests/`.
 Designer performs no functional simulation, numerical reference execution,
-defect mutation or synthesis. The current saved HT sources passed the fast
-static command `iverilog -g2012 -t null rtl/*.sv` with Icarus Verilog 12.0.
-This is parsing/elaboration only: the public top is still absent, and no
-connected-system, numerical or timing result is implied. No functional or
+defect mutation or synthesis. The connected default top passed the fast
+static command
+`iverilog -g2012 -Wimplicit -s anvil_q2_ht_top -t null rtl/*.sv`
+with Icarus Verilog 12.0, with no diagnostics. An earlier static elaboration
+warned about an imported operation constant in an instance-port conditional;
+an explicitly sized operation wire repairs that connection.
+This is parsing/elaboration only: no numerical, synthesis or timing result
+is implied. No functional or
 synthesis preparation harness/receipt was authored. No product PDF is produced
 before engineering acceptance.
+
+The portable design source list is `rtl/*.sv`, `design/SPEC.md`,
+`design/ARCHITECTURE.md` and `design/anvil_q2_ht.sdc`; parent comparisons
+add the unchanged `anvil_q2_reference/rtl/*.sv`. The top has no dependency on
+generated binaries, a private work directory or a previously rendered report.
+From the project root, the independent Verifier-owned commands are
+`python3 tests/verify.py --suite l1` and
+`python3 tests/verify.py --suite portable-reproduction`. Their reference,
+fixture, mutation, checkpoint-import and bridge sources are owned by Verifier,
+not substituted by this design handoff. Full reproduction additionally needs
+the declared genuine pinned checkpoint/configuration/license inputs in
+`data/model/`, Python 3, Icarus/vvp, Verilator, Yosys, a C++ compiler, Quartus
+17.1 and the runtime's hardware bridge. No tools are installed by this design.
