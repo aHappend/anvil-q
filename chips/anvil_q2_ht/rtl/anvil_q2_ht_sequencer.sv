@@ -210,8 +210,10 @@ module anvil_q2_ht_sequencer #(
   reg [511:0] descriptor_value;
   reg signed [127:0] score_read;
   reg [31:0] exponent_read;
-  (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg signed [127:0] score_ram [0:(MAX_SEQ_LEN>0 ? MAX_SEQ_LEN : 1)-1];
-  (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [31:0] exponent_ram [0:(MAX_SEQ_LEN>0 ? MAX_SEQ_LEN : 1)-1];
+  (* ramstyle = "M20K, no_rw_check" *)
+  reg signed [127:0] score_ram [0:(MAX_SEQ_LEN>0 ? MAX_SEQ_LEN : 1)-1];
+  (* ramstyle = "M20K, no_rw_check" *)
+  reg [31:0] exponent_ram [0:(MAX_SEQ_LEN>0 ? MAX_SEQ_LEN : 1)-1];
 
   wire running=rst_n && !flush && !faulted;
   wire vf_ready, vf_valid, vf_error;
