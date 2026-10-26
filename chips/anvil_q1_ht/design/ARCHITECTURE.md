@@ -241,11 +241,27 @@ Verifier-owned and have not run.
 AWQ loads one panel of zeros and scales for each input group, then requests
 that group's contiguous qweight rows. All64 registered dequantizers operate
 in parallel. Each weight-row packet also starts a synchronous activation read.
-The row's tensor beat waits for dequantization; later groups continue the same
+AWQ/BF16 packet capture is an elastic row stage followed by two elastic
+dequantization stages. Packet capture, conversion and tensor submission overlap;
+they are not sequential visits to separate FSM states for every row.
+The activation and first/final/group-end flags follow the same stage enables
+as their weights. A tensor stall therefore retains the complete output vector,
+and simultaneous stage retirement/refill never substitutes the next activation.
+The last packet closes group input acceptance; only its accepted tensor vector
+and settled block permit metadata reload. Later groups continue the same
 exact tensor dot. BF16 and tied FP16 use the same64 real compute lanes but
 require up to two DDR beats per weight row, unlike AWQ's half beat for a full
-panel. Q/K/V bias is a final synthetic product before the tensor's final rounding.
+panel. Tied FP16 retains its separate registered conversion schedule.
+Q/K/V bias is a final synthetic product before the tensor's final rounding.
 The controller never uses rounded results as reconstructed accumulators.
+
+The retained pre-repair default K-projection diagnostic is
+`evidence/preparation/verifier-projection-k-20261026T204541Z-ba500665/receipt.json`:
+12245 HT cycles versus74225 parent cycles, or6.061658x, with256 numerical
+comparisons passing. That result fails the required8x threshold. The elastic
+feed change addresses its serialized row schedule; it is not a measured
+speedup claim. Independent Verifier must repeat that comparison, all seven
+required default AWQ projections and affected numerical/stall/fault cases.
 
 The stream reader reserves bytes in a192-byte register reservoir, retaining
 copied bytes while an owned bank is released and its successor is claimed.

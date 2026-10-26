@@ -46,7 +46,7 @@ module anvil_q1_ht_descriptors #(
                INSTALL_WRITE = 4'd5, COMMIT_READ = 4'd6, COMMIT_CHECK = 4'd7,
                CSR_DELAY = 4'd8;
     // Entry: {valid, layer[4:0], kind[3:0], proj[2:0], base[32:0], length[31:0]}.
-    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg [77:0] descriptors [0:COUNT-1];
+    (* ramstyle = "M20K", ram_style = "block" *) reg [77:0] descriptors [0:COUNT-1];
     reg [3:0] state;
     reg init_done, committed, bf16, fault, clear_load, previous_load_failed;
     reg [31:0] selected_index;

@@ -43,7 +43,7 @@ module anvil_q1_ht_logical_memory #(
   localparam ADDR_BITS = WORDS > 1 ? $clog2(WORDS) : 1;
   localparam IDLE = 4'd0, ADDRESS = 4'd1, ACCESS = 4'd2, READ_RESULT = 4'd3,
     EXTERNAL = 4'd4, EXTERNAL_WAIT = 4'd5, KV = 4'd6, KV_WAIT = 4'd7, RESULT = 4'd8;
-  (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg [31:0] scratch [0:WORDS-1];
+  (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] scratch [0:WORDS-1];
   reg [3:0] state, kind;
   reg wr, failed;
   reg [2:0] projection;

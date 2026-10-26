@@ -87,6 +87,10 @@ mean immediately after that edge's nonblocking updates.
 | Last tensor input E | Four product-latency edges; exact carry-save accumulation at E+4. |
 | Tensor finalization | Resolve 32-bit carry chunks at E+5..E+8, round at E+9, publish at E+10. |
 | Tensor stall | Output valid, data and mask hold until accepted. No following dot is accepted before the current result transfers. |
+| AWQ/BF16 row accepted at P | Capture the packet and synchronously read its activation using the pre-edge input index; advance that index only on packet acceptance. |
+| Projection conversion without stalls | At P+1 capture lane conversion/difference and activation/boundary metadata; at P+2 register products and matching metadata. The tensor can accept them at P+3. Following rows may enter on consecutive edges. |
+| Projection feed stall | The row buffer and both dequantizer stages retain their respective payloads and metadata. Simultaneous retirement/refill uses the old stage payload for retirement. |
+| Projection group end, including group size 1 | Stop accepting packets after the last group row; reload zeros/scales only after that row transfers to the tensor and its block settles. Single-row first/final flags travel with the row. |
 | Tensor violation | Sticky `protocol_error`, no successful result until reset. The illegal accepted beat never enters the arithmetic pipeline. |
 | Tile depth 1 | One beat may be a complete tile. Full ownership is published only after its final accepted write. |
 | Tile depth 3/other nonpowers | Compare against the explicit final index; never mask a binary counter to wrap. |
@@ -146,6 +150,9 @@ An invalid opcode or zero divisor returns an explicit error.
 conversion/difference stage followed by a registered product. Its `in_value`
 contains FP16 scale in AWQ mode or BF16 weight in BF16 mode. An erroneous input
 returns `out_error`, never a valid zero-weight substitute.
+Both stages are elastic: independent valid bits allow one new lane value per
+cycle when downstream service permits, while result data/error hold during
+backpressure. This does not change conversion widths or rounding.
 
 ## Descriptor tensor layout
 
@@ -282,6 +289,9 @@ it loads group zeros/scales once, streams contiguous packed matrix rows through
 the actual ping-pong banks, dequantizes all64 lanes in parallel, and submits
 vectors to the tensor primitive. AWQ group transitions preserve the open exact
 dot product; group metadata reloads never round a partial accumulation.
+Packet acceptance, synchronous activation fetch, dequantization and tensor
+submission overlap for AWQ/BF16 rows. First/final/group-end flags and activations
+advance with the corresponding weights, not with the next packet's index.
 BF16 and tied FP16 projections stream a whole panel without AWQ metadata.
 Q/K/V bias is a final exact synthetic tensor product before the one rounding
 boundary. Tail masks suppress both invalid padding checks and unused outputs.

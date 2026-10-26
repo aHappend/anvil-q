@@ -73,7 +73,6 @@ module anvil_q1_ht_projection #(
       ZERO_REQUEST = 6'd7, ZERO_PACKET = 6'd8, ZERO_DONE = 6'd9,
       SCALE_REQUEST = 6'd10, SCALE_PACKET = 6'd11, SCALE_DONE = 6'd12,
       WEIGHT_REQUEST = 6'd13, WEIGHT_PACKET = 6'd14,
-      DEQUANT_REQUEST = 6'd15, DEQUANT_RESULT = 6'd16,
       TENSOR_SEND = 6'd17, WEIGHT_DONE = 6'd18,
       BIAS_REQUEST = 6'd19, BIAS_PACKET = 6'd20, BIAS_DONE = 6'd21,
       BIAS_SEND = 6'd22, TENSOR_RESULT = 6'd23,
@@ -97,9 +96,22 @@ module anvil_q1_ht_projection #(
     reg [2367:0] weights;
     reg [2047:0] results;
     reg signed [31:0] activation;
-    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg signed [31:0] activation_store [0:MAX_INPUTS-1];
+    reg row_valid, row_first, row_final, row_group_last, rows_complete;
+    reg convert_valid, convert_first, convert_final, convert_group_last;
+    reg result_first, result_final, result_group_last;
+    reg signed [31:0] convert_activation, result_activation;
+    (* ramstyle = "M20K", ram_style = "block" *)
+      reg signed [31:0] activation_store [0:MAX_INPUTS-1];
     wire [63:0] dequant_ready, dequant_valid, dequant_error;
     wire [2367:0] dequant_weights;
+    wire streaming = state == WEIGHT_PACKET && !vocabulary;
+    wire dequant_fault = (&dequant_valid) && (|(dequant_error & mask));
+    wire dequant_result_ready = !streaming || tensor_in_ready || dequant_fault;
+    wire dequant_advance = !(&dequant_valid) || dequant_result_ready;
+    wire row_ready = !row_valid || (&dequant_ready);
+    wire convert_accept = streaming && row_valid && (&dequant_ready) &&
+                          !failed && !abort_error && !dequant_fault;
+    wire stream_send = streaming && (&dequant_valid) && !dequant_fault;
     wire memory_response = mem_rsp_valid && mem_rsp_ready;
     wire block_accept = block_valid && block_ready;
     wire block_settled = block_finished || block_done;
@@ -120,13 +132,13 @@ module anvil_q1_ht_projection #(
         (bf16 ? row_words[16*lane+:16] : scale_words[16*lane+:16]) : 16'b0;
       wire signed [31:0] fp16_value = fp16_q16(row_words[16*lane+:16]);
       anvil_q1_ht_dequant u_dequant (
-        .clk(clk), .rst_n(rst_n), .in_valid(state == DEQUANT_REQUEST && (&dequant_ready)),
+        .clk(clk), .rst_n(rst_n), .in_valid(convert_accept),
         .in_ready(dequant_ready[lane]), .in_bf16(bf16),
         .in_qweight(row_words[32*(lane >> 3)+:32]),
         .in_qzero(zero_words[32*(lane >> 3)+:32]),
         .in_lane(LOGICAL_LANE), .in_value(value_bits),
         .out_valid(dequant_valid[lane]),
-        .out_ready(state == DEQUANT_RESULT || state == FAIL_DRAIN),
+        .out_ready(dequant_result_ready),
         .out_weight(dequant_weights[37*lane+:37]), .out_error(dequant_error[lane])
       );
       assign fp16_invalid_lanes[lane] = mask[lane] && fp16_invalid(row_words[16*lane+:16]);
@@ -166,16 +178,21 @@ module anvil_q1_ht_projection #(
       state == ZERO_REQUEST ? {2'b0, lanes[6:1]} :
       (state == SCALE_REQUEST || state == BIAS_REQUEST) ? {lanes, 1'b0} : row_bytes;
     assign packet_ready = rst_n && (state == ZERO_PACKET || state == SCALE_PACKET ||
-                                    state == WEIGHT_PACKET || state == BIAS_PACKET ||
-                                    state == FAIL_DRAIN);
+      (state == WEIGHT_PACKET && (vocabulary ||
+       (!rows_complete && row_ready && !failed && !abort_error && !dequant_fault))) ||
+      state == BIAS_PACKET || state == FAIL_DRAIN);
     assign tensor_in_valid = rst_n && !failed && !abort_error &&
-                             (state == TENSOR_SEND || state == BIAS_SEND);
-    assign tensor_in_first = tensor_in_valid && state == TENSOR_SEND && k == 0;
+                             (stream_send || state == TENSOR_SEND || state == BIAS_SEND);
+    assign tensor_in_first = tensor_in_valid &&
+      (streaming ? result_first : state == TENSOR_SEND && k == 0);
     assign tensor_in_last = tensor_in_valid &&
-      (state == BIAS_SEND || (row_last && (vocabulary || projection >= 3)));
+      (streaming ? result_final :
+       (state == BIAS_SEND || (row_last && (vocabulary || projection >= 3))));
     assign tensor_in_activation = tensor_in_valid ?
-      (state == BIAS_SEND ? 32'sd65536 : activation) : 32'sd0;
-    assign tensor_in_weight_q16 = tensor_in_valid ? weights : 2368'b0;
+      (streaming ? result_activation :
+       state == BIAS_SEND ? 32'sd65536 : activation) : 32'sd0;
+    assign tensor_in_weight_q16 = tensor_in_valid ?
+      (streaming ? dequant_weights : weights) : 2368'b0;
     assign tensor_in_mask = tensor_in_valid ? mask : 64'b0;
     assign tensor_out_ready = rst_n && state == TENSOR_RESULT;
     assign logit_valid = rst_n && state == LOGIT && !failed && !abort_error;
@@ -186,7 +203,8 @@ module anvil_q1_ht_projection #(
       if (rst_n) begin
         if (memory_response && state != OUTPUT_REQUEST && state != OUTPUT_RESPONSE &&
             !mem_rsp_error) activation_store[input_index] <= mem_rsp_rdata;
-        if (state == WEIGHT_PACKET && packet_valid) activation <= activation_store[k];
+        if (state == WEIGHT_PACKET && packet_valid && packet_ready)
+          activation <= activation_store[k];
       end
     end
 
@@ -230,7 +248,49 @@ module anvil_q1_ht_projection #(
         row_words <= 0;
         weights <= 0;
         results <= 0;
+        row_valid <= 0;
+        row_first <= 0;
+        row_final <= 0;
+        row_group_last <= 0;
+        rows_complete <= 0;
+        convert_valid <= 0;
+        convert_first <= 0;
+        convert_final <= 0;
+        convert_group_last <= 0;
+        result_first <= 0;
+        result_final <= 0;
+        result_group_last <= 0;
+        convert_activation <= 0;
+        result_activation <= 0;
       end else begin
+        if (!streaming) begin
+          row_valid <= 0;
+          convert_valid <= 0;
+        end else begin
+          if (row_ready) begin
+            row_valid <= packet_valid && packet_ready;
+            if (packet_valid && packet_ready) begin
+              row_first <= k == 0;
+              row_final <= row_last && projection >= 3;
+              row_group_last <= group_last;
+            end
+          end
+          if (&dequant_ready) begin
+            convert_valid <= convert_accept;
+            if (convert_accept) begin
+              convert_activation <= activation;
+              convert_first <= row_first;
+              convert_final <= row_final;
+              convert_group_last <= row_group_last;
+            end
+          end
+          if (dequant_advance && convert_valid) begin
+            result_activation <= convert_activation;
+            result_first <= convert_first;
+            result_final <= convert_final;
+            result_group_last <= convert_group_last;
+          end
+        end
         if (mem_req_valid && mem_req_ready) memory_pending <= 1;
         if (memory_response) memory_pending <= 0;
         if (block_accept) begin
@@ -318,17 +378,27 @@ module anvil_q1_ht_projection #(
             else state <= SCALE_DONE;
           end
           SCALE_DONE: if (block_settled) state <= WEIGHT_REQUEST;
-          WEIGHT_REQUEST: if (block_accept) state <= WEIGHT_PACKET;
-          WEIGHT_PACKET: if (packet_valid) begin
-            row_words <= packet_data;
-            if (packet_last != group_last) begin failed <= 1; state <= FAIL_DRAIN; end
-            else if (vocabulary) state <= FP16_CONVERT;
-            else state <= DEQUANT_REQUEST;
+          WEIGHT_REQUEST: if (block_accept) begin
+            rows_complete <= 0;
+            state <= WEIGHT_PACKET;
           end
-          DEQUANT_REQUEST: if (&dequant_ready) state <= DEQUANT_RESULT;
-          DEQUANT_RESULT: if (&dequant_valid) begin
-            if (|(dequant_error & mask)) begin failed <= 1; state <= FAIL_DRAIN; end
-            else begin weights <= dequant_weights; state <= TENSOR_SEND; end
+          WEIGHT_PACKET: begin
+            if (packet_valid && packet_ready) begin
+              row_words <= packet_data;
+              if (packet_last != group_last) begin failed <= 1; state <= FAIL_DRAIN; end
+              else if (vocabulary) state <= FP16_CONVERT;
+              else if (group_last) rows_complete <= 1;
+              else begin
+                k <= k + 1;
+                group_row <= group_row + 1;
+              end
+            end
+            if (stream_send && tensor_in_ready && result_group_last)
+              state <= WEIGHT_DONE;
+            if (!vocabulary && dequant_fault) begin
+              failed <= 1;
+              state <= FAIL_DRAIN;
+            end
           end
           FP16_CONVERT: begin
             weights <= fp16_weights;
