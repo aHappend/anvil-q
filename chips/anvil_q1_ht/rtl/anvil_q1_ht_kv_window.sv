@@ -59,8 +59,6 @@ module anvil_q1_ht_kv_window #(
     (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] tags [0:ENTRIES-1];
     (* ramstyle = "M20K", ram_style = "block" *)
       reg [2*KV_WIDTH-1:0] valid_words [0:ENTRIES-1];
-    (* ramstyle = "M20K", ram_style = "block" *)
-      reg [SLOT_BITS-1:0] position_slot [0:MAX_SEQ_LEN-1];
     reg [31:0] history_next [0:NUM_LAYERS-1];
     reg [3:0] state;
     reg init_done, failed, result_error, result_hit;
@@ -84,17 +82,26 @@ module anvil_q1_ht_kv_window #(
     wire selected_valid = |(mask_data & selected_bit);
     wire spill_response = spill_rsp_valid && spill_rsp_ready;
     wire spill_accept = spill_valid && spill_ready;
-    integer map_index, map_slot;
     integer h;
 
-    initial begin
-      map_slot = 0;
-      for (map_index = 0; map_index < MAX_SEQ_LEN; map_index = map_index + 1) begin
-        position_slot[map_index] = SLOT_BITS'(map_slot);
-        if (map_slot == KV_WINDOW-1) map_slot = 0;
-        else map_slot = map_slot + 1;
+    function automatic [SLOT_BITS-1:0] calc_position_slot(input [31:0] pos);
+      integer rem;
+      integer b;
+      begin
+        if (KV_WINDOW <= 1) begin
+          calc_position_slot = {SLOT_BITS{1'b0}};
+        end else if ((KV_WINDOW & (KV_WINDOW - 1)) == 0) begin
+          calc_position_slot = pos[SLOT_BITS-1:0];
+        end else begin
+          rem = 0;
+          for (b = 31; b >= 0; b = b - 1) begin
+            rem = (rem << 1) | ((pos >> b) & 1);
+            if (rem >= KV_WINDOW) rem = rem - KV_WINDOW;
+          end
+          calc_position_slot = SLOT_BITS'(rem);
+        end
       end
-    end
+    endfunction
 
     assign initialized = rst_n && init_done;
     assign req_ready = rst_n && init_done && !new_sequence && !failed && state == IDLE;
@@ -184,7 +191,7 @@ module anvil_q1_ht_kv_window #(
           write_data <= req_wdata;
           invalid_request <= req_layer >= NUM_LAYERS || req_head >= NUM_KV_HEADS ||
                              req_dim >= HEAD_DIM || req_pos >= MAX_SEQ_LEN;
-          if (req_pos < MAX_SEQ_LEN) slot <= position_slot[req_pos];
+          if (req_pos < MAX_SEQ_LEN) slot <= calc_position_slot(req_pos);
           else slot <= 0;
           result_data <= 0;
           result_error <= 0;
