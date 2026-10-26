@@ -9,8 +9,8 @@ module anvil_q1_fp_rsqrt(
   wire [23:0] input_significand;
   reg [23:0] valid;
   reg special [0:22];
-  (* nomem2reg *) reg [31:0] special_value [0:22];
-  (* nomem2reg *) reg [4:0] special_status [0:22];
+  reg [31:0] special_value [0:22];
+  reg [4:0] special_status [0:22];
   reg [47:0] radicand [0:12];
   reg [23:0] root [0:12];
   reg [25:0] root_remainder [0:12];
