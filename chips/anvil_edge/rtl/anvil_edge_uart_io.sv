@@ -1,6 +1,7 @@
 module anvil_edge_uart_io #(
   parameter integer RX_FIFO_DEPTH = 16,
-  parameter integer TX_FIFO_DEPTH = 16
+  parameter integer TX_FIFO_DEPTH = 16,
+  parameter integer FRAME_LOCK = 0
 ) (
   input wire clk, rst_n,
   input wire uart_rx,
@@ -25,7 +26,9 @@ module anvil_edge_uart_io #(
   input wire [7:0] tx_data,
   input wire tx_last,
   output wire framing_error, overflow_error,
-  output wire rx_idle, tx_idle
+  output wire rx_idle, tx_idle, rx_line_idle,
+  input wire receive_enable,
+  input tri0 response_complete
 );
   localparam [1:0] RX_IDLE=0, RX_START=1, RX_DATA=2, RX_STOP=3;
   reg rx_meta, rx_sync, rx_previous;
@@ -40,6 +43,7 @@ module anvil_edge_uart_io #(
   reg [7:0] pending_byte;
   reg framing_fault, overflow_fault, serial_fault, empty_frame_fault;
   reg tx_active;
+  reg frame_closed;
   reg [9:0] tx_shift;
   reg [3:0] tx_bit;
   reg [31:0] tx_counter;
@@ -49,6 +53,7 @@ module anvil_edge_uart_io #(
   wire tx_fifo_valid, tx_fifo_pop;
   wire [8:0] tx_fifo_data;
   wire healthy = !framing_fault && !overflow_fault && !serial_fault && !empty_frame_fault;
+  wire receive_open=FRAME_LOCK==0 || (receive_enable && !frame_closed);
   wire serial_emit = received_valid &&
                      (active_frame_bytes != 0 || pending_valid);
   wire serial_last = active_frame_bytes != 0 ?
@@ -60,21 +65,24 @@ module anvil_edge_uart_io #(
                     rx_fifo_empty && tx_fifo_empty && !pending_valid &&
                     frame_count == 0 && !received_valid &&
                     rx_sync && rx_previous && !tx_valid &&
-                    !(active_bypass && s_axis_tvalid);
+                    !(active_bypass && s_axis_tvalid &&
+                      (FRAME_LOCK==0 || receive_enable));
 
   assign framing_error = rst_n && (framing_fault || serial_fault || empty_frame_fault);
   assign overflow_error = rst_n && overflow_fault;
   assign rx_idle = rst_n && rx_state == RX_IDLE && rx_fifo_empty &&
                    !pending_valid && !received_valid && frame_count == 0 &&
                    rx_sync && rx_previous;
+  assign rx_line_idle = rst_n && rx_state == RX_IDLE && !received_valid &&
+                        rx_sync && rx_previous;
   assign tx_idle = rst_n && !tx_active && tx_fifo_empty;
   assign uart_tx = !rst_n || !tx_active ? 1'b1 : tx_shift[0];
-  assign rx_fifo_valid = rst_n && healthy &&
+  assign rx_fifo_valid = rst_n && healthy && receive_open &&
                          (active_bypass ? s_axis_tvalid : serial_emit);
   assign rx_fifo_in_data = active_bypass ?
                            {s_axis_tlast, s_axis_tdata} :
                            {serial_last, serial_data};
-  assign s_axis_tready = rst_n && healthy && active_bypass && rx_fifo_ready;
+  assign s_axis_tready = rst_n && healthy && receive_open && active_bypass && rx_fifo_ready;
   assign rx_valid = rst_n && healthy && rx_fifo_out_valid;
   assign rx_data = rx_valid ? rx_fifo_out_data[7:0] : 0;
   assign rx_last = rx_valid && rx_fifo_out_data[8];
@@ -95,6 +103,13 @@ module anvil_edge_uart_io #(
     .out_valid(tx_fifo_valid), .out_ready(tx_fifo_pop), .out_data(tx_fifo_data),
     .empty(tx_fifo_empty), .full()
   );
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) frame_closed<=0;
+    else if (response_complete) frame_closed<=0;
+    else if (FRAME_LOCK!=0 && rx_fifo_valid && rx_fifo_ready && rx_fifo_in_data[8])
+      frame_closed<=1;
+  end
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -181,8 +196,11 @@ module anvil_edge_uart_io #(
       overflow_fault <= 0;
       empty_frame_fault <= 0;
     end else if (!active_bypass && received_valid && healthy) begin
-      if (serial_emit && !rx_fifo_ready) overflow_fault <= 1;
-      if (active_frame_bytes != 0) begin
+      if (!receive_open || (serial_emit && !rx_fifo_ready)) overflow_fault <= 1;
+      if (!receive_open) begin
+        pending_valid<=0;
+        frame_count<=0;
+      end else if (active_frame_bytes != 0) begin
         if (frame_count == active_frame_bytes-1) frame_count <= 0;
         else frame_count <= frame_count+1;
       end else if (received_byte == 8'h0a) begin

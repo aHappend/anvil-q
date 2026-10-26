@@ -6,14 +6,15 @@ The design includes a non-fall-through elastic FIFO, a clock-enable UART
 with streaming bypass, prompt-buffered autonomous controller, UTF-8 detokenizer,
 ranked-merge pretoken engine, Unicode normalization and tagged-DFA ordinary-text
 span engine, typed DDR mapper/arbiter and a derived sequential Q1 core with an
-active-vocabulary adapter. These are saved production-source components, not
-an integrated or verified SoC. The image staging engine now covers header/
-descriptor validation and CRC-checked SPI-to-DDR transfer. Semantic boot
-validation/commit, special-token-aware tokenizer
-integration, configuration/top-level control and physical board integration
-are still missing.
+active-vocabulary adapter. These are connected production-source components,
+not a verified SoC. The public boot loader connects CRC-checked
+SPI-to-DDR staging, semantic validation and atomic configuration commit.
+The public tokenizer adds two-phase special matching and BOS; configuration
+and top-level control connect the full autonomous transaction. The actual
+board-specific wrapper, installed DDR4 IP and pin/clock constraints remain
+unavailable and must not be replaced by a behavioral RAM or guessed pins.
 
-The intended production hierarchy remains:
+The literal production hierarchy is:
 
 ```
 anvil_edge_top
@@ -112,8 +113,7 @@ check the DDR window. Invalid tuples cannot reach tensor-data issue.
 
 Table clients are read-only. The arbiter scans the sixteen committed table
 ranges one per stage, permits exact raw-byte tail-word access only for kind
-0x202, and returns held explicit errors for invalid addresses. Boot still must
-validate all segment relationships and the complete directory before commit;
+0x202, and returns held explicit errors for invalid addresses. Boot validates all segment relationships and the complete directory before commit;
 runtime range checks are not a replacement for boot validation.
 
 ## Ranked BPE component
@@ -177,13 +177,23 @@ unaccepted throughout processing of that interval's BPE. This deliberately
 serial schedule prevents next-anchor table reads from racing byte-map/merge
 reads and keeps table-response ownership explicit under arbitrary stalls.
 
-This does not complete the public tokenizer. Its enclosing engine still must
-capture/validate the complete UTF-8 prompt, protect before-normalization
-specials, apply normalized special matching and AddedToken stripping/word
-policies, add BOS, collect all span/special tokens and only then admit prefill.
-An ordinary-text span result is not evidence of those missing policies.
+`anvil_edge_bpe_tokenizer` first captures and validates all raw UTF-8. The first
+special splitter protects eligible before-normalization specials. Ordinary
+runs pass through the normalizer and the second, normalized-phase splitter.
+Remaining ordinary runs enter the span engine with identity normalization,
+so text is never normalized twice. BOS and both phases' special tokens share
+the complete-prompt token buffer. Only its final readout can reach prefill.
 
-## Image staging and storage work still required
+Each splitter classifies/scalar-encodes its entire input, retaining byte-to-
+scalar end indexes. Trie walking begins only at scalar boundaries; terminals
+inside a scalar are ineligible. Eligible longest terminals retain their ID,
+record index and AddedToken flags. Left stripping rewinds only trailing
+ordinary White_Space entries in the output plan; right stripping advances
+the input scalar cursor. Word-boundary checks use pinned Unicode properties.
+Plan output and public tokenizer output have registered load/hold stages.
+These are design semantics, not demonstrated official-tokenizer equivalence.
+
+## Image staging, semantic validation and commit
 
 `anvil_edge_image_loader` reads the frozen header/configuration and records
 each descriptor in a canonical twenty-segment bank. A separate order vector
@@ -198,12 +208,61 @@ and write acknowledgments must succeed before the staging `image_loaded`
 status and gated staging fields become visible. Staging completion is not
 boot_done and never enables a runtime client.
 
-The public boot loader still must wait for synchronized calibration, invoke
-this transfer engine, read and validate every geometry/directory/table semantic
-relationship from DDR, and only then publish the atomic committed bundle.
-The runtime mapper and arbiter rely on that missing semantic commit. Tables
-and immutable tensors are read-only after commit; only activation/cache
-storage is writable. No incomplete image is authorized to enter these clients.
+The public `anvil_edge_ddr4_boot_loader` waits for two-register-synchronized
+calibration and serializes these stages:
+
+```
+reset boot epoch -> calibration -> SPI staging
+  -> manifest -> directory/tensor initialization -> tokens/map/merges
+  -> Unicode/DFA/normalization records -> special trie -> atomic commit
+```
+
+`anvil_edge_boot_segment_reader` captures one bounded aligned read range and
+holds each DDR request and response independently of downstream pacing.
+Header, metadata and directory-record reads use the same sequencer. Raw token
+bytes alone permit a rounded final physical word, with byte indexes checked
+against the exact unrounded data count.
+
+The manifest stage checks the exact geometry/configuration, metadata capacities
+and every table header/extent. The directory stage validates a strictly sorted
+legal key set with exactly the mandated cardinality. This establishes key
+completeness without a model-sized on-chip directory. It checks each region
+against all earlier regions, then validates all FP16 tensor words, inactive
+embedding/output rows, all writable initialization and immutable holes.
+Finding each next immutable interval uses a serial directory scan rather than
+a combinational associative search.
+
+The token stage validates all records, then dereferences each byte-map entry
+and compares its actual one-byte string. This proves distinct base IDs without
+a second 256-entry membership store. Every merge fetches its three ordinary
+tokens and compares the full concatenation byte by byte. Unsigned ranks,
+including 0xffffffff and ties, remain legal.
+
+The profile stage checks complete Unicode scalar coverage, state/transition/
+tag/accept intervals, dead-state behavior, accept-policy consistency, sorted
+normalization keys and scalar-pool validity. Official Unicode semantics and
+asset fidelity still require independent pinned-reference comparisons;
+structural validation is not an authenticated boot claim.
+
+The special-trie stage checks all special records and unique IDs. It clears
+its visited bitmap serially, then uses a bounded depth-first stack to check
+edge order, unique parentage, cycles, reachability and terminal byte strings.
+Node and edge visit counts must equal the table counts. No data-memory contents
+are assumed initialized at power-on; counters and explicit bitmap clearing
+establish validity before use.
+
+Only the selected stage can issue or consume a DDR transaction. Stage success
+is observed after its final response has retired. Once all stages are valid,
+one edge registers the complete bundle and asserts `boot_done`; no individual
+base or metadata word becomes independently visible. Idle recovery withdraws
+admission and resets a registered subordinate epoch before rereading flash.
+The epoch reset is not decoded from a multi-bit FSM state. Failure aborts that
+epoch, leaves `boot_done` low and retains the first stage diagnostic.
+
+The runtime mapper and arbiter use this atomic bundle. Tables and immutable
+tensors are read-only after commit; only activation/cache storage is writable.
+The top connects that ownership boundary and rejects nonquiescent reloads.
+The saved boot path has not been functionally or synthesis verified.
 `design/STORAGE.md` ships the exact storage ABI and worked byte/address
 fragments without claiming that those fragments form complete boot images.
 
@@ -211,3 +270,25 @@ The default geometry requires external storage, not inferred on-chip model RAM.
 Capacity, address-window, flash command width and real board pin/PHY choices
 remain explicit integration prerequisites. Q2/Q3/Q4 compatibility denotes
 the frozen shell contract, not unsupplied arithmetic implementations.
+
+## Transaction control and failure drain
+
+The top publishes boot configuration before opening reception and serializes
+engine start, prompt reception, autonomous execution and TX drain. The UART's
+integrated frame lock closes reception at the first accepted last marker,
+not at a later tokenizer handoff. Its finite wire-input overflow diagnostic
+remains active while reception is closed.
+
+Configuration responses are registered and held. Profile/vocabulary changes
+are staged until the next completely validated image matches them. Illegal
+writes never alter either staged or active values. Serial setting writes
+withdraw input for a settling interval rather than racing an incoming bypass
+beat against the UART's idle configuration latch.
+
+An observed failure registers the first selected diagnostic and abort request.
+Clients reset on the following edge; memory does not reset. Already accepted
+mapping/table/DDR transactions finish and are drained to their recorded owner,
+including a write acknowledgement. The arbiter can complete a captured typed
+request even after its originating core has reset. Explicit recovery is
+permitted only after memory and physical serial paths are quiescent, then
+withdraws all admission and rereads external flash.

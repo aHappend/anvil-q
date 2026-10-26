@@ -169,8 +169,7 @@ module anvil_edge_token_table_validator #(
           raw_address<=65'd32+raw_offset; raw_lane<=raw_offset[1:0]; state<=RAW_CHECK;
         end
         RAW_CHECK: begin
-          if (raw_offset[64] || raw_offset>={33'd0,raw_count} ||
-              raw_address[64] || rounded_length[64]) begin
+          if (raw_offset[64] || raw_offset>={33'd0,raw_count} || raw_address[64]) begin
             code<=8'h06; state<=FAILED;
           end else begin
             read_segment<=6; read_offset<=raw_address[63:0] & ~64'd3;

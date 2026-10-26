@@ -4,13 +4,14 @@
 
 The independently admitted ANVLEDG3 version-1 work order is normative. This
 document records implementation decisions; it does not reduce its acceptance
-matrix. The current source increment is incomplete and is not an integrated
-appliance. No functional, synthesis, timing, model, or board acceptance is
+matrix. The current source increment connects the production shell at
+`anvil_edge_top`; the actual board wrapper/controller/pins remain unavailable.
+No functional, synthesis, timing, model, or board acceptance is
 claimed. The supplied `anvil_q1_reference/rtl/` is read-only provenance, not
 validated production logic.
 
 Design owns `rtl/*.sv`, `design/*.md`, and `fpga/*`. Independent verification
-owns `tests/*.py` and `tests/data/*`. Production must ultimately instantiate the
+owns `tests/*.py` and `tests/data/*`. Production literally instantiates the
 seven named shell modules and a timing-safe derived `anvil_q1_top`.
 
 ## Clock and reset
@@ -60,6 +61,7 @@ reload. A successful `done` is never asserted with `error`.
 | `10` | Invalid UTF-8 |
 | `11` | Token/table bounds |
 | `12` | Malformed tokenizer profile |
+| `13` | Enabled raw special rejected by the committed profile policy |
 | `20` | Core-reported protocol/numerical error |
 | `21` | Logit frame count/index/completion violation |
 | `30` | Prompt byte/token capacity |
@@ -69,7 +71,92 @@ reload. A successful `done` is never asserted with `error`.
 | `41` | UART receive overflow |
 
 Top-level first-error priority remains boot/memory, input/table, core,
-sequence/capacity, then UART. The top-level implementation is pending.
+sequence/capacity, then UART.
+
+## Public tokenizer integration contract
+
+The tokenizer's additional internal configuration ports are `config_valid`,
+`cfg_table_bases[1023:0]`, `cfg_table_counts[511:0]` and
+`cfg_metadata[1023:0]`. Table slot `i` denotes kind `0x200+i`, in the same
+low-slot-first packing as the boot bundle; metadata words retain serialized
+order. Configuration remains stable from start through completion.
+Parameters `MAX_PROMPT_BYTES`, `MAX_PROMPT_TOKENS`, `MAX_PRETOKEN_BYTES`
+default to 4096; `MAX_TAG_REGISTERS` defaults to 32. All capacities are
+positive and tag capacity is at least 32.
+
+The internal `anvil_edge_special_splitter` accepts a complete nonempty scalar
+span with `in_valid/ready`, `in_scalar[31:0]`, `in_last` and `start`.
+Its packed configuration is identical to the tokenizer's; `normalized_phase`
+selects AddedToken flag bit 4. It returns held `out_valid/ready`,
+`out_value[31:0]`, `out_special`, `out_boundary`, `out_last`.
+An ordinary value is a scalar; a special value is a token ID.
+`out_boundary` closes an ordinary run before a special or span end;
+`out_last` closes the entire splitter result. The splitter retains the whole
+span, classifies every scalar from Unicode tables, encodes its bytes and
+walks the admitted special trie from each scalar boundary. Terminal matches
+must end at a scalar boundary. Eligible terminals use longest byte match,
+then lower special-record index. Stripping removes only adjacent whitespace
+classified by the committed Unicode tables, never another special.
+All table operations are serialized registered record reads, held request,
+response wait and registered consume; no fixed DDR latency is assumed.
+
+The public tokenizer validates the full raw UTF-8 prompt before processing
+before-normalization specials. Each remaining ordinary run is normalized,
+split for after-normalization specials, then sent through the ordinary span
+engine with identity normalization. BOS is inserted once. All resulting
+tokens are buffered before any public token becomes valid. Capacity counts
+include BOS and specials. A single scalar/byte/token may simultaneously
+be first and last; no separate trailing beat is required.
+
+## Configuration, transaction admission and recovery
+
+`anvil_edge_config` is an internal single-outstanding register endpoint.
+Its public-side ports match the top `cfg_*` channel. Additional inputs are
+`status[3:0]`, `transaction_error_code[7:0]`, `write_allowed`,
+`reload_allowed`, `publish`, and `committed_config_words[223:0]`.
+Outputs are `reload_request`, `publish_error`, and active
+`uart_divisor/eos_token_id/max_new_tokens/transport/profile_id/vocab_size/
+uart_frame_bytes[31:0]`. Profile and vocabulary writes modify only staged
+values; their reads return those staged values. `publish` accepts a completely
+validated bundle, requiring any explicitly staged profile/vocabulary to match
+the new image. A mismatch reports code 06 through `publish_error`; admission
+remains withdrawn. A failed reload never reinstates the old bundle.
+Other legal writes update the idle active register, not the flash image.
+Reload rereads the flash image's complete configuration and replaces such
+overrides; boot never requires a configuration write. Command reads return zero.
+Illegal accesses produce held `cfg_rsp_error` without mutating any register.
+The helper pulse `serial_update` accompanies a successful divisor, transport
+or framing write. It withdraws reception while the UART latches its new idle
+configuration; a held bypass valid cannot force reception in the old mode.
+
+UART's additional parameter `FRAME_LOCK` defaults to zero for the standalone
+transceiver and is one in the top. Additional helper inputs are
+`receive_enable` (ignored when `FRAME_LOCK=0`) and `response_complete` (default
+pulled low). A locked transceiver closes input immediately after accepting a frame's
+last byte, reopening only on response completion. UART bytes arriving while
+closed/disabled report overflow; bypass instead deasserts ready. Existing
+`rx_idle/tx_idle` outputs include FIFO drain; `rx_line_idle` reports only
+synchronized pin/framer quiescence, so explicit error recovery may discard a
+failed buffered frame without pretending that it completed.
+
+Memory subsystem helper `abort_inference` defaults low. On a transaction
+failure, it rejects new inference requests, finishes an already captured typed
+mapping/DDR operation, and retires its response without requiring a failed
+client to remain alive. A captured table transaction is likewise drained to
+its recorded owner. Boot responses are never discarded. Clients enter reset
+only after abort is registered; memory itself remains live until `idle`.
+An idle recovery requires physical RX idle, complete TX drain and memory idle,
+then resets the UART/client epoch and starts a fresh external-image reload.
+DDR requests accepted before failure are not annulled or rerouted.
+
+The top serializes boot, publication, transport settling, idle, engine start,
+prompt input, autonomous execution and physical-output drain. It prevents a
+configuration write from racing prompt admission. Full prompt tokenization
+precedes controller prefill. Successful `done` is a one-cycle pulse only after
+controller finish, detokenizer completion and `tx_idle`; empty output follows
+the same completion path without a fabricated byte. Simultaneous error
+selection ranks DDR/boot, malformed input/table, core, capacity/sequence, UART,
+and retains the first selected code until reset or accepted recovery.
 
 ## Standalone controller interface
 
@@ -132,8 +219,8 @@ Overflow is a sticky error; software must not interpret a subsequently drained
 prefix as a successful transaction.
 
 TX FIFO acceptance is not serial completion. The internal additional output
-`tx_idle` is true only when its FIFO and serializer are empty; the future top
-must wait for it, including the final stop bit. Additional `rx_idle` indicates
+`tx_idle` is true only when its FIFO and serializer are empty; the top
+waits for it, including the final stop bit. Additional `rx_idle` indicates
 no serial frame, pending byte, or RX FIFO content. Both are zero in reset.
 They are integration/quiescence signals, not debug ports.
 
@@ -148,7 +235,7 @@ data areas. `config_valid` means the entire boot bundle has committed; it is
 not a software bypass for structural boot validation. The engine captures
 these values at `start`. Additional `finish_valid/finish_ready` inputs/outputs
 close a response even when it contains no tokens. They are connected to the
-controller finish handshake in the eventual top.
+controller finish handshake in the top.
 
 Token admission is serialized. Capture ID/last, compute the record address
 with extended precision, issue held aligned reads for its four words, consume
@@ -421,8 +508,10 @@ CRC, semantic validation, directory checks, and DDR acknowledgements. No
 partial-table inference is permitted. The 256 byte-map entries must reference
 256 different ordinary tokens with their exact single-byte strings.
 
-The SPI boot/validator, special-token-aware tokenizer integration, configuration registers,
-top-level integration and board integration remain to be implemented.
+The SPI boot/validator, special-token-aware tokenizer, configuration registers
+and top-level integration are saved RTL, without functional acceptance.
+Real board integration remains a prerequisite; the portable bridge is not
+an installed controller/PHY or pin map.
 The saved memory mapper/arbiter, ranked-merge component and derived core are
 not yet connected into an autonomous boot-to-text appliance.
 Complete official tokenizer assets, quantized
@@ -461,7 +550,7 @@ table-response errors. A nonmatching pair key advances the binary search.
 ### Unicode/tokenizer front-end internal contracts
 
 The following production helpers do not change the public tokenizer interface.
-They operate on nonempty spans; the eventual special-token dispatcher skips
+They operate on nonempty spans; the special-token dispatcher skips
 empty spans rather than manufacturing a scalar. No helper's partial output
 authorizes prompt prefill. The tokenizer must collect and validate the complete
 prompt token vector before exposing it to the controller.
@@ -569,7 +658,7 @@ no timeout substitutes for candidate selection.
 
 `anvil_edge_text_bpe_span` connects the normalizer, UTF-8 encoder, tagged DFA,
 byte-map record reader and ranked BPE for one nonempty ordinary-text span.
-This is an internal component of the pending special-token-aware tokenizer,
+This is an internal component of the special-token-aware tokenizer,
 not an alternative public tokenizer. Its scalar input/output token channels
 are `in_valid/in_ready/in_scalar[31:0]/in_last` and
 `out_valid/out_ready/out_token_id[31:0]/out_last`; it has `start`, standard
@@ -620,7 +709,7 @@ same held DDR read channel as the segment reader. Errors are sticky until
 reset; successful validation can be started again. Neither a header pass nor
 a staged manifest authorizes any tokenizer/core request. Cross-record,
 tensor-region and complete table semantic validation remain additional
-prerequisites of the eventual public boot commit.
+prerequisites of the public boot commit.
 
 `anvil_edge_directory_validator` consumes the same frozen staging bundle.
 It independently checks the directory header, exact legal sorted key set,
@@ -659,6 +748,47 @@ scalar-pool extents. It assumes the structurally checked manifest remains
 stable, uses only serialized bounded DDR reads and returns
 `valid_profile_tables` as an intermediate result. It does not replace official
 asset provenance or independent Unicode/tokenizer comparisons.
+
+`anvil_edge_special_trie_validator` checks every special record, unique token
+IDs and special-token flags, then traverses the entire trie with a bounded
+depth-first stack. It clears a visited-node bitmap serially, rejects revisits
+(including cycles, multiple parents and edges back to the root), checks each
+node's edge interval and strict byte ordering, and compares each terminal's
+complete path against its referenced token bytes. Requiring node and edge
+visit totals to match their headers excludes disconnected data and unused or
+multiply referenced edges. Its explicit capacities default to 1,048,576 nodes,
+262,144 special records and 4096 path bytes; larger images fail code 06 before
+traversal. These are hardware storage capacities, not a change to official
+profile coverage. This stage requires both manifest and token validation and
+returns `valid_special_trie`, not `boot_done`.
+
+### Public boot-loader commit and recovery
+
+`anvil_edge_ddr4_boot_loader` has the admitted SPI and single-outstanding DDR
+channels, `start`, `ddr_cal_done`, `boot_done/busy/error/error_code`, and these
+additional internal committed outputs: `committed_config_words[223:0]`,
+`committed_segment_bases[1279:0]`, `committed_segment_bytes[1279:0]`,
+`committed_metadata[1023:0]`, `committed_table_counts[511:0]`. Config words are
+ordered by offsets 04,08,0c,10,14,18,24; canonical segment slots are
+100,101,102,103,200..20f; metadata/count packing is described above. All outputs
+are gated to zero until atomic commit. The wrapper forwards no inferred model
+or table state from an initial block.
+
+After reset the loader automatically waits for two-register-synchronized
+calibration, transfers the SPI image, and runs manifest, directory, token,
+profile and trie validators in that order. The final commit edge publishes all
+five packed fields and `boot_done` together. The selected stage owns the held
+DDR transaction and response; no stage switch occurs with an outstanding
+request. A validator error leaves admission withdrawn and preserves its code.
+
+While ready or failed, `start` requests an idle recovery/reload. Its caller must
+first establish quiescent I/O, no active inference, and memory-subsystem idle;
+this is an internal ownership precondition, not a new external register.
+Reload withdraws `boot_done`, clears committed outputs and resets the subordinate
+boot epoch before rereading the parameterized flash base. It cannot keep a
+partially overwritten old image admitted. Active boot ignores `start`; the
+top/configuration controller rejects illegal active reload writes
+instead of presenting them to this internal control.
 
 | Boot-validation boundary | Behavior |
 | --- | --- |

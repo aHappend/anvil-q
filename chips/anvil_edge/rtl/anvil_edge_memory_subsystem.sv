@@ -56,7 +56,8 @@ module anvil_edge_memory_subsystem #(
   output wire ddr_rsp_ready,
   input wire [31:0] ddr_rsp_rdata,
   input wire ddr_rsp_error,
-  output wire idle
+  output wire idle,
+  input tri0 abort_inference
 );
   localparam [3:0] IDLE=0, TABLE_RANGE=1, TABLE_END=2, TABLE_CHECK=3,
     REQUEST=4, RESPONSE=5, RETURN=6;
@@ -78,12 +79,13 @@ module anvil_edge_memory_subsystem #(
   reg [64:0] table_end;
   reg [64:0] request_end;
   wire mapper_req_valid, mapper_req_ready, mapper_req_write;
+  wire mapper_core_ready;
   wire [63:0] mapper_req_addr;
   wire [31:0] mapper_req_wdata;
   wire [3:0] mapper_req_wstrb;
   wire mapper_rsp_valid, mapper_rsp_ready, mapper_rsp_error, mapper_idle;
   wire [31:0] mapper_rsp_rdata;
-  wire response_accept=
+  wire response_accept=(abort_inference && owner!=BOOT) ||
     (owner==CORE && mapper_rsp_ready) ||
     (owner==TOKENIZER && tokenizer_tbl_rsp_ready) ||
     (owner==DETOKENIZER && detokenizer_tbl_rsp_ready) ||
@@ -99,12 +101,12 @@ module anvil_edge_memory_subsystem #(
     .cfg_directory_base(cfg_directory_base),.cfg_directory_count(cfg_directory_count),
     .cfg_immutable_base(cfg_immutable_base),.cfg_immutable_bytes(cfg_immutable_bytes),
     .cfg_writable_base(cfg_writable_base),.cfg_writable_bytes(cfg_writable_bytes),
-    .mem_req_valid(core_mem_req_valid),.mem_req_ready(core_mem_req_ready),
+    .mem_req_valid(core_mem_req_valid && !abort_inference),.mem_req_ready(mapper_core_ready),
     .mem_req_write(core_mem_req_write),.mem_req_kind(core_mem_req_kind),
     .mem_req_layer(core_mem_req_layer),.mem_req_proj(core_mem_req_proj),
     .mem_req_row(core_mem_req_row),.mem_req_col(core_mem_req_col),
     .mem_req_wdata(core_mem_req_wdata),.mem_rsp_valid(core_mem_rsp_valid),
-    .mem_rsp_ready(core_mem_rsp_ready),.mem_rsp_rdata(core_mem_rsp_rdata),
+    .mem_rsp_ready(core_mem_rsp_ready || abort_inference),.mem_rsp_rdata(core_mem_rsp_rdata),
     .mem_rsp_error(core_mem_rsp_error),
     .ddr_req_valid(mapper_req_valid),.ddr_req_ready(mapper_req_ready),
     .ddr_req_write(mapper_req_write),.ddr_req_addr(mapper_req_addr),
@@ -122,6 +124,8 @@ module anvil_edge_memory_subsystem #(
           selected_valid=1;
           selected_owner=BOOT;
         end
+      end else if (abort_inference) begin
+        if (mapper_req_valid) begin selected_valid=1; selected_owner=CORE; end
       end else begin
         case (priority_owner)
           CORE: begin
@@ -145,6 +149,7 @@ module anvil_edge_memory_subsystem #(
   end
 
   assign mapper_req_ready=selected_valid && selected_owner==CORE;
+  assign core_mem_req_ready=rst_n && !abort_inference && mapper_core_ready;
   assign tokenizer_tbl_req_ready=selected_valid && selected_owner==TOKENIZER;
   assign detokenizer_tbl_req_ready=selected_valid && selected_owner==DETOKENIZER;
   assign boot_req_ready=selected_valid && selected_owner==BOOT;
