@@ -34,7 +34,7 @@ module anvil_q2_fp_gqa_attention #(
   reg [31:0] time_index, dim, component;
   reg [31:0] query32, q, cache_value, dot, partial, sqrt_dim;
   reg [31:0] score, max_score, denominator, weighted, exponential, result;
-  reg [31:0] scores [0:SS-1];
+  (* nomem2reg *) reg [31:0] scores [0:SS-1];
   wire [15:0] query16=narrow16(query32,FP_FORMAT);
   wire [31:0] converted_query=expand16(query16,FP_FORMAT);
   wire [1:0] reqv, reqr, reqw, rspv, rspr, rspe;
