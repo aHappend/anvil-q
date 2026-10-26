@@ -135,12 +135,9 @@ module anvil_q2_ht_tile_buffers #(
         localparam J = bank_index+16*bank_lane;
         localparam QUARTER = J >> 5;
         localparam WORD = J & 31;
-        (* ramstyle = "M20K, no_rw_check" *)
-        reg [15:0] weight_ram [0:TILE_SLOTS*16-1];
-        (* ramstyle = "M20K, no_rw_check" *)
-        reg [19:0] metadata_ram [0:TILE_SLOTS*16-1];
-        (* ramstyle = "M20K, no_rw_check" *)
-        reg [31:0] activation_ram [0:TILE_SLOTS-1];
+        (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [15:0] weight_ram [0:TILE_SLOTS*16-1];
+        (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [19:0] metadata_ram [0:TILE_SLOTS*16-1];
+        (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [31:0] activation_ram [0:TILE_SLOTS-1];
         reg [15:0] weight_read;
         reg [19:0] metadata_read;
         reg [31:0] activation_read;

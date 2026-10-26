@@ -86,23 +86,19 @@ module anvil_q2_ht_configuration #(
     reg [32:0] committed_base, committed_length;
     reg response_valid, response_error;
     reg [31:0] response_data;
-    (* ramstyle = "M20K, no_rw_check" *)
-    reg [511:0] shadow [0:ENTRIES-1];
+    (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [511:0] shadow [0:ENTRIES-1];
     reg [15:0] initialized [0:ENTRIES-1];
-    (* ramstyle = "M20K, no_rw_check" *)
-    reg [511:0] committed [0:2*ENTRIES-1];
+    (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [511:0] committed [0:2*ENTRIES-1];
     reg [511:0] descriptor, embedding_descriptor;
     reg descriptor_valid, descriptor_error;
     reg [511:0] descriptor_data;
     reg [8:0] index;
     reg [1:0] part;
     reg [RW-1:0] range_count, scan_index;
-    (* ramstyle = "M20K, no_rw_check" *)
-    reg [32:0] range_base [0:RANGES-1];
-    (* ramstyle = "M20K, no_rw_check" *)
-    reg [33:0] range_end [0:RANGES-1];
-    reg [8:0] range_entry [0:RANGES-1];
-    reg [1:0] range_part [0:RANGES-1];
+    (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [32:0] range_base [0:RANGES-1];
+    (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [33:0] range_end [0:RANGES-1];
+    (* nomem2reg *) reg [8:0] range_entry [0:RANGES-1];
+    (* nomem2reg *) reg [1:0] range_part [0:RANGES-1];
     reg [32:0] candidate_base, prior_base;
     reg [33:0] candidate_end, prior_end;
     reg [8:0] prior_entry;
