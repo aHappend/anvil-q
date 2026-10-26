@@ -39,8 +39,7 @@ module anvil_q2_ht_kv_burst (
   reg [26:0] cached_base;
   reg [15:0] cached_valid;
   reg [3:0] target;
-  (* ramstyle = "M20K, no_rw_check" *)
-  reg [511:0] lines [0:15];
+  (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [511:0] lines [0:15];
   wire [33:0] region_end={1'b0,region_base}+{1'b0,region_length};
   wire [33:0] request_end={1'b0,req_address}+34'd64;
   wire malformed=(|req_address[5:0]) || req_address<region_base ||

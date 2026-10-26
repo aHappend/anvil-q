@@ -64,8 +64,7 @@ module anvil_q2_ht_vector_store #(
     for (bank=0; bank<16; bank=bank+1) begin: banks
       for (slice=0; slice<8; slice=slice+1) begin: slices
         localparam LANE=bank+16*slice;
-        (* ramstyle = "M20K, no_rw_check" *)
-        reg [31:0] ram [0:DEPTH-1];
+        (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [31:0] ram [0:DEPTH-1];
         reg [31:0] read_q;
         assign scalar_slice[LANE]=read_q;
         assign tile_slice[LANE]=read_q;

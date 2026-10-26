@@ -91,8 +91,7 @@ module anvil_q2_ht_kv_cache #(
     reg [5:0] target, replacement;
     reg target_hit;
     reg [63:0] hit_bitmap;
-    (* ramstyle = "M20K, no_rw_check" *)
-    reg [WORDS*32-1:0] hot_ram [0:HOT_BLOCKS-1];
+    (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [WORDS*32-1:0] hot_ram [0:HOT_BLOCKS-1];
     reg [WORDS*32-1:0] hot_read_data;
     integer i, match_index;
 
