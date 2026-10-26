@@ -54,11 +54,10 @@ module anvil_q1_ht_kv_window #(
                HIT_CHECK = 4'd3, EVICT_READ = 4'd4, EVICT_LATCH = 4'd5,
                EVICT_ISSUE = 4'd6, EVICT_WAIT = 4'd7, INSTALL = 4'd8,
                MISS_ISSUE = 4'd9, MISS_WAIT = 4'd10, RESULT = 4'd11;
-    (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] key_mem [0:WORDS-1];
-    (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] value_mem [0:WORDS-1];
-    (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] tags [0:ENTRIES-1];
-    (* ramstyle = "M20K", ram_style = "block" *)
-      reg [2*KV_WIDTH-1:0] valid_words [0:ENTRIES-1];
+    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg [31:0] key_mem [0:WORDS-1];
+    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg [31:0] value_mem [0:WORDS-1];
+    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg [31:0] tags [0:ENTRIES-1];
+    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg [2*KV_WIDTH-1:0] valid_words [0:ENTRIES-1];
     reg [31:0] history_next [0:NUM_LAYERS-1];
     reg [3:0] state;
     reg init_done, failed, result_error, result_hit;

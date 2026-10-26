@@ -12,8 +12,7 @@ module anvil_q1_ht_tile_bank #(
 );
   generate
     if (TILE_BEATS >= 1 && TILE_BEATS <= 256) begin : g_legal
-      (* ramstyle = "M20K, no_rw_check" *)
-      reg [511:0] storage [0:TILE_BEATS-1];
+      (* ramstyle = "M20K, no_rw_check" , nomem2reg *) reg [511:0] storage [0:TILE_BEATS-1];
 
       always @(posedge ddr_clk) begin
         if (write_enable)

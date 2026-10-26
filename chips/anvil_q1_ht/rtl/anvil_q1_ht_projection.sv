@@ -97,8 +97,7 @@ module anvil_q1_ht_projection #(
     reg [2367:0] weights;
     reg [2047:0] results;
     reg signed [31:0] activation;
-    (* ramstyle = "M20K", ram_style = "block" *)
-      reg signed [31:0] activation_store [0:MAX_INPUTS-1];
+    (* ramstyle = "M20K", ram_style = "block" , nomem2reg *) reg signed [31:0] activation_store [0:MAX_INPUTS-1];
     wire [63:0] dequant_ready, dequant_valid, dequant_error;
     wire [2367:0] dequant_weights;
     wire memory_response = mem_rsp_valid && mem_rsp_ready;
