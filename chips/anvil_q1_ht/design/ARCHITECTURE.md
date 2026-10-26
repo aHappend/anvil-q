@@ -366,6 +366,17 @@ the active command drains issued traffic, emits one error completion and cannot
 restart without global reset. No finite guessed settling delay certifies drain.
 The DMA abort path cannot withdraw a command held under Avalon waitrequest.
 
+Decoder fault handling has priority after the entire state dispatch, including
+embedding, cache clear, child command issue and child completion. The latched
+failure keeps child abort asserted and blocks new embedding requests, commands
+and logits even if the incoming fault indication clears. Embedding response/ack
+states retain memory ownership until their accepted response; kernel/projection
+wait states retain child ownership until completion. States with no accepted
+transaction complete with error directly. This repairs the uncompleted-token
+failure retained at
+`evidence/preparation/verifier-orphan-fault-20261026T115941Z-a68db5c7/receipt.json`;
+the repaired behavior requires independent Verifier regression.
+
 Do not reuse the parent's combinational divide/modulo/sqrt/nonlinear functions
 in the HT clocked datapath.
 

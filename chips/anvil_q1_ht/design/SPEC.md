@@ -102,6 +102,7 @@ mean immediately after that edge's nonblocking updates.
 | Final logit accepted F | `done=1,error=0` after F for exactly one compute cycle. |
 | Invalid token/order | No logits; one error completion within two compute edges of acceptance. |
 | Simultaneous error/result | Error takes priority; no successful completion or newly published result. |
+| Execution fault in any active decoder state | Latch failure and invalidate continuation; suppress new requests/commands and logits. Retain an accepted embedding response or active child ownership until it drains, then emit one error completion. A fault before acceptance completes without waiting for an unissued transaction. |
 | Descriptor install | Scan all existing regions before atomically replacing the selected entry; exclude that entry's old region from overlap comparisons. |
 | Descriptor commit | Scan all required identities and exact padded lengths before setting image validity or responding. |
 | CSR accepted at E | Ordinary read/write response becomes valid after E+1 and holds until a later accepted response edge. Install/commit wait for all validation. |

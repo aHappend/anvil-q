@@ -64,6 +64,7 @@ module anvil_q1_ht_decoder #(
     PROJECTION_SEND = 4'd12, PROJECTION_WAIT = 4'd13;
   reg [3:0] state, step;
   reg failed, sequence_valid, final_norm;
+  wire abort_execution = execution_fault || failed;
   reg [31:0] token, position, next_position, component, layer;
   reg [31:0] cycles_low, cycles_high;
   reg signed [31:0] embedding_value;
@@ -97,7 +98,7 @@ module anvil_q1_ht_decoder #(
   assign token_cycles = rst_n ? {cycles_high, cycles_low} : 64'b0;
   assign cache_new_sequence = rst_n && state == CLEAR;
   assign logit_valid = rst_n && state == PROJECTION_WAIT && projection == 7 &&
-                       p_logit_valid && !failed && !execution_fault;
+                       p_logit_valid && !abort_execution;
   assign logit_index = logit_valid ? p_logit_index : 32'b0;
   assign logit_data = logit_valid ? p_logit_data : 32'sd0;
   assign mem_req_valid = rst_n && req_valid[selected];
@@ -111,7 +112,7 @@ module anvil_q1_ht_decoder #(
   assign mem_rsp_ready = rst_n && rsp_ready[selected];
   assign req_ready = rst_n && mem_req_ready ? (3'b001 << selected) : 3'b0;
   assign rsp_valid = rst_n && mem_rsp_valid ? (3'b001 << selected) : 3'b0;
-  assign req_valid[0] = rst_n && !execution_fault &&
+  assign req_valid[0] = rst_n && !abort_execution &&
     (state == EMBEDDING_READ || state == EMBEDDING_WRITE);
   assign req_write[0] = state == EMBEDDING_WRITE;
   assign req_kind[0+:4] = own_read ? 4'd0 : 4'd8;
@@ -128,8 +129,8 @@ module anvil_q1_ht_decoder #(
     .NUM_Q_HEADS(NUM_Q_HEADS), .NUM_KV_HEADS(NUM_KV_HEADS), .HEAD_DIM(HEAD_DIM),
     .MAX_SEQ_LEN(MAX_SEQ_LEN), .LEGACY_PARAMETERS(COMPATIBILITY)
   ) u_kernel (
-    .clk(clk), .rst_n(child_rst_n), .abort_error(execution_fault),
-    .cmd_valid(state == KERNEL_SEND && !execution_fault), .cmd_ready(kernel_ready),
+    .clk(clk), .rst_n(child_rst_n), .abort_error(abort_execution),
+    .cmd_valid(state == KERNEL_SEND && !abort_execution), .cmd_ready(kernel_ready),
     .cmd_op(kernel_operation), .cmd_layer(kernel_layer), .cmd_pos(position),
     .done(kernel_done), .error(kernel_error),
     .mem_req_valid(req_valid[1]), .mem_req_ready(req_ready[1]), .mem_req_write(req_write[1]),
@@ -145,8 +146,8 @@ module anvil_q1_ht_decoder #(
       .NUM_KV_HEADS(NUM_KV_HEADS), .HEAD_DIM(HEAD_DIM), .GROUP_SIZE(GROUP_SIZE),
       .VOCAB_SIZE(VOCAB_SIZE), .MAX_SEQ_LEN(MAX_SEQ_LEN)
     ) u_projection (
-      .clk(clk), .rst_n(child_rst_n), .abort_error(execution_fault),
-      .cmd_valid(state == PROJECTION_SEND && !execution_fault),
+      .clk(clk), .rst_n(child_rst_n), .abort_error(abort_execution),
+      .cmd_valid(state == PROJECTION_SEND && !abort_execution),
       .cmd_ready(projection_ready), .cmd_layer(layer), .cmd_pos(position),
       .cmd_proj(projection), .done(projection_done), .error(projection_error),
       .mem_req_valid(req_valid[2]), .mem_req_ready(req_ready[2]), .mem_req_write(req_write[2]),
@@ -179,8 +180,8 @@ module anvil_q1_ht_decoder #(
     .NUM_KV_HEADS(NUM_KV_HEADS), .HEAD_DIM(HEAD_DIM), .GROUP_SIZE(GROUP_SIZE),
     .VOCAB_SIZE(VOCAB_SIZE), .MAX_SEQ_LEN(MAX_SEQ_LEN)
   ) u_projection (
-    .clk(clk), .rst_n(child_rst_n), .abort_error(execution_fault),
-    .cmd_valid(state == PROJECTION_SEND && !execution_fault),
+    .clk(clk), .rst_n(child_rst_n), .abort_error(abort_execution),
+    .cmd_valid(state == PROJECTION_SEND && !abort_execution),
     .cmd_ready(projection_ready), .cmd_layer(layer), .cmd_pos(position),
     .cmd_proj(projection), .storage_bf16(storage_bf16),
     .done(projection_done), .error(projection_error),
@@ -294,17 +295,6 @@ module anvil_q1_ht_decoder #(
             13: begin kernel_operation <= 5; state <= KERNEL_SEND; end
             default: begin failed <= 1; sequence_valid <= 0; state <= COMPLETE; end
           endcase
-          if (execution_fault && state != IDLE && state != COMPLETE) begin
-            failed <= 1;
-            sequence_valid <= 0;
-            if (state != KERNEL_WAIT && state != PROJECTION_WAIT &&
-                state != EMBEDDING_RESPONSE && state != EMBEDDING_ACK)
-              state <= COMPLETE;
-            else if ((state == KERNEL_WAIT && kernel_done) ||
-                     (state == PROJECTION_WAIT && projection_done) ||
-                     ((state == EMBEDDING_RESPONSE || state == EMBEDDING_ACK) && own_response))
-              state <= COMPLETE;
-          end
         end
         KERNEL_SEND: if (kernel_ready) state <= KERNEL_WAIT;
         KERNEL_WAIT: if (kernel_done) begin
@@ -342,6 +332,18 @@ module anvil_q1_ht_decoder #(
         COMPLETE: state <= IDLE;
         default: begin failed <= 1; sequence_valid <= 0; state <= COMPLETE; end
       endcase
+      // Keep response ownership until the accepted transaction or child drains.
+      if (abort_execution && state != IDLE && state != COMPLETE) begin
+        failed <= 1;
+        sequence_valid <= 0;
+        if (state != KERNEL_WAIT && state != PROJECTION_WAIT &&
+            state != EMBEDDING_RESPONSE && state != EMBEDDING_ACK)
+          state <= COMPLETE;
+        else if ((state == KERNEL_WAIT && kernel_done) ||
+                 (state == PROJECTION_WAIT && projection_done) ||
+                 ((state == EMBEDDING_RESPONSE || state == EMBEDDING_ACK) && own_response))
+          state <= COMPLETE;
+      end
     end
   end
 endmodule
