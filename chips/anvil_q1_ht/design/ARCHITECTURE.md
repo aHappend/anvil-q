@@ -366,6 +366,19 @@ the active command drains issued traffic, emits one error completion and cannot
 restart without global reset. No finite guessed settling delay certifies drain.
 The DMA abort path cannot withdraw a command held under Avalon waitrequest.
 
+The kernel places abort handling inside the non-reset sequential priority
+chain: asynchronous reset wins, then active-command abort, then response faults
+and normal state dispatch. Abort latches failure and suppresses new memory
+requests. In `MEMORY_WAIT` it retains ownership until the response handshake;
+on that edge, or immediately in a state without an outstanding memory request,
+it enters error completion. Abort does not override reset, idle command
+acceptance or completion retirement. This repairs the reset-inference structure
+identified in
+`evidence/preparation/verifier-synthesis-control-20261026T134623Z-87b803a3/receipt.json`
+and
+`evidence/preparation/verifier-synthesis-small-20261026T134623Z-b1705ef2/receipt.json`;
+independent synthesis and abort/drain regression remain required.
+
 Decoder fault handling has priority after the entire state dispatch, including
 embedding, cache clear, child command issue and child completion. The latched
 failure keeps child abort asserted and blocks new embedding requests, commands

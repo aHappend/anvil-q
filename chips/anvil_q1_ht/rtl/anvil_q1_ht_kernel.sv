@@ -180,8 +180,10 @@ module anvil_q1_ht_kernel #(
         nonlinear_silu <= 0;
         nonlinear_argument <= 0;
         nonlinear_value <= 0;
-      end else begin
-      if (memory_complete && mem_rsp_error) begin
+      end else if (abort_error && state != IDLE && state != COMPLETE) begin
+        failed <= 1;
+        if (state != MEMORY_WAIT || memory_complete) state <= COMPLETE;
+      end else if (memory_complete && mem_rsp_error) begin
         failed <= 1;
         state <= COMPLETE;
       end else if (state == MATH_WAIT && math_valid && math_error) begin
@@ -755,11 +757,6 @@ module anvil_q1_ht_kernel #(
           state <= COMPLETE;
         end
       endcase
-      if (abort_error && state != IDLE && state != COMPLETE) begin
-        failed <= 1;
-        if (state != MEMORY_WAIT || memory_complete) state <= COMPLETE;
-      end
-      end
     end
   end else begin : g_illegal
     initial $fatal(1, "ANVIL_Q1_HT PARAMETER ERROR: kernel dimensions");
