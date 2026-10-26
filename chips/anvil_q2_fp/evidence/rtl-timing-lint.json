@@ -1,13 +1,11 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-10-26T17:42:58.386702+00:00",
+  "timestamp_utc": "2026-10-26T22:46:00.170203+00:00",
   "root": "/data/sufeng/anvil-q2-fp-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
   "rtl_files_checked": 21,
-  "auto_sanitized_nomem2reg_files": [
-    "rtl/anvil_q2_fp_gqa_attention.sv"
-  ],
+  "auto_sanitized_nomem2reg_files": [],
   "source_sha256": {
     "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
     "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
