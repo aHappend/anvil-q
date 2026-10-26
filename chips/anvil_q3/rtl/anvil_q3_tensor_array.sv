@@ -132,7 +132,7 @@ module anvil_q3_tensor_array #(
     integer i;
 
     for (a=0;a<8;a=a+1) begin: activation_lanes
-      (* nomem2reg *) reg [31:0] activation_storage [0:ACTIVATION_WORDS-1];
+      reg [31:0] activation_storage [0:ACTIVATION_WORDS-1];
       reg [31:0] read_data;
       assign operand_activations[a*32+:32]=operand_mask[a] ? read_data : 32'd0;
 
