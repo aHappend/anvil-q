@@ -87,19 +87,22 @@ module anvil_q3_tensor_array #(
     .c_rsp_ready(c_rsp_ready),.c_rsp_rdata(c_rsp_rdata)
   );
 
-  genvar g;
+  genvar g, a;
   generate for (g=0;g<SB;g=g+1) begin: engines
     reg active, completed, local_failed, local_fault, descriptors_finished;
     reg [31:0] output_base, next_input, rows_completed;
     wire [31:0] rows_left=outputs-output_base;
     wire [31:0] row_count=rows_left<TR ? rows_left : TR;
     wire [31:0] inputs_left=inputs-next_input;
-    reg [31:0] activation_storage [0:MAX_INPUTS-1];
+    localparam ACTIVATION_WORDS=(MAX_INPUTS>>3)+((MAX_INPUTS&7)!=0);
+    localparam ACTIVATION_AW=ACTIVATION_WORDS>1 ? $clog2(ACTIVATION_WORDS) : 1;
+    wire [ACTIVATION_AW-1:0] activation_write_address=load_index>>3;
+    wire [ACTIVATION_AW-1:0] activation_read_address=beat_input[g*32+:32]>>3;
     reg signed [127:0] sums [0:TR-1];
     reg operand_valid;
     reg [31:0] operand_q, operand_z, operand_row, operand_input;
     reg [127:0] operand_scale;
-    reg [255:0] operand_activations;
+    wire [255:0] operand_activations;
     reg [7:0] operand_mask;
     reg [31:0] row_pipe [0:7];
     reg [7:0] first_pipe, last_pipe;
@@ -123,7 +126,24 @@ module anvil_q3_tensor_array #(
        beat_row[g*32+:32]<output_base ||
        {1'b0,beat_row[g*32+:32]}>={1'b0,output_base}+row_count ||
        beat_input[g*32+:32]>=inputs);
-    integer i, lane;
+    wire activation_read=rst_n && !local_flush && !bad_beat &&
+      !(dot_valid && dot_error) && !(add_valid && add_error) &&
+      operand_ready && beat_valid[g] && active;
+    integer i;
+
+    for (a=0;a<8;a=a+1) begin: activation_lanes
+      reg [31:0] activation_storage [0:ACTIVATION_WORDS-1];
+      reg [31:0] read_data;
+      assign operand_activations[a*32+:32]=operand_mask[a] ? read_data : 32'd0;
+
+      always @(posedge clk) begin
+        if (rst_n && !internal_flush && load_transfer && !bad_load &&
+            load_index[2:0]==a)
+          activation_storage[activation_write_address]<=load_data;
+        if (activation_read && beat_mask[g*8+a])
+          read_data<=activation_storage[activation_read_address];
+      end
+    end
 
     assign bank_done[g]=completed;
     assign bank_fault[g]=local_fault;
@@ -162,7 +182,7 @@ module anvil_q3_tensor_array #(
         active<=0; completed<=0; local_failed<=0; local_fault<=0;
         descriptors_finished<=0; output_base<=0; next_input<=0; rows_completed<=0;
         operand_valid<=0; operand_q<=0; operand_z<=0; operand_scale<=0;
-        operand_activations<=0; operand_mask<=0; operand_row<=0; operand_input<=0;
+        operand_mask<=0; operand_row<=0; operand_input<=0;
         first_pipe<=0; last_pipe<=0; addition_row<=0; addition_last<=0;
         result_pending<=0; result_index<=0; result_data<=0;
         for (i=0;i<8;i=i+1) row_pipe[i]<=0;
@@ -172,7 +192,6 @@ module anvil_q3_tensor_array #(
         first_pipe<=0; last_pipe<=0;
       end else begin
         local_fault<=0;
-        if (load_transfer && !bad_load) activation_storage[load_index]<=load_data;
         if (compute_start) begin
           active<=g*TR<outputs; completed<=g*TR>=outputs;
           output_base<=g*TR; next_input<=0; rows_completed<=0;
@@ -194,12 +213,6 @@ module anvil_q3_tensor_array #(
                 operand_scale<=beat_scale[g*128+:128];
                 operand_mask<=beat_mask[g*8+:8]; operand_row<=beat_row[g*32+:32];
                 operand_input<=beat_input[g*32+:32];
-                for (lane=0;lane<8;lane=lane+1) begin
-                  if (beat_mask[g*8+lane])
-                    operand_activations[lane*32+:32]<=
-                      activation_storage[beat_input[g*32+:32]+lane];
-                  else operand_activations[lane*32+:32]<=0;
-                end
               end
             end
             if (dot_input_ready) begin

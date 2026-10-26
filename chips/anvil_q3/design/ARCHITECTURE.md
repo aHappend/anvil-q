@@ -144,6 +144,35 @@ row partial sums consume 8*8*16 = 1024 logical bytes. These numbers exclude
 pipeline/control registers, padding, inferred RAM granularity and replication
 by implementation tools. They are source-level capacities, not fitted usage.
 
+Each engine's activation copy is interleaved across eight reset-free synchronous
+lane memories: logical component `8*word+lane` resides at `word` in that lane.
+The default is eight 1376-by-32 memories per engine, preserving all 11008
+components and independent bank copies. A load writes only its selected lane;
+an accepted weight beat reads one word from each enabled lane. Tensor-generated
+descriptor input bases and prefetch beat offsets are multiples of eight, so no
+lane rotation or extra read port is needed. The registered read data and
+resettable operand metadata capture on the same edge; the registered mask
+zeros disabled lanes before dot8. Memory contents and read registers are not
+reset. Resettable valid/control state prevents their use before a complete
+activation load. No large-memory register-forcing attribute is used.
+
+| Activation boundary/event | Pre-edge condition and post-edge effect |
+| --- | --- |
+| Reset / first released edge | Public outputs remain reset-gated; operand valid/mask reset to zero; no storage read/write during reset |
+| Accepted load | Write component `load_index` to its lane and word; malformed last markers do not write |
+| Final accepted load | Write the last component and activate compute; no beat is accepted from the previously inactive engine on that edge |
+| Accepted beat at E0 | Synchronous lane reads and q/z/scale/row/input/mask capture together; operand valid asserts after E0 |
+| Dot8 acceptance at E1 | Earliest dot8 consumption of E0's matched activation/metadata snapshot; no added pipeline stage |
+| Operand stall | Read registers, mask and all operand metadata hold; no beat acceptance |
+| Masked tail / smallest legal vector | Masked lanes supply zero without reading padding; eight-component vectors use the same mapping |
+| Concurrent load/read | LOAD and active compute are disjoint; no legal read/write collision |
+| Flush or local fault | Flush/fault control suppresses reads and invalidates operand ownership; retained RAM bits cannot become new work without a new complete load |
+
+This inference-oriented repair addresses the activation-store register expansion
+observed in the retained full-default synthesis timeout. It does not establish
+that expansion was the sole timeout cause, successful RAM inference, resource
+fit or timing closure; those require independent synthesis and physical checks.
+
 Each fill presently reads one qweight word, one qzero word and one FP16 scale
 transport word per logical tile cell. This intentionally simple correct-address
 schedule repeats packed-word/scale reads: 12 bus bytes per cell, not the
