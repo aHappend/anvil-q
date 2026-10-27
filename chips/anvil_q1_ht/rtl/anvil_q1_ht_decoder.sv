@@ -64,7 +64,8 @@ module anvil_q1_ht_decoder #(
     PROJECTION_SEND = 4'd12, PROJECTION_WAIT = 4'd13;
   reg [3:0] state, step;
   reg failed, sequence_valid, final_norm;
-  wire abort_execution = execution_fault || failed;
+  // Command rejection has not started execution or modified sequence history.
+  wire abort_execution = execution_fault || (failed && state != INVALID);
   reg [31:0] token, position, next_position, component, layer;
   reg [31:0] cycles_low, cycles_high;
   reg signed [31:0] embedding_value;

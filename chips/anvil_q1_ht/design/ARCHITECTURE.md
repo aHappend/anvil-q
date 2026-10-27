@@ -406,6 +406,16 @@ failure retained at
 `evidence/preparation/verifier-orphan-fault-20261026T115941Z-a68db5c7/receipt.json`;
 the repaired behavior requires independent Verifier regression.
 
+Command validation rejection is distinct from execution failure: in `INVALID`,
+the completion's `failed` bit does not assert execution abort or clear sequence
+validity. The previous successful next position and cache history remain
+available for retry, even after a rejected `new_sequence` command. An external
+`execution_fault` still takes priority in this state and invalidates continuation;
+fault latching and draining in execution states are unchanged. This repairs the
+continuation regression retained at
+`evidence/preparation/verifier-compatibility-20261027T125102Z-e4d2a58d/receipt.json`;
+independent compatibility and execution-fault regression remain required.
+
 Do not reuse the parent's combinational divide/modulo/sqrt/nonlinear functions
 in the HT clocked datapath.
 
