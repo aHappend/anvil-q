@@ -334,14 +334,18 @@ class Validator:
         require(set(suite["domains"]) == set(DOMAINS), "wrong five-domain set")
         return cases
 
+    def array_bytes(self, descriptor, dtype, width):
+        from packed_storage import array_bytes
+        return array_bytes(self.artifact(descriptor), descriptor, dtype, width)
+
     def arrays(self, actual, reference, repeat, width, threshold, label, wide=False):
-        a, r, again = (self.artifact(item) for item in (actual, reference, repeat))
-        size, encoding = (8, "d") if wide else (4, "f")
-        require(a.stat().st_size == width * size and r.stat().st_size == width * 8 and
-                again.stat().st_size == width * size, "incomplete numerical array: " + label)
-        require(actual["sha256"] == repeat["sha256"], "nondeterministic output: " + label)
-        values = struct.unpack("<" + encoding * width, a.read_bytes())
-        expected = struct.unpack("<" + "d" * width, r.read_bytes())
+        encoding = "d" if wide else "f"
+        a = self.array_bytes(actual, "<f8" if wide else "<f4", width)
+        r = self.array_bytes(reference, "<f8", width)
+        again = self.array_bytes(repeat, "<f8" if wide else "<f4", width)
+        require(a == again, "nondeterministic output: " + label)
+        values = struct.unpack("<" + encoding * width, a)
+        expected = struct.unpack("<" + "d" * width, r)
         require(all(math.isfinite(v) for v in (*values, *expected)),
                 "nonfinite numerical array: " + label)
         norm = max(1.0, max(map(abs, expected)))
@@ -479,8 +483,8 @@ class Validator:
                                   ("decoded_weight_logits", reference),
                                   ("checkpoint_fp64_logits", reference)):
                     self.produced(position[name], run)
-                require(position["fp64_logits"]["sha256"] ==
-                        position["decoded_weight_logits"]["sha256"],
+                require(self.array_bytes(position["fp64_logits"], "<f8", 151936) ==
+                        self.array_bytes(position["decoded_weight_logits"], "<f8", 151936),
                         "selected-weight FP64 references differ: " + label)
                 self.arrays(position["logits"], position["fp64_logits"],
                             position["repeat_logits"], 151936,
@@ -520,12 +524,11 @@ class Validator:
             for index, step in enumerate(greedy["steps"]):
                 self.produced(step["logits"], execution)
                 self.produced(step["repeat_logits"], repeated)
-                actual = self.artifact(step["logits"])
-                self.artifact(step["repeat_logits"])
-                require(step["logits"]["sha256"] == step["repeat_logits"]["sha256"] and
-                        actual.stat().st_size == 151936 * 4,
+                actual = self.array_bytes(step["logits"], "<f4", 151936)
+                repeated_logits = self.array_bytes(step["repeat_logits"], "<f4", 151936)
+                require(actual == repeated_logits,
                         "missing/nondeterministic greedy logits")
-                logits = struct.unpack("<151936f", actual.read_bytes())
+                logits = struct.unpack("<151936f", actual)
                 require(all(math.isfinite(v) for v in logits), "nonfinite greedy logits")
                 token = max(range(151936), key=logits.__getitem__)
                 require(greedy["tokens"][index] == token,
