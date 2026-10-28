@@ -12,6 +12,7 @@ import uuid
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from retention import Experiment
+from invocation import invocation_experiment, run_regression
 from binding_diagnosis import summarize
 import verify
 
@@ -289,18 +290,22 @@ def main():
     if args.worker:
         run_cases(root / output / "cases")
         return 0
-    experiment = Experiment(root, output, sys.orig_argv,
+    experiment = invocation_experiment(root, output, sys.orig_argv,
                             ["tests/input_binding_check.py", "tests/verify.py",
                              "tests/retention.py", "tests/build_cache.py", "tests/binding_diagnosis.py",
-                             "tests/README.md"])
+                             "tests/invocation.py", "tests/invocation_check.py",
+                             "tests/scheduling_check.py", "tests/README.md"])
     experiment.receipt["scope"] = "synthetic retention only; no RTL or aggregate suite"
     if args.repair_of:
         experiment.receipt["repair_of"] = args.repair_of
     try:
         experiment.run([sys.executable, "--version"], "python-version")
         experiment.run([sys.executable, "-B", "tests/input_binding_check.py",
-                        "--worker", "--output", str(output)], "synthetic-cases")
+                        "--worker", "--output", str(experiment.output)], "synthetic-cases")
         experiment.receipt["compared_cases"] = 22
+        run_regression(experiment)
+        experiment.receipt["invocation_regression"] = str(
+            experiment.output / "invocation-regression/receipt.json")
         experiment.finish(0)
         return 0
     except (OSError, RuntimeError, ValueError, KeyError) as error:

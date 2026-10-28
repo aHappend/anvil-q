@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_cache import compile_verilator, create_cache
 from build_reuse_check import PROBE
 from retention import Experiment
+from invocation import invocation_experiment
 from scheduling import BUDGET_ENV, HELD_ENV, create_budget, run_graph
 from verify import run_observed_child
 import verify
@@ -442,7 +443,8 @@ def main():
         return worker(args, root)
     if args.scope is None:
         parser.error("--scope is required")
-    experiment = Experiment(root, args.output, sys.orig_argv, verify.product_sources(root))
+    factory = invocation_experiment if args.scope == "critical-path" else Experiment
+    experiment = factory(root, args.output, sys.orig_argv, verify.product_sources(root))
     if args.repair_of:
         experiment.receipt["repair_of"] = args.repair_of
     started = time.monotonic()
