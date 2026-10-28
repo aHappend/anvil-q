@@ -56,7 +56,8 @@ def table(record_bytes, records):
 
 
 def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=4096,
-                    transport=1, geometry=None, tokenizer=None, metadata_words=None):
+                    transport=1, geometry=None, tokenizer=None, metadata_words=None,
+                    table_payloads=None):
     """Complete image bytes and independently calculated public DDR tuples."""
     dimensions = {
         "layers": 1, "hidden": 8, "intermediate": 8, "query_heads": 1,
@@ -170,6 +171,13 @@ def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=40
                 raise ValueError("Metadata override must name a u32 word in the 128-byte record")
             struct.pack_into("<I", data, index * 4, value)
         segments[0x200] = bytes(data)
+    if table_payloads is not None:
+        if set(table_payloads) != set(range(0x200, 0x210)) or tokenizer is not None:
+            raise ValueError("Supply exactly metadata and fifteen tables, without a second profile")
+        for kind, data in table_payloads.items():
+            if not isinstance(data, bytes) or not data:
+                raise ValueError("Complete table payloads must be nonempty serialized bytes")
+            segments[kind] = data
     if fault in ("zero-immutable-hole", "nonzero-immutable-hole"):
         segments[0x102] += words(int(fault == "nonzero-immutable-hole"), 0)
     if fault == "nonzero-inactive-row":
@@ -543,9 +551,14 @@ module bench;
 
 
 def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=257,
-              metadata_words=None, reload_metadata=None, label=None):
-    fixture = synthetic_image(vocabulary, capacity=capacity, fault=fault,
-                              metadata_words=metadata_words)
+              metadata_words=None, reload_metadata=None, label=None, fixture=None):
+    if fixture is None:
+        fixture = synthetic_image(vocabulary, capacity=capacity, fault=fault,
+                                  metadata_words=metadata_words)
+    elif (fixture["vocabulary"] != vocabulary or fixture["capacity"] != capacity
+          or fixture["fault"] != fault or metadata_words is not None or reload
+          or reload_metadata is not None):
+        raise ValueError("External boot fixture identity/options do not match test invocation")
     name = f"boot-v{vocabulary}-s{seed}-{fault or ('reload' if reload else 'valid')}"
     if label:
         name += "-" + label
@@ -554,7 +567,9 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
     flash = directory / "flash.hex"
     flash.write_text("".join(f"{byte:02x}\n" for byte in fixture["image"]), encoding="ascii")
     manifest = {
-        "synthetic_only": True, "vocabulary": vocabulary, "physical_capacity": capacity,
+        "synthetic_only": fixture.get("synthetic_only", True),
+        "input_provenance": fixture.get("input_provenance", "Independent synthetic representation fixture"),
+        "vocabulary": vocabulary, "physical_capacity": capacity,
         "metadata_words": metadata_words,
         "metadata_reload_epochs": reload_metadata,
         "image_sha256": hashlib.sha256(fixture["image"]).hexdigest(),

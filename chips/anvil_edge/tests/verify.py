@@ -60,7 +60,7 @@ from qwen_regex import run_qwen_regex
 from unicode_sources import run_unicode_sources, run_unicode_intake
 from unicode_tables import run_unicode_conversion, run_unicode_rtl
 from metadata import run_metadata
-from qwen_integration import run_qwen_integration
+from qwen_integration import run_qwen_integration, run_qwen_boot
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -899,6 +899,7 @@ def main():
         "unicode-rtl",
         "metadata",
         "official-qwen-integration",
+        "official-qwen-boot",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1047,6 +1048,8 @@ def main():
             run_metadata(evidence)
         elif args.probe == "official-qwen-integration":
             run_qwen_integration(evidence)
+        elif args.probe == "official-qwen-boot":
+            run_qwen_boot(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):

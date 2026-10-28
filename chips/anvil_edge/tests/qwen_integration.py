@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import re
 import struct
 import sys
 
@@ -252,6 +253,42 @@ def run_qwen_integration(evidence):
     info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
     vectors = json.loads((evidence.path / "official-vectors.json").read_bytes())
     run_rtl(evidence, info, vectors)
+
+
+def run_qwen_boot(evidence):
+    from storage import boot_test, synthetic_image, words
+
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.child([
+        "./.venv/bin/python", "tests/qwen_integration.py", evidence.relative(evidence.path),
+    ], "official-qwen-complete-table-preparation")
+    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
+    payloads = {0x200: words(*info["metadata"])}
+    for entry in info["tables"]:
+        data = (evidence.path / f"table-{entry['kind']:03x}.bin").read_bytes()
+        require(hashlib.sha256(data).hexdigest() == entry["sha256"],
+                "Pinned complete tables changed before boot-image serialization")
+        payloads[entry["kind"]] = data
+    fixture = synthetic_image(VOCABULARY, capacity=151936, table_payloads=payloads)
+    fixture["synthetic_only"] = False
+    fixture["input_provenance"] = {
+        "tokenizer_bundle_sha256": manifest()["bundle_sha256"],
+        "tokenizer_tables": "Complete pinned official Qwen asset conversion; source hashes "
+                            "and official comparisons are retained in this invocation",
+        "weights": "Synthetic zero tensors, minimum geometry, not an actual pretrained model",
+    }
+    save(evidence.path / "official-boot-scope.json", {
+        "scope": "Real SPI-to-DDR boot and complete table-validation pipeline only, "
+                 "with all pinned official Qwen tables and synthetic minimum-geometry "
+                 "zero weights. Not inference, production default geometry or physical memory.",
+        "tokenizer_bundle_sha256": manifest()["bundle_sha256"],
+        "image_sha256": hashlib.sha256(fixture["image"]).hexdigest(),
+        "image_bytes": len(fixture["image"]),
+        "active_vocabulary": VOCABULARY, "physical_capacity": 151936,
+        "synthetic_core_geometry": fixture["geometry"], "seed": 17,
+    })
+    boot_test(evidence, VOCABULARY, 17, capacity=151936,
+              fixture=fixture, label="complete-official-qwen-tables")
 
 
 def run_rtl(evidence, info, vectors):
@@ -540,7 +577,7 @@ endmodule
     }
     for name, value in values.items():
         bench = bench.replace(f"@{name}@", str(value))
-    require("@" not in bench, "Unexpanded Qwen bench placeholder")
+    require(not re.search(r"@[A-Z_]+@", bench), "Unexpanded Qwen bench placeholder")
     sources = ["rtl/anvil_edge_numeric_pkg.sv"] + [
         str(path.relative_to(ROOT)) for path in sorted((ROOT / "rtl").glob("*.sv"))
         if path.name != "anvil_edge_numeric_pkg.sv"
