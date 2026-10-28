@@ -1,0 +1,1284 @@
+#!/usr/bin/env python3
+"""Portable, fail-closed independent verification entrypoint.
+
+Reproduce from the project root:
+  python3 tests/verify.py --check prerequisites
+  python3 tests/verify.py --check l1
+  python3 tests/verify.py --check benchmark-contract
+  python3 tests/verify.py --check portable
+
+L1 combines rational IEEE leaf references, FP64 transformer/operator models,
+public-pin transaction scoreboards, read-only parent differentials, disposable
+defects, parameter diagnostics, source rules and generic Yosys synthesis.
+Icarus/vvp remains mandatory; installed Verilator optionally accelerates the
+larger matrix. Neither simulator establishes device timing or physical results.
+The portable entrypoint compiles and runs an exact fresh declared-source copy
+on the minimum legal configuration, all modes, and synthesizes its hierarchy.
+It is bounded clean-copy reproduction, not a full-model benchmark.
+
+Every invocation allocates exclusive project-local preparation evidence. Child
+logs are exclusive too: reusing a label fails instead of overwriting a run.
+Missing full-model artifacts or unimplemented mandatory coverage fail closed.
+The shared runtime, not this script, owns Arria timing and physical gates.
+"""
+
+import argparse
+import datetime
+import hashlib
+import itertools
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from numerical import (binary32, check_scalar, dot_reference, dot_vectors,
+                       float32, power_two, scalar_vectors)
+from architecture import Architecture, CONFIGURATIONS, PARAMETERS, compare_trace, metrics
+from operators import OPERATOR_IDS, PRODUCTION, OperatorReference, compare_operator
+from preservation import audit as audit_preservation, parser_selftest
+from rtl_rules import inspect as inspect_rtl, matched, tokens
+from benchmark import FORBIDDEN, artifact_path, check as check_benchmark
+
+ROOT = Path(__file__).resolve().parents[1]
+SELECTORS = ("rtl/*.sv", "design/*.md", "fpga/*", "tests/**",
+             "anvil_q1_reference/rtl/*.sv")
+REQUIRED_COVERAGE = (
+    "integration_all_legal_modes_seeds", "24_layer_integration",
+    "production_individual_operators", "production_addresses_schedule",
+    "protocol_reset_fault_mode_recovery", "parent_differential",
+    "preservation_independent_inventory", "nine_mechanism_defect_sensitivity",
+    "illegal_parameter_diagnostics", "complete_hierarchy_synthesis",
+    "static_arithmetic_assignment_rules",
+)
+
+
+def now():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def digest(path):
+    value = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024*1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+
+def sources(root=ROOT):
+    selected = {p for selector in SELECTORS
+                for p in root.glob(selector + "/*" if selector.endswith("/**") else selector)
+                if p.is_file() and not FORBIDDEN.intersection(p.relative_to(root).parts)}
+    for path in selected:
+        artifact_path(root, str(path.relative_to(root)))
+    return sorted(selected)
+
+
+class Evidence:
+    def __init__(self, name):
+        parent = ROOT / "evidence" / "preparation"
+        parent.mkdir(parents=True, exist_ok=True)
+        self.path = Path(tempfile.mkdtemp(prefix="verifier-" + name + "-", dir=parent))
+        self.receipt = {
+            "schema": 1, "acceptance_evidence": False,
+            "argv": [sys.executable, *sys.argv], "cwd": ".",
+            "python_version": sys.version,
+            "started_at": now(), "records": [], "assertions": [],
+            "source_sha256": {str(p.relative_to(ROOT)): digest(p) for p in sources()},
+        }
+        self.finish("running")
+
+    def finish(self, status):
+        self.receipt["status"] = status
+        self.receipt["ended_at"] = now()
+        (self.path / "receipt.json").write_text(
+            json.dumps(self.receipt, indent=2) + "\n")
+
+    def assertion(self, name, passed, **detail):
+        self.receipt["assertions"].append(
+            {"name": name, "passed": bool(passed), **detail})
+        self.finish("running")
+        return passed
+
+    def run(self, label, argv, timeout=3600, cwd=ROOT):
+        stdout = self.path / (label + ".stdout")
+        stderr = self.path / (label + ".stderr")
+        record = {
+            "label": label, "argv": list(map(str, argv)),
+            "cwd": str(cwd.relative_to(ROOT)), "started_at": now(),
+            "timeout_s": timeout, "stdout": str(stdout.relative_to(ROOT)),
+            "stderr": str(stderr.relative_to(ROOT)), "timed_out": False,
+        }
+        self.receipt["records"].append(record)
+        self.finish("running")
+        started = time.monotonic()
+        with stdout.open("xb") as out, stderr.open("xb") as err:
+            try:
+                completed = subprocess.run(
+                    argv, cwd=cwd, stdout=out, stderr=err, timeout=timeout,
+                    check=False,
+                )
+                record["exit_code"] = completed.returncode
+            except subprocess.TimeoutExpired:
+                record["timed_out"] = True
+                record["exit_code"] = None
+            except OSError as error:
+                record["exit_code"] = None
+                record["error"] = str(error)
+        record["ended_at"] = now()
+        record["elapsed_s"] = time.monotonic() - started
+        self.finish("running")
+        return record["exit_code"] == 0 and not record["timed_out"]
+
+    def versions(self):
+        result = True
+        for name, args in (
+            ("python3", ["python3", "--version"]),
+            ("iverilog", ["iverilog", "-V"]),
+            ("vvp", ["vvp", "-V"]), ("yosys", ["yosys", "-V"]),
+        ):
+            available = shutil.which(name) is not None
+            self.assertion("tool_" + name, available)
+            if available:
+                result = self.run("version-" + name, args, timeout=30) and result
+            else:
+                result = False
+        self.receipt["optional_tools"] = {
+            name: bool(shutil.which(name)) for name in ("verilator", "quartus_sh")
+        }
+        if self.receipt["optional_tools"]["verilator"]:
+            result = self.run("version-verilator", ["verilator", "--version"],
+                              timeout=30) and result
+        return result
+
+
+def component(ev, name, check, *args, **kwargs):
+    child = Evidence(name)
+    child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+    passed = False
+    try:
+        result = bool(check(child, *args, **kwargs))
+        if not child.receipt["assertions"]:
+            child.assertion("component_assertions_present", False,
+                            error="component returned without recording an assertion")
+        elif not result and all(
+                assertion["passed"] for assertion in child.receipt["assertions"]):
+            child.assertion("component_return_value", False,
+                            error="component returned false despite passing assertions")
+        passed = result and all(
+            assertion["passed"] for assertion in child.receipt["assertions"])
+        return passed
+    except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
+        child.assertion("verification_exception", False, error=repr(error))
+        raise
+    finally:
+        child.finish("passed" if passed else "failed")
+        receipt = str((child.path / "receipt.json").relative_to(ROOT))
+        ev.receipt.setdefault("children", []).append(
+            receipt)
+        ev.assertion("component_" + name, passed, child_receipt=receipt)
+        if not passed:
+            report_failures(child)
+
+
+def report_failures(ev):
+    for assertion in ev.receipt["assertions"]:
+        if not assertion["passed"]:
+            print(json.dumps({
+                "receipt": str((ev.path / "receipt.json").relative_to(ROOT)),
+                **assertion,
+            }), file=sys.stderr)
+
+
+def reference_selftest(ev):
+    cases = [
+        (1, 0x3f80, 0x4000, 1, 0, 0x40000000, 0),
+        (2, 0x3c00, 0x4000, 1, 0, 0x40000000, 0),
+        (2, 1, 0x3c00, 1, 0, 0x33800000, 0),
+        (1, 1, 0x3f80, 1, 0, 0x10000, 0),
+        (1, 0x7f80, 0, 1, 0, 0x7fc00000, 16),
+        (2, 0x7c01, 0, 0, 0x80000000, 0x80000000, 0),
+        (1, 0x3f80bf80, 0x3f803f80, 3, 0, 0, 0),
+    ]
+    for precision, a, b, mask, seed, result, status in cases:
+        assert dot_reference(precision, a, b, mask, seed)[:2] == (result, status)
+    assert binary32(power_two(-150)) == (0, 3)
+    assert binary32(3 * power_two(-150)) == (2, 3)
+    assert binary32(1 + power_two(-24)) == (0x3f800000, 1)
+    assert binary32(1 + 3 * power_two(-24)) == (0x3f800002, 1)
+    ev.assertion("independent_reference_known_answers", True, comparisons=len(cases) + 4)
+
+
+def leaf_check(ev, full, rtl_directory=None):
+    reference_selftest(ev)
+    stimulus = ev.path / "leaf-input.txt"
+    expected = ev.path / "leaf-expected.jsonl"
+    trace = ev.path / "leaf-output.txt"
+    count = 0
+    with stimulus.open("w") as out, expected.open("w") as exp:
+        def emit(reset, valid, vector, x):
+            nonlocal count
+            precision, a, b, mask, seed = vector
+            result, status, bound = dot_reference(*vector)
+            out.write(f"{reset} {valid} {precision} {a:032x} {b:032x} "
+                      f"{mask:02x} {seed:08x} {x:08x}\n")
+            exp.write(json.dumps({
+                "rst_n": reset, "valid": valid, "x": x,
+                "dot": [result, status], "grid_bound": bound,
+                "precision": precision,
+            }, separators=(",", ":")) + "\n")
+            count += 1
+
+        idle = (1, 0, 0, 0, 0)
+        emit(0, 0, idle, 0)
+        # Reset with every possible in-flight scalar age and dot stage.
+        for phase in range(25):
+            for age in range(phase):
+                emit(1, 1, (1, 0x3f80, 0x3f80, 1, 0), 0x3f800000)
+            emit(0, 0, idle, 0)
+            for _ in range(25):
+                emit(1, 0, idle, 0)
+        for index, (vector, x) in enumerate(itertools.zip_longest(
+            dot_vectors(full), scalar_vectors(full)
+        )):
+            emit(1, 1, vector or idle, 0x3f800000 if x is None else x)
+            if index % 31 == 0:
+                emit(1, 0, idle, 0)
+        for _ in range(24):
+            emit(1, 0, idle, 0)
+    for path in (stimulus, expected):
+        ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(ROOT))] = digest(path)
+    rtl = sorted((rtl_directory or ROOT / "rtl").glob("*.sv"))
+    executable = ev.path / "leaf.vvp"
+    compile_ok = ev.run("leaf-compile", [
+        "iverilog", "-g2012", "-Wall", "-s", "leaf_tb", "-o",
+        str(executable.relative_to(ROOT)), *[str(p.relative_to(ROOT)) for p in rtl],
+        "tests/leaf_tb.sv",
+    ])
+    if not ev.assertion("leaf_compile", compile_ok):
+        return False
+    run_ok = ev.run("leaf-simulate", [
+        "vvp", str(executable.relative_to(ROOT)),
+        "+input=" + str(stimulus.relative_to(ROOT)),
+        "+output=" + str(trace.relative_to(ROOT)),
+    ], timeout=86400)
+    if not ev.assertion("leaf_behavior_latency_bubbles_reset_xz", run_ok):
+        return False
+    pending = {}
+    failures = []
+    mismatch_counts = dict.fromkeys(("dot", "exp", "reciprocal", "rsqrt"), 0)
+    comparisons = dict.fromkeys(mismatch_counts, 0)
+    rows = 0
+    with expected.open() as inputs, trace.open() as outputs:
+        for cycle, (input_line, output_line) in enumerate(
+            itertools.zip_longest(inputs, outputs)
+        ):
+            if input_line is None or output_line is None:
+                raise ValueError(f"trace length mismatch at cycle {cycle}")
+            row = json.loads(input_line)
+            fields = output_line.split()
+            if len(fields) != 13 or int(fields[0]) != cycle:
+                raise ValueError(f"malformed simulator trace at cycle {cycle}")
+            if not row["rst_n"]:
+                pending.clear()
+            elif row["valid"]:
+                for name, latency in (("dot", 3), ("exp", 8),
+                                      ("reciprocal", 16), ("rsqrt", 24)):
+                    pending[cycle + latency - 1, name] = (cycle, row)
+            for offset, name in enumerate(comparisons):
+                valid = int(fields[1 + 3 * offset], 2)
+                result = int(fields[2 + 3 * offset], 16)
+                status = int(fields[3 + 3 * offset], 16)
+                wanted = pending.pop((cycle, name), None)
+                if valid != int(wanted is not None):
+                    raise ValueError(f"reference valid mismatch {name} cycle {cycle}")
+                if wanted is None:
+                    if result or status:
+                        raise ValueError(f"nonzero invalid output {name} cycle {cycle}")
+                    continue
+                launch, case = wanted
+                comparisons[name] += 1
+                passed = ([result, status] == case["dot"] if name == "dot" else
+                          check_scalar(name, case["x"], result, status))
+                if not passed:
+                    mismatch_counts[name] += 1
+                    if len(failures) < 32:
+                        failures.append({
+                            "operator": name, "launch_cycle": launch,
+                            "observed_cycle": cycle, "input": case,
+                            "result_hex": f"{result:08x}", "status": status,
+                        })
+            rows += 1
+    assert rows == count and not pending
+    (ev.path / "leaf-mismatches.json").write_text(json.dumps({
+        "comparisons": comparisons, "mismatch_counts": mismatch_counts,
+        "first_failures": failures, "full_vectors": full,
+    }, indent=2) + "\n")
+    return ev.assertion("leaf_independent_numerical", not any(mismatch_counts.values()),
+                        comparisons=comparisons, mismatch_counts=mismatch_counts,
+                        diagnostics=str((ev.path / "leaf-mismatches.json").relative_to(ROOT)))
+
+
+def benchmark_contract(ev):
+    return check_benchmark(ROOT, ev)
+
+
+def synthesis_check(ev, top="anvil_q1_fp_top"):
+    netlist = ev.path / (top + ".json")
+    script = ev.path / (top + ".ys")
+    commands = ["read_verilog -sv " + " ".join(
+        str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("rtl/*.sv")))]
+    if top == "anvil_q1_fp_top":
+        parameters = dict(NUM_LAYERS=1, HIDDEN_SIZE=8, INTERMEDIATE_SIZE=8,
+                          NUM_Q_HEADS=1, NUM_KV_HEADS=1, HEAD_DIM=8,
+                          GROUP_SIZE=1, VOCAB_SIZE=1, MAX_SEQ_LEN=1)
+        commands.append("chparam " + " ".join(
+            f"-set {key} {value}" for key, value in parameters.items()) + " " + top)
+    commands += [
+        f"hierarchy -check -top {top}", "proc", "opt", "check -assert",
+        f"synth -top {top} -noabc", "check -assert", "stat",
+        "write_json " + str(netlist.relative_to(ROOT)),
+    ]
+    script.write_text("\n".join(commands) + "\n")
+    ev.receipt.setdefault("data_sha256", {})[str(script.relative_to(ROOT))] = digest(script)
+    if not ev.run("yosys-" + top, ["yosys", "-Q", "-T", "-s",
+                                  str(script.relative_to(ROOT))], timeout=86400):
+        return ev.assertion("synthesis_" + top, False,
+                            reason="Yosys command failed; raw tool diagnostics retained")
+    data = json.loads(netlist.read_text())
+    modules = data["modules"]
+    visited = set()
+    stack = [top]
+    sequential = 0
+    forbidden = []
+    hierarchy = set()
+    while stack:
+        name = stack.pop()
+        if name in visited:
+            continue
+        visited.add(name)
+        module = modules[name]
+        attributes = module.get("attributes", {})
+        hierarchy.add(attributes.get("hdlname", name).split()[0].lstrip("\\"))
+        if int(str(attributes.get("blackbox", "0")), 2):
+            forbidden.append([name, "blackbox"])
+        for cell_name, cell in module.get("cells", {}).items():
+            cell_type = cell["type"]
+            if cell_type in modules:
+                stack.append(cell_type)
+            elif "latch" in cell_type.lower() or cell_type in (
+                    "$div", "$mod", "$divfloor", "$modfloor"):
+                forbidden.append([name, cell_name, cell_type])
+            elif "dff" in cell_type.lower():
+                sequential += 1
+            elif not cell_type.startswith("$"):
+                forbidden.append([name, cell_name, "unknown cell " + cell_type])
+    required = ({"anvil_q1_fp_decoder_layer", "anvil_q1_fp_rmsnorm",
+                 "anvil_q1_fp_gemv", "anvil_q1_fp_rope",
+                 "anvil_q1_fp_gqa_attention", "anvil_q1_fp_swiglu_mlp",
+                 "anvil_q1_fp_elementwise", "anvil_q1_fp_exp",
+                 "anvil_q1_fp_reciprocal", "anvil_q1_fp_rsqrt",
+                 "anvil_q1_fp_dot8_mixed"} if top == "anvil_q1_fp_top" else
+                {"anvil_q1_fp_reduce3"})
+    missing = sorted(required - hierarchy)
+    literal_missing = []
+    if top == "anvil_q1_fp_top":
+        expected_paths = (
+            "memory_port", "decoder", "final_norm", "bus",
+            "decoder.norm", "decoder.gemv", "decoder.rope",
+            "decoder.attention", "decoder.mlp", "decoder.residual", "decoder.bus",
+            "decoder.mlp.gemv", "decoder.mlp.silu_product", "decoder.mlp.bus",
+        )
+        for path in expected_paths:
+            module = modules[top]
+            for instance in path.split("."):
+                cell = module.get("cells", {}).get(instance)
+                if cell is None or cell["type"] not in modules:
+                    literal_missing.append(path)
+                    break
+                module = modules[cell["type"]]
+    return ev.assertion("synthesis_" + top,
+                        not forbidden and sequential >= 100 and not missing and not literal_missing,
+                        forbidden=forbidden, sequential_cells=sequential,
+                        required_modules_missing=missing,
+                        literal_hierarchy_missing=literal_missing,
+                        netlist=str(netlist.relative_to(ROOT)))
+
+
+def prerequisites(ev):
+    tool_ok = ev.versions()
+    dependency_ok = ev.run("reference-dependency-discovery", [
+        "python3", "-c",
+        "import importlib.util,json; "
+        "print(json.dumps({name: importlib.util.find_spec(name) is not None "
+        "for name in ('numpy','torch','transformers','tokenizers','safetensors','datasets','mpmath')}))",
+    ], timeout=30)
+    numpy_ok = ev.run("reference-numpy-import", [
+        "python3", "-c", "import numpy; print(numpy.__version__)",
+    ], timeout=30)
+    ev.assertion("reference_numpy_import", numpy_ok,
+                 reason="Production FP64 references require an importable NumPy; "
+                        "dependency discovery alone is not availability validation")
+    files_ok = benchmark_contract(ev)
+    return tool_ok and dependency_ok and numpy_ok and files_ok
+
+
+def integration_check(ev, full=False, configurations=None, modes=None, seeds=None,
+                      rtl_directory=None, simulator="iverilog"):
+    if configurations is None:
+        configurations = CONFIGURATIONS if full else {"minimum": CONFIGURATIONS["minimum"]}
+    if modes is None:
+        modes = (0, 1, 2) if full else (1, 2, 0)
+    if seeds is None:
+        seeds = (17, 53, 89) if full else (17,)
+    result = True
+    for name, config in configurations.items():
+        binaries = {}
+        for parent in ((False, True) if 0 in modes else (False,)):
+            label = name + ("-parent" if parent else "-revised")
+            executable = ev.path / (label + (".vvp" if simulator == "iverilog" else ".sim"))
+            directory = ROOT / "anvil_q1_reference/rtl" if parent else rtl_directory or ROOT / "rtl"
+            rtl = sorted(directory.glob("*.sv"))
+            if simulator == "iverilog":
+                argv = ["iverilog", "-g2012", "-Wall", "-s", "integration_tb",
+                        "-o", str(executable.relative_to(ROOT))]
+            elif simulator == "verilator":
+                argv = [
+                    "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                    "--top-module", "integration_tb", "--Mdir",
+                    str((ev.path / (label + "-build")).relative_to(ROOT)),
+                    "-o", str(executable.resolve()),
+                ]
+            else:
+                raise ValueError("Unsupported simulator: " + simulator)
+            if parent:
+                argv.append("-DPARENT")
+            parameter_prefix = "-Pintegration_tb." if simulator == "iverilog" else "-G"
+            argv += [f"{parameter_prefix}{key}={value}"
+                     for key, value in zip(PARAMETERS, config)]
+            argv += [str(p.relative_to(ROOT)) for p in rtl] + ["tests/integration_tb.sv"]
+            compiled = ev.run(label + "-compile", argv)
+            result = ev.assertion(label + "_compile", compiled) and result
+            if compiled:
+                binaries[parent] = executable
+        for mode in modes:
+            for seed in seeds:
+                label = f"{name}-mode{mode}-seed{seed}"
+                model = Architecture(config, mode, seed)
+                fixture = ev.path / (label + ".hex")
+                model.write_fixture(fixture)
+                model.execute()
+                ev.receipt.setdefault("data_sha256", {})[str(fixture.relative_to(ROOT))] = digest(fixture)
+                traces = {}
+                for parent in ((False, True) if mode == 0 else (False,)):
+                    if parent not in binaries:
+                        result = False
+                        continue
+                    suffix = "-parent" if parent else "-revised"
+                    trace = ev.path / (label + suffix + ".trace")
+                    command = (["vvp", str(binaries[parent].relative_to(ROOT))]
+                               if simulator == "iverilog" else [str(binaries[parent])])
+                    executed = ev.run(label + suffix, [
+                        *command,
+                        "+fixture=" + str(fixture.relative_to(ROOT)),
+                        "+trace=" + str(trace.relative_to(ROOT)),
+                        f"+mode={mode}", f"+seed={seed}",
+                    ], timeout=86400)
+                    result = ev.assertion(label + suffix + "_protocol", executed) and result
+                    if executed:
+                        traces[parent] = trace
+                if False in traces:
+                    report = ev.path / (label + "-reference.json")
+                    compared = compare_trace(model, traces[False], report)
+                    result = ev.assertion(
+                        label + "_independent_architecture_numerical", compared,
+                        report=str(report.relative_to(ROOT))) and result
+                if mode == 0 and len(traces) == 2:
+                    def logical_trace(path):
+                        return [line.split()[:-1] for line in path.read_text().splitlines()
+                                if line.startswith(("M ", "O "))]
+                    revised, parent = logical_trace(traces[False]), logical_trace(traces[True])
+                    equal = revised == parent
+                    result = ev.assertion(label + "_parent_differential", equal,
+                                          events=len(revised),
+                                          parent_events=len(parent)) and result
+    return result
+
+
+def static_check(ev):
+    records = []
+    for path in sorted(ROOT.glob("rtl/*.sv")):
+        record = inspect_rtl(path)
+        record["file"] = str(path.relative_to(ROOT))
+        records.append(record)
+    report = ev.path / "rtl-rules.json"
+    report.write_text(json.dumps(records, indent=2) + "\n")
+    rules_ok = ev.assertion("static_arithmetic_assignment_rules",
+                            not any(r["violations"] for r in records),
+                            report=str(report.relative_to(ROOT)))
+    interfaces_ok = interface_check(ev)
+    return rules_ok and interfaces_ok
+
+
+def interface_check(ev):
+    def header(path):
+        ts = tokens(path.read_text())
+        if ts[0] != "module":
+            raise ValueError("expected module declaration: " + str(path))
+        index = 2
+        parameters = []
+        if ts[index] == "#":
+            end = matched(ts, index+1, "(", ")")
+            parameters = ts[index+2:end]
+            index = end+1
+        if ts[index] != "(":
+            raise ValueError("expected ANSI port list: " + str(path))
+        end = matched(ts, index, "(", ")")
+        return parameters, ts[index+1:end]
+
+    pairs = (
+        ("top", "fp_top"), ("decoder_layer", "fp_decoder_layer"),
+        ("swiglu_mlp", "fp_swiglu_mlp"), ("w4a16_gemv", "fp_gemv"),
+        ("gqa_attention", "fp_gqa_attention"), ("rope", "fp_rope"),
+        ("rmsnorm", "fp_rmsnorm"), ("elementwise", "fp_elementwise"),
+        ("mem_port", "mem_port"), ("bus_mux", "bus_mux"),
+    )
+    result = True
+    for parent, revised in pairs:
+        pp, ports = header(ROOT / f"anvil_q1_reference/rtl/anvil_q1_{parent}.sv")
+        rp, revised_ports = header(ROOT / f"rtl/anvil_q1_{revised}.sv")
+        if parent not in ("mem_port", "bus_mux"):
+            ports += [",", "input", "wire", "[", "1", ":", "0", "]",
+                      "precision_mode" if parent == "top" else "cmd_precision"]
+        result = ev.assertion("parent_interface_" + parent,
+                              pp == rp and ports == revised_ports,
+                              parameters_equal=pp == rp,
+                              ports_equal=ports == revised_ports) and result
+    return result
+
+
+def protocol_check(ev, simulator="iverilog"):
+    config = (1, 8, 8, 1, 1, 8, 1, 3, 3)
+    executable = ev.path / ("protocol.vvp" if simulator == "iverilog" else "protocol.sim")
+    if simulator == "iverilog":
+        argv = ["iverilog", "-g2012", "-Wall", "-s", "protocol_tb", "-o",
+                str(executable.relative_to(ROOT))]
+    elif simulator == "verilator":
+        argv = [
+            "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+            "--top-module", "protocol_tb", "--Mdir",
+            str((ev.path / "protocol-build").relative_to(ROOT)),
+            "-o", str(executable.resolve()),
+        ]
+    else:
+        raise ValueError("Unsupported simulator: " + simulator)
+    compiled = ev.run("protocol-compile", [
+        *argv,
+        *[str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("rtl/*.sv"))],
+        "tests/protocol_tb.sv",
+    ])
+    if not ev.assertion("protocol_compile", compiled):
+        return False
+    result = True
+    native_reference = {}
+    for precision in (1, 2):
+        model = Architecture(config, precision, 17)
+        model.execute()
+        native_reference[precision] = [
+            event[2] for event in model.events
+            if event[0] == "O" and event[3] == "position0/layer0/logits"]
+    for mode in (0, 1, 2):
+        fixture = ev.path / f"protocol-mode{mode}.hex"
+        Architecture(config, mode, 17).write_fixture(fixture)
+        ev.receipt.setdefault("data_sha256", {})[str(fixture.relative_to(ROOT))] = digest(fixture)
+        alternate = ev.path / f"protocol-mode{mode}-alternate.hex"
+        Architecture(config, (mode+1)%3, 17).write_fixture(alternate)
+        ev.receipt["data_sha256"][str(alternate.relative_to(ROOT))] = digest(alternate)
+        label = f"protocol-mode{mode}"
+        command = (["vvp", str(executable.relative_to(ROOT))]
+                   if simulator == "iverilog" else [str(executable)])
+        executed = ev.run(label, [
+            *command,
+            "+fixture=" + str(fixture.relative_to(ROOT)),
+            "+alternate_fixture=" + str(alternate.relative_to(ROOT)), f"+mode={mode}",
+        ], timeout=86400)
+        output = (ev.path / (label + ".stdout")).read_text()
+        result = ev.assertion(label, executed and f"PROTOCOL_COVERAGE mode={mode} " in output,
+                              coverage=[s for s in output.splitlines()
+                                        if s.startswith("PROTOCOL_COVERAGE ")]) and result
+        if executed:
+            groups = {}
+            for line in output.splitlines():
+                if not line.startswith("RECOVERY_RESULT "):
+                    continue
+                _, recovery, precision, index, bits = line.split()
+                key = int(recovery), int(precision)
+                vector = groups.setdefault(key, [])
+                if int(index) != len(vector):
+                    raise ValueError("protocol recovery logit order mismatch")
+                vector.append(float32(int(bits, 16)) if key[1] else int(bits, 16))
+            numerical = {}
+            for (recovery, precision), values in groups.items():
+                if len(values) != config[-2]:
+                    raise ValueError("protocol recovery logit count mismatch")
+                if precision:
+                    measurement = metrics(values, native_reference[precision])
+                    measurement["passed"] = (
+                        measurement["normalized_max_absolute_error"] <= 0.002 and (
+                            measurement["reference_all_zero"] or
+                            measurement["cosine"] is not None and measurement["cosine"] >= 0.9999))
+                    numerical[f"recovery{recovery}/mode{precision}"] = measurement
+            resets = [line for line in output.splitlines() if line.startswith("PUBLIC_RESPONSE_RESET ")]
+            report = ev.path / (label+"-recovery-reference.json")
+            report.write_text(json.dumps({"numerical": numerical,
+                                          "public_response_resets": resets}, indent=2)+"\n")
+            result = ev.assertion(
+                label+"_recovery_fp64_and_public_response_resets",
+                bool(numerical) and all(m["passed"] for m in numerical.values()) and len(resets) == 125,
+                report=str(report.relative_to(ROOT))) and result
+    return result
+
+
+def portable_check(ev):
+    destination = ev.path / "clean-project"
+    destination.mkdir()
+    selected = sources()
+    for source in selected:
+        target = destination / source.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    copied = {str(p.relative_to(destination)): digest(p) for p in sources(destination)}
+    expected = {str(p.relative_to(ROOT)): digest(p) for p in selected}
+    if not ev.assertion("clean_copy_exact_declared_inputs", copied == expected,
+                        copied_sha256=copied):
+        return False
+    executed = ev.run("clean-copy-smoke", [
+        "python3", "tests/verify.py", "--probe", "clean-smoke",
+    ], timeout=86400, cwd=destination)
+    output = (ev.path / "clean-copy-smoke.stdout").read_text().splitlines()
+    if not output:
+        return ev.assertion("clean_copy_all_modes_behavior_synthesis", False,
+                            reason="No child receipt produced")
+    child = json.loads(output[-1])
+    receipt = destination / child["receipt"]
+    if not receipt.resolve().is_relative_to(destination.resolve()):
+        raise ValueError("clean-copy receipt escaped clean project")
+    retained = json.loads(receipt.read_text())
+    ev.receipt.setdefault("children", []).append(str(receipt.relative_to(ROOT)))
+    assertions = {a["name"]: a["passed"] for a in retained["assertions"]}
+    mandatory = ["synthesis_anvil_q1_fp_top", "leaf_independent_numerical"] + [
+        f"minimum-mode{mode}-seed17_independent_architecture_numerical"
+        for mode in (0, 1, 2)]
+    return ev.assertion("clean_copy_all_modes_behavior_synthesis",
+                        executed and child["status"] == "passed" and
+                        all(assertions.get(name, False) for name in mandatory),
+                        required_assertions=mandatory,
+                        scope="Smallest legal configuration; not full-model reproduction")
+
+
+def parameter_check(ev):
+    names = ("NUM_LAYERS", "HIDDEN_SIZE", "INTERMEDIATE_SIZE",
+             "NUM_Q_HEADS", "NUM_KV_HEADS", "HEAD_DIM", "GROUP_SIZE",
+             "VOCAB_SIZE", "MAX_SEQ_LEN")
+    minimum = dict(zip(names, CONFIGURATIONS["minimum"]))
+    # The tuple order in CONFIGURATIONS places vocabulary and depth after G.
+    minimum["AWQ_BITS"] = 4
+    rtl = [str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("rtl/*.sv"))]
+    result = True
+    for label, values in [("production", {})] + [
+        (name, dict(zip(names, config))) for name, config in CONFIGURATIONS.items()
+    ]:
+        argv = ["iverilog", "-g2012", "-Wall", "-t", "null", "-s", "anvil_q1_fp_top"]
+        argv += [f"-Panvil_q1_fp_top.{key}={value}" for key, value in values.items()]
+        result = ev.assertion("legal_elaboration_" + label,
+                              ev.run("elaborate-" + label, argv + rtl)) and result
+    illegal = [(name.lower()+"_zero", {name: 0}) for name in names]
+    illegal += [
+        ("head_grouping", {"HIDDEN_SIZE": 24, "NUM_Q_HEADS": 3, "NUM_KV_HEADS": 2}),
+        ("odd_head_dim", {"HIDDEN_SIZE": 56, "NUM_Q_HEADS": 8, "NUM_KV_HEADS": 8,
+                          "HEAD_DIM": 7}),
+        ("awq_bits", {"AWQ_BITS": 8}), ("group_divisibility", {"GROUP_SIZE": 3}),
+        ("lane_divisibility", {"HIDDEN_SIZE": 10, "HEAD_DIM": 10, "INTERMEDIATE_SIZE": 10}),
+        ("embedding_address_overflow", {"VOCAB_SIZE": 536870912}),
+        ("sequence_limit", {"MAX_SEQ_LEN": 16777216}),
+        ("cache_address_overflow", {"NUM_LAYERS": 536870912, "MAX_SEQ_LEN": 3}),
+        ("matrix_address_overflow", {"HIDDEN_SIZE": 65536, "NUM_Q_HEADS": 8192}),
+    ]
+    for label, changes in illegal:
+        values = {**minimum, **changes}
+        executable = ev.path / ("illegal-" + label + ".vvp")
+        argv = ["iverilog", "-g2012", "-Wall", "-s", "anvil_q1_fp_top",
+                "-o", str(executable.relative_to(ROOT))]
+        argv += [f"-Panvil_q1_fp_top.{key}={value}" for key, value in values.items()]
+        compiled = ev.run("illegal-" + label + "-compile", argv + rtl)
+        if not ev.assertion("illegal_" + label + "_diagnostic_elaborates", compiled):
+            result = False
+            continue
+        ev.run("illegal-" + label + "-execute", ["vvp", str(executable.relative_to(ROOT))])
+        record = ev.receipt["records"][-1]
+        output = (ROOT / record["stdout"]).read_text() + (ROOT / record["stderr"]).read_text()
+        rejected = (record["exit_code"] is not None and record["exit_code"] != 0 and
+                    not record["timed_out"] and "ANVIL_Q1 PARAMETER ERROR" in output)
+        result = ev.assertion("illegal_" + label + "_explicit_diagnostic", rejected,
+                              exit_code=record["exit_code"]) and result
+    return result
+
+
+def preservation_check(ev):
+    fixture = ev.path / "control-inventory-fixture.sv"
+    checks = parser_selftest(fixture)
+    ev.receipt.setdefault("data_sha256", {})[str(fixture.relative_to(ROOT))] = digest(fixture)
+    parser_ok = True
+    for name, passed in checks.items():
+        parser_ok = ev.assertion("preservation_parser_" + name, passed) and parser_ok
+    report = ev.path / "preservation-inventory.json"
+    result = audit_preservation(ROOT, report, digest)
+    audit_ok = ev.assertion(
+        "preservation_independent_inventory", result["passed"],
+        original_items=result["complete_original_denominator"],
+        classification_counts=result["classification_counts"],
+        unclassified_items=len(result["unclassified"]),
+        threshold_percent=85, report=str(report.relative_to(ROOT)),
+        diagnostics=result["failures"])
+    return parser_ok and audit_ok
+
+
+def operator_check(ev, production=False, config=None, operations=None, cases=None):
+    if config is None:
+        config = PRODUCTION if production else CONFIGURATIONS["nonpower"]
+    simulator = "verilator" if shutil.which("verilator") else "iverilog"
+    result = True
+    for name, op in OPERATOR_IDS.items():
+        if operations is not None and name not in operations:
+            continue
+        binaries = {}
+        selected_modes = {mode for operator, _, mode in cases if operator == name} if cases else {0, 1, 2}
+        for parent in ((False, True) if 0 in selected_modes else (False,)):
+            label = name + ("-parent" if parent else "-revised")
+            executable = ev.path / (label + (".sim" if simulator == "verilator" else ".vvp"))
+            if simulator == "verilator":
+                argv = [
+                    "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                    "--top-module", "operator_tb", "--Mdir",
+                    str((ev.path / (label+"-build")).relative_to(ROOT)),
+                    "-o", str(executable.resolve()),
+                ]
+                prefix = "-G"
+            else:
+                argv = ["iverilog", "-g2012", "-Wall", "-s", "operator_tb",
+                        "-o", str(executable.relative_to(ROOT))]
+                prefix = "-Poperator_tb."
+            if parent:
+                argv.append("-DPARENT")
+            values = {"OP": op, **dict(zip(PARAMETERS, config))}
+            argv += [f"{prefix}{key}={value}" for key, value in values.items()]
+            rtl = ROOT / ("anvil_q1_reference/rtl" if parent else "rtl")
+            argv += [str(p.relative_to(ROOT)) for p in sorted(rtl.glob("*.sv"))]
+            argv.append("tests/operator_tb.sv")
+            compiled = ev.run(label+"-compile", argv)
+            result = ev.assertion(label+"_compile", compiled) and result
+            if compiled:
+                binaries[parent] = executable
+        selectors = range(7) if name == "gemv" else (
+            range(3) if name in ("norm", "elementwise") else (0,))
+        if operations is not None:
+            selectors = operations[name]
+        for selector in selectors:
+            for mode in (0, 1, 2):
+                if cases is not None and (name, selector, mode) not in cases:
+                    continue
+                label = f"{name}-selector{selector}-mode{mode}"
+                oracle = ev.path / (label + ".requests")
+                position = config[-1]-1 if name == "rope" else (
+                    min(2, config[-1]-1) if name == "attention" else 0)
+                with oracle.open("w") as stream:
+                    reference = OperatorReference(config, mode, 17, stream)
+                    reference.execute_operator(name, selector, position, config[0]-1)
+                ev.receipt.setdefault("data_sha256", {})[str(oracle.relative_to(ROOT))] = digest(oracle)
+                traces = {}
+                for parent in ((False, True) if mode == 0 else (False,)):
+                    if parent not in binaries:
+                        result = False
+                        continue
+                    suffix = "-parent" if parent else "-revised"
+                    trace = ev.path / (label+suffix+".trace")
+                    command = (["vvp", str(binaries[parent].relative_to(ROOT))]
+                               if simulator == "iverilog" else [str(binaries[parent])])
+                    executed = ev.run(label+suffix, [
+                        *command, "+oracle="+str(oracle.relative_to(ROOT)),
+                        "+trace="+str(trace.relative_to(ROOT)),
+                        f"+mode={mode}", "+seed=17", f"+selector={selector}",
+                        f"+position={position}", f"+layer={config[0]-1}",
+                    ], timeout=86400)
+                    result = ev.assertion(label+suffix+"_architecture_protocol", executed) and result
+                    if executed:
+                        report = ev.path / (label+suffix+"-reference.json")
+                        passed = compare_operator(reference, trace, report)
+                        result = ev.assertion(label+suffix+"_reference", passed,
+                                              report=str(report.relative_to(ROOT))) and result
+                        traces[parent] = trace
+                if mode == 0 and len(traces) == 2:
+                    def writes(path):
+                        return [line.split()[:-1] for line in path.read_text().splitlines()
+                                if line.startswith("W ")]
+                    revised, parent = writes(traces[False]), writes(traces[True])
+                    result = ev.assertion(label+"_parent_differential",
+                                          revised == parent and len(revised) > 0,
+                                          writes=len(revised), parent_writes=len(parent)) and result
+    assertion = ("production_operator_subset" if cases is not None else
+                 "production_individual_operators" if production else "operator_smoke")
+    return ev.assertion(assertion,
+                        result, configuration=dict(zip(PARAMETERS, config)),
+                        selected_cases=cases,
+                        scope="Synthetic isolated-operator engineering coverage, not benchmark") and result
+
+
+def production_recovery(ev, prior):
+    retained = json.loads(prior.read_text())
+    dependencies = [p for p in sources()
+                    if p.relative_to(ROOT).parts[0] in ("rtl", "anvil_q1_reference")]
+    dependencies += [ROOT / "tests" / name for name in (
+        "operator_tb.sv", "architecture.py", "numerical.py")]
+    for path in dependencies:
+        name = str(path.relative_to(ROOT))
+        if retained["source_sha256"].get(name) != digest(path):
+            return ev.assertion("recovery_source_binding", False, changed=name)
+    assertions = {item["name"]: item for item in retained["assertions"]}
+    records = {item["label"]: item for item in retained["records"]}
+    class HashWriter:
+        def __init__(self):
+            self.hash = hashlib.sha256()
+
+        def write(self, text):
+            self.hash.update(text.encode())
+
+    unresolved, reused = [], []
+    for name in OPERATOR_IDS:
+        selectors = range(7) if name == "gemv" else (
+            range(3) if name in ("norm", "elementwise") else (0,))
+        for selector in selectors:
+            for mode in (0, 1, 2):
+                label = f"{name}-selector{selector}-mode{mode}"
+                completed = True
+                for suffix in (("-revised", "-parent") if mode == 0 else ("-revised",)):
+                    record = records.get(label + suffix, {})
+                    assertion = assertions.get(label + suffix + "_reference", {})
+                    report = ROOT / assertion.get("report", "missing-reference-report")
+                    complete = (record.get("exit_code") == 0 and
+                                not record.get("timed_out", True) and
+                                assertion.get("passed") is True and report.is_file())
+                    if complete:
+                        complete = all((ROOT / record[key]).is_file()
+                                       for key in ("stdout", "stderr"))
+                        ev.receipt.setdefault("reused_reports", {})[
+                            str(report.relative_to(ROOT))] = digest(report)
+                    completed = completed and complete
+                if mode == 0:
+                    completed = completed and assertions.get(
+                        label + "_parent_differential", {}).get("passed") is True
+                if completed:
+                    stream = HashWriter()
+                    position = PRODUCTION[-1]-1 if name == "rope" else (
+                        min(2, PRODUCTION[-1]-1) if name == "attention" else 0)
+                    reference = OperatorReference(PRODUCTION, mode, 17, stream)
+                    reference.execute_operator(name, selector, position, PRODUCTION[0]-1)
+                    oracle = prior.parent / (label + ".requests")
+                    completed = (oracle.is_file() and
+                                 digest(oracle) == stream.hash.hexdigest() and
+                                 retained["data_sha256"].get(
+                                     str(oracle.relative_to(ROOT))) == digest(oracle))
+                    for suffix in (("-revised", "-parent") if mode == 0 else ("-revised",)):
+                        trace = prior.parent / (label + suffix + ".trace")
+                        report = ev.path / (label + suffix + "-rechecked.json")
+                        compared = compare_operator(reference, trace, report)
+                        ev.receipt.setdefault("reused_raw_sha256", {})[
+                            str(trace.relative_to(ROOT))] = digest(trace)
+                        completed = compared and completed
+                (reused if completed else unresolved).append((name, selector, mode))
+    ev.assertion("completed_children_not_reclassified", True, reused=reused,
+                 unresolved=unresolved, prior_status=retained["status"])
+    operations = {name: sorted({selector for op, selector, _ in unresolved if op == name})
+                  for name in OPERATOR_IDS if any(op == name for op, _, _ in unresolved)}
+    if not unresolved:
+        return True
+    return operator_check(ev, production=True, operations=operations, cases=unresolved)
+
+
+def top_address_check(ev):
+    simulator = "verilator" if shutil.which("verilator") else "iverilog"
+    result = True
+    binaries = {}
+    for parent in (False, True):
+        label = "production-prefix-" + ("parent" if parent else "revised")
+        executable = ev.path / (label + (".sim" if simulator == "verilator" else ".vvp"))
+        if simulator == "verilator":
+            argv = [
+                "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                "--top-module", "top_address_tb", "--Mdir",
+                str((ev.path / (label+"-build")).relative_to(ROOT)),
+                "-o", str(executable.resolve()),
+            ]
+        else:
+            argv = ["iverilog", "-g2012", "-Wall", "-s", "top_address_tb",
+                    "-o", str(executable.relative_to(ROOT))]
+        if parent:
+            argv.append("-DPARENT")
+        rtl = ROOT / ("anvil_q1_reference/rtl" if parent else "rtl")
+        argv += [str(p.relative_to(ROOT)) for p in sorted(rtl.glob("*.sv"))]
+        argv.append("tests/top_address_tb.sv")
+        compiled = ev.run(label+"-compile", argv)
+        result = ev.assertion(label+"_compile", compiled) and result
+        if compiled:
+            binaries[parent] = executable
+    for mode in (0, 1, 2):
+        label = f"production-prefix-mode{mode}"
+        oracle = ev.path / (label+".requests")
+        with oracle.open("w") as stream:
+            reference = OperatorReference(PRODUCTION, mode, 17, stream)
+            reference.group = "production/embedding-last-token"
+            for col in range(PRODUCTION[1]):
+                x = reference.read(0, row=PRODUCTION[-2]-1, col=col)
+                reference.write(8, x, col=col)
+            reference.read(8, row=0, col=0)
+        ev.receipt.setdefault("data_sha256", {})[str(oracle.relative_to(ROOT))] = digest(oracle)
+        for parent in ((False, True) if mode == 0 else (False,)):
+            if parent not in binaries:
+                result = False
+                continue
+            suffix = "-parent" if parent else "-revised"
+            trace = ev.path / (label+suffix+".trace")
+            command = (["vvp", str(binaries[parent].relative_to(ROOT))]
+                       if simulator == "iverilog" else [str(binaries[parent])])
+            executed = ev.run(label+suffix, [
+                *command, "+oracle="+str(oracle.relative_to(ROOT)),
+                "+trace="+str(trace.relative_to(ROOT)), f"+mode={mode}", "+seed=17",
+            ], timeout=86400)
+            result = ev.assertion(label+suffix+"_architecture_protocol", executed) and result
+            if executed:
+                report = ev.path / (label+suffix+"-reference.json")
+                result = ev.assertion(
+                    label+suffix+"_exact_embedding_and_addresses",
+                    compare_operator(reference, trace, report, prefix_only=True),
+                    report=str(report.relative_to(ROOT))) and result
+    return ev.assertion("production_top_address_prefix", result,
+                        token_id=PRODUCTION[-2]-1, embedding_words=PRODUCTION[1],
+                        scope="Reset after embedding and first decoder request; not full inference") and result
+
+
+def leaf_defect_check(ev):
+    baseline = Evidence("leaf-defect-pristine")
+    baseline.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+    pristine = leaf_check(baseline, full=False)
+    baseline.finish("passed" if pristine else "failed")
+    ev.receipt.setdefault("children", []).append(str((baseline.path / "receipt.json").relative_to(ROOT)))
+    if not ev.assertion("leaf_defect_pristine", pristine):
+        return False
+    recipes = (
+        ("bf16_exponent_bias", "anvil_q1_fp_00_pkg.sv",
+         "ea=(a[14:7]==0 ? -126 : $signed(32'({1'b0,a[14:7]}))-127)-10;",
+         "ea=(a[14:7]==0 ? -126 : $signed(32'({1'b0,a[14:7]}))-126)-10;"),
+        ("fp16_subnormal_hidden_bit", "anvil_q1_fp_00_pkg.sv",
+         "sa={a[14:10]!=0,a[9:0]};", "sa={1'b1,a[9:0]};"),
+        ("dot_valid_latency", "anvil_q1_fp_reduce3.sv",
+         "assign out_valid=rst_n && valid3;", "assign out_valid=rst_n && valid2;"),
+        ("wide_accumulator_cancellation", "anvil_q1_fp_00_pkg.sv",
+         "aligned=$signed({5'd0,mag});", "aligned=$signed({5'd0,mag[63:40],40'd0});"),
+    )
+    passed = True
+    for name, filename, before, after in recipes:
+        child = Evidence("mutant-" + name)
+        child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+        directory = child.path / "rtl"
+        directory.mkdir()
+        for path in sorted(ROOT.glob("rtl/*.sv")):
+            shutil.copy2(path, directory / path.name)
+        path = directory / filename
+        source = path.read_text()
+        if source.count(before) != 1:
+            child.assertion("unique_mutation_site", False, mechanism=name)
+            child.finish("failed")
+            raise ValueError("mutation recipe no longer applies: " + name)
+        path.write_text(source.replace(before, after))
+        child.receipt["mutation"] = {
+            "mechanism": name, "file": filename, "before": before, "after": after,
+            "pristine_receipt": str((baseline.path / "receipt.json").relative_to(ROOT)),
+            "source_sha256": {str(p.relative_to(ROOT)): digest(p) for p in directory.glob("*.sv")},
+        }
+        mutant_passed = False
+        try:
+            mutant_passed = leaf_check(child, full=False, rtl_directory=directory)
+        finally:
+            child.finish("passed" if mutant_passed else "failed")
+        assertions = {a["name"]: a for a in child.receipt["assertions"]}
+        numerical = assertions.get("leaf_independent_numerical", {}).get("mismatch_counts", {})
+        simulator_stdout = child.path / "leaf-simulate.stdout"
+        latency_rejection = name == "dot_valid_latency" and simulator_stdout.is_file() and any(
+            message in simulator_stdout.read_text() for message in ("LATENCY", "DOT_BUBBLE_OR_X"))
+        detected = assertions.get("leaf_compile", {}).get("passed", False) and (
+            numerical.get("dot", 0) > 0 or latency_rejection) and not mutant_passed
+        receipt = str((child.path / "receipt.json").relative_to(ROOT))
+        ev.receipt.setdefault("children", []).append(receipt)
+        passed = ev.assertion("defect_" + name, detected, receipt=receipt,
+                              numerical_mismatches=numerical,
+                              latency_rejection=latency_rejection) and passed
+    return passed
+
+
+def integration_defect_check(ev):
+    recipes = (
+        ("awq_nibble_permutation", "anvil_q1_fp_awq_dequant.sv",
+         "0: shift=0; 1: shift=16; 2: shift=4; 3: shift=20;",
+         "0: shift=0; 1: shift=4; 2: shift=16; 3: shift=20;",
+         "minimum", 0),
+        ("gqa7_kv_head_mapping", "anvil_q1_fp_gqa_attention.sv",
+         "if(group_offset+1==RATIO)", "if(group_offset+1==RATIO+1)",
+         "gqa14", 1),
+        ("split_half_rope_mapping", "anvil_q1_fp_rope.sv",
+         "? HEAD_DIM/2 : 0);", "? 1 : 0);", "minimum", 1),
+        ("precision_latching", "anvil_q1_fp_top.sv",
+         "1: if(issue) state<=2;",
+         "1: if(issue) begin precision<=precision_mode; state<=2; end",
+         "minimum", 1),
+        ("stalled_logit_stability", "anvil_q1_fp_top.sv",
+         "15: if(logit_ready) begin",
+         "15: if(!logit_ready) native_sum<=native_sum^32'h00000001; else begin",
+         "minimum", 1),
+    )
+    result = True
+    for name, filename, before, after, configuration, mode in recipes:
+        pristine = Evidence("integration-pristine-" + name)
+        pristine.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+        configurations = {configuration: (
+            (1, 112, 8, 14, 2, 8, 8, 1, 1) if configuration == "gqa14"
+            else CONFIGURATIONS[configuration])}
+        simulator = "verilator" if shutil.which("verilator") else "iverilog"
+        passed = integration_check(pristine, configurations=configurations,
+                                   modes=(mode,), seeds=(17,), simulator=simulator)
+        pristine.finish("passed" if passed else "failed")
+        pristine_receipt = str((pristine.path / "receipt.json").relative_to(ROOT))
+        ev.receipt.setdefault("children", []).append(pristine_receipt)
+        if not ev.assertion("pristine_" + name, passed, receipt=pristine_receipt):
+            result = False
+            continue
+        child = Evidence("mutant-" + name)
+        child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+        directory = child.path / "rtl"
+        directory.mkdir()
+        for path in sorted(ROOT.glob("rtl/*.sv")):
+            shutil.copy2(path, directory / path.name)
+        path = directory / filename
+        source = path.read_text()
+        if source.count(before) != 1:
+            raise ValueError("mutation recipe no longer unique: " + name)
+        path.write_text(source.replace(before, after))
+        child.receipt["mutation"] = {
+            "mechanism": name, "file": filename, "before": before, "after": after,
+            "pristine_receipt": pristine_receipt,
+            "source_sha256": {str(p.relative_to(ROOT)): digest(p)
+                              for p in directory.glob("*.sv")},
+        }
+        mutant_passed = False
+        rejection = None
+        try:
+            mutant_passed = integration_check(
+                child, configurations=configurations, modes=(mode,), seeds=(17,),
+                rtl_directory=directory, simulator=simulator)
+        except ValueError as error:
+            rejection = str(error)
+            child.assertion("architectural_reference_rejection", False,
+                            diagnostic=rejection)
+        finally:
+            child.finish("passed" if mutant_passed else "failed")
+        assertions = {a["name"]: a for a in child.receipt["assertions"]}
+        compiled = assertions.get(configuration+"-revised_compile", {}).get("passed", False)
+        comparison_failure = any(
+            not a["passed"] and a["name"].endswith(
+                ("_parent_differential", "_independent_architecture_numerical"))
+            for a in child.receipt["assertions"])
+        protocol_log = child.path / f"{configuration}-mode{mode}-seed17-revised.stdout"
+        logit_rejected = (name == "stalled_logit_stability" and protocol_log.is_file()
+                          and "LOGIT_STABILITY" in protocol_log.read_text())
+        address_rejected = rejection is not None and rejection.startswith(
+            ("request address/order event ", "event "))
+        receipt = str((child.path / "receipt.json").relative_to(ROOT))
+        ev.receipt.setdefault("children", []).append(receipt)
+        result = ev.assertion("defect_" + name,
+                              compiled and not mutant_passed and (
+                                  comparison_failure or address_rejected or logit_rejected),
+                              receipt=receipt, diagnostic=rejection,
+                              comparison_rejection=comparison_failure,
+                              stalled_logit_rejection=logit_rejected) and result
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    entry = parser.add_mutually_exclusive_group(required=True)
+    entry.add_argument("--check", choices=(
+        "prerequisites", "l1", "benchmark-contract", "portable"))
+    entry.add_argument("--probe", choices=(
+        "leaves", "synthesis-dot", "synthesis-top", "integration", "static", "parameters",
+        "defects-leaves", "integration-matrix", "protocol", "clean-smoke",
+        "leaves-full", "defects-integration", "integration-accelerated",
+        "protocol-accelerated", "portable-smoke", "operators", "production-operators",
+        "maximum-position", "production-top-addresses", "preservation", "input-inventory",
+        "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation"))
+    parser.add_argument("--repair-of", type=Path)
+    parser.add_argument("--diagnostic-repair-of", type=Path, action="append", default=[])
+    parser.add_argument("--python-facility", type=Path, action="append", default=[])
+    parser.add_argument("--reconciled-with", type=Path)
+    args = parser.parse_args()
+    ev = Evidence(args.check or args.probe)
+    if args.repair_of:
+        prior = ROOT / args.repair_of
+        ev.receipt["repair_of"] = {
+            "path": str(prior.relative_to(ROOT)), "sha256": digest(prior),
+        }
+    for path in args.diagnostic_repair_of:
+        previous = ROOT / path
+        ev.receipt.setdefault("diagnostic_repairs", []).append(
+            {"path": str(previous.relative_to(ROOT)), "sha256": digest(previous)})
+    ok = False
+    try:
+        if args.probe == "leaves":
+            ok = ev.versions() and leaf_check(ev, full=False)
+        elif args.probe == "leaves-full":
+            ok = ev.versions() and leaf_check(ev, full=True)
+        elif args.probe == "synthesis-dot":
+            ok = ev.versions() and synthesis_check(ev, "anvil_q1_fp_dot8")
+        elif args.probe == "synthesis-top":
+            ok = ev.versions() and synthesis_check(ev)
+        elif args.probe == "static":
+            ok = static_check(ev)
+        elif args.probe == "parameters":
+            ok = ev.versions() and parameter_check(ev)
+        elif args.probe == "defects-leaves":
+            ok = ev.versions() and leaf_defect_check(ev)
+        elif args.probe == "defects-integration":
+            ok = ev.versions() and integration_defect_check(ev)
+        elif args.probe == "integration":
+            ok = ev.versions() and integration_check(ev)
+        elif args.probe == "integration-matrix":
+            ok = ev.versions() and integration_check(ev, full=True)
+        elif args.probe == "protocol":
+            ok = ev.versions() and protocol_check(ev)
+        elif args.probe == "protocol-accelerated":
+            ok = ev.versions() and protocol_check(ev, simulator="verilator")
+        elif args.probe == "integration-accelerated":
+            ok = ev.versions() and integration_check(ev, full=True, simulator="verilator")
+        elif args.probe == "clean-smoke":
+            tools_ok = ev.versions()
+            if tools_ok:
+                leaves_ok = leaf_check(ev, full=False)
+                integration_ok = integration_check(ev)
+                synthesis_ok = synthesis_check(ev)
+                preservation_ok = preservation_check(ev)
+                ok = leaves_ok and integration_ok and synthesis_ok and preservation_ok
+        elif args.probe == "portable-smoke":
+            ok = ev.versions() and portable_check(ev)
+        elif args.probe in ("operators", "production-operators"):
+            ok = ev.versions() and operator_check(
+                ev, production=args.probe == "production-operators")
+        elif args.probe == "maximum-position":
+            ok = ev.versions() and operator_check(
+                ev, config=(1, 8, 8, 1, 1, 8, 1, 1, 16777215),
+                operations={"rope": (0,)})
+        elif args.probe == "production-top-addresses":
+            ok = ev.versions() and top_address_check(ev)
+        elif args.probe == "preservation":
+            ok = preservation_check(ev)
+        elif args.probe == "input-inventory":
+            ok = prerequisites(ev)
+        elif args.probe == "production-recovery":
+            if not args.repair_of:
+                raise ValueError("production-recovery requires --repair-of receipt")
+            ok = ev.versions() and production_recovery(ev, prior)
+        elif args.probe == "benchmark-fixtures":
+            from benchmark_fixtures import check as check_fixtures
+            ok = check_fixtures(ROOT, ev)
+        elif args.probe == "facilities":
+            from recovery import facilities
+            ok = facilities(ROOT, ev, args.python_facility)
+        elif args.probe == "integration-reconciliation":
+            from recovery import reconcile_integration
+            if not args.repair_of or not args.reconciled_with:
+                raise ValueError("integration-reconciliation requires --repair-of and "
+                                 "--reconciled-with receipts")
+            ok = reconcile_integration(ROOT, ev, prior, ROOT / args.reconciled_with)
+        elif args.check == "prerequisites":
+            ok = prerequisites(ev)
+        elif args.check == "benchmark-contract":
+            ok = benchmark_contract(ev)
+        elif args.check == "l1":
+            tools_ok = ev.versions()
+            if tools_ok:
+                from benchmark_fixtures import check as check_fixtures
+                benchmark_validator_ok = component(
+                    ev, "l1-benchmark-validator", lambda child: check_fixtures(ROOT, child))
+                static_ok = static_check(ev)
+                parameters_ok = parameter_check(ev)
+                synthesis_ok = synthesis_check(ev)
+                dot_synthesis_ok = synthesis_check(ev, "anvil_q1_fp_dot8")
+                leaves_ok = leaf_check(ev, full=True)
+                defects_ok = leaf_defect_check(ev)
+                integration_defects_ok = integration_defect_check(ev)
+                simulator = "verilator" if shutil.which("verilator") else "iverilog"
+                protocol_ok = protocol_check(ev, simulator=simulator)
+                # Keep a four-state Icarus integration oracle even when the
+                # larger matrix uses the optional cycle-accurate accelerator.
+                icarus_ok = component(ev, "l1-icarus-integration", integration_check)
+                integration_ok = component(
+                    ev, "l1-integration-matrix", integration_check,
+                    full=True, simulator=simulator)
+                operators_ok = component(
+                    ev, "l1-production-operators", operator_check, production=True)
+                maximum_position_ok = component(
+                    ev, "l1-maximum-position", operator_check,
+                    config=(1, 8, 8, 1, 1, 8, 1, 1, 16777215),
+                    operations={"rope": (0,)})
+                top_address_ok = component(ev, "l1-production-top-addresses", top_address_check)
+                preservation_ok = preservation_check(ev)
+                ok = (benchmark_validator_ok and static_ok and parameters_ok and synthesis_ok and
+                      dot_synthesis_ok and leaves_ok and defects_ok and
+                      integration_defects_ok and protocol_ok and icarus_ok and
+                      integration_ok and operators_ok and maximum_position_ok and
+                      top_address_ok and preservation_ok)
+                covered = {
+                    "integration_all_legal_modes_seeds": integration_ok,
+                    "24_layer_integration": integration_ok,
+                    "protocol_reset_fault_mode_recovery": protocol_ok,
+                    "parent_differential": integration_ok and icarus_ok,
+                    "nine_mechanism_defect_sensitivity": defects_ok and integration_defects_ok,
+                    "illegal_parameter_diagnostics": parameters_ok,
+                    "complete_hierarchy_synthesis": synthesis_ok and dot_synthesis_ok,
+                    "static_arithmetic_assignment_rules": static_ok,
+                    "production_individual_operators": operators_ok,
+                    "production_addresses_schedule": (
+                        operators_ok and maximum_position_ok and top_address_ok and integration_ok),
+                    "preservation_independent_inventory": preservation_ok,
+                }
+                for name in REQUIRED_COVERAGE:
+                    covered_ok = covered.get(name, False)
+                    ev.assertion(name, covered_ok, reason=(
+                        "Executed required checks" if name in covered else
+                        "Required coverage not implemented yet"))
+                    ok = covered_ok and ok
+        elif args.check == "portable":
+            ok = ev.versions() and portable_check(ev)
+    except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
+        ev.assertion("verification_exception", False, error=repr(error))
+    finally:
+        ev.finish("passed" if ok else "failed")
+    if not ok:
+        report_failures(ev)
+    print(json.dumps({"status": ev.receipt["status"],
+                      "receipt": str((ev.path / "receipt.json").relative_to(ROOT))}))
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
