@@ -687,6 +687,8 @@ def transaction_chunks(path):
         yield from reader.chunks()
     else:
         import gzip
+        if magic[:2] != b"\x1f\x8b":
+            raise gzip.BadGzipFile("Not a gzipped file: unknown/truncated transaction storage header")
         previous = 0
         with gzip.open(path, "rb") as stream:
             while raw := stream.read(CHUNK_BYTES // RECORD.size * RECORD.size):

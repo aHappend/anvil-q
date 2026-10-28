@@ -40,8 +40,12 @@ def write_stream(source, destination, kind):
                 writer.reshape([writer.total // 4], ["fragment"])
             writer.close()
     except BaseException:
-        if writer is not None and not writer.stream.closed:
-            writer.stream.close()
+        if writer is not None:
+            writer.closed = True
+            try:
+                writer.stream.close()
+            finally:
+                writer.index_stream.close()
         raise
 
 

@@ -41,6 +41,7 @@ def direct_producers(destination, report, reject):
     parsed = ("tests/production_sim.py", "tests/teacher_reference.py",
               "tests/reference_collector.py", "tests/production_resume.py",
               "tests/packed_storage.py", "tests/packed_stream.py",
+              "tests/sparse_transactions.py",
               "tests/collection_capacity.py", "tests/packed_storage_checks.py")
     for name in parsed:
         ast.parse((ROOT / name).read_text(), filename=name)
@@ -104,7 +105,8 @@ def direct_producers(destination, report, reject):
     report["producer_commands"] = commands
     bindings = {name: sha(ROOT / name) for name in (
         "tests/packed_producer_fixture.cpp", "tests/production_storage.hpp",
-        "tests/packed_stream.hpp", "tests/packed_stream.py", "tests/packed_storage.py")}
+        "tests/packed_stream.hpp", "tests/packed_stream.py", "tests/packed_storage.py",
+        "tests/sparse_transactions.py")}
 
     def run(label, argv, passed=True, data=None):
         stdout, stderr = directory / (label + ".stdout"), directory / (label + ".stderr")
@@ -276,6 +278,9 @@ def direct_producers(destination, report, reject):
             not accounting["host_memory"]["workload_sized_index_python_lists"] and
             accounting["complete_capacity_bound_bytes"] is None and
             accounting["trace_data_block_bound_one_attempt"] > 0 and
+            accounting["mandatory_trace_framing_floor"]["format"] == "anvil-transactions-v2" and
+            accounting["whole_process_memory"]["whole_process_memory_bound_bytes"] is None and
+            not accounting["whole_process_memory"]["whole_process_memory_qualified"] and
             all(item["bound_bytes"] is None for item in accounting["additional_costs"].values())
             and not accounting["full_workload_storage_qualified"] and
             not accounting["collection_resumption_authorized"],
