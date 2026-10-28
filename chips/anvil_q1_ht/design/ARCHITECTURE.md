@@ -300,8 +300,14 @@ locks descriptor/scalar request ownership, including response stalls.
 
 Two M20K data arrays partition K and V by layer, slot and head/dimension.
 Each slot also has a synchronous full-position tag and a bitmap covering all
-K/V words. A synchronous constant mapping ROM derives the slot in one edge;
-it is initialized by an explicit wrap counter, not a power-of-two mask.
+K/V words. A synchronous mapping SRAM derives the slot in one edge.
+After global reset, an explicit wrap counter fills one mapping entry per clock,
+in parallel with metadata invalidation. Readiness remains low until both finish:
+initialization takes `max(MAX_SEQ_LEN, NUM_LAYERS*KV_WINDOW)` local clock edges
+after reset release. This avoids a large elaboration-time initialization loop.
+The map uses no power-of-two mask or runtime division, including at window depth1.
+Its read/write ports are in the reset-free synchronous memory process; the
+large KV and metadata arrays also carry `nomem2reg` inference attributes.
 The next edge reads tag, bitmap and selected SRAM word, and the third edge
 publishes the checked result: accepted address K, valid hit after K+2.
 
@@ -312,6 +318,10 @@ current history before issuing a backing request. Hot reads issue no spill
 request. New sequence sequentially invalidates metadata and history while
 blocking requests, leaving model DDR and unneeded data bits untouched.
 The bitmap prevents partial insertion from falsely validating unwritten data.
+`new_sequence` retains the completed, data-independent slot map and clears only
+history and metadata, taking `NUM_LAYERS*KV_WINDOW` initialization edges.
+No request is accepted before initialization completes; slot read registers
+need not reset because an accepted request overwrites them before lookup.
 
 Backing requests are held until accepted and their responses are checked,
 including coincident acceptance/response. The scalar address controller routes
@@ -500,3 +510,14 @@ package. Renaming it to `anvil_q1_ht_compat_projection.sv` restored package-firs
 portable source ordering; the repaired receipt explicitly links that failure.
 No functional executable, synthesis or hardware check was run. Independent
 Verifier execution is the next step, with every admitted check still mandatory.
+
+The KV startup-map revision passed one static elaboration of all product RTL
+with Icarus Verilog using the same `-g2012 -Wall -t null` command above.
+The existing evidence-retention helper captured source snapshots, hashes,
+compiler version, exact child arguments, raw outputs and exit0 at
+`evidence/preparation/verifier-designer-kv-static-20261028T032951Z-d13eccf6/receipt.json`.
+No simulation or synthesis was run for this revision. Independent Verifier
+must check initialization completion, reset during map fill, retained mapping
+across new sequences, depths1/3/128, tagged hit latency and cold spill retrieval,
+as well as actual memory inference. This static result establishes none of
+those functional or physical properties.

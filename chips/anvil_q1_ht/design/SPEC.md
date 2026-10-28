@@ -98,7 +98,8 @@ mean immediately after that edge's nonblocking updates.
 | KV read edge K | A tagged resident hit yields data after K+2. |
 | KV accepted write | Response follows the committed SRAM write; a colliding old slot is not modified until every spill write has acknowledged successfully. |
 | KV depth 1 | Eviction must finish before replacing the sole position; layer/head/position tags still distinguish entries. |
-| KV clear | Requests are blocked while one slot per cycle is invalidated. An idle `new_sequence` initiates this clear; it does not touch model storage. |
+| KV initialization | Global reset starts parallel one-entry-per-clock slot-map fill and metadata clear. Readiness waits for both, for `max(MAX_SEQ_LEN, NUM_LAYERS*KV_WINDOW)` local initialization edges; depths1 and non-power-of-two windows use explicit counter wrap. |
+| KV clear | Requests are blocked while one slot per cycle is invalidated. An idle `new_sequence` initiates this `NUM_LAYERS*KV_WINDOW`-edge clear; it retains the initialized slot map and does not touch model storage. |
 | New sequence | Invalidate history/tags, not DDR weights. Drain active transactions before reuse. |
 | Avalon issue+response | Capture a response on the same edge as command acceptance, as well as consecutive response edges. |
 | Reset with traffic | External EMIF transaction source must also quiesce/reset; stale pre-reset responses cannot enter a new epoch. |

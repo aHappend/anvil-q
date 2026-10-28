@@ -54,13 +54,16 @@ module anvil_q1_ht_kv_window #(
                HIT_CHECK = 4'd3, EVICT_READ = 4'd4, EVICT_LATCH = 4'd5,
                EVICT_ISSUE = 4'd6, EVICT_WAIT = 4'd7, INSTALL = 4'd8,
                MISS_ISSUE = 4'd9, MISS_WAIT = 4'd10, RESULT = 4'd11;
-    (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] key_mem [0:WORDS-1];
-    (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] value_mem [0:WORDS-1];
-    (* ramstyle = "M20K", ram_style = "block" *) reg [31:0] tags [0:ENTRIES-1];
-    (* ramstyle = "M20K", ram_style = "block" *)
+    (* ramstyle = "M20K", ram_style = "block", nomem2reg *) reg [31:0] key_mem [0:WORDS-1];
+    (* ramstyle = "M20K", ram_style = "block", nomem2reg *) reg [31:0] value_mem [0:WORDS-1];
+    (* ramstyle = "M20K", ram_style = "block", nomem2reg *) reg [31:0] tags [0:ENTRIES-1];
+    (* ramstyle = "M20K", ram_style = "block", nomem2reg *)
       reg [2*KV_WIDTH-1:0] valid_words [0:ENTRIES-1];
-    (* ramstyle = "M20K", ram_style = "block" *)
+    (* ramstyle = "M20K", ram_style = "block", nomem2reg *)
       reg [SLOT_BITS-1:0] position_slot [0:MAX_SEQ_LEN-1];
+    reg [31:0] map_index;
+    reg [SLOT_BITS-1:0] map_slot;
+    reg map_done, clear_done;
     reg [31:0] history_next [0:NUM_LAYERS-1];
     reg [3:0] state;
     reg init_done, failed, result_error, result_hit;
@@ -84,17 +87,7 @@ module anvil_q1_ht_kv_window #(
     wire selected_valid = |(mask_data & selected_bit);
     wire spill_response = spill_rsp_valid && spill_rsp_ready;
     wire spill_accept = spill_valid && spill_ready;
-    integer map_index, map_slot;
     integer h;
-
-    initial begin
-      map_slot = 0;
-      for (map_index = 0; map_index < MAX_SEQ_LEN; map_index = map_index + 1) begin
-        position_slot[map_index] = SLOT_BITS'(map_slot);
-        if (map_slot == KV_WINDOW-1) map_slot = 0;
-        else map_slot = map_slot + 1;
-      end
-    end
 
     assign initialized = rst_n && init_done;
     assign req_ready = rst_n && init_done && !new_sequence && !failed && state == IDLE;
@@ -115,6 +108,12 @@ module anvil_q1_ht_kv_window #(
 
     always @(posedge clk) begin
       if (rst_n) begin
+        if (state == INITIALIZE && !map_done)
+          position_slot[map_index] <= map_slot;
+        if (state == IDLE && req_valid && req_ready) begin
+          if (req_pos < MAX_SEQ_LEN) slot <= position_slot[req_pos];
+          else slot <= 0;
+        end
         if (state == LOOKUP && !invalid_request) begin
           tag_data <= tags[lookup_entry];
           mask_data <= valid_words[lookup_entry];
@@ -125,7 +124,7 @@ module anvil_q1_ht_kv_window #(
           key_data <= key_mem[evict_base + evict_column];
           value_data <= value_mem[evict_base + evict_column];
         end
-        if (state == INITIALIZE) begin
+        if (state == INITIALIZE && !clear_done) begin
           valid_words[clear_entry] <= 0;
           tags[clear_entry] <= 0;
         end else if (state == INSTALL) begin
@@ -146,9 +145,12 @@ module anvil_q1_ht_kv_window #(
         result_hit <= 0;
         result_data <= 0;
         clear_entry <= 0;
+        clear_done <= 0;
+        map_index <= 0;
+        map_slot <= 0;
+        map_done <= 0;
         entry_address <= 0;
         data_address <= 0;
-        slot <= 0;
         wr <= 0;
         value_select <= 0;
         invalid_request <= 0;
@@ -166,14 +168,28 @@ module anvil_q1_ht_kv_window #(
         init_done <= 0;
         failed <= 0;
         clear_entry <= 0;
+        clear_done <= 0;
         for (h = 0; h < NUM_LAYERS; h = h + 1) history_next[h] <= 0;
         state <= INITIALIZE;
       end else case (state)
         INITIALIZE: begin
-          if (clear_entry == ENTRIES-1) begin
+          if (!clear_done) begin
+            if (clear_entry == ENTRIES-1) clear_done <= 1;
+            else clear_entry <= clear_entry + 1'b1;
+          end
+          if (!map_done) begin
+            if (map_index == MAX_SEQ_LEN-1) map_done <= 1;
+            else begin
+              map_index <= map_index + 1'b1;
+              if (map_slot == KV_WINDOW-1) map_slot <= 0;
+              else map_slot <= map_slot + 1'b1;
+            end
+          end
+          if ((clear_done || clear_entry == ENTRIES-1) &&
+              (map_done || map_index == MAX_SEQ_LEN-1)) begin
             init_done <= 1;
             state <= IDLE;
-          end else clear_entry <= clear_entry + 1'b1;
+          end
         end
         IDLE: if (req_valid && req_ready) begin
           wr <= req_write;
@@ -184,8 +200,6 @@ module anvil_q1_ht_kv_window #(
           write_data <= req_wdata;
           invalid_request <= req_layer >= NUM_LAYERS || req_head >= NUM_KV_HEADS ||
                              req_dim >= HEAD_DIM || req_pos >= MAX_SEQ_LEN;
-          if (req_pos < MAX_SEQ_LEN) slot <= position_slot[req_pos];
-          else slot <= 0;
           result_data <= 0;
           result_error <= 0;
           result_hit <= 0;
