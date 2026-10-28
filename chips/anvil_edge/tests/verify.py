@@ -48,8 +48,11 @@ from adapters import run_adapters
 from memory import run_memory
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
 from scheduling import resource_limits, scheduling_probe, scheduling_controls
-from interactions import run_top_interactions, run_top_token_capacity
-from official import run_official_discovery, run_official_intake
+from interactions import run_top_interactions, run_top_token_capacity, run_drain_prompts
+from official import (
+    run_official_discovery, run_official_intake, run_official_assets,
+    run_official_checkpoint,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -874,6 +877,9 @@ def main():
         "top-token-capacity",
         "official-qwen-discovery",
         "official-qwen-intake",
+        "drain-prompts",
+        "official-qwen-assets",
+        "official-qwen-reference",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -995,6 +1001,12 @@ def main():
             run_official_discovery(evidence)
         elif args.probe == "official-qwen-intake":
             run_official_intake(evidence)
+        elif args.probe == "drain-prompts":
+            run_drain_prompts(evidence)
+        elif args.probe == "official-qwen-assets":
+            run_official_assets(evidence)
+        elif args.probe == "official-qwen-reference":
+            run_official_checkpoint(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):
@@ -1032,9 +1044,10 @@ def main():
             evidence.tools(("iverilog", "vvp", "yosys"))
             evidence.run_cases((f"suite-{index}-{suite.__name__}", suite)
                                for index, suite in enumerate(L1_SUITES))
+            run_official_checkpoint(evidence)
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "
-                "coverage; pinned official tokenizer/model assets are absent. "
+                "coverage; official-profile and real-model integrations remain incomplete. "
                 "Unit results cannot certify the production appliance."
             )
         else:

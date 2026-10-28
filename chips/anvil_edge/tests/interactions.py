@@ -31,6 +31,7 @@ def top_interaction_bench(evidence, bench, fixture, prompt, operations, kind, ua
         control(1,32'h04,7,1,0);
         control(1,32'h10,1,1,0);
         control(1,32'h24,3,1,0);
+        blocked_prompt();
         if (!busy || done || error || completions)
           $fatal(1,"TOP_CONTROL_UART_EARLY_COMPLETE");
         allow_controls=0; interaction_events=interaction_events+1;
@@ -53,6 +54,7 @@ def top_interaction_bench(evidence, bench, fixture, prompt, operations, kind, ua
     control(0,32'h04,0,0,5);
     control(0,32'h10,0,0,1);
     control(0,32'h24,0,0,0);
+    blocked_prompt();
     repeat (10) begin
       tick();
       if (!m_axis_tvalid || m_axis_tdata!==0 || m_axis_tready ||
@@ -75,7 +77,21 @@ def top_interaction_bench(evidence, bench, fixture, prompt, operations, kind, ua
         bench = replace_once(bench, "  reg running=0,out_held=0;", """
   reg running=0,out_held=0;
   reg allow_controls=0,block_output=0;
-  integer interaction_events=0;
+  integer interaction_events=0,rejected_prompt_edges=0;
+  task automatic blocked_prompt;
+    begin
+      @(negedge clk); #1;
+      s_axis_tvalid=1; s_axis_tdata=8'h5a; s_axis_tlast=1;
+      repeat (8) begin
+        @(posedge clk);
+        if (s_axis_tready!==0 || !busy || done || error)
+          $fatal(1,"TOP_DRAIN_PROMPT_ADMITTED");
+        rejected_prompt_edges=rejected_prompt_edges+1;
+        #1;
+      end
+      @(negedge clk); #1; s_axis_tvalid=0;
+    end
+  endtask
 """)
         bench = replace_once(
             bench, 'if (cfg_valid || cfg_write) $fatal(1,"TOP_HOST_INTERVENTION");',
@@ -95,11 +111,55 @@ def top_interaction_bench(evidence, bench, fixture, prompt, operations, kind, ua
     control(0,32'h10,0,0,{int(uart)});
     control(1,32'h24,3,0,0);
     control(0,32'h24,0,0,3);
-    if (interaction_events!=1 || control_requests!=control_responses ||
+    if (interaction_events!=1 || rejected_prompt_edges!=8 ||
+        control_requests!=control_responses ||
         error || !boot_done || completions!=1 || outputs!=2)
       $fatal(1,"TOP_SERIAL_UPDATE_CONSERVATION");
     comparisons=comparisons+1;
     $display("TOP_INTERACTION serial_drain=1 controls=%0d",control_responses);
+"""
+    elif kind == "uart-drain-prompt":
+        if not uart:
+            raise ValueError("Physical drain prompt rejection requires UART")
+        bench = replace_once(
+            bench,
+            """    if (expect_rejection && (embedding_reads!=0 || inference_writes!=0 ||
+                            m_axis_tvalid || done || uart_tx!==1))""",
+            """    if (expect_rejection && (m_axis_tvalid || done))""")
+        scenario = f"""
+    running=1;
+    @(negedge clk); #1;
+    send_serial(65); send_serial(66); send_serial(67); send_serial(10);
+    while (uart_tx!==0 && !error) tick();
+    if (error || !busy || done || outputs || completions || s_axis_tready)
+      $fatal(1,"TOP_UART_DRAIN_PROMPT_EVENT");
+    expect_rejection=1;
+    fork
+      begin decode_serial(); decode_serial(); end
+      begin
+        @(negedge clk); #1; send_serial(90);
+        while (!error) tick();
+        if (error_code!==8'h41 || busy || done || !boot_done || completions)
+          $fatal(1,"TOP_UART_DRAIN_PROMPT_ERROR code=%h",error_code);
+      end
+    join
+    repeat (30) begin
+      tick();
+      if (!error || error_code!==8'h41 || busy || done || !boot_done ||
+          s_axis_tready || m_axis_tvalid || uart_tx!==1 || outputs!=2 || completions)
+        $fatal(1,"TOP_UART_DRAIN_PROMPT_REJECTION code=%h",error_code);
+    end
+    if (pending || ddr_req_valid ||
+        cache_k_writes!={operations*8} || cache_v_writes!={operations*8} ||
+        embedding_reads!={operations*(fixture['capacity']*8+8)})
+      $fatal(1,"TOP_UART_DRAIN_PROMPT_EXTRA_OPERATION");
+    running=0;
+    control(0,32'h20,0,0,32'h41);
+    control(0,0,0,0,9);
+    if (control_requests!=control_responses)
+      $fatal(1,"TOP_UART_DRAIN_PROMPT_CONTROL_CONSERVATION");
+    comparisons=comparisons+1;
+    $display("TOP_INTERACTION uart_drain_prompt_rejected=1 no_successful_completion=1");
 """
     elif kind == "memory-transport-priority":
         if not uart:
@@ -254,7 +314,21 @@ def run_top_interactions(evidence):
          top_test(scope, seed, uart=uart, interaction=kind))
         for seed in (1, 17, 89) for kind, uart in (
             ("serial-drain", False), ("serial-drain", True),
+            ("uart-drain-prompt", True),
             ("semantic-failed-reload", False), ("memory-transport-priority", True))
+    ])
+
+
+def run_drain_prompts(evidence):
+    """Only newly added output-drain scenarios; full L1 includes them above."""
+    from storage import top_test
+    evidence.run_cases([
+        (f"drain-prompt-{seed}-{kind}-uart-{uart}",
+         lambda scope, seed=seed, kind=kind, uart=uart:
+         top_test(scope, seed, uart=uart, interaction=kind))
+        for seed in (1, 17, 89) for kind, uart in (
+            ("serial-drain", False), ("serial-drain", True),
+            ("uart-drain-prompt", True))
     ])
 
 
