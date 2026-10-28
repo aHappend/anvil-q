@@ -276,121 +276,40 @@ def representative(experiment, nested=False):
         "bounded small-model preparation, not full-model or aggregate acceptance")
 
 
-def matrix_contract(experiment, baseline=None):
+def planned_l1_checks(experiment):
     captured = []
     with patch.object(verify, "create_budget"), patch.object(verify, "create_cache"), \
             patch.object(verify, "require_tools"), \
             patch.object(verify, "run_graph", side_effect=lambda _, rows, __: captured.extend(rows)):
         verify.l1(experiment)
-    with (experiment.directory / "matrix-checks.json").open("x") as stream:
-        json.dump(captured, stream, indent=2)
-        stream.write("\n")
-    expected_cache = str(experiment.output / "verilator-builds")
-    require(len(captured) == len({row["check"] for row in captured}), "duplicate matrix checks")
-    cache_users = 0
-    for row in captured:
-        if "--build-cache" in row["argv"]:
-            value = row["argv"][row["argv"].index("--build-cache") + 1]
-            require(value == expected_cache,
-                    "matrix cache binding mismatch: " + row["check"] +
-                    " actual=" + value + " expected=" + expected_cache)
-            cache_users += 1
-    names = {row["check"]: row for row in captured}
-    require(names["default-synthesis"]["priority"] >
-            max(row["priority"] for row in captured if row["check"] != "default-synthesis"),
-            "default synthesis is not highest priority")
-    require(names["five-domain-ledger-recomparison"]["depends_on"] ==
-            ["D5-common-service-benchmark"], "benchmark recomparison dependency lost")
-    for mode in ("awq", "bf16"):
-        require("official-image-" + mode in
-                names["official-reference-" + mode]["depends_on"],
-                "official image/reference dependency lost")
-    experiment.receipt["matrix_contract"] = {
-        "check_count": len(captured), "cache_users": cache_users,
-        "tool_children_executed": 0, "capture": str(experiment.output / "matrix-checks.json")}
-    if baseline is not None:
-        if baseline.is_absolute() or ".." in baseline.parts:
-            raise ValueError("matrix baseline must be project-relative")
-        previous = json.loads((experiment.root / baseline).read_text())
-
-        def normalized(rows):
-            output = str(Path(rows[0]["receipt"]).parent.parent)
-            results = []
-            for row in rows:
-                argv = list(row["argv"])
-                if "--build-cache" in argv:
-                    argv[argv.index("--build-cache") + 1] = "<run-local-build-cache>"
-                argv = [value.replace(output + "/", "<run>/") for value in argv]
-                results.append({"check": row["check"], "argv": argv,
-                                "priority": row["priority"],
-                                "depends_on": row.get("depends_on", [])})
-            return results
-
-        require(normalized(previous) == normalized(captured),
-                "matrix workload/options/dependencies changed beyond cache binding repair")
-        experiment.receipt["matrix_contract"]["baseline"] = {
-            "path": str(baseline), "sha256": hashlib.sha256(
-                (experiment.root / baseline).read_bytes()).hexdigest(),
-            "equal_after_run_path_and_cache_binding_normalization": True}
-    experiment.receipt["comparison_summary"] = (
-        "matrix construction only; all cache argv bindings, priorities and data dependencies checked")
+    return captured
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--scope", choices=("contract", "connected", "nested", "retention", "matrix"))
-    parser.add_argument("--repair-of")
-    parser.add_argument("--matrix-baseline", type=Path)
-    parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--kind", choices=("normal", "numerical-failure", "compile-failure",
-                                          "nested", "hold"),
-                        default="normal", help=argparse.SUPPRESS)
-    parser.add_argument("--build-cache", type=Path, help=argparse.SUPPRESS)
-    args = parser.parse_args()
-    root = Path(__file__).resolve().parent.parent
-    if args.worker:
-        return worker(args, root)
-    if args.scope is None:
-        parser.error("--scope is required")
-    names = [str(path.relative_to(root))
-             for folder, pattern in (("rtl", "*.sv"), ("anvil_q2_reference/rtl", "*.sv"),
-                                     ("tests", "*"))
-             for path in sorted((root / folder).glob(pattern)) if path.is_file()]
-    experiment = Experiment(root, args.output, sys.orig_argv, names)
-    if args.repair_of:
-        experiment.receipt["repair_of"] = args.repair_of
-    started = time.monotonic()
-    try:
-        experiment.run(["python3", "--version"], "python-version")
-        create_budget(experiment, slots=2 if args.scope == "contract" else None)
-        if args.scope == "contract":
-            require(experiment.receipt["resource_budget"]["slots"] >= 2,
-                    "same-key concurrency requires at least two detected resource slots")
-            contract(experiment)
-        elif args.scope == "retention":
-            rows = [
-                command(experiment, "retention", "bindings", "input_binding_check.py"),
-                command(experiment, "retention", "reuse", "build_reuse_check.py",
-                        ["--scope", "contract"])]
-            graph(experiment, rows)
-        elif args.scope == "matrix":
-            matrix_contract(experiment, args.matrix_baseline)
-        else:
-            representative(experiment, nested=args.scope == "nested")
-        experiment.receipt["measured_elapsed_s"] = time.monotonic() - started
-        experiment.receipt["scope"] = "bounded admitted scheduler-recovery preparation only"
-        experiment.finish(0)
-        return 0
-    except (OSError, RuntimeError, ValueError, KeyError, ArithmeticError) as error:
-        experiment.receipt["measured_elapsed_s"] = time.monotonic() - started
-        experiment.finish(1, error)
-        print(error, file=sys.stderr)
-        return 1
-    finally:
-        os.environ.pop(BUDGET_ENV, None)
-        os.environ.pop(HELD_ENV, None)
+def critical_path(experiment):
+    require(experiment.receipt["resource_budget"]["slots"] >= 2,
+            "critical-path concurrency requires at least two detected resource slots")
+    cache = experiment.output / "verilator-builds"
+    create_cache(experiment.root, cache)
+    experiment.receipt["build_cache"] = str(cache)
+    planned = planned_l1_checks(experiment)
+    names = ("default-synthesis", "D5-common-service-benchmark",
+             "five-domain-ledger-recomparison")
+    require(len(planned) == len({row["check"] for row in planned}),
+            "duplicate production workload")
+    by_name = {row["check"]: row for row in planned}
+    rows = [by_name[name] for name in names]
+    rows[1]["delegated"] = True
+    experiment.receipt["critical_path_checks"] = rows
+    graph(experiment, rows)
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    children = []
+    for row in rows:
+        child = json.loads((experiment.root / row["receipt"]).read_text())
+        require(child["exit"] == 0, "critical-path child did not complete: " + row["check"])
+        require(all(experiment.receipt["source_hashes"].get(name) == digest
+                    for name, digest in child["source_hashes"].items()),
+                "critical-path child source mismatch")
+        children.append(child)
+    synthesis, benchmark, recompare = children
+    require(synthesis["structure"]["top"] == "anvil_q2_ht_top",
+  
