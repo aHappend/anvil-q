@@ -666,6 +666,17 @@ class Validator:
                 "native timing/resources and three physical passes remain mandatory."])
 
 
+def validate_input_manifests(root, ev):
+    """Validate collection inputs without importing numerical inference tools."""
+    validator = Validator(root, ev)
+    model = load_json(root / "tests/data/model_manifest.json")
+    suite = load_json(root / "tests/data/benchmark_manifest.json")
+    validator.model(model)
+    cases = validator.suite(suite, model)
+    config = load_json(validator.artifact(model["config"]))
+    return model, suite, cases, config
+
+
 def check(root, ev):
     try:
         paths = {name: artifact_path(root, f"tests/data/{name}.json") for name in

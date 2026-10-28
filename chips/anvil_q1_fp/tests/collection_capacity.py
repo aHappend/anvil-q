@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from benchmark import FORBIDDEN, load_json, require, sha
+from benchmark import FORBIDDEN, load_json, require, sha, validate_input_manifests
 from production_schedule import PRODUCTION, schedule
 from reference_capacity import measurement, measurement_selftest
 from verify import Evidence, ROOT, now
@@ -20,6 +20,7 @@ REPEATS = 2
 REFERENCE_BYTES = (24 * 896 + 151936) * 8
 OBSERVATION_BYTES = REFERENCE_BYTES // 2
 BINDINGS = (
+    "tests/benchmark.py",
     "tests/collection_capacity.py", "tests/production_sim.py", "tests/production_sim.cpp",
     "tests/production_schedule.py", "tests/teacher_reference.py",
     "tests/reference_collector.py", "tests/fp64_reference.py", "tests/awq_prepare.py",
@@ -175,7 +176,6 @@ def array_allocation(rows, block, modes=3):
 
 
 def assess():
-    from teacher_reference import validate_inputs
     # Validate genuine inputs, not a three-position predictor's unrelated subset.
     # The holder records the validator's data binding without launching inference.
     class Inputs:
@@ -186,7 +186,7 @@ def assess():
             return passed
 
     holder = Inputs()
-    model, suite, _, _ = validate_inputs(holder)
+    model, suite, _, _ = validate_input_manifests(ROOT, holder)
     rows = []
     for domain, group in suite["domains"].items():
         require(len(group["cases"]) == 10, "domain does not contain ten frozen cases")

@@ -11,7 +11,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from awq_prepare import AWQStream, batch_activations, numerics
-from benchmark import Validator, load_json, require, sha
+from benchmark import load_json, require, sha, validate_input_manifests
 from benchmark_inputs import checked_payload, write_json
 from fp64_reference import NativeStream, SafeTensors, decode
 from verify import Evidence, ROOT
@@ -82,13 +82,7 @@ def reference_case(model, config, mode, tokens, destination):
 
 
 def validate_inputs(ev):
-    validator = Validator(ROOT, ev)
-    model = load_json(ROOT / "tests/data/model_manifest.json")
-    suite = load_json(ROOT / "tests/data/benchmark_manifest.json")
-    validator.model(model)
-    cases = validator.suite(suite, model)
-    config = load_json(validator.artifact(model["config"]))
-    return model, suite, cases, config
+    return validate_input_manifests(ROOT, ev)
 
 
 def qualified(ev, path):
