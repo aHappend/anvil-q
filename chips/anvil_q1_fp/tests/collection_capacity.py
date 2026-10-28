@@ -389,10 +389,35 @@ def memory_accounting(rows):
     observer = max(max(row["teacher_positions"], row["greedy_positions_maximum"]) for row in rows)
     require(0 < teacher <= 32768 and 0 < observer <= 32768,
             "memory accounting sequence extent")
+    # Charge all named arrays plus expression scratch concurrently, deliberately
+    # overcounting disjoint lifetimes. Native/BLAS allocator costs remain unknown.
+    hidden = teacher * 896 * 8
+    intermediate = teacher * 4864 * 8
+    attention = teacher * teacher * 8
+    reference_arrays = {
+        "layer_list_and_returned_stack": 2 * 24 * hidden,
+        "teacher_transpose_astype_and_tobytes": 3 * 24 * hidden,
+        "named_activations_and_elementwise_expression_scratch": 32 * hidden + 16 * intermediate,
+        "attention_named_arrays_old_head_and_expression_scratch": 10 * attention,
+        "causal_mask_and_construction_scratch": 4 * teacher * teacher,
+        "largest_weight_decode_expression_scratch": 48 * 4864 * 896,
+        "vocabulary_block_rows_and_decode_scratch": 48 * 1024 * 896,
+        "vocabulary_block_product_old_product_cast_and_tobytes": 4 * 1024 * teacher * 8,
+        "argmax_maximum_indices_masks_and_indexing_scratch": 64 * teacher,
+    }
+    trace_delta = TRACE_CHUNK_BYTES // 44 * 54
+    codec_arrays = {
+        "one_trace_writer_raw_copies_and_append_scratch": 6 * TRACE_CHUNK_BYTES,
+        "one_trace_writer_delta_growth_bytes_and_compression_scratch": 4 * trace_delta,
+        "one_trace_reader_two_cached_frames_plus_caller_and_decode_copies":
+            7 * TRACE_CHUNK_BYTES + 3 * trace_delta,
+        "two_observer_array_writer_buffers_and_expression_scratch": 16 * 1024 * 1024,
+        "two_reference_reader_caches_views_and_expression_scratch": 24 * 1024 * 1024,
+    }
     return {
         "largest_teacher_positions": teacher, "largest_observer_positions": observer,
         "trace_codec_raw_chunk_bytes": TRACE_CHUNK_BYTES,
-        "trace_delta_maximum_bytes": TRACE_CHUNK_BYTES // 44 * 54,
+        "trace_delta_maximum_bytes": trace_delta,
         "trace_reader_two_chunk_cache_bytes": 2 * TRACE_CHUNK_BYTES,
         "reference_two_array_reader_cache_bytes": 4 * 1024 * 1024,
         "observer_kv_value_payload_bytes": observer * 24 * 256 * 4,
@@ -404,6 +429,29 @@ def memory_accounting(rows):
         "reference_logit_embedding_decode_block_fp64_bytes": 1024 * 896 * 8,
         "collection_parallelism": 1, "maximum_observer_codec_children": 3,
         "maximum_reference_reader_children": 2,
+        "maximum_concurrent_codec_children": 5,
+        "conservative_visible_reference_array_budget": reference_arrays,
+        "conservative_visible_reference_array_budget_bytes": sum(reference_arrays.values()),
+        "conservative_visible_codec_buffer_budget": codec_arrays,
+        "conservative_visible_codec_buffer_budget_bytes": sum(codec_arrays.values()),
+        "budget_policy": "Conservative visible-payload planning sums, not whole-RSS upper "
+                         "bounds. Codecs, named arrays, casts, retained previous loop values "
+                         "and expression scratch are overcounted across disjoint phases; "
+                         "Python/NumPy/malloc/BLAS internal allocation is additional.",
+        "allocation_lifetimes": {
+            "observer": "One serial Driver per repeat retains KV map and all tensor mmap "
+                        "objects until process exit. Two FP64 reader services and three "
+                        "output writer services can coexist (five, not three, children). "
+                        "Layer/logit writers close per position; trace closes per process.",
+            "teacher": "FP64 reference child exits before observer starts. Four modes run "
+                       "serially but allocator retention may survive between cases in the "
+                       "child. batch_activations retains 24 layer copies then stacks them; "
+                       "reference_case retains stack during transpose/cast/serialization "
+                       "and vocabulary blocks. Attention arrays are quadratic in positions.",
+            "comparison": "Comparison runs after both observer repeats exit. Trace readers "
+                          "may retain two 64-MiB frames plus caller references and decode "
+                          "temporaries. References have separate two-chunk array caches.",
+        },
         "whole_process_memory_bound_bytes": None,
         "whole_process_memory_qualified": False,
         "unresolved": [
@@ -415,6 +463,9 @@ def memory_accounting(rows):
             "NumPy allocator retention. The listed arrays may overlap in lifetime.",
             "Parent orchestrator, imported modules, retained metadata and log buffers. "
             "Serial cases do not multiply peak RSS by fifty; concurrent child RSS adds.",
+            "Visible-payload budgets above have not been independently qualified against "
+            "NumPy/BLAS execution in the selected shared-runtime interpreter. They do "
+            "not constitute an enforced allocation cap or a full-process bound.",
         ],
         "limitation": "Logical array/value extents only, not a measured high-water mark, "
                       "process limit, reservation or proof of host-memory fit.",
