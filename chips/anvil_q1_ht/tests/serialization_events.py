@@ -39,32 +39,32 @@ OUTPUTS = {
 TRACE = r"""
 always @(posedge clk) if(rst_n) begin
  if(token_valid && token_ready)
-  $display("EVENT TOKEN %0.0f %h %h %h",$realtime*1000,token_id,token_pos,new_sequence);
+  $display("EVENT TOKEN %0.0f %h %h %h",$realtime/1ps,token_id,token_pos,new_sequence);
  if(csr_valid && csr_ready)
-  $display("EVENT CSR %0.0f %h %h %h",$realtime*1000,csr_write,csr_address,csr_wdata);
+  $display("EVENT CSR %0.0f %h %h %h",$realtime/1ps,csr_write,csr_address,csr_wdata);
  if(csr_rsp_valid && csr_rsp_ready)
-  $display("EVENT CSR_RSP %0.0f %h %h",$realtime*1000,csr_rdata,csr_error);
+  $display("EVENT CSR_RSP %0.0f %h %h",$realtime/1ps,csr_rdata,csr_error);
  if(logit_valid && logit_ready)
-  $display("EVENT LOGIT %0.0f %h %h",$realtime*1000,logit_index,logit_data);
+  $display("EVENT LOGIT %0.0f %h %h",$realtime/1ps,logit_index,logit_data);
 end
 always @(posedge clk) begin
  #0.001;
- if(rst_n && done) $display("EVENT DONE %0.0f %h",$realtime*1000,error);
+ if(rst_n && done) $display("EVENT DONE %0.0f %h",$realtime/1ps,error);
 end
 always @(posedge ddr_clk) if(rst_n) begin
  if(load_valid && load_ready)
   $display("EVENT LOAD %0.0f %h %h %h %h",
-           $realtime*1000,load_address,load_data,load_byteenable,load_last);
+           $realtime/1ps,load_address,load_data,load_byteenable,load_last);
  if(avm_read && !avm_waitrequest)
   $display("EVENT READ %0.0f %h %h %h",
-           $realtime*1000,avm_address,avm_burstcount,avm_byteenable);
+           $realtime/1ps,avm_address,avm_burstcount,avm_byteenable);
  if(avm_write && !avm_waitrequest)
   $display("EVENT WRITE %0.0f %h %h %h %h",
-           $realtime*1000,avm_address,avm_burstcount,avm_writedata,avm_byteenable);
+           $realtime/1ps,avm_address,avm_burstcount,avm_writedata,avm_byteenable);
  if(avm_readdatavalid)
-  $display("EVENT READ_RSP %0.0f %h %h",$realtime*1000,avm_readdata,avm_response);
+  $display("EVENT READ_RSP %0.0f %h %h",$realtime/1ps,avm_readdata,avm_response);
  if(avm_writeresponsevalid)
-  $display("EVENT WRITE_RSP %0.0f %h",$realtime*1000,avm_response);
+  $display("EVENT WRITE_RSP %0.0f %h",$realtime/1ps,avm_response);
 end
 """
 
@@ -106,6 +106,7 @@ class Driver:
         self.process = subprocess.Popen(
             [str(project_path(executable))], cwd=ROOT, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=self.stderr, text=True, bufsize=1)
+        self.last_evaluation = None
 
     def request(self, text):
         self.process.stdin.write(text + "\n")
@@ -117,6 +118,9 @@ class Driver:
         return line.strip()
 
     def evaluate(self, time, pins):
+        identity = (time, tuple(pins.items()))
+        if self.last_evaluation is not None and self.last_evaluation[0] == identity:
+            return dict(self.last_evaluation[1])
         words = [time]
         for name, width in INPUTS.items():
             value = pins[name]
@@ -137,6 +141,7 @@ class Driver:
             outputs[name] = sum(reply.pop(0) << (32 * i) for i in range(count))
         if reply:
             raise RuntimeError("driver returned extra observation")
+        self.last_evaluation = (identity, dict(outputs))
         return outputs
 
     def close(self):
@@ -177,7 +182,7 @@ class Controller:
                 "memory": [0] * (spec["capacity"] + 64),
                 "outstanding": 0, "cursor": 0, "response_writes": 0,
                 "reads": 0, "writes": 0, "load_accepts": 0, "csr_compares": 0,
-                "logits": 0, "ddr_cycles": 0, "reset_checks": 1,
+                "logits": 0, "ddr_cycles": 0, "reset_checks": 0,
                 "core_edges": 0, "ddr_edges": 0, "simultaneous_events": 0,
                 "held_payload": None, "op": 0, "phase": 0, "v": {},
                 "wait": None, "due": None, "pending_post": False,
@@ -526,8 +531,8 @@ class Controller:
             # Public transfers are observed before any rising-edge evaluation.
             if kind == "cp":
                 self.core_positive()
+                self.reset_check()
                 s.update(pending_post=True, post_time=time + 1)
-            self.reset_check()
             p["clk"] ^= 1
             s["next_core"] += 5000
             s["core_edges"] += 1
@@ -536,22 +541,14 @@ class Controller:
             kinds.append(kind)
             if kind == "dp":
                 self.ddr_positive()
-            else:
-                self.ddr_negative()
             p["ddr_clk"] ^= 1
             s["next_ddr"] += 1875
             s["ddr_edges"] += 1
         if core and ddr:
             s["simultaneous_events"] += 1
-        s["outputs"] = self.driver.evaluate(time, p)
-        if post:
-            s["pending_post"] = False
-            if p["rst_n"] and s["outputs"]["done"]:
-                self.event("DONE", s["outputs"]["error"])
-        if due:
-            s["due"] = None
-            self.advance()
-        elif s["wait"] is not None:
+        # The original timed harness releases reset at the shared compute/DDR
+        # falling edge before the DDR negedge service process observes it.
+        if not due and s["wait"] is not None:
             wait = s["wait"]
             if wait.rstrip("+") in kinds:
                 s["wait"] = None
@@ -559,6 +556,18 @@ class Controller:
                     s["due"] = time + 1
                 else:
                     self.advance()
+        if "dn" in kinds:
+            self.ddr_negative()
+        s["outputs"] = self.driver.evaluate(time, p)
+        if "cn" in kinds:
+            self.reset_check()
+        if post:
+            s["pending_post"] = False
+            if p["rst_n"] and s["outputs"]["done"]:
+                self.event("DONE", s["outputs"]["error"])
+        if due:
+            s["due"] = None
+            self.advance()
         # Settle stimulus changes at the same timestamp, without advancing clocks.
         s["outputs"] = self.driver.evaluate(time, p)
         if s["time"] > 100_000_000_000:
@@ -571,7 +580,7 @@ class Controller:
             return "outstanding-ddr"
         if categories == ["outstanding-ddr"]:
             address = s["response_address"]
-            if (s["last_response_boundary"] and p["avm_readdatavalid"] and
+            if (s["last_response_boundary"] and p["avm_readdatavalid"] and p["ddr_clk"] and
                     address is not None and
                     any(base <= address < base + length
                         for base, length in self.spec["weight_regions"])):
@@ -869,6 +878,29 @@ def negative_segments(evidence, spec, manifests):
 
 
 def compare(evidence, executable):
+    timestamp_bench = r"""
+`timescale 1ns/1ps
+module tb;
+real stamp;
+initial begin
+ #1.875;
+ stamp=$realtime/1ps;
+ if(stamp != 1875.0) $fatal(1,"PICOSECOND_STAMP_ROUNDED");
+ $display("EVENT STAMP %0.0f 0",$realtime/1ps);
+ #3.126;
+ stamp=$realtime/1ps;
+ if(stamp != 5001.0) $fatal(1,"POST_EDGE_STAMP_ROUNDED");
+ $display("EVENT STAMP %0.0f 0",$realtime/1ps);
+ $display("CHECKS_PASSED timestamp samples=2");
+ $finish;
+end
+endmodule
+"""
+    for simulator in ("iverilog", "verilator"):
+        text = evidence.simulate("timestamp-" + simulator, timestamp_bench,
+                                 sources=[], simulator=simulator)
+        if canonical_events(text) != [["STAMP", 1875, 0], ["STAMP", 5001, 0]]:
+            raise AssertionError("trace formatting did not retain picosecond event deadlines")
     for mode in ("AWQ", "BF16"):
         captured = []
         original_simulate = evidence.simulate
