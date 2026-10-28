@@ -10,7 +10,7 @@ import shutil
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from benchmark import load_json, require, sha
+from benchmark import FORBIDDEN, load_json, require, sha
 from production_schedule import PRODUCTION, schedule
 from reference_capacity import measurement, measurement_selftest
 from verify import Evidence, ROOT, now
@@ -72,7 +72,8 @@ def retained_usage(directory):
     statuses = Counter()
     for parent, directories, filenames in os.walk(directory, followlinks=False):
         directories[:] = sorted(name for name in directories
-                                if not (Path(parent) / name).is_symlink())
+                                if name not in FORBIDDEN and
+                                not (Path(parent) / name).is_symlink())
         for name in sorted(filenames):
             path = Path(parent) / name
             info = path.lstat()
@@ -206,6 +207,11 @@ def assess():
                        "free_bytes_are_not_reserved": True},
         "retained_preparation": retained,
         "mandatory_teacher_capacity": measurement(teacher_mandatory, usage.free),
+        "capacity_guard_policy": {
+            "reserve_bytes_means": "Estimated headroom: max(1 GiB, available_bytes // 10)",
+            "actually_reserved_bytes": 0,
+            "raw_fixed_payload_shortfall_without_headroom_bytes":
+                max(0, teacher_mandatory - usage.free)},
         "planning_scenarios": {
             "fixed_arrays_plus_estimated_metadata_build": measurement(
                 fixed_maximum + log_index_allowance + build_staging_allowance, usage.free),
@@ -227,6 +233,7 @@ def assess():
                     "coexist and accumulate over all cases, not just the largest case. "
                     "In-memory FP64 temporaries are not disk reservations."},
         "full_suite_capacity_proven": False, "storage_provisioned_by_probe": False,
+        "full_model_results_present": (ROOT / "tests/data/full_model_results.json").is_file(),
         "collection_launched": False, "rtl_rebuilt": False, "results_assembled": False,
         "limitations": [
             "Fixed arrays count current production_sim/reference_collector output layouts. "

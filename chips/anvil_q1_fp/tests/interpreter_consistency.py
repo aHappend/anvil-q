@@ -92,6 +92,15 @@ def worker(case):
                 row["name"] == "full_model_inputs_and_execution" and not row["passed"] and
                 "tests/data/full_model_results.json" in row.get("missing", [])
                 for row in ev.receipt["assertions"]), "missing results did not fail closed")
+            expected_failures = {"full_model_inputs_and_execution"}
+            if case == "failed-import":
+                expected_failures.add("reference_numpy_import")
+            require({row["name"] for row in ev.receipt["assertions"] if not row["passed"]}
+                    == expected_failures, "unexpected prerequisite failure")
+            require(all(row["exit_code"] == 0 and not row["timed_out"]
+                        for label, row in records.items()
+                        if label != "reference-numpy-import"),
+                    "unexpected version/discovery child failure")
             ev.assertion("real_children_consistent_missing_results_still_fail", True,
                          numpy_imported=imported, divergent_path_python_exit=91)
             # The prerequisite receipt intentionally remains failed.
