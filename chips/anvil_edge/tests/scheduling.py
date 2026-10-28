@@ -91,6 +91,14 @@ def source_contract():
     assert len(scheduled) == 1
     assert any(isinstance(node, ast.Name) and node.id == "L1_SUITES"
                for node in ast.walk(scheduled[0]))
+    official = [node for statement in l1[0].body for node in ast.walk(statement)
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == "run_official_checkpoint"]
+    assert len(official) == 1
+    incomplete = l1[0].body[-1]
+    assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
+    assert isinstance(incomplete.exc.args[0], ast.Constant)
+    assert incomplete.exc.args[0].value.startswith("L1 incomplete:")
     reached = set(roots)
     while True:
         expanded = reached | set().union(*(graph[name] for name in reached))
@@ -125,6 +133,7 @@ def source_contract():
         "reachable_functions": sorted(reached),
         "call_graph": {name: sorted(graph[name]) for name in sorted(reached)},
         "required_nested_suites": sorted(required_nested),
+        "official_checkpoint_wired_and_l1_incomplete_rejection_retained": True,
         "available_official_tokenizers": [
             entry["family"] for entry in assets["official_tokenizers"] if entry["available"]],
     }, indent=2))

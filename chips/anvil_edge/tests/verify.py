@@ -53,6 +53,7 @@ from official import (
     run_official_discovery, run_official_intake, run_official_assets,
     run_official_checkpoint,
 )
+from qwen_tables import run_qwen_fragments
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -880,6 +881,7 @@ def main():
         "drain-prompts",
         "official-qwen-assets",
         "official-qwen-reference",
+        "official-qwen-fragments",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1007,6 +1009,8 @@ def main():
             run_official_assets(evidence)
         elif args.probe == "official-qwen-reference":
             run_official_checkpoint(evidence)
+        elif args.probe == "official-qwen-fragments":
+            run_qwen_fragments(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):
@@ -1044,10 +1048,12 @@ def main():
             evidence.tools(("iverilog", "vvp", "yosys"))
             evidence.run_cases((f"suite-{index}-{suite.__name__}", suite)
                                for index, suite in enumerate(L1_SUITES))
+            run_qwen_fragments(evidence)
             run_official_checkpoint(evidence)
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "
-                "coverage; official-profile and real-model integrations remain incomplete. "
+                "coverage; exact official-profile conversion/RTL boot/tokenization and "
+                "real-model integrations remain incomplete. "
                 "Unit results cannot certify the production appliance."
             )
         else:

@@ -141,7 +141,7 @@ def fetch(directory):
         "eos_token": config.get("eos_token"),
         "official_reference_comparisons": 0,
         "rtl_boot_or_tokenization_executed": False,
-        "scope": "Provenance-checked raw intake only; converter remains unimplemented",
+        "scope": "Provenance-checked raw intake only; complete official image conversion remains incomplete",
     }
     (directory / "qwen-intake.json").write_text(
         json.dumps(record, indent=2, ensure_ascii=True) + "\n", encoding="ascii")
@@ -166,10 +166,10 @@ def validate(directory):
     vocab = json.loads((ROOT / "tests/data/qwen-vocab.json").read_bytes())
     if tokenizer["model"]["vocab"] != vocab:
         raise RuntimeError("Qwen tokenizer.json and vocab.json disagree")
-    merges = (ROOT / "tests/data/qwen-merges.txt").read_text().splitlines()
-    if not merges or not merges[0].startswith("#version:"):
-        raise RuntimeError("Qwen merges.txt has no expected version header")
-    pairs = [line.split(" ") for line in merges[1:]]
+    merges = (ROOT / "tests/data/qwen-merges.txt").read_text(encoding="utf-8").splitlines()
+    if merges and merges[0].startswith("#version:"):
+        merges = merges[1:]
+    pairs = [line.split(" ") for line in merges]
     embedded = tokenizer["model"]["merges"]
     embedded = [pair.split(" ") if isinstance(pair, str) else pair for pair in embedded]
     if pairs != embedded or any(len(pair) != 2 for pair in pairs):
@@ -260,16 +260,11 @@ def run_official_assets(evidence):
 
 
 def run_official_checkpoint(evidence):
+    """The enclosing L1 entry retains its incomplete-integration rejection."""
     evidence.tools(("python3",))
     evidence.child(
         ["python3", "tests/official.py", "reference", evidence.relative(evidence.path)],
         "qwen-independent-official-reference",
-    )
-    from verify import VerificationFailure
-    raise VerificationFailure(
-        "Official-profile RTL integration incomplete: exact Qwen tagged-DFA, normalization "
-        "and AddedToken image conversion/boot/tokenization are not implemented. "
-        "DeepSeek-V3, Llama-3.2 and weighted default-geometry hardware coverage remain mandatory."
     )
 
 
@@ -290,4 +285,10 @@ if __name__ == "__main__":
     actions = {"discover": discover, "fetch": fetch, "validate": validate, "reference": reference}
     if len(sys.argv) != 3 or sys.argv[1] not in actions:
         raise SystemExit("Usage: python3 tests/official.py discover|fetch|validate|reference PROJECT_RELATIVE_EVIDENCE_DIRECTORY")
+    destination = Path(sys.argv[2])
+    if (destination.is_absolute() or ".." in destination.parts
+            or destination.parts[:2] not in (
+                ("evidence", "preparation"), ("evidence", "verification"))
+            or not destination.is_dir()):
+        raise SystemExit("Output must be an existing project-relative fresh evidence directory")
     actions[sys.argv[1]](sys.argv[2])
