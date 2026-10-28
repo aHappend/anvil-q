@@ -728,14 +728,17 @@ endmodule
  csr(1,16'h0008,4,0,0);
  repeat(30) edge_tick();
  RECOVERY_TOKEN
- $display("CHECKS_PASSED read_fault beat=READ_FAULT_VALUE reads=%0d recovered_logits=%0d",
-          reads,logits);
+ $display("CHECKS_PASSED read_fault beat=%0d reads=%0d recovered_logits=%0d",
+          READ_FAULT_VALUE,reads,logits);
  $finish;
 """
         id, position, new, expected = tokens[0]
         inference = inference.replace(
-            "RECOVERY_TOKEN", f"run_token(32'd{id},32'd{position},1'b1,"
-            f"{hx(packed(expected,32),32*shape.vocab)});")
+            "RECOVERY_TOKEN", (
+                "run_token(token_words[0][31:0],token_words[0][63:32],1'b1,"
+                "token_words[0][65+:VOCAB_VALUE*32]);" if reusable_build else
+                f"run_token(32'd{id},32'd{position},1'b1,"
+                f"{hx(packed(expected,32),32*shape.vocab)});"))
     if orphan_fault:
         inference = r"""
  @(negedge clk);token_id=1;token_pos=0;new_sequence=0;token_valid=1;
@@ -836,8 +839,9 @@ endmodule
 """
         inference = inference.replace("STAGE_CONDITION", stage_condition).replace(
             "WAIT_FOR_STAGE", wait_for_stage).replace(
-            "ABORT_STAGE", abort_stage).replace("FIRST_TOKEN", str(tokens[0][0])).replace(
-            "FIRST_EXPECTED", hx(tokens[0][3][0], 32))
+            "ABORT_STAGE", abort_stage).replace(
+            "FIRST_TOKEN", "token_words[0][31:0]" if reusable_build else str(tokens[0][0])).replace(
+            "FIRST_EXPECTED", "token_words[0][65+:32]" if reusable_build else hx(tokens[0][3][0], 32))
     after_upload = ""
     if fault_write >= 0:
         after_upload = r"""
@@ -848,15 +852,15 @@ endmodule
   edge_tick();
   if(done!==0 || logit_valid!==0 || token_ready!==0) $fatal(1,"WRITE_FAULT_FALSE_INFERENCE_SUCCESS");
  end
- $display("CHECKS_PASSED write_fault beat=WRITE_FAULT_VALUE acknowledged_writes=%0d image_invalid=1",writes);
+ $display("CHECKS_PASSED write_fault beat=%0d acknowledged_writes=%0d image_invalid=1",
+          WRITE_FAULT_VALUE,writes);
  $finish;
 """
     target_kind = {"embedding-pending": 0, "kernel": 5, "projection": 1}.get(abort_stage, 0)
     target = next(descriptor for descriptor in model.descriptors
                   if descriptor[1:4] == (target_kind, 0, 0))
     runtime_args = ()
-    reusable = (reusable_build and not upload_only and fault_read < 0 and
-                fault_write < 0 and not orphan_fault and not abort_stage)
+    reusable = reusable_build
     if reusable:
         from verify import file_sha256
 
@@ -872,7 +876,9 @@ endmodule
         runtime_files = {
             "case.hex": "".join(f"{word:08x}\n" for word in (
                 int(mode == "BF16"), len(model.image) // 64,
-                len(descriptor_words), len(tokens))),
+                len(descriptor_words), len(tokens), fault_read & 0xffffffff,
+                fault_write & 0xffffffff, target[4] & 0xffffffff, target[4] >> 32,
+                (target[4] + target[5]) & 0xffffffff, (target[4] + target[5]) >> 32)),
             "descriptors.hex": "".join(f"{word:012x}\n" for word in descriptor_words),
             "tokens.hex": "".join(
                 format((packed(expected,32) << 65) | (int(new) << 64) |
@@ -889,15 +895,21 @@ endmodule
             "integer response_writes=0;", r"""
 integer response_writes=0;
 string case_directory,mode_name;
-reg [31:0] case_header [0:3];
+reg [31:0] case_header [0:9];
 reg [47:0] descriptor_words [0:2047];
 reg [VOCAB_BITS_MINUS_ONE+65:0] token_words [0:MAX_TOKENS_MINUS_ONE];
 integer image_beats,descriptor_count,token_count,case_index;
+integer read_fault_value,write_fault_value;
+reg [32:0] target_base;
+reg [33:0] target_end;
 task read_case;
  begin
   if(!$value$plusargs("CASE_DIR=%s",case_directory)) $fatal(1,"MISSING_CASE_DIRECTORY");
   $readmemh({case_directory,"/case.hex"},case_header);
   image_beats=case_header[1];descriptor_count=case_header[2];token_count=case_header[3];
+  read_fault_value=$signed(case_header[4]);write_fault_value=$signed(case_header[5]);
+  target_base={case_header[7][0],case_header[6]};
+  target_end={case_header[9][1:0],case_header[8]};
   if(case_header[0]>1 || image_beats<1 || image_beats>IMAGE_CAPACITY ||
      descriptor_count<1 || descriptor_count>2048 ||
      token_count<1 || token_count>MAX_TOKENS) $fatal(1,"INVALID_CASE_HEADER");
@@ -922,7 +934,11 @@ endtask
  for(case_index=0;case_index<descriptor_count;case_index=case_index+1)
   csr(1,descriptor_words[case_index][47:32],descriptor_words[case_index][31:0],0,0);
 """)
-        bench = bench.replace("AFTER_COMMIT", runtime_inference)
+        if not (upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or abort_stage):
+            bench = bench.replace("AFTER_COMMIT", runtime_inference)
+        else:
+            bench = bench.replace("AFTER_COMMIT", inference)
+        bench = bench.replace("AFTER_UPLOAD", after_upload)
         bench = bench.replace(
             '$display("TOKEN_COMPARED mode=MODE position=',
             '$display("TOKEN_COMPARED mode=%s position=').replace(
@@ -937,7 +953,8 @@ endtask
             "MEMORY_LAST": str(capacity + 63),
             "MAX_TOKENS_MINUS_ONE": str(min(shape.max_seq, shape.window + 2)),
             "MAX_TOKENS": str(min(shape.max_seq, shape.window + 2) + 1),
-            "TARGET_BASE": "33'd0", "TARGET_END": "34'd0",
+            "TARGET_BASE": "target_base", "TARGET_END": "target_end",
+            "READ_FAULT_VALUE": "read_fault_value", "WRITE_FAULT_VALUE": "write_fault_value",
         }.items():
             bench = bench.replace(old, new)
         runtime_args = ("+CASE_DIR=" + evidence.relative(evidence.folder),)
@@ -2202,6 +2219,7 @@ def run_probe(evidence, name, seed, config=0):
             for beat in beats:
                 trial = evidence.__class__(f"{kind}-fault-{beat}",
                                            source_root=evidence.folder / "sources")
+                trial.simulation_build_pool = evidence.simulation_build_pool
                 trial.record["tool_version_receipt"] = evidence.relative(evidence.folder / "receipt.json")
                 try:
                     top_probe(trial, "AWQ", seed, **{"fault_" + kind: beat})

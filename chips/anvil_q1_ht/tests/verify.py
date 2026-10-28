@@ -56,6 +56,7 @@ class Evidence:
                        "entry_argv": entry_command(),
                        "start_time": utc(), "repair_of": repair_of, "source_sha256": {},
                        "commands": [], "observations": [], "acceptance_evidence": False}
+        self.simulation_build_pool = {}
         self.create_receipt()
         source_root = ROOT if source_root is None else Path(source_root)
         for selector in SELECTORS:
@@ -234,6 +235,8 @@ class Evidence:
             identity = {
                 "schema": 1, "verilator": version, "compiler": compiler,
                 "options": options, "bench_sha256": file_sha256(tb),
+                "geometry": self.record.get("engineering_fixture", {}).get(
+                    "shape", self.record.get("simulation_geometry")),
                 "sources": [(path.name, file_sha256(path)) for path in sources],
             }
             key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
@@ -433,6 +436,9 @@ def main():
         evidence.command(["python3", "-B", "tests/evidence_checks.py", "--scratch",
                           evidence.relative(evidence.folder / "command-harness-scratch")],
                          "command-evidence-regression")
+        evidence.command(["python3", "-B", "tests/simulation_checks.py", "--regression-child",
+                          "--scratch", evidence.relative(evidence.folder / "simulation-harness-scratch")],
+                         "simulation-build-reuse-regression")
         if args.probe in ("retention", "retention-audit", "retention-diagnosis"):
             from retention import audit, diagnose, run
             if args.probe == "retention":

@@ -44,7 +44,8 @@ def logical_image(model):
 
 
 def compatibility(evidence, seed, config):
-    from experiments import CLOCK, hx, packed
+    from experiments import CLOCK, packed
+    from verify import file_sha256
 
     shape = MATRIX[config]
     model = EngineeringModel(shape, seed, "AWQ")
@@ -62,27 +63,26 @@ def compatibility(evidence, seed, config):
             base, cols = region_index[layer * 96 + kind * 8]
             expected_writes.setdefault(base + row * cols + col, []).append(value)
         expected.extend(logits)
-        commands.append(f"run_token({token},{position},{int(sequence)},"
-                        f"{hx(packed(logits, 32), shape.vocab * 32)});")
+        commands.append((0, token, position, int(sequence), packed(logits, 32)))
 
     success(seed % shape.vocab, 0, False)
     commands += [
-        f"invalid_token({shape.vocab},0,1);",
-        f"invalid_token(0,{shape.max_seq},0);",
-        "invalid_token(0,1,1);",
-        "invalid_token(0,0,0);",
+        (1, shape.vocab, 0, 1, 0),
+        (1, 0, shape.max_seq, 0, 0),
+        (1, 0, 1, 1, 0),
+        (1, 0, 0, 0, 0),
     ]
     if shape.max_seq > 1:
         success((seed + 1) % shape.vocab, 1, False)
     success((seed + 2) % shape.vocab, 0, True)
     commands += [
-        "fault_token(0);",
-        "invalid_token(0,0,0);",
+        (2, 0, 0, 0, 0),
+        (1, 0, 0, 0, 0),
     ]
     success((seed + 3) % shape.vocab, 0, True)
-    commands += ["fault_token(1);", "invalid_token(0,0,0);"]
+    commands += [(2, 1, 0, 0, 0), (1, 0, 0, 0, 0)]
     success((seed + 4) % shape.vocab, 0, True)
-    commands += ["reset_during_memory();"]
+    commands += [(3, 0, 0, 0, 0)]
     model.history = [[] for _ in range(shape.layers)]
     success((seed + 5) % shape.vocab, 0, False)
     write_depth = max(map(len, expected_writes.values()))
@@ -90,6 +90,14 @@ def compatibility(evidence, seed, config):
     write_image.write_text("".join(
         f"{(expected_writes.get(address, []) + [0] * write_depth)[index] & 0xffffffff:08x}\n"
         for address in range(len(words)) for index in range(write_depth)))
+    stimulus = evidence.folder / "compatibility-stimulus.hex"
+    stimulus.write_text("".join(
+        format((logits << 67) | (sequence << 66) | (position << 34) | (token << 2) | op,
+               f"0{(32 * shape.vocab + 70) // 4}x") + "\n"
+        for op, token, position, sequence, logits in commands))
+    evidence.record.setdefault("runtime_input_sha256", {}).update({
+        evidence.relative(path): file_sha256(path) for path in (image, write_image, stimulus)})
+    evidence.record["simulation_geometry"] = vars(shape)
 
     bench = CLOCK + r"""
 localparam VOCAB=@VOCAB@;
@@ -108,6 +116,8 @@ reg [31:0] memory [0:@MEMORY_LAST@];
 reg [31:0] expected_writes [0:@WRITE_LAST@];
 integer write_counts [0:@MEMORY_LAST@];
 integer init_index;
+string case_directory;
+reg [VOCAB*32+66:0] stimulus [0:@COMMAND_LAST@];
 integer cycles=0,requests=0,writes=0,compared=0,successes=0,invalids=0,faults=0;
 integer pending=0,delay_left=0,address=0,reset_active=0,held=0;
 integer read_fault=0,numerical_fault=0,injected=0;
@@ -312,12 +322,24 @@ task reset_during_memory;
 endtask
 initial begin
  rst_n=0;
- $readmemh("@IMAGE@",memory);
- $readmemh("@WRITE_IMAGE@",expected_writes);
+ if(!$value$plusargs("CASE_DIR=%s",case_directory)) $fatal(1,"MISSING_CASE_DIRECTORY");
+ $readmemh({case_directory,"/compatibility-memory.hex"},memory);
+ $readmemh({case_directory,"/compatibility-writes.hex"},expected_writes);
+ $readmemh({case_directory,"/compatibility-stimulus.hex"},stimulus);
  for(init_index=0;init_index<=@MEMORY_LAST@;init_index=init_index+1) write_counts[init_index]=0;
  repeat(4) edge_tick();
  @(negedge clk);rst_n=1;
- @COMMANDS@
+ for(init_index=0;init_index<=@COMMAND_LAST@;init_index=init_index+1) begin
+  case(stimulus[init_index][1:0])
+   0:run_token(stimulus[init_index][33:2],stimulus[init_index][65:34],
+               stimulus[init_index][66],stimulus[init_index][67+:VOCAB*32]);
+   1:invalid_token(stimulus[init_index][33:2],stimulus[init_index][65:34],
+                   stimulus[init_index][66]);
+   2:fault_token(stimulus[init_index][33:2]);
+   3:reset_during_memory();
+   default:$fatal(1,"INVALID_COMPATIBILITY_STIMULUS");
+  endcase
+ end
  if(compared==0 || requests==0 || writes==0 || faults!=2 || invalids!=6 || reset_active!=1)
   $fatal(1,"COMPAT_MISSING_COVERAGE");
  $display("CHECKS_PASSED compatibility logits=%0d tokens=%0d requests=%0d writes=%0d invalids=%0d faults=%0d active_resets=%0d",
@@ -330,8 +352,7 @@ endmodule
         "VOCAB": shape.vocab, "MEMORY_LAST": len(words) - 1,
         "REGIONS": "\n".join(f"{key}:begin base={base};rows={rows};cols={cols};end"
                              for key, base, rows, cols in regions),
-        "IMAGE": evidence.relative(image), "COMMANDS": "\n".join(commands),
-        "WRITE_IMAGE": evidence.relative(write_image), "WRITE_DEPTH": write_depth,
+        "COMMAND_LAST": len(commands) - 1, "WRITE_DEPTH": write_depth,
         "WRITE_LAST": len(words) * write_depth - 1,
         **{name.upper(): value for name, value in vars(shape).items()},
     }
@@ -353,7 +374,9 @@ endmodule
                          ("compatibility", root / "rtl")):
         simulator = "verilator"
         evidence.simulate("compat-" + name, bench, sources=sorted(source.glob("*.sv")),
-                          timeout=14400, simulator=simulator)
+                          timeout=14400, simulator=simulator,
+                          runtime_args=("+CASE_DIR=" + evidence.relative(evidence.folder),),
+                          build_pool=evidence.simulation_build_pool)
         ledger = [row for row in evidence.record["observations"][-1]["observed_counters"]
                   if "requests" in row]
         if len(ledger) != 1 or ledger[0]["logits"] != len(expected):
@@ -372,6 +395,7 @@ def compatibility_matrix(evidence):
         trial = evidence.__class__(
             f"compatibility-{row['configuration']}-{row['seed']}",
             source_root=evidence.folder / "sources")
+        trial.simulation_build_pool = evidence.simulation_build_pool
         row["receipt"] = evidence.relative(trial.folder / "receipt.json")
         trial.record["tool_version_receipt"] = evidence.relative(evidence.folder / "receipt.json")
         evidence.flush()

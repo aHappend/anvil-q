@@ -93,6 +93,62 @@ class SimulationTierChecks(unittest.TestCase):
             trial.simulate("invalid", "", cxx_optimization="-ffast-math")
         self.assertEqual(trial.record["commands"], [])
 
+    def test_seed_and_mode_data_are_not_compiled_into_integration_bench(self):
+        trial = self.evidence()
+        calls = []
+        trial.simulate = lambda name, bench, **kwargs: calls.append((name, bench, kwargs))
+        experiments.top_probe(trial, "AWQ", 17)
+        first_inputs = dict(trial.record["runtime_input_sha256"])
+        experiments.top_probe(trial, "BF16", 89)
+        self.assertEqual(calls[0][1], calls[2][1])
+        self.assertEqual(calls[1][1], calls[3][1])
+        self.assertNotEqual(first_inputs, trial.record["runtime_input_sha256"])
+        self.assertEqual(len(trial.record["engineering_fixture"]["tokens"]), 2)
+
+    def test_reuse_executes_each_runtime_case_and_binds_the_original_build(self):
+        trial = self.evidence()
+        pool = {}
+        with patch("verify.shutil.which", return_value="verilator"):
+            for name in ("awq17", "bf1689"):
+                trial.simulate(name, "module tb; endmodule", sources=[],
+                               simulator="verilator", build_pool=pool,
+                               runtime_args=("+CASE_DIR=" + name,))
+        commands = trial.record["commands"]
+        self.assertEqual(sum(row["label"].endswith("-compile") for row in commands), 1)
+        runs = [row for row in commands if row["label"].endswith("-simulation")]
+        self.assertEqual(len(runs), 2)
+        self.assertEqual(runs[0]["argv"][0], runs[1]["argv"][0])
+        self.assertNotEqual(runs[0]["argv"][1], runs[1]["argv"][1])
+        self.assertEqual([row["reused"] for row in trial.record["simulation_builds"]],
+                         [False, True])
+
+    def test_changed_options_or_bench_require_another_build(self):
+        trial = self.evidence()
+        pool = {}
+        with patch("verify.shutil.which", return_value="verilator"):
+            for name, bench, flags in (
+                    ("original", "module tb; endmodule", ()),
+                    ("options", "module tb; endmodule", ("CHANGED",)),
+                    ("bench", "module tb; initial $finish; endmodule", ())):
+                trial.simulate(name, bench, sources=[], simulator="verilator",
+                               build_pool=pool, defines=flags)
+        self.assertEqual(len(pool), 3)
+        self.assertTrue(all(not row["reused"] for row in trial.record["simulation_builds"]))
+
+    def test_changed_executable_is_rejected_not_silently_rebuilt(self):
+        trial = self.evidence()
+        pool = {}
+        with patch("verify.shutil.which", return_value="verilator"):
+            trial.simulate("original", "module tb; endmodule", sources=[],
+                           simulator="verilator", build_pool=pool)
+            build, = pool.values()
+            (ROOT / build["executable"]).write_bytes(b"changed")
+            with self.assertRaisesRegex(RuntimeError, "compiled simulation build changed"):
+                trial.simulate("changed", "module tb; endmodule", sources=[],
+                               simulator="verilator", build_pool=pool)
+        self.assertEqual(sum(row["label"].endswith("-simulation")
+                             for row in trial.record["commands"]), 1)
+
     def test_changed_sources_preserve_clean_reproduction_path_policy(self):
         for name in ("verify", "experiments", "benchmarks", "compatibility",
                      "sensitivity", "simulation_checks", "campaign_costs"):
