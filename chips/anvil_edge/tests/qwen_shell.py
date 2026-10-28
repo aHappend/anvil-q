@@ -27,33 +27,42 @@ MAX_NEW = 8
 PERIOD = 16
 
 
-def build_inputs(directory):
+def build_inputs(directory, compact=False):
     """Runs with the already installed, independently identified official oracle."""
     directory = Path(directory)
-    prepare(directory)
+    if not compact:
+        prepare(directory)
     directory = ROOT / directory
-    info = json.loads((directory / "complete-table-fixture.json").read_bytes())
-    vectors = json.loads((directory / "official-vectors.json").read_bytes())[:5]
-    payloads = {0x200: words(*info["metadata"])}
-    for entry in info["tables"]:
-        data = (directory / f"table-{entry['kind']:03x}.bin").read_bytes()
-        require(hashlib.sha256(data).hexdigest() == entry["sha256"],
-                "Qwen table changed before shell image construction")
-        payloads[entry["kind"]] = data
+    vocabulary, capacity = (257, 257) if compact else (VOCABULARY, CAPACITY)
+    if compact:
+        vectors = [
+            {"input_utf8_hex": b"ABC".hex(), "token_ids": [256, 67]},
+            {"input_utf8_hex": b"ABCD".hex(), "token_ids": [256, 67, 68]},
+        ]
+        payloads = None
+    else:
+        info = json.loads((directory / "complete-table-fixture.json").read_bytes())
+        vectors = json.loads((directory / "official-vectors.json").read_bytes())[:5]
+        payloads = {0x200: words(*info["metadata"])}
+        for entry in info["tables"]:
+            data = (directory / f"table-{entry['kind']:03x}.bin").read_bytes()
+            require(hashlib.sha256(data).hexdigest() == entry["sha256"],
+                    "Qwen table changed before shell image construction")
+            payloads[entry["kind"]] = data
     reference = Reference(Geometry(vocabulary=PERIOD, sequence=SEQUENCE), 17)
     initial = dict(reference.initial)
 
     def tensor_word(kind, layer, projection, row, column):
         if kind == 0:
             return (initial[kind, layer, projection, row % PERIOD, column]
-                    if row < VOCABULARY else 0)
+                    if row < vocabulary else 0)
         # The serialized activation slot has padded/unused rows; keep them zero.
         return initial.get((kind, layer, projection, row, column), 0)
 
     fixtures = []
     for bypass in (0, 1):
         fixture = synthetic_image(
-            VOCABULARY, capacity=CAPACITY, table_payloads=payloads,
+            vocabulary, capacity=capacity, table_payloads=payloads,
             geometry={"sequence": SEQUENCE}, max_pretoken=4096,
             tensor_word=tensor_word, config_values={12: MAX_NEW, 16: bypass},
         )
@@ -76,7 +85,7 @@ def build_inputs(directory):
         return fixture["destinations"][storage] + offset + 4 * (row * columns + column)
 
     # Vocabulary pieces are read from the independently converted official input.
-    records, pieces = payloads[0x201][32:], payloads[0x202][32:]
+    records, pieces = fixture["segments"][0x201][32:], fixture["segments"][0x202][32:]
     cases = []
     for case, vector in enumerate(vectors):
         ref = Reference(Geometry(vocabulary=PERIOD, sequence=SEQUENCE), 17)
@@ -85,13 +94,15 @@ def build_inputs(directory):
                 "Prompt must exercise multi-token prefill without sequence truncation")
         prompt_count = len(operations)
         position = 0
-        winners = []
+        winners, write_operations = [], []
         while position < len(operations):
+            previous_writes = len(ref.trace)
             logits = ref.token(operations[position] % PERIOD, position)
+            write_operations.extend([position] * (len(ref.trace) - previous_writes))
             winner = max(range(PERIOD), key=lambda token: (logits[token], -token))
             winners.append({"position": position, "logits_period": logits,
-                            "selected": winner, "active_logit_count": VOCABULARY,
-                            "physical_logit_count": CAPACITY})
+                            "selected": winner, "active_logit_count": vocabulary,
+                            "physical_logit_count": capacity})
             if position >= prompt_count - 1:
                 require(winner != 151645, "Synthetic output unexpectedly selected EOS")
                 generated.append(winner)
@@ -106,13 +117,14 @@ def build_inputs(directory):
             require(flags == 1, "Synthetic argmax selected a special/malformed piece")
             output.extend(pieces[offset:offset + length])
         output.decode("utf-8", errors="strict")
-        require(bytes(output) == bytes(token + 33 for token in generated),
-                "Periodic head must emit independently checked ASCII Qwen pieces")
+        require(bytes(output) == bytes(token + (0 if compact else 33) for token in generated),
+                "Periodic head must emit independently checked vocabulary pieces")
         trace = [(address(tuple(row["key"])), row["word"]) for row in ref.trace]
         inputs = list(bytes.fromhex(vector["input_utf8_hex"]))
         fields = {"input": inputs, "tokens": operations, "output": list(output),
                   "write-address": [row[0] for row in trace],
-                  "write-data": [row[1] for row in trace]}
+                  "write-data": [row[1] for row in trace],
+                  "write-operation": write_operations}
         files = {}
         for name, values in fields.items():
             path = directory / f"shell-case-{case}-{name}.hex"
@@ -124,7 +136,7 @@ def build_inputs(directory):
                            "count": len(values)}
         cases.append({
             "case": case, "prompt_utf8_hex": vector["input_utf8_hex"],
-            "official_prompt_ids": vector["token_ids"], "core_operation_ids": operations,
+            "expected_prompt_ids": vector["token_ids"], "core_operation_ids": operations,
             "generated_ids": generated, "output_utf8_hex": output.hex(),
             "winners": winners, "activation_write_count": len(trace), "files": files,
         })
@@ -140,11 +152,15 @@ def build_inputs(directory):
     require(extent <= 1 << 24 and cursor == len(fixture["image"]),
             "Image must fit standard 24-bit SPI NOR")
     save(directory / "shell-reference.json", {
-        "scope": "Complete pinned Qwen tokenizer, real production H8/L1 core, "
+        "scope": ("Synthetic compact scoreboard regression, not official tables; "
+                  if compact else "Complete pinned Qwen tokenizer; ") +
+                 "real production H8/L1 core, "
                  "independent synthetic periodic tensors; not pretrained inference, "
                  "default geometry, other tokenizer families, STA or physical acceptance",
         "tokenizer_bundle_sha256": manifest()["bundle_sha256"],
-        "active_vocabulary": VOCABULARY, "physical_capacity": CAPACITY,
+        "prompt_oracle": "Independent synthetic AB merge" if compact else
+                         "Installed pinned official tokenizer, add_special_tokens=False",
+        "active_vocabulary": vocabulary, "physical_capacity": capacity,
         "embedding_period": PERIOD, "synthetic_weight_seed": 17,
         "numerical_equivalence": "All active embedding/head rows repeat the sixteen "
                                  "oracle rows. Other tensors are identical. Inactive "
@@ -166,7 +182,7 @@ def build_inputs(directory):
                              "public adapter/controller suites remain mandatory.",
     })
     print(f"QWEN_SHELL_REFERENCE prompts={len(cases)} max_new_tokens={MAX_NEW} "
-          f"active={VOCABULARY} capacity={CAPACITY}")
+          f"active={vocabulary} capacity={capacity} compact={compact}")
 
 
 SHELL = r"""
@@ -193,7 +209,7 @@ module bench;
   anvil_edge_top #(
     .NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(8),
     .NUM_Q_HEADS(1),.NUM_KV_HEADS(1),.HEAD_DIM(8),.GROUP_SIZE(8),
-    .VOCAB_SIZE(151936),.MAX_SEQ_LEN(64),.SPI_CLOCK_HALF_PERIOD(1),
+    .VOCAB_SIZE(@CAPACITY@),.MAX_SEQ_LEN(64),.SPI_CLOCK_HALF_PERIOD(1),
     .MAX_PROMPT_BYTES(4096),.MAX_PROMPT_TOKENS(4096),
     .RX_FIFO_DEPTH(16),.TX_FIFO_DEPTH(3),.DDR_BYTES(@EXTENT@)
   ) dut(.*);
@@ -212,10 +228,13 @@ module bench;
   integer boot_segment=0,boot_offset=0,request_stalls=0,output_stalls=0;
   integer comparisons=0,frame=0,outputs=0,completions=0,reloads=0;
   integer frame_done=0,input_count=0,embedding_reads=0,activation_writes=0;
+  integer total_activation_writes=0,prompt_count=0,matched_write=-1,active_operation=-1;
   integer operation_index=0,embedding_index=0,inference_reads=0;
   reg [31:0] input_bytes[0:4095],expected_tokens[0:63],output_bytes[0:4095];
   reg [63:0] expected_write_address[0:65535];
   reg [31:0] expected_write_data[0:65535];
+  reg [31:0] expected_write_operation[0:65535];
+  reg write_seen[0:65535];
   integer input_length=0,output_length=0,operation_count=0,write_count=0;
   reg [63:0] cycles=0;
   function automatic bit within_segment(input [63:0] address);
@@ -256,8 +275,7 @@ module bench;
              boot_done,busy,done,error,error_code,uart_tx,s_axis_tready,
              m_axis_tvalid,m_axis_tlast,m_axis_tdata,cfg_ready,cfg_rsp_valid,
              cfg_rsp_error,cfg_rdata})===1'bx) $fatal(1,"QWEN_SHELL_XZ");
-      if (error) $fatal(1,{"QWEN_SHELL_ERROR frame=%0d code=%h cycles=%0d ",
-                           "embedding=%0d activation=%0d outputs=%0d"},
+      if (error) $fatal(1,"QWEN_SHELL_ERROR frame=%0d code=%h cycles=%0d embedding=%0d activation=%0d outputs=%0d",
                            frame,error_code,cycles,embedding_reads,activation_writes,outputs);
       if (held && (!ddr_req_valid ||
           {ddr_req_write,ddr_req_addr,ddr_req_wdata,ddr_req_wstrb}!==held_payload))
@@ -292,17 +310,26 @@ module bench;
               boot_segment=boot_segment+1; boot_offset=0;
             end
           end else begin
-            if (activation_writes>=write_count ||
-                ddr_req_addr!==expected_write_address[activation_writes] ||
-                ddr_req_wdata!==expected_write_data[activation_writes] ||
-                ddr_req_wstrb!==4'hf)
-              $fatal(1,{"QWEN_SHELL_NUMERICAL_WRITE frame=%0d item=%0d ",
-                       "address=%h expected_address=%h got=%h expected=%h"},
-                     frame,activation_writes,ddr_req_addr,
-                     expected_write_address[activation_writes],
-                     ddr_req_wdata,expected_write_data[activation_writes]);
+            active_operation=(embedding_reads-1)/@EMBEDDING_READS_PER_OPERATION@;
+            matched_write=-1;
+            // Independent addresses may retire in any order; successive values
+            // at one address and the public operation epoch must still match.
+            for (integer item=0;item<write_count;item=item+1)
+              if (matched_write<0 && !write_seen[item] &&
+                  ddr_req_addr===expected_write_address[item] &&
+                  active_operation==expected_write_operation[item])
+                matched_write=item;
+            if (matched_write<0 || activation_writes>=write_count || ddr_req_wstrb!==4'hf)
+              $fatal(1,"QWEN_SHELL_UNEXPECTED_WRITE frame=%0d op=%0d address=%h",
+                     frame,active_operation,ddr_req_addr);
+            if (ddr_req_wdata!==expected_write_data[matched_write])
+              $fatal(1,"QWEN_SHELL_NUMERICAL_WRITE frame=%0d item=%0d address=%h got=%h expected=%h",
+                     frame,matched_write,ddr_req_addr,
+                     ddr_req_wdata,expected_write_data[matched_write]);
+            write_seen[matched_write]=1;
             ddr[ddr_req_addr>>2]=ddr_req_wdata;
             activation_writes=activation_writes+1;
+            total_activation_writes=total_activation_writes+1;
           end
         end else begin
           if (ddr_req_wstrb!==0 || boot_segment!=20)
@@ -311,9 +338,10 @@ module bench;
           if (running) begin
             inference_reads=inference_reads+1;
             if (ddr_req_addr>=segment_base[2] &&
-                ddr_req_addr<segment_base[2]+64'd4861952) begin
-              operation_index=embedding_reads/1215496;
-              embedding_index=embedding_reads%1215496;
+                ddr_req_addr<segment_base[2]+64'd@EMBEDDING_BYTES@) begin
+              if (input_count!=input_length) $fatal(1,"QWEN_SHELL_PARTIAL_PREFILL");
+              operation_index=embedding_reads/@EMBEDDING_READS_PER_OPERATION@;
+              embedding_index=embedding_reads%@EMBEDDING_READS_PER_OPERATION@;
               if (operation_index>=operation_count)
                 $fatal(1,"QWEN_SHELL_EXTRA_CORE_OPERATION");
               if (embedding_index<8) begin
@@ -343,6 +371,8 @@ module bench;
         if (out_held) output_stalls=output_stalls+1;
         if (!BYPASS && m_axis_tvalid) $fatal(1,"QWEN_SHELL_UNSELECTED_OUTPUT");
         if (BYPASS && m_axis_tvalid && m_axis_tready) begin
+          if (embedding_reads<prompt_count*@EMBEDDING_READS_PER_OPERATION@)
+            $fatal(1,"QWEN_SHELL_INTERMEDIATE_PREFILL_OUTPUT");
           if (outputs>=output_length || m_axis_tdata!==output_bytes[outputs][7:0] ||
               m_axis_tlast!==(outputs==output_length-1))
             $fatal(1,"QWEN_SHELL_OUTPUT_BYTE frame=%0d item=%0d got=%h expected=%h",
@@ -359,8 +389,8 @@ module bench;
         if (done) begin
           if (frame_done!=0 || outputs!=output_length || pending || ddr_req_valid ||
               m_axis_tvalid || uart_tx!==1 || activation_writes!=write_count ||
-              embedding_reads!=operation_count*1215496 ||
-              acknowledgements!=writes+reads+activation_writes)
+              embedding_reads!=operation_count*@EMBEDDING_READS_PER_OPERATION@ ||
+              acknowledgements!=writes+reads+total_activation_writes)
             $fatal(1,"QWEN_SHELL_DRAIN frame=%0d output=%0d writes=%0d embedding=%0d",
                    frame,outputs,activation_writes,embedding_reads);
           frame_done=frame_done+1; completions=completions+1; comparisons=comparisons+1;
@@ -393,6 +423,8 @@ module bench;
       while (outputs<output_length) begin
         expected_frame={1'b1,output_bytes[outputs][7:0],1'b0};
         while (uart_tx!==0) tick();
+        if (embedding_reads<prompt_count*@EMBEDDING_READS_PER_OPERATION@)
+          $fatal(1,"QWEN_SHELL_UART_INTERMEDIATE_PREFILL_OUTPUT");
         for (integer bit_index=0;bit_index<10;bit_index=bit_index+1)
           repeat (5) begin
             if (uart_tx!==expected_frame[bit_index] || done!==0)
@@ -423,6 +455,7 @@ module bench;
         $fatal(1,"QWEN_SHELL_RELOAD_NOT_IDLE");
       @(negedge clk); #1;
       writes=0; reads=0; acknowledgements=0; boot_segment=0; boot_offset=0;
+      total_activation_writes=0;
       loading=1; spi_reads=0;
       cfg_valid=1; cfg_write=1; cfg_addr=32'h1c; cfg_wdata=1;
       do begin @(posedge clk); end while (!cfg_ready);
@@ -455,8 +488,7 @@ module bench;
       @LOAD_CASE@
       outputs=0; frame_done=0; input_count=0; embedding_reads=0;
       activation_writes=0; inference_reads=0; out_held=0;
-      // Counters retain boot totals and current-frame writes only.
-      acknowledgements=writes+reads;
+      for (integer item=0;item<write_count;item=item+1) write_seen[item]=0;
       running=1;
       if (BYPASS) begin
         for (integer item=0;item<input_length;item=item+1)
@@ -467,8 +499,8 @@ module bench;
             @(negedge clk); #1;
             for (integer item=0;item<input_length;item=item+1)
               send_serial(input_bytes[item][7:0]);
-            send_serial(10);
             input_count=input_length;
+            send_serial(10);
           end
           decode_serial();
         join
@@ -478,9 +510,7 @@ module bench;
       if (frame_done!=1 || busy || pending || ddr_req_valid || m_axis_tvalid ||
           outputs!=output_length || input_count!=input_length || inference_reads==0)
         $fatal(1,"QWEN_SHELL_FINAL_COUNTS");
-      $display({"QWEN_SHELL_FRAME frame=%0d transport=%0d prompt_bytes=%0d ",
-               "operations=%0d output_bytes=%0d embedding_reads=%0d ",
-               "activation_writes=%0d cycles=%0d"},
+      $display("QWEN_SHELL_FRAME frame=%0d transport=%0d prompt_bytes=%0d operations=%0d output_bytes=%0d embedding_reads=%0d activation_writes=%0d cycles=%0d",
                frame,BYPASS,input_count,operation_count,outputs,embedding_reads,
                activation_writes,cycles);
       running=0;
@@ -511,10 +541,12 @@ def shell_case(evidence, info, seed, bypass, general_only):
                  f"        input_length={fields['input']['count']};",
                  f"        output_length={fields['output']['count']};",
                  f"        operation_count={fields['tokens']['count']};",
+                 f"        prompt_count={len(case['expected_prompt_ids'])};",
                  f"        write_count={fields['write-data']['count']};"]
         for name, array in (("input", "input_bytes"), ("tokens", "expected_tokens"),
                             ("output", "output_bytes"), ("write-address", "expected_write_address"),
-                            ("write-data", "expected_write_data")):
+                            ("write-data", "expected_write_data"),
+                            ("write-operation", "expected_write_operation")):
             source = fields[name]
             require(hashlib.sha256((ROOT / source["path"]).read_bytes()).hexdigest()
                     == source["sha256"], "Shell reference vector changed")
@@ -537,6 +569,9 @@ def shell_case(evidence, info, seed, bypass, general_only):
     cycles += sum(len(case["core_operation_ids"]) for case in cases) * 1000000000
     values = {
         "EXTENT": info["extent"], "BYPASS": bypass, "FRAMES": len(cases),
+        "CAPACITY": info["physical_capacity"],
+        "EMBEDDING_BYTES": info["physical_capacity"] * 32,
+        "EMBEDDING_READS_PER_OPERATION": info["physical_capacity"] * 8 + 8,
         "SPI": spi, "SEED": seed, "FLASH": image["path"],
         "FLASH_BYTES": info["flash_bytes"], "SEGMENTS": segments,
         "BOOT_WRITES": sum((entry["bytes"] + 3) // 4 for entry in info["segments"]),
@@ -572,11 +607,26 @@ def run_qwen_shell(evidence, general_only=False):
     ])
 
 
+def run_shell_scoreboard(evidence):
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.child(["./.venv/bin/python", "tests/qwen_shell.py",
+                    evidence.relative(evidence.path), "--compact"],
+                   "compact-shell-reference")
+    info = json.loads((evidence.path / "shell-reference.json").read_bytes())
+    evidence.run_cases([
+        (f"compact-shell-b{bypass}-s{seed}",
+         lambda scope, seed=seed, bypass=bypass:
+         shell_case(scope, info, seed, bypass, False))
+        for seed in (1, 17, 89) for bypass in (0, 1)
+    ])
+
+
 if __name__ == "__main__":
-    require(len(sys.argv) == 2, "Usage: ./.venv/bin/python tests/qwen_shell.py EVIDENCE_DIRECTORY")
+    require(len(sys.argv) in (2, 3) and (len(sys.argv) == 2 or sys.argv[2] == "--compact"),
+            "Usage: ./.venv/bin/python tests/qwen_shell.py EVIDENCE_DIRECTORY [--compact]")
     destination = Path(sys.argv[1])
     require(not destination.is_absolute() and ".." not in destination.parts
             and destination.is_dir() and destination.parts[:2] in (
                 ("evidence", "preparation"), ("evidence", "verification")),
             "Shell inputs require a fresh project evidence directory")
-    build_inputs(destination)
+    build_inputs(destination, compact=len(sys.argv) == 3)
