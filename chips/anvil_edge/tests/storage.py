@@ -503,6 +503,37 @@ def packed(values, width):
     return f"{sum(value << (width * i) for i, value in enumerate(values)):x}"
 
 
+def wide_cycle_guard(bound):
+    return f"""
+  initial begin : bounded_cycles
+    reg [63:0] watchdog_cycles;
+    watchdog_cycles=0;
+    while (watchdog_cycles<64'd{bound}) begin
+      @(posedge clk); watchdog_cycles=watchdog_cycles+1'b1;
+    end
+    $fatal(1,"BOOT_CYCLE_BOUND writes=%0d reads=%0d",writes,reads);
+  end
+"""
+
+
+def run_watchdog_width(evidence):
+    bench = """
+module bench;
+  reg clk=0;
+  always #5 clk=~clk;
+  integer writes=0,reads=0,comparisons=0;
+  initial begin
+    repeat (4) begin
+      @(posedge clk); #1; comparisons=comparisons+1;
+    end
+    if (comparisons!=4 || $time!=36) $fatal(1,"WATCHDOG_CLOCK_PROGRESS");
+    $display("COMPARED %0d",comparisons); $finish;
+  end
+""" + wide_cycle_guard(3700482320) + "\nendmodule\n"
+    for simulator in ("iverilog", "verilator"):
+        evidence.simulate("watchdog-width-" + simulator, bench, [], 4, simulator=simulator)
+
+
 def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=257):
     fixture = synthetic_image(vocabulary, capacity=capacity, fault=fault)
     name = f"boot-v{vocabulary}-s{seed}-{fault or ('reload' if reload else 'valid')}"
@@ -591,7 +622,14 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
         bench = bench.replace("65532", str(extent - 4))
         bench = bench.replace("[0:8191]", f'[0:{len(fixture["writes"])-1}]')
         cycle_bound = len(fixture["image"]) * 80 + vocabulary * 10000 + 30000000
-        bench = bench.replace("repeat (30000000)", f"repeat (64'd{cycle_bound})")
+        original_guard = """
+  initial begin
+    repeat (30000000) @(posedge clk); $fatal(1,"BOOT_CYCLE_BOUND writes=%0d reads=%0d",writes,reads);
+  end
+"""
+        if bench.count(original_guard) != 1:
+            raise RuntimeError("Missing unique large-image cycle watchdog")
+        bench = bench.replace(original_guard, wide_cycle_guard(cycle_bound))
     for key, value in parameters.items():
         bench = bench.replace(f"@{key}@", value)
     if fault == "ddr-read-error":
@@ -645,6 +683,7 @@ def run_storage_edges(evidence):
 
 
 def run_image_upper(evidence):
+    run_watchdog_width(evidence)
     boot_test(evidence, 262145, 17, capacity=262145)
 
 
@@ -656,6 +695,7 @@ def run_boot_boundaries(evidence):
 
 def run_large_images(evidence):
     evidence.tools(("iverilog", "vvp"))
+    run_watchdog_width(evidence)
     for vocabulary in (128256, 151936, 262144):
         boot_test(evidence, vocabulary, 17, capacity=vocabulary)
 
