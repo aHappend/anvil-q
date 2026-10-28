@@ -145,13 +145,16 @@ class Evidence:
     def relative(self, path):
         return str(path.relative_to(ROOT))
 
-    def run_cases(self, cases):
+    def run_cases(self, cases, *, workers=None):
         """Settle every submitted case, including peers of a failing case."""
         cases = list(cases)
+        workers = self._limits["workers"] if workers is None else workers
+        if not isinstance(workers, int) or not 1 <= workers <= self._limits["workers"]:
+            raise VerificationFailure("Invalid case concurrency")
         labels = [label for label, _ in cases]
         if not cases or len(set(labels)) != len(labels):
             raise VerificationFailure("Case batches must be nonempty and uniquely labelled")
-        batch = {"planned": labels, "results": [], "status": "running"}
+        batch = {"planned": labels, "results": [], "status": "running", "workers": workers}
         self.record["case_batches"].append(batch)
 
         def execute(label, function):
@@ -186,7 +189,7 @@ class Evidence:
                     self._root._case_scopes -= 1
 
         failures = []
-        with ThreadPoolExecutor(max_workers=self._limits["workers"]) as executor:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = [(label, executor.submit(execute, label, function))
                        for label, function in cases]
             for label, future in futures:
@@ -321,7 +324,8 @@ class Evidence:
                 record = self.child([name, flag], name + "-version", timeout=timeout)
                 self.record["tool_versions"][name] = record
 
-    def simulate(self, name, bench, sources, comparisons, *, simulator=None):
+    def simulate(self, name, bench, sources, comparisons, *, simulator=None,
+                 optimize=False):
         # Only bounded arithmetic/FIFO leaves stay on the four-state interpreter.
         leaf = name == "half" or name.startswith(
             ("multiply-", "divide-", "sqrt-", "fifo-", "lowering-")
@@ -407,6 +411,8 @@ class Evidence:
                 "-Wno-fatal", "--x-initial", "unique", "--x-assign", "unique",
                 "-j", "2",
             ]
+            if optimize:
+                compile_options.extend(["-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3"])
             tool_identity = {}
             for tool_name in ("verilator", "g++", "make"):
                 tool = self.record["tool_versions"][tool_name]

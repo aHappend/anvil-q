@@ -234,7 +234,11 @@ module bench;
   reg [63:0] expected_write_address[0:65535];
   reg [31:0] expected_write_data[0:65535];
   reg [31:0] expected_write_operation[0:65535];
+  integer expected_write_next[0:65535];
+  integer write_head[bit [95:0]];
   reg write_seen[0:65535];
+  integer scoreboard_fault=0;
+  reg fault_injected=0;
   integer input_length=0,output_length=0,operation_count=0,write_count=0;
   reg [63:0] cycles=0;
   function automatic bit within_segment(input [63:0] address);
@@ -255,6 +259,27 @@ module bench;
           spi_cs_n!==1 || uart_tx!==1) $fatal(1,"QWEN_SHELL_RESET");
     end
   endtask
+  task automatic check_write(input [63:0] address,input [31:0] value,
+                            input [3:0] strobe,input integer operation);
+    reg [95:0] key;
+    begin
+      key={32'(operation),address};
+      matched_write=write_head.exists(key) ? write_head[key] : -1;
+      if (matched_write<0 || activation_writes>=write_count || strobe!==4'hf)
+        $fatal(1,"QWEN_SHELL_UNEXPECTED_WRITE frame=%0d op=%0d address=%h",
+               frame,operation,address);
+      if (write_seen[matched_write] || address!==expected_write_address[matched_write] ||
+          operation!=expected_write_operation[matched_write])
+        $fatal(1,"QWEN_SHELL_WRITE_INDEX");
+      if (value!==expected_write_data[matched_write])
+        $fatal(1,"QWEN_SHELL_NUMERICAL_WRITE frame=%0d item=%0d address=%h got=%h expected=%h",
+               frame,matched_write,address,value,expected_write_data[matched_write]);
+      write_seen[matched_write]=1;
+      write_head[key]=expected_write_next[matched_write];
+      activation_writes=activation_writes+1;
+      total_activation_writes=total_activation_writes+1;
+    end
+  endtask
   always @(posedge clk or negedge clk) if (!rst_n) reset_check();
   always @(negedge clk) if (rst_n) begin
     rng=rng^(rng<<13); rng=rng^(rng>>17); rng=rng^(rng<<5);
@@ -269,6 +294,9 @@ module bench;
   end
   always @(posedge clk) begin
     cycles=cycles+1;
+    if (cycles>=64'd@CYCLES@)
+      $fatal(1,"QWEN_SHELL_CYCLE_BOUND frame=%0d embedding=%0d writes=%0d",
+             frame,embedding_reads,activation_writes);
     if (rst_n) begin
       if ((^{spi_mosi,spi_sck,spi_cs_n,ddr_req_valid,ddr_req_write,
              ddr_req_addr,ddr_req_wdata,ddr_req_wstrb,ddr_rsp_ready,
@@ -311,25 +339,23 @@ module bench;
             end
           end else begin
             active_operation=(embedding_reads-1)/@EMBEDDING_READS_PER_OPERATION@;
-            matched_write=-1;
-            // Independent addresses may retire in any order; successive values
-            // at one address and the public operation epoch must still match.
-            for (integer item=0;item<write_count;item=item+1)
-              if (matched_write<0 && !write_seen[item] &&
-                  ddr_req_addr===expected_write_address[item] &&
-                  active_operation==expected_write_operation[item])
-                matched_write=item;
-            if (matched_write<0 || activation_writes>=write_count || ddr_req_wstrb!==4'hf)
-              $fatal(1,"QWEN_SHELL_UNEXPECTED_WRITE frame=%0d op=%0d address=%h",
-                     frame,active_operation,ddr_req_addr);
-            if (ddr_req_wdata!==expected_write_data[matched_write])
-              $fatal(1,"QWEN_SHELL_NUMERICAL_WRITE frame=%0d item=%0d address=%h got=%h expected=%h",
-                     frame,matched_write,ddr_req_addr,
-                     ddr_req_wdata,expected_write_data[matched_write]);
-            write_seen[matched_write]=1;
+            if (scoreboard_fault==3 && !fault_injected && activation_writes==write_count-1) begin
+              fault_injected=1;
+              $display("SCOREBOARD_INJECT missing address=%h",ddr_req_addr);
+            end else begin
+              if (scoreboard_fault==1 && !fault_injected) begin
+                fault_injected=1;
+                $display("SCOREBOARD_INJECT wrong-value address=%h",ddr_req_addr);
+                check_write(ddr_req_addr,ddr_req_wdata^32'd1,ddr_req_wstrb,active_operation);
+              end else check_write(ddr_req_addr,ddr_req_wdata,ddr_req_wstrb,active_operation);
+              if (scoreboard_fault==2 && !fault_injected &&
+                  expected_write_next[matched_write]<0) begin
+                fault_injected=1;
+                $display("SCOREBOARD_INJECT duplicate address=%h",ddr_req_addr);
+                check_write(ddr_req_addr,ddr_req_wdata,ddr_req_wstrb,active_operation);
+              end
+            end
             ddr[ddr_req_addr>>2]=ddr_req_wdata;
-            activation_writes=activation_writes+1;
-            total_activation_writes=total_activation_writes+1;
           end
         end else begin
           if (ddr_req_wstrb!==0 || boot_segment!=20)
@@ -393,6 +419,8 @@ module bench;
               acknowledgements!=writes+reads+total_activation_writes)
             $fatal(1,"QWEN_SHELL_DRAIN frame=%0d output=%0d writes=%0d embedding=%0d",
                    frame,outputs,activation_writes,embedding_reads);
+          for (integer item=0;item<write_count;item=item+1)
+            if (!write_seen[item]) $fatal(1,"QWEN_SHELL_MISSING_WRITE item=%0d",item);
           frame_done=frame_done+1; completions=completions+1; comparisons=comparisons+1;
         end
       end
@@ -422,7 +450,7 @@ module bench;
     begin
       while (outputs<output_length) begin
         expected_frame={1'b1,output_bytes[outputs][7:0],1'b0};
-        while (uart_tx!==0) tick();
+        wait (uart_tx===0); #1;
         if (embedding_reads<prompt_count*@EMBEDDING_READS_PER_OPERATION@)
           $fatal(1,"QWEN_SHELL_UART_INTERMEDIATE_PREFILL_OUTPUT");
         for (integer bit_index=0;bit_index<10;bit_index=bit_index+1)
@@ -438,8 +466,9 @@ module bench;
   endtask
   task automatic wait_boot;
     begin
-      while (!boot_done) tick();
-      while (busy) tick();
+      wait (boot_done);
+      @(negedge clk); #1;
+      wait (!busy);
       if (boot_segment!=20 || pending || ddr_rsp_valid || loading ||
           writes!=@BOOT_WRITES@ || reads==0 || spi_reads<22 ||
           acknowledgements!=writes+reads)
@@ -474,6 +503,8 @@ module bench;
   endtask
   initial begin
     rst_n=0; #0; reset_check();
+    if (!$value$plusargs("scoreboard_fault=%d",scoreboard_fault)) scoreboard_fault=0;
+    if (scoreboard_fault<0 || scoreboard_fault>3) $fatal(1,"INVALID_SCOREBOARD_FAULT");
     $readmemh("@FLASH@",flash,0,@FLASH_BYTES@-1);
     @SEGMENTS@
     repeat (2) tick(); @(negedge clk); #1; rst_n=1;
@@ -488,7 +519,14 @@ module bench;
       @LOAD_CASE@
       outputs=0; frame_done=0; input_count=0; embedding_reads=0;
       activation_writes=0; inference_reads=0; out_held=0;
-      for (integer item=0;item<write_count;item=item+1) write_seen[item]=0;
+      write_head.delete();
+      for (integer item=write_count-1;item>=0;item=item-1) begin
+        write_seen[item]=0;
+        expected_write_next[item]=
+          write_head.exists({expected_write_operation[item],expected_write_address[item]}) ?
+          write_head[{expected_write_operation[item],expected_write_address[item]}] : -1;
+        write_head[{expected_write_operation[item],expected_write_address[item]}]=item;
+      end
       running=1;
       if (BYPASS) begin
         for (integer item=0;item<input_length;item=item+1)
@@ -505,7 +543,7 @@ module bench;
           decode_serial();
         join
       end
-      while (frame_done==0) tick();
+      wait (frame_done!=0);
       repeat (20) tick();
       if (frame_done!=1 || busy || pending || ddr_req_valid || m_axis_tvalid ||
           outputs!=output_length || input_count!=input_length || inference_reads==0)
@@ -522,11 +560,6 @@ module bench;
     $display("QWEN_SHELL_COUNTS frames=%0d reloads=%0d request_stalls=%0d output_stalls=%0d",
              completions,reloads,request_stalls,output_stalls);
     $display("COMPARED %0d",comparisons); $finish;
-  end
-  initial begin
-    while (cycles<64'd@CYCLES@) @(negedge clk);
-    $fatal(1,"QWEN_SHELL_CYCLE_BOUND frame=%0d embedding=%0d writes=%0d",
-           frame,embedding_reads,activation_writes);
   end
 endmodule
 """
@@ -588,7 +621,7 @@ def shell_case(evidence, info, seed, bypass, general_only):
         if path.name != "anvil_edge_numeric_pkg.sv"
     ]
     return evidence.simulate(f"qwen-shell-b{bypass}-s{seed}", bench, sources,
-                             None, simulator="verilator")
+                             None, simulator="verilator", optimize=True)
 
 
 def run_qwen_shell(evidence, general_only=False):
@@ -604,7 +637,7 @@ def run_qwen_shell(evidence, general_only=False):
          shell_case(scope, info, seed, bypass, general_only))
         for seed in ((17,) if general_only else (1, 17, 89))
         for bypass in (0, 1)
-    ])
+    ], workers=1)
 
 
 def run_shell_scoreboard(evidence):
@@ -619,6 +652,39 @@ def run_shell_scoreboard(evidence):
          shell_case(scope, info, seed, bypass, False))
         for seed in (1, 17, 89) for bypass in (0, 1)
     ])
+    rows = list(evidence.record["coverage"])
+    require(len(rows) == 6 and all(row["status"] == "passed" for row in rows),
+            "All compact transports/seeds must complete before scoreboard controls")
+    # These are monitor diagnostics, not production RTL mutation coverage.
+    # Reuse the compiled, unmodified bench and alter only its observed-write stream.
+    baseline = next(row for row in rows if row["name"] == "qwen-shell-b1-s17")
+    result = baseline["simulation_receipt"]
+    controls = []
+    for mode, name, assertion in (
+        (1, "wrong-value", "QWEN_SHELL_NUMERICAL_WRITE"),
+        (2, "duplicate", "QWEN_SHELL_UNEXPECTED_WRITE"),
+        (3, "missing", "QWEN_SHELL_DRAIN"),
+    ):
+        child = evidence.child(
+            [*result["argv"], f"+scoreboard_fault={mode}"],
+            "scoreboard-control-" + name, allow_failure=True)
+        output = (ROOT / child["stdout"]).read_text() + (ROOT / child["stderr"]).read_text()
+        require(child["exit_code"] != 0 and not child["timed_out"] and
+                child["child_settled"] and child["process_group_settled"] and
+                f"SCOREBOARD_INJECT {name}" in output and assertion in output and
+                "%Error:" in output,
+                f"Indexed scoreboard failed to reject {name} via {assertion}")
+        controls.append({"fault": name, "assertion": assertion, "receipt": child})
+    evidence.record["indexed_scoreboard_controls"] = controls
+    evidence.record["shell_execution_measurement"] = {
+        "scope": "Compact diagnostic only; not complete official tables or pretrained inference",
+        "transports": [0, 1], "seeds": [1, 17, 89],
+        "simulation_seconds": [row["simulation_receipt"]["duration_s"] for row in rows],
+        "comparisons_per_case": [row["actual_comparisons"] for row in rows],
+        "optimizations": ["per-operation/address indexed ordered queues",
+                          "event waits instead of idle coroutine polling",
+                          "C++ OPT_FAST=-O3 OPT_SLOW=-O3"],
+    }
 
 
 if __name__ == "__main__":
