@@ -658,10 +658,22 @@ def run_uart_controls(evidence):
         $fatal(1,"UART_RESET_TX_EPOCH");
     end
     comparisons=comparisons+1;
-    if (comparisons!=11) $fatal(1,"UART_CONTROL_COMPARISONS %0d",comparisons);
+    divisor={divisor}; fresh(0,1);
+    @(negedge clk); #1; divisor={divisor+3};
+    repeat (4) tick();
+    j=serial_bits;
+    fork
+      begin transmit(8'h5a,1); end
+      begin decode_serial(8'h5a,{divisor+3}); end
+    join
+    while (!tx_idle) tick();
+    if (serial_bits-j!={10*(divisor+3)} || framing_error || overflow_error)
+      $fatal(1,"UART_UPDATED_BIT_PERIOD");
+    comparisons=comparisons+1;
+    if (comparisons!=13) $fatal(1,"UART_CONTROL_COMPARISONS %0d",comparisons);
 """ + bench[end:]
             evidence.simulate(f"uart-controls-d{divisor}-s{seed}", bench,
-                              ["rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"], 11)
+                              ["rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"], 13)
         bench = UART.replace("DIVISOR", "5").replace("@DEPTH@", "1").replace("SEED", str(seed))
         bench = bench.replace(".TX_FIFO_DEPTH(1)", ".TX_FIFO_DEPTH(1),.FRAME_LOCK(1)")
         begin = bench.index("    fresh(0,0);", bench.index("  integer j;"))

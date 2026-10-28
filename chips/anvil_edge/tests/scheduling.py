@@ -78,6 +78,19 @@ def source_contract():
         "run_synthesis", "run_mutations",
     }
     assert len(roots) == len(set(roots)) and set(roots) == required_roots
+    l1 = [node for node in ast.walk(trees["verify"]) if isinstance(node, ast.If)
+          and isinstance(node.test, ast.Compare)
+          and isinstance(node.test.left, ast.Attribute)
+          and node.test.left.attr == "check"
+          and any(isinstance(value, ast.Constant) and value.value == "l1"
+                  for value in node.test.comparators)]
+    assert len(l1) == 1
+    scheduled = [node for statement in l1[0].body for node in ast.walk(statement)
+                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                 and node.func.attr == "run_cases"]
+    assert len(scheduled) == 1
+    assert any(isinstance(node, ast.Name) and node.id == "L1_SUITES"
+               for node in ast.walk(scheduled[0]))
     reached = set(roots)
     while True:
         expanded = reached | set().union(*(graph[name] for name in reached))
@@ -91,6 +104,7 @@ def source_contract():
         "run_image_upper", "run_watchdog_width", "run_uart_controls",
         "run_numerical_errors", "run_tokenizer_capacity",
         "run_top_interactions",
+        "run_top_token_capacity",
     }
     assert required_nested <= reached, sorted(required_nested - reached)
     requirements = json.loads((root / "tests/data/requirements.json").read_text())

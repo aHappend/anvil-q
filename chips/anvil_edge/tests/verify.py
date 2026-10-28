@@ -48,7 +48,7 @@ from adapters import run_adapters
 from memory import run_memory
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
 from scheduling import resource_limits, scheduling_probe, scheduling_controls
-from interactions import run_top_interactions
+from interactions import run_top_interactions, run_top_token_capacity
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -335,12 +335,13 @@ class Evidence:
         self.record["coverage"].append(record)
         if simulator == "iverilog":
             self.tools(("iverilog", "vvp"))
-            self.child(
+            record["compile_receipt"] = self.child(
                 ["iverilog", "-g2012", "-Wall", "-s", "bench", "-o",
                  self.relative(binary), *sources, self.relative(source)],
                 name + "-compile",
             )
-            result = self.child(["vvp", self.relative(binary)], name + "-simulate")
+            result = self.child(["vvp", self.relative(binary)], name + "-simulate",
+                                allow_failure=True)
         else:
             self.tools(("verilator",))
             compiled_source = directory / "compiled-bench.sv"
@@ -430,8 +431,14 @@ class Evidence:
                 compile_cache_hit=cache_hit, compile_tool=tool_identity,
                 compile_options=compile_options, source_sha256=source_hashes,
             )
-            result = self.child([self.relative(binary), *runtime_args], name + "-simulate")
+            result = self.child([self.relative(binary), *runtime_args], name + "-simulate",
+                                allow_failure=True)
         record["simulation_receipt"] = result
+        if (result["exit_code"] != 0 or result["timed_out"] or
+                not result["child_settled"] or not result.get("process_group_settled", True)):
+            record["status"] = "failed"
+            receipt = str(Path(result["stdout"]).parent / "receipt.json")
+            raise VerificationFailure(f"{name} failed; see {receipt}")
         lines = (ROOT / result["stdout"]).read_text().splitlines()
         totals = [int(line.split()[1]) for line in lines if line.startswith("COMPARED ")]
         if len(totals) != 1 or totals[0] <= 0 or (
@@ -447,6 +454,20 @@ class Evidence:
             if self._root._active_children or self._root._case_scopes:
                 raise VerificationFailure("Cannot publish evidence with unsettled work")
         self.record["children"].sort(key=lambda row: row["index"])
+        simulations = [row for row in self.record["coverage"] if "simulator" in row]
+        self.record["simulation_accounting"] = {
+            "recorded": len(simulations),
+            "by_status": {status: sum(row["status"] == status for row in simulations)
+                          for status in ("passed", "expected-functional-rejection",
+                                         "failed", "not-run")},
+            "passed_comparisons": sum(row.get("actual_comparisons", 0)
+                                      for row in simulations if row["status"] == "passed"),
+            "case_batch_count": len(self.record["case_batches"]),
+            "planned_cases": sum(len(batch["planned"]) for batch in self.record["case_batches"]),
+            "settled_cases": sum(len(batch["results"]) for batch in self.record["case_batches"]),
+            "scope": "Nested batch counts include suite nodes; simulation rows count actual "
+                     "attempts. Expected rejections require specific unchanged mutation assertions.",
+        }
         self.record.update(
             end_utc=utc(), exit_code=exit_code, reason=reason,
             child_settled=all(c["child_settled"] and c.get("process_group_settled", True)
@@ -844,6 +865,7 @@ def main():
         "scheduling-parallel",
         "scheduling-controls",
         "top-interactions",
+        "top-token-capacity",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -959,6 +981,8 @@ def main():
             scheduling_controls(evidence)
         elif args.probe == "top-interactions":
             run_top_interactions(evidence)
+        elif args.probe == "top-token-capacity":
+            run_top_token_capacity(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):

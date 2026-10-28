@@ -99,10 +99,17 @@ def run_mutations(evidence, fifo_test):
         if (failure is None or result["exit_code"] == 0 or result["timed_out"] or
                 not result["child_settled"] or "%Error:" not in output or assertion not in output):
             raise RuntimeError(f"Mutant {name} not killed by required {assertion}") from failure
+        rows = [row for row in evidence.record["coverage"]
+                if row.get("simulation_receipt") is result]
+        if len(rows) != 1 or rows[0]["status"] != "failed":
+            raise RuntimeError(f"Mutant {name} lacks an accounted failed functional simulation")
+        rows[0].update(status="expected-functional-rejection", mutation_assertion=assertion)
         results.append({"name": name, "assertion": assertion, "status": "killed",
                         "simulation": result, "diff": evidence.relative(directory / "mutation.diff")})
     if len(results) < 8:
         raise RuntimeError("Required eight mutation categories were not killed")
     (evidence.path / "mutation-results.json").write_text(json.dumps(results, indent=2) + "\n")
     evidence.record["coverage"].append({"name": "functional-mutations",
-                                        "status": "passed", "killed": len(results)})
+                                        "status": "passed", "killed": len(results),
+                                        "results": evidence.relative(
+                                            evidence.path / "mutation-results.json")})

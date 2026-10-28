@@ -1114,6 +1114,7 @@ def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=Fa
             "range": (b"ABC\xf4\x90\x80\x80", 0x10),
             "incomplete": (b"ABC\xe2\x82", 0x10),
             "byte-capacity": (b"x" * 17, 0x30),
+            "token-capacity": (b"ABC", 0x30),
             "empty-uart": (b"", 0x40),
             "stop-uart": (b"A", 0x40),
             "closed-uart": (b"ABC", 0x41),
@@ -1209,6 +1210,8 @@ def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=Fa
     .MAX_PROMPT_BYTES(16),.MAX_PROMPT_TOKENS(16),.MAX_PRETOKEN_BYTES(16),
     .MAX_TOKEN_BYTES(16),.RX_FIFO_DEPTH(3),.TX_FIFO_DEPTH(3),
     .DDR_BYTES(65536)""")
+    if input_fault == "token-capacity":
+        bench = bench.replace(".MAX_PROMPT_TOKENS(16)", ".MAX_PROMPT_TOKENS(1)")
     bench = bench.replace("reg start=0,ddr_cal_done=0,spi_miso=0;", """
   reg ddr_cal_done=0,spi_miso=0;
   reg uart_rx=1,s_axis_tvalid=0,s_axis_tlast=0,m_axis_tready=0;
@@ -1738,6 +1741,8 @@ def run_top_errors(evidence):
             (True, ("empty-uart", "stop-uart", "closed-uart")))
         for fault in faults
     ])
+    from interactions import run_top_token_capacity
+    run_top_token_capacity(evidence)
 
 
 def run_top_reload(evidence):

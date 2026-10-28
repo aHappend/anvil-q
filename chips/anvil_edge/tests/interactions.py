@@ -15,8 +15,6 @@ def top_interaction_bench(evidence, bench, fixture, prompt, operations, kind, ua
 
     bench = top_control_scenario(
         bench, fixture, prompt, None, 0, None, False, uart, operations, "")
-    first = bench.index("    running=1;\n", bench.index("  initial begin\n    rst_n=0;"))
-    terminal = bench.index('    $display("BOOT_TRANSACTIONS', first)
     if uart:
         exchange = """
     fork
@@ -103,6 +101,81 @@ def top_interaction_bench(evidence, bench, fixture, prompt, operations, kind, ua
     comparisons=comparisons+1;
     $display("TOP_INTERACTION serial_drain=1 controls=%0d",control_responses);
 """
+    elif kind == "memory-transport-priority":
+        if not uart:
+            raise ValueError("Memory/transport coincidence requires physical UART")
+        bench = replace_once(bench, "  reg running=0,out_held=0;", """
+  reg running=0,out_held=0;
+  reg block_response=0,witness_rst_n=0;
+  wire witness_overflow;
+  integer fault_collisions=0;
+  anvil_edge_uart_io #(.RX_FIFO_DEPTH(3),.TX_FIFO_DEPTH(3),.FRAME_LOCK(1))
+    transport_event_witness(
+      .clk(clk),.rst_n(witness_rst_n),.uart_rx(uart_rx),.uart_tx(),
+      .divisor(32'd5),.axis_bypass(1'b0),.uart_frame_bytes(32'd0),
+      .s_axis_tvalid(1'b0),.s_axis_tready(),.s_axis_tdata(8'd0),.s_axis_tlast(1'b0),
+      .m_axis_tvalid(),.m_axis_tready(1'b0),.m_axis_tdata(),.m_axis_tlast(),
+      .rx_valid(),.rx_ready(1'b0),.rx_data(),.rx_last(),
+      .tx_valid(1'b0),.tx_ready(),.tx_data(8'd0),.tx_last(1'b0),
+      .framing_error(),.overflow_error(witness_overflow),
+      .rx_idle(),.tx_idle(),.rx_line_idle(),
+      .receive_enable(1'b0),.response_complete(1'b0));
+""")
+        bench = replace_once(bench, "if (pending && !ddr_rsp_valid) begin",
+                             "if (pending && !ddr_rsp_valid && !block_response) begin")
+        # This second public-port instance times the deliberately closed RX event,
+        # not the expected result. The independent priority rule requires code 04.
+        scenario = """
+    running=1; block_response=1;
+    @(negedge clk); #1;
+    send_serial(65); send_serial(66); send_serial(67); send_serial(10);
+    while (!pending && !error) tick();
+    if (error || !busy || embedding_reads || outputs || completions || ddr_rsp_valid)
+      $fatal(1,"TOP_PRIORITY_PENDING_EVENT");
+    @(negedge clk); #1; witness_rst_n=1;
+    repeat (8) tick();
+    expect_rejection=1;
+    fork
+      begin
+        @(negedge clk); #1; send_serial(90);
+      end
+      begin
+        while (!witness_overflow && !error) tick();
+        if (error || witness_overflow!==1 || !pending || ddr_rsp_valid)
+          $fatal(1,"TOP_PRIORITY_PREMATURE_ERROR");
+        @(negedge clk); #1;
+        ddr_rsp_valid=1; ddr_rsp_error=1;
+        ddr_rsp_rdata={ddr[pending_address+3],ddr[pending_address+2],
+                       ddr[pending_address+1],ddr[pending_address]};
+        @(posedge clk);
+        $display("TOP_PRIORITY_COLLISION cycle=%0d addr=%h valid=%b ready=%b bus_error=%b transport=%b prior_error=%b",
+                 cycle,pending_address,ddr_rsp_valid,ddr_rsp_ready,
+                 ddr_rsp_error,witness_overflow,error);
+        if (witness_overflow!==1 || ddr_rsp_valid!==1 || ddr_rsp_ready!==1 ||
+            ddr_rsp_error!==1 || error!==0)
+          $fatal(1,"TOP_PRIORITY_NO_COINCIDENCE");
+        fault_collisions=fault_collisions+1;
+        #1;
+        if (error!==1 || error_code!==8'h04 || done)
+          $fatal(1,"TOP_PRIORITY_WINNER expected=04 observed=%h",error_code);
+        @(negedge clk); #1; ddr_rsp_error=0;
+      end
+    join
+    repeat (20) begin
+      tick();
+      if (!error || error_code!==8'h04 || done || busy || !boot_done ||
+          pending || ddr_req_valid || outputs || completions || embedding_reads ||
+          inference_writes || m_axis_tvalid || uart_tx!==1)
+        $fatal(1,"TOP_PRIORITY_STICKY_FIRST_ERROR");
+    end
+    running=0;
+    control(0,32'h20,0,0,4);
+    control(0,0,0,0,9);
+    if (fault_collisions!=1 || control_requests!=control_responses)
+      $fatal(1,"TOP_PRIORITY_CONSERVATION");
+    comparisons=comparisons+1;
+    $display("TOP_INTERACTION memory_transport_priority=1");
+"""
     elif kind == "semantic-failed-reload":
         if uart:
             raise ValueError("Semantic reload case uses bypass admission")
@@ -181,5 +254,14 @@ def run_top_interactions(evidence):
          top_test(scope, seed, uart=uart, interaction=kind))
         for seed in (1, 17, 89) for kind, uart in (
             ("serial-drain", False), ("serial-drain", True),
-            ("semantic-failed-reload", False))
+            ("semantic-failed-reload", False), ("memory-transport-priority", True))
+    ])
+
+
+def run_top_token_capacity(evidence):
+    from storage import top_test
+    evidence.run_cases([
+        (f"top-token-capacity-{seed}",
+         lambda scope, seed=seed: top_test(scope, seed, input_fault="token-capacity"))
+        for seed in (1, 17, 89)
     ])
