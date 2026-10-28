@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import sys
+import sysconfig
 import urllib.error
 import urllib.request
 
@@ -15,6 +16,7 @@ QWEN_IDENTITY = "Qwen/Qwen2.5-0.5B-Instruct"
 QWEN_REVISION = "7ae557604adf67be50417f59c2c2f167def9a775"
 QWEN_FILES = ("LICENSE", "tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt")
 ROOT = Path(__file__).resolve().parent.parent
+TOKENIZERS_VERSION = "0.21.4"
 
 
 def manifest():
@@ -209,10 +211,13 @@ def reference(directory):
     except ImportError as error:
         raise RuntimeError(
             "Pinned Qwen assets are present, but independent official-reference execution "
-            "requires the unavailable tokenizers package. No installation is authorized. "
+            "requires tokenizers==0.21.4 in the admitted project-local .venv. "
+            "Use the bounded official-dependency-repair preparation probe; "
             "Partial vocabulary and symbolic ordered-regex converters do not replace "
             "complete upstream Unicode/NFC/AddedToken conversion or official equivalence."
         ) from error
+    if tokenizers.__version__ != TOKENIZERS_VERSION:
+        raise RuntimeError(f"Official reference requires tokenizers=={TOKENIZERS_VERSION}")
     tokenizer = tokenizers.Tokenizer.from_file(str(ROOT / "tests/data/qwen-tokenizer.json"))
     requirements = json.loads((ROOT / "tests/data/requirements.json").read_bytes())
     corpus = requirements["prompts"] + [
@@ -264,9 +269,82 @@ def run_official_checkpoint(evidence):
     """The enclosing L1 entry retains its incomplete-integration rejection."""
     evidence.tools(("python3",))
     evidence.child(
-        ["python3", "tests/official.py", "reference", evidence.relative(evidence.path)],
+        ["./.venv/bin/python", "tests/official.py", "reference", evidence.relative(evidence.path)],
         "qwen-independent-official-reference",
     )
+
+
+def installed_identity(directory):
+    """Hash the installed distributions, not candidate upstream crate sources."""
+    import tokenizers
+    if tokenizers.__version__ != TOKENIZERS_VERSION:
+        raise RuntimeError(f"Installed oracle must be tokenizers=={TOKENIZERS_VERSION}")
+    environment = (ROOT / ".venv").resolve()
+    if Path(sys.prefix).resolve() != environment:
+        raise RuntimeError("Identity inspection must use the project-local .venv")
+    distributions = []
+    package_directory = Path(sysconfig.get_path("purelib")).resolve()
+    package_directory.relative_to(environment)
+    for distribution in sorted(importlib.metadata.distributions(path=[str(package_directory)]),
+                               key=lambda item: item.metadata["Name"].lower()):
+        files = []
+        for item in distribution.files or []:
+            path = Path(distribution.locate_file(item)).resolve()
+            relative = path.relative_to(environment)
+            if path.is_file():
+                data = path.read_bytes()
+                files.append({"path": str(Path(".venv") / relative), "bytes": len(data),
+                              "sha256": hashlib.sha256(data).hexdigest()})
+        if not files:
+            raise RuntimeError("Installed distribution has no inspectable files")
+        distributions.append({
+            "name": distribution.metadata["Name"], "version": distribution.version,
+            "requires": distribution.requires or [], "files": files,
+        })
+    record = {
+        "python_version": sys.version, "environment": ".venv",
+        "distribution_search_path": str(package_directory.relative_to(ROOT)),
+        "tokenizers_version": tokenizers.__version__,
+        "tokenizers_module": str(Path(tokenizers.__file__).resolve().relative_to(ROOT)),
+        "distributions": distributions,
+        "scope": "Actual installed files; embedded Rust dependency versions are not inferred "
+                 "from separately retained candidate crate sources",
+    }
+    with (Path(directory) / "installed-library-identity.json").open("x") as output:
+        json.dump(record, output, indent=2)
+        output.write("\n")
+    print(f"INSTALLED_DISTRIBUTIONS {len(distributions)} TOKENIZERS {tokenizers.__version__}")
+
+
+def run_official_environment(evidence):
+    """Explicitly admitted, one-shot dependency repair; never install during L1."""
+    if (ROOT / ".venv").exists():
+        raise RuntimeError("Project .venv already exists; preserve it and diagnose before provisioning")
+    evidence.tools(("python3",))
+    evidence.child(["python3", "-m", "venv", ".venv"], "create-project-venv")
+    evidence.child(["./.venv/bin/pip", "--version"], "project-pip-version")
+    evidence.child([
+        "./.venv/bin/pip", "install", "--index-url", "https://pypi.org/simple",
+        "--no-cache-dir", "--disable-pip-version-check", "--report",
+        evidence.relative(evidence.path / "pip-install-report.json"),
+        f"tokenizers=={TOKENIZERS_VERSION}",
+    ], "install-pinned-tokenizers")
+    run_official_identity(evidence)
+    run_official_checkpoint(evidence)
+
+
+def run_official_identity(evidence):
+    package_directory = (
+        Path(".venv/lib") / f"python{sys.version_info.major}.{sys.version_info.minor}"
+        / "site-packages"
+    )
+    evidence.child(["./.venv/bin/python", "--version"], "project-python-version")
+    evidence.child(["./.venv/bin/pip", "freeze", "--all", "--path", str(package_directory)],
+                   "resolved-local-python-dependencies")
+    evidence.child([
+        "./.venv/bin/python", "tests/official.py", "identity",
+        evidence.relative(evidence.path),
+    ], "installed-oracle-identity")
 
 
 def run_official_intake(evidence):
@@ -283,9 +361,10 @@ def run_official_intake(evidence):
 
 
 if __name__ == "__main__":
-    actions = {"discover": discover, "fetch": fetch, "validate": validate, "reference": reference}
+    actions = {"discover": discover, "fetch": fetch, "validate": validate,
+               "reference": reference, "identity": installed_identity}
     if len(sys.argv) != 3 or sys.argv[1] not in actions:
-        raise SystemExit("Usage: python3 tests/official.py discover|fetch|validate|reference PROJECT_RELATIVE_EVIDENCE_DIRECTORY")
+        raise SystemExit("Usage: python3 tests/official.py discover|fetch|validate|reference|identity PROJECT_RELATIVE_EVIDENCE_DIRECTORY")
     destination = Path(sys.argv[2])
     if (destination.is_absolute() or ".." in destination.parts
             or destination.parts[:2] not in (

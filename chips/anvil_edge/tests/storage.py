@@ -614,7 +614,10 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
     if reload_metadata is not None:
         if reload:
             raise ValueError("Choose either the original undersized reload or metadata reload")
-        reload_code = ""
+        reload_code = """
+    $display("BOOT_METADATA_EPOCH 0 code=0 writes=%0d reads=%0d acknowledgements=%0d",
+             writes,reads,acknowledgements);
+"""
         for epoch, (overrides, expected_error) in enumerate(reload_metadata, 1):
             second = synthetic_image(vocabulary, capacity=capacity, metadata_words=overrides)
             if (second["destinations"] != fixture["destinations"] or
@@ -646,6 +649,8 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
     wait_result(8'h{expected_error:02x});
     if (writes!={len(second['writes'])} || reads==0)
       $fatal(1,"BOOT_METADATA_RELOAD_TRAFFIC");
+    $display("BOOT_METADATA_EPOCH {epoch} code={expected_error} writes=%0d reads=%0d acknowledgements=%0d",
+             writes,reads,acknowledgements);
 """
     parameters = {
         "FLASH": evidence.relative(flash), "FLASH_EXTENT": str(len(fixture["image"])),

@@ -33,7 +33,10 @@ def manifest_test(evidence, seed, simulator):
         ("recovery-v2", V2, 0),
     ]
     (directory / "cases.json").write_text(json.dumps({
-        "scope": "Structural metadata validation only; version labels do not certify tables",
+        "scope": "Structural metadata validation only; version labels do not certify tables. "
+                 "Successful helper transactions restart through start; rejected helper "
+                 "transactions require reset, as supplied by the production boot loader. "
+                 "The separate SPI tests verify public boot-loader reload/error recovery.",
         "seed": seed, "cases": cases,
     }, indent=2) + "\n")
     scenarios = []
@@ -219,3 +222,46 @@ def run_metadata(evidence):
                    ]))
         for seed in (1, 17, 89)
     ])
+    metadata_synthesis(evidence)
+
+
+def metadata_synthesis(evidence):
+    evidence.tools(("yosys",))
+    directory = evidence.path / "metadata-synthesis"
+    directory.mkdir()
+    script = directory / "check.ys"
+    netlist = directory / "netlist.json"
+    script.write_text(
+        "read_verilog -sv rtl/anvil_edge_parameters.sv "
+        "rtl/anvil_edge_boot_segment_reader.sv rtl/anvil_edge_manifest_validator.sv\n"
+        "chparam -set NUM_LAYERS 1 -set HIDDEN_SIZE 8 -set INTERMEDIATE_SIZE 8 "
+        "-set NUM_Q_HEADS 1 -set NUM_KV_HEADS 1 -set HEAD_DIM 8 -set GROUP_SIZE 8 "
+        "-set VOCAB_SIZE 257 -set MAX_SEQ_LEN 4 anvil_edge_manifest_validator\n"
+        "hierarchy -check -top anvil_edge_manifest_validator\n"
+        "proc\nopt_expr\nopt_clean\nflatten\nopt_clean\ncheck -assert\n"
+        "select -assert-none t:$dlatch t:$adlatch t:$dlatchsr t:$div t:$mod "
+        "t:$divfloor t:$modfloor\n"
+        f"write_json {evidence.relative(netlist)}\n",
+        encoding="ascii",
+    )
+    evidence.child(["yosys", "-Q", "-T", "-s", evidence.relative(script)],
+                   "metadata-structural-synthesis")
+    modules = json.loads(netlist.read_text())["modules"]
+    if set(modules) != {"anvil_edge_manifest_validator"}:
+        raise RuntimeError("Unexpected flattened metadata synthesis hierarchy")
+    cells = modules["anvil_edge_manifest_validator"]["cells"]
+    state_bits = sum(len(cell["connections"].get("Q", []))
+                     for cell in cells.values() if "dff" in cell["type"].lower())
+    if state_bits < 1000 or not cells or any(
+        not cell["type"].startswith("$") or
+        any(kind in cell["type"].lower() for kind in ("latch", "div", "mod"))
+        for cell in cells.values()
+    ):
+        raise RuntimeError("Metadata synthesis lost substantive state or has forbidden cells")
+    evidence.record["coverage"].append({
+        "name": "metadata-structural-synthesis", "status": "passed",
+        "state_bits": state_bits, "cells": len(cells), "forbidden_cells": 0,
+        "scope": "Changed manifest validator and real segment reader only, not production "
+                 "core synthesis, physical timing, or hardware acceptance",
+        "netlist": evidence.relative(netlist),
+    })
