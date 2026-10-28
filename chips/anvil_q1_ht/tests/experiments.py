@@ -390,7 +390,12 @@ def top_probe(evidence, mode, seed, upload_only=False, config=0,
         evidence.record["diagnostic_scope"] = (
             "One independently compared first token only; not the mandatory matrix, "
             "sequence reuse, window rollover, or full-model acceptance.")
-    image = evidence.folder / "image.hex"
+    runtime_cases = evidence.record.setdefault("runtime_cases", [])
+    case_folder = evidence.folder / f"case-inputs-{len(runtime_cases):04d}"
+    case_folder.mkdir(exist_ok=False)
+    runtime_case = {"directory": evidence.relative(case_folder)}
+    runtime_cases.append(runtime_case)
+    image = case_folder / "image.hex"
     image.write_text("".join(f"{int.from_bytes(model.image[i:i+64], 'little'):0128x}\n"
                              for i in range(0, len(model.image), 64)))
     calls = [f"csr(1,16'h000c,32'd{int(mode == 'BF16')},0,0);"]
@@ -886,11 +891,13 @@ endmodule
                 for id, position, new, expected in tokens),
         }
         for filename, text in runtime_files.items():
-            (evidence.folder / filename).write_text(text)
-        evidence.record["runtime_input_sha256"] = {
+            (case_folder / filename).write_text(text)
+        input_hashes = {
             evidence.relative(path): file_sha256(path)
-            for path in [image, *(evidence.folder / name for name in runtime_files)]
+            for path in [image, *(case_folder / name for name in runtime_files)]
         }
+        evidence.record.setdefault("runtime_input_sha256", {}).update(input_hashes)
+        runtime_case["input_sha256"] = input_hashes
         bench = bench.replace(
             "integer response_writes=0;", r"""
 integer response_writes=0;
@@ -957,7 +964,7 @@ endtask
             "READ_FAULT_VALUE": "read_fault_value", "WRITE_FAULT_VALUE": "write_fault_value",
         }.items():
             bench = bench.replace(old, new)
-        runtime_args = ("+CASE_DIR=" + evidence.relative(evidence.folder),)
+        runtime_args = ("+CASE_DIR=" + evidence.relative(case_folder),)
     replacements = {
         "AFTER_COMMIT": inference.replace("MODE", mode),
         "AFTER_UPLOAD": after_upload,
@@ -998,6 +1005,7 @@ endtask
         "abort_stage": abort_stage,
         "descriptors": model.descriptors,
     }
+    runtime_case["engineering_fixture"] = evidence.record["engineering_fixture"]
     evidence.flush()
     name = "top-" + mode.lower() + ("-" + abort_stage if abort_stage else "")
     if simulator == "verilator":

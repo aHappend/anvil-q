@@ -103,6 +103,12 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertEqual(calls[0][1], calls[2][1])
         self.assertEqual(calls[1][1], calls[3][1])
         self.assertNotEqual(first_inputs, trial.record["runtime_input_sha256"])
+        self.assertTrue(all(trial.record["runtime_input_sha256"][path] == digest
+                            for path, digest in first_inputs.items()))
+        self.assertEqual(len(trial.record["runtime_cases"]), 2)
+        for path, digest in first_inputs.items():
+            from verify import file_sha256
+            self.assertEqual(file_sha256(ROOT / path), digest)
         self.assertEqual(len(trial.record["engineering_fixture"]["tokens"]), 2)
 
     def test_reuse_executes_each_runtime_case_and_binds_the_original_build(self):

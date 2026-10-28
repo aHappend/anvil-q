@@ -140,6 +140,12 @@ def compare_retained(evidence):
                                    if command["label"].endswith("-compile")),
             "simulation_seconds": sum(command["elapsed_seconds"] for command in child["commands"]
                                       if command["label"].endswith("-simulation")),
+            "simulation_child_user_seconds": sum(
+                command.get("sequential_child_user_seconds", 0) for command in child["commands"]
+                if command["label"].endswith("-simulation")),
+            "simulation_child_system_seconds": sum(
+                command.get("sequential_child_system_seconds", 0) for command in child["commands"]
+                if command["label"].endswith("-simulation")),
             "reused": child["simulation_builds"][-1]["reused"],
         })
     evidence.record["complete_case_comparisons"] = comparisons
