@@ -219,7 +219,8 @@ wire signed [36:0] out_weight;
 reg [131:0] vectors [0:131071];
 reg [36:0] expected;
 reg expected_error;
-integer i,stall,errors=0;
+integer i,stall,errors=0,comparisons=0,cycle_count=0;
+always @(posedge clk) cycle_count=cycle_count+1;
 anvil_q1_ht_dequant product(
   .clk(clk),.rst_n(rst_n),.in_valid(in_valid),.in_ready(in_ready),
   .in_bf16(in_bf16),.in_qweight(in_qweight),.in_qzero(in_qzero),.in_lane(in_lane),
@@ -237,7 +238,7 @@ initial begin
   $readmemh("VECTOR_PATH",vectors);
   repeat (3) edge_tick();
   @(negedge clk); rst_n=1;
-  for (i=0;i<131072;i=i+1) begin
+  for (i=VECTOR_START;i<VECTOR_STOP;i=i+1) begin
     @(negedge clk);
     in_bf16=vectors[i][128];
     in_qweight=vectors[i][127:96];
@@ -265,9 +266,11 @@ initial begin
     edge_tick();
     if (out_valid !== 0) $fatal(1,"DEQUANT_RETIRE");
     @(negedge clk); out_ready=0;
+    comparisons=comparisons+1;
   end
   if (errors==0) $fatal(1,"DEQUANT_NO_INVALID_ENCODINGS_OBSERVED");
-  $display("CHECKS_PASSED dequant encodings=131072 expected_errors=%0d",errors);
+  $display("CHECKS_PASSED dequant encodings=%0d expected_errors=%0d cycles=%0d",
+           comparisons,errors,cycle_count);
   $finish;
 end
 endmodule
@@ -275,8 +278,25 @@ endmodule
     sources = ["anvil_q1_ht_dequant.sv"]
     if rtl_root is None:
         sources.insert(0, "anvil_q1_ht_00_numeric_pkg.sv")
-    evidence.simulate("dequant", bench.replace("VECTOR_PATH", evidence.relative(path)),
-                      sources, rtl_root=rtl_root)
+    interpreted = getattr(evidence, "default_simulator", "iverilog") == "iverilog"
+    # Keep the AWQ-to-BF16 transition inside one batch, not across a reset.
+    batches = ((0, 65537), (65537, count)) if interpreted else ((0, count),)
+    compared = 0
+    for index, (start, stop) in enumerate(batches):
+        program = bench.replace("VECTOR_PATH", evidence.relative(path)).replace(
+            "VECTOR_START", str(start)).replace("VECTOR_STOP", str(stop))
+        evidence.simulate(f"dequant-{index}", program, sources, rtl_root=rtl_root)
+        counters = evidence.record["observations"][-1]["observed_counters"]
+        if (len(counters) != 1 or counters[0].get("encodings") != stop - start or
+                counters[0].get("cycles", 0) <= 0):
+            raise AssertionError("dequant batch lacks complete observed encoding/cycle counts")
+        if interpreted and counters[0]["cycles"] > 500000:
+            raise AssertionError("Icarus harness tier exceeded 500000 cycles; use compiled simulation")
+        compared += counters[0]["encodings"]
+    if compared != count:
+        raise AssertionError("exhaustive dequant coverage is incomplete")
+    evidence.record["dequant_encoding_count"] = compared
+    evidence.flush()
 
 
 def math_probe(evidence, seed):

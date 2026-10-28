@@ -47,6 +47,14 @@ def entry_command():
     return argv
 
 
+def build_artifacts(build):
+    artifacts = {**build["inputs"], build["executable"]: build["executable_sha256"]}
+    command = build["compile_command"]
+    for key in ("stdout", "stderr"):
+        artifacts[command[key]] = command[key + "_sha256"]
+    return artifacts
+
+
 class Evidence:
     def __init__(self, probe, repair_of=None, source_root=None):
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -251,6 +259,7 @@ class Evidence:
                     "producer_receipt": self.relative(self.folder / "receipt.json"),
                     "executable": self.relative(executable),
                     "executable_sha256": file_sha256(executable),
+                    "compile_command": dict(self.record["commands"][-1]),
                     "inputs": {self.relative(path): file_sha256(path)
                                for path in [*sources, tb]},
                 }
@@ -259,8 +268,7 @@ class Evidence:
                 reused = False
             else:
                 reused = True
-            for path, digest in {**cached["inputs"],
-                                 cached["executable"]: cached["executable_sha256"]}.items():
+            for path, digest in build_artifacts(cached).items():
                 if file_sha256(ROOT / path) != digest:
                     raise RuntimeError("compiled simulation build changed: " + path)
             self.record.setdefault("simulation_builds", []).append(
@@ -295,8 +303,7 @@ class Evidence:
                     artifacts[command[key]] = command.get(key + "_sha256")
             artifacts.update(self.record.get("runtime_input_sha256", {}))
             for build in self.record.get("simulation_builds", []):
-                artifacts.update(build["inputs"])
-                artifacts[build["executable"]] = build["executable_sha256"]
+                artifacts.update(build_artifacts(build))
             for relative, expected in artifacts.items():
                 path = ROOT / relative
                 if expected is None or not path.is_file() or file_sha256(path) != expected:

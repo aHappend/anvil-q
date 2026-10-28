@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import experiments
-from verify import Evidence, NONPORTABLE_PATH, ROOT
+from verify import Evidence, NONPORTABLE_PATH, ROOT, file_sha256
 
 
 class SimulationTierChecks(unittest.TestCase):
@@ -29,8 +29,14 @@ class SimulationTierChecks(unittest.TestCase):
         trial.flush = lambda: None
 
         def command(argv, label, timeout=3600, **kwargs):
-            trial.record["commands"].append(
-                {"argv": argv, "label": label, "timeout": timeout})
+            row = {"argv": argv, "label": label, "timeout": timeout}
+            ordinal = len(trial.record["commands"])
+            for key in ("stdout", "stderr"):
+                path = trial.folder / f"{ordinal:05d}-{label}-{key}.log"
+                path.write_text("synthetic unit-test command evidence\n")
+                row[key] = trial.relative(path)
+                row[key + "_sha256"] = file_sha256(path)
+            trial.record["commands"].append(row)
             if label.endswith("-compile") and argv[0] == "verilator":
                 build = ROOT / argv[argv.index("--Mdir") + 1]
                 build.mkdir()
@@ -107,7 +113,6 @@ class SimulationTierChecks(unittest.TestCase):
                             for path, digest in first_inputs.items()))
         self.assertEqual(len(trial.record["runtime_cases"]), 2)
         for path, digest in first_inputs.items():
-            from verify import file_sha256
             self.assertEqual(file_sha256(ROOT / path), digest)
         self.assertEqual(len(trial.record["engineering_fixture"]["tokens"]), 2)
 
@@ -152,6 +157,22 @@ class SimulationTierChecks(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "compiled simulation build changed"):
                 trial.simulate("changed", "module tb; endmodule", sources=[],
                                simulator="verilator", build_pool=pool)
+        self.assertEqual(sum(row["label"].endswith("-simulation")
+                             for row in trial.record["commands"]), 1)
+
+    def test_missing_producer_compile_log_rejects_reuse(self):
+        trial = self.evidence()
+        pool = {}
+        with patch("verify.shutil.which", return_value="verilator"):
+            trial.simulate("original", "module tb; endmodule", sources=[],
+                           simulator="verilator", build_pool=pool)
+            build, = pool.values()
+            log = ROOT / build["compile_command"]["stdout"]
+            log.unlink()
+            with self.assertRaises(FileNotFoundError):
+                trial.simulate("lost", "module tb; endmodule", sources=[],
+                               simulator="verilator", build_pool=pool)
+            self.assertFalse(log.exists())
         self.assertEqual(sum(row["label"].endswith("-simulation")
                              for row in trial.record["commands"]), 1)
 
