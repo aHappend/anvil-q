@@ -6,7 +6,6 @@ from collections import Counter
 import json
 import os
 from pathlib import Path
-import shutil
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -51,7 +50,21 @@ def transactions(config, mode, positions):
 
 def selftest():
     from architecture import CONFIGURATIONS
+    from types import SimpleNamespace
+    from unittest.mock import patch
     measurement_selftest()
+    for free_blocks, available_blocks in ((20, 20), (20, 7), (20, 0)):
+        stat = SimpleNamespace(f_frsize=4096, f_blocks=100, f_bfree=free_blocks,
+                               f_bavail=available_blocks, f_favail=37)
+        with patch.object(os, "statvfs", return_value=stat):
+            observed = filesystem_capacity(ROOT)
+        require(observed["total_bytes"] == 409600 and
+                observed["used_bytes"] == 327680 and
+                observed["free_bytes_including_reserved"] == 81920 and
+                observed["available_bytes"] == available_blocks * 4096 and
+                observed["available_inodes"] == 37 and
+                observed["fragment_bytes"] == 4096,
+                "filesystem capacity includes unavailable reserved blocks")
     comparisons = 0
     for config in CONFIGURATIONS.values():
         for mode in range(3):
@@ -62,6 +75,18 @@ def selftest():
                         "analytical transaction count differs from enumerated schedule")
                 comparisons += 1
     return comparisons
+
+
+def filesystem_capacity(directory):
+    stat = os.statvfs(directory)
+    return {
+        "total_bytes": stat.f_blocks * stat.f_frsize,
+        "used_bytes": (stat.f_blocks - stat.f_bfree) * stat.f_frsize,
+        "free_bytes_including_reserved": stat.f_bfree * stat.f_frsize,
+        "available_bytes": stat.f_bavail * stat.f_frsize,
+        "available_inodes": stat.f_favail,
+        "fragment_bytes": stat.f_frsize,
+    }
 
 
 def retained_usage(directory):
@@ -220,9 +245,9 @@ def assess():
         for bound in ("minimum", "maximum")
     }
     retained = retained_usage(ROOT / "evidence/preparation")
-    usage = shutil.disk_usage(ROOT)
-    stat = os.statvfs(ROOT)
-    allocation = array_allocation(rows, stat.f_frsize)
+    filesystem = filesystem_capacity(ROOT)
+    available_bytes = filesystem["available_bytes"]
+    allocation = array_allocation(rows, filesystem["fragment_bytes"])
     # These are explicit planning allowances, NOT measured/reserved output bytes.
     positions = sum(row["teacher_positions"] + row["greedy_positions_maximum"] for row in rows)
     log_index_allowance = positions * 3 * REPEATS * 256 * 1024
@@ -260,23 +285,21 @@ def assess():
             "reason": "Actual gzip ratio and progress-flush counts are unmeasured for complete "
                       "teacher/generation traces. Raw counts are not compressed-byte predictions. "
                       "No three-position compression ratio is extrapolated."},
-        "filesystem": {"storage_root": ".", "measured_at": now(),
-                       "total_bytes": usage.total, "used_bytes": usage.used,
-                       "available_bytes": usage.free, "available_inodes": stat.f_favail,
+        "filesystem": {"storage_root": ".", "measured_at": now(), **filesystem,
                        "free_bytes_are_not_reserved": True},
         "retained_preparation": retained,
-        "mandatory_teacher_capacity": measurement(teacher_mandatory, usage.free),
+        "mandatory_teacher_capacity": measurement(teacher_mandatory, available_bytes),
         "capacity_guard_policy": {
             "reserve_bytes_means": "Estimated headroom: max(1 GiB, available_bytes // 10)",
             "actually_reserved_bytes": 0,
             "raw_fixed_payload_shortfall_without_headroom_bytes":
-                max(0, teacher_mandatory - usage.free)},
+                max(0, teacher_mandatory - available_bytes)},
         "planning_scenarios": {
             "fixed_arrays_plus_estimated_metadata_build": measurement(
-                fixed_maximum + log_index_allowance + build_staging_allowance, usage.free),
+                fixed_maximum + log_index_allowance + build_staging_allowance, available_bytes),
             "raw_trace_basis_with_one_additional_retained_failure": measurement(
                 fixed_maximum + raw_trace["maximum"] + log_index_allowance +
-                build_staging_allowance + one_failed_attempt_allowance, usage.free)},
+                build_staging_allowance + one_failed_attempt_allowance, available_bytes)},
         "estimated_headroom": {
             "metadata_and_raw_log_allowance_bytes": log_index_allowance,
             "simultaneous_build_and_temporary_staging_allowance_bytes": build_staging_allowance,
@@ -294,7 +317,7 @@ def assess():
                     "deleted after staging. In-memory FP64 temporaries are not disk reservations."},
         "external_storage_prerequisite": {
             "minimum_additional_array_payload_bytes_without_headroom":
-                max(0, fixed_maximum - usage.free),
+                max(0, fixed_maximum - available_bytes),
             "maximum_successful_attempt_array_payload_bytes": fixed_maximum,
             "success_plus_one_retained_failure_array_payload_bytes": 2 * fixed_maximum,
             "rounded_array_data_bytes_success_plus_one_retained_failure":
