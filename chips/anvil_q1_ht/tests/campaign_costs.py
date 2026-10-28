@@ -16,7 +16,16 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from experiments import integration_matrix
+from reference import MATRIX
 from verify import Evidence, ROOT, file_sha256
+
+CAMPAIGN = (
+    "fixture-integrity", "checkpoint-repack", "parameters", "dequant", "tensor", "math",
+    "dma", "kv", "csr-upload", "integration-matrix", "faults", "orphan-fault",
+    "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
+    "synthesis", "kernel-default", "projection-default", "bf16-default",
+    "vocabulary-default",
+)
 
 
 def historical_costs(evidence):
@@ -43,6 +52,7 @@ def historical_costs(evidence):
             row = {
                 "receipt": evidence.relative(path), "sha256": file_sha256(path),
                 "probe": record.get("probe"), "outcome": record.get("outcome", "unfinished"),
+                "end_time": record.get("end_time"),
                 "command_seconds": sum(command["elapsed_seconds"] for command in settled),
                 "compile_seconds": sum(command["elapsed_seconds"] for command in settled
                                        if command["label"].endswith("-compile")),
@@ -66,6 +76,11 @@ def historical_costs(evidence):
                                ("mode", "seed", "shape", "read_fault_beat", "write_fault_beat",
                                 "orphan_response_fault", "abort_stage")}
                 row["token_count"] = len(fixture.get("tokens", []))
+            builds = record.get("simulation_builds", [])
+            if builds:
+                row["build_key"] = builds[-1]["key"]
+            if commands and commands[-1].get("process_settled"):
+                row["last_command_seconds"] = commands[-1].get("elapsed_seconds")
             rows.append(row)
             if (row["outcome"] == "probe_passed" and row["rtl_and_reference_match_current"] and
                     row.get("probe") and row.get("receipt_wall_seconds")):
@@ -83,25 +98,83 @@ def historical_costs(evidence):
                     "receipt_sha256": file_sha256(path),
                 })
     evidence.record["historical_cost_inventory"] = rows
-    campaign = (
-        "fixture-integrity", "checkpoint-repack", "parameters", "dequant", "tensor", "math",
-        "dma", "kv", "csr-upload", "integration-matrix", "faults", "orphan-fault",
-        "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
-        "synthesis", "kernel-default", "projection-default", "bf16-default",
-        "vocabulary-default",
-    )
     evidence.record["whole_campaign_cost_breakdown"] = [
         {"stage": name, "complete_stage_samples": stages.get(name, []),
          "status": "measured_historical" if name in stages else "no_complete_stage_measurement",
          "acceptance_evidence": False}
-        for name in campaign]
+        for name in CAMPAIGN]
     evidence.record["historical_complete_stage_lower_bound_seconds"] = sum(
         min(sample["seconds"] for sample in stages[name])
-        for name in campaign if name in stages)
+        for name in CAMPAIGN if name in stages)
     evidence.record["cost_accounting_limits"] = (
         "The lower bound excludes every unmeasured campaign stage. Historical "
         "costs use their original harness/options, not a prediction of this revision. "
         "No missing, canceled or malformed execution is assigned zero cost or a pass.")
+    evidence.flush()
+    partition_diagnosis(evidence, rows)
+
+
+def partition_diagnosis(evidence, samples):
+    """Cost-only proposal: neither a new executable contract nor cached passes."""
+    partitions = []
+    for config, shape in enumerate(MATRIX):
+        complete = [
+            row for row in samples
+            if row["outcome"] == "probe_passed" and row["rtl_and_reference_match_current"]
+            and row.get("build_key") and row.get("case", {}).get("shape") == vars(shape)
+            and row.get("token_count") == min(shape.max_seq, shape.window + 2) + 1
+            and row.get("probe", "").startswith(f"matrix-{config}-")
+            and row["case"].get("read_fault_beat") == -1
+            and row["case"].get("write_fault_beat") == -1
+            and not row["case"].get("orphan_response_fault")
+            and not row["case"].get("abort_stage")
+        ]
+        latest = max(complete, key=lambda row: row["end_time"]) if complete else None
+        matching = [row for row in complete if row["build_key"] == latest["build_key"]]
+        for seed in (17, 89, 257):
+            for mode in ("AWQ", "BF16"):
+                candidates = [row for row in matching
+                              if row["case"]["seed"] == seed and row["case"]["mode"] == mode]
+                sample = max(candidates, key=lambda row: row["end_time"]) if candidates else None
+                entry = {
+                    "configuration": config, "seed": seed, "mode": mode,
+                    "argv": ["python3", "-B", "tests/campaign_costs.py", "--config", str(config),
+                             "--seeds", str(seed), "--modes", mode],
+                    "measurement_status": "measured_preparation" if sample else "unmeasured",
+                    "required_tokens": min(shape.max_seq, shape.window + 2) + 1,
+                    "required_ordered_logits": (min(shape.max_seq, shape.window + 2) + 1) * shape.vocab,
+                }
+                if sample:
+                    entry.update({
+                        "receipt": sample["receipt"], "receipt_sha256": sample["sha256"],
+                        "measured_case_wall_seconds": sample["receipt_wall_seconds"],
+                        "functional_simulation_seconds": sample["last_command_seconds"],
+                        "simulation_only_excess_over_2700_seconds": max(
+                            0, sample["last_command_seconds"] - 2700),
+                        "build_key": sample["build_key"],
+                    })
+                partitions.append(entry)
+    evidence.record["execution_partition_proposal"] = {
+        "status": "diagnosis_only_requires_Coordinator_and_independent_review",
+        "original_and_supplemental_checks_remain_mandatory": True,
+        "does_not_repair_or_replace_original_command": True,
+        "matrix_case_commands": partitions,
+        "other_stage_commands": [
+            ["python3", "tests/verify.py", "--probe", name]
+            for name in CAMPAIGN if name != "integration-matrix"],
+        "observed_matrix_cases": sum(row["measurement_status"] == "measured_preparation"
+                                     for row in partitions),
+        "required_matrix_cases": len(partitions),
+        "missing_case_costs_are_unknown_not_zero": True,
+        "whole_campaign_total_seconds": None,
+        "limitation": (
+            "These commands preserve complete cases but are proposed append-only diagnostics, "
+            "not admitted replacements for aggregate L1. A measured single-case simulation "
+            "over 2700 seconds cannot fit unchanged patrol even without compilation. "
+            "Coordinator must diagnose execution-policy reconciliation or admit a separately "
+            "verified state-preserving checkpoint harness; no such harness is implemented here. "
+            "Other stage costs and the complete campaign total remain partially unmeasured."),
+    }
     evidence.flush()
 
 
@@ -140,6 +213,10 @@ def compare_retained(evidence):
                                    if command["label"].endswith("-compile")),
             "simulation_seconds": sum(command["elapsed_seconds"] for command in child["commands"]
                                       if command["label"].endswith("-simulation")),
+            "compiled_build_seconds": sum(
+                command["elapsed_seconds"] for command in child["commands"]
+                if command["label"].endswith("-compile") and command["argv"][0] == "verilator"),
+            "functional_simulation_seconds": child["commands"][-1]["elapsed_seconds"],
             "simulation_child_user_seconds": sum(
                 command.get("sequential_child_user_seconds", 0) for command in child["commands"]
                 if command["label"].endswith("-simulation")),
