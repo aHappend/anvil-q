@@ -172,7 +172,8 @@ def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=40
             struct.pack_into("<I", data, index * 4, value)
         segments[0x200] = bytes(data)
     if table_payloads is not None:
-        if set(table_payloads) != set(range(0x200, 0x210)) or tokenizer is not None:
+        if (set(table_payloads) != set(range(0x200, 0x210)) or tokenizer is not None
+                or metadata_words is not None):
             raise ValueError("Supply exactly metadata and fifteen tables, without a second profile")
         for kind, data in table_payloads.items():
             if not isinstance(data, bytes) or not data:
@@ -1458,6 +1459,7 @@ def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=Fa
         "SEED": str(seed), "WRITES": str(len(fixture["writes"])), "DDR_ERROR": "0",
         "VECTORS": "\n".join(vectors),
         "CACHE_K": str(cache_bases[0]), "CACHE_V": str(cache_bases[1]),
+        "METADATA": f"{int.from_bytes(fixture['segments'][0x200], 'little'):x}",
     }
     for key, value in parameters.items():
         bench = bench.replace(f"@{key}@", value)
