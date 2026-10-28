@@ -262,6 +262,7 @@ def packed_workload_accounting(rows, block, modes=MODES):
         "format": "anvil-packed-v1", "cases": len(rows), "modes": list(modes),
         "repeats": REPEATS, "greedy_limit": 128,
         "array_data": arrays,
+        "mandatory_trace_index_floor": packed_trace_index_floor(rows, modes),
         "transactions_one_attempt_maximum": transaction_count,
         "trace_data_block_bound_one_attempt": traces,
         "token_and_rope_data_block_bound_one_attempt": support,
@@ -309,6 +310,50 @@ def packed_workload_accounting(rows, block, modes=MODES):
         "reference_view_payload_duplicates": 0,
         "repeat_observations_shared": False,
         "complete_capacity_bound_bytes": None,
+        "full_workload_storage_qualified": False,
+        "collection_resumption_authorized": False,
+    }
+
+
+def packed_trace_index_floor(rows, modes=MODES, config=PRODUCTION):
+    """Uncompressed indexes impose a floor even if every payload compresses."""
+    from packed_storage import CHUNK_BYTES, ENTRY, RECORD
+    require(isinstance(modes, (tuple, list)) and modes and len(set(modes)) == len(modes)
+            and all(mode in MODES for mode in modes), "invalid index-floor modes")
+    records_per_chunk = CHUNK_BYTES // RECORD.size
+    chunks = records = containers = largest_index = 0
+    for row in rows:
+        teacher, prompt = row["teacher_positions"], row["prompt_positions"]
+        require(type(teacher) is int and type(prompt) is int and
+                0 < prompt <= teacher <= config[-1], "invalid mandatory workload positions")
+        for mode in modes:
+            precision = 0 if mode == "w4a16" else 1 if mode == "bf16" else 2
+            for positions in (teacher, prompt):
+                count = transactions(config, precision, positions)
+                entries = (count + records_per_chunk - 1) // records_per_chunk
+                records += REPEATS * count
+                chunks += REPEATS * entries
+                containers += REPEATS
+                largest_index = max(largest_index, entries * ENTRY.size)
+    return {
+        "format": "anvil-packed-v1",
+        "basis": "Complete teacher sequences and all prompt tokens, even with immediate EOS. "
+                 "No optional post-prompt generation or future failed attempt is charged.",
+        "cases": len(rows), "modes": list(modes), "repeats": REPEATS,
+        "mandatory_transaction_records": records,
+        "mandatory_trace_containers": containers,
+        "records_per_chunk": records_per_chunk, "index_entry_bytes": ENTRY.size,
+        "mandatory_index_entries": chunks,
+        "minimum_logical_index_bytes_one_successful_attempt": chunks * ENTRY.size,
+        "largest_mandatory_container_index_bytes": largest_index,
+        "compression_ratio_assumed": False,
+        "excluded_costs": "All encoded payload, headers, footers, arrays, logs, metadata, "
+                          "builds, staging and retained failures are additional.",
+        "host_memory": "Writer retains every index entry; Reader loads the complete index. "
+                       "Largest index bytes are a buffer-content floor, not a full RSS bound.",
+        "limitation": "Logical index bytes, not a filesystem allocation guarantee. "
+                      "Transparent filesystem compression/deduplication and storage reservation "
+                      "are not qualified by this accounting.",
         "full_workload_storage_qualified": False,
         "collection_resumption_authorized": False,
     }
@@ -396,6 +441,10 @@ def assess():
     packed_complete["budget_gap_meaning"] = (
         "Additional bytes to provision the no-compression-fallback data-block budget, "
         "not a lower bound on actual encoded size or proof that a compression ratio fits.")
+    index_floor = packed_complete["mandatory_trace_index_floor"]
+    index_floor["available_bytes_at_assessment"] = available_bytes
+    index_floor["logical_index_bytes_exceed_available_bytes"] = (
+        index_floor["minimum_logical_index_bytes_one_successful_attempt"] > available_bytes)
     from packed_storage import bound as packed_bound
     packed_trace_bound = sum(
         REPEATS * sum(packed_bound(row["trace_workload"][mode][name] * 44,

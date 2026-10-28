@@ -260,7 +260,8 @@ def direct_producers(destination, report, reject):
     reject("producer-occupied-reference", lambda: array_output(
         reference, "layers", "<f8", [2, 24, 896], ["position", "layer", "component"],
         packed=True), errors=(FileExistsError,))
-    rows = [{"teacher_positions": i % 3 + 1, "greedy_positions_maximum": i % 5 + 2}
+    rows = [{"teacher_positions": i % 3 + 1, "prompt_positions": 1,
+             "greedy_positions_maximum": i % 5 + 2}
             for i in range(50)]
     accounting = packed_workload_accounting(rows, 4096)
     require(accounting["cases"] == 50 and accounting["repeats"] == 2 and
@@ -277,6 +278,64 @@ def direct_producers(destination, report, reject):
         "transactions_compared_per_repeat": 30000, "reference_view_bytes": len(golden),
         "raw_production_staging_bytes": 0, "cpp_build_contains_rtl": False,
         "synthetic_complete_capacity_accounting": accounting})
+
+
+def trace_index_floors(destination, report, reject):
+    """Check index floors against actual sealed bytes and enumerated schedules."""
+    from architecture import CONFIGURATIONS
+    from collection_capacity import packed_trace_index_floor
+    from production_schedule import schedule
+
+    per_chunk = CHUNK_BYTES // RECORD.size
+    boundaries = (0, 1, per_chunk - 1, per_chunk, per_chunk + 1, 2 * per_chunk)
+    for count in boundaries:
+        path = destination / ("index-floor-" + str(count) + ".aqp")
+        with Writer(path, transactions=True) as output:
+            for start in range(0, count, 4096):
+                output.append(b"".join(
+                    RECORD.pack(2*i+1, 0, 2*i+2, 0, 0, 8, 0, 0, i, 0, i)
+                    for i in range(start, min(start + 4096, count))))
+        raw = path.read_bytes()
+        offset, entries, total, _, _ = FOOTER.unpack(raw[-FOOTER.size:])
+        expected = (count + per_chunk - 1) // per_chunk
+        require(entries == expected and total == count * RECORD.size and
+                len(raw) - FOOTER.size - offset == expected * ENTRY.size and
+                len(raw) >= expected * ENTRY.size and
+                len(Reader(path).entries) == expected,
+                "compression-independent index floor differs from sealed bytes")
+    comparisons = 0
+    for config in CONFIGURATIONS.values():
+        rows = [{"teacher_positions": config[-1], "prompt_positions": 1}]
+        for modes in (("bf16",), ("fp16", "w4a16"), ("bf16", "fp16", "w4a16")):
+            result = packed_trace_index_floor(rows, modes, config)
+            counts = [
+                sum(1 for _ in schedule(config, {"w4a16": 0, "bf16": 1, "fp16": 2}[mode],
+                                       [index % config[-2] for index in range(positions)]))
+                for mode in modes for positions in (config[-1], 1)]
+            expected_entries = 2 * sum((value + per_chunk - 1) // per_chunk
+                                       for value in counts)
+            require(result["mandatory_transaction_records"] == 2 * sum(counts) and
+                    result["mandatory_index_entries"] == expected_entries and
+                    result["minimum_logical_index_bytes_one_successful_attempt"] ==
+                    expected_entries * ENTRY.size and
+                    result["largest_mandatory_container_index_bytes"] ==
+                    max((value + per_chunk - 1) // per_chunk for value in counts) * ENTRY.size
+                    and not result["collection_resumption_authorized"],
+                    "mandatory index floor differs from enumerated architectural workload")
+            comparisons += 1
+    for name, row in (
+        ("boolean-prompt", {"teacher_positions": 1, "prompt_positions": True}),
+        ("zero-prompt", {"teacher_positions": 1, "prompt_positions": 0}),
+        ("prompt-after-teacher", {"teacher_positions": 1, "prompt_positions": 2}),
+    ):
+        reject("index-floor-" + name, lambda row=row: packed_trace_index_floor([row]))
+    reject("index-floor-duplicate-modes", lambda: packed_trace_index_floor(
+        [{"teacher_positions": 1, "prompt_positions": 1}], ("bf16", "bf16")))
+    report["positive_cases"].append({
+        "name": "compression-independent-mandatory-trace-index-floor",
+        "sealed_container_boundary_comparisons": len(boundaries),
+        "enumerated_workload_comparisons": comparisons,
+        "production_model_executed": False, "collection_resumption_authorized": False})
 
 
 def integrated(destination, report, reject):
@@ -1007,6 +1066,7 @@ def worker(destination):
     integrated(destination, report, reject)
     checkpoint_fragments(destination, report, reject)
     direct_producers(destination, report, reject)
+    trace_index_floors(destination, report, reject)
     report["tools"] = {"python": sys.version, "zlib_runtime": zlib.ZLIB_RUNTIME_VERSION}
     report["full_workload_capacity_qualified"] = False
     report["direct_packed_producers_opt_in_implemented"] = True
