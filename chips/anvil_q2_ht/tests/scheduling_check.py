@@ -312,4 +312,173 @@ def critical_path(experiment):
         children.append(child)
     synthesis, benchmark, recompare = children
     require(synthesis["structure"]["top"] == "anvil_q2_ht_top",
+            "critical path substituted a reduced synthesis top")
+    require(synthesis["structure"]["physical_lane_instances"] == 128 and
+            set(synthesis["structure"]["required_instances"]) ==
+            {"prefetcher", "tile_buffers", "tensor_array", "kv_cache", "sequencer"},
+            "critical path lost the production hierarchy")
+    expected_cells = {(mode, cache, seed)
+                      for mode, caches in (("W4A16", ("Q16", "INT8")),
+                                           ("BF16", ("Q16", "FP16", "INT8")))
+                      for cache in caches for seed in (11, 29, 101)}
+    cells = [(row["mode"], row["cache"], row["seed"]) for row in benchmark["benchmarks"]]
+    require(len(cells) == len(expected_cells) and set(cells) == expected_cells,
+            "critical path reduced the benchmark matrix")
+    require(len(benchmark["benchmark_checks"]) == 27 and
+            all(row["outcome"] == "passed" for row in benchmark["benchmark_checks"]),
+            "critical path did not complete all benchmark executions")
+    require(recompare["summary"]["executions"] == 27 and
+            recompare["summary"]["corrupt_observation_rejections"] == 27,
+            "critical path lost dependent comparisons or sensitivity cases")
+
+    commands = {row["check"]: next(command for command in experiment.receipt["commands"]
+                                  if command["argv"] == row["argv"])
+                for row in rows}
+    synthesis_command, benchmark_command, recompare_command = [
+        commands[row["check"]] for row in rows]
+    def interval(command):
+        start = command["execution_start_monotonic_s"]
+        return start, start + command["execution_duration_s"]
+
+    synthesis_start, synthesis_end = interval(synthesis_command)
+    benchmark_start, benchmark_end = interval(benchmark_command)
+    overlap = min(synthesis_end, benchmark_end) - max(synthesis_start, benchmark_start)
+    require(overlap > 0, "default synthesis and complete benchmark did not overlap")
+    require(interval(recompare_command)[0] >= benchmark_end,
+            "dependent recomparison started before benchmark completion")
+    experiment.receipt["critical_path_measurements"] = {
+        "overlap_s": overlap,
+        "schedule_elapsed_s": experiment.receipt["schedules"][-1]["elapsed_s"],
+        "children": [{
+            "check": row["check"], "receipt": row["receipt"],
+            "duration_s": commands[row["check"]]["execution_duration_s"],
+            "user_cpu_s": commands[row["check"]]["user_cpu_s"],
+            "system_cpu_s": commands[row["check"]]["system_cpu_s"],
+            "max_rss_kib": commands[row["check"]]["max_rss_kib"],
+            "rss_scope": commands[row["check"]]["rss_scope"],
+            "exit": commands[row["check"]]["exit"],
+            "timed_out": commands[row["check"]]["timed_out"],
+        } for row in rows],
+        "benchmark_cells": len(cells), "benchmark_executions": 27,
+        "recomparison": recompare["summary"],
+    }
+    experiment.receipt["comparison_summary"] = (
+        "default 128-lane top synthesis and complete fifteen-cell/twenty-seven-execution "
+        "benchmark completed concurrently; dependent five-domain recomparison completed; "
+        "critical-path preparation only, not aggregate or physical acceptance")
+
+
+def matrix_contract(experiment, baseline=None):
+    captured = planned_l1_checks(experiment)
+    with (experiment.directory / "matrix-checks.json").open("x") as stream:
+        json.dump(captured, stream, indent=2)
+        stream.write("\n")
+    expected_cache = str(experiment.output / "verilator-builds")
+    require(len(captured) == len({row["check"] for row in captured}), "duplicate matrix checks")
+    cache_users = 0
+    for row in captured:
+        if "--build-cache" in row["argv"]:
+            value = row["argv"][row["argv"].index("--build-cache") + 1]
+            require(value == expected_cache,
+                    "matrix cache binding mismatch: " + row["check"] +
+                    " actual=" + value + " expected=" + expected_cache)
+            cache_users += 1
+    names = {row["check"]: row for row in captured}
+    require(names["default-synthesis"]["priority"] >
+            max(row["priority"] for row in captured if row["check"] != "default-synthesis"),
+            "default synthesis is not highest priority")
+    require(names["five-domain-ledger-recomparison"]["depends_on"] ==
+            ["D5-common-service-benchmark"], "benchmark recomparison dependency lost")
+    for mode in ("awq", "bf16"):
+        require("official-image-" + mode in
+                names["official-reference-" + mode]["depends_on"],
+                "official image/reference dependency lost")
+    experiment.receipt["matrix_contract"] = {
+        "check_count": len(captured), "cache_users": cache_users,
+        "tool_children_executed": 0, "capture": str(experiment.output / "matrix-checks.json")}
+    if baseline is not None:
+        if baseline.is_absolute() or ".." in baseline.parts:
+            raise ValueError("matrix baseline must be project-relative")
+        previous = json.loads((experiment.root / baseline).read_text())
+
+        def normalized(rows):
+            output = str(Path(rows[0]["receipt"]).parent.parent)
+            results = []
+            for row in rows:
+                argv = list(row["argv"])
+                if "--build-cache" in argv:
+                    argv[argv.index("--build-cache") + 1] = "<run-local-build-cache>"
+                argv = [value.replace(output + "/", "<run>/") for value in argv]
+                results.append({"check": row["check"], "argv": argv,
+                                "priority": row["priority"],
+                                "depends_on": row.get("depends_on", [])})
+            return results
+
+        require(normalized(previous) == normalized(captured),
+                "matrix workload/options/dependencies changed beyond cache binding repair")
+        experiment.receipt["matrix_contract"]["baseline"] = {
+            "path": str(baseline), "sha256": hashlib.sha256(
+                (experiment.root / baseline).read_bytes()).hexdigest(),
+            "equal_after_run_path_and_cache_binding_normalization": True}
+    experiment.receipt["comparison_summary"] = (
+        "matrix construction only; all cache argv bindings, priorities and data dependencies checked")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--scope", choices=("contract", "connected", "nested", "retention",
+                                          "matrix", "critical-path"))
+    parser.add_argument("--repair-of")
+    parser.add_argument("--matrix-baseline", type=Path)
+    parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--kind", choices=("normal", "numerical-failure", "compile-failure",
+                                          "nested", "hold"),
+                        default="normal", help=argparse.SUPPRESS)
+    parser.add_argument("--build-cache", type=Path, help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parent.parent
+    if args.worker:
+        return worker(args, root)
+    if args.scope is None:
+        parser.error("--scope is required")
+    experiment = Experiment(root, args.output, sys.orig_argv, verify.product_sources(root))
+    if args.repair_of:
+        experiment.receipt["repair_of"] = args.repair_of
+    started = time.monotonic()
+    try:
+        experiment.run(["python3", "--version"], "python-version")
+        create_budget(experiment, slots=2 if args.scope == "contract" else None)
+        if args.scope == "contract":
+            require(experiment.receipt["resource_budget"]["slots"] >= 2,
+                    "same-key concurrency requires at least two detected resource slots")
+            contract(experiment)
+        elif args.scope == "retention":
+            rows = [
+                command(experiment, "retention", "bindings", "input_binding_check.py"),
+                command(experiment, "retention", "reuse", "build_reuse_check.py",
+                        ["--scope", "contract"])]
+            graph(experiment, rows)
+        elif args.scope == "matrix":
+            matrix_contract(experiment, args.matrix_baseline)
+        elif args.scope == "critical-path":
+            critical_path(experiment)
+        else:
+            representative(experiment, nested=args.scope == "nested")
+        experiment.receipt["measured_elapsed_s"] = time.monotonic() - started
+        experiment.receipt["scope"] = "bounded admitted scheduler-recovery preparation only"
+        experiment.finish(0)
+        return 0
+    except (OSError, RuntimeError, ValueError, KeyError, ArithmeticError) as error:
+        experiment.receipt["measured_elapsed_s"] = time.monotonic() - started
+        experiment.finish(1, error)
+        print(error, file=sys.stderr)
+        return 1
+    finally:
+        os.environ.pop(BUDGET_ENV, None)
+        os.environ.pop(HELD_ENV, None)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
   
