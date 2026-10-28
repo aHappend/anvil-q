@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-10-28T19:59:16.879479+00:00",
+  "timestamp_utc": "2026-10-28T23:07:21.334857+00:00",
   "project_dir": "/data/sufeng/anvil-q2-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -16,10 +16,8 @@
     "lpm_divide_errors": [],
     "warning_10268_count": 0,
     "warning_10268": [],
-    "uninferred_ram_count": 1,
-    "uninferred_rams": [
-      "Info (276007): RAM logic \"anvil_q2_ht_configuration:implementation.configuration|implementation.committed\" is uninferred due to asynchronous read logic File: /data/sufeng/anvil-q2-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q2_ht_configuration.sv Line: 91"
-    ]
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
   },
   "sta_summary": {
     "exit_code": 3,
@@ -40,7 +38,7 @@
       "",
       "    while executing",
       "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_x17oso73.tcl\" line 2)",
+      "    (file \"vulcan_sta_aqcoqd7o.tcl\" line 2)",
       "------------------------------------------------"
     ]
   },
@@ -62,6 +60,6 @@
     "CACHE_BLOCK": 8,
     "MAX_SEQ_LEN": 8
   },
-  "source_sha256": "352b727b096b0516d756e43bc68d50ee3769fde002c8d4d122e3a8375c2db91c",
+  "source_sha256": "72215d4b8ab19f3ff7e301c27ae8fedc81da544ae7813b0ea07196ff2d55e027",
   "applicable": true
 }
