@@ -1092,6 +1092,7 @@ def main():
             run_unicode_rtl(evidence)
             run_official_checkpoint(evidence)
             run_qwen_integration(evidence)
+            run_qwen_boot(evidence)
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "
                 "coverage; exact official-profile conversion/RTL boot/tokenization and "

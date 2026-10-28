@@ -75,7 +75,7 @@ def source_contract():
         "run_detokenizer", "run_boot", "run_config", "run_mapper", "run_bpe",
         "run_normalization", "run_dfa", "run_tokenizer", "run_numerical",
         "run_parameters", "run_adapters", "run_memory", "run_top", "run_top_resets",
-        "run_synthesis", "run_mutations",
+        "run_synthesis", "run_mutations", "run_metadata",
     }
     assert len(roots) == len(set(roots)) and set(roots) == required_roots
     l1 = [node for node in ast.walk(trees["verify"]) if isinstance(node, ast.If)
@@ -99,7 +99,8 @@ def source_contract():
               if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call)
               and isinstance(statement.value.func, ast.Name)]
     assert direct == ["run_qwen_fragments", "run_qwen_regex",
-                      "run_unicode_rtl", "run_official_checkpoint"]
+                      "run_unicode_rtl", "run_official_checkpoint",
+                      "run_qwen_integration", "run_qwen_boot"]
     incomplete = l1[0].body[-1]
     assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
     assert isinstance(incomplete.exc.args[0], ast.Constant)
