@@ -1,10 +1,11 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-10-24T15:20:00.109579+00:00",
+  "timestamp_utc": "2026-10-28T16:17:08.037482+00:00",
   "root": "/data/sufeng/anvil-q3-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
   "rtl_files_checked": 26,
+  "auto_sanitized_nomem2reg_files": [],
   "source_sha256": {
     "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
     "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
@@ -28,7 +29,7 @@
     "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
     "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
     "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
-    "rtl/anvil_q3_tensor_array.sv": "bb675fda22e925b7c8e601a1692584e05541d4293eed037e4047b951895ff92c",
+    "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
     "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
     "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
     "rtl/anvil_q3_weight_prefetcher.sv": "8558f9685b68d99d9b812845789b37815373c5d70c5f362f53d10c7684a83d6d"
@@ -38,6 +39,7 @@
   "netlist_div_mod_hazards": [],
   "mixed_assign_hazards": [],
   "lut_clock_gate_hazards": [],
-  "detail": "Zero combinational divider/modulo, LUT clock-gate, or mixed-assignment hazards detected.",
+  "ast_unroll_loop_hazards": [],
+  "detail": "Zero combinational divider/modulo, LUT clock-gate, AST loop-unroll, or mixed-assignment hazards detected.",
   "applicable": true
 }
