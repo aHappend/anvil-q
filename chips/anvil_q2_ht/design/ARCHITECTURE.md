@@ -232,6 +232,14 @@ creates the successful configuration response. An annul during copying does
 not change the active bank. Failed commits preserve the previous model
 configuration, rather than leaving a partially copied table accessible.
 
+Committed storage has a dedicated reset-free clocked write/read process.
+The read register receives only the addressed RAM word, enabled for an accepted
+in-range lookup. Invalid lookups instead register an error and mask the public
+payload to zero outside the RAM process. This avoids a zero-data bypass on the
+RAM read register that inhibits Quartus synchronous-memory inference, while
+retaining one-edge lookup responses, atomic bank switching and stalled-response
+stability. M20K mapping and physical timing still require native Quartus evidence.
+
 The top must serialize commit/invalidate against accepted token/host activity.
 The chosen integration priority is configuration, then idle host access, then
 a new token. Idle shadow edits do not authorize DDR weight writes while the

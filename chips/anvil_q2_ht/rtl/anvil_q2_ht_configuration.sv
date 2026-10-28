@@ -61,6 +61,7 @@ module anvil_q2_ht_configuration #(
     assign desc_rsp_valid=0; assign desc_rsp_data=0; assign desc_rsp_error=0;
   end else begin: implementation
     localparam ENTRIES=16+16*NUM_LAYERS;
+    localparam COMMITTED_AW=$clog2(2*ENTRIES);
     localparam RANGES=1+3*ENTRIES;
     localparam RW=$clog2(RANGES+1);
     localparam GROUP_SHIFT=$clog2(GROUP_SIZE);
@@ -152,6 +153,12 @@ module anvil_q2_ht_configuration #(
     wire identical_embedding_alias=index==1 && part==0 &&
       prior_entry==0 && prior_part==0 && descriptor==embedding_descriptor;
     wire cfg_transfer=cfg_valid && cfg_ready;
+    wire descriptor_transfer=desc_req_valid && desc_req_ready;
+    wire descriptor_index_valid=desc_req_index<ENTRIES;
+    wire [COMMITTED_AW-1:0] committed_write_address=
+      COMMITTED_AW'((active_bank ? 0 : ENTRIES)+index);
+    wire [COMMITTED_AW-1:0] committed_read_address=
+      COMMITTED_AW'((active_bank ? ENTRIES : 0)+desc_req_index);
     wire can_write=!operation_busy && quiescent;
     wire busy=state!=IDLE;
 
@@ -206,8 +213,17 @@ module anvil_q2_ht_configuration #(
     assign desc_req_ready=rst_n && !annul && !busy && loaded &&
       (!descriptor_valid || desc_rsp_ready);
     assign desc_rsp_valid=rst_n && descriptor_valid;
-    assign desc_rsp_data=desc_rsp_valid ? descriptor_data : 512'd0;
+    assign desc_rsp_data=desc_rsp_valid && !descriptor_error ?
+      descriptor_data : 512'd0;
     assign desc_rsp_error=desc_rsp_valid && descriptor_error;
+
+    always @(posedge clk) begin
+      if (state==COPY && !annul)
+        committed[committed_write_address]<=
+          visible_descriptor(shadow[index],initialized[index]);
+      if (descriptor_transfer && descriptor_index_valid)
+        descriptor_data<=committed[committed_read_address];
+    end
 
     always @(posedge clk) begin
       if (cfg_transfer && cfg_write && can_write && cfg_addr[1:0]==0 &&
@@ -216,14 +232,6 @@ module anvil_q2_ht_configuration #(
       end
       if (state==LOAD && !annul)
         descriptor<=visible_descriptor(shadow[index],initialized[index]);
-      if (state==COPY && !annul)
-        committed[(active_bank ? 0 : ENTRIES)+index]<=
-          visible_descriptor(shadow[index],initialized[index]);
-      if (desc_req_valid && desc_req_ready) begin
-        if (desc_req_index<ENTRIES)
-          descriptor_data<=committed[(active_bank ? ENTRIES : 0)+desc_req_index];
-        else descriptor_data<=0;
-      end
       if (state==SCAN && !scan_loaded && scan_index<range_count) begin
         prior_base<=range_base[scan_index];
         prior_end<=range_end[scan_index];
@@ -263,9 +271,9 @@ module anvil_q2_ht_configuration #(
         changed<=0;
         if (response_valid && cfg_rsp_ready) response_valid<=0;
         if (descriptor_valid && desc_rsp_ready) descriptor_valid<=0;
-        if (desc_req_valid && desc_req_ready) begin
+        if (descriptor_transfer) begin
           descriptor_valid<=1;
-          descriptor_error<=desc_req_index>=ENTRIES;
+          descriptor_error<=!descriptor_index_valid;
         end
         if (annul) begin descriptor_valid<=0; descriptor_error<=0; end
         if (annul && busy) begin

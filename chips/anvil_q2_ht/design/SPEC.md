@@ -191,6 +191,7 @@ not consumable on the same edge that creates them.
 | Commit validation | No successful response before the last validation/copy edge |
 | Commit failure or cancellation | Previously committed descriptor bank/configuration unchanged |
 | Descriptor lookup | Registered response; invalid indices return an error, not aliased data |
+| Descriptor lookup replacement | Accepting a held response and a new lookup on the same edge replaces data/error together; an invalid lookup returns zero data without reading RAM |
 | Descriptor lookup annul | Discard the local held lookup response so a canceled generation cannot block a subsequent request |
 | Concurrent configuration/host/token requests | Integration must arbitrate configuration before host before a new token |
 | Fabric client request | Acceptance reserves command storage and a private response slot |
@@ -232,6 +233,13 @@ Configuration responses persist until accepted. A successful commit atomically
 switches a double-buffered descriptor bank after validation and copying finish.
 An unsuccessful or annulled commit preserves the previous active bank and its
 weight/cache configuration.
+
+Committed descriptor payloads use a dedicated, clock-enabled synchronous RAM
+read register without reset or a non-RAM data assignment. Invalid lookup indices
+do not enable the RAM read; registered response error/valid bits mask the
+unmodified payload register to zero. A valid lookup captured at E0 produces its
+response immediately after E0, with earliest consumption at E1. Backpressure
+holds the payload, validity and error together, without an extra pipeline edge.
 
 Descriptor fields and offsets are those of the admitted 64-byte descriptor.
 All fields are little-endian:
