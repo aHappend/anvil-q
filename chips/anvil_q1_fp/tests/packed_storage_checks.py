@@ -10,6 +10,8 @@ from pathlib import Path
 import random
 import struct
 import sys
+import subprocess
+import time
 import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -19,7 +21,196 @@ from packed_storage import (CHUNK_BYTES, END, ENTRY, FOOTER, HEADER_LIMIT, MAGIC
                             bound, delta_decode,
                             delta_encode, dimensions, pack_array, take_varint,
                             transactions, varint)
-from verify import Evidence, ROOT
+from verify import Evidence, ROOT, now
+
+
+def direct_producers(destination, report, reject):
+    """Run the exact observer storage classes, independently of any RTL build."""
+    import io
+    import shutil
+    from collection_capacity import packed_workload_accounting
+    from packed_storage import array_output, observation_vector
+    from packed_stream import write_stream
+
+    directory = destination / "direct-producers"
+    directory.mkdir()
+    commands = []
+    report["producer_commands"] = commands
+    bindings = {name: sha(ROOT / name) for name in (
+        "tests/packed_producer_fixture.cpp", "tests/production_storage.hpp",
+        "tests/packed_stream.hpp", "tests/packed_stream.py", "tests/packed_storage.py")}
+
+    def run(label, argv, passed=True, data=None):
+        stdout, stderr = directory / (label + ".stdout"), directory / (label + ".stderr")
+        record = {"label": label, "argv": argv, "cwd": ".", "started_at": now(), "timeout_s": 3600,
+                  "source_sha256": bindings, "stdout": str(stdout.relative_to(ROOT)),
+                  "stderr": str(stderr.relative_to(ROOT))}
+        commands.append(record)
+        started = time.monotonic()
+        try:
+            with stdout.open("xb") as out, stderr.open("xb") as err:
+                child = subprocess.run(argv, cwd=ROOT, input=data, stdout=out, stderr=err,
+                                       timeout=3600, check=False)
+            record.update(timed_out=False, exit_code=child.returncode)
+        except subprocess.TimeoutExpired:
+            record.update(timed_out=True, exit_code=None)
+            raise
+        finally:
+            record.update(ended_at=now(), elapsed_s=time.monotonic()-started)
+            with (directory / (label + ".command.json")).open("x") as output:
+                json.dump(record, output, indent=2)
+        require((child.returncode == 0) == passed, "unexpected producer command exit: " + label)
+        return stdout, stderr
+
+    require(shutil.which("c++") is not None, "synthetic packed producer requires existing c++")
+    run("cxx-version", ["c++", "--version"])
+    run("python-version", ["python3", "--version"])
+    executable = directory / "producer"
+    run("compile-storage-only", ["c++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+        "-Itests", "tests/packed_producer_fixture.cpp", "-lz", "-o",
+        str(executable.relative_to(ROOT))])
+    command = [str(executable.relative_to(ROOT))]
+    specials = [0, 0x80000000, 1, 0x80000001, 0x007fffff, 0x00800000, 0x3f800000,
+                0xbf800000, 0x7f7fffff, 0x7f800000, 0xff800000, 0x7fc00017, 0x7f800001]
+    repeats = []
+    for repeat in range(2):
+        packed = directory / ("packed-repeat-" + str(repeat))
+        repeats.append(packed)
+        legacy = directory / ("legacy-repeat-" + str(repeat))
+        for storage, target in (("packed", packed), ("legacy", legacy)):
+            run(f"produce-{storage}-{repeat}", [
+                *command, "produce", str(target.relative_to(ROOT)), storage])
+        for kind, width in (("layers", 24*896), ("logits", 151936)):
+            expected = b"".join(struct.pack("<I", specials[i % len(specials)])
+                                for i in range(width))
+            require(b"".join(Reader(packed / (kind + ".aqp")).chunks()) == expected ==
+                    (legacy / (kind + ".f32")).read_bytes(),
+                    "direct C++ packed/legacy producer changed observed bits")
+        expected_rows = []
+        random_ = 17
+        for i in range(30000):
+            random_ ^= random_ << 13 & 0xffffffff
+            random_ ^= random_ >> 17
+            random_ ^= random_ << 5 & 0xffffffff
+            cycle = (1 << 32) + i*9
+            expected_rows.append((cycle & 0xffffffff, cycle >> 32, (cycle+3) & 0xffffffff,
+                                  (cycle+3) >> 32, i % 2, i % 13, i % 24, i % 7, i,
+                                  151935-i, random_ if i % 2 else random_ ^ 0xffffffff))
+        require(list(transactions(packed / "transactions.aqp")) == expected_rows ==
+                list(transactions(legacy / "transactions.u32.gz")),
+                "direct C++ transaction producer changed cycles/order/fields/write payloads")
+    require(not __import__("os").path.samefile(repeats[0] / "logits.aqp",
+                                              repeats[1] / "logits.aqp"),
+            "direct producer repeats share payloads")
+    for operation in ("fragment", "empty"):
+        target = directory / operation
+        run(operation, [*command, operation, str(target.relative_to(ROOT)), "packed"])
+        if operation == "empty":
+            require(not (target / "layers.aqp").exists() and not (target / "logits.aqp").exists(),
+                    "empty observation created a false complete vector")
+        else:
+            for kind, count in (("layers", 897), ("logits", 3)):
+                reader = Reader(target / (kind + ".aqp"), dtype="<f4",
+                                shape=[count], axes=["fragment"])
+                require(b"".join(reader.chunks()) == b"".join(
+                    struct.pack("<I", specials[i % len(specials)]) for i in range(count)),
+                    "direct paused fragment lost bytes")
+                reject("fragment-not-complete-" + kind, lambda kind=kind: observation_vector(
+                    ROOT, target, kind))
+    for operation, expected in (("overlong", "packed append length/overflow"),
+                                ("codec-failure", "FileExistsError"),
+                                ("badtransaction", "overlapping or out-of-order transaction")):
+        target = directory / operation
+        _, error = run(operation, [*command, operation, str(target.relative_to(ROOT)), "packed"],
+                       passed=False)
+        diagnostic = error.read_text()
+        require(expected in diagnostic and "PACKED_" in diagnostic,
+                "direct C++ producer swallowed a codec error or failed for another reason")
+        if operation == "codec-failure":
+            require((target / "layers.aqp").read_text() == "retained-occupied-output",
+                    "direct producer overwrote an occupied output")
+    overflow = directory / "overlong.aqp"
+    reject("producer-overlong-vector", lambda: write_stream(
+        io.BytesIO(bytes((24*896+1)*4)), overflow, "layers"))
+    reject("producer-partial-float", lambda: write_stream(
+        io.BytesIO(b"\x01"), directory / "partial.aqp", "logits"))
+    reject("producer-partial-transaction", lambda: write_stream(
+        io.BytesIO(bytes(43)), directory / "partial-trace.aqp", "transactions"))
+    reject("producer-failed-seal-not-readable", lambda: Reader(overflow))
+    for kind in ("layers", "logits"):
+        damaged = directory / ("damaged-" + kind + ".aqp")
+        shutil.copy2(repeats[0] / (kind + ".aqp"), damaged)
+        reader = Reader(damaged)
+        with damaged.open("r+b") as output:
+            output.seek(reader.entries[0][0])
+            value = output.read(1)[0]
+            output.seek(reader.entries[0][0]); output.write(bytes([value ^ 1]))
+        reject("direct-observation-corrupt-" + kind,
+               lambda path=damaged: b"".join(Reader(path).chunks()))
+    # Fresh direct FP64 producers exercise the same helper reference_case uses.
+    # Values are finite and chosen by integer bit patterns, not DUT arithmetic.
+    reference = directory / "references"
+    reference.mkdir()
+    reference_bits = (0, 1 << 63, 1, (1 << 63) | 1, 0x3ff0000000000000,
+                      0xbff0000000000000, 0x0010000000000000)
+    raws = {}
+    for kind, shape, axes in (
+        ("layers", [2, 24, 896], ["position", "layer", "component"]),
+        ("logits", [151936, 2], ["vocabulary", "position"])):
+        width = dimensions("<f8", shape, axes) // 8
+        raw = b"".join(struct.pack("<Q", reference_bits[i % len(reference_bits)])
+                       for i in range(width))
+        raws[kind] = raw
+        path, writer = array_output(reference, kind, "<f8", shape, axes, packed=True)
+        with writer:
+            for start in range(0, len(raw), 8192):
+                writer.write(raw[start:start+8192])
+        require(b"".join(Reader(path).chunks()) == raw and
+                not (reference / (kind + ".f64")).exists(),
+                "direct FP64 producer changed bytes or staged a raw file")
+    response = directory / "reference-views.raw"
+    run("cpp-reference-consumer", [*command, "reference", str(response.relative_to(ROOT)),
+        str((reference / "layers.aqp").relative_to(ROOT)),
+        str((reference / "logits.aqp").relative_to(ROOT))])
+    golden = b"".join(
+        raws["layers"][position*24*896*8:(position+1)*24*896*8] +
+        b"".join(raws["logits"][(v*2+position)*8:(v*2+position+1)*8]
+                 for v in range(151936)) for position in range(2))
+    require(response.read_bytes() == golden, "C++ FP64 reference views changed bits/axes")
+    corrupt = directory / "corrupt-reference.aqp"
+    shutil.copy2(reference / "layers.aqp", corrupt)
+    first = Reader(corrupt).entries[0][0]
+    with corrupt.open("r+b") as output:
+        output.seek(first)
+        value = output.read(1)[0]
+        output.seek(first); output.write(bytes([value ^ 1]))
+    _, diagnostic = run("cpp-corrupt-reference", [
+        *command, "reference", str((directory / "rejected-views.raw").relative_to(ROOT)),
+        str(corrupt.relative_to(ROOT)), str((reference / "logits.aqp").relative_to(ROOT))],
+        passed=False)
+    require("damaged/truncated packed payload" in diagnostic.read_text() and
+            "PACKED_PIPE_READ" in diagnostic.read_text(),
+            "corrupt reference failed for an unrelated reason")
+    reject("producer-occupied-reference", lambda: array_output(
+        reference, "layers", "<f8", [2, 24, 896], ["position", "layer", "component"],
+        packed=True), errors=(FileExistsError,))
+    rows = [{"teacher_positions": i % 3 + 1, "greedy_positions_maximum": i % 5 + 2}
+            for i in range(50)]
+    accounting = packed_workload_accounting(rows, 4096)
+    require(accounting["cases"] == 50 and accounting["repeats"] == 2 and
+            accounting["bounded_data_blocks_success_plus_one_retained_failure"] ==
+            2 * accounting["bounded_data_blocks_one_successful_attempt"] and
+            accounting["complete_capacity_bound_bytes"] is None and
+            accounting["trace_data_block_bound_one_attempt"] > 0 and
+            all(item["bound_bytes"] is None for item in accounting["additional_costs"].values())
+            and not accounting["full_workload_storage_qualified"] and
+            not accounting["collection_resumption_authorized"],
+            "whole-workload accounting omitted failure/trace/unbounded costs")
+    report["positive_cases"].append({
+        "name": "direct-python-cpp-producer-consumers", "independent_producer_repeats": 2,
+        "transactions_compared_per_repeat": 30000, "reference_view_bytes": len(golden),
+        "raw_production_staging_bytes": 0, "cpp_build_contains_rtl": False,
+        "synthetic_complete_capacity_accounting": accounting})
 
 
 def integrated(destination, report, reject):
@@ -33,6 +224,7 @@ def integrated(destination, report, reject):
     from production_schedule import audit_rows, binary_rows, schedule
     from production_sim import compare_greedy, compare_teacher
     from production_trace import replay
+    from production_resume import audit as audit_prefix, exact_fragments
     from reference_collector import collect
     from retention_inventory import selftest as retention_selftest
     from transaction_retention import inspect_trace
@@ -152,6 +344,37 @@ def integrated(destination, report, reject):
                         positions, directory / (mode + "-teacher"), synthetic=True)
         compare_greedy(Observations(), "synthetic-integrated", mode, runs, [53, 89],
                        directory / (mode + "-greedy.json"), [17])
+        events = runs[0] / "events.jsonl"
+        with events.open("x") as output:
+            for position in range(positions):
+                for layer in range(24):
+                    output.write(json.dumps({"event": "layer", "position": position,
+                                             "layer": layer, "cycle": 100+position*24+layer})
+                                 + "\n")
+        artifacts = [{"path": str(path.relative_to(ROOT)), "sha256": sha(path)}
+                     for path in [events, *(runs[0] / f"position-{position}" / "layers.aqp"
+                                            for position in range(positions))]]
+        head = {"binding": {"workload": "teacher", "mode": mode,
+                           "arguments": ["-"]*8 + [
+                               references[mode]["layers"]["path"],
+                               references[mode]["logits"]["path"], str(positions)]},
+                "artifacts": artifacts}
+        observer = Observations()
+        observer.path = directory / (mode + "-synthetic-prefix-audit")
+        observer.path.mkdir()
+
+        def ancestry(ev, item, chain):
+            chain.append(head)
+            return head
+
+        # Ancestry admission is deliberately mocked; only storage-consumer
+        # numerical/shape assertions are exercised, never a genuine checkpoint.
+        with patch("production_resume.validate_segment", side_effect=ancestry):
+            audit_prefix(observer, {"synthetic": True})
+        require(load_json(observer.path / "layer-prefix-comparisons.json")["layers"] and
+                bytes(exact_fragments([runs[0]], "layers.f32", 0)) ==
+                struct.pack("<" + "f"*len(layer_values), *layer_values),
+                "packed prefix audit/fragment consumer failed")
         require(not list((directory / (mode + "-teacher")).rglob("*.f32")),
                 "packed teacher comparison duplicated observation layers")
         reject(mode + "-repeat-run-alias", lambda: compare_greedy(
@@ -180,6 +403,7 @@ def integrated(destination, report, reject):
             "name": "production-packed-comparison-call-sites", "mode": mode,
             "synthetic_positions": positions, "separately_written_repeats": 2,
             "layer_comparisons": positions * 24, "logit_comparisons": positions,
+            "synthetic_prefix_audit_comparisons": positions * 24,
             "inference_executed": False, "rtl_executed": False})
 
     # Keep mathematical reference code out of this standard-library-only probe.
@@ -716,9 +940,11 @@ def worker(destination):
     reject("cross-chunk-transaction-order", lambda: list(transactions(reordered)))
     integrated(destination, report, reject)
     checkpoint_fragments(destination, report, reject)
+    direct_producers(destination, report, reject)
     report["tools"] = {"python": sys.version, "zlib_runtime": zlib.ZLIB_RUNTIME_VERSION}
     report["full_workload_capacity_qualified"] = False
-    report["production_format_enabled"] = False
+    report["direct_packed_producers_opt_in_implemented"] = True
+    report["production_collection_enabled"] = False
     with (destination / "qualification.json").open("x") as output:
         json.dump(report, output, indent=2)
         output.write("\n")
@@ -730,6 +956,7 @@ def main():
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--destination", type=Path)
     parser.add_argument("--repair-of", type=Path)
+    parser.add_argument("--preceding-receipt", type=Path)
     args = parser.parse_args()
     if args.worker:
         require(args.destination is not None, "packed diagnostic destination missing")
@@ -745,6 +972,11 @@ def main():
             previous = artifact_path(ROOT, str(args.repair_of))
             require(load_json(previous)["status"] == "failed", "repair link did not fail")
             ev.receipt["repair_of"] = {"path": str(args.repair_of), "sha256": sha(previous)}
+        if args.preceding_receipt:
+            previous = artifact_path(ROOT, str(args.preceding_receipt))
+            load_json(previous)
+            ev.receipt["preceding_diagnostic"] = {
+                "path": str(args.preceding_receipt), "sha256": sha(previous)}
         passed = ev.run("codec-roundtrip-corruption", [
             sys.executable, "tests/packed_storage_checks.py", "--worker", "--destination",
             str((ev.path / "synthetic").relative_to(ROOT))], timeout=3600)
@@ -752,7 +984,22 @@ def main():
                      full_workload_capacity_qualified=False, collection_resumption_authorized=False)
         if passed:
             ev.receipt["qualification"] = load_json(ev.path / "synthetic/qualification.json")
+            assessed = ev.run("complete-packed-capacity-assessment", [
+                sys.executable, "tests/collection_capacity.py", "--worker"], timeout=3600)
+            require(assessed, "complete capacity accounting diagnostic failed")
+            assessment = load_json(ev.path / "complete-packed-capacity-assessment.stdout")
+            ev.receipt["complete_packed_capacity"] = assessment[
+                "direct_packed_complete_workload_accounting"]
+            require(assessment["scope"]["cases"] == 50 and
+                    assessment["scope"]["repeats"] == 2 and
+                    assessment["scope"]["modes"] == ["bf16", "fp16", "w4a16"],
+                    "capacity assessment omitted required workload")
+            ev.assertion("full_workload_storage_accounted_not_qualified", True,
+                         complete_capacity_bound_bytes=None,
+                         full_workload_storage_qualified=False,
+                         collection_resumption_authorized=False)
     except (ValueError, OSError, KeyError) as error:
+        passed = False
         ev.assertion("packed_codec_diagnostic_exception", False, diagnostic=repr(error))
     finally:
         ev.receipt["outputs"] = {str(path.relative_to(ROOT)): sha(path)

@@ -18,6 +18,8 @@ from verify import Evidence, ROOT
 
 
 MODES = ("checkpoint", "bf16", "fp16", "w4a16")
+REFERENCE_SOURCES = ("tests/teacher_reference.py", "tests/fp64_reference.py",
+                     "tests/awq_prepare.py", "tests/packed_storage.py")
 
 
 def descriptor(path):
@@ -37,7 +39,7 @@ def decoded_rows(stream, raw, mode):
     return decode(raw, stream.tensors["model.embed_tokens.weight"]["dtype"])
 
 
-def reference_case(model, config, mode, tokens, destination):
+def reference_case(model, config, mode, tokens, destination, *, packed=False):
     require(tokens and len(tokens) <= 32768 and
             all(type(token) is int and 0 <= token < 151936 for token in tokens),
             "invalid full teacher context")
@@ -46,8 +48,11 @@ def reference_case(model, config, mode, tokens, destination):
     require(layers.shape == (24, len(tokens), 896) and np.isfinite(layers).all(),
             "invalid teacher layer references")
     destination.mkdir(parents=True, exist_ok=False)
-    layers_path, logits_path = destination / "layers.f64", destination / "logits.f64"
-    with layers_path.open("xb") as output:
+    from packed_storage import array_output
+    layers_path, output = array_output(
+        destination, "layers", "<f8", [len(tokens), 24, 896],
+        ["position", "layer", "component"], packed=packed)
+    with output:
         output.write(np.transpose(layers, (1, 0, 2)).astype("<f8").tobytes())
     final = layers[-1]
     epsilon = (float(np.float32(config["rms_norm_eps"])) if mode in ("bf16", "fp16")
@@ -57,7 +62,10 @@ def reference_case(model, config, mode, tokens, destination):
     embedding = stream.get("model.embed_tokens.weight")
     argmax = np.zeros(len(tokens), dtype=np.int64)
     maximum = np.full(len(tokens), -np.inf)
-    with logits_path.open("xb") as output:
+    logits_path, output = array_output(
+        destination, "logits", "<f8", [151936, len(tokens)],
+        ["vocabulary", "position"], packed=packed)
+    with output:
         for start in range(0, len(embedding), 1024):
             rows = decoded_rows(stream, embedding[start:start + 1024], mode)
             logits = rows @ final.T
@@ -107,9 +115,16 @@ def qualification_worker(args):
     native = load_json(args.native_reference_receipt)
     awq = load_json(args.awq_reference_receipt)
     for mode in MODES:
-        actual = reference_case(model, config, mode, tokens, args.destination / mode)
-        layers = np.fromfile(ROOT / actual["layers"]["path"], dtype="<f8").reshape(3, 24, 896)
-        logits = np.fromfile(ROOT / actual["logits"]["path"], dtype="<f8").reshape(151936, 3)
+        actual = reference_case(model, config, mode, tokens, args.destination / mode,
+                                packed=args.packed_storage)
+        def values(kind, shape):
+            path = ROOT / actual[kind]["path"]
+            if path.suffix == ".aqp":
+                from packed_storage import Reader
+                return np.frombuffer(b"".join(Reader(path).chunks()), dtype="<f8").reshape(shape)
+            return np.fromfile(path, dtype="<f8").reshape(shape)
+        layers = values("layers", (3, 24, 896))
+        logits = values("logits", (151936, 3))
         retained = awq if mode == "w4a16" else native
         maximum_layer, maximum_logit = 0., 0.
         for position in range(3):
@@ -150,8 +165,7 @@ def full_worker(args):
         "benchmark_manifest": descriptor(ROOT / "tests/data/benchmark_manifest.json"),
         "arithmetic": "ieee-fp64", "independent_of_rtl": True,
         "dependencies": {"numpy": np.__version__, "python": sys.version},
-        "reference_sources": {name: sha(ROOT / name) for name in (
-            "tests/teacher_reference.py", "tests/fp64_reference.py", "tests/awq_prepare.py")},
+        "reference_sources": {name: sha(ROOT / name) for name in REFERENCE_SOURCES},
         "limitations": "Complete teacher reference arrays only; no DUT comparisons, "
                         "greedy outputs, task scores, cycles, timing, resources or hardware evidence.",
         "cases": []}
@@ -163,7 +177,8 @@ def full_worker(args):
             row = {"case": identifier, "teacher_tokens": case["teacher_tokens"], "modes": {}}
             for mode in MODES:
                 row["modes"][mode] = reference_case(
-                    model, config, mode, tokens, args.destination / f"case-{number:02d}" / mode)
+                    model, config, mode, tokens, args.destination / f"case-{number:02d}" / mode,
+                    packed=args.packed_storage)
                 print(json.dumps({"case": identifier, "mode": mode,
                                   "teacher_positions": len(tokens), "layers": 24, "vocabulary": 151936}),
                       flush=True)
@@ -182,6 +197,7 @@ def main():
     parser.add_argument("--native-reference-receipt", type=Path)
     parser.add_argument("--awq-reference-receipt", type=Path)
     parser.add_argument("--qualification-receipt", type=Path)
+    parser.add_argument("--packed-storage", action="store_true")
     args = parser.parse_args()
     for key, value in vars(args).items():
         if isinstance(value, Path):
@@ -200,6 +216,8 @@ def main():
         destination = ev.path / "reference-outputs"
         command = [sys.executable, "tests/teacher_reference.py", "--worker",
                    "--destination", str(destination.relative_to(ROOT))]
+        if args.packed_storage:
+            command.append("--packed-storage")
         require(ev.run("numpy-version", [sys.executable, "-c",
                                        "import numpy,sys; print(sys.version); print(numpy.__version__)"],
                        timeout=30), "reference dependency missing")
@@ -226,13 +244,18 @@ def main():
             qualification = qualified(ev, args.qualification_receipt)
             require(any(row["name"] == "teacher_reference_qualification_completed" and row["passed"]
                         for row in qualification["assertions"]), "missing batched qualification assertion")
-            dependencies = ("tests/teacher_reference.py", "tests/fp64_reference.py", "tests/awq_prepare.py")
+            dependencies = REFERENCE_SOURCES
             require(all(qualification["source_sha256"][name] == sha(ROOT / name)
                         for name in dependencies), "qualified reference implementation changed")
             require(all(qualification["data_sha256"][model[key]["path"]] == model[key]["sha256"]
                         for key in ("config", "tokenizer")), "qualified model inputs changed")
             positions = sum(len(case[3]) for case in cases.values())
             expected_bytes = positions * len(MODES) * (24 * 896 + 151936) * 8
+            if args.packed_storage:
+                from packed_storage import bound
+                expected_bytes = sum(len(MODES) * (
+                    bound(len(case[3]) * 24 * 896 * 8) +
+                    bound(len(case[3]) * 151936 * 8)) for case in cases.values())
             free = shutil.disk_usage(ROOT).free
             reserve = max(1024 ** 3, free // 10)
             require(ev.assertion("reference_output_capacity", free >= expected_bytes + reserve,

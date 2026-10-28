@@ -193,11 +193,20 @@ class Writer:
             for _, completed, _ in transaction_fields(raw, self.previous_cycle):
                 self.previous_cycle = completed
         self.total += len(raw)
-        self.buffer.extend(raw)
         size = self.header["chunk_bytes"]
-        while len(self.buffer) >= size:
-            self._chunk(bytes(self.buffer[:size]))
-            del self.buffer[:size]
+        view = memoryview(raw)
+        offset = 0
+        if self.buffer:
+            count = min(size - len(self.buffer), len(view))
+            self.buffer.extend(view[:count])
+            offset = count
+            if len(self.buffer) == size:
+                self._chunk(bytes(self.buffer))
+                self.buffer.clear()
+        while len(view) - offset >= size:
+            self._chunk(bytes(view[offset:offset+size]))
+            offset += size
+        self.buffer.extend(view[offset:])
 
     def _chunk(self, raw):
         if self.header["kind"] == "transactions":
@@ -427,6 +436,15 @@ def pack_array(source, destination, dtype, shape, axes):
             while raw := stream.read(CHUNK_BYTES):
                 writer.append(raw)
 
+def array_output(directory, name, dtype, shape, axes, *, packed=False):
+    """Open a direct producer, retaining the legacy byte layout when requested."""
+    dimensions(dtype, shape, axes)
+    require(name in ("layers", "logits") and dtype in ("<f4", "<f8"),
+            "invalid producer array")
+    suffix = ".aqp" if packed else ".f64" if dtype == "<f8" else ".f32"
+    path = Path(directory) / (name + suffix)
+    return path, (Writer(path, dtype=dtype, shape=shape, axes=axes) if packed else path.open("xb"))
+
 
 def array_bytes(path, item, dtype, width):
     """Decode a hash-bound array descriptor, retaining legacy flat files."""
@@ -515,6 +533,42 @@ def observation_vector(root, directory, kind, layer=None):
     expected = (24 * 896 if kind == "layers" else 151936) * 4
     require(flat.stat().st_size == expected, "incomplete observed production " + kind)
     return {"path": str(flat.relative_to(root)), "sha256": sha(flat)}
+
+def observation_chunks(directory, kind):
+    """Decode a complete or explicitly partial checkpoint observation."""
+    require(kind in ("layers", "logits"), "invalid observation fragment kind")
+    directory = Path(directory)
+    paths = [path for path in (directory / (kind + ".aqp"), directory / (kind + ".f32"))
+             if path.exists()]
+    require(len(paths) <= 1, "ambiguous packed/legacy observation fragment")
+    if not paths:
+        return
+    path = paths[0]
+    shape, axes = ([24, 896], ["layer", "component"]) if kind == "layers" else (
+        [151936], ["vocabulary"])
+    maximum = math.prod(shape) * 4
+    if path.suffix == ".aqp":
+        reader = Reader(path)
+        require(reader.header["kind"] == "array" and reader.header["dtype"] == "<f4"
+                and reader.total <= maximum and
+                (reader.header["shape"], reader.header["axes"]) in (
+                    (shape, axes), ([reader.total // 4], ["fragment"])),
+                "invalid packed observation fragment shape/axes")
+        yield from reader.chunks()
+    else:
+        require(path.stat().st_size <= maximum and path.stat().st_size % 4 == 0,
+                "invalid legacy observation fragment size")
+        with path.open("rb") as source:
+            while raw := source.read(CHUNK_BYTES):
+                require(len(raw) % 4 == 0, "partial observation fragment element")
+                yield raw
+
+
+def transaction_path(directory):
+    paths = [path for path in (Path(directory) / "transactions.aqp",
+                              Path(directory) / "transactions.u32.gz") if path.exists()]
+    require(len(paths) == 1, "missing or ambiguous packed/legacy transaction witness")
+    return paths[0]
 
 
 def transaction_chunks(path):

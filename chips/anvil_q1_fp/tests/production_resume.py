@@ -6,6 +6,8 @@ reset. Incomplete observations never become tests/data/full_model_results.json.
 """
 
 import argparse
+from contextlib import ExitStack
+import hashlib
 import itertools
 import json
 import math
@@ -17,13 +19,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from architecture import metrics
 from benchmark import artifact_path, load_json, require, sha
 from benchmark_inputs import write_json
-from production_checkpoint import execution, validate_segment, trace_rows
+from production_checkpoint import event_record, execution, validate_segment, trace_rows
 from production_sim import descriptor
+from packed_storage import Reader, observation_chunks, transaction_path
 from verify import Evidence, ROOT
 
 
 def exact_fragments(runs, filename, position=None):
     for run in runs:
+        if filename in ("layers.f32", "logits.f32"):
+            directory = run / f"position-{position}"
+            for raw in observation_chunks(directory, filename.split(".")[0]):
+                yield from raw
+            continue
         path = run / (f"position-{position}" if position is not None else "") / filename
         if path.exists():
             with path.open("rb") as source:
@@ -77,9 +85,9 @@ def qualify(ev, item, cycles):
                 "late checkpoint completed summaries differ")
     compared = 0
     resumed_rows = itertools.chain.from_iterable(
-        trace_rows(path / "transactions.u32.gz") for path in runs)
+        trace_rows(transaction_path(path)) for path in runs)
     for actual, wanted in itertools.zip_longest(
-            resumed_rows, trace_rows(baseline_path / "transactions.u32.gz")):
+            resumed_rows, trace_rows(transaction_path(baseline_path))):
         require(actual is not None and actual == wanted, "late checkpoint public trace differs")
         compared += 1
     require(compared > 0, "no late checkpoint public transaction comparisons")
@@ -109,27 +117,37 @@ def audit(ev, item):
     require(binding["workload"] == "teacher", "layer prefix audit requires matching teacher reference")
     layers_path = artifact_path(ROOT, binding["arguments"][8])
     positions = int(binding["arguments"][10])
-    require(layers_path.stat().st_size == positions * 24 * 896 * 8,
-            "teacher reference layer shape")
+    reference_reader = None
+    if layers_path.suffix == ".aqp":
+        reference_reader = Reader(layers_path, dtype="<f8", shape=[positions, 24, 896],
+                                  axes=["position", "layer", "component"])
+    else:
+        require(layers_path.stat().st_size == positions * 24 * 896 * 8,
+                "teacher reference layer shape")
     completed = {}
     fragments = {}
     for row in reversed(chain):
         for entry in row["artifacts"]:
             path = ROOT / entry["path"]
             if path.name == "events.jsonl":
-                for line in path.read_text().splitlines():
-                    event = json.loads(line)
-                    if event["event"] == "layer":
-                        key = event["position"], event["layer"]
-                        require(key not in completed, "duplicate completed layer event")
-                        completed[key] = event
-            elif path.name == "layers.f32":
+                with path.open("rb") as events:
+                    for line in events:
+                        event = event_record(line)
+                        if event["event"] == "layer":
+                            key = event["position"], event["layer"]
+                            require(key not in completed, "duplicate completed layer event")
+                            completed[key] = event
+            elif path.name in ("layers.f32", "layers.aqp"):
                 position = int(path.parent.name.removeprefix("position-"))
-                fragments.setdefault(position, bytearray()).extend(path.read_bytes())
+                # The helper rejects duplicate encodings and checks fragment
+                # dtype/axes and every decoded chunk before using the bits.
+                for raw in observation_chunks(path.parent, "layers"):
+                    fragments.setdefault(position, bytearray()).extend(raw)
     require(completed, "no complete real production layer observations")
     results = []
     observed_keys = set()
-    with layers_path.open("rb") as reference:
+    with ExitStack() as stack:
+        reference = None if reference_reader else stack.enter_context(layers_path.open("rb"))
         for position, raw in sorted(fragments.items()):
             count = len(raw) // (896 * 4)
             require(position < positions and count <= 24, "partial layer vector shape")
@@ -139,8 +157,14 @@ def audit(ev, item):
                 require((position, layer) in completed, "nonconsecutive completed layers")
                 offset = layer * 896 * 4
                 actual = struct.unpack("<896f", raw[offset:offset + 896*4])
-                reference.seek((position * 24 + layer) * 896 * 8)
-                expected = struct.unpack("<896d", reference.read(896 * 8))
+                offset = (position * 24 + layer) * 896 * 8
+                if reference_reader:
+                    raw_expected = reference_reader.read(offset, 896 * 8)
+                else:
+                    reference.seek(offset)
+                    raw_expected = reference.read(896 * 8)
+                require(len(raw_expected) == 896 * 8, "truncated completed-layer reference")
+                expected = struct.unpack("<896d", raw_expected)
                 require(all(math.isfinite(value) for value in (*actual, *expected)),
                         "nonfinite completed production layer/reference")
                 observed_keys.add((position, layer))
@@ -186,10 +210,26 @@ def compare_timeout(ev, old_path, item):
     require(hashes == {name: value for name, value in binding["build_sources"].items()
                        if name.startswith("rtl/")}, "RTL differs across timeout recovery")
     old_args, new_args = previous["argv"], binding["arguments"]
+    def reference_hash(path, kind):
+        positions = int(new_args[10])
+        shape, axes = (([positions, 24, 896], ["position", "layer", "component"])
+                       if kind == "layers" else
+                       ([151936, positions], ["vocabulary", "position"]))
+        if path.suffix != ".aqp":
+            require(path.stat().st_size == math.prod(shape) * 8,
+                    "timeout reference array shape differs")
+            return sha(path)
+        reader = Reader(path, dtype="<f8", shape=shape, axes=axes)
+        digest = hashlib.sha256()
+        for raw in reader.chunks():
+            digest.update(raw)
+        return digest.hexdigest()
     for old_index, new_index in ((1, 0), (2, 1), (3, 2), (9, 8), (10, 9)):
         left = artifact_path(ROOT, old_args[old_index])
         right = artifact_path(ROOT, new_args[new_index])
-        require(sha(left) == sha(right), "timeout recovery input/reference differs")
+        kind = "layers" if old_index == 9 else "logits"
+        require((reference_hash(left, kind) == reference_hash(right, kind)) if old_index in (9, 10)
+                else (sha(left) == sha(right)), "timeout recovery input/reference differs")
         ev.receipt.setdefault("data_sha256", {}).update({
             str(left.relative_to(ROOT)): sha(left), str(right.relative_to(ROOT)): sha(right)})
     require(old_args[5:9] == new_args[4:8], "timeout recovery workload differs")
@@ -203,10 +243,15 @@ def compare_timeout(ev, old_path, item):
                 for lines in logs]
     require(progress[0] == progress[1] and progress[0],
             "timeout recovery observed progress differs")
-    before = artifact_path(ROOT, old_args[4]) / "position-0/layers.f32"
-    after = (ROOT / head["state"]["path"]).parent / "position-0/layers.f32"
-    require(before.stat().st_size > 0 and sha(before) == sha(after),
-            "timeout recovery completed layer bytes differ")
+    before = artifact_path(ROOT, old_args[4])
+    after = (ROOT / head["state"]["path"]).parent
+    identical_bytes = 0
+    for left, right in itertools.zip_longest(
+            exact_fragments([before], "layers.f32", 0),
+            exact_fragments([after], "layers.f32", 0)):
+        require(left is not None and left == right, "timeout recovery completed layer bytes differ")
+        identical_bytes += 1
+    require(identical_bytes > 0, "timeout recovery has no completed layer bytes")
     ev.receipt["repair_of"] = descriptor(old_path)
     result = {
         "original_timeout_receipt": descriptor(old_path),
@@ -216,7 +261,7 @@ def compare_timeout(ev, old_path, item):
         "current_elapsed_s": current["elapsed_s"], "end_cycle": head["end_cycle"],
         "identical_rtl": True, "identical_inputs_and_selected_references": True,
         "identical_retained_progress_lines": len(progress[0]),
-        "identical_completed_layer_bytes": before.stat().st_size,
+        "identical_completed_layer_bytes": identical_bytes,
         "complete_benchmark": False,
         "limitations": "Procedural recovery only. C++ collection/serialization changed; "
                       "commands and stop conditions differ. No same-command causal "

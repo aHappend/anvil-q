@@ -27,6 +27,7 @@ BINDINGS = (
     "tests/reference_capacity.py", "tests/data/model_manifest.json",
     "tests/data/benchmark_manifest.json", "tests/retention_storage.py",
     "tests/packed_storage.py",
+    "tests/packed_stream.py", "tests/packed_stream.hpp", "tests/production_storage.hpp",
 )
 
 
@@ -177,7 +178,7 @@ def array_allocation(rows, block, modes=3):
 
 
 def packed_array_allocation(rows, block, modes=3):
-    """Prospective no-ratio bound; not the enabled producer or a fit certificate."""
+    """Direct-producer no-ratio bound; not production permission or a fit certificate."""
     from packed_storage import bound
     require(type(block) is int and block > 0 and type(modes) is int and 1 <= modes <= 3,
             "invalid packed capacity block/modes")
@@ -197,7 +198,8 @@ def packed_array_allocation(rows, block, modes=3):
         files += sum(count for count, _ in sizes)
         maximum_case = max(maximum_case, case)
     return {
-        "format": "anvil-packed-v1", "prospective_only": True, "producer_enabled": False,
+        "format": "anvil-packed-v1", "prospective_only": False,
+        "producer_opt_in_implemented": True, "production_collection_enabled": False,
         "fragment_bytes": block, "cases": len(rows), "modes": modes, "repeats": REPEATS,
         "rounded_array_raw_fallback_bound_one_successful_attempt": total,
         "rounded_array_raw_fallback_bound_success_plus_one_retained_failure": 2 * total,
@@ -211,6 +213,104 @@ def packed_array_allocation(rows, block, modes=3):
         "limitation": "Logical container raw-fallback bounds rounded to data blocks only. "
                       "Not measured encoded bytes, a compression-ratio prediction, a full "
                       "filesystem allocation bound, storage reservation or collection authority.",
+    }
+
+
+def packed_workload_accounting(rows, block, modes=MODES):
+    """Charge the full retained workload, explicitly exposing unbounded costs."""
+    from packed_storage import bound
+    require(isinstance(modes, (tuple, list)) and modes and len(set(modes)) == len(modes)
+            and all(mode in MODES for mode in modes), "invalid accounting modes")
+    arrays = packed_array_allocation(rows, block, len(modes))
+
+    def rounded(size):
+        return (size + block - 1) // block * block
+
+    traces = support = trace_files = support_files = 0
+    largest_case = 0
+    transaction_count = 0
+    for row in rows:
+        n, g = row["teacher_positions"], row["greedy_positions_maximum"]
+        require(type(n) is int and 0 < n <= 32768 and type(g) is int and 0 <= g <= 32768,
+                "invalid complete accounting positions")
+        # A partial teacher-only run has no greedy work. Full qualification
+        # always supplies the prompt+127 maximum, not observed early EOS.
+        case_traces = case_support = 0
+        for mode in modes:
+            precision = 0 if mode == "w4a16" else 1 if mode == "bf16" else 2
+            for positions in (n, g):
+                if not positions:
+                    continue
+                count = transactions(PRODUCTION, precision, positions)
+                case_traces += REPEATS * rounded(bound(count * 44, transactions=True))
+                transaction_count += REPEATS * count
+                trace_files += REPEATS
+                # Collector retains one token-text and one RoPE file per
+                # workload/mode; repeats share inputs, never observations.
+                case_support += rounded(positions * 7) + rounded((positions + 1) * 64 * 4)
+                support_files += 2
+        case_support += rounded(n * 10 + 5)  # indented reference-worker JSON tokens
+        support_files += 1
+        traces += case_traces
+        support += case_support
+        case_arrays = packed_array_allocation([row], block, len(modes))[
+            "rounded_array_raw_fallback_bound_one_successful_attempt"]
+        largest_case = max(largest_case, case_arrays + case_traces + case_support)
+    finite = arrays["rounded_array_raw_fallback_bound_one_successful_attempt"] + traces + support
+    files = arrays["array_payload_inodes_one_successful_attempt"] + trace_files + support_files
+    return {
+        "format": "anvil-packed-v1", "cases": len(rows), "modes": list(modes),
+        "repeats": REPEATS, "greedy_limit": 128,
+        "array_data": arrays,
+        "transactions_one_attempt_maximum": transaction_count,
+        "trace_data_block_bound_one_attempt": traces,
+        "token_and_rope_data_block_bound_one_attempt": support,
+        "bounded_data_blocks_one_successful_attempt": finite,
+        "bounded_data_blocks_success_plus_one_retained_failure": 2 * finite,
+        "bounded_payload_inodes_one_successful_attempt": files,
+        "bounded_payload_inodes_success_plus_one_retained_failure": 2 * files,
+        "retained_failed_attempt": {
+            "count": 1, "charged_bounded_data_blocks": finite,
+            "policy": "Charge a complete additional attempt; never discard partial failures. "
+                      "Already retained attempts are included in current filesystem used bytes."},
+        "peak_staging": {
+            "collection_parallelism": 1,
+            "raw_array_or_trace_duplicate_disk_bytes": 0,
+            "largest_case_bounded_data_blocks": largest_case,
+            "cumulative_retained_bounded_data_blocks": 2 * finite,
+            "receipt_atomic_staging_bound_bytes": None,
+            "build_products_and_temporary_files_bound_bytes": None,
+            "note": "All case outputs accumulate. Codec buffers are RAM, not disk staging; "
+                    "partially written packed files and their final indexes are included in "
+                    "container bounds. Unknown receipt/build staging is additional."},
+        "host_memory": {
+            "payload_chunk_bytes": 1024 * 1024,
+            "complete_host_memory_bound_bytes": None,
+            "limitation": "Payload buffering is chunk-bounded, but writer/reader indexes "
+                         "grow with decoded chunk count. FP64 model/activation temporaries "
+                         "and complete-workload index RAM have not been qualified."},
+        "additional_costs": {
+            "reference_and_comparison_view_json_indexes": {
+                "bound_bytes": None, "reason": "No enforced serialized metadata byte limit."},
+            "events_stdout_stderr_and_tool_logs": {
+                "bound_bytes": None, "reason": "No enforced cumulative producer/log byte limit."},
+            "incremental_collection_indexes_and_receipts": {
+                "bound_bytes": None, "reason": "Retained progress and atomic receipt staging "
+                "depend on unbounded metadata/log records and path lengths."},
+            "memory_mapping_tables": {
+                "bound_bytes": None, "reason": "No enforced path/serialized table byte limit."},
+            "build_products_and_peak_build_staging": {
+                "bound_bytes": None, "reason": "Tool output size has no enforced capacity cap."},
+            "filesystem_directories_extents_and_inode_metadata": {
+                "bound_bytes": None, "reason": "Data-block rounding is not a filesystem "
+                "metadata allocation guarantee."},
+        },
+        "compression_ratio_assumed": False,
+        "reference_view_payload_duplicates": 0,
+        "repeat_observations_shared": False,
+        "complete_capacity_bound_bytes": None,
+        "full_workload_storage_qualified": False,
+        "collection_resumption_authorized": False,
     }
 
 
@@ -288,6 +388,14 @@ def assess():
     available_bytes = filesystem["available_bytes"]
     allocation = array_allocation(rows, filesystem["fragment_bytes"])
     packed_allocation = packed_array_allocation(rows, filesystem["fragment_bytes"])
+    packed_complete = packed_workload_accounting(rows, filesystem["fragment_bytes"])
+    packed_complete["available_bytes_at_assessment"] = available_bytes
+    packed_complete["bounded_data_budget_gap_before_unbounded_costs"] = max(
+        0, packed_complete["bounded_data_blocks_success_plus_one_retained_failure"] -
+        available_bytes)
+    packed_complete["budget_gap_meaning"] = (
+        "Additional bytes to provision the no-compression-fallback data-block budget, "
+        "not a lower bound on actual encoded size or proof that a compression ratio fits.")
     from packed_storage import bound as packed_bound
     packed_trace_bound = sum(
         REPEATS * sum(packed_bound(row["trace_workload"][mode][name] * 44,
@@ -325,6 +433,7 @@ def assess():
             "copy_fallback_allowed": False},
         "filesystem_array_data_planning": allocation,
         "prospective_packed_array_data_bound": packed_allocation,
+        "direct_packed_complete_workload_accounting": packed_complete,
         "prospective_packed_trace_bound": {
             "format": "anvil-packed-v1", "producer_enabled": False,
             "raw_fallback_logical_bytes_one_successful_attempt": packed_trace_bound,

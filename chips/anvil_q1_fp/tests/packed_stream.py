@@ -6,6 +6,7 @@ from pathlib import Path
 import struct
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import artifact_path, require
 from packed_storage import CHUNK_BYTES, Reader, Writer
 

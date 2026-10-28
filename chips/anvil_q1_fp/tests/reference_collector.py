@@ -17,7 +17,7 @@ from verify import Evidence, ROOT
 
 
 REFERENCE_SOURCES = ("tests/teacher_reference.py", "tests/fp64_reference.py",
-                     "tests/awq_prepare.py")
+                     "tests/awq_prepare.py", "tests/packed_storage.py")
 MODES = ("checkpoint", "bf16", "fp16", "w4a16")
 
 
@@ -189,7 +189,8 @@ def qualification_worker(args):
         paths = {}
         for kind in ("layers", "logits"):
             matches = [name for name in record["outputs"]
-                       if name.endswith(f"/{mode}/{kind}.f64")]
+                       if any(name.endswith(f"/{mode}/{kind}.{suffix}")
+                              for suffix in ("f64", "aqp"))]
             require(len(matches) == 1, "missing qualified collector input")
             paths[kind] = ROOT / matches[0]
             require(sha(paths[kind]) == record["outputs"][matches[0]],
@@ -197,25 +198,49 @@ def qualification_worker(args):
         require(paths["layers"].parent == paths["logits"].parent,
                 "collector inputs belong to different modes")
         recomputed = args.destination / ("recomputed-" + mode)
-        reference_case(model, config, mode, [config["bos_token_id"], 17, 53], recomputed)
+        reference_case(model, config, mode, [config["bos_token_id"], 17, 53], recomputed,
+                       packed=args.packed_storage)
+        from packed_storage import Reader, array_bytes
+        readers = {}
+        legacy = {}
         for kind, path in paths.items():
-            require(sha(recomputed / (kind + ".f64")) == sha(path),
-                    "fresh-process teacher bytes differ from qualified reference")
+            shape, axes = (([3, 24, 896], ["position", "layer", "component"])
+                           if kind == "layers" else
+                           ([151936, 3], ["vocabulary", "position"]))
+            if path.suffix == ".aqp":
+                readers[kind] = Reader(path, dtype="<f8", shape=shape, axes=axes)
+            else:
+                require(path.stat().st_size == math.prod(shape) * 8,
+                        "qualified legacy collector input dimensions differ")
+                legacy[kind] = path.read_bytes()
+
+        def raw(kind, offset, length):
+            if kind in readers:
+                return readers[kind].read(offset, length)
+            data = legacy[kind][offset:offset+length]
+            require(len(data) == length, "truncated independent collector input")
+            return data
+
+        for kind, path in paths.items():
+            fresh = recomputed / (kind + (".aqp" if args.packed_storage else ".f64"))
+            # Compare decoded bytes, not codec-dependent container hashes.
+            actual = (b"".join(Reader(fresh).chunks()) if args.packed_storage else fresh.read_bytes())
+            expected_size = (3 * 24 * 896 if kind == "layers" else 151936 * 3) * 8
+            require(actual == raw(kind, 0, expected_size),
+                    "fresh-process decoded teacher bytes differ from qualified reference")
         rows = collect(paths["layers"].parent, args.destination / mode, 3)
         # Compare with a separate explicit flat-offset traversal, not memmap indexing.
         for position, row in enumerate(rows):
-            with paths["layers"].open("rb") as source:
-                for layer, output in enumerate(row["layers"]):
-                    source.seek(((position * 24 + layer) * 896) * 8)
-                    require((ROOT / output["fp64_output"]["path"]).read_bytes() ==
-                            source.read(896 * 8), "flat-offset layer comparison differs")
-                    comparisons += 1
-            with paths["logits"].open("rb") as source:
-                expected = bytearray()
-                for vocabulary in range(151936):
-                    source.seek((vocabulary * 3 + position) * 8)
-                    expected.extend(source.read(8))
-            require((ROOT / row["fp64_logits"]["path"]).read_bytes() == expected,
+            for layer, output in enumerate(row["layers"]):
+                item = output["fp64_output"]
+                require(array_bytes(ROOT / item["path"], item, "<f8", 896) ==
+                        raw("layers", ((position * 24 + layer) * 896) * 8, 896 * 8),
+                        "flat-offset layer comparison differs")
+                comparisons += 1
+            expected = b"".join(raw("logits", (vocabulary * 3 + position) * 8, 8)
+                                for vocabulary in range(151936))
+            item = row["fp64_logits"]
+            require(array_bytes(ROOT / item["path"], item, "<f8", 151936) == expected,
                     "flat-offset logit comparison differs")
             comparisons += 1
     rejected = 0
@@ -264,7 +289,8 @@ def full_worker(args):
                    "teacher_tokens": case["teacher_tokens"], "modes": {}}
             for mode in MODES:
                 directory = args.destination / f"case-{number:02d}" / mode
-                raw = reference_case(model, config, mode, tokens, directory / "raw")
+                raw = reference_case(model, config, mode, tokens, directory / "raw",
+                                     packed=args.packed_storage)
                 positions = collect(directory / "raw", directory / "collected", len(tokens))
                 require(len(positions) == len(tokens), "collector omitted a teacher position")
                 row["modes"][mode] = {
@@ -287,6 +313,7 @@ def main():
     parser.add_argument("--collector-receipt", type=Path)
     parser.add_argument("--capacity-receipt", type=Path)
     parser.add_argument("--repair-of", type=Path)
+    parser.add_argument("--packed-storage", action="store_true")
     args = parser.parse_args()
     for value in vars(args).values():
         if isinstance(value, Path):
@@ -311,6 +338,8 @@ def main():
         command = [sys.executable, "tests/reference_collector.py", "--worker",
                    "--reference-receipt", str(args.reference_receipt),
                    "--destination", str((ev.path / "collected-reference").relative_to(ROOT))]
+        if args.packed_storage:
+            command.append("--packed-storage")
         if args.qualify:
             command += ["--qualify"]
         else:

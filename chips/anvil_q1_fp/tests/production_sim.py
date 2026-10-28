@@ -23,7 +23,9 @@ from verify import Evidence, ROOT
 
 
 MODES = {"bf16": 1, "fp16": 2, "w4a16": 0}
-BUILD_SOURCES = ("tests/production_sim.cpp",)
+BUILD_SOURCES = ("tests/production_sim.cpp", "tests/packed_stream.hpp",
+                 "tests/production_storage.hpp", "tests/packed_stream.py",
+                 "tests/packed_storage.py")
 
 
 def descriptor(path):
@@ -280,7 +282,7 @@ def compare_greedy(ev, key, mode, runs, prompt, destination, eos):
 
 def storage_preflight(ev, args, suite):
     """Reject an impossible array budget, never certify complete storage."""
-    from collection_capacity import array_allocation
+    from collection_capacity import array_allocation, packed_array_allocation
 
     all_cases = [(domain + "/" + case["id"], case)
                  for domain, group in suite["domains"].items() for case in group["cases"]]
@@ -299,20 +301,27 @@ def storage_preflight(ev, args, suite):
         require(n <= 32768 and g <= 32768, "collection exceeds legal sequence depth")
         rows.append({"teacher_positions": n, "greedy_positions_maximum": g})
     stat = os.statvfs(ev.path)
-    allocation = array_allocation(rows, stat.f_frsize, modes=len(args.modes))
+    packed = getattr(args, "packed_storage", False)
+    allocation = (packed_array_allocation if packed else array_allocation)(
+        rows, stat.f_frsize, modes=len(args.modes))
     # Include one additional retained failed attempt. Traces and metadata are
     # additional, so passing this necessary condition cannot qualify storage.
-    required_bytes = 2 * allocation["rounded_array_data_bytes_one_successful_attempt"]
-    required_inodes = 2 * allocation["unique_array_payload_file_inodes_one_attempt"]
+    required_bytes = 2 * allocation[
+        "rounded_array_raw_fallback_bound_one_successful_attempt" if packed else
+        "rounded_array_data_bytes_one_successful_attempt"]
+    required_inodes = 2 * allocation[
+        "array_payload_inodes_one_successful_attempt" if packed else
+        "unique_array_payload_file_inodes_one_attempt"]
     available_bytes = stat.f_bavail * stat.f_frsize
     report = {
-        "cases": len(selected), "modes": list(args.modes),
+        "cases": len(selected), "modes": list(args.modes), "packed_storage": packed,
         "teacher_prefix": args.teacher_prefix, "array_allocation": allocation,
         "required_array_bytes_with_one_retained_failure": required_bytes,
         "required_array_inodes_with_one_retained_failure": required_inodes,
         "available_bytes": available_bytes, "available_inodes": stat.f_favail,
         "reserved_bytes": 0, "full_workload_storage_qualified": False,
-        "limitation": "Necessary array-only condition, not a reservation or complete "
+        "limitation": "Array-only budget check (raw fallback upper bound when packed), "
+                      "not a reservation, encoded-size prediction or complete "
                       "trace/metadata/log/staging capacity qualification.",
     }
     ev.receipt["collection_storage_preflight"] = report
@@ -326,6 +335,11 @@ def storage_preflight(ev, args, suite):
 
 
 def run_collection(ev, args):
+    # Storage diagnostics do not grant collection authority. Keep the opt-in
+    # path fail-closed until separately reviewed capacity/environment recovery.
+    require(not getattr(args, "packed_storage", False),
+            "packed production collection paused pending independent capacity "
+            "qualification and shared-runtime environment repair")
     from teacher_reference import validate_inputs
     model, suite, _, config = validate_inputs(ev)
     selected = None
@@ -477,7 +491,8 @@ def run_collection(ev, args):
             sys.executable, "tests/production_sim.py", "--reference-worker",
             "--tokens", str(reference_tokens.relative_to(ROOT)),
             "--destination", str((directory / "references").relative_to(ROOT)),
-            "--modes", *args.modes], timeout=args.timeout),
+            "--modes", *args.modes, *(["--packed-storage"] if args.packed_storage else [])],
+            timeout=args.timeout),
             "independent FP64 reference preparation failed")
         references = load_json(directory / "references/references.json")
         for mode in args.modes:
@@ -507,6 +522,8 @@ def run_collection(ev, args):
                         references[mode]["layers"]["path"] if workload == "teacher" else "-",
                         references[mode]["logits"]["path"] if workload == "teacher" else "-",
                         str(len(tokens))]
+                    if args.packed_storage:
+                        command.append("--packed-storage")
                     for path in (table, token_path, rope_path):
                         ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(ROOT))] = sha(path)
                     passed = ev.run(label, command, timeout=args.timeout)
@@ -549,6 +566,7 @@ def main():
     parser.add_argument("--reference-worker", action="store_true")
     parser.add_argument("--tokens", type=Path)
     parser.add_argument("--destination", type=Path)
+    parser.add_argument("--packed-storage", action="store_true")
     args = parser.parse_args()
     if args.reference_worker:
         from awq_prepare import numerics
@@ -562,7 +580,8 @@ def main():
         config = load_json(ROOT / model["config"]["path"])
         references = {}
         for mode in ("checkpoint", *args.modes):
-            references[mode] = reference_case(model, config, mode, tokens, destination / mode)
+            references[mode] = reference_case(model, config, mode, tokens, destination / mode,
+                                              packed=args.packed_storage)
             print(json.dumps({"mode": mode, "reference": references[mode]}), flush=True)
         write_json(destination / "references.json", references)
         return 0
@@ -571,7 +590,9 @@ def main():
     try:
         snapshot = ev.path / "collector-sources"
         snapshot.mkdir()
-        for name in ("production_sim.py", "production_sim.cpp", "production_trace.py"):
+        for name in ("production_sim.py", "production_sim.cpp", "production_trace.py",
+                     "packed_stream.hpp", "production_storage.hpp",
+                     "packed_stream.py", "packed_storage.py"):
             shutil.copy2(ROOT / "tests" / name, snapshot / name)
         if args.repair_of:
             ev.receipt["repair_of"] = descriptor(artifact_path(ROOT, str(args.repair_of)))
