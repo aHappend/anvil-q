@@ -150,7 +150,7 @@ class Evidence:
     def versions(self):
         result = True
         for name, args in (
-            ("python3", ["python3", "--version"]),
+            ("python3", [sys.executable, "--version"]),
             ("iverilog", ["iverilog", "-V"]),
             ("vvp", ["vvp", "-V"]), ("yosys", ["yosys", "-V"]),
         ):
@@ -425,13 +425,13 @@ def synthesis_check(ev, top="anvil_q1_fp_top"):
 def prerequisites(ev):
     tool_ok = ev.versions()
     dependency_ok = ev.run("reference-dependency-discovery", [
-        "python3", "-c",
+        sys.executable, "-c",
         "import importlib.util,json; "
         "print(json.dumps({name: importlib.util.find_spec(name) is not None "
         "for name in ('numpy','torch','transformers','tokenizers','safetensors','datasets','mpmath')}))",
     ], timeout=30)
     numpy_ok = ev.run("reference-numpy-import", [
-        "python3", "-c", "import numpy; print(numpy.__version__)",
+        sys.executable, "-c", "import numpy; print(numpy.__version__)",
     ], timeout=30)
     ev.assertion("reference_numpy_import", numpy_ok,
                  reason="Production FP64 references require an importable NumPy; "
@@ -670,7 +670,7 @@ def portable_check(ev):
                         copied_sha256=copied):
         return False
     executed = ev.run("clean-copy-smoke", [
-        "python3", "tests/verify.py", "--probe", "clean-smoke",
+        sys.executable, "tests/verify.py", "--probe", "clean-smoke",
     ], timeout=86400, cwd=destination)
     output = (ev.path / "clean-copy-smoke.stdout").read_text().splitlines()
     if not output:
@@ -1140,7 +1140,7 @@ def main():
         "protocol-accelerated", "portable-smoke", "operators", "production-operators",
         "maximum-position", "production-top-addresses", "preservation", "input-inventory",
         "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation",
-        "receipt-publication"))
+        "receipt-publication", "interpreter-consistency"))
     parser.add_argument("--repair-of", type=Path)
     parser.add_argument("--diagnostic-repair-of", type=Path, action="append", default=[])
     parser.add_argument("--python-facility", type=Path, action="append", default=[])
@@ -1217,6 +1217,9 @@ def main():
         elif args.probe == "receipt-publication":
             from receipt_publication import check as check_publication
             ok = check_publication(ROOT, ev)
+        elif args.probe == "interpreter-consistency":
+            from interpreter_consistency import check as check_interpreter
+            ok = check_interpreter(ROOT, ev)
         elif args.probe == "facilities":
             from recovery import facilities
             ok = facilities(ROOT, ev, args.python_facility)

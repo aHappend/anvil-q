@@ -158,6 +158,7 @@ def component_diagnostics_check(root, ev):
 
 
 def prerequisite_dependencies_check(root, ev):
+    import sys
     from types import SimpleNamespace
     from unittest.mock import patch
     import verify
@@ -186,7 +187,7 @@ def prerequisite_dependencies_check(root, ev):
             result is numpy_available and manifest_calls == [holder] and
             labels == ["reference-dependency-discovery", "reference-numpy-import"] and
             numpy_commands[0][1] == [
-                "python3", "-c", "import numpy; print(numpy.__version__)"] and
+                sys.executable, "-c", "import numpy; print(numpy.__version__)"] and
             numpy_commands[0][2]["timeout"] == 30 and
             len(assertions) == 1 and
             assertions[0]["name"] == "reference_numpy_import" and
@@ -1352,6 +1353,8 @@ def fixture(project):
 
 
 def check(root, ev):
+    import sys
+
     ev.receipt["scope"] = NOTICE
     good = library_entrypoint_check(root, ev)
     good = failure_diagnostics_check(root, ev) and good
@@ -1511,7 +1514,7 @@ def check(root, ev):
         if label.startswith("missing-results"):
             (data / "full_model_results.json").unlink()
         ev.run("entrypoint-" + label, [
-            "python3", "tests/verify.py", "--check", "benchmark-contract"],
+            sys.executable, "tests/verify.py", "--check", "benchmark-contract"],
             timeout=3600, cwd=project)
         record = ev.receipt["records"][-1]
         output = (root / record["stdout"]).read_text().splitlines()
