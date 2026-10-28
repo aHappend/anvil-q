@@ -10,6 +10,7 @@ All outputs are advisory preparation, not tests/data/full_model_results.json.
 import argparse
 import gzip
 import json
+import os
 from pathlib import Path
 import shutil
 import struct
@@ -249,9 +250,59 @@ def compare_greedy(ev, key, mode, runs, prompt, destination, eos):
                  generated_tokens=len(generated), independent_processes=2)
 
 
+def storage_preflight(ev, args, suite):
+    """Reject an impossible array budget, never certify complete storage."""
+    from collection_capacity import array_allocation
+
+    all_cases = [(domain + "/" + case["id"], case)
+                 for domain, group in suite["domains"].items() for case in group["cases"]]
+    require(len(all_cases) == 50, "frozen suite is not fifty cases")
+    selected = all_cases[args.case_start:args.case_start + args.case_count]
+    require(len(selected) == args.case_count, "case selection exceeds frozen suite")
+    rows = []
+    for _, case in selected:
+        teacher = load_json(checked(ev, case["teacher_tokens"]))
+        prompt = load_json(checked(ev, case["prompt_tokens"]))
+        require(teacher and prompt and all(type(x) is int and 0 <= x < 151936
+                                          for x in teacher + prompt), "invalid token IDs")
+        n = len(teacher) if args.teacher_prefix is None else min(
+            len(teacher), args.teacher_prefix)
+        g = len(prompt) + 127 if args.teacher_prefix is None else 0
+        require(n <= 32768 and g <= 32768, "collection exceeds legal sequence depth")
+        rows.append({"teacher_positions": n, "greedy_positions_maximum": g})
+    stat = os.statvfs(ev.path)
+    allocation = array_allocation(rows, stat.f_frsize, modes=len(args.modes))
+    # Include one additional retained failed attempt. Traces and metadata are
+    # additional, so passing this necessary condition cannot qualify storage.
+    required_bytes = 2 * allocation["rounded_array_data_bytes_one_successful_attempt"]
+    required_inodes = 2 * allocation["unique_array_payload_file_inodes_one_attempt"]
+    available_bytes = stat.f_bavail * stat.f_frsize
+    report = {
+        "cases": len(selected), "modes": list(args.modes),
+        "teacher_prefix": args.teacher_prefix, "array_allocation": allocation,
+        "required_array_bytes_with_one_retained_failure": required_bytes,
+        "required_array_inodes_with_one_retained_failure": required_inodes,
+        "available_bytes": available_bytes, "available_inodes": stat.f_favail,
+        "reserved_bytes": 0, "full_workload_storage_qualified": False,
+        "limitation": "Necessary array-only condition, not a reservation or complete "
+                      "trace/metadata/log/staging capacity qualification.",
+    }
+    ev.receipt["collection_storage_preflight"] = report
+    enough = available_bytes >= required_bytes and stat.f_favail >= required_inodes
+    require(ev.assertion("collection_array_storage_lower_bound", enough, **report),
+            "insufficient collection array storage before RTL build/inference: "
+            f"need at least {required_bytes} bytes and {required_inodes} inodes "
+            f"including one retained failure; available {available_bytes} bytes and "
+            f"{stat.f_favail} inodes; trace/metadata/log/staging capacity is additional")
+    return selected
+
+
 def run_collection(ev, args):
     from teacher_reference import validate_inputs
     model, suite, _, config = validate_inputs(ev)
+    selected = None
+    if not (args.build_only or args.qualify_trace or args.qualify_comparisons):
+        selected = storage_preflight(ev, args, suite)
     if args.qualify_comparisons:
         import numpy as np
         first_case = next(iter(suite["domains"].values()))["cases"][0]
@@ -368,11 +419,7 @@ def run_collection(ev, args):
     if args.build_only:
         ev.assertion("production_binary_built_not_executed", True)
         return
-    all_cases = [(domain + "/" + case["id"], case)
-                 for domain, group in suite["domains"].items() for case in group["cases"]]
-    require(len(all_cases) == 50, "frozen suite is not fifty cases")
-    selected = all_cases[args.case_start:args.case_start + args.case_count]
-    require(len(selected) == args.case_count, "case selection exceeds frozen suite")
+    require(selected is not None, "collection selection was not preflighted")
     index = {
         "schema": 1, "purpose": "incomplete-production-rtl-observations",
         "acceptance_evidence": False, "backend": "verilator",

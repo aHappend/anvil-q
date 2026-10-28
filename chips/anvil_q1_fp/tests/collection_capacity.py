@@ -110,9 +110,12 @@ def retained_usage(directory):
     return result
 
 
-def array_allocation(rows, block):
+def array_allocation(rows, block, modes=3):
     """Data-block planning only; filesystem metadata is an additional cost."""
     require(type(block) is int and block > 0, "invalid filesystem fragment size")
+    require(type(modes) is int and 1 <= modes <= 3, "invalid precision-mode count")
+    references = modes + 1
+    observations = modes * REPEATS
 
     def rounded(size):
         return (size + block - 1) // block * block
@@ -122,20 +125,22 @@ def array_allocation(rows, block):
     for row in rows:
         n, g = row["teacher_positions"], row["greedy_positions_maximum"]
         payload_blocks += (
-            4 * (rounded(n * 24 * 896 * 8) + rounded(n * 151936 * 8)) +
-            4 * n * (24 * rounded(896 * 8) + rounded(151936 * 8)) +
-            6 * (n + g) * (rounded(24 * 896 * 4) + rounded(151936 * 4)) +
-            6 * n * 24 * rounded(896 * 4))
-        unique_files += 8 + 4 * n * 25 + 6 * n * 24 + 6 * (n + g) * 2
-        namespace_files += 8 + 10 * n * 25 + 6 * n * 24 + 6 * (n + g) * 2
+            references * (rounded(n * 24 * 896 * 8) + rounded(n * 151936 * 8)) +
+            references * n * (24 * rounded(896 * 8) + rounded(151936 * 8)) +
+            observations * (n + g) * (rounded(24 * 896 * 4) + rounded(151936 * 4)) +
+            observations * n * 24 * rounded(896 * 4))
+        unique_files += (2 * references + references * n * 25 +
+                         observations * n * 24 + observations * (n + g) * 2)
+        namespace_files += (2 * references + (references + observations) * n * 25 +
+                            observations * n * 24 + observations * (n + g) * 2)
     return {
         "fragment_bytes": block,
         "rounded_array_data_bytes_one_successful_attempt": payload_blocks,
         "unique_array_payload_file_inodes_one_attempt": unique_files,
         "array_payload_pathnames_one_attempt": namespace_files,
         "hard_link_alias_pathnames_one_attempt": namespace_files - unique_files,
-        "raw_reference_files_per_case": 8,
-        "reference_position_index_files_per_case": 10,
+        "raw_reference_files_per_case": 2 * references,
+        "reference_position_index_files_per_case": references + observations,
         "metadata_inodes_and_bytes_additional": True,
         "guaranteed_filesystem_allocation_bound": False,
         "limitation": "Rounded data payload is not a bound for directories, indexes, logs, "

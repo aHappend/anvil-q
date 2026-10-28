@@ -14,6 +14,8 @@ from pathlib import Path
 import random
 import struct
 import sys
+from types import SimpleNamespace
+from unittest.mock import patch
 import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -43,26 +45,114 @@ def synthetic(destination):
             raise ValueError("retention defect was not rejected: " + name)
 
     # Enumerate physical files independently of the closed-form capacity sum.
-    physical = []
-    for mode in range(4):
-        physical.extend((2 * 24 * 896 * 8, 151936 * 2 * 8))
-        for position in range(2):
-            physical.extend([896 * 8] * 24 + [151936 * 8])
-    for mode in range(3):
-        for repeat in range(2):
-            for position in range(2):
-                physical.extend([896 * 4] * 24)
-            for position in range(2 + 3):
-                physical.extend((24 * 896 * 4, 151936 * 4))
-    for fragment in (512, 4096, 65536):
-        actual = array_allocation(
-            [{"teacher_positions": 2, "greedy_positions_maximum": 3}], fragment)
-        expected = sum(((size + fragment - 1) // fragment) * fragment for size in physical)
-        require(actual["rounded_array_data_bytes_one_successful_attempt"] == expected and
-                actual["unique_array_payload_file_inodes_one_attempt"] == len(physical) and
-                actual["hard_link_alias_pathnames_one_attempt"] == 6 * 2 * 25,
-                "array allocation differs from independently enumerated files")
-    report["enumerated_filesystem_fragment_cases"] = 3
+    def physical_arrays(modes, teacher, greedy):
+        physical = []
+        for mode in range(modes + 1):
+            physical.extend((teacher * 24 * 896 * 8, 151936 * teacher * 8))
+            for position in range(teacher):
+                physical.extend([896 * 8] * 24 + [151936 * 8])
+        for mode in range(modes):
+            for repeat in range(2):
+                for position in range(teacher):
+                    physical.extend([896 * 4] * 24)
+                for position in range(teacher + greedy):
+                    physical.extend((24 * 896 * 4, 151936 * 4))
+        return physical
+
+    for modes in (1, 2, 3):
+        physical = physical_arrays(modes, 2, 3)
+        for fragment in (512, 4096, 65536):
+            actual = array_allocation(
+                [{"teacher_positions": 2, "greedy_positions_maximum": 3}], fragment,
+                modes=modes)
+            expected = sum(((size + fragment - 1) // fragment) * fragment for size in physical)
+            require(actual["rounded_array_data_bytes_one_successful_attempt"] == expected and
+                    actual["unique_array_payload_file_inodes_one_attempt"] == len(physical) and
+                    actual["hard_link_alias_pathnames_one_attempt"] == modes * 2 * 2 * 25 and
+                    actual["raw_reference_files_per_case"] == 2 * (modes + 1) and
+                    actual["reference_position_index_files_per_case"] == modes * 3 + 1,
+                    "array allocation differs from independently enumerated files")
+    report["enumerated_filesystem_fragment_mode_cases"] = 9
+
+    # Call the actual collector entry function, but reject before either the
+    # reference worker or RTL compiler can run. No production work is executed.
+    import production_sim
+    guard_directory = destination / "preflight"
+    guard_directory.mkdir()
+    teacher_path = guard_directory / "teacher.json"
+    prompt_path = guard_directory / "prompt.json"
+    write_json(teacher_path, [1, 2])
+    write_json(prompt_path, [1])
+    case = {"teacher_tokens": descriptor(teacher_path),
+            "prompt_tokens": descriptor(prompt_path)}
+    suite = {"domains": {str(domain): {"cases": [
+        {"id": str(number), **case} for number in range(10)]} for domain in range(5)}}
+
+    class Preflight:
+        def __init__(self):
+            self.path = guard_directory
+            self.receipt = {}
+            self.assertions = []
+
+        def assertion(self, name, passed, **details):
+            self.assertions.append({"name": name, "passed": passed, **details})
+            return passed
+
+    guard_cases = []
+    for modes, prefix, count in ((3, None, 50), (1, None, 1), (2, 1, 3)):
+        args = SimpleNamespace(
+            case_start=0, case_count=count, modes=list(production_sim.MODES)[:modes],
+            teacher_prefix=prefix, build_only=False, qualify_trace=False,
+            qualify_comparisons=False, build_receipt=None)
+        physical = physical_arrays(modes, 2 if prefix is None else 1,
+                                   128 if prefix is None else 0) * count
+        expected_bytes = 2 * sum((size + 4095) // 4096 * 4096 for size in physical)
+        expected_inodes = 2 * len(physical)
+        for condition, blocks, inodes in (
+                ("exact-array-bound", expected_bytes // 4096, expected_inodes),
+                ("one-block-short", expected_bytes // 4096 - 1, expected_inodes),
+                ("one-inode-short", expected_bytes // 4096, expected_inodes - 1)):
+            fixture = Preflight()
+            stat = SimpleNamespace(f_frsize=4096, f_bavail=blocks, f_favail=inodes)
+            with patch.object(production_sim.os, "statvfs", return_value=stat), \
+                    patch("teacher_reference.validate_inputs", return_value=({}, suite, {}, {})), \
+                    patch.object(production_sim, "compile_simulator",
+                                 side_effect=RuntimeError("synthetic compiler boundary")) as compiler:
+                if condition == "exact-array-bound":
+                    selected = production_sim.storage_preflight(fixture, args, suite)
+                    require(len(selected) == count and
+                            not fixture.receipt["collection_storage_preflight"][
+                                "full_workload_storage_qualified"],
+                            "array-only bound incorrectly qualified complete storage")
+                    try:
+                        production_sim.run_collection(fixture, args)
+                    except RuntimeError as error:
+                        require(str(error) == "synthetic compiler boundary",
+                                "wrong sufficient-array control outcome")
+                    else:
+                        raise ValueError("sufficient-array control did not reach compiler boundary")
+                    require(compiler.call_count == 1, "sufficient-array control was rejected")
+                else:
+                    try:
+                        production_sim.run_collection(fixture, args)
+                    except ValueError as error:
+                        require("insufficient collection array storage before RTL build/inference"
+                                in str(error), "wrong preflight rejection")
+                    else:
+                        raise ValueError("insufficient storage escaped collector preflight")
+                    require(compiler.call_count == 0, "preflight launched compiler")
+            observed = fixture.receipt["collection_storage_preflight"]
+            require(observed["required_array_bytes_with_one_retained_failure"] == expected_bytes and
+                    observed["required_array_inodes_with_one_retained_failure"] == expected_inodes,
+                    "collector guard differs from independent allocation enumeration")
+            guard_cases.append({"modes": modes, "teacher_prefix": prefix, "cases": count,
+                                "condition": condition, "assertions": fixture.assertions,
+                                "mock_compiler_boundary_calls": compiler.call_count,
+                                "rtl_builds": 0})
+    report["collector_preflight_synthetic_cases"] = guard_cases
+    for invalid_modes in (0, 4, True):
+        reject("invalid-mode-count/" + str(invalid_modes),
+               lambda invalid_modes=invalid_modes: array_allocation([], 4096, invalid_modes))
 
     positions = 2
     reference_values = {}
@@ -250,9 +340,28 @@ def main():
     if args.worker == "capacity":
         require(args.destination is None, "capacity worker is read-only")
         from collection_capacity import assess, selftest
+        from production_sim import MODES, storage_preflight
         comparisons = selftest()
         report = assess()
         report["enumerated_schedule_count_comparisons"] = comparisons
+
+        class Preflight:
+            path = ROOT / "evidence/preparation"
+            receipt = {}
+
+            def assertion(self, name, passed, **details):
+                return passed
+
+        holder = Preflight()
+        selection = SimpleNamespace(case_start=0, case_count=50, modes=list(MODES),
+                                    teacher_prefix=None)
+        try:
+            storage_preflight(holder, selection, load_json(ROOT / "tests/data/benchmark_manifest.json"))
+        except ValueError as error:
+            require("insufficient collection array storage before RTL build/inference"
+                    in str(error), "unexpected real-storage preflight error")
+            report["collector_preflight_rejection"] = str(error)
+        report["collector_preflight"] = holder.receipt["collection_storage_preflight"]
         print(json.dumps(report, indent=2))
         return 0
     require(args.destination is None, "destination is only for a synthetic worker")
