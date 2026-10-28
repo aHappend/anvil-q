@@ -29,8 +29,9 @@ def native_baseline_sensitivity():
     }
     if not supported_q1(fixture):
         raise AssertionError("pinned native Q1 adapter fixture rejected")
-    status = baseline_prerequisites([fixture], {}, generations=("Q1", "Q2"))
-    if ([row["source_bound_execution_adapter"] for row in status["generations"]]
+    status = baseline_prerequisites([fixture], {})
+    if ([row["generation"] for row in status["generations"]] != ["Q1", "Q2"] or
+            [row["source_bound_execution_adapter"] for row in status["generations"]]
             != [True, False, False] or not status["unmet"]):
         raise AssertionError("native Q1 adapter fixture incorrectly qualified another generation")
     variants = []

@@ -5,6 +5,8 @@ shared-runtime persistence recovery.
 Snapshot copying starts only after an incomplete receipt is retained. If later
 writes fail too, that receipt remains incomplete, never a successful snapshot.
 Every copied source must match its recorded hash before the snapshot is complete.
+Live sources must still match that snapshot at successful finalization; source
+drift fails the invocation rather than certifying a different workspace revision.
 Successful finalization requires a complete snapshot and settled child records;
 completed expected-negative tests may retain nonzero exit codes.
 Snapshot content, raw logs and child receipts must still exist at finalization.
@@ -157,6 +159,9 @@ class Run:
             raise AssertionError("incomplete verification execution cannot be finalized as passed")
         if status == "passed":
             for name, digest in self.hashes.items():
+                source = ROOT / name
+                if not source.is_file() or sha256(source) != digest:
+                    raise AssertionError("live verification source changed during execution: " + name)
                 snapshot = self.path / "sources" / name
                 if not snapshot.is_file() or sha256(snapshot) != digest:
                     raise AssertionError("missing/changed retained verification artifact: "

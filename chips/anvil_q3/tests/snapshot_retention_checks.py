@@ -4,6 +4,7 @@ Reproduce from the project root:
 python3 tests/prepare.py --probe snapshot-retention
 Successful finalization must reject incomplete snapshots and unfinished children.
 It must also reject missing or changed snapshots and missing raw child evidence.
+Live-source drift must reject success without rewriting the retained receipt.
 These fixtures do not repair missing retained evidence or runtime storage.
 """
 
@@ -177,6 +178,28 @@ def snapshot_retention_checks(folder):
         if receipt_path.read_bytes() != before:
             raise AssertionError("rejected retention finalization changed receipt")
         candidate.finish("failed", diagnosis="deliberate offline retention defect: " + defect)
+    live_source_defects = ("changed-live-source", "missing-live-source")
+    for defect in live_source_defects:
+        live_source = folder / (defect + ".py")
+        live_source.write_text("# isolated live-source identity fixture\n")
+        with patch("execution.sources", return_value=[live_source]):
+            candidate = Run(completion_output, "offline-" + defect)
+        if defect == "changed-live-source":
+            live_source.write_text("# changed live-source identity fixture\n")
+        else:
+            live_source.unlink()
+        receipt_path = candidate.path / "receipt.json"
+        before = receipt_path.read_bytes()
+        try:
+            candidate.finish("passed")
+        except AssertionError as exc:
+            if "live verification source changed during execution" not in str(exc):
+                raise
+        else:
+            raise AssertionError("successful finalization accepted " + defect)
+        if receipt_path.read_bytes() != before:
+            raise AssertionError("source-drift rejection changed retained receipt")
+        candidate.finish("failed", diagnosis="deliberate offline source drift: " + defect)
     return {"snapshot_failure_propagated": True, "failed_receipt_retained": True,
             "fresh_control_preserved_failure": True,
             "initial_incomplete_receipt_survives_failed_update": True,
@@ -185,6 +208,7 @@ def snapshot_retention_checks(folder):
             "rejected_finalization_preserved_receipt": True,
             "completed_negative_test_preserved": True,
             "retention_defects_rejected": list(retention_defects),
+            "live_source_defects_rejected": list(live_source_defects),
             "scope": "offline project fixtures only; not shared-runtime persistence recovery"}
 
 
