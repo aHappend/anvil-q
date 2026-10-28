@@ -373,7 +373,7 @@ endmodule
 def top_probe(evidence, mode, seed, upload_only=False, config=0,
               fault_read=-1, fault_write=-1, orphan_fault=False, abort_stage=None,
               diagnostic_first_token=False, simulator="verilator",
-              cxx_optimization="-O3", flatten=False):
+              cxx_optimization="-O3", flatten=False, reusable_build=True):
     shape = MATRIX[config]
     model = EngineeringModel(shape, seed, mode)
     tokens = []
@@ -854,6 +854,93 @@ endmodule
     target_kind = {"embedding-pending": 0, "kernel": 5, "projection": 1}.get(abort_stage, 0)
     target = next(descriptor for descriptor in model.descriptors
                   if descriptor[1:4] == (target_kind, 0, 0))
+    runtime_args = ()
+    reusable = (reusable_build and not upload_only and fault_read < 0 and
+                fault_write < 0 and not orphan_fault and not abort_stage)
+    if reusable:
+        from verify import file_sha256
+
+        capacity = max(len(EngineeringModel(shape, 0, precision).image) // 64
+                       for precision in ("AWQ", "BF16"))
+        descriptor_words = []
+        for index, kind, layer, proj, base, length in model.descriptors:
+            descriptor_words.extend(
+                (address << 32) | value for address, value in (
+                    (0x10, index), (0x14, kind), (0x18, layer), (0x1c, proj),
+                    (0x20, base & 0xffffffff), (0x24, base >> 32),
+                    (0x28, length), (0x2c, 1)))
+        runtime_files = {
+            "case.hex": "".join(f"{word:08x}\n" for word in (
+                int(mode == "BF16"), len(model.image) // 64,
+                len(descriptor_words), len(tokens))),
+            "descriptors.hex": "".join(f"{word:012x}\n" for word in descriptor_words),
+            "tokens.hex": "".join(
+                format((packed(expected,32) << 65) | (int(new) << 64) |
+                       (position << 32) | id, f"0{(32 * shape.vocab + 68) // 4}x") + "\n"
+                for id, position, new, expected in tokens),
+        }
+        for filename, text in runtime_files.items():
+            (evidence.folder / filename).write_text(text)
+        evidence.record["runtime_input_sha256"] = {
+            evidence.relative(path): file_sha256(path)
+            for path in [image, *(evidence.folder / name for name in runtime_files)]
+        }
+        bench = bench.replace(
+            "integer response_writes=0;", r"""
+integer response_writes=0;
+string case_directory,mode_name;
+reg [31:0] case_header [0:3];
+reg [47:0] descriptor_words [0:2047];
+reg [VOCAB_BITS_MINUS_ONE+65:0] token_words [0:MAX_TOKENS_MINUS_ONE];
+integer image_beats,descriptor_count,token_count,case_index;
+task read_case;
+ begin
+  if(!$value$plusargs("CASE_DIR=%s",case_directory)) $fatal(1,"MISSING_CASE_DIRECTORY");
+  $readmemh({case_directory,"/case.hex"},case_header);
+  image_beats=case_header[1];descriptor_count=case_header[2];token_count=case_header[3];
+  if(case_header[0]>1 || image_beats<1 || image_beats>IMAGE_CAPACITY ||
+     descriptor_count<1 || descriptor_count>2048 ||
+     token_count<1 || token_count>MAX_TOKENS) $fatal(1,"INVALID_CASE_HEADER");
+  mode_name=case_header[0] ? "BF16" : "AWQ";
+  $readmemh({case_directory,"/image.hex"},image,0,image_beats-1);
+  $readmemh({case_directory,"/descriptors.hex"},descriptor_words,0,descriptor_count-1);
+  $readmemh({case_directory,"/tokens.hex"},token_words,0,token_count-1);
+ end
+endtask
+""")
+        bench = bench.replace('$readmemh("IMAGE_PATH",image);', "read_case();")
+        runtime_inference = r"""
+ for(case_index=0;case_index<token_count;case_index=case_index+1)
+  run_token(token_words[case_index][31:0],token_words[case_index][63:32],
+            token_words[case_index][64],token_words[case_index][65+:VOCAB_VALUE*32]);
+ $display("CHECKS_PASSED top mode=%s logits=%0d reads=%0d preload_beats=%0d csr_compares=%0d",
+          mode_name,logits,reads,load_accepts,csr_compares);
+ $finish;
+"""
+        bench = bench.replace("DESCRIPTOR_CALLS", r"""
+ csr(1,16'h000c,case_header[0],0,0);
+ for(case_index=0;case_index<descriptor_count;case_index=case_index+1)
+  csr(1,descriptor_words[case_index][47:32],descriptor_words[case_index][31:0],0,0);
+""")
+        bench = bench.replace("AFTER_COMMIT", runtime_inference)
+        bench = bench.replace(
+            '$display("TOKEN_COMPARED mode=MODE position=',
+            '$display("TOKEN_COMPARED mode=%s position=').replace(
+                "position,sequence_start,token_logits,cycles,reads);",
+                "mode_name,position,sequence_start,token_logits,cycles,reads);")
+        # Array bounds are geometry-only; case-specific upload lengths stay runtime data.
+        bench = bench.replace("[0:IMAGE_LAST]", "[0:IMAGE_CAPACITY_MINUS_ONE]")
+        bench = bench.replace("IMAGE_LAST", "(image_beats-1)")
+        for old, new in {
+            "IMAGE_CAPACITY_MINUS_ONE": str(capacity - 1),
+            "IMAGE_CAPACITY": str(capacity),
+            "MEMORY_LAST": str(capacity + 63),
+            "MAX_TOKENS_MINUS_ONE": str(min(shape.max_seq, shape.window + 2)),
+            "MAX_TOKENS": str(min(shape.max_seq, shape.window + 2) + 1),
+            "TARGET_BASE": "33'd0", "TARGET_END": "34'd0",
+        }.items():
+            bench = bench.replace(old, new)
+        runtime_args = ("+CASE_DIR=" + evidence.relative(evidence.folder),)
     replacements = {
         "AFTER_COMMIT": inference.replace("MODE", mode),
         "AFTER_UPLOAD": after_upload,
@@ -898,7 +985,7 @@ endmodule
     name = "top-" + mode.lower() + ("-" + abort_stage if abort_stage else "")
     if simulator == "verilator":
         evidence.simulate(name + "-four-state-reset", bench, defines=("RESET_ONLY",),
-                          simulator="iverilog")
+                          simulator="iverilog", runtime_args=runtime_args)
         evidence.record["integration_simulator"] = {
             "functional": "Verilator timing simulation with unchanged numerical/protocol assertions",
             "four_state": "Icarus full-hierarchy time-zero and both-clock-edge reset assertions",
@@ -907,7 +994,9 @@ endmodule
         }
         evidence.flush()
     evidence.simulate(name, bench, simulator=simulator, timeout=43200,
-                      cxx_optimization=cxx_optimization, flatten=flatten)
+                      cxx_optimization=cxx_optimization, flatten=flatten,
+                      runtime_args=runtime_args,
+                      build_pool=getattr(evidence, "simulation_build_pool", None))
 
 
 def kernel_default(evidence, seed):
@@ -1999,6 +2088,9 @@ endmodule
 def integration_matrix(evidence, configurations=range(3), seeds=(17, 89, 257),
                        modes=("AWQ", "BF16"), lifecycle=None):
     ledger = evidence.record.setdefault("integration_matrix", [])
+    pool = getattr(evidence, "simulation_build_pool", None)
+    if pool is None:
+        pool = evidence.simulation_build_pool = {}
     for config in configurations:
         for seed in seeds:
             for mode in modes:
@@ -2015,6 +2107,7 @@ def integration_matrix(evidence, configurations=range(3), seeds=(17, 89, 257),
             f"matrix-{row['configuration']}-{row['seed']}-{row['mode'].lower()}",
             source_root=evidence.folder / "sources")
         row["receipt"] = evidence.relative(trial.folder / "receipt.json")
+        trial.simulation_build_pool = pool
         trial.record["tool_version_receipt"] = evidence.relative(evidence.folder / "receipt.json")
         evidence.flush()
         if lifecycle is not None:

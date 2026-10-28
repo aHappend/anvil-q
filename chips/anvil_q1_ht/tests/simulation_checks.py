@@ -31,6 +31,10 @@ class SimulationTierChecks(unittest.TestCase):
         def command(argv, label, timeout=3600, **kwargs):
             trial.record["commands"].append(
                 {"argv": argv, "label": label, "timeout": timeout})
+            if label.endswith("-compile") and argv[0] == "verilator":
+                build = ROOT / argv[argv.index("--Mdir") + 1]
+                build.mkdir()
+                (build / "Vtb").write_bytes(b"synthetic executable")
             return "CHECKS_PASSED synthetic comparisons=1\n"
 
         trial.command = command
@@ -41,7 +45,7 @@ class SimulationTierChecks(unittest.TestCase):
         with patch("verify.shutil.which", return_value="verilator"):
             trial.simulate("compiled", "module tb; endmodule", sources=[],
                            simulator="verilator")
-        version, compile_command, simulation = trial.record["commands"]
+        version, compiler, compile_command, simulation = trial.record["commands"]
         argv = compile_command["argv"]
         self.assertEqual(version["argv"], ["verilator", "--version"])
         self.assertIn("--assert", argv)
@@ -71,7 +75,7 @@ class SimulationTierChecks(unittest.TestCase):
         trial.default_simulator = "verilator"
         with patch("verify.shutil.which", return_value="verilator"):
             trial.simulate("mutation", "module tb; endmodule", sources=[])
-        self.assertEqual(trial.record["commands"][1]["argv"][0], "verilator")
+        self.assertEqual(trial.record["commands"][2]["argv"][0], "verilator")
 
     def test_first_token_diagnostic_does_not_change_default_token_set(self):
         trial = self.evidence()
@@ -91,7 +95,7 @@ class SimulationTierChecks(unittest.TestCase):
 
     def test_changed_sources_preserve_clean_reproduction_path_policy(self):
         for name in ("verify", "experiments", "benchmarks", "compatibility",
-                     "sensitivity", "simulation_checks"):
+                     "sensitivity", "simulation_checks", "campaign_costs"):
             with self.subTest(source=name):
                 source = ROOT / "tests" / (name + ".py")
                 self.assertIsNone(NONPORTABLE_PATH.search(source.read_text()))

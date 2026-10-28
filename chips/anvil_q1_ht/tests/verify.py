@@ -151,6 +151,7 @@ class Evidence:
         self.record["commands"].append(entry)
         self.flush()
         started = time.monotonic()
+        child_times = os.times()
         process = None
         try:
             with stdout.open("xb") as out, stderr.open("xb") as err:
@@ -177,6 +178,9 @@ class Evidence:
             code = None if process is None else process.returncode
             entry["launch_error" if process is None else "execution_error"] = str(exc)
         entry.update(exit_code=code, end_time=utc(), elapsed_seconds=time.monotonic() - started)
+        settled_times = os.times()
+        entry["sequential_child_user_seconds"] = settled_times.children_user - child_times.children_user
+        entry["sequential_child_system_seconds"] = settled_times.children_system - child_times.children_system
         for key, path in (("stdout", stdout), ("stderr", stderr)):
             if not path.is_file():
                 entry[key + "_missing"] = True
@@ -196,7 +200,8 @@ class Evidence:
         return text
 
     def simulate(self, name, bench, sources=None, rtl_root=None, timeout=3600,
-                 simulator=None, defines=(), cxx_optimization="-O3", flatten=False):
+                 simulator=None, defines=(), cxx_optimization="-O3", flatten=False,
+                 runtime_args=(), build_pool=None):
         simulator = simulator or getattr(self, "default_simulator", "iverilog")
         if cxx_optimization not in ("-Os", "-O3"):
             raise ValueError("unsupported C++ optimization")
@@ -219,19 +224,49 @@ class Evidence:
             self.command(argv, name + "-compile")
             command = ["vvp", self.relative(image)]
         elif simulator == "verilator":
-            self.command(["verilator", "--version"], name + "-tool-version")
+            version = self.command(["verilator", "--version"], name + "-tool-version")
+            compiler = self.command(["g++", "--version"], name + "-compiler-version")
             build = folder / "compiled"
-            self.command(
-                ["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
-                 "-j", "2", "-CFLAGS", cxx_optimization,
-                 *(["--flatten"] if flatten else []),
-                 "--top-module", "tb", "--Mdir", self.relative(build),
-                 *["-D" + value for value in defines], *inputs],
-                name + "-compile", timeout=3600)
-            command = [self.relative(build / "Vtb")]
+            options = ["--binary", "--timing", "--assert", "-Wno-fatal",
+                       "-j", "2", "-CFLAGS", cxx_optimization,
+                       *(["--flatten"] if flatten else []),
+                       "--top-module", "tb", *["-D" + value for value in defines]]
+            identity = {
+                "schema": 1, "verilator": version, "compiler": compiler,
+                "options": options, "bench_sha256": file_sha256(tb),
+                "sources": [(path.name, file_sha256(path)) for path in sources],
+            }
+            key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+            cached = None if build_pool is None else build_pool.get(key)
+            if cached is None:
+                self.command(
+                    ["verilator", *options, "--Mdir", self.relative(build), *inputs],
+                    name + "-compile", timeout=3600)
+                executable = build / "Vtb"
+                cached = {
+                    "identity": identity, "key": key,
+                    "producer_receipt": self.relative(self.folder / "receipt.json"),
+                    "executable": self.relative(executable),
+                    "executable_sha256": file_sha256(executable),
+                    "inputs": {self.relative(path): file_sha256(path)
+                               for path in [*sources, tb]},
+                }
+                if build_pool is not None:
+                    build_pool[key] = cached
+                reused = False
+            else:
+                reused = True
+            for path, digest in {**cached["inputs"],
+                                 cached["executable"]: cached["executable_sha256"]}.items():
+                if file_sha256(ROOT / path) != digest:
+                    raise RuntimeError("compiled simulation build changed: " + path)
+            self.record.setdefault("simulation_builds", []).append(
+                {**cached, "reused": reused, "runtime_args": list(runtime_args)})
+            self.flush()
+            command = [cached["executable"]]
         else:
             raise ValueError(f"unsupported simulation tool: {simulator}")
-        output = self.command(command, name + "-simulation", timeout=timeout)
+        output = self.command([*command, *runtime_args], name + "-simulation", timeout=timeout)
         if "CHECKS_PASSED " not in output:
             raise AssertionError(f"{name}: missing completed assertion ledger")
         ledgers = []
@@ -255,6 +290,10 @@ class Evidence:
             for command in self.record["commands"]:
                 for key in ("stdout", "stderr"):
                     artifacts[command[key]] = command.get(key + "_sha256")
+            artifacts.update(self.record.get("runtime_input_sha256", {}))
+            for build in self.record.get("simulation_builds", []):
+                artifacts.update(build["inputs"])
+                artifacts[build["executable"]] = build["executable_sha256"]
             for relative, expected in artifacts.items():
                 path = ROOT / relative
                 if expected is None or not path.is_file() or file_sha256(path) != expected:
