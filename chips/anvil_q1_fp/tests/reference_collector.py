@@ -23,13 +23,15 @@ REFERENCE_SOURCES = ("tests/teacher_reference.py", "tests/fp64_reference.py",
                      "tests/awq_prepare.py")
 
 
-def collect(source, destination, positions):
+def collect(source, destination, positions, *, shared=None):
     require(type(positions) is int and 0 < positions <= 32768,
             "invalid collector position count")
     layers_path, logits_path = source / "layers.f64", source / "logits.f64"
     require(layers_path.stat().st_size == positions * 24 * 896 * 8 and
             logits_path.stat().st_size == 151936 * positions * 8,
             "collector source dimensions differ")
+    if shared is not None:
+        return shared_collect(source, destination, positions, shared)
     layers = np.memmap(layers_path, dtype="<f8", mode="r",
                        shape=(positions, 24, 896))
     logits = np.memmap(logits_path, dtype="<f8", mode="r",
@@ -61,6 +63,59 @@ def collect(source, destination, positions):
         "acceptance_evidence": False, "dtype": "<f8",
         "sources": {"layers": descriptor(layers_path), "logits": descriptor(logits_path)},
         "positions": rows})
+    return rows
+
+
+def shared_collect(source, destination, positions, shared):
+    """Keep the original file contract, sharing only immutable reference views.
+
+    Repeats and DUT observations never enter this cache. An incomplete or changed
+    cache is an error, not permission to rebuild or overwrite retained evidence.
+    """
+    require(not destination.exists() and shared != destination and
+            shared.resolve().is_relative_to(source.resolve()) and
+            not shared.is_symlink(), "invalid shared reference destination")
+    inputs = {kind: descriptor(source / (kind + ".f64"))
+              for kind in ("layers", "logits")}
+    if not shared.exists():
+        collect(source, shared, positions)
+    index = load_json(shared / "positions.json")
+    require(index["schema"] == 1 and index["dtype"] == "<f8" and
+            index["purpose"] == "collected-fp64-teacher-reference" and
+            index["sources"] == inputs and len(index["positions"]) == positions,
+            "shared reference identity or coverage differs")
+    destination.mkdir(parents=True, exist_ok=False)
+    rows = []
+    for position, original in enumerate(index["positions"]):
+        require(original["position"] == position and len(original["layers"]) == 24,
+                "shared reference positions/layers differ")
+        directory = destination / f"position-{position:05d}"
+        directory.mkdir()
+        row = {"position": position, "layers": []}
+
+        def link(item, name, size):
+            cached = shared / f"position-{position:05d}" / name
+            target = directory / name
+            require(not cached.is_symlink() and cached.is_file() and
+                    cached.stat().st_size == size and descriptor(cached) == item,
+                    "shared reference bytes or binding changed")
+            os.link(cached, target, follow_symlinks=False)
+            require(os.path.samefile(cached, target) and sha(target) == item["sha256"],
+                    "linked reference bytes differ")
+            return descriptor(target)
+
+        for layer, value in enumerate(original["layers"]):
+            require(value["layer"] == layer, "shared reference layer order differs")
+            row["layers"].append({"layer": layer, "fp64_output": link(
+                value["fp64_output"], f"layer-{layer:02d}.f64", 896 * 8)})
+        row["fp64_logits"] = link(original["fp64_logits"], "logits.f64", 151936 * 8)
+        rows.append(row)
+    require(inputs == {kind: descriptor(source / (kind + ".f64"))
+                       for kind in inputs}, "raw references changed while linking")
+    write_json(destination / "positions.json", {
+        "schema": 1, "purpose": "collected-fp64-teacher-reference",
+        "acceptance_evidence": False, "dtype": "<f8",
+        "sources": inputs, "positions": rows})
     return rows
 
 

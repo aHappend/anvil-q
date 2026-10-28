@@ -25,7 +25,7 @@ BINDINGS = (
     "tests/production_schedule.py", "tests/teacher_reference.py",
     "tests/reference_collector.py", "tests/fp64_reference.py", "tests/awq_prepare.py",
     "tests/reference_capacity.py", "tests/data/model_manifest.json",
-    "tests/data/benchmark_manifest.json",
+    "tests/data/benchmark_manifest.json", "tests/retention_storage.py",
 )
 
 
@@ -70,6 +70,7 @@ def retained_usage(directory):
               "receipt_status_counts": {}, "unreadable_receipts": [],
               "file_size_measurement_only": True, "started_at": now()}
     statuses = Counter()
+    inodes = set()
     for parent, directories, filenames in os.walk(directory, followlinks=False):
         directories[:] = sorted(name for name in directories
                                 if name not in FORBIDDEN and
@@ -79,7 +80,10 @@ def retained_usage(directory):
             info = path.lstat()
             result["files"] += 1
             require(result["files"] <= 1000000, "retained inventory exceeds bounded file limit")
-            result["allocated_bytes"] += info.st_blocks * 512
+            inode = (info.st_dev, info.st_ino)
+            if inode not in inodes:
+                result["allocated_bytes"] += info.st_blocks * 512
+                inodes.add(inode)
             result["logical_bytes"] += info.st_size
             if name == "receipt.json" and not path.is_symlink():
                 relative = str(path.relative_to(ROOT))
@@ -97,11 +101,47 @@ def retained_usage(directory):
                 else:
                     statuses[record.get("status", "missing-status")] += 1
     result["receipt_status_counts"] = dict(statuses)
+    result["unique_file_inodes"] = len(inodes)
+    result["hard_link_aliases"] = result["files"] - len(inodes)
     result["ended_at"] = now()
     result["limitation"] = (
         "Live size inventory, not an atomic filesystem snapshot or integrity qualification. "
         "Existing retained failures already consume measured used space; do not add them twice.")
     return result
+
+
+def array_allocation(rows, block):
+    """Data-block planning only; filesystem metadata is an additional cost."""
+    require(type(block) is int and block > 0, "invalid filesystem fragment size")
+
+    def rounded(size):
+        return (size + block - 1) // block * block
+
+    payload_blocks = 0
+    unique_files = namespace_files = 0
+    for row in rows:
+        n, g = row["teacher_positions"], row["greedy_positions_maximum"]
+        payload_blocks += (
+            4 * (rounded(n * 24 * 896 * 8) + rounded(n * 151936 * 8)) +
+            4 * n * (24 * rounded(896 * 8) + rounded(151936 * 8)) +
+            6 * (n + g) * (rounded(24 * 896 * 4) + rounded(151936 * 4)) +
+            6 * n * 24 * rounded(896 * 4))
+        unique_files += 8 + 4 * n * 25 + 6 * n * 24 + 6 * (n + g) * 2
+        namespace_files += 8 + 10 * n * 25 + 6 * n * 24 + 6 * (n + g) * 2
+    return {
+        "fragment_bytes": block,
+        "rounded_array_data_bytes_one_successful_attempt": payload_blocks,
+        "unique_array_payload_file_inodes_one_attempt": unique_files,
+        "array_payload_pathnames_one_attempt": namespace_files,
+        "hard_link_alias_pathnames_one_attempt": namespace_files - unique_files,
+        "raw_reference_files_per_case": 8,
+        "reference_position_index_files_per_case": 10,
+        "metadata_inodes_and_bytes_additional": True,
+        "guaranteed_filesystem_allocation_bound": False,
+        "limitation": "Rounded data payload is not a bound for directories, indexes, logs, "
+                      "extent metadata, build products, transaction files or future failures. "
+                      "Every hard-link alias needs a directory entry, not another payload inode.",
+    }
 
 
 def assess():
@@ -130,8 +170,8 @@ def assess():
                     "full workload exceeds legal sequence depth")
             fixed = {
                 "four_raw_fp64_references": 4 * n * REFERENCE_BYTES,
-                "three_selected_and_three_checkpoint_reference_copies":
-                    6 * n * REFERENCE_BYTES,
+                "four_unique_shared_reference_position_layouts":
+                    4 * n * REFERENCE_BYTES,
                 "teacher_arrays_three_modes_two_repeats":
                     3 * REPEATS * n * OBSERVATION_BYTES,
                 "teacher_comparison_layer_copies":
@@ -167,6 +207,8 @@ def assess():
     teacher_mandatory = sum(value for name, value in fixed.items()
                            if not name.startswith("greedy_"))
     fixed_maximum = sum(fixed.values())
+    eliminated_duplicate_bytes = sum(2 * row["teacher_positions"] * REFERENCE_BYTES
+                                     for row in rows)
     raw_trace = {
         bound: sum(row["trace_workload"][mode][
             f"raw_44_byte_trace_bytes_two_repeats_{bound}"] for row in rows for mode in MODES)
@@ -175,6 +217,7 @@ def assess():
     retained = retained_usage(ROOT / "evidence/preparation")
     usage = shutil.disk_usage(ROOT)
     stat = os.statvfs(ROOT)
+    allocation = array_allocation(rows, stat.f_frsize)
     # These are explicit planning allowances, NOT measured/reserved output bytes.
     positions = sum(row["teacher_positions"] + row["greedy_positions_maximum"] for row in rows)
     log_index_allowance = positions * 3 * REPEATS * 256 * 1024
@@ -193,6 +236,17 @@ def assess():
         "cases": rows, "fixed_payload_bytes": fixed,
         "mandatory_teacher_payload_bytes_before_greedy_or_traces": teacher_mandatory,
         "full_fixed_payload_maximum_bytes": fixed_maximum,
+        "reference_view_retention": {
+            "format": "unchanged FP64 files and descriptors; same-filesystem hard links",
+            "unique_position_layouts_per_case": 4,
+            "logical_position_layouts_per_case": 10,
+            "logical_layouts_include": "Four cache layouts plus six consumer aliases",
+            "raw_aggregate_modes_retained": 4,
+            "duplicate_payload_bytes_eliminated": eliminated_duplicate_bytes,
+            "observations_and_independent_repeats_shared": False,
+            "partial_or_corrupt_cache_rebuilt": False,
+            "copy_fallback_allowed": False},
+        "filesystem_array_data_planning": allocation,
         "transaction_trace_raw_bytes": raw_trace,
         "transaction_trace_storage": {
             "format": "gzip level 1; each decoded record is 44 bytes",
@@ -228,10 +282,27 @@ def assess():
             "largest_case_fixed_payload_maximum_bytes":
                 max(sum(row["fixed_payload_bytes"].values()) for row in rows),
             "retained_fixed_payload_peak_bytes": fixed_maximum,
-            "note": "The current collector deletes no raw references, selected/checkpoint copies, "
-                    "repeat observations, comparison layer copies or transaction logs. These "
-                    "coexist and accumulate over all cases, not just the largest case. "
-                    "In-memory FP64 temporaries are not disk reservations."},
+            "note": "Four raw reference modes and four unique position layouts coexist. "
+                    "The six consumer reference trees hard-link those layouts; their payload "
+                    "is not charged again. Independent observations, comparison layers and "
+                    "transaction logs remain distinct. All cases accumulate; no files are "
+                    "deleted after staging. In-memory FP64 temporaries are not disk reservations."},
+        "external_storage_prerequisite": {
+            "minimum_additional_array_payload_bytes_without_headroom":
+                max(0, fixed_maximum - usage.free),
+            "maximum_successful_attempt_array_payload_bytes": fixed_maximum,
+            "success_plus_one_retained_failure_array_payload_bytes": 2 * fixed_maximum,
+            "rounded_array_data_bytes_success_plus_one_retained_failure":
+                2 * allocation["rounded_array_data_bytes_one_successful_attempt"],
+            "array_file_inodes_success_plus_one_retained_failure":
+                2 * allocation["unique_array_payload_file_inodes_one_attempt"],
+            "trace_bytes_additional": None,
+            "requirement": "Provide same-filesystem hard-link-capable project storage for "
+                           "all arrays, plus independently qualified full-workload gzip "
+                           "trace retention, metadata, logs, build/staging and one retained "
+                           "failed attempt. Available bytes are not a reservation. The "
+                           "uncompressed trace count is not a gzip capacity prediction.",
+            "complete_capacity_requirement_known": False},
         "full_suite_capacity_proven": False, "storage_provisioned_by_probe": False,
         "full_model_results_present": (ROOT / "tests/data/full_model_results.json").is_file(),
         "collection_launched": False, "rtl_rebuilt": False, "results_assembled": False,
@@ -239,7 +310,9 @@ def assess():
             "Fixed arrays count current production_sim/reference_collector output layouts. "
             "JSON, stdout, stderr, build outputs, filesystem allocation and future failed runs "
             "need additional capacity; allowances are estimates, not reservations.",
-            "No new compression/retention scheme is implemented or qualified by this assessment.",
+            "Hard-link reference views eliminate two duplicate position layouts, not raw "
+            "aggregates, independent repeats or observation layer copies. Codec ratios "
+            "from short synthetic or retained prefixes establish no complete-workload fit.",
             "Missing/damaged histories are inventoried only, never reconstructed or overwritten.",
             "Fit at a measured instant is not independent review or collection authorization.",
         ],

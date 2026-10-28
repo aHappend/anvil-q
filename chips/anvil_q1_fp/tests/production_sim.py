@@ -156,12 +156,14 @@ def compare_teacher(ev, key, mode, runs, references, positions, destination,
     """Use the existing independent validator and its unchanged per-case bounds."""
     from reference_collector import collect
     destination.mkdir()
+    selected_source = (ROOT / references[mode]["layers"]["path"]).parent
+    checkpoint_source = (ROOT / references["checkpoint"]["layers"]["path"]).parent
     selected = collect(
-        (ROOT / references[mode]["layers"]["path"]).parent,
-        destination / "selected-reference", positions)
+        selected_source, destination / "selected-reference", positions,
+        shared=selected_source / "position-views")
     checkpoint = collect(
-        (ROOT / references["checkpoint"]["layers"]["path"]).parent,
-        destination / "checkpoint-reference", positions)
+        checkpoint_source, destination / "checkpoint-reference", positions,
+        shared=checkpoint_source / "position-views")
     validator = Validator(ROOT, ev)
     observed = []
     for position in range(positions):
