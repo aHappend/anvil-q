@@ -69,7 +69,7 @@ def inspect_trace(path, destination):
         "record_bytes": 44, "records": count, "reads": reads, "writes": writes,
         "kinds": kinds, "first_records": first, "last_record": last,
         "gzip_eof_crc_checked": magic[:2] == b"\x1f\x8b",
-        "packed_eof_hashes_checked": magic == b"AQPACK01",
+        "packed_eof_hashes_checked": magic in (b"AQPACK01", b"AQTXN002"),
     }
     write_json(destination, result)
     print(json.dumps({key: result[key] for key in

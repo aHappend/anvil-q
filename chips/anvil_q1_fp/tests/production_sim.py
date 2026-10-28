@@ -25,7 +25,7 @@ from verify import Evidence, ROOT
 MODES = {"bf16": 1, "fp16": 2, "w4a16": 0}
 BUILD_SOURCES = ("tests/production_sim.cpp", "tests/packed_stream.hpp",
                  "tests/production_storage.hpp", "tests/packed_stream.py",
-                 "tests/packed_storage.py")
+                 "tests/packed_storage.py", "tests/sparse_transactions.py")
 
 
 def descriptor(path):
@@ -598,7 +598,7 @@ def main():
         snapshot.mkdir()
         for name in ("production_sim.py", "production_sim.cpp", "production_trace.py",
                      "packed_stream.hpp", "production_storage.hpp",
-                     "packed_stream.py", "packed_storage.py"):
+                     "packed_stream.py", "packed_storage.py", "sparse_transactions.py"):
             shutil.copy2(ROOT / "tests" / name, snapshot / name)
         if args.repair_of:
             ev.receipt["repair_of"] = descriptor(artifact_path(ROOT, str(args.repair_of)))

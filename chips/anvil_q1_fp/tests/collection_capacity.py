@@ -27,6 +27,7 @@ BINDINGS = (
     "tests/reference_capacity.py", "tests/data/model_manifest.json",
     "tests/data/benchmark_manifest.json", "tests/retention_storage.py",
     "tests/packed_storage.py",
+    "tests/sparse_transactions.py",
     "tests/packed_stream.py", "tests/packed_stream.hpp", "tests/production_storage.hpp",
 )
 
@@ -222,6 +223,7 @@ def packed_array_allocation(rows, block, modes=3):
 def packed_workload_accounting(rows, block, modes=MODES):
     """Charge the full retained workload, explicitly exposing unbounded costs."""
     from packed_storage import CHUNK_BYTES, ENTRY, RECORD, bound
+    from sparse_transactions import SPARSE, bound as trace_bound, layout
     require(isinstance(modes, (tuple, list)) and modes and len(set(modes)) == len(modes)
             and all(mode in MODES for mode in modes), "invalid accounting modes")
     arrays = packed_array_allocation(rows, block, len(modes))
@@ -245,10 +247,9 @@ def packed_workload_accounting(rows, block, modes=MODES):
                 if not positions:
                     continue
                 count = transactions(PRODUCTION, precision, positions)
-                entries = (count + CHUNK_BYTES // RECORD.size - 1) // (
-                    CHUNK_BYTES // RECORD.size)
-                largest_trace_index = max(largest_trace_index, entries * ENTRY.size)
-                case_traces += REPEATS * rounded(bound(count * 44, transactions=True))
+                _, entries = layout(count * RECORD.size)
+                largest_trace_index = max(largest_trace_index, entries * SPARSE.size)
+                case_traces += REPEATS * rounded(trace_bound(count * RECORD.size))
                 transaction_count += REPEATS * count
                 trace_files += REPEATS
                 # Collector retains one token-text and one RoPE file per
@@ -273,10 +274,11 @@ def packed_workload_accounting(rows, block, modes=MODES):
                         rounded(largest_trace_index) + observation_indexes)
     files = arrays["array_payload_inodes_one_successful_attempt"] + trace_files + support_files
     return {
-        "format": "anvil-packed-v1", "cases": len(rows), "modes": list(modes),
+        "format": "arrays-v1-transactions-v2", "cases": len(rows), "modes": list(modes),
         "repeats": REPEATS, "greedy_limit": 128,
         "array_data": arrays,
-        "mandatory_trace_index_floor": packed_trace_index_floor(rows, modes),
+        "mandatory_trace_index_floor_legacy_v1": packed_trace_index_floor(rows, modes),
+        "mandatory_trace_framing_floor": sparse_trace_floor(rows, modes),
         "transactions_one_attempt_maximum": transaction_count,
         "trace_data_block_bound_one_attempt": traces,
         "token_and_rope_data_block_bound_one_attempt": support,
@@ -313,6 +315,7 @@ def packed_workload_accounting(rows, block, modes=MODES):
                          "with on-disk random access. This bounds codec index buffers, not "
                          "total RSS. FP64 model/activation temporaries, JSON metadata and "
                          "whole-process memory have not been qualified."},
+        "whole_process_memory": memory_accounting(rows),
         "additional_costs": {
             "reference_and_comparison_view_json_indexes": {
                 "bound_bytes": None, "reason": "No enforced serialized metadata byte limit."},
@@ -335,6 +338,86 @@ def packed_workload_accounting(rows, block, modes=MODES):
         "complete_capacity_bound_bytes": None,
         "full_workload_storage_qualified": False,
         "collection_resumption_authorized": False,
+    }
+
+
+def sparse_trace_floor(rows, modes=MODES, config=PRODUCTION):
+    """V2 mandatory framing/index floor, independent of payload compression."""
+    from sparse_transactions import FRAME, SPARSE, STRIDE, TRACE_CHUNK_BYTES, layout
+    require(isinstance(modes, (tuple, list)) and modes and len(set(modes)) == len(modes)
+            and all(mode in MODES for mode in modes), "invalid v2 floor modes")
+    frames = indexes = records = containers = largest_index = 0
+    for row in rows:
+        teacher, prompt = row["teacher_positions"], row["prompt_positions"]
+        require(type(teacher) is int and type(prompt) is int and
+                0 < prompt <= teacher <= config[-1], "invalid mandatory workload positions")
+        for mode in modes:
+            precision = {"w4a16": 0, "bf16": 1, "fp16": 2}[mode]
+            for positions in (teacher, prompt):
+                count = transactions(config, precision, positions)
+                f, i = layout(count * 44)
+                records += REPEATS * count
+                frames += REPEATS * f
+                indexes += REPEATS * i
+                containers += REPEATS
+                largest_index = max(largest_index, i * SPARSE.size)
+    return {
+        "format": "anvil-transactions-v2", "cases": len(rows), "modes": list(modes),
+        "repeats": REPEATS, "mandatory_transaction_records": records,
+        "mandatory_trace_containers": containers, "chunk_raw_bytes": TRACE_CHUNK_BYTES,
+        "frame_bytes": FRAME.size, "index_stride_frames": STRIDE,
+        "sparse_entry_bytes": SPARSE.size, "mandatory_frames": frames,
+        "mandatory_sparse_entries": indexes,
+        "minimum_logical_frame_bytes": frames * FRAME.size,
+        "minimum_logical_sparse_index_bytes": indexes * SPARSE.size,
+        "minimum_logical_framing_and_index_bytes": frames * FRAME.size + indexes * SPARSE.size,
+        "largest_mandatory_container_index_bytes": largest_index,
+        "basis": "Complete teacher sequences plus full prompts, all modes and actual repeats. "
+                 "Optional generated continuation and failures excluded from this floor only.",
+        "excluded_costs": "All payloads, headers/footers, arrays, logs, builds, metadata, "
+                          "staging and failures remain additional.",
+        "compression_ratio_assumed": False, "full_workload_storage_qualified": False,
+        "collection_resumption_authorized": False,
+    }
+
+
+def memory_accounting(rows):
+    """Recompute known live data shapes without pretending these bound RSS."""
+    from sparse_transactions import TRACE_CHUNK_BYTES
+    require(rows, "memory accounting needs selected cases")
+    teacher = max(row["teacher_positions"] for row in rows)
+    observer = max(max(row["teacher_positions"], row["greedy_positions_maximum"]) for row in rows)
+    require(0 < teacher <= 32768 and 0 < observer <= 32768,
+            "memory accounting sequence extent")
+    return {
+        "largest_teacher_positions": teacher, "largest_observer_positions": observer,
+        "trace_codec_raw_chunk_bytes": TRACE_CHUNK_BYTES,
+        "trace_delta_maximum_bytes": TRACE_CHUNK_BYTES // 44 * 54,
+        "trace_reader_two_chunk_cache_bytes": 2 * TRACE_CHUNK_BYTES,
+        "reference_two_array_reader_cache_bytes": 4 * 1024 * 1024,
+        "observer_kv_value_payload_bytes": observer * 24 * 256 * 4,
+        "observer_kv_entries": observer * 24 * 256,
+        "observer_kv_key_fields_bytes": observer * 24 * 256 * 4 * 4,
+        "observer_scratch_value_and_initialized_bytes": 15 * 4864 * 5,
+        "reference_retained_layers_fp64_bytes": 24 * teacher * 896 * 8,
+        "reference_one_head_attention_matrix_fp64_bytes": teacher * teacher * 8,
+        "reference_logit_embedding_decode_block_fp64_bytes": 1024 * 896 * 8,
+        "collection_parallelism": 1, "maximum_observer_codec_children": 3,
+        "maximum_reference_reader_children": 2,
+        "whole_process_memory_bound_bytes": None,
+        "whole_process_memory_qualified": False,
+        "unresolved": [
+            "Codec copies, Python object/allocator overhead and zlib workspaces; finite chunk "
+            "and cache extents above are not an RSS upper bound.",
+            "C++ std::map node/allocator cost per KV entry, mapped tensor resident pages, "
+            "Verilated state, compiler/linker peak and libc buffers.",
+            "FP64 BLAS workspace, simultaneous decode/attention/activation temporaries and "
+            "NumPy allocator retention. The listed arrays may overlap in lifetime.",
+            "Parent orchestrator, imported modules, retained metadata and log buffers. "
+            "Serial cases do not multiply peak RSS by fifty; concurrent child RSS adds.",
+        ],
+        "limitation": "Logical array/value extents only, not a measured high-water mark, "
+                      "process limit, reservation or proof of host-memory fit.",
     }
 
 
@@ -465,14 +548,13 @@ def assess():
     packed_complete["budget_gap_meaning"] = (
         "Additional bytes to provision the no-compression-fallback data-block budget, "
         "not a lower bound on actual encoded size or proof that a compression ratio fits.")
-    index_floor = packed_complete["mandatory_trace_index_floor"]
+    index_floor = packed_complete["mandatory_trace_framing_floor"]
     index_floor["available_bytes_at_assessment"] = available_bytes
-    index_floor["logical_index_bytes_exceed_available_bytes"] = (
-        index_floor["minimum_logical_index_bytes_one_successful_attempt"] > available_bytes)
-    from packed_storage import bound as packed_bound
+    index_floor["logical_framing_bytes_exceed_available_bytes"] = (
+        index_floor["minimum_logical_framing_and_index_bytes"] > available_bytes)
+    from sparse_transactions import bound as packed_bound
     packed_trace_bound = sum(
-        REPEATS * sum(packed_bound(row["trace_workload"][mode][name] * 44,
-                                  transactions=True)
+        REPEATS * sum(packed_bound(row["trace_workload"][mode][name] * 44)
                       for name in ("teacher_transactions_per_repeat",
                                    "greedy_transactions_per_repeat_maximum"))
         for row in rows for mode in MODES)
@@ -508,7 +590,7 @@ def assess():
         "prospective_packed_array_data_bound": packed_allocation,
         "direct_packed_complete_workload_accounting": packed_complete,
         "prospective_packed_trace_bound": {
-            "format": "anvil-packed-v1", "producer_enabled": False,
+            "format": "anvil-transactions-v2", "producer_enabled": False,
             "raw_fallback_logical_bytes_one_successful_attempt": packed_trace_bound,
             "raw_fallback_logical_bytes_success_plus_one_retained_failure": 2 * packed_trace_bound,
             "independently_retained_files_one_successful_attempt": 50 * 3 * REPEATS * 2,

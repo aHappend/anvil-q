@@ -477,6 +477,225 @@ def bounded_indexes(destination, report, reject):
         "collection_resumption_authorized": False})
 
 
+def sparse_transactions(destination, report, reject):
+    """V2 round trips and independent framing fixtures, never inference."""
+    import os
+    import tracemalloc
+    from collection_capacity import sparse_trace_floor, transactions as count_transactions
+    from architecture import CONFIGURATIONS
+    from sparse_transactions import (END as end, FRAME, MAGIC as magic, SPARSE,
+        STRIDE, TRACE_CHUNK_BYTES, FrameEntries, TransactionWriter, bound as trace_bound,
+        layout)
+
+    directory = destination / "sparse-transactions"
+    directory.mkdir()
+    rng = random.Random(89)
+    count = 5000
+    rows = []
+    cycle = (1 << 32) - 5
+    for i in range(count):
+        accepted = cycle + rng.randrange(0, 1000)
+        completed = accepted + rng.randrange(1, 10000)
+        fields = [i % 2, *(rng.getrandbits(32) for _ in range(6))]
+        rows.append((accepted & 0xffffffff, accepted >> 32,
+                     completed & 0xffffffff, completed >> 32, *fields))
+        cycle = completed
+    rows[-1] = (0xfffffffe, 0xffffffff, 0xffffffff, 0xffffffff, 1,
+                0xffffffff, 0, 0x80000000, 1, 0xffffffff, 0x7f800001)
+    raw = b"".join(RECORD.pack(*row) for row in rows)
+    small_chunk = RECORD.size * 31
+    paths = []
+    for repeat in range(2):
+        path = directory / f"repeat-{repeat}.aqp"
+        with TransactionWriter(path, chunk_bytes=small_chunk) as output:
+            for start in range(0, len(raw), RECORD.size * 17):
+                output.append(raw[start:start + RECORD.size * 17])
+        paths.append(path)
+        require(path.stat().st_size <= trace_bound(len(raw), small_chunk) and
+                list(transactions(path)) == rows, "v2 transaction round trip differs")
+    require(not os.path.samefile(*paths), "v2 synthetic repeats alias one file")
+    legacy = directory / "legacy-v1.aqp"
+    with Writer(legacy, transactions=True) as output:
+        output.append(raw)
+    gzip_path = directory / "legacy-gzip.gz"
+    with gzip_path.open("xb") as output:
+        output.write(gzip.compress(raw, mtime=0))
+    require(list(transactions(legacy)) == list(transactions(gzip_path)) == rows,
+            "v2/v1/gzip exact cross-format mismatch")
+    reader = Reader(paths[0])
+    require(reader.header["schema"] == 2 and isinstance(reader.entries, FrameEntries),
+            "generic reader did not dispatch to sparse v2 format")
+    seeks = [(0, 0), (0, 1), (30, 3), (31 * STRIDE - 1, 3), (count-1, 1)]
+    seeks += [(start := rng.randrange(count), rng.randrange(count - start + 1))
+              for _ in range(30)]
+    for start, length in seeks:
+        require(list(reader.records(start, length)) == rows[start:start+length],
+                "v2 record random access differs")
+    for number in (0, STRIDE-1, STRIDE, 2*STRIDE, len(reader.entries)-1):
+        require(reader.chunk(number) == raw[number*small_chunk:(number+1)*small_chunk],
+                "v2 frame sparse seek differs")
+    index_start, frame_count, total, _, _ = FOOTER.unpack(paths[0].read_bytes()[-FOOTER.size:])
+    require(frame_count == layout(len(raw), small_chunk)[0] and total == len(raw) and
+            paths[0].stat().st_size - FOOTER.size - index_start ==
+            layout(len(raw), small_chunk)[1] * SPARSE.size,
+            "v2 sparse directory is not sparse or extent differs")
+
+    # Independent raw-frame serializer exercises a second encoder and method 0.
+    def manual(chunks, chunk_bytes):
+        header = json.dumps({"schema": 2, "kind": "transactions", "record_bytes": 44,
+                            "chunk_bytes": chunk_bytes, "index_stride": 64},
+                           sort_keys=True, separators=(",", ":")).encode("ascii")
+        prefix = magic + struct.pack("<I", len(header)) + header
+        payload = bytearray(prefix)
+        checksum = hashlib.sha256(prefix)
+        sparse = bytearray()
+        for number, chunk in enumerate(chunks):
+            if number % 64 == 0:
+                sparse.extend(struct.pack("<Q", len(payload)))
+            frame = struct.pack("<QQQB7x32s32s", number, len(chunk), len(chunk), 0,
+                                hashlib.sha256(chunk).digest(), hashlib.sha256(chunk).digest())
+            checksum.update(frame)
+            payload.extend(frame)
+            payload.extend(chunk)
+        offset = len(payload)
+        checksum.update(sparse)
+        payload.extend(sparse)
+        payload.extend(FOOTER.pack(offset, len(chunks), sum(map(len, chunks)),
+                                   checksum.digest(), end))
+        return bytes(payload)
+
+    def put(name, data):
+        path = directory / (name + ".aqp")
+        with path.open("xb") as stream:
+            stream.write(data)
+        return path
+
+    independent = put("independent-raw", manual(
+        [raw[start:start+small_chunk] for start in range(0, len(raw), small_chunk)], small_chunk))
+    require(b"".join(Reader(independent).chunks()) == raw,
+            "independently framed raw fallback differs")
+    for n in (0, 1, 30, 31, 32, 31*STRIDE, 31*STRIDE+1):
+        path = directory / f"boundary-{n}.aqp"
+        with TransactionWriter(path, chunk_bytes=small_chunk) as output:
+            output.append(raw[:n*44])
+        data = path.read_bytes()
+        offset, frames, total, _, _ = FOOTER.unpack(data[-FOOTER.size:])
+        f, i = layout(n*44, small_chunk)
+        require(frames == f and total == n*44 and len(data)-offset-FOOTER.size == i*8 and
+                list(transactions(path)) == rows[:n], "v2 chunk/index boundary mismatch")
+    for name, changes in (
+        ("bad-chunk-zero", {"chunk_bytes": 0}),
+        ("bad-chunk-unaligned", {"chunk_bytes": 45}),
+        ("bad-chunk-oversize", {"chunk_bytes": TRACE_CHUNK_BYTES+44}),
+    ):
+        reject("v2-"+name, lambda changes=changes: TransactionWriter(
+            directory / (name + ".aqp"), **changes))
+    for name, args in (("bad-record-index", (-1, 1)), ("past-end", (count, 1)),
+                       ("boolean-index", (True, 1)), ("bad-count", (0, -1))):
+        reject("v2-"+name, lambda args=args: list(reader.records(*args)))
+    reject("v2-array-metadata", lambda: Reader(paths[0], dtype="<f4", shape=[1], axes=["x"]))
+    reject("v2-occupied-container", lambda: TransactionWriter(paths[0]), errors=(FileExistsError,))
+    incomplete = TransactionWriter(directory / "failed-seal.aqp", chunk_bytes=44)
+    incomplete.append(raw[:44])
+    incomplete.index_stream.close()
+    reject("v2-failed-seal", incomplete.close)
+    require(incomplete.index_path.exists(), "failed v2 seal discarded sparse staging")
+    reject("v2-failed-container-readable", lambda: Reader(incomplete.path))
+    reject("v2-failed-writer-append", lambda: incomplete.append(raw[:44]))
+    reject("v2-failed-writer-reseal", incomplete.close)
+    occupied = directory / "occupied-spool.aqp"
+    spool = occupied.with_name(occupied.name + ".index-partial")
+    spool.write_bytes(b"retained")
+    reject("v2-occupied-spool", lambda: TransactionWriter(occupied), errors=(FileExistsError,))
+    require(spool.read_bytes() == b"retained", "v2 overwrote an occupied spool")
+    pristine = paths[0].read_bytes()
+    header_end = 12 + struct.unpack("<I", pristine[8:12])[0]
+    first_length = FRAME.unpack(pristine[header_end:header_end+FRAME.size])[1]
+    for label, offset in (("header", 12), ("frame-ordinal", header_end),
+                          ("frame-length", header_end+8), ("frame-hash", header_end+32),
+                          ("payload", header_end+FRAME.size), ("sparse-index", index_start),
+                          ("footer-hash", len(pristine)-FOOTER.size+24),
+                          ("footer-end", len(pristine)-1)):
+        damaged = bytearray(pristine)
+        damaged[offset] ^= 1
+        path = put("corrupt-"+label, damaged)
+        reject("v2-corrupt-"+label, lambda path=path: list(transactions(path)))
+    for size in (0, 7, 12, header_end-1, header_end+FRAME.size-1,
+                 header_end+FRAME.size+first_length-1, index_start,
+                 len(pristine)-FOOTER.size+1, len(pristine)-1):
+        path = put("truncated-"+str(size), pristine[:size])
+        reject("v2-truncated-"+str(size), lambda path=path: list(transactions(path)),
+               errors=(ValueError, OSError, EOFError))
+    path = put("trailing-bytes", pristine+b"x")
+    reject("v2-trailing-bytes", lambda: Reader(path))
+    # Each frame below is hash-consistent: ordering still has to fail on records.
+    path = put("rehashed-out-of-order", manual([raw[44:88], raw[:44]], 44))
+    reject("v2-rehashed-cross-frame-order", lambda: list(transactions(path)))
+    path = put("rehashed-invalid-write", manual([RECORD.pack(*rows[0][:4], 2, *rows[0][5:])], 44))
+    reject("v2-rehashed-invalid-write", lambda: list(transactions(path)))
+    # Moving valid physical frames must not be hidden by their per-frame hashes.
+    frame1 = header_end + FRAME.size + first_length
+    length1 = FRAME.size + FRAME.unpack(pristine[frame1:frame1+FRAME.size])[1]
+    moved = (pristine[:header_end] + pristine[frame1:frame1+length1] +
+             pristine[header_end:frame1] + pristine[frame1+length1:])
+    path = put("reordered-physical-frames", moved)
+    reject("v2-physical-frame-reorder", lambda: Reader(path))
+    path = put("changed-after-cache", pristine)
+    cached = Reader(path)
+    cached.chunk(0)
+    with path.open("ab") as output:
+        output.write(b"changed")
+    reject("v2-mutation-after-cache", lambda: cached.chunk(0))
+    reject("v2-mutation-after-sparse-lookup", lambda: cached.entries[0])
+
+    # Real codecs at bounded small frame size isolate index growth over 4097 frames.
+    # This is not a measurement of a maximum-sized production frame or process RSS.
+    measured = []
+    for frames in (65, 4097):
+        path = directory / f"memory-{frames}.aqp"
+        tracemalloc.start()
+        try:
+            with TransactionWriter(path, chunk_bytes=44) as output:
+                for i in range(frames):
+                    output.append(RECORD.pack(2*i+1, 0, 2*i+2, 0, 0, 8, 0, 0, i, 0, i))
+                require(output.index_stream.tell() <= ((frames+63)//64)*8,
+                        "v2 spool retained dense frame entries")
+            _, writer_peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        tracemalloc.start()
+        try:
+            observed = Reader(path)
+            for i in (0, frames//2, frames-1):
+                require(list(observed.records(i, 1))[0][0] == 2*i+1,
+                        "bounded-memory v2 seek changed records")
+            _, reader_peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        require(max(writer_peak, reader_peak) < 2 * CHUNK_BYTES,
+                "v2 sparse index test exceeded bounded traced Python allocation")
+        measured.append({"frames": frames, "writer_peak_traced_python_bytes": writer_peak,
+                         "reader_peak_traced_python_bytes": reader_peak})
+    for config in CONFIGURATIONS.values():
+        selected = [{"teacher_positions": config[-1], "prompt_positions": 1,
+                     "greedy_positions_maximum": config[-1]}]
+        result = sparse_trace_floor(selected, config=config)
+        counts = [count_transactions(config, mode, n) for mode in range(3)
+                  for n in (config[-1], 1)]
+        require(result["mandatory_frames"] == 2 * sum(layout(n*44)[0] for n in counts) and
+                result["mandatory_sparse_entries"] == 2 * sum(layout(n*44)[1] for n in counts),
+                "v2 full-schedule framing floor mismatch")
+    report["positive_cases"].append({
+        "name": "v2-sparse-lossless-legacy-random-access-corruption-and-memory",
+        "independently_written_synthetic_repeats": 2, "records_per_repeat": count,
+        "exact_cross_format_comparisons": 3, "record_slice_comparisons": len(seeks),
+        "small_frame_bytes": small_chunk, "sparse_stride_frames": STRIDE,
+        "production_frame_raw_bound_bytes": TRACE_CHUNK_BYTES,
+        "managed_memory_measurements": measured, "memory_test_codecs_mocked": False,
+        "maximum_production_frame_rss_measured": False, "complete_process_rss_qualified": False,
+        "production_collection_enabled": False})
+
+
 def integrated(destination, report, reject):
     """Exercise production consumers with synthetic full-width arrays, not inference."""
     import os
@@ -1207,6 +1426,7 @@ def worker(destination):
     direct_producers(destination, report, reject)
     trace_index_floors(destination, report, reject)
     bounded_indexes(destination, report, reject)
+    sparse_transactions(destination, report, reject)
     report["tools"] = {"python": sys.version, "zlib_runtime": zlib.ZLIB_RUNTIME_VERSION}
     report["full_workload_capacity_qualified"] = False
     report["direct_packed_producers_opt_in_implemented"] = True

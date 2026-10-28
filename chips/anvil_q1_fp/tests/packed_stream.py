@@ -10,6 +10,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import artifact_path, require
 from packed_storage import CHUNK_BYTES, Reader, Writer
+from sparse_transactions import TransactionWriter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +26,7 @@ def write_stream(source, destination, kind):
     writer = None
     try:
         if kind == "transactions":
-            writer = Writer(destination, transactions=True)
+            writer = TransactionWriter(destination)
         width = 44 if kind == "transactions" else 4
         chunk = CHUNK_BYTES // width * width
         while raw := source.read(chunk):

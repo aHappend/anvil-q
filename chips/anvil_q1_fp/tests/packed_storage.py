@@ -176,8 +176,9 @@ def delta_encode(raw):
     return bytes(output)
 
 
-def delta_decode(data, count):
-    require(integer(count, 1) and count <= CHUNK_BYTES // RECORD.size,
+def delta_decode(data, count, *, maximum_bytes=CHUNK_BYTES):
+    require(integer(maximum_bytes, RECORD.size, 64 * CHUNK_BYTES) and
+            integer(count, 1) and count <= maximum_bytes // RECORD.size,
             "invalid transaction chunk count")
     offset = previous_cycle = 0
     previous_fields = (0,) * 6
@@ -353,6 +354,15 @@ class Writer:
 
 
 class Reader:
+    def __new__(cls, path, *, dtype=None, shape=None, axes=None):
+        if cls is Reader:
+            with Path(path).open("rb") as stream:
+                magic = stream.read(8)
+            if magic == b"AQTXN002":
+                from sparse_transactions import TransactionReader
+                return object.__new__(TransactionReader)
+        return super().__new__(cls)
+
     def __init__(self, path, *, dtype=None, shape=None, axes=None):
         self.path = Path(path)
         with self.path.open("rb") as stream:
@@ -454,7 +464,8 @@ class Reader:
         else:
             # Two cycle varints, six field varints and one u32: at most 54 bytes/record.
             delta = inflate(encoded, decoded // RECORD.size * 54)
-            raw = delta_decode(delta, decoded // RECORD.size)
+            raw = delta_decode(delta, decoded // RECORD.size,
+                               maximum_bytes=self.header["chunk_bytes"])
         require(len(raw) == decoded and digest(raw) == raw_hash, "decoded packed hash differs")
         self.entries.unchanged()
         self.cache[number] = raw
@@ -670,7 +681,7 @@ def transaction_chunks(path):
     path = Path(path)
     with path.open("rb") as stream:
         magic = stream.read(8)
-    if magic == MAGIC:
+    if magic in (MAGIC, b"AQTXN002"):
         reader = Reader(path)
         require(reader.header["kind"] == "transactions", "array used as transaction stream")
         yield from reader.chunks()

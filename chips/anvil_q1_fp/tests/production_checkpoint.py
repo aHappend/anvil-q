@@ -181,10 +181,11 @@ def event_record(line):
 def packed_fragments(chain, destination):
     """Pack already validated fragments directly, without raw staging copies."""
     from packed_storage import CHUNK_BYTES, Reader, Writer, transaction_chunks
+    from sparse_transactions import TransactionWriter
 
     fragments = {}
     event_count = 0
-    with Writer(destination / "transactions.aqp", transactions=True) as trace:
+    with TransactionWriter(destination / "transactions.aqp") as trace:
         with (destination / "events.jsonl").open("xb") as events:
             for row in reversed(chain):
                 traces = [entry for entry in row["artifacts"] if Path(entry["path"]).name in
@@ -279,6 +280,7 @@ def assemble(ev, item, label="assembled", *, packed=False):
         seal(destination / "assembly.json", {
             "schema": 1, "segment": item, "segments": len(chain),
             "storage": "anvil-packed-v1",
+            "transaction_storage": "anvil-transactions-v2",
             "completed_process": completed, "complete_benchmark": False,
             "events": event_count, "end_cycle": head["end_cycle"],
             "artifacts": [descriptor(path) for path in sorted(destination.rglob("*"))
@@ -286,7 +288,7 @@ def assemble(ev, item, label="assembled", *, packed=False):
         })
         ev.assertion("immutable_segment_fragment_assembly", True, segments=len(chain),
                      completed_process=completed, events=event_count,
-                     storage="anvil-packed-v1")
+                     storage="anvil-packed-v1", transaction_storage="anvil-transactions-v2")
         return destination
     event_count = 0
     with gzip.open(destination / "transactions.u32.gz", "xb") as trace:
