@@ -49,6 +49,7 @@ from memory import run_memory
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
 from scheduling import resource_limits, scheduling_probe, scheduling_controls
 from interactions import run_top_interactions, run_top_token_capacity
+from official import run_official_discovery, run_official_intake
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -435,10 +436,9 @@ class Evidence:
             )
             result = self.child([self.relative(binary), *runtime_args], name + "-simulate",
                                 allow_failure=True)
-        record["simulation_receipt"] = result
+        record.update(simulation_receipt=result, status="failed")
         if (result["exit_code"] != 0 or result["timed_out"] or
                 not result["child_settled"] or not result.get("process_group_settled", True)):
-            record["status"] = "failed"
             receipt = str(Path(result["stdout"]).parent / "receipt.json")
             raise VerificationFailure(f"{name} failed; see {receipt}")
         lines = (ROOT / result["stdout"]).read_text().splitlines()
@@ -461,6 +461,7 @@ class Evidence:
             "recorded": len(simulations),
             "by_status": {status: sum(row["status"] == status for row in simulations)
                           for status in ("passed", "expected-functional-rejection",
+                                         "expected-harness-rejection",
                                          "failed", "not-run")},
             "passed_comparisons": sum(row.get("actual_comparisons", 0)
                                       for row in simulations if row["status"] == "passed"),
@@ -493,6 +494,9 @@ class Evidence:
         if not self.record["sources_unchanged"]:
             self.record["exit_code"] = 1
             self.record["reason"] = "Source set changed during verification; evidence invalid"
+        if not self.record["child_settled"]:
+            self.record["exit_code"] = 1
+            self.record["reason"] = "A child process group did not settle; evidence invalid"
         write_json(self.path / "receipt.json", self.record)
         print(json.dumps({
             "exit_code": self.record["exit_code"],
@@ -868,6 +872,8 @@ def main():
         "scheduling-controls",
         "top-interactions",
         "top-token-capacity",
+        "official-qwen-discovery",
+        "official-qwen-intake",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -985,6 +991,10 @@ def main():
             run_top_interactions(evidence)
         elif args.probe == "top-token-capacity":
             run_top_token_capacity(evidence)
+        elif args.probe == "official-qwen-discovery":
+            run_official_discovery(evidence)
+        elif args.probe == "official-qwen-intake":
+            run_official_intake(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):

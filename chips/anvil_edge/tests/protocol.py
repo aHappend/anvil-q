@@ -722,7 +722,7 @@ module bench;
   reg [31:0] tbl_rsp_data=0;
   reg config_valid=1,finish_valid=0;
   wire finish_ready;
-  reg [31:0] cfg_vocab_size=257,cfg_max_token_byte_length=64;
+  reg [31:0] cfg_vocab_size=257,cfg_max_token_byte_length=@MAX_TOKEN_LENGTH@;
   reg [63:0] cfg_token_records_base=64'h1000,cfg_token_bytes_base=64'h4000;
   reg [63:0] cfg_token_bytes_count=@BYTE_COUNT@;
   anvil_edge_detokenizer dut(.*);
@@ -791,7 +791,7 @@ module bench;
       end
       if (out_valid && out_ready) begin
         if (outputs>=@OUTPUTS@ || out_data!==expected[outputs] ||
-            out_last!==(outputs==@OUTPUTS@-1))
+            out_last!==(@ERROR_CODE@==0 && outputs==@OUTPUTS@-1))
           $fatal(1,"DETOK_BYTES item=%0d expected=%h observed=%h last=%b",
                  outputs,expected[outputs],out_data,out_last);
         outputs=outputs+1; comparisons=comparisons+1;
@@ -825,7 +825,8 @@ module bench;
         if (error!==1 || error_code!==@ERROR_CODE@ || done!==0)
           $fatal(1,"DETOK_ERROR expected=%h observed=%h",@ERROR_CODE@,error_code);
       end
-      if (outputs!=@OUTPUTS@ || completions!=0 || outstanding)
+      if (outputs!=@OUTPUTS@ || completions!=0 || outstanding ||
+          requests!=@REQUESTS@ || responses!=requests || out_valid || in_ready)
         $fatal(1,"DETOK_ERROR_COUNTS");
     end else begin
       while (completions==0 && !error) tick();
@@ -848,7 +849,10 @@ endmodule
 
 
 def detokenizer_test(evidence, seed, name, pieces, *, finish=False, error=0,
-                     bad_record=False, invalid_id=False, bus_error=False):
+                     bad_record=False, invalid_id=False, bus_error=False,
+                     max_token_length=64, expected_prefix=b""):
+    assert max_token_length > 0
+    assert error or not expected_prefix
     # The offsets intentionally cross word boundaries and do not start at zero.
     raw = b"\x7f\x55\x13"
     records = {}
@@ -862,7 +866,7 @@ def detokenizer_test(evidence, seed, name, pieces, *, finish=False, error=0,
             records[0x1020 + token * 16 + word * 4] = int.from_bytes(
                 record[word * 4:word * 4 + 4], "little")
         reads.extend(0x1020 + token * 16 + word * 4 for word in range(4))
-        if not bad_record:
+        if not bad_record and len(piece) <= max_token_length:
             reads.extend((0x4020 + offset + byte) & ~3 for byte in range(len(piece)))
     memory = dict(records)
     padded = raw + b"\x00" * (-len(raw) % 4)
@@ -872,7 +876,7 @@ def detokenizer_test(evidence, seed, name, pieces, *, finish=False, error=0,
         reads = []
     if bus_error:
         reads = reads[:1]
-    output = b"".join(pieces) if not error else b""
+    output = b"".join(pieces) if not error else expected_prefix
     if not error:
         assert output.decode("utf-8").encode("utf-8") == output
     vectors = [f"addresses[{i}]=64'h{address:x};" for i, address in enumerate(reads)]
@@ -892,6 +896,7 @@ do begin @(posedge clk); end while (!finish_ready);
 """)
     parameters = {
         "SEED": str(seed), "BYTE_COUNT": str(len(raw)),
+        "MAX_TOKEN_LENGTH": str(max_token_length),
         "MEMORY": "\n".join(f"64'h{a:x}: memory=32'h{v:08x};"
                             for a, v in sorted(memory.items())),
         "BUS_ERROR": str(int(bus_error)), "REQUESTS": str(len(reads)),
@@ -928,6 +933,19 @@ def run_detokenizer(evidence):
             ("surrogate", [b"\xed\xa0\x80"], {"error": 0x10}),
             ("out-of-range", [b"\xf4\x90\x80\x80"], {"error": 0x10}),
             ("ddr-error", [b"A"], {"bus_error": True, "error": 0x04}),
+            ("prefix-before-invalid", [b"AB", b"\xc3X"],
+             {"error": 0x10, "expected_prefix": b"A"}),
+            ("prefix-before-incomplete", [b"AB", b"\xe2\x82"],
+             {"error": 0x10, "expected_prefix": b"A"}),
+            ("prefix-before-incomplete-finish", [b"AB", b"\xe2\x82"],
+             {"finish": True, "error": 0x10, "expected_prefix": b"A"}),
+            ("token-length-boundary", [b"A" * 64], {}),
+            ("token-length-over", [b"A" * 65], {"error": 0x11}),
+            ("prefix-before-token-length-over", [b"AB", b"C" * 65],
+             {"error": 0x11, "expected_prefix": b"A"}),
+            ("token-length-one", [b"A", b"B"], {"max_token_length": 1}),
+            ("token-length-one-over", [b"AB"],
+             {"max_token_length": 1, "error": 0x11}),
         ):
             detokenizer_test(evidence, seed, name, pieces, **options)
 

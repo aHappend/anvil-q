@@ -147,7 +147,7 @@ def scheduling_probe(evidence):
                           ["rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"],
                           78, simulator=simulator)))
     evidence.run_cases(cases)
-    rows = evidence.record["coverage"]
+    rows = list(evidence.record["coverage"])
     assert len(rows) == len(cases) and all(row["status"] == "passed" for row in rows)
     reloads = [row for row in rows if "nfc-bos-to-nfd-reload" in row["name"]]
     assert len(reloads) == 3
@@ -211,17 +211,33 @@ def scheduling_controls(evidence):
         (f"cache-copy-{index}", lambda scope, index=index: simulation(scope, index))
         for index in range(3)
     ])
-    rows = evidence.record["coverage"]
+    rows = list(evidence.record["coverage"])
     assert len(rows) == 3 and all(row["status"] == "passed" for row in rows)
     assert len({row["compile_cache_key"] for row in rows}) == 1
     assert sum(not row["compile_cache_hit"] for row in rows) == 1
     assert evidence.source_overrides == {} and evidence.name_prefix == ""
     assert evidence.simulator_override is None
+    expected_error = None
+    try:
+        evidence.simulate(
+            "infrastructure-zero-comparison-rejection",
+            'module bench; initial begin $display("COMPARED 0"); $finish; end endmodule\n',
+            [], 1, simulator="iverilog")
+    except Exception as error:
+        expected_error = error
+    rejected = evidence.record["coverage"][-1]
+    assert expected_error is not None and "invalid comparison count [0]" in str(expected_error)
+    assert rejected["status"] == "failed"
+    assert rejected["simulation_receipt"]["exit_code"] == 0
+    assert rejected["simulation_receipt"]["process_group_settled"]
+    rejected.update(status="expected-harness-rejection",
+                    reason="Successful child exit with zero comparisons is not verification")
     evidence.record["scheduling_controls"] = {
         "expected_child_exit": 7, "expected_batch_rejections": 1,
         "settled_children": len(children), "distinct_log_paths": len(children),
         "concurrent_identical_simulations": 3, "actual_compilations": 1,
         "passed_simulation_comparisons": sum(row["actual_comparisons"] for row in rows),
+        "expected_zero_comparison_rejections": 1,
         "scope": "Harness diagnostic; deliberate child rejection is not an RTL mutation kill",
     }
 

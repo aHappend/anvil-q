@@ -97,7 +97,8 @@ def run_mutations(evidence, fifo_test):
         output = ((root / result["stdout"]).read_text() +
                   (root / result["stderr"]).read_text())
         if (failure is None or result["exit_code"] == 0 or result["timed_out"] or
-                not result["child_settled"] or "%Error:" not in output or assertion not in output):
+                not result["child_settled"] or not result["process_group_settled"] or
+                "%Error:" not in output or assertion not in output):
             raise RuntimeError(f"Mutant {name} not killed by required {assertion}") from failure
         rows = [row for row in evidence.record["coverage"]
                 if row.get("simulation_receipt") is result]
