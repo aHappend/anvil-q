@@ -56,7 +56,7 @@ def table(record_bytes, records):
 
 
 def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=4096,
-                    transport=1, geometry=None, tokenizer=None):
+                    transport=1, geometry=None, tokenizer=None, metadata_words=None):
     """Complete image bytes and independently calculated public DDR tuples."""
     dimensions = {
         "layers": 1, "hidden": 8, "intermediate": 8, "query_heads": 1,
@@ -163,6 +163,13 @@ def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=40
                 widths[index],
                 [data[offset:offset + widths[index]]
                  for offset in range(0, length, widths[index])])
+    if metadata_words is not None:
+        data = bytearray(segments[0x200])
+        for index, value in metadata_words.items():
+            if not isinstance(index, int) or not 0 <= index < 32:
+                raise ValueError("Metadata override must name a u32 word in the 128-byte record")
+            struct.pack_into("<I", data, index * 4, value)
+        segments[0x200] = bytes(data)
     if fault in ("zero-immutable-hole", "nonzero-immutable-hole"):
         segments[0x102] += words(int(fault == "nonzero-immutable-hole"), 0)
     if fault == "nonzero-inactive-row":
@@ -457,7 +464,7 @@ module bench;
             committed_config_words!==224'h@CONFIG@ ||
             committed_segment_bases!==1280'h@BASES@ ||
             committed_segment_bytes!==1280'h@LENGTHS@ ||
-            committed_metadata!==1024'h@METADATA@ ||
+            committed_metadata!==expected_metadata ||
             committed_table_counts!==512'h@COUNTS@)
           $fatal(1,"BOOT_COMMIT code=%h writes=%0d reads=%0d ack=%0d spi=%0d",
                  error_code,writes,reads,acknowledgements,spi_reads);
@@ -473,6 +480,7 @@ module bench;
     end
   endtask
   integer i;
+  reg [1023:0] expected_metadata=1024'h@METADATA@;
   initial begin
     rst_n=0; #0; reset_check();
     for (i=0;i<65536;i=i+1) begin flash[i]=8'hff; ddr[i]=0; end
@@ -534,15 +542,21 @@ module bench;
         evidence.simulate("watchdog-width-" + simulator, bench, [], 4, simulator=simulator)
 
 
-def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=257):
-    fixture = synthetic_image(vocabulary, capacity=capacity, fault=fault)
+def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=257,
+              metadata_words=None, reload_metadata=None, label=None):
+    fixture = synthetic_image(vocabulary, capacity=capacity, fault=fault,
+                              metadata_words=metadata_words)
     name = f"boot-v{vocabulary}-s{seed}-{fault or ('reload' if reload else 'valid')}"
+    if label:
+        name += "-" + label
     directory = evidence.path / (name + "-input")
     directory.mkdir()
     flash = directory / "flash.hex"
     flash.write_text("".join(f"{byte:02x}\n" for byte in fixture["image"]), encoding="ascii")
     manifest = {
         "synthetic_only": True, "vocabulary": vocabulary, "physical_capacity": capacity,
+        "metadata_words": metadata_words,
+        "metadata_reload_epochs": reload_metadata,
         "image_sha256": hashlib.sha256(fixture["image"]).hexdigest(),
         "segments": [{"kind": kind, "base": fixture["destinations"][kind],
                       "length": len(payload), "crc32": zlib.crc32(payload)}
@@ -596,6 +610,42 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
     if (boot_done!==0) $fatal(1,"BOOT_RELOAD_NOT_WITHDRAWN");
     @(negedge clk); #1; start=0;
     wait_result(8'h01);
+"""
+    if reload_metadata is not None:
+        if reload:
+            raise ValueError("Choose either the original undersized reload or metadata reload")
+        reload_code = ""
+        for epoch, (overrides, expected_error) in enumerate(reload_metadata, 1):
+            second = synthetic_image(vocabulary, capacity=capacity, metadata_words=overrides)
+            if (second["destinations"] != fixture["destinations"] or
+                    len(second["image"]) != len(fixture["image"]) or
+                    len(second["writes"]) != len(fixture["writes"])):
+                raise ValueError("Metadata-only reload changed image layout")
+            image_file = directory / f"metadata-reload-{epoch}.hex"
+            image_file.write_text("".join(f"{byte:02x}\n" for byte in second["image"]),
+                                  encoding="ascii")
+            # Restore every expected word, including ones changed by an earlier epoch.
+            updates = "\n".join(
+                f"    write_data[{index}]=32'h{new[1]:x};"
+                for index, new in enumerate(second["writes"])
+                if (fixture["destinations"][0x200] <= new[0] <
+                    fixture["destinations"][0x200] + 128))
+            reload_code += f"""
+    repeat (5) tick();
+    if (pending || ddr_rsp_valid || ddr_req_valid)
+      $fatal(1,"BOOT_METADATA_RELOAD_NOT_QUIESCENT");
+    @(negedge clk); #1;
+    $readmemh("{evidence.relative(image_file)}",flash,0,{len(second['image'])-1});
+{updates}
+    expected_metadata=1024'h{int.from_bytes(second['segments'][0x200], 'little'):x};
+    writes=0; reads=0; acknowledgements=0; spi_reads=0; loading=1;
+    start=1; tick();
+    if (boot_done!==0 || committed_metadata!==0)
+      $fatal(1,"BOOT_METADATA_RELOAD_NOT_WITHDRAWN");
+    @(negedge clk); #1; start=0;
+    wait_result(8'h{expected_error:02x});
+    if (writes!={len(second['writes'])} || reads==0)
+      $fatal(1,"BOOT_METADATA_RELOAD_TRAFFIC");
 """
     parameters = {
         "FLASH": evidence.relative(flash), "FLASH_EXTENT": str(len(fixture["image"])),

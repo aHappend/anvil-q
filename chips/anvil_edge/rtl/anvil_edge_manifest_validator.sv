@@ -154,7 +154,8 @@ module anvil_edge_manifest_validator #(
             metadata<=reader_data; state<=METADATA_CHECK;
           end
           METADATA_CHECK: begin
-            if (metadata[0+:32]!=1 || metadata[32+:32]<1 ||
+            if ((metadata[0+:32]!=1 && metadata[0+:32]!=2) ||
+                metadata[32+:32]<1 ||
                 metadata[32+:32]>3 || metadata[64+:32]!=active_vocab ||
                 metadata[96+:32]>4 || metadata[128+:32]>2 ||
                 metadata[160+:32]>1 ||
@@ -165,7 +166,8 @@ module anvil_edge_manifest_validator #(
                 metadata[384+:32]==0 || metadata[384+:32]>MAX_TAG_REGISTERS ||
                 metadata[448+:32]==0 || metadata[448+:32]>MAX_TOKEN_BYTES ||
                 metadata[480+:32]==0 || metadata[480+:32]>MAX_PRETOKEN_BYTES ||
-                metadata[768+:256]!=0) begin
+                (metadata[0+:32]==1 && metadata[768+:64]!=0) ||
+                metadata[832+:192]!=0) begin
               code<=8'h06; state<=FAILED;
             end else begin segment_index<=1; state<=HEADER_SELECT; end
           end

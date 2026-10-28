@@ -57,6 +57,7 @@ from qwen_tables import run_qwen_fragments
 from qwen_regex import run_qwen_regex
 from unicode_sources import run_unicode_sources, run_unicode_intake
 from unicode_tables import run_unicode_conversion, run_unicode_rtl
+from metadata import run_metadata
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -836,6 +837,7 @@ L1_SUITES = (
     run_boot, run_config, run_mapper, run_bpe, run_normalization, run_dfa,
     run_tokenizer, run_numerical, run_parameters, run_adapters, run_memory,
     run_top, run_top_resets, run_synthesis,
+    run_metadata,
     lambda evidence: run_mutations(evidence, fifo_test),
 )
 
@@ -890,6 +892,7 @@ def main():
         "unicode-intake",
         "unicode-conversion",
         "unicode-rtl",
+        "metadata",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1029,6 +1032,8 @@ def main():
             run_unicode_conversion(evidence)
         elif args.probe == "unicode-rtl":
             run_unicode_rtl(evidence)
+        elif args.probe == "metadata":
+            run_metadata(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):

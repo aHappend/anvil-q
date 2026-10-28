@@ -224,7 +224,15 @@ bytes alone permit a rounded final physical word, with byte indexes checked
 against the exact unrounded data count.
 
 The manifest stage checks the exact geometry/configuration, metadata capacities
-and every table header/extent. The directory stage validates a strictly sorted
+and every table header/extent. Metadata versions 1 and 2 share the existing
+128-byte staged/committed bundle. Version 1 reserves words 24..31 as zero;
+version 2 assigns normalization/combining-class provenance to word 24 and
+regex case-folding provenance to word 25, retaining reserved-zero words 26..31.
+Word 8 identifies classification/special-property provenance. These labels
+describe the tables executed by the existing lookup, normalizer and DFA, not
+hardwired Unicode behavior. Unsupported metadata versions or nonzero reserved
+fields fail before commit; reload admission and atomic publication are unchanged.
+The directory stage validates a strictly sorted
 legal key set with exactly the mandated cardinality. This establishes key
 completeness without a model-sized on-chip directory. It checks each region
 against all earlier regions, then validates all FP16 tensor words, inactive

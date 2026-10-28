@@ -95,6 +95,11 @@ def source_contract():
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                 and node.func.id == "run_official_checkpoint"]
     assert len(official) == 1
+    direct = [statement.value.func.id for statement in l1[0].body
+              if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call)
+              and isinstance(statement.value.func, ast.Name)]
+    assert direct == ["run_qwen_fragments", "run_qwen_regex",
+                      "run_unicode_rtl", "run_official_checkpoint"]
     incomplete = l1[0].body[-1]
     assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
     assert isinstance(incomplete.exc.args[0], ast.Constant)

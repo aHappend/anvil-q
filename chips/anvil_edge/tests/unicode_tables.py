@@ -15,7 +15,6 @@ import random
 import re
 import struct
 import sys
-import tomllib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from official import ROOT
@@ -46,6 +45,10 @@ def scalar(value):
 
 
 def inputs():
+    require(sys.version_info >= (3, 11),
+            "Unicode release-lock parsing requires Python >=3.11 with stdlib tomllib; do not install packages")
+    import tomllib
+
     manifest = json.loads((ROOT / "tests/data/unicode-provenance.json").read_bytes())
     result = {}
     for row in manifest["sources"]:

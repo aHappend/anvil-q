@@ -4,7 +4,10 @@
 
 The independently admitted ANVLEDG3 version-1 work order is normative. This
 document records implementation decisions; it does not reduce its acceptance
-matrix. The current source increment connects the production shell at
+matrix. The admitted tokenizer metadata-version-2 extension preserves the
+flash format version 1 and metadata-version-1 behavior; `STORAGE.md` defines
+the separate classification/special-property, normalization/combining-class
+and regex case-folding version fields. The current source increment connects the production shell at
 `anvil_edge_top`; the actual board wrapper/controller/pins remain unavailable.
 No functional, synthesis, timing, model, or board acceptance is
 claimed. The supplied `anvil_q1_reference/rtl/` is read-only provenance, not
