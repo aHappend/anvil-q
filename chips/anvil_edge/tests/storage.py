@@ -655,12 +655,16 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
 
 def run_boot(evidence):
     evidence.tools(("iverilog", "vvp"))
-    for seed in (1, 17, 89):
-        for vocabulary in (256, 257, 1, 255):
-            boot_test(evidence, vocabulary, seed, reload=vocabulary == 257)
-    for fault in ("wrong-geometry", "duplicate-byte-map", "bad-merge",
-                  "reserved-token", "crc", "ddr-error"):
-        boot_test(evidence, 257, 17, fault)
+    evidence.run_cases([
+        (f"boot-{vocabulary}-{seed}",
+         lambda scope, vocabulary=vocabulary, seed=seed:
+         boot_test(scope, vocabulary, seed, reload=vocabulary == 257))
+        for seed in (1, 17, 89) for vocabulary in (256, 257, 1, 255)
+    ] + [
+        ("boot-fault-" + fault, lambda scope, fault=fault: boot_test(scope, 257, 17, fault))
+        for fault in ("wrong-geometry", "duplicate-byte-map", "bad-merge",
+                      "reserved-token", "crc", "ddr-error")
+    ])
     run_storage_faults(evidence)
     run_large_images(evidence)
     run_storage_edges(evidence)
@@ -670,15 +674,21 @@ def run_storage_faults(evidence):
     evidence.tools(("iverilog", "vvp"))
     previous = {"wrong-geometry", "duplicate-byte-map", "bad-merge",
                 "reserved-token", "crc", "ddr-error", "nonzero-inactive-row"}
-    for fault in sorted(FAULT_CODES.keys() - previous):
-        boot_test(evidence, 257, 17, fault)
+    evidence.run_cases([
+        ("storage-fault-" + fault,
+         lambda scope, fault=fault: boot_test(scope, 257, 17, fault))
+        for fault in sorted(FAULT_CODES.keys() - previous)
+    ])
 
 
 def run_storage_edges(evidence):
-    for seed in (1, 17, 89):
-        boot_test(evidence, 256, seed, "nonzero-inactive-row")
-        boot_test(evidence, 257, seed, "zero-immutable-hole")
-        boot_test(evidence, 258, seed, capacity=257)
+    evidence.run_cases([
+        (f"storage-edge-{seed}-{vocabulary}-{fault}",
+         lambda scope, seed=seed, vocabulary=vocabulary, fault=fault:
+         boot_test(scope, vocabulary, seed, fault, capacity=257))
+        for seed in (1, 17, 89) for vocabulary, fault in (
+            (256, "nonzero-inactive-row"), (257, "zero-immutable-hole"), (258, None))
+    ])
     run_image_upper(evidence)
 
 
@@ -1671,9 +1681,11 @@ def top_control_scenario(bench, fixture, prompt, faulty_prompt, expected_error,
 def run_top(evidence):
     evidence.tools(("iverilog", "vvp"))
     top_test(evidence, 89, uart=True, startup_only=True)
-    for seed in (1, 17, 89):
-        top_test(evidence, seed)
-        top_test(evidence, seed, uart=True)
+    evidence.run_cases([
+        (f"top-{seed}-uart-{uart}",
+         lambda scope, seed=seed, uart=uart: top_test(scope, seed, uart=uart))
+        for seed in (1, 17, 89) for uart in (False, True)
+    ])
     run_top_profiles(evidence)
     run_top_errors(evidence)
     run_top_reload(evidence)
@@ -1690,9 +1702,11 @@ def run_top_profiles(evidence):
         ("normalized-special", "e\u0301", {"mode": 1, "policy": 1,
                                          "special_options": (("\u00e9", 17),)}),
     )
-    for seed in (1, 17, 89):
-        for profile in examples:
-            top_test(evidence, seed, text_profile=profile)
+    evidence.run_cases([
+        (f"top-profile-{seed}-{profile[0]}",
+         lambda scope, seed=seed, profile=profile: top_test(scope, seed, text_profile=profile))
+        for seed in (1, 17, 89) for profile in examples
+    ])
     run_top_profile_uart(evidence)
 
 
@@ -1702,24 +1716,34 @@ def run_top_profile_uart(evidence):
 
 
 def run_top_errors(evidence):
-    for seed in (1, 17, 89):
-        for fault in ("overlong", "surrogate", "range", "incomplete", "byte-capacity"):
-            top_test(evidence, seed, input_fault=fault)
-        for fault in ("empty-uart", "stop-uart", "closed-uart"):
-            top_test(evidence, seed, uart=True, input_fault=fault)
+    evidence.run_cases([
+        (f"top-error-{seed}-{fault}",
+         lambda scope, seed=seed, fault=fault, uart=uart:
+         top_test(scope, seed, uart=uart, input_fault=fault))
+        for seed in (1, 17, 89) for uart, faults in (
+            (False, ("overlong", "surrogate", "range", "incomplete", "byte-capacity")),
+            (True, ("empty-uart", "stop-uart", "closed-uart")))
+        for fault in faults
+    ])
 
 
 def run_top_reload(evidence):
-    for seed in (1, 17, 89):
-        top_test(evidence, seed, reload_after=True)
-        top_test(evidence, seed, input_fault="overlong", reload_after=True)
+    evidence.run_cases([
+        (f"top-reload-{seed}-{fault}",
+         lambda scope, seed=seed, fault=fault:
+         top_test(scope, seed, input_fault=fault, reload_after=True))
+        for seed in (1, 17, 89) for fault in (None, "overlong")
+    ])
     run_top_profile_reload(evidence)
     top_test(evidence, 17, uart=True, reload_after=True)
 
 
 def run_top_profile_reload(evidence):
-    for seed in (1, 17, 89):
-        top_test(evidence, seed, reload_profile=True)
+    evidence.run_cases([
+        (f"top-profile-reload-{seed}",
+         lambda scope, seed=seed: top_test(scope, seed, reload_profile=True))
+        for seed in (1, 17, 89)
+    ])
 
 
 def run_top_uart(evidence):
@@ -1729,7 +1753,10 @@ def run_top_uart(evidence):
 
 def run_top_resets(evidence):
     evidence.tools(("iverilog", "vvp"))
-    for seed in (1, 17, 89):
-        for phase in ("boot", "prefill", "tx"):
-            top_test(evidence, seed, reset_phase=phase)
-        top_test(evidence, seed, uart=True, reset_phase="tx")
+    evidence.run_cases([
+        (f"top-reset-{seed}-{phase}-uart-{uart}",
+         lambda scope, seed=seed, phase=phase, uart=uart:
+         top_test(scope, seed, uart=uart, reset_phase=phase))
+        for seed in (1, 17, 89) for phase, uart in (
+            ("boot", False), ("prefill", False), ("tx", False), ("tx", True))
+    ])

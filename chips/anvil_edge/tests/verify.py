@@ -7,6 +7,8 @@ No design sources or prior evidence are modified.
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+import copy
 import hashlib
 import json
 import math
@@ -20,6 +22,7 @@ import struct
 import subprocess
 import sys
 import time
+import threading
 import uuid
 from datetime import datetime, timezone
 
@@ -43,6 +46,7 @@ from parameters import run_parameters
 from adapters import run_adapters
 from memory import run_memory
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
+from scheduling import resource_limits, scheduling_probe
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -84,6 +88,16 @@ class Evidence:
         self.name_prefix = ""
         self.simulator_override = None
         self.compiled_simulations = {}
+        self._root = self
+        self._lock = threading.RLock()
+        self._tool_lock = threading.RLock()
+        self._cache_locks = {}
+        self._child_index = 0
+        self._case_index = 0
+        self._active_children = {}
+        self._case_scopes = 0
+        self._limits = resource_limits(ROOT)
+        self._slots = threading.BoundedSemaphore(self._limits["workers"])
         self.record = {
             "schema": 1,
             "kind": "verifier-preparation" if preparation else "verification",
@@ -99,6 +113,8 @@ class Evidence:
             "source_sha256": {},
             "tool_versions": {},
             "coverage": [],
+            "case_batches": [],
+            "scheduling": self._limits,
         }
         for selector in SELECTORS:
             for path in sorted(ROOT.glob(selector)):
@@ -112,20 +128,88 @@ class Evidence:
     def relative(self, path):
         return str(path.relative_to(ROOT))
 
+    def run_cases(self, cases):
+        """Settle every submitted case, including peers of a failing case."""
+        cases = list(cases)
+        labels = [label for label, _ in cases]
+        if not cases or len(set(labels)) != len(labels):
+            raise VerificationFailure("Case batches must be nonempty and uniquely labelled")
+        batch = {"planned": labels, "results": [], "status": "running"}
+        self.record["case_batches"].append(batch)
+
+        def execute(label, function):
+            scope = copy.copy(self)
+            scope.source_overrides = dict(self.source_overrides)
+            with self._lock:
+                index = self._root._case_index
+                self._root._case_index += 1
+            safe_label = re.sub(r"[^a-zA-Z0-9_.-]", "-", label)
+            scope.path = self.path / f"case-{index:04d}-{safe_label}"
+            scope.path.mkdir()
+            scope.record = dict(self.record)
+            for key in ("children", "coverage", "case_batches"):
+                scope.record[key] = []
+            with self._lock:
+                self._root._case_scopes += 1
+            start = time.monotonic()
+            result = {"name": label, "status": "running", "start_utc": utc(),
+                      "directory": self.relative(scope.path)}
+            try:
+                function(scope)
+                result["status"] = "passed"
+            except BaseException as error:
+                result.update(status="failed", error=f"{type(error).__name__}: {error}")
+                raise
+            finally:
+                result.update(end_utc=utc(), duration_s=time.monotonic() - start)
+                with self._lock:
+                    for key in ("children", "coverage", "case_batches"):
+                        self.record[key].extend(scope.record[key])
+                    batch["results"].append(result)
+                    self._root._case_scopes -= 1
+
+        failures = []
+        with ThreadPoolExecutor(max_workers=self._limits["workers"]) as executor:
+            futures = [(label, executor.submit(execute, label, function))
+                       for label, function in cases]
+            for label, future in futures:
+                try:
+                    future.result()
+                except BaseException as error:
+                    failures.append((label, error))
+        batch["status"] = "failed" if failures else "passed"
+        if sorted(row["name"] for row in batch["results"]) != sorted(labels):
+            raise VerificationFailure("Case accounting lost a submitted case")
+        if failures:
+            raise VerificationFailure(
+                "; ".join(f"{label}: {error}" for label, error in failures)
+            ) from failures[0][1]
+
     def child(self, argv, name, timeout=WALL_TIMEOUT, allow_failure=False, cwd=None):
         """Every child has immutable raw logs and a separate final receipt."""
-        index = len(self.record["children"])
+        queued = time.monotonic()
+        with self._slots:
+            return self._child(argv, name, timeout, allow_failure, cwd,
+                               time.monotonic() - queued)
+
+    def _child(self, argv, name, timeout, allow_failure, cwd, queue_seconds):
+        with self._lock:
+            index = self._root._child_index
+            self._root._child_index += 1
         directory = self.path / f"{index:03d}-{name}"
         directory.mkdir()
         record = {
+            "index": index,
             "argv": [str(arg) for arg in argv],
             "cwd": "." if cwd is None else self.relative(cwd),
             "start_utc": utc(), "timeout_s": timeout,
             "stdout": self.relative(directory / "stdout.log"),
             "stderr": self.relative(directory / "stderr.log"),
             "timed_out": False, "child_settled": False,
+            "queue_duration_s": queue_seconds,
         }
         start = time.monotonic()
+        interrupted = None
         with (directory / "stdout.log").open("xb") as stdout:
             with (directory / "stderr.log").open("xb") as stderr:
                 try:
@@ -140,22 +224,53 @@ class Evidence:
                     record["launch_error"] = str(error)
                     record["child_settled"] = True
                 else:
+                    with self._lock:
+                        self._root._active_children[process.pid] = record["argv"]
                     try:
-                        process.wait(timeout=timeout)
-                    except subprocess.TimeoutExpired:
-                        record["timed_out"] = True
-                        os.killpg(process.pid, signal.SIGTERM)
-                        try:
-                            process.wait(timeout=10)
-                        except subprocess.TimeoutExpired:
-                            os.killpg(process.pid, signal.SIGKILL)
-                            process.wait()
+                        deadline = start + timeout
+                        while True:
+                            pid, status, usage = os.wait4(process.pid, os.WNOHANG)
+                            if pid:
+                                process.returncode = os.waitstatus_to_exitcode(status)
+                                break
+                            if time.monotonic() >= deadline:
+                                record["timed_out"] = True
+                                os.killpg(process.pid, signal.SIGTERM)
+                                deadline = time.monotonic() + 10
+                                while time.monotonic() < deadline:
+                                    pid, status, usage = os.wait4(process.pid, os.WNOHANG)
+                                    if pid:
+                                        break
+                                    time.sleep(.05)
+                                if not pid:
+                                    os.killpg(process.pid, signal.SIGKILL)
+                                    _, status, usage = os.wait4(process.pid, 0)
+                                process.returncode = os.waitstatus_to_exitcode(status)
+                                break
+                            time.sleep(.05)
+                    except BaseException as error:
+                        interrupted = error
+                        os.killpg(process.pid, signal.SIGKILL)
+                        _, status, usage = os.wait4(process.pid, 0)
+                        process.returncode = os.waitstatus_to_exitcode(status)
+                        record["interrupted"] = f"{type(error).__name__}: {error}"
+                    finally:
+                        with self._lock:
+                            del self._root._active_children[process.pid]
                     record["exit_code"] = process.returncode
                     record["child_settled"] = process.poll() is not None
+                    record["resources"] = {
+                        "user_cpu_s": usage.ru_utime, "system_cpu_s": usage.ru_stime,
+                        "max_rss_kib": usage.ru_maxrss,
+                        "major_page_faults": usage.ru_majflt,
+                        "input_blocks": usage.ru_inblock, "output_blocks": usage.ru_oublock,
+                    }
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
         write_json(directory / "receipt.json", record)
         self.record["children"].append(record)
+        if interrupted is not None:
+            raise interrupted
         if not allow_failure and (
             record["exit_code"] != 0 or record["timed_out"]
             or not record["child_settled"]
@@ -166,6 +281,10 @@ class Evidence:
         return record
 
     def tools(self, names, timeout=WALL_TIMEOUT):
+        with self._tool_lock:
+            self._tools(names, timeout)
+
+    def _tools(self, names, timeout):
         missing = [name for name in names if shutil.which(name) is None]
         if missing:
             self.record["missing_tools"] = missing
@@ -255,23 +374,39 @@ class Evidence:
                 four_state=False,
             )
             source_hashes = [(path, digest(ROOT / path)) for path in sources]
+            compile_options = [
+                "--binary", "--timing", "--assert",
+                "--timescale", "1ns/1ps", "--top-module", "bench",
+                "-Wno-fatal", "--x-initial", "unique", "--x-assign", "unique",
+                "-j", "2",
+            ]
+            tool = self.record["tool_versions"]["verilator"]
+            tool_identity = {
+                "path": shutil.which("verilator"),
+                "stdout_sha256": digest(ROOT / tool["stdout"]),
+                "stderr_sha256": digest(ROOT / tool["stderr"]),
+                "executable_sha256": digest(Path(shutil.which("verilator"))),
+            }
             cache_key = hashlib.sha256(json.dumps(
-                [compiled_bench, source_hashes], sort_keys=True
+                [compiled_bench, source_hashes, compile_options, tool_identity],
+                sort_keys=True
             ).encode()).hexdigest()
-            cached = self.compiled_simulations.get(cache_key)
-            if cached is None:
-                object_dir = directory / "obj"
-                compile_record = self.child(
-                    ["verilator", "--binary", "--timing", "--assert",
-                     "--timescale", "1ns/1ps", "--top-module", "bench",
-                     "-Wno-fatal", "--x-initial", "unique", "--x-assign", "unique",
-                     "-j", "2", "--Mdir", self.relative(object_dir), "-o", "simulation",
-                     *sources, self.relative(compiled_source)],
-                    name + "-compile",
-                )
-                binary = object_dir / "simulation"
-                cached = (binary, compile_record, digest(binary))
-                self.compiled_simulations[cache_key] = cached
+            with self._lock:
+                cache_lock = self._cache_locks.setdefault(cache_key, threading.Lock())
+            with cache_lock:
+                cached = self.compiled_simulations.get(cache_key)
+                cache_hit = cached is not None
+                if cached is None:
+                    object_dir = directory / "obj"
+                    compile_record = self.child(
+                        ["verilator", *compile_options,
+                         "--Mdir", self.relative(object_dir), "-o", "simulation",
+                         *sources, self.relative(compiled_source)],
+                        name + "-compile",
+                    )
+                    binary = object_dir / "simulation"
+                    cached = (binary, compile_record, digest(binary))
+                    self.compiled_simulations[cache_key] = cached
             binary, compile_record, binary_hash = cached
             if digest(binary) != binary_hash:
                 raise VerificationFailure("Compiled simulation changed before reuse")
@@ -279,6 +414,8 @@ class Evidence:
                 compile_cache_key=cache_key, executable_sha256=binary_hash,
                 compile_receipt=compile_record,
                 runtime_arguments=runtime_args, input_files=input_files,
+                compile_cache_hit=cache_hit, compile_tool=tool_identity,
+                compile_options=compile_options, source_sha256=source_hashes,
             )
             result = self.child([self.relative(binary), *runtime_args], name + "-simulate")
         record["simulation_receipt"] = result
@@ -290,8 +427,13 @@ class Evidence:
             raise VerificationFailure(f"{name}: invalid comparison count {totals}, required {comparisons}")
         record["actual_comparisons"] = totals[0]
         record["status"] = "passed"
+        return record
 
     def finish(self, exit_code, reason):
+        with self._lock:
+            if self._root._active_children or self._root._case_scopes:
+                raise VerificationFailure("Cannot publish evidence with unsettled work")
+        self.record["children"].sort(key=lambda row: row["index"])
         self.record.update(
             end_utc=utc(), exit_code=exit_code, reason=reason,
             child_settled=all(c["child_settled"] for c in self.record["children"]),
@@ -632,6 +774,15 @@ def run_fifo(evidence):
             fifo_test(evidence, depth, seed)
 
 
+L1_SUITES = (
+    run_arithmetic, run_fifo, run_controller, run_uart, run_detokenizer,
+    run_boot, run_config, run_mapper, run_bpe, run_normalization, run_dfa,
+    run_tokenizer, run_numerical, run_parameters, run_adapters, run_memory,
+    run_top, run_top_resets, run_synthesis,
+    lambda evidence: run_mutations(evidence, fifo_test),
+)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
@@ -667,6 +818,7 @@ def main():
         "image-upper",
         "simulator-tiering",
         "simulator-compatibility",
+        "scheduling-parallel",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -776,6 +928,8 @@ def main():
                 ["python3", "tests/scheduling.py", *args.schedule_receipt],
                 "measured-scheduling-submatrix",
             )
+        elif args.probe == "scheduling-parallel":
+            scheduling_probe(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):
@@ -807,71 +961,12 @@ def main():
             top_test(evidence, 17, reset_phase="prefill")
         elif args.probe == "source-contract":
             evidence.tools(("python3",), timeout=300)
-            evidence.child(["python3", "-c", """
-import ast
-import json
-from pathlib import Path
-sources = sorted(Path("tests").glob("*.py"))
-for path in sources:
-    ast.parse(path.read_text(), filename=str(path))
-tree = ast.parse(Path("tests/verify.py").read_text())
-l1 = [node for node in ast.walk(tree) if isinstance(node, ast.If)
-      and isinstance(node.test, ast.Compare)
-      and isinstance(node.test.left, ast.Attribute)
-      and node.test.left.attr == "check"
-      and any(isinstance(value, ast.Constant) and value.value == "l1"
-              for value in node.test.comparators)]
-assert len(l1) == 1
-calls = [node.value.func.id for node in l1[0].body
-         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
-         and isinstance(node.value.func, ast.Name)]
-assert calls == [
-    "run_arithmetic", "run_fifo", "run_controller", "run_uart",
-    "run_detokenizer", "run_boot", "run_config", "run_mapper", "run_bpe",
-    "run_normalization", "run_dfa", "run_tokenizer", "run_numerical",
-    "run_parameters", "run_adapters", "run_memory", "run_top", "run_top_resets",
-    "run_synthesis", "run_mutations",
-]
-requirements = json.loads(Path("tests/data/requirements.json").read_text())
-assets = json.loads(Path("tests/data/assets.json").read_text())
-assert requirements["seeds"] == [1, 17, 89]
-assert requirements["max_new_tokens"] == 8
-assert requirements["prompts"] == [
-    "What is the capital of France?",
-    "Compute 17 + 25.",
-    "Write a Python function that adds two integers.",
-    "All robins are birds. Are robins animals? Explain briefly.",
-    "Translate hello into Chinese.",
-]
-assert [entry["family_id"] for entry in assets["official_tokenizers"]] == [1, 2, 3]
-assert isinstance(requirements["remaining_required_checks"], list)
-print("SOURCE_CONTRACT", len(sources), "Python sources; exact frozen benchmark matrix")
-print("L1_WIRING", len(calls), "required suite entrypoints; no replacement batch")
-print("DECLARED_AVAILABLE_TOKENIZERS",
-      [entry["family"] for entry in assets["official_tokenizers"] if entry["available"]])
-"""], "source-contract", timeout=3600)
+            evidence.child(["python3", "tests/scheduling.py", "--source-contract"],
+                           "source-contract", timeout=3600)
         elif args.check == "l1":
             evidence.tools(("iverilog", "vvp", "yosys"))
-            run_arithmetic(evidence)
-            run_fifo(evidence)
-            run_controller(evidence)
-            run_uart(evidence)
-            run_detokenizer(evidence)
-            run_boot(evidence)
-            run_config(evidence)
-            run_mapper(evidence)
-            run_bpe(evidence)
-            run_normalization(evidence)
-            run_dfa(evidence)
-            run_tokenizer(evidence)
-            run_numerical(evidence)
-            run_parameters(evidence)
-            run_adapters(evidence)
-            run_memory(evidence)
-            run_top(evidence)
-            run_top_resets(evidence)
-            run_synthesis(evidence)
-            run_mutations(evidence, fifo_test)
+            evidence.run_cases((f"suite-{index}-{suite.__name__}", suite)
+                               for index, suite in enumerate(L1_SUITES))
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "
                 "coverage; pinned official tokenizer/model assets are absent. "

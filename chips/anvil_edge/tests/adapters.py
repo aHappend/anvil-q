@@ -234,10 +234,10 @@ def adapter_test(evidence, profile, active, seed, fault=0, token=7):
     }.items():
         bench = bench.replace(f"@{key}@", str(value))
     name = f"adapter-contract-p{profile}-v{active}-s{seed}-f{fault}-t{token}"
-    evidence.simulate(name, bench, ["rtl/anvil_edge_core_adapter.sv"],
-                      active + 3 if expected_error == 0 else None)
+    result = evidence.simulate(name, bench, ["rtl/anvil_edge_core_adapter.sv"],
+                               active + 3 if expected_error == 0 else None)
     if expected_error == 0:
-        child = evidence.record["children"][-1]
+        child = result["simulation_receipt"]
         root = Path(__file__).resolve().parent.parent
         lines = (root / child["stdout"]).read_text().splitlines()
         physical = [i for i, line in enumerate(lines) if line.startswith("FIXTURE_FRAME ")]

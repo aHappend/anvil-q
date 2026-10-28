@@ -1,12 +1,157 @@
-"""Read-only measured scheduling diagnostic; never an acceptance substitute."""
+"""Bounded execution policy and advisory scheduling diagnostics."""
 
+import ast
 import hashlib
 import json
+import os
 from pathlib import Path
+import shutil
 import sys
 
 
+def resource_limits(root):
+    cpu = len(os.sched_getaffinity(0))
+    available = int(next(line.split()[1] for line in
+                         Path("/proc/meminfo").read_text().splitlines()
+                         if line.startswith("MemAvailable:"))) * 1024
+    cgroup = Path("/sys/fs/cgroup")
+    group = next((line.split("::", 1)[1] for line in
+                  Path("/proc/self/cgroup").read_text().splitlines()
+                  if line.startswith("0::")), "/")
+    current = cgroup / group.lstrip("/")
+    constraints = []
+    while current == cgroup or cgroup in current.parents:
+        for filename in ("cpu.max", "memory.max"):
+            path = current / filename
+            if not path.exists():
+                continue
+            value = path.read_text().strip()
+            constraints.append({"path": str(path.relative_to(cgroup)), "value": value})
+            if filename == "cpu.max" and not value.startswith("max"):
+                quota, period = map(int, value.split())
+                cpu = min(cpu, max(1, quota // period))
+            elif filename == "memory.max" and value != "max":
+                used = int((current / "memory.current").read_text())
+                available = min(available, max(0, int(value) - used))
+        if current == cgroup:
+            break
+        current = current.parent
+    disk = shutil.disk_usage(root).free
+    workers = max(1, min(8, cpu // 3, available // (2 << 30), disk // (2 << 30)))
+    return {
+        "workers": workers, "cpu_capacity": cpu, "available_memory_bytes": available,
+        "available_disk_bytes": disk, "cgroup_constraints": constraints,
+        "policy": "At most eight tool children; reserve three CPU slots and 2 GiB "
+                  "memory/disk per child. Verilator compilation uses -j 2. "
+                  "Nested case batches share the same child semaphore.",
+    }
+
+
+def source_contract():
+    root = Path(__file__).resolve().parent.parent
+    trees = {path.stem: ast.parse(path.read_text(), filename=str(path))
+             for path in sorted((root / "tests").glob("*.py"))}
+    definitions = {}
+    for tree in trees.values():
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                definitions[node.name] = node
+    graph = {
+        name: {call.func.id for call in ast.walk(node)
+               if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+               and call.func.id in definitions}
+        for name, node in definitions.items()
+    }
+    entry = next(node for node in trees["verify"].body
+                 if isinstance(node, ast.Assign)
+                 and any(isinstance(target, ast.Name) and target.id == "L1_SUITES"
+                         for target in node.targets))
+    roots = [node.id for node in ast.walk(entry.value)
+             if isinstance(node, ast.Name) and node.id in definitions
+             and node.id.startswith("run_")]
+    required_roots = {
+        "run_arithmetic", "run_fifo", "run_controller", "run_uart",
+        "run_detokenizer", "run_boot", "run_config", "run_mapper", "run_bpe",
+        "run_normalization", "run_dfa", "run_tokenizer", "run_numerical",
+        "run_parameters", "run_adapters", "run_memory", "run_top", "run_top_resets",
+        "run_synthesis", "run_mutations",
+    }
+    assert len(roots) == len(set(roots)) and set(roots) == required_roots
+    reached = set(roots)
+    while True:
+        expanded = reached | set().union(*(graph[name] for name in reached))
+        if expanded == reached:
+            break
+        reached = expanded
+    required_nested = {
+        "run_top_profiles", "run_top_errors", "run_top_reload",
+        "run_top_profile_uart", "run_top_profile_reload",
+        "run_storage_faults", "run_large_images", "run_storage_edges",
+        "run_image_upper", "run_watchdog_width", "run_uart_controls",
+        "run_numerical_errors", "run_tokenizer_capacity",
+    }
+    assert required_nested <= reached, sorted(required_nested - reached)
+    requirements = json.loads((root / "tests/data/requirements.json").read_text())
+    assets = json.loads((root / "tests/data/assets.json").read_text())
+    assert requirements["seeds"] == [1, 17, 89]
+    assert requirements["max_new_tokens"] == 8
+    assert requirements["prompts"] == [
+        "What is the capital of France?", "Compute 17 + 25.",
+        "Write a Python function that adds two integers.",
+        "All robins are birds. Are robins animals? Explain briefly.",
+        "Translate hello into Chinese.",
+    ]
+    assert [entry["family_id"] for entry in assets["official_tokenizers"]] == [1, 2, 3]
+    assert isinstance(requirements["remaining_required_checks"], list)
+    print(json.dumps({
+        "scope": "Static transitive wiring, not executed functional coverage",
+        "sources": len(trees), "entrypoints": sorted(roots),
+        "reachable_functions": sorted(reached),
+        "call_graph": {name: sorted(graph[name]) for name in sorted(reached)},
+        "required_nested_suites": sorted(required_nested),
+        "available_official_tokenizers": [
+            entry["family"] for entry in assets["official_tokenizers"] if entry["available"]],
+    }, indent=2))
+
+
+def scheduling_probe(evidence):
+    from storage import top_test
+    from protocol import UART
+    cases = []
+    for seed in (1, 17, 89):
+        cases.append((f"top-seed-{seed}",
+                      lambda scope, seed=seed: top_test(scope, seed)))
+        cases.append((f"reload-seed-{seed}",
+                      lambda scope, seed=seed: top_test(scope, seed, reload_profile=True)))
+    bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
+    for simulator in ("iverilog", "verilator"):
+        cases.append(("compact-" + simulator,
+                      lambda scope, simulator=simulator: scope.simulate(
+                          "scheduling-uart-" + simulator, bench,
+                          ["rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"],
+                          78, simulator=simulator)))
+    evidence.run_cases(cases)
+    rows = evidence.record["coverage"]
+    assert len(rows) == len(cases) and all(row["status"] == "passed" for row in rows)
+    reloads = [row for row in rows if "nfc-bos-to-nfd-reload" in row["name"]]
+    assert len(reloads) == 3
+    assert len({row["compile_cache_key"] for row in reloads}) == 1
+    assert sum(not row["compile_cache_hit"] for row in reloads) == 1
+    evidence.record["scheduling_measurement"] = {
+        "scope": "Six real production-top transactions plus compact dual-simulator UART",
+        "comparisons": sum(row["actual_comparisons"] for row in rows),
+        "compile_children": [row for row in evidence.record["children"]
+                             if "--binary" in row["argv"] or "-g2012" in row["argv"]],
+        "simulation_children": [row["simulation_receipt"] for row in rows],
+        "cache_hits": sum(row.get("compile_cache_hit", False) for row in rows),
+        "limits": "Measured submatrix only; not full L1 or official-model acceptance",
+    }
+
+
 def main():
+    if sys.argv[1:] == ["--source-contract"]:
+        source_contract()
+        return
     root = Path(__file__).resolve().parent.parent
     inputs, simulations = [], []
     for argument in sys.argv[1:]:
