@@ -166,6 +166,18 @@ def execution(ev, binding, destination, target, parent=None, parent_item=None,
     return row, item
 
 
+def event_record(line):
+    require(line.endswith(b"\n"), "partial checkpoint event record")
+
+    class EventLine:
+        def read_text(self):
+            return line.decode("utf-8")
+
+    record = load_json(EventLine())
+    require(type(record) is dict, "malformed checkpoint event")
+    return record
+
+
 def packed_fragments(chain, destination):
     """Pack already validated fragments directly, without raw staging copies."""
     from packed_storage import CHUNK_BYTES, Reader, Writer, transaction_chunks
@@ -185,8 +197,7 @@ def packed_fragments(chain, destination):
                     trace.append(raw)
                 with (ROOT / event_files[0]["path"]).open("rb") as source:
                     for line in source:
-                        require(line.endswith(b"\n"), "partial checkpoint event record")
-                        require(type(json.loads(line)) is dict, "malformed checkpoint event")
+                        event_record(line)
                         events.write(line)
                         event_count += 1
                 seen = set()
@@ -289,9 +300,7 @@ def assemble(ev, item, label="assembled", *, packed=False):
                 path = ROOT / artifacts["events.jsonl"]["path"]
                 with path.open("rb") as source:
                     for line in source:
-                        require(line.endswith(b"\n"), "partial checkpoint event record")
-                        load_json_line = json.loads(line)
-                        require(type(load_json_line) is dict, "malformed checkpoint event")
+                        event_record(line)
                         events.write(line)
                         event_count += 1
                 for entry in row["artifacts"]:

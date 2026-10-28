@@ -365,6 +365,15 @@ def checkpoint_fragments(destination, report, reject):
     damaged.write_bytes(raw)
     mutant("damaged-packed-fragment", lambda rows: replace(
         rows, "position-0/layers.aqp", damaged))
+    for label, raw in (("partial-event", b'{"cycle":1}'),
+                       ("duplicate-event-key", b'{"cycle":1,"cycle":2}\n'),
+                       ("nonfinite-event", b'{"cycle":NaN}\n'),
+                       ("nonobject-event", b"[]\n")):
+        path = directory / label / "events.jsonl"
+        path.parent.mkdir()
+        path.write_bytes(raw)
+        mutant(label + "-rejection", lambda rows, path=path: replace(
+            rows, "/events.jsonl", path))
     paused = directory / "paused"
     paused.mkdir()
     require(packed_fragments([segments[0]], paused) == 1 and
@@ -375,6 +384,29 @@ def checkpoint_fragments(destination, report, reject):
         require(reader.header["axes"] == ["fragment"] and
                 b"".join(reader.chunks()) == raw[:(17 if kind == "layers" else 65537) * 4],
                 "partial fragment shape/bits changed")
+    empty_trace = directory / "empty-trace" / "transactions.aqp"
+    empty_trace.parent.mkdir()
+    with Writer(empty_trace, transactions=True):
+        pass
+    require(list(transactions(empty_trace)) == [] and
+            empty_trace.stat().st_size <= bound(0, transactions=True),
+            "empty transaction witness did not preserve its zero count")
+    reject("checkpoint-incomplete-array", lambda: Writer(
+        directory / "incomplete-array.aqp", dtype="<f4", shape=[1], axes=["element"]).close())
+    no_observations = copy.deepcopy(segments[0])
+    no_observations["artifacts"] = [
+        item for item in no_observations["artifacts"]
+        if Path(item["path"]).name in ("events.jsonl", "transactions.u32.gz")]
+    for item in no_observations["artifacts"]:
+        if item["path"].endswith("transactions.u32.gz"):
+            item.update(path=str(empty_trace.relative_to(ROOT)), sha256=sha(empty_trace))
+    empty_output = directory / "paused-before-first-response"
+    empty_output.mkdir()
+    require(packed_fragments([no_observations], empty_output) == 1 and
+            list(transactions(empty_output / "transactions.aqp")) == [] and
+            not list(empty_output.glob("position-*")) and
+            not (empty_output / "summary.json").exists(),
+            "pre-response partial assembly fabricated observations or completion")
     report["positive_cases"].append({
         "name": "synthetic-packed-checkpoint-fragments", "segments": 2, "positions": 2,
         "vectors_compared": 4, "transaction_records_compared": 2,

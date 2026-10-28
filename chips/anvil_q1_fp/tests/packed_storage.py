@@ -213,12 +213,33 @@ class Writer:
         self.entries.append(ENTRY.pack(offset, len(candidate), len(raw), method,
                                        digest(candidate), digest(raw)))
 
+    def reshape(self, shape, axes):
+        """Seal a shorter observation fragment without staging raw payload."""
+        require(not self.sealed and self.header["kind"] == "array",
+                "reshape requires an unsealed array")
+        expected = dimensions(self.header["dtype"], shape, axes)
+        require(expected == self.total and expected <= self.expected,
+                "fragment shape differs from written bytes")
+        header = {**self.header, "shape": shape, "axes": axes}
+        encoded = json.dumps(header, sort_keys=True, separators=(",", ":")).encode("ascii")
+        length = len(self.prefix) - 12
+        require(len(encoded) <= length, "fragment header exceeds reserved extent")
+        prefix = MAGIC + struct.pack("<I", length) + encoded.ljust(length, b" ")
+        offset = self.stream.tell()
+        self.stream.seek(0)
+        require(self.stream.write(prefix) == len(prefix), "fragment header short write")
+        self.stream.seek(offset)
+        self.prefix, self.header, self.expected = prefix, header, expected
+
+    def write(self, raw):
+        self.append(raw)
+        return len(raw)
+
     def close(self):
         require(not self.sealed, "packed writer already sealed")
         try:
-            require(self.total > 0 and
-                    (self.expected is None or self.total == self.expected),
-                    "incomplete packed array/empty transaction stream")
+            require(self.expected is None or self.total == self.expected,
+                    "incomplete packed array")
             if self.buffer:
                 self._chunk(bytes(self.buffer))
                 self.buffer.clear()
@@ -289,7 +310,7 @@ class Reader:
                     "invalid packed chunk size")
             stream.seek(-FOOTER.size, 2)
             offset, count, self.total, index_digest, magic = FOOTER.unpack(stream.read(FOOTER.size))
-            require(magic == END and 0 < self.total <= MAX_BYTES and
+            require(magic == END and 0 <= self.total <= MAX_BYTES and
                     self.total % self.width == 0 and
                     (expected is None or self.total == expected) and
                     count == (self.total + chunk_bytes - 1) // chunk_bytes and
@@ -392,7 +413,7 @@ class Reader:
 
 def bound(raw_bytes, *, transactions=False):
     """Conservative logical file bound, independent of any compression ratio."""
-    require(integer(raw_bytes, 1), "invalid packed capacity input")
+    require(integer(raw_bytes, 0 if transactions else 1), "invalid packed capacity input")
     chunk = CHUNK_BYTES // RECORD.size * RECORD.size if transactions else CHUNK_BYTES
     require(not transactions or raw_bytes % RECORD.size == 0, "partial trace capacity input")
     return 12 + HEADER_LIMIT + raw_bytes + ((raw_bytes + chunk - 1) // chunk) * ENTRY.size + FOOTER.size
