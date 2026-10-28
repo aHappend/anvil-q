@@ -650,6 +650,19 @@ def run_tokenizer(evidence):
 def run_tokenizer_capacity(evidence):
     evidence.tools(("iverilog", "vvp", "python3"))
     for seed in (1, 17, 89):
+        for capacity in (1, 3):
+            tokenizer_test(evidence, seed, f"bos-tokens-over-{capacity}", "x" * capacity,
+                           byte_capacity=capacity, token_capacity=capacity,
+                           bos=True, error=0x30)
+        tokenizer_test(evidence, seed, "special-one-token", "<X>", policy=1,
+                       byte_capacity=16, token_capacity=1,
+                       special_options=(("<X>", 1),))
+        tokenizer_test(evidence, seed, "bos-special-exact-three", "<X><X>", policy=1,
+                       bos=True, byte_capacity=16, token_capacity=3,
+                       special_options=(("<X>", 1),))
+        tokenizer_test(evidence, seed, "bos-special-over-three", "<X><X><X>", policy=1,
+                       bos=True, byte_capacity=16, token_capacity=3, error=0x30,
+                       special_options=(("<X>", 1),))
         tokenizer_test(evidence, seed, "bytes-and-tokens-4096", "x" * 4096,
                        byte_capacity=4096, token_capacity=4096)
         tokenizer_test(evidence, seed, "bytes-over-4096", "x" * 4097,

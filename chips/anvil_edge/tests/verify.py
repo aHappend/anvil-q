@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import random
 import re
+import resource
 import shutil
 import signal
 import struct
@@ -46,7 +47,8 @@ from parameters import run_parameters
 from adapters import run_adapters
 from memory import run_memory
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
-from scheduling import resource_limits, scheduling_probe
+from scheduling import resource_limits, scheduling_probe, scheduling_controls
+from interactions import run_top_interactions
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -95,7 +97,9 @@ class Evidence:
         self._child_index = 0
         self._case_index = 0
         self._active_children = {}
+        self._peak_children = 0
         self._case_scopes = 0
+        self._started = time.monotonic()
         self._limits = resource_limits(ROOT)
         self._slots = threading.BoundedSemaphore(self._limits["workers"])
         self.record = {
@@ -226,6 +230,8 @@ class Evidence:
                 else:
                     with self._lock:
                         self._root._active_children[process.pid] = record["argv"]
+                        self._root._peak_children = max(
+                            self._root._peak_children, len(self._root._active_children))
                     try:
                         deadline = start + timeout
                         while True:
@@ -265,6 +271,13 @@ class Evidence:
                         "major_page_faults": usage.ru_majflt,
                         "input_blocks": usage.ru_inblock, "output_blocks": usage.ru_oublock,
                     }
+                    try:
+                        os.killpg(process.pid, 0)
+                    except ProcessLookupError:
+                        record["process_group_settled"] = True
+                    else:
+                        os.killpg(process.pid, signal.SIGKILL)
+                        record["process_group_settled"] = False
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
         write_json(directory / "receipt.json", record)
@@ -273,7 +286,7 @@ class Evidence:
             raise interrupted
         if not allow_failure and (
             record["exit_code"] != 0 or record["timed_out"]
-            or not record["child_settled"]
+            or not record["child_settled"] or not record.get("process_group_settled", True)
         ):
             raise VerificationFailure(
                 f"{name} failed; see {self.relative(directory / 'receipt.json')}"
@@ -436,7 +449,17 @@ class Evidence:
         self.record["children"].sort(key=lambda row: row["index"])
         self.record.update(
             end_utc=utc(), exit_code=exit_code, reason=reason,
-            child_settled=all(c["child_settled"] for c in self.record["children"]),
+            child_settled=all(c["child_settled"] and c.get("process_group_settled", True)
+                              for c in self.record["children"]),
+            duration_s=time.monotonic() - self._started,
+            resources={
+                "peak_concurrent_children": self._root._peak_children,
+                "parent_max_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+                "child_user_cpu_s": sum(c.get("resources", {}).get("user_cpu_s", 0)
+                                        for c in self.record["children"]),
+                "child_system_cpu_s": sum(c.get("resources", {}).get("system_cpu_s", 0)
+                                          for c in self.record["children"]),
+            },
         )
         current = {}
         for selector in SELECTORS:
@@ -819,6 +842,8 @@ def main():
         "simulator-tiering",
         "simulator-compatibility",
         "scheduling-parallel",
+        "scheduling-controls",
+        "top-interactions",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -930,6 +955,10 @@ def main():
             )
         elif args.probe == "scheduling-parallel":
             scheduling_probe(evidence)
+        elif args.probe == "scheduling-controls":
+            scheduling_controls(evidence)
+        elif args.probe == "top-interactions":
+            run_top_interactions(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):

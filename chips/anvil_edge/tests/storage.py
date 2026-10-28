@@ -705,8 +705,11 @@ def run_boot_boundaries(evidence):
 def run_large_images(evidence):
     evidence.tools(("iverilog", "vvp"))
     run_watchdog_width(evidence)
-    for vocabulary in (128256, 151936, 262144):
-        boot_test(evidence, vocabulary, 17, capacity=vocabulary)
+    evidence.run_cases([
+        (f"large-image-{vocabulary}", lambda scope, vocabulary=vocabulary:
+         boot_test(scope, vocabulary, 17, capacity=vocabulary))
+        for vocabulary in (128256, 151936, 262144)
+    ])
 
 
 CONFIG = r"""
@@ -1077,7 +1080,7 @@ def run_mapper(evidence):
 
 def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=False,
              text_profile=None, input_fault=None, reload_after=False,
-             reload_profile=False):
+             reload_profile=False, interaction=None):
     """Real minimum-geometry Q1; zero tensors have independently exact zero logits."""
     raw_prompt = b"ABC"
     # The base fixture has the AB merge, so ABC prefills [256,67].
@@ -1127,6 +1130,10 @@ def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=Fa
         name += "-reset-" + reset_phase
     if startup_only:
         name += "-startup"
+    if interaction is not None:
+        if reset_phase or startup_only or text_profile or input_fault or reload_after:
+            raise ValueError("Top interactions require their dedicated fixture")
+        name += "-" + interaction
     directory = evidence.path / (name + "-input")
     directory.mkdir()
     reload_updates = ""
@@ -1257,7 +1264,7 @@ def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=Fa
         'cfg_valid=%b cfg_ready=%b cfg_response=%b",cycle,writes,reads,embedding_reads,'
         'cache_k_writes,cache_v_writes,outputs,completions,error,error_code,busy,'
         'cfg_valid,cfg_ready,cfg_rsp_valid);')
-    if reload_after:
+    if reload_after or interaction == "semantic-failed-reload":
         # Two complete boot/inference epochs retain the one-epoch cycle budget each.
         bench = bench.replace("repeat (30000000)", "repeat (60000000)")
     # Committed loader bundle is not a public top port. Top is observed solely at
@@ -1517,6 +1524,10 @@ def top_test(evidence, seed=17, uart=False, *, reset_phase=None, startup_only=Fa
         bench = top_control_scenario(
             bench, fixture, raw_prompt, fault_prompt, expected_error,
             input_fault, reload_after, uart, operations, reload_updates)
+    if interaction is not None:
+        from interactions import top_interaction_bench
+        bench = top_interaction_bench(
+            evidence, bench, fixture, raw_prompt, operations, interaction, uart)
     root = Path(__file__).resolve().parent.parent
     evidence.simulate(name, bench, [
         "rtl/anvil_edge_numeric_pkg.sv",
@@ -1689,6 +1700,8 @@ def run_top(evidence):
     run_top_profiles(evidence)
     run_top_errors(evidence)
     run_top_reload(evidence)
+    from interactions import run_top_interactions
+    run_top_interactions(evidence)
 
 
 def run_top_profiles(evidence):

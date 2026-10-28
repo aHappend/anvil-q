@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import threading
 
 
 def resource_limits(root):
@@ -89,6 +90,7 @@ def source_contract():
         "run_storage_faults", "run_large_images", "run_storage_edges",
         "run_image_upper", "run_watchdog_width", "run_uart_controls",
         "run_numerical_errors", "run_tokenizer_capacity",
+        "run_top_interactions",
     }
     assert required_nested <= reached, sorted(required_nested - reached)
     requirements = json.loads((root / "tests/data/requirements.json").read_text())
@@ -145,6 +147,68 @@ def scheduling_probe(evidence):
         "simulation_children": [row["simulation_receipt"] for row in rows],
         "cache_hits": sum(row.get("compile_cache_hit", False) for row in rows),
         "limits": "Measured submatrix only; not full L1 or official-model acceptance",
+    }
+
+
+def scheduling_controls(evidence):
+    """Actual failure/peer settlement and concurrent cache/isolation checks."""
+    from protocol import UART
+    gate = threading.Barrier(evidence._limits["workers"])
+
+    def command(scope, index):
+        scope.source_overrides["unused-isolation-check"] = str(index)
+        scope.name_prefix = str(index)
+        gate.wait(timeout=60)
+        assert scope.source_overrides["unused-isolation-check"] == str(index)
+        result = scope.child(
+            ["python3", "-c", f"print('CASE {index}'); raise SystemExit({7 if index == 0 else 0})"],
+            "same-child-name")
+        assert (Path(__file__).resolve().parent.parent / result["stdout"]).read_text() == f"CASE {index}\n"
+
+    expected_error = None
+    try:
+        evidence.run_cases([
+            (f"command-{index}", lambda scope, index=index: command(scope, index))
+            for index in range(evidence._limits["workers"])
+        ])
+    except Exception as error:
+        expected_error = error
+    batch = evidence.record["case_batches"][-1]
+    children = list(evidence.record["children"])
+    assert expected_error is not None and batch["status"] == "failed"
+    assert len(batch["results"]) == evidence._limits["workers"]
+    assert sum(row["status"] == "failed" for row in batch["results"]) == 1
+    assert len(children) == evidence._limits["workers"]
+    assert sum(row["exit_code"] == 7 for row in children) == 1
+    assert all(row["child_settled"] and row["process_group_settled"] for row in children)
+    assert len({row["stdout"] for row in children}) == len(children)
+    assert evidence.source_overrides == {} and evidence.name_prefix == ""
+
+    bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
+
+    def simulation(scope, index):
+        scope.simulator_override = "verilator"
+        scope.name_prefix = f"copy-{index}-"
+        scope.source_overrides["unused-isolation-check"] = str(index)
+        return scope.simulate("uart", bench, [
+            "rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"], 78)
+
+    evidence.run_cases([
+        (f"cache-copy-{index}", lambda scope, index=index: simulation(scope, index))
+        for index in range(3)
+    ])
+    rows = evidence.record["coverage"]
+    assert len(rows) == 3 and all(row["status"] == "passed" for row in rows)
+    assert len({row["compile_cache_key"] for row in rows}) == 1
+    assert sum(not row["compile_cache_hit"] for row in rows) == 1
+    assert evidence.source_overrides == {} and evidence.name_prefix == ""
+    assert evidence.simulator_override is None
+    evidence.record["scheduling_controls"] = {
+        "expected_child_exit": 7, "expected_batch_rejections": 1,
+        "settled_children": len(children), "distinct_log_paths": len(children),
+        "concurrent_identical_simulations": 3, "actual_compilations": 1,
+        "passed_simulation_comparisons": sum(row["actual_comparisons"] for row in rows),
+        "scope": "Harness diagnostic; deliberate child rejection is not an RTL mutation kill",
     }
 
 
