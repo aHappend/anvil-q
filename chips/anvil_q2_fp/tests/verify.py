@@ -16,7 +16,8 @@ check-local model reuse; seeds and fixture paths are run-time testbench inputs,
 not changes to DUT parameters. Icarus retains full compact leaf tests and
 four-state time-zero/edge startup checks for each compiled configuration.
 Behavior and benchmark dispatch at most four independent child jobs, with
-two compiler jobs per build; synthesis stays serial and memory-preserving.
+two compiler jobs per build. Native synthesis dispatches at most four jobs,
+bounded by available CPU/memory, and retains memory -nomap in every child.
 """
 
 import argparse
@@ -32,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from defect_checks import MUTATIONS
 from retained import ROOT, Run
 from suite_manifest import SEEDS, configurations, manifest
+from synthesis_dispatch import policy as synthesis_policy, resources as synthesis_resources
 from top_lifecycle_checks import SCENARIOS
 
 
@@ -221,6 +223,10 @@ def execute(check):
                 record["outcome"] = "missing-verification-source"
                 raise RuntimeError(f"required verification entrypoint missing: {record['argv'][1]}")
         workers = 4 if check in ("behavior", "benchmark") else 1
+        if check == "synthesis":
+            dispatch = synthesis_policy(synthesis_resources())
+            workers = dispatch["maximum_concurrent_jobs"]
+            run.receipt["synthesis_dispatch"] = dispatch
         run.receipt["maximum_concurrent_jobs"] = workers
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = [executor.submit(execute_job, run, record) for record in records]
