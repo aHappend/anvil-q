@@ -304,8 +304,8 @@ def storage_preflight(ev, args, suite):
     packed = getattr(args, "packed_storage", False)
     allocation = (packed_array_allocation if packed else array_allocation)(
         rows, stat.f_frsize, modes=len(args.modes))
-    # Include one additional retained failed attempt. Traces and metadata are
-    # additional, so passing this necessary condition cannot qualify storage.
+    # Include one additional retained failed attempt. Packed raw fallback is
+    # a conservative budget, not a lower bound on actual encoded size.
     required_bytes = 2 * allocation[
         "rounded_array_raw_fallback_bound_one_successful_attempt" if packed else
         "rounded_array_data_bytes_one_successful_attempt"]
@@ -326,11 +326,17 @@ def storage_preflight(ev, args, suite):
     }
     ev.receipt["collection_storage_preflight"] = report
     enough = available_bytes >= required_bytes and stat.f_favail >= required_inodes
-    require(ev.assertion("collection_array_storage_lower_bound", enough, **report),
+    assertion = ("collection_array_storage_fallback_budget" if packed else
+                 "collection_array_storage_lower_bound")
+    requirement = (f"raw-fallback budget {required_bytes} bytes and {required_inodes} inodes"
+                   if packed else
+                   f"need at least {required_bytes} bytes and {required_inodes} inodes")
+    require(ev.assertion(assertion, enough, **report),
             "insufficient collection array storage before RTL build/inference: "
-            f"need at least {required_bytes} bytes and {required_inodes} inodes "
+            f"{requirement} "
             f"including one retained failure; available {available_bytes} bytes and "
-            f"{stat.f_favail} inodes; trace/metadata/log/staging capacity is additional")
+            f"{stat.f_favail} inodes; trace/metadata/log/staging capacity is additional" +
+            ("; packed budget is not a lower bound on actual encoded size" if packed else ""))
     return selected
 
 

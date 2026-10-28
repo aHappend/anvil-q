@@ -14,6 +14,7 @@ import subprocess
 import time
 import zlib
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import Validator, artifact_path, load_json, require, sha
 from packed_storage import (CHUNK_BYTES, END, ENTRY, FOOTER, HEADER_LIMIT, MAGIC,
@@ -27,13 +28,78 @@ from verify import Evidence, ROOT, now
 def direct_producers(destination, report, reject):
     """Run the exact observer storage classes, independently of any RTL build."""
     import io
+    import ast
     import shutil
+    from types import SimpleNamespace
+    from unittest.mock import patch
     from collection_capacity import packed_workload_accounting
     from packed_storage import array_output, observation_vector
     from packed_stream import write_stream
 
     directory = destination / "direct-producers"
     directory.mkdir()
+    parsed = ("tests/production_sim.py", "tests/teacher_reference.py",
+              "tests/reference_collector.py", "tests/production_resume.py",
+              "tests/packed_storage.py", "tests/packed_stream.py",
+              "tests/collection_capacity.py", "tests/packed_storage_checks.py")
+    for name in parsed:
+        ast.parse((ROOT / name).read_text(), filename=name)
+    from production_sim import run_collection, storage_preflight
+    try:
+        run_collection(None, SimpleNamespace(packed_storage=True))
+    except ValueError as error:
+        require("collection paused pending independent capacity" in str(error),
+                "packed collection failed for the wrong prerequisite")
+    else:
+        raise ValueError("unqualified packed production collection was not blocked")
+    require("numpy" not in sys.modules and "teacher_reference" not in sys.modules,
+            "paused packed collector imported inference dependencies")
+    report["positive_cases"].append({
+        "name": "producer-source-syntax-and-collection-pause",
+        "python_sources_parsed": list(parsed),
+        "packed_collection_rejected_before_inference_import": True})
+    suite = {"domains": {
+        str(domain): {"cases": [
+            {"id": str(case), "teacher_tokens": {}, "prompt_tokens": {}}
+            for case in range(10)]} for domain in range(5)}}
+    for packed in (False, True):
+        for sufficient in (False, True):
+            assertions = []
+            def assertion(name, passed, **detail):
+                assertions.append((name, passed, detail))
+                return passed
+            holder = SimpleNamespace(path=directory, receipt={}, assertion=assertion)
+            args = SimpleNamespace(case_start=0, case_count=50, teacher_prefix=None,
+                                   modes=["bf16", "fp16", "w4a16"], packed_storage=packed)
+            stat = SimpleNamespace(f_frsize=4096, f_bavail=10**18 if sufficient else 0,
+                                   f_favail=10**18)
+            with patch("production_sim.checked", return_value="synthetic-tokens"), \
+                    patch("production_sim.load_json", return_value=[1]), \
+                    patch("production_sim.os.statvfs", return_value=stat):
+                try:
+                    selected = storage_preflight(holder, args, suite)
+                except ValueError as error:
+                    require(not sufficient, "sufficient array budget was rejected")
+                    diagnostic = str(error)
+                    require(("raw-fallback budget" in diagnostic and
+                             "not a lower bound on actual encoded size" in diagnostic and
+                             "need at least" not in diagnostic) if packed else
+                            "need at least" in diagnostic,
+                            "storage preflight conflates packed budget with actual minimum")
+                else:
+                    require(sufficient and len(selected) == 50,
+                            "insufficient array budget was accepted")
+            expected = ("collection_array_storage_fallback_budget" if packed else
+                        "collection_array_storage_lower_bound")
+            require(len(assertions) == 1 and assertions[0][:2] == (expected, sufficient)
+                    and not holder.receipt["collection_storage_preflight"][
+                        "full_workload_storage_qualified"],
+                    "array preflight changed its guard or certified complete storage")
+    report["positive_cases"].append({
+        "name": "array-preflight-budget-not-capacity-qualification",
+        "synthetic_cases": 50, "format_availability_comparisons": 4,
+        "packed_fallback_not_reported_as_actual_minimum": True,
+        "full_workload_capacity_qualified": False})
     commands = []
     report["producer_commands"] = commands
     bindings = {name: sha(ROOT / name) for name in (
