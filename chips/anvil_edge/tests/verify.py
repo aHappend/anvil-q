@@ -55,7 +55,8 @@ from official import (
 )
 from qwen_tables import run_qwen_fragments
 from qwen_regex import run_qwen_regex
-from unicode_sources import run_unicode_sources
+from unicode_sources import run_unicode_sources, run_unicode_intake
+from unicode_tables import run_unicode_conversion, run_unicode_rtl
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -886,6 +887,9 @@ def main():
         "official-qwen-fragments",
         "official-qwen-regex",
         "official-unicode-sources",
+        "unicode-intake",
+        "unicode-conversion",
+        "unicode-rtl",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1019,6 +1023,12 @@ def main():
             run_qwen_regex(evidence)
         elif args.probe == "official-unicode-sources":
             run_unicode_sources(evidence)
+        elif args.probe == "unicode-intake":
+            run_unicode_intake(evidence)
+        elif args.probe == "unicode-conversion":
+            run_unicode_conversion(evidence)
+        elif args.probe == "unicode-rtl":
+            run_unicode_rtl(evidence)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):
@@ -1058,6 +1068,7 @@ def main():
                                for index, suite in enumerate(L1_SUITES))
             run_qwen_fragments(evidence)
             run_qwen_regex(evidence)
+            run_unicode_rtl(evidence)
             run_official_checkpoint(evidence)
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "

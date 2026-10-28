@@ -31,12 +31,10 @@ module bench;
   integer requests=0,responses=0,outputs=0,completions=0,cycle=0,delay_count=0;
   integer req_wait=0,out_wait=0,request_stalls=0,output_stalls=0,comparisons=0;
   integer inputs=0;
+  @MEMORY_DECLARATIONS@
   function automatic [31:0] memory(input [63:0] address);
     begin
-      case (address)
-        @MEMORY@
-        default: $fatal(1,"TEXT_UNMAPPED_READ address=%h",address);
-      endcase
+      @MEMORY_LOOKUP@
     end
   endfunction
   task automatic reset_check;
@@ -177,13 +175,38 @@ def ranges_for(properties, classes=None):
 
 def run_text_case(evidence, name, seed, dut, memory, inputs, expected, *,
                   error=0, bus_error=False, cycles=2000000, provenance=None):
+    declarations = ""
+    lookup = ("case (address)\n" +
+              "\n".join(f"64'h{a:x}: memory=32'h{v:08x};"
+                        for a, v in sorted(memory.items())) +
+              '\ndefault: $fatal(1,"TEXT_UNMAPPED_READ address=%h",address);\nendcase')
+    if len(memory) > 4096:
+        # Keep complete source-derived tables without a huge C++ case statement.
+        ordered = sorted(memory.items())
+        groups = []
+        for index, (address, value) in enumerate(ordered):
+            if not groups or address != groups[-1][1]:
+                groups.append([address, address + 4, index])
+            else:
+                groups[-1][1] = address + 4
+        image = evidence.path / f"{name}-s{seed}-table.hex"
+        with image.open("x", encoding="ascii") as output:
+            output.write("".join(f"{value:08x}\n" for _, value in ordered))
+        declarations = (
+            f"reg [31:0] table_words[0:{len(ordered) - 1}];\n"
+            f'  initial $readmemh("{evidence.relative(image)}",table_words);')
+        lookup = ('if (address[1:0]!=0) $fatal(1,"TEXT_UNALIGNED_READ");\n' +
+                  "\nelse ".join(
+                      f"if (address>=64'h{first:x} && address<64'h{end:x}) "
+                      f"memory=table_words[{index}+((address-64'h{first:x})>>2)];"
+                      for first, end, index in groups) +
+                  '\nelse $fatal(1,"TEXT_UNMAPPED_READ address=%h",address);')
     values = {
         "DUT": dut, "SEED": str(seed), "BUS_ERROR": str(int(bus_error)),
         "OUTPUTS": str(len(expected)), "INPUTS": str(len(inputs)),
         "ARRAY_LAST": str(max(0, len(expected) - 1)),
         "ERROR_CODE": f"8'h{error:02x}", "CYCLES": str(cycles),
-        "MEMORY": "\n".join(f"64'h{a:x}: memory=32'h{v:08x};"
-                            for a, v in sorted(memory.items())),
+        "MEMORY_DECLARATIONS": declarations, "MEMORY_LOOKUP": lookup,
         "VECTORS": "\n".join(f"expected[{i}]=64'h{v:x};"
                              for i, v in enumerate(expected)),
         "STIMULUS": "\n".join(f"item(32'h{v:x},{int(i == len(inputs)-1)});"

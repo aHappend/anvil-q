@@ -143,11 +143,61 @@ def run_unicode_sources(evidence):
                    "pinned-upstream-unicode-source-inspection")
 
 
+def intake(directory):
+    """Retain versioned primary data before admitting hashes to local inputs."""
+    records = []
+    for crate, version, checksum in CRATES:
+        _, record = retrieve(
+            directory, f"{crate}-{version}.crate",
+            f"https://static.crates.io/crates/{crate}/{crate}-{version}.crate", checksum)
+        records.append(record)
+    for version, names in (
+        ("9.0.0", ("UnicodeData.txt", "CompositionExclusions.txt", "NormalizationTest.txt")),
+        ("16.0.0", ("UnicodeData.txt", "PropList.txt", "CaseFolding.txt",
+                    "CompositionExclusions.txt")),
+    ):
+        for name in names:
+            _, record = retrieve(directory, f"ucd-{version}-{name}",
+                                 f"https://www.unicode.org/Public/{version}/ucd/{name}")
+            records.append(record)
+    _, record = retrieve(directory, "unicode-LICENSE.txt", "https://www.unicode.org/license.txt")
+    records.append(record)
+    for name in ("tokenizers/Cargo.toml",):
+        _, record = retrieve(
+            directory, "release-" + name.replace("/", "-"),
+            f"https://raw.githubusercontent.com/huggingface/tokenizers/{TOKENIZERS_COMMIT}/{name}")
+        records.append(record)
+    raw, record = retrieve(directory, "tokenizers-0.21.4.crate",
+                           "https://static.crates.io/crates/tokenizers/tokenizers-0.21.4.crate")
+    records.append(record)
+    release = members(raw, "tokenizers", "0.21.4")
+    require("Cargo.lock" in release, "Published release does not retain its dependency lock")
+    with (directory / "release-Cargo.lock").open("xb") as output:
+        output.write(release["Cargo.lock"])
+    _, record = retrieve(
+        directory, "onig-6.5.1.crate",
+        "https://static.crates.io/crates/onig/onig-6.5.1.crate",
+        "336b9c63443aceef14bea841b899035ae3abe89b7c486aaf4c5bd8aafedac3f0")
+    records.append(record)
+    with (directory / "unicode-intake.json").open("x", encoding="ascii") as output:
+        json.dump({"sources": records, "candidate_tokenizers_commit": TOKENIZERS_COMMIT,
+                   "official_build_identity": "unconfirmed; no official library executed",
+                   "scope": "Source intake only; no conversion or RTL comparisons"}, output, indent=2)
+        output.write("\n")
+    print(json.dumps(records, indent=2))
+
+
+def run_unicode_intake(evidence):
+    evidence.tools(("python3",))
+    evidence.child(["python3", "tests/unicode_sources.py", "intake",
+                    evidence.relative(evidence.path)], "unicode-primary-data-intake")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3 and sys.argv[1] != "intake"):
         raise SystemExit("Usage: python3 tests/unicode_sources.py PROJECT_RELATIVE_EVIDENCE_DIRECTORY")
-    destination = Path(sys.argv[1])
+    destination = Path(sys.argv[-1])
     if (destination.is_absolute() or ".." in destination.parts
             or destination.parts[:2] != ("evidence", "preparation") or not destination.is_dir()):
         raise SystemExit("Output must be an existing project-relative fresh preparation directory")
-    inspect(destination)
+    (intake if len(sys.argv) == 3 else inspect)(destination)
