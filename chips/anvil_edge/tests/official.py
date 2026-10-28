@@ -210,7 +210,8 @@ def reference(directory):
         raise RuntimeError(
             "Pinned Qwen assets are present, but independent official-reference execution "
             "requires the unavailable tokenizers package. No installation is authorized. "
-            "Exact tagged-DFA/Unicode/AddedToken conversion is separately unimplemented."
+            "Partial vocabulary and symbolic ordered-regex converters do not replace "
+            "complete upstream Unicode/NFC/AddedToken conversion or official equivalence."
         ) from error
     tokenizer = tokenizers.Tokenizer.from_file(str(ROOT / "tests/data/qwen-tokenizer.json"))
     requirements = json.loads((ROOT / "tests/data/requirements.json").read_bytes())
