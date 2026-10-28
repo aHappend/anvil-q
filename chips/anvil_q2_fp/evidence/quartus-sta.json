@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-10-28T21:00:11.143347+00:00",
+  "timestamp_utc": "2026-10-28T23:46:33.965007+00:00",
   "project_dir": "/data/sufeng/anvil-q2-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -340,6 +340,6 @@
     "CACHE_BLOCK": 8,
     "MAX_SEQ_LEN": 8
   },
-  "source_sha256": "8c58c19d7f10f1c6fa775e5f0f559a138c018c88f766557ebd22f4c407425419",
+  "source_sha256": "0629f6053f8ead64904e061dd9b9a3f26265d116ae1ea1a3478fb3e4d19735b4",
   "applicable": true
 }
