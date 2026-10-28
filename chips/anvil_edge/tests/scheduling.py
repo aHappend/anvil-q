@@ -100,7 +100,7 @@ def source_contract():
               and isinstance(statement.value.func, ast.Name)]
     assert direct == ["run_qwen_fragments", "run_qwen_regex",
                       "run_unicode_rtl", "run_official_checkpoint",
-                      "run_qwen_integration", "run_qwen_boot"]
+                      "run_qwen_integration", "run_qwen_boot", "run_qwen_shell"]
     incomplete = l1[0].body[-1]
     assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
     assert isinstance(incomplete.exc.args[0], ast.Constant)

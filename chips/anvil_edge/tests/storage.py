@@ -57,7 +57,7 @@ def table(record_bytes, records):
 
 def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=4096,
                     transport=1, geometry=None, tokenizer=None, metadata_words=None,
-                    table_payloads=None):
+                    table_payloads=None, tensor_word=None, config_values=None):
     """Complete image bytes and independently calculated public DDR tuples."""
     dimensions = {
         "layers": 1, "hidden": 8, "intermediate": 8, "query_heads": 1,
@@ -146,6 +146,19 @@ def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=40
         0x20E: table(4, []),
         0x20F: table(16, []),
     }
+    if tensor_word is not None:
+        for storage in (0x102, 0x103):
+            data = bytearray(segments[storage])
+            for kind, layer, projection, owner, offset, rows, columns, _, _, _ in regions:
+                if owner != storage:
+                    continue
+                for row in range(rows):
+                    for column in range(columns):
+                        value = tensor_word(kind, layer, projection, row, column)
+                        if not isinstance(value, int) or not 0 <= value <= 0xFFFFFFFF:
+                            raise ValueError("Synthetic tensor callback must return a u32")
+                        struct.pack_into("<I", data, offset + 4 * (row * columns + column), value)
+            segments[storage] = bytes(data)
     if tokenizer is not None:
         memory, bases, counts, profile_metadata, _, _ = tokenizer
         if profile_metadata[2] != vocabulary:
@@ -245,6 +258,14 @@ def synthetic_image(vocabulary=256, capacity=257, *, fault=None, max_pretoken=40
         segments[0x20F] = table(16, [words(0x65, 0x301, 0x110000, 0)])
     eos = struct.unpack_from("<I", segments[0x200], 28)[0]
     config = [5, eos, 2, transport, 1, vocabulary, 0]
+    if config_values is not None:
+        offsets = (4, 8, 12, 16, 20, 24, 36)
+        if set(config_values) - set(offsets):
+            raise ValueError("Unknown synthetic configuration offset")
+        for address, value in config_values.items():
+            if not isinstance(value, int) or not 0 <= value <= 0xFFFFFFFF:
+                raise ValueError("Synthetic configuration value must be a u32")
+            config[offsets.index(address)] = value
     config_bytes = b"".join(words(address, value) for address, value in
                             zip((4, 8, 12, 16, 20, 24, 36), config))
     header_bytes = 32 + len(config_bytes) + 40 * len(segments)
