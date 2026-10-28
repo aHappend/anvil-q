@@ -343,7 +343,7 @@ class Evidence:
             result = self.child(["vvp", self.relative(binary)], name + "-simulate",
                                 allow_failure=True)
         else:
-            self.tools(("verilator",))
+            self.tools(("verilator", "g++", "make"))
             compiled_source = directory / "compiled-bench.sv"
             # Verilator has no inactive-region #0 support. Keep the original
             # bench, and settle reset 1 ps before checking, never a clock later.
@@ -394,13 +394,15 @@ class Evidence:
                 "-Wno-fatal", "--x-initial", "unique", "--x-assign", "unique",
                 "-j", "2",
             ]
-            tool = self.record["tool_versions"]["verilator"]
-            tool_identity = {
-                "path": shutil.which("verilator"),
-                "stdout_sha256": digest(ROOT / tool["stdout"]),
-                "stderr_sha256": digest(ROOT / tool["stderr"]),
-                "executable_sha256": digest(Path(shutil.which("verilator"))),
-            }
+            tool_identity = {}
+            for tool_name in ("verilator", "g++", "make"):
+                tool = self.record["tool_versions"][tool_name]
+                tool_identity[tool_name] = {
+                    "path": shutil.which(tool_name),
+                    "stdout_sha256": digest(ROOT / tool["stdout"]),
+                    "stderr_sha256": digest(ROOT / tool["stderr"]),
+                    "executable_sha256": digest(Path(shutil.which(tool_name))),
+                }
             cache_key = hashlib.sha256(json.dumps(
                 [compiled_bench, source_hashes, compile_options, tool_identity],
                 sort_keys=True
