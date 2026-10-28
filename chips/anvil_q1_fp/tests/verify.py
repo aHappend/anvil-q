@@ -95,8 +95,21 @@ class Evidence:
     def finish(self, status):
         self.receipt["status"] = status
         self.receipt["ended_at"] = now()
-        (self.path / "receipt.json").write_text(
-            json.dumps(self.receipt, indent=2) + "\n")
+        serialized = json.dumps(self.receipt, indent=2) + "\n"
+        fd, temporary = tempfile.mkstemp(prefix=".receipt-", suffix=".tmp",
+                                         dir=self.path)
+        # Failed staged files are retained for diagnosis, never installed.
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            if stream.write(serialized) != len(serialized):
+                raise OSError("incomplete receipt write")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, self.path / "receipt.json")
+        directory = os.open(self.path, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
 
     def assertion(self, name, passed, **detail):
         self.receipt["assertions"].append(
@@ -1126,7 +1139,8 @@ def main():
         "leaves-full", "defects-integration", "integration-accelerated",
         "protocol-accelerated", "portable-smoke", "operators", "production-operators",
         "maximum-position", "production-top-addresses", "preservation", "input-inventory",
-        "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation"))
+        "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation",
+        "receipt-publication"))
     parser.add_argument("--repair-of", type=Path)
     parser.add_argument("--diagnostic-repair-of", type=Path, action="append", default=[])
     parser.add_argument("--python-facility", type=Path, action="append", default=[])
@@ -1200,6 +1214,9 @@ def main():
         elif args.probe == "benchmark-fixtures":
             from benchmark_fixtures import check as check_fixtures
             ok = check_fixtures(ROOT, ev)
+        elif args.probe == "receipt-publication":
+            from receipt_publication import check as check_publication
+            ok = check_publication(ROOT, ev)
         elif args.probe == "facilities":
             from recovery import facilities
             ok = facilities(ROOT, ev, args.python_facility)
