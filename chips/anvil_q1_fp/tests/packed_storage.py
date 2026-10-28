@@ -10,6 +10,7 @@ import hashlib
 from collections import OrderedDict
 import json
 import math
+import os
 from pathlib import Path
 import struct
 import zlib
@@ -26,6 +27,54 @@ CHUNK_BYTES = 1024 * 1024
 HEADER_LIMIT = 65536
 MAX_BYTES = (1 << 63) - 1
 DTYPES = {"<f4": 4, "<f8": 8, "<u4": 4}
+INDEX_BLOCK_BYTES = CHUNK_BYTES // ENTRY.size * ENTRY.size
+
+
+def file_identity(info):
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+
+class IndexEntries:
+    """Random-access sealed index without a workload-sized Python object list."""
+
+    def __init__(self, path, offset, count, identity):
+        self.path, self.offset, self.count, self.identity = path, offset, count, identity
+
+    def __len__(self):
+        return self.count
+
+    def unchanged(self):
+        require(file_identity(self.path.stat()) == self.identity,
+                "packed source changed after index validation")
+
+    def __getitem__(self, number):
+        require(integer(number) and number < self.count, "packed index out of bounds")
+        with self.path.open("rb") as stream:
+            require(file_identity(os.fstat(stream.fileno())) == self.identity,
+                    "packed source changed after index validation")
+            stream.seek(self.offset + number * ENTRY.size)
+            raw = stream.read(ENTRY.size)
+            require(len(raw) == ENTRY.size and
+                    file_identity(os.fstat(stream.fileno())) == self.identity,
+                    "packed index changed during read")
+        self.unchanged()
+        return ENTRY.unpack(raw)
+
+    def __iter__(self):
+        with self.path.open("rb") as stream:
+            require(file_identity(os.fstat(stream.fileno())) == self.identity,
+                    "packed source changed after index validation")
+            stream.seek(self.offset)
+            remaining = self.count * ENTRY.size
+            while remaining:
+                raw = stream.read(min(INDEX_BLOCK_BYTES, remaining))
+                require(len(raw) == min(INDEX_BLOCK_BYTES, remaining),
+                        "truncated packed index")
+                remaining -= len(raw)
+                yield from ENTRY.iter_unpack(raw)
+            require(file_identity(os.fstat(stream.fileno())) == self.identity,
+                    "packed index changed during iteration")
+        self.unchanged()
 
 
 def digest(data):
@@ -176,15 +225,25 @@ class Writer:
         self.prefix = MAGIC + struct.pack("<I", len(encoded)) + encoded
         self.path = Path(path)
         self.stream = self.path.open("xb")
-        self.stream.write(self.prefix)
-        self.entries = []
+        self.index_path = self.path.with_name(self.path.name + ".index-partial")
+        try:
+            self.index_stream = self.index_path.open("x+b")
+            require(self.stream.write(self.prefix) == len(self.prefix),
+                    "packed header short write")
+        except BaseException:
+            self.stream.close()
+            if hasattr(self, "index_stream"):
+                self.index_stream.close()
+            raise
+        self.entry_count = 0
         self.buffer = bytearray()
         self.total = 0
         self.previous_cycle = 0
         self.sealed = False
+        self.closed = False
 
     def append(self, raw):
-        require(not self.sealed and isinstance(raw, (bytes, bytearray, memoryview)),
+        require(not self.closed and isinstance(raw, (bytes, bytearray, memoryview)),
                 "invalid append to packed writer")
         require(len(raw) % self.width == 0 and self.total + len(raw) <= MAX_BYTES and
                 (self.expected is None or self.total + len(raw) <= self.expected),
@@ -219,12 +278,14 @@ class Writer:
             method, candidate = 0, raw
         offset = self.stream.tell()
         require(self.stream.write(candidate) == len(candidate), "packed payload short write")
-        self.entries.append(ENTRY.pack(offset, len(candidate), len(raw), method,
-                                       digest(candidate), digest(raw)))
+        entry = ENTRY.pack(offset, len(candidate), len(raw), method,
+                           digest(candidate), digest(raw))
+        require(self.index_stream.write(entry) == len(entry), "packed index spool short write")
+        self.entry_count += 1
 
     def reshape(self, shape, axes):
         """Seal a shorter observation fragment without staging raw payload."""
-        require(not self.sealed and self.header["kind"] == "array",
+        require(not self.closed and self.header["kind"] == "array",
                 "reshape requires an unsealed array")
         expected = dimensions(self.header["dtype"], shape, axes)
         require(expected == self.total and expected <= self.expected,
@@ -245,7 +306,7 @@ class Writer:
         return len(raw)
 
     def close(self):
-        require(not self.sealed, "packed writer already sealed")
+        require(not self.closed, "packed writer already closed")
         try:
             require(self.expected is None or self.total == self.expected,
                     "incomplete packed array")
@@ -253,15 +314,29 @@ class Writer:
                 self._chunk(bytes(self.buffer))
                 self.buffer.clear()
             offset = self.stream.tell()
-            index = b"".join(self.entries)
-            require(self.stream.write(index) == len(index), "packed index short write")
-            footer = FOOTER.pack(offset, len(self.entries), self.total,
-                                 digest(self.prefix + index), END)
+            self.index_stream.flush()
+            require(self.index_stream.tell() == self.entry_count * ENTRY.size,
+                    "packed index spool extent differs")
+            self.index_stream.seek(0)
+            checksum = hashlib.sha256(self.prefix)
+            while index := self.index_stream.read(INDEX_BLOCK_BYTES):
+                checksum.update(index)
+                require(self.stream.write(index) == len(index), "packed index short write")
+            require(self.stream.tell() == offset + self.entry_count * ENTRY.size,
+                    "packed index copy extent differs")
+            footer = FOOTER.pack(offset, self.entry_count, self.total, checksum.digest(), END)
             require(self.stream.write(footer) == len(footer), "packed footer short write")
             self.stream.flush()
-            self.sealed = True
         finally:
-            self.stream.close()
+            self.closed = True
+            try:
+                self.stream.close()
+            finally:
+                self.index_stream.close()
+        # A failed seal retains both partial files. Only a completed seal removes
+        # this invocation's exclusively created index staging file.
+        self.index_path.unlink()
+        self.sealed = True
 
     def __enter__(self):
         return self
@@ -270,15 +345,20 @@ class Writer:
         if kind is None:
             self.close()
         else:
-            self.stream.close()
+            self.closed = True
+            try:
+                self.stream.close()
+            finally:
+                self.index_stream.close()
 
 
 class Reader:
     def __init__(self, path, *, dtype=None, shape=None, axes=None):
         self.path = Path(path)
-        size = self.path.stat().st_size
-        require(size >= 12 + FOOTER.size, "truncated packed container")
         with self.path.open("rb") as stream:
+            identity = file_identity(os.fstat(stream.fileno()))
+            size = identity[2]
+            require(size >= 12 + FOOTER.size, "truncated packed container")
             prefix = stream.read(12)
             require(prefix[:8] == MAGIC, "unknown packed storage version")
             length, = struct.unpack("<I", prefix[8:])
@@ -327,24 +407,37 @@ class Reader:
                     count * ENTRY.size == size - FOOTER.size - offset,
                     "invalid/truncated packed index extent")
             stream.seek(offset)
-            index = stream.read(count * ENTRY.size)
-            require(digest(prefix + header_bytes + index) == index_digest,
+            checksum = hashlib.sha256(prefix + header_bytes)
+            remaining = count * ENTRY.size
+            cursor = 12 + length
+            number = 0
+            while remaining:
+                index = stream.read(min(INDEX_BLOCK_BYTES, remaining))
+                require(len(index) == min(INDEX_BLOCK_BYTES, remaining),
+                        "truncated packed index")
+                remaining -= len(index)
+                checksum.update(index)
+                for start, encoded, decoded, method, _, _ in ENTRY.iter_unpack(index):
+                    expected_chunk = min(chunk_bytes, self.total - number * chunk_bytes)
+                    require(start == cursor and decoded == expected_chunk and
+                            0 < encoded <= decoded and
+                            (method == 0 and encoded == decoded or
+                             method == (1 if header["kind"] == "array" else 2)),
+                            "invalid/overlapping/reordered packed chunk extent or codec")
+                    cursor += encoded
+                    number += 1
+            require(checksum.digest() == index_digest,
                     "damaged packed header/index")
-        self.entries = list(ENTRY.iter_unpack(index))
+            require(cursor == offset, "unindexed packed payload")
+            require(file_identity(os.fstat(stream.fileno())) == identity,
+                    "packed source changed during index validation")
+        self.entries = IndexEntries(self.path, offset, count, identity)
+        self.entries.unchanged()
         self.cache = OrderedDict()
-        cursor = 12 + length
-        for number, (start, encoded, decoded, method, _, _) in enumerate(self.entries):
-            expected_chunk = min(chunk_bytes, self.total - number * chunk_bytes)
-            require(start == cursor and decoded == expected_chunk and
-                    0 < encoded <= decoded and
-                    (method == 0 and encoded == decoded or
-                     method == (1 if header["kind"] == "array" else 2)),
-                    "invalid/overlapping/reordered packed chunk extent or codec")
-            cursor += encoded
-        require(cursor == offset, "unindexed packed payload")
 
     def chunk(self, number):
         require(integer(number) and number < len(self.entries), "packed chunk index out of bounds")
+        self.entries.unchanged()
         if number in self.cache:
             self.cache.move_to_end(number)
             return self.cache[number]
@@ -363,6 +456,7 @@ class Reader:
             delta = inflate(encoded, decoded // RECORD.size * 54)
             raw = delta_decode(delta, decoded // RECORD.size)
         require(len(raw) == decoded and digest(raw) == raw_hash, "decoded packed hash differs")
+        self.entries.unchanged()
         self.cache[number] = raw
         if len(self.cache) > 2:
             self.cache.popitem(last=False)

@@ -266,7 +266,14 @@ def direct_producers(destination, report, reject):
     accounting = packed_workload_accounting(rows, 4096)
     require(accounting["cases"] == 50 and accounting["repeats"] == 2 and
             accounting["bounded_data_blocks_success_plus_one_retained_failure"] ==
-            2 * accounting["bounded_data_blocks_one_successful_attempt"] and
+            2 * accounting["bounded_data_blocks_one_successful_attempt"] +
+            accounting["peak_staging"][
+                "index_spool_data_block_bound_success_plus_retained_failure"] and
+            accounting["peak_staging"]["failed_index_spool_retained"] and
+            accounting["peak_staging"]["maximum_concurrent_index_writers"] == 3 and
+            accounting["bounded_payload_inodes_success_plus_one_retained_failure"] ==
+            2 * accounting["bounded_payload_inodes_one_successful_attempt"] + 6 and
+            not accounting["host_memory"]["workload_sized_index_python_lists"] and
             accounting["complete_capacity_bound_bytes"] is None and
             accounting["trace_data_block_bound_one_attempt"] > 0 and
             all(item["bound_bytes"] is None for item in accounting["additional_costs"].values())
@@ -336,6 +343,138 @@ def trace_index_floors(destination, report, reject):
         "sealed_container_boundary_comparisons": len(boundaries),
         "enumerated_workload_comparisons": comparisons,
         "production_model_executed": False, "collection_resumption_authorized": False})
+
+
+def bounded_indexes(destination, report, reject):
+    """Isolate large indexes using exact cached codecs, not model execution."""
+    import tracemalloc
+    from unittest.mock import patch
+    from packed_storage import INDEX_BLOCK_BYTES, IndexEntries, digest
+
+    directory = destination / "bounded-indexes"
+    directory.mkdir()
+    path = directory / "repeated-zero-array.aqp"
+    raw = bytes(CHUNK_BYTES)
+    encoded = zlib.compress(raw, 6)
+    raw_hash, encoded_hash = digest(raw), digest(encoded)
+    count = 32768
+
+    def cached_digest(value):
+        require(value == raw or value == encoded, "unexpected cached-codec input")
+        return raw_hash if len(value) == len(raw) else encoded_hash
+
+    def cached_compress(value, level):
+        require(value == raw and level == 6, "unexpected cached compression input")
+        return encoded
+
+    # Exact repeated-zero compression/hashes are computed above once. Keep the
+    # real append, index writes, sealing and readers; avoid recomputing 32 GiB.
+    tracemalloc.start()
+    try:
+        with patch("packed_storage.shuffled", new=lambda value, width: value), \
+                patch("packed_storage.zlib.compress", new=cached_compress), \
+                patch("packed_storage.digest", new=cached_digest):
+            with Writer(path, dtype="<f4", shape=[count * CHUNK_BYTES // 4],
+                        axes=["element"]) as output:
+                require(output.index_path.exists(), "writer did not create an index spool")
+                for _ in range(count):
+                    output.append(raw)
+                require(output.entry_count == count and not hasattr(output, "entries"),
+                        "writer retains a workload-sized index list")
+            require(not output.index_path.exists(), "successful seal retained index staging")
+        _, writer_peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    memory_limit = 4 * CHUNK_BYTES
+    require(writer_peak <= memory_limit, "writer index allocation grew with chunk count")
+
+    tracemalloc.start()
+    try:
+        reader = Reader(path)
+        require(isinstance(reader.entries, IndexEntries) and len(reader.entries) == count,
+                "reader materialized or truncated its index")
+        _, reader_peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    require(reader_peak <= memory_limit, "reader index allocation grew with chunk count")
+    for number in (0, count // 2, count - 1):
+        require(reader.chunk(number) == raw, "on-disk index random access changed decoded bits")
+    # Check the exact legacy v1 byte contract on a small raw-fallback payload.
+    legacy = directory / "legacy-byte-contract.aqp"
+    payload = random.Random(53).randbytes(256)
+    with Writer(legacy, dtype="<u4", shape=[64], axes=["element"]) as output:
+        output.append(payload)
+        prefix = output.prefix
+    entry = ENTRY.pack(len(prefix), len(payload), len(payload), 0,
+                       digest(payload), digest(payload))
+    require(legacy.read_bytes() == prefix + payload + entry + FOOTER.pack(
+        len(prefix) + len(payload), 1, len(payload), digest(prefix + entry), END),
+        "bounded index implementation changed the legacy v1 byte format")
+
+    incomplete = Writer(directory / "incomplete.aqp", dtype="<f4",
+                        shape=[CHUNK_BYTES // 2], axes=["element"])
+    incomplete.append(raw)
+    reject("spooled-incomplete-seal", incomplete.close)
+    require(incomplete.index_path.exists() and
+            incomplete.index_path.stat().st_size == ENTRY.size,
+            "failed seal lost its retained index spool")
+    reject("spooled-failed-container-unreadable", lambda: Reader(incomplete.path))
+    reject("spooled-failed-writer-append", lambda: incomplete.append(bytes(4)))
+    reject("spooled-failed-writer-reseal", incomplete.close)
+    occupied = directory / "occupied.aqp"
+    sidecar = occupied.with_name(occupied.name + ".index-partial")
+    sidecar.write_bytes(b"retained-prior-index")
+    reject("spooled-exclusive-index", lambda: Writer(
+        occupied, dtype="<f4", shape=[1], axes=["element"]), errors=(FileExistsError,))
+    require(sidecar.read_bytes() == b"retained-prior-index",
+            "writer overwrote an occupied index spool")
+
+    # Cached data must not hide either index mutation or source replacement.
+    with legacy.open("r+b") as output:
+        output.seek(-FOOTER.size - ENTRY.size, 2)
+        before = output.read(1)
+        output.seek(-1, 1)
+        output.write(bytes([before[0] ^ 1]))
+    reject("lazy-index-corruption-before-validation", lambda: Reader(legacy))
+    for name in ("entry", "iteration", "cached-payload", "replacement"):
+        # A separately retained valid index is changed after validation; do not
+        # mutate the large diagnostic or any product evidence.
+        changed = directory / ("changed-" + name + ".aqp")
+        with Writer(changed, dtype="<u4", shape=[1], axes=["element"]) as output:
+            output.append(bytes(4))
+        changed_reader = Reader(changed)
+        changed_reader.chunk(0)
+        if name == "replacement":
+            replacement = directory / "replacement.aqp"
+            with Writer(replacement, dtype="<u4", shape=[1], axes=["element"]) as output:
+                output.append(bytes(4))
+            __import__("os").replace(replacement, changed)
+        else:
+            with changed.open("ab") as output:
+                output.write(b"changed")
+        operation = {
+            "entry": lambda: changed_reader.entries[0],
+            "iteration": lambda: next(iter(changed_reader.entries)),
+            "cached-payload": lambda: changed_reader.chunk(0),
+            "replacement": lambda: changed_reader.chunk(0),
+        }[name]
+        reject("lazy-index-changed-" + name, operation)
+    report["positive_cases"].append({
+        "name": "disk-backed-index-memory-and-legacy-byte-contract",
+        "index_entries": count, "logical_index_bytes": count * ENTRY.size,
+        "synthetic_decoded_bytes": count * CHUNK_BYTES,
+        "encoded_container_bytes": path.stat().st_size,
+        "writer_peak_traced_python_bytes": writer_peak,
+        "reader_validation_peak_traced_python_bytes": reader_peak,
+        "traced_python_allocation_limit_bytes": memory_limit,
+        "index_scan_block_bytes": INDEX_BLOCK_BYTES,
+        "exact_repeated_zero_codecs_cached": True,
+        "sampled_decoded_chunks": 3,
+        "failed_index_spool_retained": True,
+        "legacy_v1_bytes_unchanged": True,
+        "complete_process_rss_qualified": False,
+        "production_model_executed": False,
+        "collection_resumption_authorized": False})
 
 
 def integrated(destination, report, reject):
@@ -1067,6 +1206,7 @@ def worker(destination):
     checkpoint_fragments(destination, report, reject)
     direct_producers(destination, report, reject)
     trace_index_floors(destination, report, reject)
+    bounded_indexes(destination, report, reject)
     report["tools"] = {"python": sys.version, "zlib_runtime": zlib.ZLIB_RUNTIME_VERSION}
     report["full_workload_capacity_qualified"] = False
     report["direct_packed_producers_opt_in_implemented"] = True

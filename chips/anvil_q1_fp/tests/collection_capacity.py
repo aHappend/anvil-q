@@ -179,10 +179,10 @@ def array_allocation(rows, block, modes=3):
 
 def packed_array_allocation(rows, block, modes=3):
     """Direct-producer no-ratio bound; not production permission or a fit certificate."""
-    from packed_storage import bound
+    from packed_storage import CHUNK_BYTES, ENTRY, bound
     require(type(block) is int and block > 0 and type(modes) is int and 1 <= modes <= 3,
             "invalid packed capacity block/modes")
-    total = files = maximum_case = 0
+    total = files = maximum_case = maximum_index = 0
     for row in rows:
         n, g = row["teacher_positions"], row["greedy_positions_maximum"]
         require(type(n) is int and 0 < n <= 32768 and type(g) is int and 0 <= g <= 32768,
@@ -192,6 +192,8 @@ def packed_array_allocation(rows, block, modes=3):
         sizes = [(modes + 1, n * 24 * 896 * 8), (modes + 1, n * 151936 * 8),
                  (modes * REPEATS * (n + g), 24 * 896 * 4),
                  (modes * REPEATS * (n + g), 151936 * 4)]
+        maximum_index = max(maximum_index, *(
+            (raw + CHUNK_BYTES - 1) // CHUNK_BYTES * ENTRY.size for _, raw in sizes))
         case = sum(count * ((bound(raw) + block - 1) // block * block)
                    for count, raw in sizes)
         total += case
@@ -206,6 +208,7 @@ def packed_array_allocation(rows, block, modes=3):
         "array_payload_inodes_one_successful_attempt": files,
         "array_payload_inodes_success_plus_one_retained_failure": 2 * files,
         "largest_case_array_raw_fallback_bound": maximum_case,
+        "largest_array_index_spool_logical_bytes": maximum_index,
         "reference_position_and_observation_layer_payload_copies": 0,
         "compression_ratio_assumed": False,
         "metadata_logs_builds_staging_and_traces_included": False,
@@ -218,7 +221,7 @@ def packed_array_allocation(rows, block, modes=3):
 
 def packed_workload_accounting(rows, block, modes=MODES):
     """Charge the full retained workload, explicitly exposing unbounded costs."""
-    from packed_storage import bound
+    from packed_storage import CHUNK_BYTES, ENTRY, RECORD, bound
     require(isinstance(modes, (tuple, list)) and modes and len(set(modes)) == len(modes)
             and all(mode in MODES for mode in modes), "invalid accounting modes")
     arrays = packed_array_allocation(rows, block, len(modes))
@@ -227,7 +230,7 @@ def packed_workload_accounting(rows, block, modes=MODES):
         return (size + block - 1) // block * block
 
     traces = support = trace_files = support_files = 0
-    largest_case = 0
+    largest_case = largest_trace_index = 0
     transaction_count = 0
     for row in rows:
         n, g = row["teacher_positions"], row["greedy_positions_maximum"]
@@ -242,6 +245,9 @@ def packed_workload_accounting(rows, block, modes=MODES):
                 if not positions:
                     continue
                 count = transactions(PRODUCTION, precision, positions)
+                entries = (count + CHUNK_BYTES // RECORD.size - 1) // (
+                    CHUNK_BYTES // RECORD.size)
+                largest_trace_index = max(largest_trace_index, entries * ENTRY.size)
                 case_traces += REPEATS * rounded(bound(count * 44, transactions=True))
                 transaction_count += REPEATS * count
                 trace_files += REPEATS
@@ -257,6 +263,14 @@ def packed_workload_accounting(rows, block, modes=MODES):
             "rounded_array_raw_fallback_bound_one_successful_attempt"]
         largest_case = max(largest_case, case_arrays + case_traces + case_support)
     finite = arrays["rounded_array_raw_fallback_bound_one_successful_attempt"] + traces + support
+    # The serial observer has three concurrent codec children: the full trace
+    # plus two single-position arrays. FP64 layer/logit writers run sequentially.
+    # A failed observer can retain all three spools while a retry is active.
+    observation_indexes = sum(rounded(
+        (raw + CHUNK_BYTES - 1) // CHUNK_BYTES * ENTRY.size)
+        for raw in (24 * 896 * 4, 151936 * 4))
+    index_staging = max(rounded(arrays["largest_array_index_spool_logical_bytes"]),
+                        rounded(largest_trace_index) + observation_indexes)
     files = arrays["array_payload_inodes_one_successful_attempt"] + trace_files + support_files
     return {
         "format": "anvil-packed-v1", "cases": len(rows), "modes": list(modes),
@@ -267,29 +281,38 @@ def packed_workload_accounting(rows, block, modes=MODES):
         "trace_data_block_bound_one_attempt": traces,
         "token_and_rope_data_block_bound_one_attempt": support,
         "bounded_data_blocks_one_successful_attempt": finite,
-        "bounded_data_blocks_success_plus_one_retained_failure": 2 * finite,
+        "bounded_data_blocks_success_plus_one_retained_failure": 2 * finite + 2 * index_staging,
         "bounded_payload_inodes_one_successful_attempt": files,
-        "bounded_payload_inodes_success_plus_one_retained_failure": 2 * files,
+        "bounded_payload_inodes_success_plus_one_retained_failure": 2 * files + 6,
         "retained_failed_attempt": {
-            "count": 1, "charged_bounded_data_blocks": finite,
+            "count": 1, "charged_bounded_data_blocks": finite + index_staging,
             "policy": "Charge a complete additional attempt; never discard partial failures. "
                       "Already retained attempts are included in current filesystem used bytes."},
         "peak_staging": {
             "collection_parallelism": 1,
+            "maximum_concurrent_index_writers": 3,
             "raw_array_or_trace_duplicate_disk_bytes": 0,
+            "index_spool_data_block_bound_one_active_collection": index_staging,
+            "index_spool_data_block_bound_success_plus_retained_failure": 2 * index_staging,
+            "successful_index_spool_removed_after_seal": True,
+            "failed_index_spool_retained": True,
             "largest_case_bounded_data_blocks": largest_case,
-            "cumulative_retained_bounded_data_blocks": 2 * finite,
+            "cumulative_retained_bounded_data_blocks": 2 * finite + 2 * index_staging,
             "receipt_atomic_staging_bound_bytes": None,
             "build_products_and_temporary_files_bound_bytes": None,
-            "note": "All case outputs accumulate. Codec buffers are RAM, not disk staging; "
-                    "partially written packed files and their final indexes are included in "
-                    "container bounds. Unknown receipt/build staging is additional."},
+            "note": "All case outputs accumulate. Final indexes are included in container "
+                    "bounds. Disk-backed index spools add one active plus one retained "
+                    "failed-collection allowance, each up to three concurrent writers. "
+                    "Unknown receipt/build staging is additional."},
         "host_memory": {
             "payload_chunk_bytes": 1024 * 1024,
             "complete_host_memory_bound_bytes": None,
-            "limitation": "Payload buffering is chunk-bounded, but writer/reader indexes "
-                         "grow with decoded chunk count. FP64 model/activation temporaries "
-                         "and complete-workload index RAM have not been qualified."},
+            "index_block_bytes": CHUNK_BYTES // ENTRY.size * ENTRY.size,
+            "workload_sized_index_python_lists": False,
+            "limitation": "Writer index entries spool to disk and Reader scans bounded blocks "
+                         "with on-disk random access. This bounds codec index buffers, not "
+                         "total RSS. FP64 model/activation temporaries, JSON metadata and "
+                         "whole-process memory have not been qualified."},
         "additional_costs": {
             "reference_and_comparison_view_json_indexes": {
                 "bound_bytes": None, "reason": "No enforced serialized metadata byte limit."},
@@ -349,8 +372,9 @@ def packed_trace_index_floor(rows, modes=MODES, config=PRODUCTION):
         "compression_ratio_assumed": False,
         "excluded_costs": "All encoded payload, headers, footers, arrays, logs, metadata, "
                           "builds, staging and retained failures are additional.",
-        "host_memory": "Writer retains every index entry; Reader loads the complete index. "
-                       "Largest index bytes are a buffer-content floor, not a full RSS bound.",
+        "host_memory": "Writer spools entries to disk; Reader validates bounded blocks and "
+                       "fetches entries on demand. Largest index bytes remain a disk cost, "
+                       "not a requirement to hold the index in RAM or a full RSS bound.",
         "limitation": "Logical index bytes, not a filesystem allocation guarantee. "
                       "Transparent filesystem compression/deduplication and storage reservation "
                       "are not qualified by this accounting.",
