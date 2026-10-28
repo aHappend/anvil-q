@@ -33,6 +33,7 @@ from storage import (
     run_storage_edges,
     run_top_profile_uart, run_top_profile_reload,
     run_image_upper,
+    run_watchdog_width,
 )
 from synthesis import run_synthesis
 from mutations import run_mutations
@@ -760,6 +761,7 @@ def main():
         elif args.probe == "top-reload-uart":
             top_test(evidence, 17, uart=True, reload_after=True)
         elif args.probe == "image-upper":
+            run_watchdog_width(evidence)
             run_image_upper(evidence)
         elif args.probe == "storage-edges":
             run_storage_edges(evidence)

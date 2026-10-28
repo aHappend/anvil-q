@@ -683,7 +683,6 @@ def run_storage_edges(evidence):
 
 
 def run_image_upper(evidence):
-    run_watchdog_width(evidence)
     boot_test(evidence, 262145, 17, capacity=262145)
 
 
