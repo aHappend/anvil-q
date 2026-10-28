@@ -8,10 +8,8 @@ No DUT internals or RTL transition equations enter the expected schedule.
 
 import argparse
 from collections import Counter
-import gzip
 import json
 from pathlib import Path
-import struct
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -166,10 +164,8 @@ def audit_rows(rows, expected, allow_prefix):
 
 
 def binary_rows(path):
-    with gzip.open(path, "rb") as source:
-        while data := source.read(44):
-            require(len(data) == 44, "truncated architectural trace record")
-            yield struct.unpack("<11I", data)
+    from packed_storage import transactions
+    yield from transactions(path)
 
 
 def qualify(ev):

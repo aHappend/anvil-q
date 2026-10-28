@@ -106,7 +106,8 @@ def transaction_fields(raw, previous=0):
         accepted = words[0] | words[1] << 32
         completed = words[2] | words[3] << 32
         require(previous <= accepted < completed and words[4] in (0, 1),
-                "reordered/overlapping transaction or invalid write field")
+                "overlapping or out-of-order transaction (single-outstanding cycle order) "
+                "or invalid write field")
         previous = completed
         yield accepted, completed, words[4:]
 
@@ -444,22 +445,78 @@ def array_descriptor(root, path, *, origin=None, shape=None, steps=None):
                         "decoded_sha256": hashlib.sha256(raw).hexdigest()}}
 
 
-def transactions(path):
-    """Read both existing gzip u32 witnesses and new packed transaction files."""
+class ArraySource:
+    """Reuse one verified index/hash when publishing many views of an array."""
+
+    def __init__(self, root, path, *, dtype, shape, axes):
+        from benchmark import sha
+        self.root, self.path = Path(root), Path(path)
+        self.reader = Reader(self.path, dtype=dtype, shape=shape, axes=axes)
+        self.identity = self._identity()
+        self.sha256 = sha(self.path)
+        require(self._identity() == self.identity, "packed source changed during hashing")
+
+    def _identity(self):
+        info = self.path.stat()
+        return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+    def descriptor(self, *, origin=None, shape=None, steps=None):
+        require(self._identity() == self.identity, "packed source changed during view collection")
+        source_shape = self.reader.header["shape"]
+        origin = [0] * len(source_shape) if origin is None else origin
+        shape = list(source_shape) if shape is None else shape
+        steps = [1] * len(source_shape) if steps is None else steps
+        raw = self.reader.view(origin, shape, steps)
+        require(self._identity() == self.identity, "packed source changed during view collection")
+        return {"path": str(self.path.relative_to(self.root)), "sha256": self.sha256,
+                "storage": {"format": "anvil-packed-v1", "dtype": self.reader.header["dtype"],
+                            "array_shape": list(source_shape), "axes": self.reader.header["axes"],
+                            "origin": list(origin), "shape": list(shape), "steps": list(steps),
+                            "decoded_sha256": hashlib.sha256(raw).hexdigest()}}
+
+
+def observation_vector(root, directory, kind, layer=None):
+    """Describe a complete production observation, packed or legacy, without copies."""
+    from benchmark import sha
+    require(kind in ("layers", "logits") and
+            (layer is None or kind == "layers" and integer(layer, 0, 23)),
+            "invalid observation vector selection")
+    directory = Path(directory)
+    packed, flat = directory / (kind + ".aqp"), directory / (kind + ".f32")
+    require(not (packed.exists() and flat.exists()), "ambiguous packed/legacy observation")
+    if packed.exists():
+        shape, axes = ([24, 896], ["layer", "component"]) if kind == "layers" else (
+            [151936], ["vocabulary"])
+        source = ArraySource(root, packed, dtype="<f4", shape=shape, axes=axes)
+        return source.descriptor(**({"origin": [layer, 0], "shape": [1, 896]}
+                                   if layer is not None else {}))
+    require(layer is None, "legacy layer view requires explicit extraction")
+    expected = (24 * 896 if kind == "layers" else 151936) * 4
+    require(flat.stat().st_size == expected, "incomplete observed production " + kind)
+    return {"path": str(flat.relative_to(root)), "sha256": sha(flat)}
+
+
+def transaction_chunks(path):
+    """Yield bounded, validated raw records from packed or legacy witnesses."""
     path = Path(path)
     with path.open("rb") as stream:
         magic = stream.read(8)
     if magic == MAGIC:
         reader = Reader(path)
         require(reader.header["kind"] == "transactions", "array used as transaction stream")
-        for raw in reader.chunks():
-            yield from RECORD.iter_unpack(raw)
+        yield from reader.chunks()
     else:
         import gzip
         previous = 0
         with gzip.open(path, "rb") as stream:
-            while raw := stream.read(RECORD.size):
-                require(len(raw) == RECORD.size, "partial 44-byte transaction record")
+            while raw := stream.read(CHUNK_BYTES // RECORD.size * RECORD.size):
+                require(len(raw) % RECORD.size == 0, "partial 44-byte transaction record")
                 for _, completed, _ in transaction_fields(raw, previous):
                     previous = completed
-                yield RECORD.unpack(raw)
+                yield raw
+
+
+def transactions(path):
+    """Read both existing gzip u32 witnesses and new packed transaction files."""
+    for raw in transaction_chunks(path):
+        yield from RECORD.iter_unpack(raw)

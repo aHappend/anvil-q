@@ -26,6 +26,7 @@ BINDINGS = (
     "tests/reference_collector.py", "tests/fp64_reference.py", "tests/awq_prepare.py",
     "tests/reference_capacity.py", "tests/data/model_manifest.json",
     "tests/data/benchmark_manifest.json", "tests/retention_storage.py",
+    "tests/packed_storage.py",
 )
 
 
@@ -175,6 +176,44 @@ def array_allocation(rows, block, modes=3):
     }
 
 
+def packed_array_allocation(rows, block, modes=3):
+    """Prospective no-ratio bound; not the enabled producer or a fit certificate."""
+    from packed_storage import bound
+    require(type(block) is int and block > 0 and type(modes) is int and 1 <= modes <= 3,
+            "invalid packed capacity block/modes")
+    total = files = maximum_case = 0
+    for row in rows:
+        n, g = row["teacher_positions"], row["greedy_positions_maximum"]
+        require(type(n) is int and 0 < n <= 32768 and type(g) is int and 0 <= g <= 32768,
+                "invalid packed capacity position count")
+        # References: one immutable aggregate pair per selected weight semantics.
+        # Observations: separate pairs for every position in each actual repeat.
+        sizes = [(modes + 1, n * 24 * 896 * 8), (modes + 1, n * 151936 * 8),
+                 (modes * REPEATS * (n + g), 24 * 896 * 4),
+                 (modes * REPEATS * (n + g), 151936 * 4)]
+        case = sum(count * ((bound(raw) + block - 1) // block * block)
+                   for count, raw in sizes)
+        total += case
+        files += sum(count for count, _ in sizes)
+        maximum_case = max(maximum_case, case)
+    return {
+        "format": "anvil-packed-v1", "prospective_only": True, "producer_enabled": False,
+        "fragment_bytes": block, "cases": len(rows), "modes": modes, "repeats": REPEATS,
+        "rounded_array_raw_fallback_bound_one_successful_attempt": total,
+        "rounded_array_raw_fallback_bound_success_plus_one_retained_failure": 2 * total,
+        "array_payload_inodes_one_successful_attempt": files,
+        "array_payload_inodes_success_plus_one_retained_failure": 2 * files,
+        "largest_case_array_raw_fallback_bound": maximum_case,
+        "reference_position_and_observation_layer_payload_copies": 0,
+        "compression_ratio_assumed": False,
+        "metadata_logs_builds_staging_and_traces_included": False,
+        "full_workload_storage_qualified": False,
+        "limitation": "Logical container raw-fallback bounds rounded to data blocks only. "
+                      "Not measured encoded bytes, a compression-ratio prediction, a full "
+                      "filesystem allocation bound, storage reservation or collection authority.",
+    }
+
+
 def assess():
     # Validate genuine inputs, not a three-position predictor's unrelated subset.
     # The holder records the validator's data binding without launching inference.
@@ -248,6 +287,14 @@ def assess():
     filesystem = filesystem_capacity(ROOT)
     available_bytes = filesystem["available_bytes"]
     allocation = array_allocation(rows, filesystem["fragment_bytes"])
+    packed_allocation = packed_array_allocation(rows, filesystem["fragment_bytes"])
+    from packed_storage import bound as packed_bound
+    packed_trace_bound = sum(
+        REPEATS * sum(packed_bound(row["trace_workload"][mode][name] * 44,
+                                  transactions=True)
+                      for name in ("teacher_transactions_per_repeat",
+                                   "greedy_transactions_per_repeat_maximum"))
+        for row in rows for mode in MODES)
     # These are explicit planning allowances, NOT measured/reserved output bytes.
     positions = sum(row["teacher_positions"] + row["greedy_positions_maximum"] for row in rows)
     log_index_allowance = positions * 3 * REPEATS * 256 * 1024
@@ -277,6 +324,15 @@ def assess():
             "partial_or_corrupt_cache_rebuilt": False,
             "copy_fallback_allowed": False},
         "filesystem_array_data_planning": allocation,
+        "prospective_packed_array_data_bound": packed_allocation,
+        "prospective_packed_trace_bound": {
+            "format": "anvil-packed-v1", "producer_enabled": False,
+            "raw_fallback_logical_bytes_one_successful_attempt": packed_trace_bound,
+            "raw_fallback_logical_bytes_success_plus_one_retained_failure": 2 * packed_trace_bound,
+            "independently_retained_files_one_successful_attempt": 50 * 3 * REPEATS * 2,
+            "compression_ratio_assumed": False,
+            "metadata_logs_builds_staging_and_filesystem_allocation_included": False,
+            "full_workload_storage_qualified": False},
         "transaction_trace_raw_bytes": raw_trace,
         "transaction_trace_storage": {
             "format": "gzip level 1; each decoded record is 44 bytes",

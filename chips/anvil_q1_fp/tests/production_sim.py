@@ -156,9 +156,16 @@ def compare_teacher(ev, key, mode, runs, references, positions, destination,
                     synthetic=False):
     """Use the existing independent validator and its unchanged per-case bounds."""
     from reference_collector import collect
+    from packed_storage import observation_vector
+    require(len(runs) == 2 and runs[0].resolve() != runs[1].resolve(),
+            "teacher repeats must be separate observations")
     destination.mkdir()
-    selected_source = (ROOT / references[mode]["layers"]["path"]).parent
-    checkpoint_source = (ROOT / references["checkpoint"]["layers"]["path"]).parent
+    sources = {}
+    for selected_mode in (mode, "checkpoint"):
+        paths = [checked(ev, references[selected_mode][kind]) for kind in ("layers", "logits")]
+        require(paths[0].parent == paths[1].parent, "reference arrays belong to different sources")
+        sources[selected_mode] = paths[0].parent
+    selected_source, checkpoint_source = sources[mode], sources["checkpoint"]
     selected = collect(
         selected_source, destination / "selected-reference", positions,
         shared=selected_source / "position-views")
@@ -172,6 +179,11 @@ def compare_teacher(ev, key, mode, runs, references, positions, destination,
         directory = destination / f"position-{position:05d}"
         directory.mkdir()
         for repeat, run in enumerate(runs):
+            packed = run / f"position-{position}" / "layers.aqp"
+            if packed.exists():
+                # The per-layer descriptors below retain exact views, not copies.
+                observation_vector(ROOT, packed.parent, "layers")
+                continue
             aggregate = run / f"position-{position}" / "layers.f32"
             require(aggregate.stat().st_size == 24 * 896 * 4,
                     "incomplete observed production layers")
@@ -181,7 +193,9 @@ def compare_teacher(ev, key, mode, runs, references, positions, destination,
                     with target.open("xb") as output:
                         output.write(source.read(896 * 4))
         actual_logits, repeat_logits = [
-            descriptor(run / f"position-{position}" / "logits.f32") for run in runs]
+            observation_vector(ROOT, run / f"position-{position}", "logits") for run in runs]
+        require(not os.path.samefile(ROOT / actual_logits["path"], ROOT / repeat_logits["path"]),
+                "teacher repeat payloads must be independently retained")
         threshold = (-1, float("inf")) if mode == "w4a16" else (.999, .01)
         validator.arrays(actual_logits, selected[position]["fp64_logits"],
                          repeat_logits, 151936, threshold, f"{key}/{mode}/{position}/logits")
@@ -191,8 +205,12 @@ def compare_teacher(ev, key, mode, runs, references, positions, destination,
                    checkpoint_fp64_logits=checkpoint[position]["fp64_logits"])
         for layer in range(24):
             actual, repeated = [
+                observation_vector(ROOT, run / f"position-{position}", "layers", layer)
+                if (run / f"position-{position}" / "layers.aqp").exists() else
                 descriptor(directory / f"repeat-{repeat}-layer-{layer:02d}.f32")
-                for repeat in range(2)]
+                for repeat, run in enumerate(runs)]
+            require(not os.path.samefile(ROOT / actual["path"], ROOT / repeated["path"]),
+                    "teacher repeat payloads must be independently retained")
             reference = selected[position]["layers"][layer]["fp64_output"]
             threshold = (-1, float("inf")) if mode == "w4a16" else (.9999, .002)
             validator.arrays(actual, reference, repeated, 896, threshold,
@@ -216,6 +234,9 @@ def compare_teacher(ev, key, mode, runs, references, positions, destination,
 
 
 def compare_greedy(ev, key, mode, runs, prompt, destination, eos):
+    from packed_storage import array_bytes, observation_vector
+    require(len(runs) == 2 and runs[0].resolve() != runs[1].resolve(),
+            "greedy repeats must be separate observations")
     first, repeated = [load_json(path / "summary.json") for path in runs]
     generated = first["generated_tokens"]
     require(generated == repeated["generated_tokens"] and 0 < len(generated) <= 128,
@@ -227,20 +248,27 @@ def compare_greedy(ev, key, mode, runs, prompt, destination, eos):
             len(prompt) + len(generated) - 1, "greedy input position count")
     for position in range(first["positions_completed"]):
         for kind in ("layers", "logits"):
-            paths = [run / f"position-{position}" / (kind + ".f32") for run in runs]
-            require(sha(paths[0]) == sha(paths[1]), "nondeterministic greedy arrays")
+            items = [observation_vector(ROOT, run / f"position-{position}", kind)
+                     for run in runs]
+            require(not os.path.samefile(*(ROOT / item["path"] for item in items)),
+                    "greedy repeat payloads must be independently retained")
+            width = 24 * 896 if kind == "layers" else 151936
+            require(array_bytes(ROOT / items[0]["path"], items[0], "<f4", width) ==
+                    array_bytes(ROOT / items[1]["path"], items[1], "<f4", width),
+                    "nondeterministic greedy arrays")
     steps = []
     for index, token in enumerate(generated):
         position = len(prompt) + index - 1
-        paths = [run / f"position-{position}" / "logits.f32" for run in runs]
-        require(paths[0].stat().st_size == 151936 * 4, "incomplete greedy logits")
-        values = struct.unpack("<151936f", paths[0].read_bytes())
+        items = [observation_vector(ROOT, run / f"position-{position}", "logits")
+                 for run in runs]
+        values = struct.unpack("<151936f", array_bytes(
+            ROOT / items[0]["path"], items[0], "<f4", 151936))
         import math
         require(all(math.isfinite(value) for value in values), "nonfinite greedy logits")
         require(max(range(151936), key=values.__getitem__) == token,
                 "greedy output is not lowest-ID-tie argmax")
         steps.append({"context": prompt + generated[:index],
-                      "logits": descriptor(paths[0]), "repeat_logits": descriptor(paths[1])})
+                      "logits": items[0], "repeat_logits": items[1]})
     write_json(destination, {
         "case": key, "mode": mode, "tokens": generated, "repeat_tokens": generated,
         "stop_reason": stop, "steps": steps, "complete_benchmark": False,

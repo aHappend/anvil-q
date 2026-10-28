@@ -6,17 +6,17 @@ or a completed benchmark. Integrity identifiers are retained only in evidence.
 """
 
 import argparse
-import gzip
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
 import shutil
-import struct
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import artifact_path, load_json, require, sha
 from benchmark_inputs import write_json
+from packed_storage import RECORD, transactions
 from verify import Evidence, ROOT, now
 
 
@@ -28,12 +28,11 @@ def inspect_trace(path, destination):
     first = []
     last = None
     kinds = {}
-    # Reading through EOF validates the gzip trailer/CRC as well as every record.
-    with gzip.open(path, "rb") as source:
-        while data := source.read(44):
-            require(len(data) == 44, "partial 44-byte transaction record")
+    # Read through EOF, validating the legacy CRC or packed index/payload hashes.
+    with closing(transactions(path)) as source:
+        for words in source:
+            data = RECORD.pack(*words)
             decoded.update(data)
-            words = struct.unpack("<11I", data)
             accepted = words[0] | (words[1] << 32)
             completed = words[2] | (words[3] << 32)
             require(accepted < completed and words[4] in (0, 1),
@@ -55,6 +54,8 @@ def inspect_trace(path, destination):
             kinds[str(words[5])] = kinds.get(str(words[5]), 0) + 1
     require(count > 0, "empty transaction witness")
     compressed_hash = sha(path)
+    with path.open("rb") as source:
+        magic = source.read(8)
     after = path.stat()
     require((before.st_size, before.st_mtime_ns, before.st_ino) ==
             (after.st_size, after.st_mtime_ns, after.st_ino),
@@ -67,7 +68,8 @@ def inspect_trace(path, destination):
         "decompressed_bytes": count * 44, "decompressed_sha256": decoded.hexdigest(),
         "record_bytes": 44, "records": count, "reads": reads, "writes": writes,
         "kinds": kinds, "first_records": first, "last_record": last,
-        "gzip_eof_crc_checked": True,
+        "gzip_eof_crc_checked": magic[:2] == b"\x1f\x8b",
+        "packed_eof_hashes_checked": magic == b"AQPACK01",
     }
     write_json(destination, result)
     print(json.dumps({key: result[key] for key in

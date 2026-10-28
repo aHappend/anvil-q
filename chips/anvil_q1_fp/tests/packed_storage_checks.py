@@ -22,6 +22,367 @@ from packed_storage import (CHUNK_BYTES, END, ENTRY, FOOTER, HEADER_LIMIT, MAGIC
 from verify import Evidence, ROOT
 
 
+def integrated(destination, report, reject):
+    """Exercise production consumers with synthetic full-width arrays, not inference."""
+    import os
+    import shutil
+    from unittest.mock import patch
+    from packed_storage import ArraySource
+    from collection_capacity import packed_array_allocation
+    from production_checkpoint import trace_rows
+    from production_schedule import audit_rows, binary_rows, schedule
+    from production_sim import compare_greedy, compare_teacher
+    from production_trace import replay
+    from reference_collector import collect
+    from retention_inventory import selftest as retention_selftest
+    from transaction_retention import inspect_trace
+
+    directory = destination / "integrated"
+    directory.mkdir()
+    retention_selftest(directory / "legacy-retention-regressions")
+    capacity_comparisons = 0
+    for modes in (1, 2, 3):
+        for block in (1, 4096):
+            rows = [{"teacher_positions": 1, "greedy_positions_maximum": 0},
+                    {"teacher_positions": 3, "greedy_positions_maximum": 5}]
+            sizes = []
+            for row in rows:
+                for _ in range(modes + 1):
+                    sizes.extend((row["teacher_positions"] * 24 * 896 * 8,
+                                  row["teacher_positions"] * 151936 * 8))
+                for _ in range(modes):
+                    for _ in range(2):
+                        for workload in ("teacher_positions", "greedy_positions_maximum"):
+                            for _ in range(row[workload]):
+                                sizes.extend((24 * 896 * 4, 151936 * 4))
+            expected = sum((bound(size) + block - 1) // block * block for size in sizes)
+            actual = packed_array_allocation(rows, block, modes)
+            require(actual["rounded_array_raw_fallback_bound_one_successful_attempt"] == expected
+                    and actual["array_payload_inodes_one_successful_attempt"] == len(sizes)
+                    and actual["rounded_array_raw_fallback_bound_success_plus_one_retained_failure"]
+                    == 2 * expected and not actual["full_workload_storage_qualified"],
+                    "prospective complete-array bound differs from enumerated containers")
+            capacity_comparisons += 1
+    report["positive_cases"].append({"name": "prospective-packed-array-bound",
+                                     "enumerated_layout_comparisons": capacity_comparisons,
+                                     "full_workload_capacity_qualified": False})
+    positions = 2
+    values = (0., -0., 2.0 ** -149, -(2.0 ** -149), 1., -2., 3.)
+    layer_values = [values[index % len(values)] for index in range(24 * 896)]
+    logit_values = [values[index % len(values)] for index in range(151936)]
+    logit_values[17] = 4.
+    references = {}
+    for mode in ("checkpoint", "bf16", "fp16", "w4a16"):
+        source = directory / "references" / mode
+        source.mkdir(parents=True)
+        references[mode] = {}
+        for kind, data, shape, axes in (
+                ("layers", layer_values * positions, [positions, 24, 896],
+                 ["position", "layer", "component"]),
+                ("logits", [value for value in logit_values for _ in range(positions)],
+                 [151936, positions], ["vocabulary", "position"])):
+            path = source / (kind + ".aqp")
+            with Writer(path, dtype="<f8", shape=shape, axes=axes) as writer:
+                writer.append(struct.pack("<" + "d" * len(data), *data))
+            references[mode][kind] = {"path": str(path.relative_to(ROOT)), "sha256": sha(path)}
+        before = {path.name: sha(path) for path in source.iterdir()}
+        for consumer in range(2):
+            output = directory / (mode + "-consumer-" + str(consumer))
+            rows = collect(source, output, positions, shared=source / "position-views")
+            require(len(rows) == positions and len(list(output.rglob("*"))) == 1,
+                    "packed collector materialized duplicate payloads")
+            for position, row in enumerate(rows):
+                for layer, item in enumerate(row["layers"]):
+                    raw = array_bytes(ROOT / item["fp64_output"]["path"],
+                                      item["fp64_output"], "<f8", 896)
+                    require(raw == struct.pack("<896d", *layer_values[layer*896:(layer+1)*896]),
+                            "integrated packed layer offsets/bits differ")
+                item = row["fp64_logits"]
+                require(array_bytes(ROOT / item["path"], item, "<f8", 151936) ==
+                        struct.pack("<151936d", *logit_values),
+                        "integrated vocabulary-major position offsets/bits differ")
+            reject(mode + "-occupied-collector", lambda: collect(source, output, positions),
+                   errors=(FileExistsError,))
+        require(before == {path.name: sha(path) for path in source.iterdir()},
+                "collecting views changed immutable reference sources")
+        reject(mode + "-collector-wrong-count", lambda: collect(
+            source, directory / (mode + "-wrong-count"), 1))
+    invalid = directory / "wrong-reference-axes"
+    invalid.mkdir()
+    with Writer(invalid / "layers.aqp", dtype="<f8", shape=[positions, 24, 896],
+                axes=["position", "component", "layer"]) as writer:
+        writer.append(struct.pack("<" + "d" * (positions * len(layer_values)),
+                                  *(layer_values * positions)))
+    os.link(source / "logits.aqp", invalid / "logits.aqp")
+    reject("integrated-collector-wrong-axes", lambda: collect(
+        invalid, directory / "wrong-axes-consumer", positions))
+    changing = directory / "changed-view-source.aqp"
+    shutil.copy2(source / "layers.aqp", changing)
+    verified = ArraySource(ROOT, changing, dtype="<f8", shape=[positions, 24, 896],
+                           axes=["position", "layer", "component"])
+    with changing.open("r+b") as stream:
+        stream.seek(-1, 2)
+        stream.write(b"\xff")
+    reject("changed-source-after-index-verification", verified.descriptor)
+
+    class Observations:
+        receipt = {}
+
+        def assertion(self, name, passed, **details):
+            require(passed, "integrated assertion failed: " + name)
+            return passed
+
+    for mode in ("bf16", "fp16", "w4a16"):
+        runs = []
+        for repeat in range(2):
+            run = directory / f"{mode}-repeat-{repeat}"
+            runs.append(run)
+            for position in range(positions):
+                target = run / f"position-{position}"
+                target.mkdir(parents=True)
+                for kind, data, shape, axes in (
+                        ("layers", layer_values, [24, 896], ["layer", "component"]),
+                        ("logits", logit_values, [151936], ["vocabulary"])):
+                    with Writer(target / (kind + ".aqp"), dtype="<f4",
+                                shape=shape, axes=axes) as writer:
+                        writer.append(struct.pack("<" + "f" * len(data), *data))
+            with (run / "summary.json").open("x") as stream:
+                json.dump({"generated_tokens": [17], "positions_completed": positions}, stream)
+        compare_teacher(Observations(), "synthetic-integrated", mode, runs, references,
+                        positions, directory / (mode + "-teacher"), synthetic=True)
+        compare_greedy(Observations(), "synthetic-integrated", mode, runs, [53, 89],
+                       directory / (mode + "-greedy.json"), [17])
+        require(not list((directory / (mode + "-teacher")).rglob("*.f32")),
+                "packed teacher comparison duplicated observation layers")
+        reject(mode + "-repeat-run-alias", lambda: compare_greedy(
+            Observations(), "synthetic-integrated", mode, [runs[0], runs[0]], [53, 89],
+            directory / (mode + "-alias.json"), [17]))
+        alias = directory / (mode + "-hard-linked-repeat")
+        shutil.copytree(runs[0], alias, copy_function=os.link)
+        reject(mode + "-repeat-payload-alias", lambda: compare_greedy(
+            Observations(), "synthetic-integrated", mode, [runs[0], alias], [53, 89],
+            directory / (mode + "-payload-alias.json"), [17]))
+        mutant = directory / (mode + "-damaged-repeat")
+        shutil.copytree(runs[1], mutant)
+        damaged = mutant / "position-0/logits.aqp"
+        with damaged.open("r+b") as stream:
+            stream.seek(12 + struct.unpack("<I", stream.read(12)[8:])[0])
+            byte = stream.read(1)
+            stream.seek(-1, 1)
+            stream.write(bytes([byte[0] ^ 1]))
+        reject(mode + "-integrated-teacher-damaged-payload", lambda: compare_teacher(
+            Observations(), "synthetic-integrated", mode, [runs[0], mutant], references,
+            positions, directory / (mode + "-damaged-teacher"), synthetic=True))
+        reject(mode + "-integrated-greedy-damaged-payload", lambda: compare_greedy(
+            Observations(), "synthetic-integrated", mode, [runs[0], mutant], [53, 89],
+            directory / (mode + "-damaged-greedy.json"), [17]))
+        report["positive_cases"].append({
+            "name": "production-packed-comparison-call-sites", "mode": mode,
+            "synthetic_positions": positions, "separately_written_repeats": 2,
+            "layer_comparisons": positions * 24, "logit_comparisons": positions,
+            "inference_executed": False, "rtl_executed": False})
+
+    # Keep mathematical reference code out of this standard-library-only probe.
+    require("numpy" not in sys.modules and "teacher_reference" not in sys.modules,
+            "bounded storage integration imported inference dependencies")
+    config = (1, 8, 8, 1, 1, 8, 1, 1, 1)
+    for mode in range(3):
+        expected = list(schedule(config, mode, [0]))
+        records = [RECORD.pack(10 + 3*i, 0, 11 + 3*i, 0, *item[:6], i)
+                   for i, item in enumerate(expected)]
+        raw = b"".join(records)
+        packed = directory / f"schedule-{mode}.aqp"
+        with Writer(packed, transactions=True) as writer:
+            writer.append(raw)
+        legacy = directory / f"schedule-{mode}.gz"
+        with legacy.open("xb") as stream:
+            stream.write(gzip.compress(raw, mtime=0))
+        require(list(trace_rows(packed)) == list(trace_rows(legacy)),
+                "checkpoint packed/legacy transaction reader differs")
+        for path in (packed, legacy):
+            result = audit_rows(binary_rows(path), iter(expected), False)
+            require(result["transactions_compared"] == len(records) and
+                    result["complete_memory_schedule"], "integrated schedule audit incomplete")
+            observed = inspect_trace(path, directory / (path.name + "-inspection.json"))
+            require(observed["decompressed_sha256"] == hashlib.sha256(raw).hexdigest(),
+                    "integrated trace retention changed decoded bits/order/cycles")
+        report["positive_cases"].append({"name": "packed-legacy-transaction-consumers",
+                                         "mode": mode, "records": len(records)})
+
+    class SyntheticTensor:
+        def read(self, *coordinates):
+            return 0x3f80
+
+    rows = [(1, 0, 2, 0, 0, 0, 0, 0, 17, 0, 0x3f80),
+            (4, 0, 5, 0, 1, 8, 0, 0, 0, 0, 0x3f800000),
+            (7, 0, 8, 0, 0, 8, 0, 0, 0, 0, 0x3f800000)]
+    with patch("production_trace.StreamOracle", lambda mode: SyntheticTensor()):
+        raw = b"".join(RECORD.pack(*row) for row in rows)
+        packed = directory / "replay.aqp"
+        with Writer(packed, transactions=True) as writer:
+            writer.append(raw)
+        replay(packed, "bf16", directory / "replay-pristine.json")
+        changed = list(rows)
+        changed[1] = (*rows[1][:-1], 0x40000000)
+        damaged = directory / "replay-wrong-write.aqp"
+        with Writer(damaged, transactions=True) as writer:
+            writer.append(b"".join(RECORD.pack(*row) for row in changed))
+        reject("integrated-public-replay-write-payload", lambda: replay(
+            damaged, "bf16", directory / "replay-damaged.json"))
+    report["positive_cases"].append({"name": "unchanged-public-memory-replay",
+                                     "synthetic_tensor_oracle": True, "records": len(rows)})
+
+
+def checkpoint_fragments(destination, report, reject):
+    """Synthetic segment packing only; no checkpoint execution or result assembly."""
+    from production_checkpoint import packed_fragments
+
+    directory = destination / "checkpoint-fragments"
+    directory.mkdir()
+    words = (0, 0x80000000, 1, 0x80000001, 0x007fffff, 0x00800000,
+             0x3f800000, 0x7f800000, 0x7f800001, 0x7fc01234)
+    expected = {
+        kind: b"".join(struct.pack("<I", words[index % len(words)])
+                       for index in range(count))
+        for kind, count in (("layers", 24 * 896), ("logits", 151936))}
+    segments = []
+    records = []
+    event_bytes = b""
+    for number in range(2):
+        source = directory / f"segment-{number}"
+        source.mkdir()
+        artifacts = []
+
+        def artifact(path):
+            artifacts.append({"path": str(path.relative_to(ROOT)), "sha256": sha(path)})
+
+        raw = RECORD.pack(1 + 3 * number, 1, 2 + 3 * number, 1,
+                          number, 8, 0, 0, 0, number, 0xffffffff - number)
+        records.append(raw)
+        trace = source / ("transactions.u32.gz" if number == 0 else "transactions.aqp")
+        if number == 0:
+            with trace.open("xb") as stream:
+                stream.write(gzip.compress(raw, mtime=0))
+        else:
+            with Writer(trace, transactions=True) as stream:
+                stream.append(raw)
+        artifact(trace)
+        events = source / "events.jsonl"
+        line = (json.dumps({"segment": number, "cycle": (1 << 32) + 2 + 3 * number})
+                + "\n").encode()
+        events.write_bytes(line)
+        event_bytes += line
+        artifact(events)
+        for position in range(2):
+            target = source / f"position-{position}"
+            target.mkdir()
+            for kind, raw in expected.items():
+                split = (17 if kind == "layers" else 65537) * 4
+                raw = raw[:split] if number == 0 else raw[split:]
+                path = target / (kind + (".f32" if number == 0 else ".aqp"))
+                if number == 0:
+                    with path.open("xb") as stream:
+                        stream.write(raw)
+                else:
+                    with Writer(path, dtype="<f4", shape=[len(raw) // 4],
+                                axes=["fragment"]) as stream:
+                        stream.append(raw)
+                artifact(path)
+        summary = source / "summary.json"
+        if number == 1:
+            with summary.open("x") as stream:
+                json.dump({"positions_completed": 2, "cycles": (1 << 32) + 10}, stream)
+            artifact(summary)
+        segments.append({"status": "paused" if number == 0 else "completed",
+                         "summary": None if number == 0 else
+                         {"path": str(summary.relative_to(ROOT)), "sha256": sha(summary)},
+                         "artifacts": artifacts})
+    chain = list(reversed(segments))
+    before = {item["path"]: sha(ROOT / item["path"])
+              for segment in segments for item in segment["artifacts"]}
+    output = directory / "packed"
+    output.mkdir()
+    require(packed_fragments(chain, output) == 2, "checkpoint event count differs")
+    require(b"".join(Reader(output / "transactions.aqp").chunks()) == b"".join(records) and
+            (output / "events.jsonl").read_bytes() == event_bytes,
+            "checkpoint trace fields/order/cycles or event bytes changed")
+    for position in range(2):
+        for kind, raw in expected.items():
+            path = output / f"position-{position}" / (kind + ".aqp")
+            require(b"".join(Reader(path).chunks()) == raw,
+                    "checkpoint fragment concatenation changed floating-point bits")
+            shape, axes = ([24, 896], ["layer", "component"]) if kind == "layers" else (
+                [151936], ["vocabulary"])
+            Reader(path, dtype="<f4", shape=shape, axes=axes)
+    require(not list(output.rglob("*.f32")) and not list(output.rglob("*.gz")),
+            "packed assembly materialized raw staging outputs")
+    require(before == {path: sha(ROOT / path) for path in before},
+            "packed assembly changed immutable input fragments")
+    reject("checkpoint-occupied-output", lambda: packed_fragments(chain, output),
+           errors=(FileExistsError,))
+
+    def mutant(label, change):
+        changed = copy.deepcopy(chain)
+        change(changed)
+        target = directory / label
+        target.mkdir()
+        reject("checkpoint-" + label, lambda: packed_fragments(changed, target))
+
+    mutant("segment-order", lambda rows: rows.reverse())
+    mutant("duplicate-vector", lambda rows: rows[0]["artifacts"].append(
+        next(item for item in rows[0]["artifacts"] if item["path"].endswith("layers.aqp"))))
+    mutant("missing-vector", lambda rows: rows[0].update(artifacts=[
+        item for item in rows[0]["artifacts"]
+        if not item["path"].endswith("position-1/layers.aqp")]))
+    mutant("missing-trace", lambda rows: rows[0].update(artifacts=[
+        item for item in rows[0]["artifacts"]
+        if not item["path"].endswith("transactions.aqp")]))
+    mutant("duplicate-trace", lambda rows: rows[0]["artifacts"].append(
+        next(item for item in rows[0]["artifacts"]
+             if item["path"].endswith("transactions.aqp"))))
+
+    def replace(rows, suffix, path):
+        for item in rows[0]["artifacts"]:
+            if item["path"].endswith(suffix):
+                item.update(path=str(path.relative_to(ROOT)), sha256=sha(path))
+
+    broken = directory / "truncated" / "position-0" / "layers.f32"
+    broken.parent.mkdir(parents=True)
+    broken.write_bytes(b"\x00")
+    mutant("partial-float", lambda rows: replace(rows, "position-0/layers.aqp", broken))
+    wrong = directory / "wrong-axes" / "position-0" / "layers.aqp"
+    wrong.parent.mkdir(parents=True)
+    with Writer(wrong, dtype="<f4", shape=[1], axes=["wrong-axis"]) as stream:
+        stream.append(b"\x00" * 4)
+    mutant("wrong-fragment-axes", lambda rows: replace(
+        rows, "position-0/layers.aqp", wrong))
+    damaged = directory / "damaged" / "position-0" / "layers.aqp"
+    damaged.parent.mkdir(parents=True)
+    original = ROOT / next(item["path"] for item in chain[0]["artifacts"]
+                           if item["path"].endswith("position-0/layers.aqp"))
+    raw = bytearray(original.read_bytes())
+    raw[12 + struct.unpack("<I", raw[8:12])[0]] ^= 1
+    damaged.write_bytes(raw)
+    mutant("damaged-packed-fragment", lambda rows: replace(
+        rows, "position-0/layers.aqp", damaged))
+    paused = directory / "paused"
+    paused.mkdir()
+    require(packed_fragments([segments[0]], paused) == 1 and
+            not (paused / "summary.json").exists(), "partial assembly claimed completion")
+    for kind, raw in expected.items():
+        path = paused / "position-0" / (kind + ".aqp")
+        reader = Reader(path)
+        require(reader.header["axes"] == ["fragment"] and
+                b"".join(reader.chunks()) == raw[:(17 if kind == "layers" else 65537) * 4],
+                "partial fragment shape/bits changed")
+    report["positive_cases"].append({
+        "name": "synthetic-packed-checkpoint-fragments", "segments": 2, "positions": 2,
+        "vectors_compared": 4, "transaction_records_compared": 2,
+        "legacy_and_packed_inputs": True, "raw_staging_copies": 0,
+        "original_inputs_unchanged": True, "partial_completion_claimed": False,
+        "rtl_executed": False, "genuine_checkpoint_assembled": False})
+
+
 def worker(destination):
     destination.mkdir(parents=True, exist_ok=False)
     report = {"schema": 1, "acceptance_evidence": False,
@@ -321,6 +682,8 @@ def worker(destination):
                                         index).digest(), END)
     reordered = put("cross-chunk-reordered.aqp", prefix + index + footer)
     reject("cross-chunk-transaction-order", lambda: list(transactions(reordered)))
+    integrated(destination, report, reject)
+    checkpoint_fragments(destination, report, reject)
     report["tools"] = {"python": sys.version, "zlib_runtime": zlib.ZLIB_RUNTIME_VERSION}
     report["full_workload_capacity_qualified"] = False
     report["production_format_enabled"] = False

@@ -7,7 +7,7 @@ scoreboard, benchmark completion, timing or hardware evidence.
 """
 
 import argparse
-import gzip
+from contextlib import closing
 import json
 import math
 from pathlib import Path
@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import artifact_path, load_json, require, sha
+from packed_storage import transactions
 from verify import Evidence, ROOT
 
 
@@ -104,13 +105,9 @@ def replay(path, mode, destination):
     embedding_expected = {}
     embedding_complete = False
     position = 0
-    with gzip.open(path, "rb") as stream:
-        while True:
-            raw = stream.read(44)
-            if not raw:
-                break
-            require(len(raw) == 44, "truncated production transaction record")
-            req_lo, req_hi, rsp_lo, rsp_hi, write, kind, layer, proj, row, col, data = struct.unpack("<11I", raw)
+    with closing(transactions(path)) as stream:
+        for words in stream:
+            req_lo, req_hi, rsp_lo, rsp_hi, write, kind, layer, proj, row, col, data = words
             request, response = req_lo + (req_hi << 32), rsp_lo + (rsp_hi << 32)
             require(previous_response < request < response, "single-outstanding cycle order")
             previous_response = response

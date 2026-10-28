@@ -3,29 +3,75 @@
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import shutil
 import sys
-
-import numpy as np
+import struct
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import load_json, require, sha
 from benchmark_inputs import write_json
-from teacher_reference import (MODES, descriptor, qualified, reference_case,
-                               validate_inputs)
-from awq_prepare import numerics
 from verify import Evidence, ROOT
 
 
 REFERENCE_SOURCES = ("tests/teacher_reference.py", "tests/fp64_reference.py",
                      "tests/awq_prepare.py")
+MODES = ("checkpoint", "bf16", "fp16", "w4a16")
+
+
+def descriptor(path):
+    return {"path": str(path.relative_to(ROOT)), "sha256": sha(path)}
+
+
+def packed_collect(source, destination, positions):
+    from packed_storage import ArraySource
+    arrays = {
+        "layers": ArraySource(ROOT, source / "layers.aqp", dtype="<f8",
+                              shape=[positions, 24, 896],
+                              axes=["position", "layer", "component"]),
+        "logits": ArraySource(ROOT, source / "logits.aqp", dtype="<f8",
+                              shape=[151936, positions], axes=["vocabulary", "position"]),
+    }
+    for array in arrays.values():
+        for raw in array.reader.chunks():
+            require(all(math.isfinite(value) for value, in struct.iter_unpack("<d", raw)),
+                    "nonfinite collector source")
+    destination.mkdir(parents=True, exist_ok=False)
+    rows = []
+    for position in range(positions):
+        rows.append({
+            "position": position,
+            "layers": [{"layer": layer, "fp64_output": arrays["layers"].descriptor(
+                origin=[position, layer, 0], shape=[1, 1, 896])} for layer in range(24)],
+            "fp64_logits": arrays["logits"].descriptor(
+                origin=[0, position], shape=[151936, 1]),
+        })
+    # Full-array source descriptors are hash bindings, not materialized vectors.
+    inputs = {kind: descriptor(array.path) for kind, array in arrays.items()}
+    write_json(destination / "positions.json", {
+        "schema": 1, "purpose": "collected-fp64-teacher-reference",
+        "acceptance_evidence": False, "dtype": "<f8",
+        "sources": inputs, "positions": rows})
+    return rows
 
 
 def collect(source, destination, positions, *, shared=None):
     require(type(positions) is int and 0 < positions <= 32768,
             "invalid collector position count")
+    packed = [source / (kind + ".aqp") for kind in ("layers", "logits")]
+    if any(path.exists() for path in packed):
+        require(all(path.is_file() for path in packed) and not any(
+            (source / (kind + ".f64")).exists() for kind in ("layers", "logits")),
+            "incomplete or ambiguous packed reference sources")
+        # Views already share only immutable reference payloads. Each consumer
+        # retains its own index, without hard-link trees or duplicate arrays.
+        if shared is not None:
+            require(shared != destination and shared.resolve().is_relative_to(source.resolve())
+                    and not shared.is_symlink(), "invalid shared reference destination")
+        return packed_collect(source, destination, positions)
+    import numpy as np
     layers_path, logits_path = source / "layers.f64", source / "logits.f64"
     require(layers_path.stat().st_size == positions * 24 * 896 * 8 and
             logits_path.stat().st_size == 151936 * positions * 8,
@@ -120,6 +166,7 @@ def shared_collect(source, destination, positions, shared):
 
 
 def retained_batched(ev, relative):
+    from teacher_reference import qualified
     record = qualified(ev, relative)
     require(any(row["name"] == "teacher_reference_qualification_completed" and
                 row["passed"] for row in record["assertions"]),
@@ -130,6 +177,8 @@ def retained_batched(ev, relative):
 
 
 def qualification_worker(args):
+    from awq_prepare import numerics
+    from teacher_reference import reference_case
     numerics()
     record = load_json(ROOT / args.reference_receipt)
     model = load_json(ROOT / "tests/data/model_manifest.json")
@@ -189,6 +238,9 @@ def qualification_worker(args):
 
 
 def full_worker(args):
+    import numpy as np
+    from awq_prepare import numerics
+    from teacher_reference import reference_case
     numerics()
     model = load_json(ROOT / "tests/data/model_manifest.json")
     suite = load_json(ROOT / "tests/data/benchmark_manifest.json")
@@ -248,6 +300,8 @@ def main():
     ev = Evidence("reference-collector-qualification" if args.qualify else "reference-collector-full")
     ok = False
     try:
+        import numpy as np
+        from teacher_reference import qualified, validate_inputs
         if args.repair_of is not None:
             ev.receipt["repair_of"] = descriptor(ROOT / args.repair_of)
         retained_batched(ev, args.reference_receipt)

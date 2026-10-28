@@ -106,8 +106,9 @@ def qualify(ev, observer):
         directory.mkdir()
 
         def rounded(reference, name):
-            raw = observer.validator.artifact(reference).read_bytes()
-            values = struct.unpack("<" + "d" * (len(raw) // 8), raw)
+            width = 151936 if name == "logits" else 896
+            raw = observer.validator.array_bytes(reference, "<f8", width)
+            values = struct.unpack("<" + "d" * width, raw)
             data = struct.pack("<" + "f" * len(values), *values)
             outputs = []
             for suffix in ("original", "repeat"):

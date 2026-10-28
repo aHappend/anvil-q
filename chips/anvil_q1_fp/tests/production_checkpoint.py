@@ -166,12 +166,117 @@ def execution(ev, binding, destination, target, parent=None, parent_item=None,
     return row, item
 
 
-def assemble(ev, item, label="assembled"):
+def packed_fragments(chain, destination):
+    """Pack already validated fragments directly, without raw staging copies."""
+    from packed_storage import CHUNK_BYTES, Reader, Writer, transaction_chunks
+
+    fragments = {}
+    event_count = 0
+    with Writer(destination / "transactions.aqp", transactions=True) as trace:
+        with (destination / "events.jsonl").open("xb") as events:
+            for row in reversed(chain):
+                traces = [entry for entry in row["artifacts"] if Path(entry["path"]).name in
+                          ("transactions.u32.gz", "transactions.aqp")]
+                event_files = [entry for entry in row["artifacts"]
+                               if Path(entry["path"]).name == "events.jsonl"]
+                require(len(traces) == len(event_files) == 1,
+                        "missing or ambiguous checkpoint trace/events")
+                for raw in transaction_chunks(ROOT / traces[0]["path"]):
+                    trace.append(raw)
+                with (ROOT / event_files[0]["path"]).open("rb") as source:
+                    for line in source:
+                        require(line.endswith(b"\n"), "partial checkpoint event record")
+                        require(type(json.loads(line)) is dict, "malformed checkpoint event")
+                        events.write(line)
+                        event_count += 1
+                seen = set()
+                for entry in row["artifacts"]:
+                    path = ROOT / entry["path"]
+                    if path.name not in ("layers.f32", "logits.f32",
+                                         "layers.aqp", "logits.aqp"):
+                        continue
+                    position, kind = path.parent.name, path.stem
+                    require(position.startswith("position-") and
+                            position[9:].isascii() and position[9:].isdecimal() and
+                            str(int(position[9:])) == position[9:],
+                            "invalid vector fragment path")
+                    key = position, kind
+                    require(key not in seen, "ambiguous checkpoint vector fragment")
+                    seen.add(key)
+                    if path.suffix == ".aqp":
+                        reader = Reader(path)
+                        require(reader.header["kind"] == "array" and
+                                reader.header["dtype"] == "<f4",
+                                "checkpoint fragment is not a binary32 array")
+                        size = reader.total
+                        expected_shape, expected_axes = (
+                            ([24, 896], ["layer", "component"]) if kind == "layers" else
+                            ([151936], ["vocabulary"]))
+                        require((reader.header["shape"], reader.header["axes"]) in (
+                            (expected_shape, expected_axes), ([size // 4], ["fragment"])),
+                            "checkpoint fragment shape/axes differ")
+                    else:
+                        size = path.stat().st_size
+                        reader = None
+                    require(size % 4 == 0, "partial checkpoint binary32 element")
+                    fragments.setdefault(key, []).append((path, reader, size))
+    completed = chain[0]["status"] == "completed"
+    summary = load_json(ROOT / chain[0]["summary"]["path"]) if completed else None
+    if completed:
+        count = summary["positions_completed"]
+        require(type(count) is int and 0 < count <= 32768 and
+                set(fragments) == {(f"position-{position}", kind)
+                                   for position in range(count) for kind in ("layers", "logits")},
+                "assembled position count differs")
+    for (position, kind), pieces in sorted(fragments.items()):
+        size = sum(piece[2] for piece in pieces)
+        expected = (24 * 896 if kind == "layers" else 151936) * 4
+        require(size <= expected and (not completed or size == expected),
+                "assembled completed position has missing/duplicate output fragments")
+        # A paused segment can precede its first observation. Empty fragments
+        # contain no bits and cannot be represented as a nonempty packed array.
+        if size == 0:
+            continue
+        shape, axes = (([24, 896], ["layer", "component"]) if kind == "layers" else
+                       ([151936], ["vocabulary"])) if size == expected else (
+                           [size // 4], ["fragment"])
+        target = destination / position
+        target.mkdir(exist_ok=True)
+        with Writer(target / (kind + ".aqp"), dtype="<f4", shape=shape, axes=axes) as output:
+            for path, reader, _ in pieces:
+                if reader is not None:
+                    for raw in reader.chunks():
+                        output.append(raw)
+                else:
+                    with path.open("rb") as source:
+                        while raw := source.read(CHUNK_BYTES):
+                            output.append(raw)
+    if completed:
+        shutil.copy2(ROOT / chain[0]["summary"]["path"], destination / "summary.json")
+    return event_count
+
+
+def assemble(ev, item, label="assembled", *, packed=False):
     """Join immutable fragments, without inventing missing records or logits."""
     chain = []
     head = validate_segment(ev, item, chain=chain)
     destination = ev.path / label
     destination.mkdir()
+    if packed:
+        event_count = packed_fragments(chain, destination)
+        completed = head["status"] == "completed"
+        seal(destination / "assembly.json", {
+            "schema": 1, "segment": item, "segments": len(chain),
+            "storage": "anvil-packed-v1",
+            "completed_process": completed, "complete_benchmark": False,
+            "events": event_count, "end_cycle": head["end_cycle"],
+            "artifacts": [descriptor(path) for path in sorted(destination.rglob("*"))
+                          if path.is_file()],
+        })
+        ev.assertion("immutable_segment_fragment_assembly", True, segments=len(chain),
+                     completed_process=completed, events=event_count,
+                     storage="anvil-packed-v1")
+        return destination
     event_count = 0
     with gzip.open(destination / "transactions.u32.gz", "xb") as trace:
         with (destination / "events.jsonl").open("xb") as events:
@@ -276,10 +381,8 @@ def make_binding(ev, model, suite, config, executable, args, mode):
 
 
 def trace_rows(path):
-    with gzip.open(path, "rb") as source:
-        while data := source.read(44):
-            require(len(data) == 44, "truncated checkpoint trace")
-            yield struct.unpack("<11I", data)
+    from packed_storage import transactions
+    yield from transactions(path)
 
 
 def qualify(ev, args, model, suite, config, executable):
@@ -362,6 +465,7 @@ def main():
     parser.add_argument("--qualify", action="store_true")
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--assemble", type=Path)
+    parser.add_argument("--packed-assembly", action="store_true")
     parser.add_argument("--build-receipt", type=Path)
     parser.add_argument("--mode", choices=tuple(MODES), default="bf16")
     parser.add_argument("--workload", choices=("teacher", "greedy"), default="teacher")
@@ -375,13 +479,15 @@ def main():
         require(args.cycles > 0 and
                 sum((bool(args.resume), bool(args.assemble), args.qualify)) <= 1,
                 "invalid checkpoint operation")
+        require(not args.packed_assembly or args.assemble is not None,
+                "packed assembly requires an existing sealed segment")
         snapshot = ev.path / "collector-sources"
         snapshot.mkdir()
         for name in (*CONTROLLERS, "tests/production_sim.cpp"):
             shutil.copy2(ROOT / name, snapshot / Path(name).name)
         if args.assemble:
             path = artifact_path(ROOT, str(args.assemble))
-            assemble(ev, descriptor(path))
+            assemble(ev, descriptor(path), packed=args.packed_assembly)
         elif args.resume:
             path = artifact_path(ROOT, str(args.resume))
             item = descriptor(path)
