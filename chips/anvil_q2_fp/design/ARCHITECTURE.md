@@ -166,6 +166,27 @@ slices through the unchanged bus mux. There are BANKS independent projection
 clients plus one scalar-operation client at the top. The parent's arbitration,
 tag allocation and completion ordering remain in that scheduler.
 
+The scalar-operation client now registers its complete request after the top
+bus mux and before scheduler ingress. This cuts the reported attention
+`state.VALUE` to scheduler `col`/`layer` path at the nested numerical mux
+boundary, rather than modifying the accepted scheduler. The one-entry buffer
+has no valid fall-through or ready look-through: an empty slot accepts the
+selected scalar request at one edge, and the scheduler can accept it starting
+at the next edge. While full, all fields hold and upstream readiness is low;
+retirement clears occupancy without same-edge refill. Scalar controllers
+already wait for each response, so this introduces one unstalled request
+cycle without limiting the independent BANKS projection clients or changing
+the tensor lane's three-stage arithmetic contract. Responses remain unbuffered
+through the original muxes, whose selection stays fixed until completion.
+
+The buffer shares the numerical core's asynchronous reset/annul domain.
+Cancellation or fault recovery discards only its not-yet-scheduler-accepted
+request. Scheduler-owned transactions still drain under the parent's existing
+flush-edge accounting, and a new sequence cannot reuse the discarded request.
+The original reported setup slack was -4.362 ns at 10.000 ns; this register
+boundary is a timing repair candidate, not a measured timing-closure claim.
+Independent functional checks and shared-runtime Quartus STA must rerun.
+
 The top retains the parent's serial vocabulary projection: for each logit,
 it walks normalized components in ascending order, rounds the linear input
 to the selected format and issues separate FP32 multiply/add commands.

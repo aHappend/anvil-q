@@ -61,6 +61,15 @@ module anvil_q2_fp_top #(
   wire [(SB+1)*4-1:0] c_reqk;
   wire [(SB+1)*3-1:0] c_reqp;
   wire [(SB+1)*32-1:0] c_reql, c_reqrow, c_reqcol, c_reqwd, c_rsprd;
+  wire scalar_req_valid, scalar_req_ready;
+  wire scalar_req_write;
+  wire [3:0] scalar_req_kind;
+  wire [2:0] scalar_req_proj;
+  wire [31:0] scalar_req_layer, scalar_req_row, scalar_req_col, scalar_req_wdata;
+  reg scalar_pending, scalar_write;
+  reg [3:0] scalar_kind;
+  reg [2:0] scalar_proj;
+  reg [31:0] scalar_layer, scalar_row, scalar_col, scalar_wdata;
   anvil_q2_fp_parameters #(
     NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,VOCAB_SIZE,MAX_SEQ_LEN,
@@ -100,10 +109,34 @@ module anvil_q2_fp_top #(
     reqrow[64+:32],reqcol[64+:32],reqwd[64+:32],rspv[2],rspr[2],rsprd[64+:32],rspe[2]);
   anvil_q2_bus_mux #(3) bus(
     core_rst_n,selected,reqv,reqr,reqw,reqk,reql,reqp,reqrow,reqcol,reqwd,
-    rspv,rspr,rsprd,rspe,c_reqv[SB],c_reqr[SB],c_reqw[SB],c_reqk[SB*4+:4],
-    c_reql[SB*32+:32],c_reqp[SB*3+:3],c_reqrow[SB*32+:32],
-    c_reqcol[SB*32+:32],c_reqwd[SB*32+:32],
+    rspv,rspr,rsprd,rspe,scalar_req_valid,scalar_req_ready,scalar_req_write,
+    scalar_req_kind,scalar_req_layer,scalar_req_proj,scalar_req_row,
+    scalar_req_col,scalar_req_wdata,
     c_rspv[SB],c_rspr[SB],c_rsprd[SB*32+:32],c_rspe[SB]);
+  // No ready look-through: mux selection and scheduler arbitration are separate paths.
+  assign scalar_req_ready=core_rst_n && !scalar_pending;
+  assign c_reqv[SB]=core_rst_n && scalar_pending;
+  assign c_reqw[SB]=scalar_write;
+  assign c_reqk[SB*4+:4]=scalar_kind;
+  assign c_reql[SB*32+:32]=scalar_layer;
+  assign c_reqp[SB*3+:3]=scalar_proj;
+  assign c_reqrow[SB*32+:32]=scalar_row;
+  assign c_reqcol[SB*32+:32]=scalar_col;
+  assign c_reqwd[SB*32+:32]=scalar_wdata;
+  always @(posedge clk or negedge core_rst_n) begin
+    if(!core_rst_n) begin
+      scalar_pending<=0; scalar_write<=0; scalar_kind<=0; scalar_proj<=0;
+      scalar_layer<=0; scalar_row<=0; scalar_col<=0; scalar_wdata<=0;
+    end else if(scalar_pending) begin
+      if(c_reqr[SB]) scalar_pending<=0;
+    end else if(scalar_req_valid && scalar_req_ready) begin
+      scalar_pending<=1;
+      scalar_write<=scalar_req_write; scalar_kind<=scalar_req_kind;
+      scalar_layer<=scalar_req_layer; scalar_proj<=scalar_req_proj;
+      scalar_row<=scalar_req_row; scalar_col<=scalar_req_col;
+      scalar_wdata<=scalar_req_wdata;
+    end
+  end
   anvil_q2_bank_scheduler #(BANKS,SB+1,QUEUE_DEPTH) bank_scheduler(
     .clk(clk),.rst_n(rst_n),.flush(cancel || state==24),
     .idle(scheduler_idle),.drain_done(scheduler_drained),.fault(scheduler_fault),

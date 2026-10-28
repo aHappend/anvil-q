@@ -50,6 +50,9 @@ must not alter any legal configuration.
 | Active reset | rst_n=0 | asynchronous state reset; every public output bit zero, including ready and data |
 | First clock after reset release | no pre-edge valid/ready pair | no fabricated transaction; idle readiness may assert |
 | Held result/request | valid && !ready | valid and complete payload remain stable until transfer, reset or specified cancellation |
+| Top scalar request buffer empty | scalar mux valid && buffer ready | capture complete request; scheduler can first accept it at the next edge |
+| Top scalar request buffer full | scheduler client ready | transfer once and clear occupancy; no same-edge refill or combinational ready look-through |
+| Top scalar buffer reset/cancel/fault annul | numerical core reset asserted | discard requests not yet accepted by scheduler; scheduler still drains its accepted transactions |
 | Lane first && last | accepted singleton beat | reset logical accumulator to +0, add this product once, emit last=1 |
 | Lane bubble | !in_valid or !in_ready | no arithmetic/accumulator update for that beat |
 | Back-to-back dots | next accepted first follows prior last | no interleaving; next first replaces accumulator base with +0 in S3 |
@@ -89,6 +92,14 @@ tags, exhaustion without reuse, per-client in-order retirement, cross-bank
 out-of-order response acceptance, round-robin ingress, independently held
 requests and flush-edge accounting. Bank selection is the low bits of
 kind+layer+projection+row+column.
+
+The top's scalar client has a one-entry registered request buffer between
+the numerical bus muxes and scheduler ingress. It captures valid and all
+request fields together and holds them until scheduler acceptance. Responses
+return through the existing muxes without an added register. This adds one
+unstalled request cycle, not an arithmetic stage or a change to the public
+memory ABI. BANKS projection clients bypass this scalar-only buffer and retain
+independent scheduler access.
 
 Required source hierarchy:
 
