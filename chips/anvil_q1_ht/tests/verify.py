@@ -250,9 +250,12 @@ class Evidence:
             key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
             cached = None if build_pool is None else build_pool.get(key)
             if cached is None:
-                self.command(
-                    ["verilator", *options, "--Mdir", self.relative(build), *inputs],
-                    name + "-compile", timeout=3600)
+                try:
+                    self.command(
+                        ["verilator", *options, "--Mdir", self.relative(build), *inputs],
+                        name + "-compile", timeout=3600)
+                finally:
+                    self.cleanup_compile_intermediates(build)
                 executable = build / "Vtb"
                 cached = {
                     "identity": identity, "key": key,
@@ -290,6 +293,33 @@ class Evidence:
                                            "observed_counters": ledgers})
         self.flush()
         return output
+
+    def cleanup_compile_intermediates(self, build):
+        """Retain executable, generated sources and logs, not compiler scratch."""
+        build = Path(build)
+        if not build.resolve().is_relative_to((ROOT / "evidence/preparation").resolve()):
+            raise ValueError("compiler cleanup must stay within project preparation evidence")
+        if build.is_symlink():
+            raise ValueError("compiler cleanup directory must not be a symlink")
+        if not build.exists():
+            return
+        removed = []
+        for path in sorted(build.rglob("*")):
+            if path.suffix not in (".o", ".a", ".gch"):
+                continue
+            if path.is_symlink() or not path.resolve().is_relative_to(build.resolve()):
+                raise ValueError("compiler intermediate escapes its build directory")
+            if path.is_file():
+                row = {"path": self.relative(path), "bytes": path.stat().st_size,
+                       "sha256": file_sha256(path)}
+                path.unlink()
+                removed.append(row)
+        self.record.setdefault("compile_intermediate_cleanup", []).append({
+            "build": self.relative(build), "removed": removed,
+            "removed_bytes": sum(row["bytes"] for row in removed),
+            "scope": "settled_compiler_scratch_only_not_historical_storage_repair",
+        })
+        self.flush()
 
     def finish(self, outcome, reason):
         if outcome in ("probe_passed", "packaging_subset_passed"):

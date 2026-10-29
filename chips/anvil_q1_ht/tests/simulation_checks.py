@@ -41,6 +41,10 @@ class SimulationTierChecks(unittest.TestCase):
                 build = ROOT / argv[argv.index("--Mdir") + 1]
                 build.mkdir()
                 (build / "Vtb").write_bytes(b"synthetic executable")
+                (build / "Vtb.o").write_bytes(b"synthetic object")
+                (build / "Vtb__ALL.a").write_bytes(b"synthetic archive")
+                (build / "Vtb.h.gch").write_bytes(b"synthetic precompiled header")
+                (build / "Vtb.cpp").write_text("synthetic generated source\n")
             return "CHECKS_PASSED synthetic comparisons=1\n"
 
         trial.command = command
@@ -57,6 +61,49 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertIn("--assert", argv)
         self.assertEqual(argv[argv.index("-CFLAGS") + 1], "-O3")
         self.assertGreaterEqual(simulation["timeout"], 3600)
+        cleanup, = trial.record["compile_intermediate_cleanup"]
+        self.assertEqual(len(cleanup["removed"]), 3)
+        build = ROOT / cleanup["build"]
+        self.assertEqual(sorted(path.name for path in build.iterdir()),
+                         ["Vtb", "Vtb.cpp"])
+        self.assertGreater(cleanup["removed_bytes"], 0)
+
+    def test_failed_compile_still_cleans_only_settled_compiler_scratch(self):
+        trial = self.evidence()
+        original_command = trial.command
+
+        def failing_compile(argv, label, **kwargs):
+            output = original_command(argv, label, **kwargs)
+            if label.endswith("-compile"):
+                raise RuntimeError("synthetic compiler failure")
+            return output
+
+        trial.command = failing_compile
+        with patch("verify.shutil.which", return_value="verilator"):
+            with self.assertRaisesRegex(RuntimeError, "synthetic compiler failure"):
+                trial.simulate("failed", "module tb; endmodule", sources=[],
+                               simulator="verilator")
+        self.assertFalse(any(row["label"].endswith("-simulation")
+                             for row in trial.record["commands"]))
+        cleanup, = trial.record["compile_intermediate_cleanup"]
+        self.assertEqual(len(cleanup["removed"]), 3)
+        self.assertTrue((ROOT / cleanup["build"] / "Vtb.cpp").is_file())
+
+    def test_cleanup_rejects_external_directory(self):
+        trial = self.evidence()
+        with self.assertRaisesRegex(ValueError, "project preparation evidence"):
+            trial.cleanup_compile_intermediates(ROOT / "tests")
+
+    def test_cleanup_rejects_symlink_without_deleting_target(self):
+        trial = self.evidence()
+        build = trial.folder / "compiled"
+        build.mkdir()
+        target = trial.folder / "retained.o"
+        target.write_bytes(b"must remain")
+        (build / "external.o").symlink_to(target)
+        with self.assertRaisesRegex(ValueError, "escapes"):
+            trial.cleanup_compile_intermediates(build)
+        self.assertEqual(target.read_bytes(), b"must remain")
 
     def test_missing_compiled_simulator_does_not_fall_back(self):
         trial = self.evidence()
