@@ -214,6 +214,10 @@ def reference_environment_check(root, ev):
     ]
     cases = [("complete-control", True, control, True),
              ("nonzero-exit", False, control, False)]
+    for label, completed in (("integer-completion", 1),
+                             ("string-completion", "passed"),
+                             ("missing-completion", None)):
+        cases.append((label, completed, control, False))
     for length in range(3):
         cases.append(("missing-event-" + str(length), True, control[:length], False))
     cases.extend([

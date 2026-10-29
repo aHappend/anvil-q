@@ -184,7 +184,7 @@ def reference_dependencies(ev, interpreter):
 
 def qualified_reference_events(completed, events):
     """Require the complete ordered import protocol, not discovery or a prefix."""
-    if not completed or len(events) != 3 or any(type(row) is not dict for row in events):
+    if completed is not True or len(events) != 3 or any(type(row) is not dict for row in events):
         return False
     parent, imported, child = events
     version = imported.get("numpy_version")
