@@ -2789,9 +2789,11 @@ endmodule
         f"forever #{ddr_period_ns / 2:g} ddr_clk=!ddr_clk; end"
         if ddr_phase_ns else
         f"always #{ddr_period_ns / 2:g} ddr_clk=!ddr_clk;")
+    simulation_name = f"dma-{depth}{clock_case}"
+    if upload_validation:
+        simulation_name += f"-upload-{getattr(evidence, 'default_simulator', 'iverilog')}"
     transcript = evidence.simulate(
-        f"dma-{'upload-' if upload_validation else ''}{depth}{clock_case}-"
-        f"{getattr(evidence, 'default_simulator', 'iverilog')}",
+        simulation_name,
         bench.replace("DEPTH_VALUE", str(depth))
         .replace("SEED_VALUE", str(seed or 1))
         .replace("DDR_PERIOD_VALUE", f"{ddr_period_ns:g}")

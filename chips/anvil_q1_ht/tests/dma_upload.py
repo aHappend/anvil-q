@@ -3,6 +3,9 @@
 Changed payload bytes distinguish preservation from merely replaying an image.
 Only public load, Avalon and tile pins are observed. This compact experiment
 does not qualify image commit, full-model inference, physical DDR or throughput.
+
+python3 -B tests/verify.py --probe dma-upload-sensitivity --seed 17
+executes both simulators and two separately compiled, disposable RTL defects.
 """
 
 import random
@@ -191,6 +194,9 @@ task upload_word(input [32:0] address,input [511:0] data,input [63:0] mask,
 endtask
 """
     replacements = {
+        "if({request_ready,completion_valid,completion_error,completion_tiles,":
+            "if({load_ready,load_done,load_error,load_idle,"
+            "request_ready,completion_valid,completion_error,completion_tiles,",
         "wire avm_waitrequest=stall_remaining>0;":
             "wire avm_waitrequest=avm_write ? upload_wait_left>0 : stall_remaining>0;",
         "wire [511:0] avm_readdata=pattern(response_remaining>0 ? service_address : avm_address);":
@@ -292,8 +298,15 @@ def upload_checks(evidence, seed):
     from experiments import dma_probe
 
     transcripts = []
-    for simulator in ("iverilog", "verilator"):
-        evidence.default_simulator = simulator
-        transcripts.append(dma_probe(evidence, 3, seed, upload_validation=True))
+    previous = getattr(evidence, "default_simulator", None)
+    try:
+        for simulator in ("iverilog", "verilator"):
+            evidence.default_simulator = simulator
+            transcripts.append(dma_probe(evidence, 3, seed, upload_validation=True))
+    finally:
+        if previous is None:
+            del evidence.default_simulator
+        else:
+            evidence.default_simulator = previous
     if transcripts[0] != transcripts[1]:
         raise AssertionError("Icarus/Verilator upload comparison ledgers disagree")
