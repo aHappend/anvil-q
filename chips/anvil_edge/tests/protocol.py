@@ -353,8 +353,78 @@ if (ops!=0 || outputs!=0 || finishes!=0 || completions!=0 || error || busy)
 comparisons=comparisons+1;
 """)
     count += 2
+    import re
+
+    original_cases = "\n".join(cases)
+    lines = original_cases.split("\n")
+    representation = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        ids = re.fullmatch(r"expected_ids\[(\d+)\]=(\d+);", line)
+        prompt_call = re.fullmatch(r"prompt\((\d+),0\);", line)
+        frame_call = re.fullmatch(r"frame\((\d+),(\d+),(\d+),([01])\);", line)
+        instruction = None
+        if ids:
+            start, value = map(int, ids.groups())
+            instruction = {"kind": "ids", "start": start, "value": value}
+            expand = lambda k: f"expected_ids[{k}]={value};"
+        elif prompt_call:
+            start, value = 0, int(prompt_call[1])
+            instruction = {"kind": "prompt", "start": start, "value": value}
+            expand = lambda k: f"prompt({value},0);"
+        elif frame_call:
+            start, winner, mode, simultaneous = map(int, frame_call.groups())
+            if simultaneous == (start & 1):
+                instruction = {"kind": "frame", "start": start,
+                               "winner": winner, "mode": mode}
+                expand = lambda k: f"frame({k},{winner},{mode},{k & 1});"
+        length = 0
+        if instruction is not None:
+            while (index + length < len(lines) and
+                   lines[index + length] == expand(start + length)):
+                length += 1
+        if length >= 3:
+            instruction["count"] = length
+            representation.append(instruction)
+            index += length
+        else:
+            representation.append({"kind": "literal", "line": line})
+            index += 1
+
+    compact, expanded = [], []
+    for instruction in representation:
+        kind = instruction["kind"]
+        if kind == "literal":
+            compact.append(instruction["line"])
+            expanded.append(instruction["line"])
+            continue
+        start = instruction["start"]
+        stop = start + instruction["count"]
+        if kind == "ids":
+            value = instruction["value"]
+            body = f"expected_ids[compact_index]={value};"
+            expanded.extend(f"expected_ids[{k}]={value};" for k in range(start, stop))
+        elif kind == "prompt":
+            value = instruction["value"]
+            body = f"prompt({value},0);"
+            expanded.extend(f"prompt({value},0);" for _ in range(start, stop))
+        else:
+            winner, mode = instruction["winner"], instruction["mode"]
+            body = f"frame(compact_index,{winner},{mode},compact_index & 1);"
+            expanded.extend(f"frame({k},{winner},{mode},{k & 1});"
+                            for k in range(start, stop))
+        compact.append(
+            f"for (integer compact_index={start}; compact_index<{stop}; "
+            f"compact_index=compact_index+1) {body}"
+        )
+    if "\n".join(expanded) != original_cases:
+        raise AssertionError("Controller compaction changed the ordered scenarios")
     bench = CONTROLLER.replace("CAPACITY", str(capacity)).replace("SEED", str(seed))
-    bench = bench.replace("CASES", "\n".join(cases)).replace("COMPARISONS", str(count))
+    expanded_bench = bench.replace("CASES", original_cases).replace("COMPARISONS", str(count))
+    bench = bench.replace("CASES", "\n".join(compact)).replace("COMPARISONS", str(count))
+    if hasattr(evidence, "controller_equivalence"):
+        evidence.controller_equivalence(capacity, seed, representation, expanded_bench, bench, count)
     evidence.simulate(f"controller-c{capacity}-s{seed}", bench,
                       ["rtl/anvil_edge_autoregressive_fsm.sv"], count)
 

@@ -1081,42 +1081,172 @@ def main():
         elif args.probe == "controller":
             run_controller(evidence)
         elif args.probe == "controller-build-repair":
+            import importlib.util
             from protocol import controller_test
 
-            if len(args.repair_of) != 1:
-                raise VerificationFailure("Controller repair requires its original failed compile receipt")
+            if len(args.repair_of) != 2:
+                raise VerificationFailure(
+                    "Controller recovery requires both original and subsequent failed compile receipts"
+                )
             prior = ROOT / args.repair_of[0]
             failed = json.loads(prior.read_text())
             original = prior.parents[2]
             previous = json.loads((original / "receipt.json").read_text())
             rows = [row for row in previous["coverage"]
                     if row.get("name") == "controller-c4096-s1"]
-            if (failed["exit_code"] != 2 or failed["timed_out"] or
-                    not failed["child_settled"] or not failed["process_group_settled"] or
-                    len(rows) != 1):
-                raise VerificationFailure("Expected the retained, settled controller build failure")
-            for name in ("tests/protocol.py", "rtl/anvil_edge_autoregressive_fsm.sv"):
-                if (ROOT / name).read_bytes() != (original / "sources" / name).read_bytes():
-                    raise VerificationFailure(f"Original controller input changed: {name}")
-            controller_test(evidence, 4096, 1)
-            repaired = evidence.record["coverage"][-1]
+            subsequent = ROOT / args.repair_of[1]
+            subsequent_failed = json.loads(subsequent.read_text())
+            subsequent_root = subsequent.parent.parent
+            subsequent_summary = json.loads((subsequent_root / "receipt.json").read_text())
+            for record in (failed, subsequent_failed):
+                if (record["exit_code"] != 2 or record["timed_out"] or
+                        not record["child_settled"] or not record["process_group_settled"]):
+                    raise VerificationFailure("Expected retained, settled controller build failures")
+            if (len(rows) != 1 or rows[0]["required_comparisons"] != 4203 or
+                    subsequent_summary["repair_of"][0]["path"] != args.repair_of[0]):
+                raise VerificationFailure("Controller failure provenance or original threshold changed")
+            for name in sorted(ROOT.glob("rtl/*.sv")):
+                relative = name.relative_to(ROOT)
+                for source_root in (original, subsequent_root):
+                    if name.read_bytes() != (source_root / "sources" / relative).read_bytes():
+                        raise VerificationFailure(f"Original RTL changed: {relative}")
+            baseline_path = original / "sources/tests/protocol.py"
+            if baseline_path.read_bytes() != (
+                    subsequent_root / "sources/tests/protocol.py").read_bytes():
+                raise VerificationFailure("Failed runs did not use the same original generator")
+            baseline_spec = importlib.util.spec_from_file_location(
+                "controller_recovery_baseline", baseline_path)
+            baseline = importlib.util.module_from_spec(baseline_spec)
+            baseline_spec.loader.exec_module(baseline)
+            from protocol import CONTROLLER
+            if baseline.CONTROLLER != CONTROLLER:
+                raise VerificationFailure("Controller public-handshake assertions or cycle bound changed")
             old_bench = ROOT / failed["argv"][-1]
-            new_bench = evidence.path / repaired["name"] / "compiled-bench.sv"
-            if (new_bench.read_bytes() != old_bench.read_bytes() or
-                    repaired["actual_comparisons"] != rows[0]["required_comparisons"]):
-                raise VerificationFailure("Controller repair changed the original bench or comparison count")
+            next_bench = ROOT / subsequent_failed["argv"][-1]
+            if old_bench.read_bytes() != next_bench.read_bytes():
+                raise VerificationFailure("Retained failed benches differ")
             evidence.record["controller_repair"] = {
-                "original_receipt": args.repair_of[0],
+                "failed_compile_receipts": list(args.repair_of),
                 "original_summary": evidence.relative(original / "receipt.json"),
-                "compiled_bench_identical": True,
+                "subsequent_summary": evidence.relative(subsequent_root / "receipt.json"),
+                "equivalence_policy": "Exact ordered stimulus/expectation expansion, not byte-identical compact bench",
+                "baseline_generator_sha256": digest(baseline_path),
+                "unchanged_rtl": True,
+                "unchanged_public_scoreboard_and_cycle_bound": True,
                 "original_required_comparisons": rows[0]["required_comparisons"],
+                "equivalence": [],
             }
-            for seed in (17, 89):
-                controller_test(evidence, 4096, seed)
-            for seed in (1, 17):
-                controller_test(evidence, 1, seed)
+
+            def controller_equivalence(capacity, seed, representation, expanded, compact, count):
+                class Capture:
+                    def simulate(self, name, bench, sources, comparisons):
+                        self.result = (name, bench, sources, comparisons)
+
+                capture = Capture()
+                baseline.controller_test(capture, capacity, seed)
+                name, original_bench, sources, original_count = capture.result
+                if capacity == 4096 and seed == 1:
+                    for retained in (old_bench, next_bench):
+                        if original_bench != (retained.parent / "bench.sv").read_text():
+                            raise VerificationFailure("Baseline does not reproduce the retained original stimulus")
+                directory = evidence.path / (name + "-equivalence")
+                directory.mkdir()
+                write_json(directory / "representation.json", representation)
+                (directory / "original-bench.sv").write_text(original_bench, encoding="ascii")
+                (directory / "expanded-bench.sv").write_text(expanded, encoding="ascii")
+                (directory / "compact-bench.sv").write_text(compact, encoding="ascii")
+                # Independently interpret the retained loop records, including final flags,
+                # without using the renderer/expander in the modified generator.
+                independently_expanded = []
+                independently_rendered = []
+                for item in representation:
+                    if item["kind"] == "literal":
+                        independently_expanded.append(item["line"])
+                        independently_rendered.append(item["line"])
+                        continue
+                    first, stop = item["start"], item["start"] + item["count"]
+                    if item["count"] < 3 or first < 0:
+                        raise VerificationFailure("Invalid compact loop bounds")
+                    if item["kind"] == "ids":
+                        body = f"expected_ids[compact_index]={item['value']};"
+                        values = [f"expected_ids[{i}]={item['value']};"
+                                  for i in range(first, stop)]
+                    elif item["kind"] == "prompt":
+                        body = f"prompt({item['value']},0);"
+                        values = [body] * item["count"]
+                    elif item["kind"] == "frame":
+                        body = (f"frame(compact_index,{item['winner']},"
+                                f"{item['mode']},compact_index & 1);")
+                        values = [f"frame({i},{item['winner']},{item['mode']},{i % 2});"
+                                  for i in range(first, stop)]
+                    else:
+                        raise VerificationFailure("Unknown controller representation instruction")
+                    independently_expanded.extend(values)
+                    independently_rendered.append(
+                        f"for (integer compact_index={first}; compact_index<{stop}; "
+                        f"compact_index=compact_index+1) {body}")
+                template = baseline.CONTROLLER.replace("CAPACITY", str(capacity)).replace(
+                    "SEED", str(seed))
+                rebuilt = template.replace("CASES", "\n".join(independently_expanded)).replace(
+                    "COMPARISONS", str(original_count))
+                rendered = template.replace("CASES", "\n".join(independently_rendered)).replace(
+                    "COMPARISONS", str(original_count))
+                # The original generator consumes its own Random(seed), so full text equality
+                # checks every random winner as well as all malformed/reset scenarios.
+                result = {
+                    "capacity": capacity, "seed": seed,
+                    "required_comparisons": count,
+                    "original_required_comparisons": original_count,
+                    "complete_ordered_expansion_equal": rebuilt == expanded == original_bench,
+                    "compact_rendering_equal": rendered == compact,
+                    "sources_equal": sources == ["rtl/anvil_edge_autoregressive_fsm.sv"],
+                    "original_bench_sha256": digest(directory / "original-bench.sv"),
+                    "expanded_bench_sha256": digest(directory / "expanded-bench.sv"),
+                    "compact_bench_sha256": digest(directory / "compact-bench.sv"),
+                    "representation_sha256": digest(directory / "representation.json"),
+                    "original_lines": len(original_bench.splitlines()),
+                    "compact_lines": len(compact.splitlines()),
+                    "loop_count": sum(item["kind"] != "literal" for item in representation),
+                }
+                result["passed"] = (
+                    result["complete_ordered_expansion_equal"] and
+                    result["compact_rendering_equal"] and result["sources_equal"] and
+                    count == original_count and (capacity != 4096 or count == 4203))
+                write_json(directory / "result.json", result)
+                evidence.record["controller_repair"]["equivalence"].append(
+                    {"result": evidence.relative(directory / "result.json"), **result})
+                if not result["passed"]:
+                    raise VerificationFailure("Controller stimulus/expectation sequence changed")
+
+            evidence.controller_equivalence = controller_equivalence
+            for capacity, seed in ((4096, 1), (4096, 17), (4096, 89), (1, 1), (1, 17)):
+                try:
+                    controller_test(evidence, capacity, seed)
+                finally:
+                    name = f"controller-c{capacity}-s{seed}"
+                    matching = [row for row in evidence.record["coverage"]
+                                if row.get("name") == name]
+                    cached = matching[-1] if matching else {}
+                    compile_argv = cached.get("compile_receipt", {}).get("argv", [])
+                    object_dir = (
+                        ROOT / compile_argv[compile_argv.index("--Mdir") + 1]
+                        if "--Mdir" in compile_argv else evidence.path / name / "obj")
+                    artifacts = [
+                        {"path": evidence.relative(path), "bytes": path.stat().st_size,
+                         "sha256": digest(path)}
+                        for path in sorted(object_dir.rglob("*")) if path.is_file()
+                    ]
+                    evidence.record["controller_repair"].setdefault("build_sizes", []).append({
+                        "capacity": capacity, "seed": seed,
+                        "compile_cache_hit": cached.get("compile_cache_hit"),
+                        "retained_build_files": artifacts,
+                        "retained_build_bytes": sum(item["bytes"] for item in artifacts),
+                        "removed_intermediate_bytes": sum(
+                            item["bytes"] for item in cached.get("compile_intermediates_removed", [])),
+                        "actual_comparisons": cached.get("actual_comparisons"),
+                    })
                 cached = evidence.record["coverage"][-1]
-                if cached["compile_cache_hit"] != (seed == 17):
+                if capacity == 1 and cached["compile_cache_hit"] != (seed == 17):
                     raise VerificationFailure("Compact controller compile cache did not behave as expected")
         elif args.probe == "uart":
             run_uart(evidence)
