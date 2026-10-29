@@ -410,7 +410,7 @@ endmodule
 """
 
 
-def core_test(evidence, geometry, seed, *, fault=None):
+def core_test(evidence, geometry, seed, *, fault=None, bench_transform=None):
     reference = Reference(geometry, seed)
     tokens = [1, 2, 0]
     for position, token in enumerate(tokens):
@@ -420,7 +420,7 @@ def core_test(evidence, geometry, seed, *, fault=None):
     label = f"numerical-h{geometry.hidden}-l{geometry.layers}-s{seed}"
     if fault:
         label += "-" + fault["name"]
-    directory = evidence.path / (label + "-input")
+    directory = evidence.path / (evidence.name_prefix + label + "-input")
     directory.mkdir()
     (directory / "reference.json").write_text(json.dumps({
         "geometry": geometry.__dict__, "seed": seed, "tokens": tokens,
@@ -505,7 +505,9 @@ end
     comparisons=comparisons+1;
 """ + bench[end:]
     root = Path(__file__).resolve().parent.parent
-    evidence.simulate(label, bench, [
+    if bench_transform is not None:
+        bench = bench_transform(bench)
+    return evidence.simulate(label, bench, [
         "rtl/anvil_edge_numeric_pkg.sv",
         *[str(path.relative_to(root)) for path in sorted((root / "rtl").glob("*.sv"))
           if path.name != "anvil_edge_numeric_pkg.sv"],

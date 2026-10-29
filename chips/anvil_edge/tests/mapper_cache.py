@@ -66,6 +66,7 @@ module bench;
   reg [63:0] inject_directory_address=64'hffffffffffffffff;
   reg inject_data_error=0,expected_error=0,expected_write=0;
   reg withdraw_on_request=0;
+  reg withdraw_on_data=0;
   function automatic bit in_directory(input [63:0] address);
     return address>=cfg_directory_base && address<cfg_directory_base+1568;
   endfunction
@@ -126,6 +127,7 @@ module bench;
               (expected_write && ddr_req_wdata!==32'h81478521))
             $fatal(1,"CACHE_DATA_TUPLE expected=%h observed=%h",expected_address,ddr_req_addr);
           data_requests=data_requests+1; pending_error=inject_data_error;
+          if (withdraw_on_data) config_valid<=0;
         end
         outstanding=1; pending_address=ddr_req_addr; delay_count=1+rng[4:2];
       end
@@ -195,7 +197,7 @@ def require(condition, message):
         raise AssertionError(message)
 
 
-def fixture_bench(evidence, seed, lifecycle):
+def fixture_bench(evidence, seed, lifecycle, *, row_reuse=False):
     fixture = synthetic_image(257)
     records = {record[:3]: (index, record)
                for index, record in enumerate(fixture["regions"])}
@@ -219,7 +221,11 @@ def fixture_bench(evidence, seed, lifecycle):
     activation, embedding, gamma = (8, 0, 0), (0, 0, 0), (7, 0, 0)
     for iteration in range(16):
         request(f"alternate-a{iteration}", activation, row=14, column=iteration % 8)
-        request(f"alternate-e{iteration}", embedding, row=iteration, column=iteration % 8)
+        request(f"alternate-e{iteration}", embedding,
+                row=3 if row_reuse else iteration, column=iteration % 8)
+    if row_reuse:
+        for row in (5, 5, 256, 256, 0, 0, 3, 3):
+            request(f"row-change-{len(labels)}", embedding, row=row, column=len(labels) % 8)
     if lifecycle:
         # Two warmed keys remain legal only for each new request's own coordinates.
         request("hit-bad-row", activation, row=13, bad=True)
@@ -281,6 +287,12 @@ def fixture_bench(evidence, seed, lifecycle):
         commands.extend(["withdraw_on_request=0;", "config_valid=1;"])
         request("withdraw-refill", embedding)
         request("withdraw-hit", embedding)
+        if row_reuse:
+            commands.append("withdraw_on_data=1;")
+            request("withdraw-warm-row", embedding, column=7)
+            commands.extend(["withdraw_on_data=0;", "config_valid=1;"])
+            request("withdraw-row-refill", embedding, column=7)
+            request("withdraw-row-hit", embedding, column=6)
         # Reset discards a warm epoch; four-state startup is also checked above.
         commands.extend([
             "@(negedge clk); #1; rst_n=0;",

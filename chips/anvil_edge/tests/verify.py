@@ -47,6 +47,7 @@ from parameters import run_parameters
 from adapters import run_adapters
 from memory import run_memory
 from mapper_cache import run_mapper_cache
+from head_row_reuse import run_head_row_reuse
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
 from scheduling import resource_limits, scheduling_probe, scheduling_controls
 from interactions import run_top_interactions, run_top_token_capacity, run_drain_prompts
@@ -894,6 +895,7 @@ L1_SUITES = (
     run_top, run_top_resets, run_synthesis,
     run_metadata,
     run_mapper_cache,
+    run_head_row_reuse,
     lambda evidence: run_mutations(evidence, fifo_test),
 )
 
@@ -958,6 +960,7 @@ def main():
         "official-qwen-shell-general-bypass",
         "shell-scoreboard",
         "mapper-cache",
+        "head-row-reuse",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1024,6 +1027,8 @@ def main():
             run_mapper(evidence)
         elif args.probe == "mapper-cache":
             run_mapper_cache(evidence, comparison=True)
+        elif args.probe == "head-row-reuse":
+            run_head_row_reuse(evidence, comparison=True)
         elif args.probe == "top":
             run_top(evidence)
         elif args.probe == "top-uart":
