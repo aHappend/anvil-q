@@ -19,6 +19,8 @@ It is bounded clean-copy reproduction, not a full-model benchmark.
 Every invocation allocates exclusive project-local preparation evidence. Child
 logs are exclusive too: reusing a label fails instead of overwriting a run.
 Missing full-model artifacts or unimplemented mandatory coverage fail closed.
+Explicit benchmark replay arrays rerun actual RTL and independent FP64 inference
+into fresh bounded windows before numerical validation; no saved metric is evidence.
 The shared runtime, not this script, owns Arria timing and physical gates.
 """
 

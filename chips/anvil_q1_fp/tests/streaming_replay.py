@@ -357,8 +357,30 @@ class Process:
             if line is None:
                 break
             require(not line.startswith(b"WINDOW_READY "), "extra replay coverage")
-        code = self.process.wait(timeout=max(1, self.deadline-time.monotonic()))
+        try:
+            code = self.process.wait(timeout=max(1, self.deadline-time.monotonic()))
+        except subprocess.TimeoutExpired as error:
+            self.record["timed_out"] = True
+            raise ValueError("replay producer timed out before exit") from error
         require(code == 0, "replay producing process failed")
+        summary = load_json(self.output / "summary.json")
+        require(type(summary["positions_completed"]) is int and
+                summary["positions_completed"] == self.position + 1,
+                "producer summary/ordered coverage differs")
+        if not self.spec["fixture"]:
+            if self.spec["role"] == "reference":
+                require(summary["arithmetic"] == "ieee-fp64" and
+                        summary["independent_of_rtl"] is True,
+                        "not independent FP64 inference")
+            else:
+                require(type(summary["requests"]) is int and summary["requests"] > 0 and
+                        summary["requests"] == summary["responses"],
+                        "production transaction conservation failed")
+                if self.spec["workload"] == "greedy":
+                    expected = [entry["observation"]["argmax"] for entry in
+                                self.windows[len(self.spec["tokens"])-1:]]
+                    require(summary["generated_tokens"] == expected,
+                            "greedy process summary differs from public logits")
         self._record(code)
         self.finished = True
         return self.record
@@ -372,7 +394,10 @@ class Process:
         self.record.update(exit_code=code, ended_at=now(),
                            stdout=item(self.root, self.directory / "stdout.txt"),
                            stderr=item(self.root, self.directory / "stderr.txt"),
-                           outputs=[item(self.root, path) for path in sorted(self.output.iterdir())
+                           window_indexes=[item(self.root, self.directory /
+                                                f"window-{position:05d}.json")
+                                           for position in range(len(self.windows))],
+                           outputs=[item(self.root, path) for path in sorted(self.output.rglob("*"))
                                     if path.is_file()])
         write_new(self.directory / "process.json", self.record)
 
@@ -451,6 +476,10 @@ def validate_manifest(root, descriptor, *, role=None, allow_fixture=False):
             expected_files.add("transactions.u32.gz")
         require({entry["name"] for entry in payloads} == expected_files,
                 "missing/extra replay payload coverage")
+    require(len(producer["window_indexes"]) == len(windows) and
+            all(load_json(checked(root, entry)) == window
+                for entry, window in zip(producer["window_indexes"], windows)),
+            "manifest differs from original producing window indexes")
     return manifest, producer
 
 

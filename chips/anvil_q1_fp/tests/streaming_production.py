@@ -3,6 +3,7 @@
 import math
 import struct
 from pathlib import Path
+import uuid
 
 from benchmark import Validator, greedy_stop, load_json, require
 from streaming_replay import (Process, data_bindings, item, specification,
@@ -149,7 +150,8 @@ def collect(ev, args, executable, model, suite, config, selected):
                 try:
                     for recipe in recipes:
                         processes.append(Process(root, directory / (mode + "-" + workload +
-                                                                   "-" + recipe["role"]),
+                                                                   "-" + recipe["role"] +
+                                                                   "-" + uuid.uuid4().hex),
                                                  recipe, args.timeout))
                     actual, repeated = processes[:2]
                     reference = processes[2] if workload == "teacher" else None

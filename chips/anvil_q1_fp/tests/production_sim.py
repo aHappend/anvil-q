@@ -150,6 +150,9 @@ def compile_simulator(ev, previous=None):
         require(ev.run("production-build", command, timeout=14400),
                 "production Verilator build failed")
         executable = directory / "Vanvil_q1_fp_top"
+        for path in directory.iterdir():
+            if path.is_file() and path.suffix in (".o", ".a", ".gch"):
+                path.unlink()
     ev.receipt["build_sources"] = identity()
     ev.receipt["executable"] = descriptor(executable)
     ev.finish("running")
@@ -515,7 +518,9 @@ def main():
         snapshot.mkdir()
         for name in ("production_sim.py", "production_sim.cpp", "production_trace.py",
                      "packed_stream.hpp", "production_storage.hpp",
-                     "packed_stream.py", "packed_storage.py", "sparse_transactions.py"):
+                     "packed_stream.py", "packed_storage.py", "sparse_transactions.py",
+                     "streaming_production.py", "streaming_replay.py", "benchmark.py",
+                     "fp64_reference.py", "teacher_reference.py"):
             shutil.copy2(ROOT / "tests" / name, snapshot / name)
         if args.repair_of:
             ev.receipt["repair_of"] = descriptor(artifact_path(ROOT, str(args.repair_of)))

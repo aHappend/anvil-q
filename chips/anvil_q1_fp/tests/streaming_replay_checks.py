@@ -10,12 +10,13 @@ from pathlib import Path
 import struct
 import subprocess
 import sys
+import uuid
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import Validator, load_json, require, sha
 from streaming_production import compare_window
-from streaming_replay import (Process, Resolver, item, specification, validate_manifest,
+from streaming_replay import (Process, Resolver, item, now, specification, validate_manifest,
                               vector_descriptor, write_new)
 from verify import Evidence, ROOT
 
@@ -49,10 +50,19 @@ def worker(args):
                     stream.write(f"1 0 {mode} 0 0 0 0 0\n")
             with (directory / f"rtl-{position}.stdout").open("xb") as stdout, (
                     directory / f"rtl-{position}.stderr").open("xb") as stderr:
+                argv = ["vvp", args.executable, "+input=" + str(stimulus.relative_to(ROOT)),
+                        "+output=" + str(output.relative_to(ROOT))]
+                started = now()
                 completed = subprocess.run(
-                    ["vvp", args.executable, "+input=" + str(stimulus.relative_to(ROOT)),
-                     "+output=" + str(output.relative_to(ROOT))],
+                    argv,
                     cwd=ROOT, stdout=stdout, stderr=stderr, timeout=3600, check=False)
+            write_new(directory / f"rtl-{position}.json", dict(
+                argv=argv, cwd=".", started_at=started, ended_at=now(),
+                timeout_s=3600, timed_out=False, exit_code=completed.returncode,
+                stdout=item(ROOT, directory / f"rtl-{position}.stdout"),
+                stderr=item(ROOT, directory / f"rtl-{position}.stderr"),
+                inputs=[item(ROOT, ROOT / args.executable), item(ROOT, stimulus)],
+                output=item(ROOT, output)))
             require(completed.returncode == 0, "compact RTL execution failed")
             observed = []
             for line in output.read_text().splitlines():
@@ -64,6 +74,8 @@ def worker(args):
                     "real RTL differs from independent FP64 dot inference")
             if args.defect == "numerical":
                 observed[0] = 100.
+            if args.defect == "repeat-only":
+                observed[0] += .125
             for name, width in (("layers", 24*896), ("logits", 151936)):
                 raw = struct.pack("<8f", *observed) * (width // 8)
                 with (window / (name + ".f32")).open("xb") as stream:
@@ -106,7 +118,8 @@ def origin(ev, executable, tokens, mode, role, defect="pristine"):
                          inputs={entry["path"]: entry["sha256"],
                                  token_entry["path"]: token_entry["sha256"]},
                          tool_names=("python3", "vvp"), fixture=True)
-    return Process(ROOT, ev.path / f"{mode}-{role}-{defect}", spec, 3600, allow_fixture=True)
+    return Process(ROOT, ev.path / f"{mode}-{role}-{defect}-{uuid.uuid4().hex}",
+                   spec, 3600, allow_fixture=True)
 
 
 def collect_origins(ev, executable, tokens, mode):
@@ -262,6 +275,27 @@ def main():
         rejection(ev, "ordinary-missing-artifact", lambda: Validator(ROOT, ev).artifact(
             dict(path=str((ev.path / "missing.f32").relative_to(ROOT)), sha256="0"*64)),
             "missing artifact:")
+        resolver = Resolver(ROOT, ev, allow_fixture=True)
+        context_validator = Validator(ROOT, ev)
+        context_validator.replay = resolver
+        vector = vector_descriptor(ROOT, manifests[0], pristine, 0,
+                                   "logits.f32", "<f4", 151936)
+        for name, case, mode, workload, contexts, position, payload in (
+            ("case", "other-case", "fp16", "teacher", [17, 53, 89], 0, "logits.f32"),
+            ("mode", "synthetic/compact-dot", "bf16", "teacher", [17, 53, 89], 0, "logits.f32"),
+            ("context", "synthetic/compact-dot", "fp16", "teacher", [17, 53, 90], 0, "logits.f32"),
+            ("workload", "synthetic/compact-dot", "fp16", "greedy", [17, 53, 89], 0, "logits.f32"),
+            ("position", "synthetic/compact-dot", "fp16", "teacher", [17, 53, 89], 1, "logits.f32"),
+            ("payload", "synthetic/compact-dot", "fp16", "teacher", [17, 53, 89], 0, "layers.f32"),
+        ):
+            rejection(ev, "substituted-" + name, lambda case=case, mode=mode, workload=workload,
+                      contexts=contexts, position=position, payload=payload:
+                      context_validator.replay_context(
+                          vector, case, mode, workload, contexts, position, payload, "<f4", 151936),
+                      "replay case/mode/context substituted" if name in
+                      ("case", "mode", "context", "workload") else
+                      "replay numerical vector substituted/reordered")
+        resolver.close(False)
         for defect, diagnostic in (
             ("altered", "replayed payload/ordered observation differs"),
             ("truncated", "truncated replay vector"),
@@ -300,6 +334,19 @@ def main():
         finally:
             for process in bad:
                 process.abort()
+        bad = []
+        try:
+            bad.append(origin(ev, executable, tokens, "bf16", "observation"))
+            bad.append(origin(ev, executable, tokens, "bf16", "repeat", "repeat-only"))
+            for process in bad:
+                process.next()
+            rejection(ev, "independent-repeat-payload", lambda: compare_window(
+                ROOT, ev, *bad, None, "bf16", "repeat-corruption"), "nondeterministic output")
+        finally:
+            for process in bad:
+                process.abort()
+        from benchmark_fixtures import library_entrypoint_check
+        require(library_entrypoint_check(ROOT, ev), "benchmark library entrypoint regressed")
         passed = True
     except (ValueError, OSError, KeyError, ImportError) as error:
         ev.assertion("streaming_replay_regression_failure", False, diagnostic=str(error))

@@ -1043,15 +1043,16 @@ def teacher_trace_check(root, ev):
         path = directory / str(index)
         with path.open("x") as stream:
             stream.write(NOTICE)
-        files.append(path)
+        files.append(dict(path=str(path.relative_to(root)), sha256=sha(path)))
     bindings = {"fixture_notice": NOTICE}
     runs = [
         dict(backend="iverilog", top="anvil_q1_fp_top",
-             dimensions=DIMENSIONS.copy(), outputs=[index], stdout=index, stderr=index)
-        for index in range(3)]
+             dimensions=DIMENSIONS.copy(), outputs=[output], stdout=output, stderr=output)
+        for output in files]
     runs[2].update(arithmetic="ieee-fp64", independent_of_rtl=True,
                    weight_semantics="decoded-selected-stream",
-                   source_sha256={"fixture": "fixture"}, dependencies={"fixture": NOTICE})
+                   source_sha256={files[2]["path"]: files[2]["sha256"]},
+                   dependencies={"fixture": NOTICE})
     good = True
     for label, updates, accepted in (
         ("integers", {}, True),
@@ -1066,15 +1067,20 @@ def teacher_trace_check(root, ev):
         trace.update(updates)
         record = dict(case="fixture", mode="bf16", teacher_tokens_sha256="teacher",
                       prompt_tokens_sha256="prompt", stream_sha256="weights",
-                      trace=0, positions=[])
+                      trace=files[0], positions=[])
         results = dict(schema=1, purpose="full-model-execution",
                        dimensions=DIMENSIONS.copy(), bindings=bindings,
                        cases=[record] * 150, execution=0, repeat_execution=1,
                        reference_execution=2)
+        run_calls = []
+
+        def run(descriptor, bindings, purpose="full-model-execution", replay_role=None):
+            run_calls.append((descriptor, purpose, replay_role))
+            return runs[descriptor]
+
         holder = SimpleNamespace(
-            run=lambda descriptor, *args: runs[descriptor],
-            artifact=lambda descriptor: files[descriptor] if isinstance(descriptor, int)
-            else files[2],
+            run=run,
+            artifact=Validator(root, ev).artifact,
             document=lambda descriptor: trace, produced=lambda *args: None)
         cases = {"fixture": ("Math", dict(
             teacher_tokens={"sha256": "teacher"},
@@ -1091,6 +1097,12 @@ def teacher_trace_check(root, ev):
             "fixture_teacher_trace_" + label, diagnostic == expected,
             scope=NOTICE, trace=trace, diagnostic=diagnostic,
             expected_diagnostic=expected, numerical_arrays_evaluated=False) and good
+        good = ev.assertion(
+            "fixture_teacher_trace_roles_" + label,
+            run_calls == [(0, "full-model-execution", "observation"),
+                          (1, "full-model-execution", "repeat"),
+                          (2, "full-model-reference", "reference")],
+            scope=NOTICE, calls=run_calls) and good
     return good
 
 
@@ -1164,10 +1176,17 @@ def selected_weight_reference_check(root, ev):
                            dimensions=DIMENSIONS.copy(), bindings=bindings,
                            cases=[record] * 150, execution=0, repeat_execution=1,
                            reference_execution=2)
+            run_calls = []
+
+            def run(descriptor, bindings, purpose="full-model-execution", replay_role=None):
+                run_calls.append((descriptor, purpose, replay_role))
+                return runs[descriptor]
+
             holder = SimpleNamespace(
-                run=lambda descriptor, *args: runs[descriptor],
+                run=run,
                 artifact=validator.artifact, arrays=validator.arrays,
                 array_bytes=validator.array_bytes,
+                replay_context=validator.replay_context,
                 document=lambda descriptor: trace, produced=lambda *args: None)
             cases = {"fixture": ("Math", dict(
                 teacher_tokens={"sha256": "teacher"},
@@ -1189,6 +1208,12 @@ def selected_weight_reference_check(root, ev):
                 scope=NOTICE, expected_diagnostic=expected, diagnostic=diagnostic,
                 numerical_comparisons=len(validator.metrics),
                 input=str(path.relative_to(root)), sha256=sha(path)) and good
+            good = ev.assertion(
+                "fixture_selected_weight_roles_" + mode + "_" + label,
+                run_calls == [(0, "full-model-execution", "observation"),
+                              (1, "full-model-execution", "repeat"),
+                              (2, "full-model-reference", "reference")],
+                scope=NOTICE, calls=run_calls) and good
     return good
 
 
