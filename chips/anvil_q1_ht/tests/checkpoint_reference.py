@@ -104,11 +104,14 @@ struct DenseConversions {
         }
     }
 };
-int64_t dense_q16(uint16_t bits, unsigned format) {
-    static const DenseConversions table;
-    if (!table.valid[format - 1][bits])
-        throw std::runtime_error("invalid dense checkpoint weight");
-    return table.values[format - 1][bits];
+void span(uint64_t size, uint64_t offset, uint64_t bytes) {
+    if (offset > size || bytes > size - offset) throw std::runtime_error("tensor bounds");
+}
+uint16_t little16(const uint8_t* data) {
+    return uint16_t(data[0]) | (uint16_t(data[1]) << 8);
+}
+uint32_t little32(const uint8_t* data) {
+    return uint32_t(little16(data)) | (uint32_t(little16(data + 2)) << 16);
 }
 uint64_t word(const uint8_t* data, uint64_t size, uint64_t offset, unsigned width) {
     if (offset > size || width > size - offset) throw std::runtime_error("tensor bounds");
@@ -150,6 +153,12 @@ extern "C" int gemv(const uint8_t* data, uint64_t size, int format,
             format < 0 || format > 3 || !group || inputs % group)
             throw std::runtime_error("invalid reference GEMV geometry");
         if (format == 0 && outputs % 8) throw std::runtime_error("AWQ packed width");
+        span(size, w, uint64_t(inputs) * outputs * (format == 0 ? 1 : 4) / 2);
+        if (format == 0) {
+            span(size, z, uint64_t(inputs / group) * outputs / 2);
+            span(size, s, uint64_t(inputs / group) * outputs * 2);
+        }
+        if (bias_format >= 0) span(size, bias, uint64_t(outputs) * 2);
         const unsigned shifts[] = {0, 16, 4, 20, 8, 24, 12, 28};
         std::vector<__int128> sums(outputs, 0);
         if (bias_format >= 0) {
@@ -165,16 +174,16 @@ extern "C" int gemv(const uint8_t* data, uint64_t size, int format,
                 if (r % group == 0) {
                     for (unsigned c = 0; c < outputs; ++c) {
                         uint64_t packed_index = uint64_t(r / group) * (outputs / 8) + c / 8;
-                        zeros[c] = (word(data, size, z + 4 * packed_index, 4)
+                        zeros[c] = (little32(data + z + 4 * packed_index)
                                     >> shifts[c % 8]) & 15;
-                        scales[c] = q16(word(data, size,
-                                             s + 2 * (uint64_t(r / group) * outputs + c), 2),
+                        scales[c] = q16(little16(data +
+                                             s + 2 * (uint64_t(r / group) * outputs + c)),
                                         false, true);
                     }
                 }
                 for (unsigned c = 0; c < outputs; c += 8) {
-                    uint32_t packed = word(data, size,
-                                          w + 4 * (uint64_t(r) * (outputs / 8) + c / 8), 4);
+                    uint32_t packed = little32(data +
+                                          w + 4 * (uint64_t(r) * (outputs / 8) + c / 8));
                     for (unsigned lane = 0; lane < 8; ++lane) {
                         int64_t weight = (int((packed >> shifts[lane]) & 15) -
                                           int(zeros[c + lane])) * scales[c + lane];
@@ -183,10 +192,13 @@ extern "C" int gemv(const uint8_t* data, uint64_t size, int format,
                 }
             }
         } else {
+            static const DenseConversions table;
             for (unsigned c = 0; c < outputs; ++c)
                 for (unsigned r = 0; r < inputs; ++r) {
-                    uint16_t bits = word(data, size, w + 2 * (uint64_t(c) * inputs + r), 2);
-                    int64_t weight = dense_q16(bits, format);
+                    uint16_t bits = little16(data + w + 2 * (uint64_t(c) * inputs + r));
+                    if (!table.valid[format - 1][bits])
+                        throw std::runtime_error("invalid dense checkpoint weight");
+                    int64_t weight = table.values[format - 1][bits];
                     sums[c] += (__int128)activation[r] * weight;
                 }
         }

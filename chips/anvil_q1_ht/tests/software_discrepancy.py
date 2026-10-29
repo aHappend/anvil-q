@@ -4,11 +4,14 @@ This is a numerical-discrepancy measurement, not a published PyTorch/BF16-kernel
 accuracy claim. Both networks receive the same input-token trajectory; their
 attention histories and intermediate arithmetic remain independent. No tolerance
 or expected hardware result is changed by a nonzero software discrepancy.
+Complete transient FP64 vectors are compared in memory; per-vector hashes and
+metrics are retained instead of redundant tensor dumps.
 """
 
 import argparse
 import copy
 import ctypes
+import hashlib
 import json
 import math
 import mmap
@@ -64,29 +67,59 @@ extern "C" int floating_gemv(
             (format == 0 && outputs % 8) || bias_format < -1 || bias_format > 1)
             throw std::runtime_error("invalid floating GEMV geometry");
         const unsigned shifts[] = {0, 16, 4, 20, 8, 24, 12, 28};
-        for (unsigned c = 0; c < outputs; ++c) {
-            double total = 0;
+        span(size, w, uint64_t(inputs) * outputs * (format == 0 ? 1 : 4) / 2);
+        if (format == 0) {
+            span(size, z, uint64_t(inputs / group) * outputs / 2);
+            span(size, s, uint64_t(inputs / group) * outputs * 2);
+        }
+        if (bias_format >= 0) span(size, bias, uint64_t(outputs) * 2);
+        static const FloatingConversions table;
+        std::fill(result, result + outputs, 0.0);
+        if (format == 0) {
+            std::vector<double> scales(outputs);
+            std::vector<int> zeros(outputs);
             for (unsigned r = 0; r < inputs; ++r) {
-                double weight;
-                if (format == 0) {
-                    uint64_t packed = uint64_t(r) * (outputs / 8) + c / 8;
-                    uint64_t grouped = uint64_t(r / group) * (outputs / 8) + c / 8;
-                    int q = (word(data, size, w + 4 * packed, 4) >> shifts[c % 8]) & 15;
-                    int zero = (word(data, size, z + 4 * grouped, 4) >> shifts[c % 8]) & 15;
-                    double scale = floating(word(data, size,
-                        s + 2 * (uint64_t(r / group) * outputs + c), 2), false);
-                    if (scale < 0) throw std::runtime_error("negative floating AWQ scale");
-                    weight = (q - zero) * scale;
-                } else {
-                    weight = floating(word(data, size,
-                        w + 2 * (uint64_t(c) * inputs + r), 2), format == 1);
+                if (r % group == 0) {
+                    for (unsigned c = 0; c < outputs; c += 8) {
+                        uint32_t packed = little32(data + z +
+                            4 * (uint64_t(r / group) * (outputs / 8) + c / 8));
+                        for (unsigned lane = 0; lane < 8; ++lane) {
+                            zeros[c + lane] = (packed >> shifts[lane]) & 15;
+                            double scale = floating(little16(data + s +
+                                2 * (uint64_t(r / group) * outputs + c + lane)), false);
+                            if (scale < 0) throw std::runtime_error("negative floating AWQ scale");
+                            scales[c + lane] = scale;
+                        }
+                    }
                 }
-                total += activation[r] * weight;
+                // Interleave independent columns, retaining increasing-r reduction in each.
+                for (unsigned c = 0; c < outputs; c += 8) {
+                    uint32_t packed = little32(data + w +
+                        4 * (uint64_t(r) * (outputs / 8) + c / 8));
+                    for (unsigned lane = 0; lane < 8; ++lane) {
+                        int q = (packed >> shifts[lane]) & 15;
+                        double weight = (q - zeros[c + lane]) * scales[c + lane];
+                        result[c + lane] += activation[r] * weight;
+                    }
+                }
             }
+        } else {
+            unsigned mask = format == 1 ? 0x7f80 : 0x7c00;
+            for (unsigned c = 0; c < outputs; ++c) {
+                double total = 0;
+                for (unsigned r = 0; r < inputs; ++r) {
+                    uint16_t bits = little16(data + w + 2 * (uint64_t(c) * inputs + r));
+                    if ((bits & mask) == mask)
+                        throw std::runtime_error("nonfinite floating input");
+                    total += activation[r] * table.values[format == 1 ? 1 : 0][bits];
+                }
+                result[c] = total;
+            }
+        }
+        for (unsigned c = 0; c < outputs; ++c) {
             if (bias_format >= 0)
-                total += floating(word(data, size, bias + 2 * c, 2), bias_format == 1);
-            if (!std::isfinite(total)) throw std::runtime_error("nonfinite floating dot");
-            result[c] = total;
+                result[c] += floating(little16(data + bias + 2 * c), bias_format == 1);
+            if (!std::isfinite(result[c])) throw std::runtime_error("nonfinite floating dot");
         }
         return 0;
     } catch (const std::exception& e) {
@@ -547,13 +580,15 @@ def measure(evidence, manifest_path):
                 metrics = compare(fixed, floating)
                 if metrics["fixed_point_greedy_token"] != step["selected_token"]:
                     raise ValueError("integer reference token differs from complete logit argmax")
-                output = evidence.folder / f"{mode.lower()}-prompt{row['prompt_index']}-pos{position}-fp64.bin"
-                with output.open("xb") as stream:
-                    stream.write(struct.pack("<151936d", *floating))
-                evidence.record["runtime_input_sha256"].update({
-                    str(path): digest, evidence.relative(output): sha(output)})
+                # The complete vectors have just been compared; retain their identity,
+                # not another checkpoint-sized collection of disposable FP64 dumps.
+                floating_digest = hashlib.sha256(
+                    struct.pack("<151936d", *floating)).hexdigest()
+                evidence.record["runtime_input_sha256"][str(path)] = digest
                 metrics.update(position=position, input_token=step["input_token"],
-                               floating_logits=evidence.relative(output))
+                               floating_logits_sha256=floating_digest,
+                               floating_logits_encoding="151936 little-endian binary64 values",
+                               integer_logits_sha256=digest)
                 result["steps"].append(metrics)
                 print(json.dumps({"mode": mode, "prompt_index": row["prompt_index"],
                                   **{key: metrics[key] for key in

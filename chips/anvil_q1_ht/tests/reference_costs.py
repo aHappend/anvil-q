@@ -1,7 +1,7 @@
 """Bounded checkpoint cost diagnosis; never a reduced acceptance campaign.
 
 Run ``python3 -B tests/reference_costs.py``. Two consecutive real default-model
-tokens per mode expose initial checkpoint sampling and steady-state costs.
+prompt-prefix tokens per mode expose initial sampling and steady-state costs.
 All mandatory prompts, logits and decode lengths remain in the L1 entrypoint.
 """
 
@@ -11,6 +11,7 @@ import copy
 import cProfile
 import ctypes
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import pstats
@@ -110,6 +111,141 @@ def baseline_engine(engine, receipt, library_name, symbol):
     return result
 
 
+def original_module(receipt, filename):
+    record = json.loads(receipt.read_text())
+    snapshot = (project_path(record["original_evaluator_snapshots"][filename])
+                if "original_evaluator_snapshots" in record else
+                receipt.parent / "sources" / "tests" / filename)
+    if sha(snapshot) != record.get("original_source_sha256", record["source_sha256"])[
+            "tests/" + filename]:
+        raise ValueError("original evaluator snapshot has changed")
+    spec = importlib.util.spec_from_file_location("cost_original_" + filename[:-3], snapshot)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def generate_original(evidence, source_receipt, metadata, root):
+    """Rebuild missing diagnostic prerequisites from bound original test sources."""
+    from verify import Evidence
+    source_path = project_path(source_receipt)
+    record = json.loads(source_path.read_text())
+    baseline = Evidence("reference-original-baseline", repair_of=str(source_path))
+    evidence.record["original_baseline_child"] = baseline.relative(baseline.folder / "receipt.json")
+    evidence.flush()
+    try:
+        baseline.record["original_source_sha256"] = record["source_sha256"]
+        baseline.record["original_source_receipt_sha256"] = sha(source_path)
+        baseline.record["original_evaluator_snapshots"] = {}
+        for name in ("checkpoint_reference.py", "software_discrepancy.py"):
+            path = source_path.parent / "sources/tests" / name
+            payload = path.read_bytes()
+            if hashlib.sha256(payload).hexdigest() != record["source_sha256"]["tests/" + name]:
+                raise ValueError("original evaluator source snapshot changed")
+            output = baseline.folder / ("original-" + name)
+            with output.open("xb") as stream:
+                stream.write(payload)
+            baseline.record["original_evaluator_snapshots"][name] = baseline.relative(output)
+        for name in ("reference.py", "fixtures.py", "repack.py", "prompts.py"):
+            if record["source_sha256"]["tests/" + name] != sha(Path("tests") / name):
+                raise ValueError("original evaluator dependency changed")
+        for mode, model in metadata["models"].items():
+            baseline.record.setdefault("runtime_input_sha256", {}).update({
+                str(root / mode.lower() / name): item["sha256"]
+                for name, item in model["files"].items()})
+        baseline.flush()
+        receipt = baseline.folder / "receipt.json"
+        integer_module = original_module(receipt, "checkpoint_reference.py")
+        # Resolve the original floating evaluator's sibling import to its bound
+        # original integer module while loading, not to the optimized CPP string.
+        current = sys.modules["checkpoint_reference"]
+        try:
+            sys.modules["checkpoint_reference"] = integer_module
+            float_module = original_module(receipt, "software_discrepancy.py")
+        finally:
+            sys.modules["checkpoint_reference"] = current
+        integer = integer_module.IntegerGEMV(baseline)
+        floating = float_module.FloatingGEMV(baseline)
+        baseline.record["integer_qualification"] = integer_module.qualify(integer, 17)
+        baseline.record["floating_qualification"] = float_module.qualify(floating, 17)
+        baseline.finish("probe_passed", "Fresh original evaluator prerequisite only; "
+                        "does not restore missing historical evidence or accept the product.")
+        return baseline.relative(receipt)
+    except Exception as exc:
+        baseline.finish("probe_failed", f"{type(exc).__name__}: {exc}")
+        raise
+
+
+def audit_reference(evidence, receipt_path, baseline, metadata, root):
+    """Bind earlier completed vectors for diagnosis, never reuse them as a pass."""
+    path = project_path(receipt_path)
+    record = json.loads(path.read_text())
+    if record.get("outcome") != "probe_passed":
+        raise ValueError("diagnostic reference producer did not complete")
+    for name in ("checkpoint_reference.py", "reference.py", "fixtures.py",
+                 "repack.py", "prompts.py"):
+        key = "tests/" + name
+        if record["source_sha256"].get(key) != baseline.get(
+                "original_source_sha256", baseline["source_sha256"]).get(key):
+            raise ValueError("earlier reference is not bound to the original evaluator")
+    bindings = record["runtime_input_sha256"]
+    for mode, model in metadata["models"].items():
+        for name, item in model["files"].items():
+            if bindings.get(str(root / mode.lower() / name)) != item["sha256"]:
+                raise ValueError("earlier reference checkpoint differs from validated fixture")
+    manifest_path = path.parent / "checkpoint-reference.json"
+    if bindings.get(str(manifest_path)) != sha(manifest_path):
+        raise ValueError("earlier reference manifest hash changed")
+    transcript = json.loads(manifest_path.read_text())
+    from software_discrepancy import validate_trajectory
+    validate_trajectory(transcript)
+    counts = {}
+    seconds = []
+    for row in transcript["rows"]:
+        counts[row["mode"]] = counts.get(row["mode"], 0) + len(row["steps"])
+        for step in row["steps"]:
+            vector_path = project_path(step["ordered_logits"])
+            payload = vector_path.read_bytes()
+            digest = hashlib.sha256(payload).hexdigest()
+            if (len(payload) != 151936 * 4 or digest != step["logits_sha256"] or
+                    bindings.get(str(vector_path)) != digest):
+                raise ValueError("earlier complete reference vector binding changed")
+            values = struct.unpack("<151936i", payload)
+            if max(range(len(values)), key=lambda i: (values[i], -i)) != step["selected_token"]:
+                raise ValueError("earlier reference selected token differs from ordered logits")
+            seconds.append(step["reference_wall_seconds_not_FPGA_performance"])
+    evidence.record["earlier_reference_diagnosis"] = {
+        "receipt": str(path), "receipt_sha256": sha(path),
+        "source_and_fixture_bindings_checked_against_original": True,
+        "ordered_vectors_hash_and_argmax_checked": counts,
+        "sum_recorded_token_wall_seconds": sum(seconds),
+        "scope": "historical_cost_diagnosis_only_not_current_reference_reuse_or_campaign_success"}
+    evidence.flush()
+
+
+class RecordedGEMV:
+    """Compare every transient dot result without retaining tensor dumps."""
+
+    def __init__(self, engine):
+        self.engine, self.calls = engine, []
+
+    def evaluate(self, pointer, size, format_id, activation, outputs, group, offsets,
+                 bias_format=-1):
+        result = self.engine.evaluate(pointer, size, format_id, activation, outputs,
+                                      group, offsets, bias_format)
+        integer = isinstance(result, tuple)
+        payload = struct.pack(f"<{len(activation)}{'i' if integer else 'd'}", *activation)
+        if integer:
+            rounded, exact = result
+            payload += struct.pack(f"<{len(rounded)}i", *rounded)
+            payload += b"".join(value.to_bytes(16, "little", signed=True) for value in exact)
+        else:
+            payload += struct.pack(f"<{len(result)}d", *result)
+        self.calls.append((format_id, outputs, group, tuple(offsets), bias_format,
+                           hashlib.sha256(payload).hexdigest()))
+        return result
+
+
 def dispatch_audit(evidence):
     rows = []
     for path in sorted(Path("tests").glob("*.py")):
@@ -145,10 +281,13 @@ def dispatch_audit(evidence):
     evidence.flush()
 
 
-def worker(evidence, compare_to=None):
+def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=None,
+           original_source_receipt=None):
     dispatch_audit(evidence)
     root = project_path("fixtures/qwen2.5-0.5b")
     metadata, _ = profiled(evidence, "fixture-validation", lambda: validate(root))
+    if original_source_receipt:
+        compare_to = generate_original(evidence, original_source_receipt, metadata, root)
     workload = []
     for mode in ("AWQ", "BF16"):
         folder = root / mode.lower()
@@ -187,42 +326,79 @@ def worker(evidence, compare_to=None):
         evidence.record["runtime_input_sha256"][str(baseline)] = sha(baseline)
         old_integer = baseline_engine(integer, baseline, "integer-gemv.so", "gemv")
         old_float = baseline_engine(floating, baseline, "floating-gemv.so", "floating_gemv")
+        original_sources = record.get("original_source_sha256", record["source_sha256"])
+        for mode, model in metadata["models"].items():
+            for name, item in model["files"].items():
+                if record["runtime_input_sha256"].get(str(root / mode.lower() / name)) != item["sha256"]:
+                    raise ValueError("original evaluator used a different checkpoint")
+        for name in ("reference.py", "fixtures.py", "repack.py", "prompts.py"):
+            if original_sources["tests/" + name] != sha(Path("tests") / name):
+                raise ValueError("baseline numerical dependency changed")
+        original_integer = original_module(baseline, "checkpoint_reference.py")
+        original_float = original_module(baseline, "software_discrepancy.py")
+        evidence.record["original_implementation_comparison"] = {
+            "receipt": str(baseline), "fixture_bindings_checked": True,
+            "snapshot_modules_checked": ["checkpoint_reference.py", "software_discrepancy.py"],
+            "scope": "original Python model classes and original compiled numerical libraries"}
+        if reference_diagnosis:
+            audit_reference(evidence, reference_diagnosis, record, metadata, root)
+    elif reference_diagnosis:
+        raise ValueError("earlier reference diagnosis requires the original evaluator receipt")
     rows = []
     for mode in ("AWQ", "BF16"):
-        fixed_model = CheckpointModel(root, metadata["models"][mode], mode, integer)
-        float_model = FloatingModel(root, metadata["models"][mode], mode, floating)
-        old_fixed_model = (CheckpointModel(root, metadata["models"][mode], mode, old_integer)
+        folder = root / mode.lower()
+        tokenizer = FrozenTokenizer(json.loads((folder / "tokenizer.json").read_text()),
+                                    json.loads((folder / "tokenizer_config.json").read_text()))
+        prefix = tokenizer.encode(canonical_chat(PROMPTS[0]), merge_heap)[:2]
+        if len(prefix) != 2:
+            raise AssertionError("checkpoint cost probe requires two real prompt-prefix tokens")
+        new_int, new_float = RecordedGEMV(integer), RecordedGEMV(floating)
+        old_int = RecordedGEMV(old_integer) if baseline else None
+        old_floating_engine = RecordedGEMV(old_float) if baseline else None
+        fixed_model = CheckpointModel(root, metadata["models"][mode], mode, new_int)
+        float_model = FloatingModel(root, metadata["models"][mode], mode, new_float)
+        old_fixed_model = (original_integer.CheckpointModel(
+                           root, metadata["models"][mode], mode, old_int)
                            if baseline else None)
-        old_float_model = (FloatingModel(root, metadata["models"][mode], mode, old_float)
+        old_float_model = (original_float.FloatingModel(
+                           root, metadata["models"][mode], mode, old_floating_engine)
                            if baseline else None)
         try:
-            for position in range(2):
+            for position, input_token in enumerate(prefix):
                 fixed, integer_profile = profiled(
                     evidence, f"{mode.lower()}-integer-{position}",
-                    lambda: fixed_model.token(151644, position, position == 0))
+                    lambda: fixed_model.token(input_token, position, position == 0))
                 floating_values, float_profile = profiled(
                     evidence, f"{mode.lower()}-floating-{position}",
-                    lambda: float_model.token(151644, position))
+                    lambda: float_model.token(input_token, position))
                 if baseline:
                     old_fixed, old_integer_profile = profiled(
                         evidence, f"{mode.lower()}-baseline-integer-{position}",
-                        lambda: old_fixed_model.token(151644, position, position == 0))
+                        lambda: old_fixed_model.token(input_token, position, position == 0))
                     old_floating, old_float_profile = profiled(
                         evidence, f"{mode.lower()}-baseline-floating-{position}",
-                        lambda: old_float_model.token(151644, position))
+                        lambda: old_float_model.token(input_token, position))
                     if (fixed != old_fixed or fixed_model.last_writes != old_fixed_model.last_writes
                             or fixed_model.history != old_fixed_model.history or
                             struct.pack("<151936d", *floating_values) !=
-                            struct.pack("<151936d", *old_floating)):
+                            struct.pack("<151936d", *old_floating) or
+                            float_model.history != old_float_model.history or
+                            new_int.calls != old_int.calls or
+                            new_float.calls != old_floating_engine.calls):
                         raise AssertionError("conversion repair changed logits, scratch writes or KV")
+                    if compare(fixed, floating_values) != original_float.compare(old_fixed, old_floating):
+                        raise AssertionError("optimization changed software discrepancy metrics")
                     evidence.record["observations"].append({
-                        "mode": mode, "position": position,
+                        "mode": mode, "position": position, "input_token": input_token,
                         "ordered_integer_and_FP64_logits_compared_each": len(fixed),
                         "scratch_writes_compared": len(fixed_model.last_writes),
                         "all_layer_KV_history_equal": True,
+                        "all_ordered_GEMV_inputs_results_and_exact_accumulators_equal": True,
+                        "integer_GEMV_calls_compared": len(new_int.calls),
+                        "floating_GEMV_calls_compared": len(new_float.calls),
                         "baseline_integer_seconds": old_integer_profile["wall_seconds"],
                         "baseline_floating_seconds": old_float_profile["wall_seconds"],
-                        "scope": "baseline libraries on identical current equations; "
+                        "scope": "original snapshot equations and original libraries; "
                                  "memoized scalars separately qualified against uncached equations"})
                 metrics, metrics_profile = profiled(
                     evidence, f"{mode.lower()}-discrepancy-{position}",
@@ -242,14 +418,17 @@ def worker(evidence, compare_to=None):
 
                 digest, io_profile = profiled(
                     evidence, f"{mode.lower()}-evidence-io-{position}", retain)
-                if baseline:
+                # The earlier cost diagnostic used token151644 twice; only its
+                # first saved fingerprint has this same prompt-prefix identity.
+                if baseline and position == 0 and "cost_diagnosis" in record:
                     previous = [row for row in record["cost_diagnosis"]["rows"]
                                 if row["mode"] == mode and row["position"] == position]
                     if len(previous) != 1 or previous[0]["logits_sha256"] != digest:
                         raise AssertionError("fresh logits differ from original uncached baseline")
                 functions = integer_profile["functions"]
                 rows.append({
-                    "mode": mode, "position": position, "logits_sha256": digest,
+                    "mode": mode, "position": position, "input_token": input_token,
+                    "logits_sha256": digest,
                     "integer_token_seconds": integer_profile["wall_seconds"],
                     "floating_token_seconds": float_profile["wall_seconds"],
                     "discrepancy_metrics_seconds": metrics_profile["wall_seconds"],
@@ -264,6 +443,11 @@ def worker(evidence, compare_to=None):
                         row["own_seconds"] for row in functions if row["file"] == "reference.py"),
                     "checkpoint_coordinate_comparisons": fixed_model.sample_comparisons,
                     "metrics": metrics})
+                new_int.calls.clear()
+                new_float.calls.clear()
+                if baseline:
+                    old_int.calls.clear()
+                    old_floating_engine.calls.clear()
         finally:
             fixed_model.close()
             float_model.close()
@@ -275,6 +459,28 @@ def worker(evidence, compare_to=None):
         "profile_overhead_included": True, "rows": rows,
         "categories": "profiles retain inclusive and self times; categories are not additive"}
     evidence.flush()
+    if measure_smoke:
+        from software_discrepancy import prepare_and_measure
+        _, profile = profiled(
+            evidence, "fresh-reference-and-measure-smoke",
+            lambda: prepare_and_measure(evidence, smoke=True))
+        report_path = evidence.folder / "software-discrepancy.json"
+        report = json.loads(report_path.read_text())
+        if report["summary"]["vectors_compared"] != 2:
+            raise AssertionError("measurement smoke omitted a checkpoint mode")
+        for row in report["rows"]:
+            step, = row["steps"]
+            original, = [item for item in rows
+                         if item["mode"] == row["mode"] and item["position"] == 0]
+            if any(step[key] != value for key, value in original["metrics"].items()):
+                raise AssertionError("streamed measurement changed complete-vector metrics")
+        if list(evidence.folder.glob("*-fp64.bin")):
+            raise AssertionError("measurement unnecessarily dumped transient floating vectors")
+        evidence.record["measurement_streaming_diagnosis"] = {
+            "wall_seconds": profile["wall_seconds"], "complete_vectors_compared": 2,
+            "original_metric_comparisons_equal": True, "transient_FP64_dumps": 0,
+            "report": evidence.relative(report_path)}
+        evidence.flush()
 
 
 def main():
@@ -283,16 +489,31 @@ def main():
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--repair-of", default=PREDECESSOR)
     parser.add_argument("--compare-to", help="completed project-relative pre-repair cost receipt")
+    parser.add_argument("--original-source-receipt",
+                        help="generate original evaluator prerequisites from bound source snapshots")
     parser.add_argument("--simulation-checks", action="store_true",
                         help="also retain compact dual-simulator and numerical-leaf checks")
+    parser.add_argument("--measure-smoke", action="store_true",
+                        help="also profile fresh-reference/measurement plumbing in both modes")
+    parser.add_argument("--reference-diagnosis",
+                        help="bind a completed original reference receipt for cost diagnosis only")
     args = parser.parse_args()
+    if args.compare_to and args.original_source_receipt:
+        parser.error("select an original cost receipt or original source receipt, not both")
     evidence = Evidence("reference-costs-worker" if args.worker else "reference-costs",
                         repair_of=args.repair_of)
     try:
         if args.worker:
-            worker(evidence, args.compare_to)
+            worker(evidence, args.compare_to, args.measure_smoke, args.reference_diagnosis,
+                   args.original_source_receipt)
         else:
             options = ["--compare-to", args.compare_to] if args.compare_to else []
+            if args.measure_smoke:
+                options.append("--measure-smoke")
+            if args.reference_diagnosis:
+                options += ["--reference-diagnosis", args.reference_diagnosis]
+            if args.original_source_receipt:
+                options += ["--original-source-receipt", args.original_source_receipt]
             text = evidence.command(
                 ["python3", "-B", "tests/reference_costs.py", "--worker",
                  "--repair-of", args.repair_of, *options], "bounded-reference-costs", timeout=3600)
