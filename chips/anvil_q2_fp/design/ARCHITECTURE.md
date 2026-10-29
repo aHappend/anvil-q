@@ -95,9 +95,13 @@ single-command registered FP32 unit. The selected sum and bias are captured
 before arithmetic; ordering/classification, exponent distance, sticky alignment,
 add/subtract, normalization distance, normalization, RNE increment and result
 packing occupy separate clocks. The bank holds its row index until the
-adder response and writes back only a finite result. This removes the
-reported `element[1]` to `sums[1][28:29]` cone that combined indexed selection,
-the entire FP32 add and indexed writeback. All eight final sums, tail masking,
+adder response and writes back only a finite result. At command acceptance
+it also registers an eight-bit one-hot writeback destination. Constant-index
+sum updates use that registered destination, rather than decoding `element`
+again on the completion edge. Quartus `preserve`/`dont_merge` attributes retain
+this destination boundary through register optimization. This separates the
+reported `element[1]` to `sums[1][28:29]` control path as well as splitting
+indexed operand selection from the FP32 arithmetic. All eight final sums, tail masking,
 bias-once semantics and memory coordinates remain unchanged. The added latency
 is outside the tensor lane: its three captures and one-beat initiation interval
 are unchanged. Both direct decoder and MLP GEMV instances use this controller.

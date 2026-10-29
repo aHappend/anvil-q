@@ -29,6 +29,7 @@ module anvil_q2_fp_gemv_bank #(
   reg [31:0] layer, position, column, row_base, inputs, outputs;
   reg [31:0] source_slot, target_slot, group_index, group_offset;
   reg [2:0] projection, element;
+  (* preserve, dont_merge *) reg [7:0] bias_destination;
   reg [31:0] qweight, qzero, activation32, bias32;
   reg [15:0] activation16, scales [0:7], weights [0:7];
   reg [31:0] sums [0:7];
@@ -116,6 +117,7 @@ module anvil_q2_fp_gemv_bank #(
       state<=IDLE; failed<=0; layer<=0; position<=0; column<=0; row_base<=0;
       inputs<=0; outputs<=0; source_slot<=0; target_slot<=0; group_index<=0;
       group_offset<=0; projection<=0; element<=0; qweight<=0; qzero<=0;
+      bias_destination<=0;
       activation32<=0; activation16<=0; bias32<=0;
       for (i=0;i<8;i=i+1) begin scales[i]<=0; weights[i]<=0; sums[i]<=0; end
     end else if (fault) begin failed<=1; state<=OUTPUT; end
@@ -216,11 +218,15 @@ module anvil_q2_fp_gemv_bank #(
           failed<=1; state<=OUTPUT;
         end else begin bias32<=expand16(read_data[15:0],FP_FORMAT); state<=BIAS_ADD; end
       end
-      BIAS_ADD: if (bias_ready) state<=BIAS_ADD_WAIT;
+      BIAS_ADD: if (bias_ready) begin
+        bias_destination<=8'b00000001 << element;
+        state<=BIAS_ADD_WAIT;
+      end
       BIAS_ADD_WAIT: if (bias_valid) begin
         if (bias_error) begin failed<=1; state<=OUTPUT; end
         else begin
-          sums[element]<=bias_sum;
+          for (i=0;i<8;i=i+1)
+            if (bias_destination[i]) sums[i]<=bias_sum;
           if (element==7 || row_base+{29'd0,element}+1>=outputs) begin
             element<=0; state<=WRITE_REQ;
           end else begin element<=element+1'b1; state<=BIAS_REQ; end
