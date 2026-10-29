@@ -15,6 +15,51 @@ from retained import ROOT, Run
 
 FAILED = ("evidence/l1/l1-behavior-20261029T003431Z-3f57e4ba/children/"
           "verifier-token-fp-fp16-w0-c0-b1-s17-20261029T003603Z-167c8adb")
+REPAIR_OF = "evidence/preparation/build-storage-capacity-20261029T032819Z-2466bfed/receipt.json"
+
+
+def capacity_summary(references, checks, available):
+    missing = sorted(set(checks) - set(references))
+    raw = sum(r.get("raw_stream_bytes", 0) for r in references.values())
+    full = sum(r["allocated_bytes"] for r in references.values())
+    return dict(
+        available_bytes=available,
+        historical_reference_status="incomplete" if missing else "complete",
+        missing_historical_checks=missing,
+        observed_partial_reference_raw_stream_bytes=raw,
+        observed_partial_reference_artifact_bytes=full,
+        observed_raw_stream_bytes=None if missing else raw,
+        raw_stream_shortfall_bytes=None if missing else max(0, raw - available),
+        observed_complete_artifact_bytes=None if missing else full,
+        complete_artifact_shortfall_bytes=None if missing else max(0, full - available),
+        future_capacity_sufficiency="unknown",
+        user_quota_sufficiency="unknown")
+
+
+def self_check():
+    checks = ("behavior", "synthesis")
+    row = dict(raw_stream_bytes=5, allocated_bytes=12)
+    absent = capacity_summary({}, checks, 100)
+    partial = capacity_summary({"synthesis": row}, checks, 100)
+    complete = capacity_summary(dict.fromkeys(checks, row), checks, 7)
+    for result in (absent, partial):
+        assert result["historical_reference_status"] == "incomplete"
+        for field in ("observed_raw_stream_bytes", "raw_stream_shortfall_bytes",
+                      "observed_complete_artifact_bytes", "complete_artifact_shortfall_bytes"):
+            assert result[field] is None, f"missing history must remain unknown: {field}"
+    assert absent["missing_historical_checks"] == ["behavior", "synthesis"]
+    assert partial["missing_historical_checks"] == ["behavior"]
+    assert partial["observed_partial_reference_raw_stream_bytes"] == 5
+    assert partial["observed_partial_reference_artifact_bytes"] == 12
+    assert complete["historical_reference_status"] == "complete"
+    assert complete["observed_raw_stream_bytes"] == 10
+    assert complete["raw_stream_shortfall_bytes"] == 3
+    assert complete["observed_complete_artifact_bytes"] == 24
+    assert complete["complete_artifact_shortfall_bytes"] == 17
+    for result in (absent, partial, complete):
+        assert result["future_capacity_sufficiency"] == "unknown"
+        assert result["user_quota_sufficiency"] == "unknown"
+    print(json.dumps(dict(compared_cases=3, scope="capacity reporting fixtures only")))
 
 
 def inventory():
@@ -117,10 +162,8 @@ def assessment(name):
             # Use the latest retained campaign, not an older smaller checkout
             # or a historical directory with fewer surviving artifacts.
             lower_bounds[check] = max(rows, key=lambda r: r["path"])
-    assert set(lower_bounds) == set(checks), "missing historical capacity reference"
     available = data["filesystem"]["available_bytes"]
-    raw_requirement = sum(r["raw_stream_bytes"] for r in lower_bounds.values())
-    full_requirement = sum(r["allocated_bytes"] for r in lower_bounds.values())
+    capacity = capacity_summary(lower_bounds, checks, available)
     failed_receipt = json.loads((ROOT / FAILED / "receipt.json").read_text())
     nonowned = {p: h for p, h in failed_receipt["source_sha256"].items()
                 if p.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
@@ -132,11 +175,7 @@ def assessment(name):
         inventory=name, unchanged_mandatory_job_counts=job_counts,
         historical_campaigns=campaigns, comparable_fp16_builds=comparable_builds,
         reference_campaigns=lower_bounds,
-        capacity=dict(available_bytes=available,
-                      observed_raw_stream_bytes=raw_requirement,
-                      raw_stream_shortfall_bytes=max(0, raw_requirement - available),
-                      observed_complete_artifact_bytes=full_requirement,
-                      complete_artifact_shortfall_bytes=max(0, full_requirement - available)),
+        capacity=capacity,
         preserved_nonowned_sources=len(nonowned),
         original_failure=FAILED + "/receipt.json",
         limitations=[
@@ -145,13 +184,19 @@ def assessment(name):
             "Raw-stream lower estimate excludes all binaries, fixtures and compiler scratch.",
             "Retained compiler-directory amplification is measured, transient peak is unknown.",
             "Hardware/Quartus storage is additional and is not included.",
+            "Missing historical checks make complete estimates and shortfalls unknown (null).",
+            "Partial-reference sums describe retained observations only, not required capacity.",
+            "Available bytes and historical observations do not establish future capacity or quota.",
         ]), indent=2))
 
 
 def execute():
     run = Run("build-storage-capacity", root="evidence/preparation")
+    run.receipt["repair_of"] = REPAIR_OF
     try:
         run.command(["python3", "--version"], "python-version")
+        run.command(["python3", "tests/build_storage_checks.py", "--self-check"],
+                    "capacity-reporting-fixtures")
         for tool, args in (
                 ("df", ["-P", "-B1", "."]), ("df", ["-Pi", "."]),
                 ("findmnt", ["--json", "-T", ".", "-o", "TARGET,SOURCE,FSTYPE,OPTIONS"])):
@@ -194,8 +239,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", action="store_true")
     parser.add_argument("--assessment")
+    parser.add_argument("--self-check", action="store_true")
     args = parser.parse_args()
-    if args.inventory:
+    if args.self_check:
+        self_check()
+    elif args.inventory:
         inventory()
     elif args.assessment:
         assessment(args.assessment)
