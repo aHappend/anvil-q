@@ -508,7 +508,7 @@ class Evidence:
                         ["verilator", *compile_options,
                          "--Mdir", self.relative(object_dir), "-o", "simulation",
                          *sources, self.relative(compiled_source),
-                         *([str(driver_source.resolve())] if driver_source is not None else [])],
+                         *(["../clock-driver.cpp"] if driver_source is not None else [])],
                         name + "-compile",
                     )
                     binary = object_dir / "simulation"
@@ -1021,7 +1021,8 @@ def main():
     evidence = Evidence(
         label, preparation=args.probe is not None,
         parent_budget_s=2700 if args.probe in (
-            "official-qwen-shell-general-bypass", "deepseek-shell-compact") else None,
+            "official-qwen-shell-general-bypass", "deepseek-shell-compact",
+            "shell-driver-comparison", "shell-driver-scaling") else None,
     )
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
     try:

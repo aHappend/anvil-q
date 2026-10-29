@@ -9,7 +9,6 @@ import copy
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 
 from deepseek_shell import measure
@@ -84,7 +83,7 @@ def controls(evidence, baseline, family):
                 "%Error:" in output,
                 f"Clock-driver monitor did not reject {family}/{name}")
         mismatches = [line[line.index(assertion):] for line in output.splitlines()
-                      if "%Error:" in line and assertion in line]
+                      if "Assertion failed" in line and assertion in line]
         require(len(mismatches) == 1, "Expected exactly one original rejection assertion")
         results.append({"fault": name, "assertion": assertion, "mismatch": mismatches[0],
                         "trace": observable_trace(child, prefix), "simulation": child,
@@ -137,7 +136,10 @@ def pair(evidence, info, family, seeds, transports, general_only, reject):
                 })
         else:
             measurements = measure(evidence, info, rows, prefix)
-        rejected = controls(scope, rows[transports.index(1)], family) if reject else []
+        baseline = next((row for row in rows if row["name"].endswith("-b1-s17")), None)
+        if reject:
+            require(baseline is not None, "Rejection controls require seed17/bypass baseline")
+        rejected = controls(scope, baseline, family) if reject else []
         observations[driver] = {"measurements": measurements, "controls": rejected,
                                 "rows": rows}
         save(evidence.path / f"{family}-{driver}-measurements.json",
