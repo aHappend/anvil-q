@@ -59,6 +59,9 @@ must not alter any legal configuration.
 | Decoder scalar buffer empty | selected engine request valid && local ready | register complete request after six-engine mux; earliest downstream acceptance at next edge |
 | Decoder scalar buffer full | downstream valid && ready | retire once, without same-edge refill; otherwise hold valid and every payload bit |
 | Decoder scalar buffer reset/cancel | numerical core reset asserted | clear occupancy and payload; scheduler-owned requests remain subject to parent draining |
+| Decoder bank buffer empty | selected GEMV/MLP bank request valid && local ready | capture complete request independently per bank; earliest scheduler acceptance at next edge |
+| Decoder bank buffer full | downstream valid && ready for that bank | retire once without same-edge refill; otherwise hold valid and complete payload independently of other banks |
+| Decoder bank buffer reset/cancel | numerical core reset asserted | clear occupancy and payload for every bank; scheduler still drains previously accepted tags, including flush-edge held transfers |
 | Lane first && last | accepted singleton beat | reset logical accumulator to +0, add this product once, emit last=1 |
 | Lane first reaches S3 | ready3 && v2 && first2 | select the rounded product after the ordinary accumulation cone; canonicalize either product zero to +0, exactly matching RNE(+0 + product) |
 | Lane bubble | !in_valid or !in_ready | no arithmetic/accumulator update for that beat |
@@ -113,7 +116,7 @@ request fields together and holds them until scheduler acceptance. Responses
 return through the existing muxes without an added register. This adds one
 unstalled request cycle, not an arithmetic stage or a change to the public
 memory ABI. BANKS projection clients bypass this scalar-only buffer and retain
-independent scheduler access.
+independent scheduler access through the decoder's per-bank buffers below.
 
 Attention additionally registers its complete scalar request immediately after
 its local cache/scratch mux, before the decoder and top muxes. This one-entry,
@@ -129,8 +132,22 @@ before the top mux. It uses the same one-entry, non-fall-through semantics,
 adding one unstalled cycle per decoder scalar request. The selected engine
 continues waiting for the actual memory response, so routing cannot change
 while this buffer owns a request. Responses are not registered here; independent
-GEMV bank traffic does not traverse this buffer. Reset clears all its outputs
+GEMV bank traffic does not traverse this scalar buffer. Reset clears all its outputs
 and integrated cancellation annuls only requests not yet scheduler-owned.
+
+Each decoder bank route has its own one-entry registered request buffer after
+the GEMV/MLP mux and before scheduler ingress. Local readiness depends only on
+that buffer being empty, with no downstream ready look-through or same-edge
+refill. Capture adds one unstalled request cycle; it is not a memory
+acknowledgement. Each complete payload remains stable until that bank's
+downstream acceptance. Responses use the unchanged route, and the originating
+controller waits for the real response before completing. Thus engine
+selection cannot advance while a buffered request owns traffic. All BANKS
+buffers can hold or transfer requests independently; they do not impose a
+global outstanding-transaction limit. Numerical-core reset clears their
+occupancy and payload, while accepted scheduler traffic retains parent
+flush/drain semantics. The registered six-engine selector is three bits,
+zero-extended at the unchanged 32-bit bus-mux interface.
 
 Required source hierarchy:
 

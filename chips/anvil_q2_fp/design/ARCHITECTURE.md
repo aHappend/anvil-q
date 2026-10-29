@@ -124,6 +124,31 @@ STA report was unavailable during this repair. Neither the speculative
 arithmetic nor the new decoder boundary establishes timing closure without
 fresh shared-runtime post-fit STA. No timing exception or waiver is introduced.
 
+The subsequent retained -0.761 ns setup failure launches from decoder
+`selected[29]` and ends at scheduler `tag` registers. The external GEMV/MLP
+bank routes, unlike the scalar path, still combined engine selection and
+scheduler ingress arbitration in one cycle. Each bank route now captures its
+complete request in a preserved one-entry register immediately after its
+two-engine mux. Scheduler ingress sees registered occupancy and payload,
+not the decoder selector through a combinational request-valid path.
+Empty-buffer readiness has no scheduler-ready look-through; a full buffer
+holds its payload until acceptance and clears without same-edge refill.
+Buffers are independent for BANKS=1/2/4, retaining parallel bank ownership.
+
+The six-engine selector and its next value are now three bits rather than
+32 preserved bits, eliminating unused high selector state, including bit 29.
+The parent bus mux still receives a 32-bit selector with explicit zero
+extension. Engine/projection/mode registration and step timing are unchanged.
+Responses retain the existing selection, since a GEMV bank waits for its
+actual response before completing and permitting a decoder step transition.
+Reset/cancellation clears all local buffers; the unchanged scheduler remains
+responsible for accepted tags and flush-edge transfers. This adds one
+unstalled request cycle per external decoder bank transaction, not a lane
+stage, arithmetic reassociation or global serialization. Independent Verifier
+must exercise both GEMV and MLP routing, independent stalls, faults and
+cancellation with buffered and scheduler-owned requests. Fresh shared-runtime
+post-fit STA at 10.000 ns is still required; no timing pass is claimed.
+
 Scalar arithmetic shares one command slot. Add uses a registered FP32
 adder; multiply registers its exact product before rounding. Divide performs
 one restoring quotient bit per cycle, and square root performs one radix-4

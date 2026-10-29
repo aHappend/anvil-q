@@ -31,10 +31,10 @@ module anvil_q2_fp_decoder_layer #(
   reg failed;
   reg [31:0] layer, position;
   reg phase;
-  (* preserve, dont_merge *) reg [31:0] selected;
+  (* preserve, dont_merge *) reg [2:0] selected;
   (* preserve, dont_merge *) reg [2:0] projection;
   (* preserve, dont_merge *) reg [1:0] norm_mode, element_mode;
-  reg [31:0] next_selected;
+  reg [2:0] next_selected;
   reg [2:0] next_projection;
   reg [1:0] next_norm_mode, next_element_mode;
   wire [3:0] next_step=step+4'd1;
@@ -63,6 +63,12 @@ module anvil_q2_fp_decoder_layer #(
     assign command[g]=rst_n && state==1 && selected==g;
   end
   for(g=0;g<SB;g=g+1) begin: engine_routes
+    wire route_valid, route_ready, route_write;
+    wire [3:0] route_kind;
+    wire [2:0] route_proj;
+    wire [31:0] route_layer, route_row, route_col, route_wdata;
+    (* preserve, dont_merge *) reg pending;
+    (* preserve, dont_merge *) reg [135:0] request_payload;
     anvil_q2_bus_mux #(2) route(
       rst_n,selected==4 ? 32'd1 : 32'd0,
       {mg_reqv[g],eg_reqv[g]},{mg_reqr[g],eg_reqr[g]},
@@ -75,10 +81,25 @@ module anvil_q2_fp_decoder_layer #(
       {mg_reqwd[g*32+:32],eg_reqwd[g*32+:32]},
       {mg_rspv[g],eg_rspv[g]},{mg_rspr[g],eg_rspr[g]},
       {mg_rsprd[g*32+:32],eg_rsprd[g*32+:32]},
-      {mg_rspe[g],eg_rspe[g]},g_req_valid[g],g_req_ready[g],g_req_write[g],
-      g_req_kind[g*4+:4],g_req_layer[g*32+:32],g_req_proj[g*3+:3],
-      g_req_row[g*32+:32],g_req_col[g*32+:32],g_req_wdata[g*32+:32],
+      {mg_rspe[g],eg_rspe[g]},route_valid,route_ready,route_write,
+      route_kind,route_layer,route_proj,route_row,route_col,route_wdata,
       g_rsp_valid[g],g_rsp_ready[g],g_rsp_rdata[g*32+:32],g_rsp_error[g]);
+    assign route_ready=rst_n && !pending;
+    assign g_req_valid[g]=rst_n && pending;
+    assign {g_req_write[g],g_req_kind[g*4+:4],g_req_layer[g*32+:32],
+            g_req_proj[g*3+:3],g_req_row[g*32+:32],g_req_col[g*32+:32],
+            g_req_wdata[g*32+:32]}=rst_n ? request_payload : 136'd0;
+    always @(posedge clk or negedge rst_n) begin
+      if(!rst_n) begin
+        pending<=0; request_payload<=0;
+      end else if(pending) begin
+        if(g_req_ready[g]) pending<=0;
+      end else if(route_valid && route_ready) begin
+        pending<=1;
+        request_payload<={route_write,route_kind,route_layer,route_proj,
+                          route_row,route_col,route_wdata};
+      end
+    end
   end endgenerate
   assign cmd_ready=rst_n && state==0;
   assign done=rst_n && state==3;
@@ -139,7 +160,7 @@ module anvil_q2_fp_decoder_layer #(
     reqv[5],reqr[5],reqw[5],reqk[20+:4],reql[160+:32],reqp[15+:3],
     reqrow[160+:32],reqcol[160+:32],reqwd[160+:32],rspv[5],rspr[5],rsprd[160+:32],rspe[5]);
   anvil_q2_bus_mux #(6) bus(
-    rst_n,selected,reqv,reqr,reqw,reqk,reql,reqp,reqrow,reqcol,reqwd,
+    rst_n,{29'd0,selected},reqv,reqr,reqw,reqk,reql,reqp,reqrow,reqcol,reqwd,
     rspv,rspr,rsprd,rspe,scalar_req_valid,scalar_req_ready,scalar_req_write,scalar_req_kind,
     scalar_req_layer,scalar_req_proj,scalar_req_row,scalar_req_col,scalar_req_wdata,
     mem_rsp_valid,mem_rsp_ready,mem_rsp_rdata,mem_rsp_error);
