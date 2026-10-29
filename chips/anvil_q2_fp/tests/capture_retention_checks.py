@@ -66,32 +66,56 @@ def existing_root_fixture(run):
     preserved = {}
     compared_files = 0
     for index in range(2):
-        child = Run("same-name", root=root)
-        try:
-            assert child.path not in children, "reused a prior run directory"
-            for name, expected in preserved.items():
-                assert (ROOT / name).read_bytes() == expected, (
-                    f"allocating a new run changed prior evidence: {name}")
-            output = child.command(
-                ["python3", "-c", f"print('root-reuse-{index}')"], "payload")
-            assert output.read_text() == f"root-reuse-{index}\n"
-            child.finish("passed-focused-only", fixture="existing-root",
-                         invocation=index)
-            for name, expected in preserved.items():
-                assert (ROOT / name).read_bytes() == expected, (
-                    f"executing a new run changed prior evidence: {name}")
-            compared_files += len(preserved)
-            children.append(child.path)
-            for path in child.path.rglob("*"):
-                if path.is_file():
-                    preserved[run.relative(path)] = path.read_bytes()
-        except (AssertionError, RuntimeError, OSError, ValueError, KeyError) as exc:
-            if not (child.path / "receipt.json").exists():
-                child.finish("failed", failure=f"{type(exc).__name__}: {exc}")
-            raise
+        output = run.command(
+            ["python3", "-c",
+             "import sys; sys.path.insert(0, 'tests'); "
+             "from retained import Run; "
+             "run = Run('same-name'); "
+             "output = run.command("
+             f"['python3', '-c', \"print('root-reuse-{index}')\"], 'payload'); "
+             f"assert output.read_text() == 'root-reuse-{index}\\n'; "
+             f"run.finish('passed-focused-only', fixture='existing-root', invocation={index})"],
+            f"root-reuse-fresh-process-{index}",
+            environment={"ANVIL_EVIDENCE_ROOT": root})
+        names = [line for line in output.read_text().splitlines()
+                 if line.endswith("/receipt.json")]
+        assert len(names) == 1, names
+        path = ROOT / names[0]
+        path.resolve().relative_to((ROOT / root).resolve())
+        child = json.loads(path.read_text())
+        assert child["evidence_root"] == root
+        assert child["source_sha256"] == run.receipt["source_sha256"]
+        assert child["outcome"] == "passed-focused-only"
+        assert child["invocation"] == index
+        assert path.parent not in children, "reused a prior run directory"
+        for name, expected in preserved.items():
+            assert (ROOT / name).read_bytes() == expected, (
+                f"executing a new run changed prior evidence: {name}")
+        compared_files += len(preserved)
+        children.append(path.parent)
+        for target in path.parent.rglob("*"):
+            if target.is_file():
+                preserved[run.relative(target)] = target.read_bytes()
+    reopened = []
+    for index, path in enumerate(children):
+        name = run.relative(path / "receipt.json")
+        output = run.command(
+            ["python3", "tests/stream_retention_checks.py", "--action", "reopen",
+             "--path", name], f"root-reuse-independent-reopen-{index}")
+        result = json.loads(output.read_text())
+        assert result["receipt"] == name
+        assert result["outcome"] == "passed-focused-only"
+        assert result["raw_streams_compared"] > 0
+        reopened.append(result)
+    for name, expected in preserved.items():
+        assert (ROOT / name).read_bytes() == expected, (
+            f"independent reopening changed prior evidence: {name}")
+    assert len(children) == len(reopened) == 2 and compared_files > 0
     return dict(
         root=root, receipts=[run.relative(path / "receipt.json") for path in children],
         invocations_compared=len(children), preserved_files_compared=compared_files,
+        allocation="fresh Python processes with ANVIL_EVIDENCE_ROOT",
+        independent_reopens=reopened,
         preserved_sha256={name: hashlib.sha256(data).hexdigest()
                           for name, data in preserved.items()})
 
@@ -201,6 +225,7 @@ def probe():
                          name != "tests/capture_retention_checks.py"}
         assert current_tests == revised_tests, "unadmitted verification source changed"
         run.command(["python3", "--version"], "python-version")
+        run.receipt["root_reuse"] = existing_root_fixture(run)
         output = run.command(
             ["python3", "tests/attention_checks.py", "--seed", "17", "--reduced"],
             "reduced-attention", timeout=21600,
