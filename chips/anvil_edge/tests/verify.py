@@ -69,7 +69,7 @@ from deepseek_assets import (
     run_deepseek_assets, run_deepseek_reference,
 )
 from deepseek_dfa import run_deepseek_dfa
-from deepseek_integration import run_deepseek_integration
+from deepseek_integration import run_deepseek_integration, run_deepseek_boot
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -982,6 +982,7 @@ def main():
         "official-deepseek-reference",
         "official-deepseek-dfa",
         "official-deepseek-integration",
+        "official-deepseek-boot",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1158,6 +1159,9 @@ def main():
         elif args.probe == "official-deepseek-integration":
             run_deepseek_integration(evidence)
             reason = "Complete DeepSeek public-port token/byte comparisons passed; boot/inference remain pending"
+        elif args.probe == "official-deepseek-boot":
+            run_deepseek_boot(evidence)
+            reason = "Complete DeepSeek SPI-to-DDR boot checked; weighted inference remains pending"
         elif args.probe == "official-qwen-reference":
             run_official_checkpoint(evidence)
         elif args.probe == "official-dependency-repair":
@@ -1235,6 +1239,7 @@ def main():
             run_deepseek_reference(evidence)
             run_deepseek_dfa(evidence)
             run_deepseek_integration(evidence)
+            run_deepseek_boot(evidence)
             run_qwen_integration(evidence)
             run_qwen_boot(evidence)
             run_qwen_shell(evidence)

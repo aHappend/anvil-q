@@ -154,6 +154,39 @@ def run_deepseek_integration(evidence):
     ])
 
 
+def run_deepseek_boot(evidence):
+    from storage import boot_test, synthetic_image, words
+
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.child([
+        "./.venv/bin/python", "tests/deepseek_integration.py", evidence.relative(evidence.path),
+    ], "deepseek-complete-table-preparation")
+    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
+    payloads = {0x200: words(*info["metadata"])}
+    for entry in info["tables"]:
+        data = (evidence.path / f"table-{entry['kind']:03x}.bin").read_bytes()
+        require(hashlib.sha256(data).hexdigest() == entry["sha256"],
+                "DeepSeek table changed before boot serialization")
+        payloads[entry["kind"]] = data
+    fixture = synthetic_image(VOCABULARY, capacity=131072, table_payloads=payloads)
+    fixture["synthetic_only"] = False
+    fixture["input_provenance"] = {
+        "tokenizer_tables": "Complete pinned official DeepSeek raw-text table conversion",
+        "weights": "Synthetic zero tensors, minimum geometry, not a pretrained model",
+    }
+    save(evidence.path / "official-boot-scope.json", {
+        "scope": "Real SPI-to-DDR boot and full table-validation pipeline only, "
+                 "with complete pinned DeepSeek raw-text tables and synthetic H8/L1 "
+                 "zero weights; not inference or physical memory",
+        "image_sha256": hashlib.sha256(fixture["image"]).hexdigest(),
+        "image_bytes": len(fixture["image"]), "active_vocabulary": VOCABULARY,
+        "physical_capacity": 131072, "synthetic_core_geometry": fixture["geometry"],
+        "seed": 17,
+    })
+    boot_test(evidence, VOCABULARY, 17, capacity=131072,
+              fixture=fixture, label="complete-official-deepseek-tables")
+
+
 if __name__ == "__main__":
     require(len(sys.argv) == 2, "Usage: ./.venv/bin/python tests/deepseek_integration.py FRESH")
     directory = Path(sys.argv[1])
