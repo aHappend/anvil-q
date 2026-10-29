@@ -49,7 +49,7 @@ from memory import run_memory
 from mapper_cache import run_mapper_cache
 from head_row_reuse import run_head_row_reuse, run_head_row_shell
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
-from scheduling import resource_limits, scheduling_probe, scheduling_controls
+from scheduling import resource_limits, scheduling_probe, scheduling_controls, cache_recovery
 from interactions import run_top_interactions, run_top_token_capacity, run_drain_prompts
 from official import (
     run_official_discovery, run_official_intake, run_official_assets,
@@ -513,6 +513,16 @@ class Evidence:
                 cache_lock = self._cache_locks.setdefault(cache_key, threading.Lock())
             with cache_lock:
                 cached = self.compiled_simulations.get(cache_key)
+                if cached is not None and not cached[0].exists():
+                    record["compile_cache_recovery"] = {
+                        "reason": "cached executable absent",
+                        "missing_executable": self.relative(cached[0]),
+                        "previous_compile_receipt": cached[1],
+                        "policy": "Fresh build in this simulation's output directory; "
+                                  "prior evidence is neither restored nor overwritten",
+                    }
+                    del self.compiled_simulations[cache_key]
+                    cached = None
                 cache_hit = cached is not None
                 if cached is None:
                     object_dir = directory / "obj"
@@ -953,6 +963,7 @@ def main():
     group.add_argument("--probe", choices=(
         "arithmetic", "fifo", "controller", "controller-build-repair",
         "retained-controller-audit",
+        "compile-cache-recovery",
         "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
         "reproduction",
@@ -1082,6 +1093,8 @@ def main():
             run_fifo(evidence)
         elif args.probe == "controller":
             run_controller(evidence)
+        elif args.probe == "compile-cache-recovery":
+            cache_recovery(evidence, VerificationFailure)
         elif args.probe == "retained-controller-audit":
             evidence.tools(("python3",))
             audit_controller(evidence, ROOT, digest, write_json, VerificationFailure)

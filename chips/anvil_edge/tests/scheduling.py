@@ -183,6 +183,58 @@ def scheduling_probe(evidence):
     }
 
 
+def cache_recovery(evidence, failure):
+    """Rebuild absent cache outputs; reject changed identities without editing evidence.
+
+    Run with tests/verify.py --probe compile-cache-recovery. The absent output
+    is an in-memory cache fixture, not removal of a historical artifact.
+    """
+    from protocol import UART
+    bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
+    sources = ["rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"]
+    first = evidence.simulate("cache-original", bench, sources, 78, simulator="verilator")
+    key = first["compile_cache_key"]
+    original = evidence.compiled_simulations[key]
+    missing = evidence.path / "intentionally-absent-cache-output"
+    assert not missing.exists()
+    evidence.compiled_simulations[key] = (missing, *original[1:])
+    evidence.record["compile_cache_recovery"] = {
+        "scope": "Harness recovery fixture, not full product acceptance",
+        "fault": "In-memory cache points to an absent output; retained files unchanged",
+        "absent_output": evidence.relative(missing),
+        "original_compile_receipt": first["compile_receipt"],
+    }
+    rebuilt = evidence.simulate("cache-rebuilt", bench, sources, 78, simulator="verilator")
+    assert not rebuilt["compile_cache_hit"]
+    assert rebuilt["compile_cache_recovery"]["reason"] == "cached executable absent"
+    assert rebuilt["compile_receipt"] != first["compile_receipt"]
+    reused = evidence.simulate("cache-reused", bench, sources, 78, simulator="verilator")
+    assert reused["compile_cache_hit"]
+    assert reused["compile_receipt"] == rebuilt["compile_receipt"]
+    cached = evidence.compiled_simulations[key]
+    evidence.compiled_simulations[key] = (*cached[:2], "invalid-fixture-hash", cached[3])
+    before = len(evidence.record["children"])
+    try:
+        evidence.simulate("cache-identity-rejected", bench, sources, 78, simulator="verilator")
+    except failure as error:
+        assert str(error) == "Compiled simulation changed before reuse"
+    else:
+        raise AssertionError("Changed cached executable identity was accepted")
+    finally:
+        evidence.compiled_simulations[key] = cached
+    assert len(evidence.record["children"]) == before
+    rejected = evidence.record["coverage"][-1]
+    rejected["status"] = "expected-harness-rejection"
+    rejected["expected_rejection"] = "Compiled simulation changed before reuse"
+    evidence.record["compile_cache_recovery"].update(
+        rebuilt_compile_receipt=rebuilt["compile_receipt"],
+        compared_uart_transactions=sum(row["actual_comparisons"]
+                                      for row in (first, rebuilt, reused)),
+        unchanged_cache_reused=True,
+        changed_identity_rejected_before_execution=True,
+    )
+
+
 def scheduling_controls(evidence):
     """Actual failure/peer settlement and concurrent cache/isolation checks."""
     from protocol import UART
