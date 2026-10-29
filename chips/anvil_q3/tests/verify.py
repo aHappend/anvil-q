@@ -43,7 +43,7 @@ CHECKS = ("prerequisites", "structure", "behavior", "benchmark", "mutations", "s
 
 
 def mandatory_a_coverage(records):
-    """Verify A dual-simulator coverage (compact 1-token Icarus + full 7-token Verilator)."""
+    """Verify requested A dispatch, not actual/original simulator coverage."""
     expected = Counter(
         (replace(A_PORTABILITY if simulator == "iverilog" else A,
                  BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym), seed,
@@ -64,7 +64,7 @@ def mandatory_a_coverage(records):
 
 
 def mandatory_decoder_workloads():
-    """Keep actual dispatch identical to the frozen preflight obligations."""
+    """Keep requested dispatch identical to the recorded preflight obligations."""
     for label, g in behavioral_geometries():
         for seed in ((17,) if label == "C" else (17, 89, 257)):
             simulators = ("iverilog", "verilator") if label == "A" else ("verilator",)
@@ -92,6 +92,44 @@ def mandatory_decoder_coverage(records):
     return {"required": sum(expected.values()), "observed": sum(observed.values())}
 
 
+def original_icarus_coverage(records):
+    """Count completed numerical results, never requested dispatch or smoke labels."""
+    required = {}
+    for label, g in behavioral_geometries():
+        for seed in ((17,) if label == "C" else (17, 89, 257)):
+            tokens = (1, 4, 2, 6) if label == "C" else (1, 4, 2, 6, 3, 5, 7)
+            prefill = 2 if label == "C" else 4
+            key = (tuple(sorted(asdict(g).items())), seed, tokens, prefill)
+            required[key] = {"profile": label, "geometry": asdict(g), "seed": seed,
+                             "tokens": list(tokens), "prefill_tokens": prefill}
+    observed = set()
+    pending = list(records)
+    while pending:
+        result = pending.pop()
+        if not isinstance(result, dict):
+            continue
+        tier = result.get("tier_dispatch", {})
+        if tier:
+            pending.append(tier["compact_smoke"])
+        if result.get("simulator") != "iverilog" or "workload" not in result:
+            continue
+        workload = result["workload"]
+        key = (tuple(sorted(result["geometry"].items())), workload["seed"],
+               tuple(workload["tokens"]), workload["prefill_tokens"])
+        if key not in required:
+            continue
+        if (result.get("bit_mismatches") != 0 or result.get("compared_bits", 0) <= 0 or
+                result.get("tokens") != len(workload["tokens"])):
+            raise AssertionError("original Icarus coverage has no complete numerical comparison")
+        observed.add(key)
+    missing = [row for key, row in required.items() if key not in observed]
+    report = {"required": len(required), "observed": len(observed), "missing": missing,
+              "status": "passed" if not missing else "unestablished",
+              "scope": "completed original full-workload Icarus results only; "
+                       "compact and compiled results do not discharge these obligations"}
+    return report
+
+
 def behavior_execution_preflight(run):
     """Record actual dispatch without certifying the original simulator matrix."""
     obligations = []
@@ -110,13 +148,20 @@ def behavior_execution_preflight(run):
         "required_workloads": len(obligations),
         "obligations": obligations,
         "supplemental_obligations": [supplemental],
+        "portability_dispatch": {
+            "requested": 48, "direct_single_bank": 12,
+            "automatic_minimum_single_bank": 36,
+            "additional_compiled_requested_geometries": 36,
+            "original_coverage_discharged": False},
         "verilator_selection": "A/B: all three seeds; C: seed17; every bank/cache variant",
         "original_coverage": {
             "required_full_icarus": {"A": 48, "B": 48, "C": 16},
             "discharged_by_compact_smoke": False,
             "status": "112 original full-workload Icarus obligations remain unestablished",
             "review_required": True},
-        "scope": "dispatch inventory only; not numerical or engineering acceptance"})
+        "scope": "requested dispatch inventory only; nested tier_dispatch records actual "
+                 "single-bank Icarus and unchanged compiled geometries; "
+                 "not numerical or engineering acceptance"})
 
 
 def numerical_matrix(run):
@@ -185,6 +230,12 @@ def numerical_matrix(run):
     write_json(run.path / "activation-matrix.json", ledger)
     mandatory_a_coverage(a_coverage)
     mandatory_decoder_coverage(decoder_coverage)
+    original = original_icarus_coverage(ledger)
+    write_json(run.path / "original-icarus-coverage.json", original)
+    if original["status"] != "passed":
+        raise AssertionError(
+            f"{len(original['missing'])} original full-workload Icarus obligations remain "
+            "unestablished; successful tiered execution is not equivalent acceptance")
     write_json(run.path / "behavior-results.json", ledger)
     return ledger
 

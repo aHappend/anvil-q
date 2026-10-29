@@ -35,6 +35,9 @@ def main():
     parser.add_argument("--banks", type=int, choices=(1, 2, 4, 8), default=8)
     parser.add_argument("--tokens", type=int, choices=(1, 4), default=4,
                         help="C diagnostic prefix length; four tokens by default")
+    parser.add_argument("--mode", type=int, choices=(0, 1, 2), default=0,
+                        help="compact portability cache mode")
+    parser.add_argument("--asymmetric", type=int, choices=(0, 1), default=0)
     args = parser.parse_args()
     run = Run("evidence/preparation/compiled-host-" + args.probe,
               "public-pin compiled decoder driver diagnostic",
@@ -55,7 +58,8 @@ def main():
         else:
             result = decoder_case(
                 run, replace(A_PORTABILITY, BANKS=args.banks, TILE_K=8, TILE_ROWS=1,
-                             QUEUE_DEPTH=1, MAX_SEQ_LEN=1),
+                             QUEUE_DEPTH=1, MAX_SEQ_LEN=1,
+                             CACHE_MODE=args.mode, INT4_ASYM=args.asymmetric),
                 simulator="iverilog", tokens=[0], prefill_tokens=1, label="minimal-tiles")
     except Exception as exc:
         run.finish("failed", diagnosis=str(exc))

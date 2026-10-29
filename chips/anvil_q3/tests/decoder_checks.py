@@ -31,7 +31,7 @@ def validate_simulation_tier(g, simulator, tokens):
     if simulator not in ("iverilog", "verilator"):
         raise ValueError("unknown decoder simulator: " + simulator)
     return simulator == "iverilog" and not (
-        g.HIDDEN_SIZE <= 32 and g.NUM_LAYERS == 1 and
+        g.BANKS == 1 and g.HIDDEN_SIZE <= 32 and g.NUM_LAYERS == 1 and
         g.INTERMEDIATE_SIZE <= 8 and g.VOCAB_SIZE == 1 and len(tokens) == 1)
 
 
@@ -337,12 +337,15 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
         from dataclasses import replace
         from parameters import startup_geometry
         compact = replace(startup_geometry(g.PROFILE), BANKS=1, INTERMEDIATE_SIZE=8,
-                          VOCAB_SIZE=1, CACHE_MODE=g.CACHE_MODE, INT4_ASYM=g.INT4_ASYM)
+                          VOCAB_SIZE=1, MAX_SEQ_LEN=1, QUEUE_DEPTH=1,
+                          TILE_K=8, TILE_ROWS=1,
+                          CACHE_MODE=g.CACHE_MODE, INT4_ASYM=g.INT4_ASYM)
         if g.PROFILE != 3:
             compact = replace(compact, HIDDEN_SIZE=8, NUM_Q_HEADS=1)
         smoke = decoder_case(
             run, compact, seed, "iverilog", tokens=[0], prefill_tokens=1,
-            first_new=int(g.PROFILE != 1), label=(label or "automatic") + "-tier-smoke")
+            first_new=int(g.PROFILE != 1),
+            label=(label or "automatic") + f"-requested-b{g.BANKS}-tier-smoke")
         complete = decoder_case(
             run, g, seed, "verilator", tokens=tokens, first_new=first_new,
             prefill_tokens=prefill_tokens, prelude=prelude, label=label, rtl=rtl,
@@ -353,6 +356,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
             host_cycle_limit=host_cycle_limit)
         complete["tier_dispatch"] = {
             "requested_simulator": "iverilog", "actual_full_simulator": "verilator",
+            "requested_geometry": asdict(g),
             "compact_smoke": smoke,
             "coverage_limit": "not full-workload Icarus coverage; independent review required"}
         write_json(run.path / complete["result_path"], complete)
@@ -486,6 +490,8 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     result["implementation"] = implementation
     result["simulator"] = simulator
     result["driver"] = "clock-stepped-public-pins" if compiled_host else "systemverilog"
+    result["workload"] = {"seed": seed, "tokens": list(tokens),
+                          "prefill_tokens": prefill_tokens}
     result["comparison_transport"] = "bounded online exact words" if stream_compare else "raw trace"
     result["result_path"] = str((folder / "result.json").relative_to(run.path))
     result["independent_q1_evidence"] = implementation == "q1-native"

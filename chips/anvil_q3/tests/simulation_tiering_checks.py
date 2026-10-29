@@ -8,7 +8,7 @@ as fulfilling that historical dual-simulator acceptance contract.
 import argparse
 from collections import Counter
 from contextlib import ExitStack
-from dataclasses import replace
+from dataclasses import asdict, replace
 from copy import deepcopy
 import inspect
 import json
@@ -42,7 +42,7 @@ def expected_workloads():
 
 
 def coverage_sensitivity():
-    from verify import mandatory_a_coverage, mandatory_decoder_coverage
+    from verify import mandatory_a_coverage, mandatory_decoder_coverage, original_icarus_coverage
 
     complete = expected_workloads()
     a = [row[1:] for row in complete if row[0] == "A"]
@@ -61,7 +61,45 @@ def coverage_sensitivity():
                 rejected.append(name + ":" + defect)
             else:
                 raise AssertionError("incorrect workload inventory accepted: " + name + defect)
-    return {"actual_required_workloads": 160, "rejected": rejected,
+    originals = []
+    for label, base in (("A", A), ("B", B), ("C", C)):
+        for banks in (1, 2, 4, 8):
+            for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
+                for seed in ((17,) if label == "C" else (17, 89, 257)):
+                    tokens = [1, 4, 2, 6] if label == "C" else [1, 4, 2, 6, 3, 5, 7]
+                    originals.append({
+                        "geometry": asdict(replace(
+                            base, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym)),
+                        "simulator": "iverilog", "tokens": len(tokens),
+                        "workload": {"seed": seed, "tokens": tokens,
+                                     "prefill_tokens": 2 if label == "C" else 4},
+                        "compared_bits": 32, "bit_mismatches": 0})
+    assert original_icarus_coverage(originals)["status"] == "passed"
+    for defect in ("missing", "compiled", "short", "wrong-phase"):
+        changed = deepcopy(originals)
+        if defect == "missing":
+            changed.pop()
+        elif defect == "compiled":
+            changed[-1]["simulator"] = "verilator"
+        elif defect == "short":
+            changed[-1]["workload"]["tokens"] = [1]
+            changed[-1]["tokens"] = 1
+        else:
+            changed[-1]["workload"]["prefill_tokens"] = 9
+        report = original_icarus_coverage(changed)
+        assert report["status"] == "unestablished" and report["observed"] == 111
+        rejected.append("original:" + defect)
+    assert original_icarus_coverage([])["observed"] == 0
+    for field, value in (("compared_bits", 0), ("bit_mismatches", 1)):
+        changed = deepcopy(originals)
+        changed[-1][field] = value
+        try:
+            original_icarus_coverage(changed)
+        except AssertionError:
+            rejected.append("original:" + field)
+        else:
+            raise AssertionError("uncompared/mismatched original result accepted: " + field)
+    return {"requested_workloads": 160, "rejected": rejected,
             "original_full_icarus_obligations_unestablished": 112,
             "scope": "offline accounting sensitivity only"}
 
@@ -118,6 +156,11 @@ def validate_execution_contract(report):
         "status": "112 original full-workload Icarus obligations remain unestablished",
         "review_required": True}
     assert report["required_workloads"] == 160
+    assert report["portability_dispatch"] == {
+        "requested": 48, "direct_single_bank": 12,
+        "automatic_minimum_single_bank": 36,
+        "additional_compiled_requested_geometries": 36,
+        "original_coverage_discharged": False}
     assert len(report["supplemental_obligations"]) == 1
     row = report["supplemental_obligations"][0]
     assert row["check_id"] == "supplemental-decoder-a-b8-int4-asymmetric-seed257"
@@ -127,7 +170,7 @@ def validate_execution_contract(report):
 
 
 def guard_sensitivity():
-    cases = ((A, [1]), (A, [1, 4]), (B, [1]), (C, [1]),
+    cases = ((A, [1]), (A, [1, 4]), (A_PORTABILITY, [0]), (B, [1]), (C, [1]),
              (next(compatibility_geometries()), [1, 2, 1, 2, 1, 2, 1]))
     for g, tokens in cases:
         assert validate_simulation_tier(g, "iverilog", tokens)
@@ -141,10 +184,13 @@ def guard_sensitivity():
         assert worker.call_count == 2
         assert worker.call_args_list[0].args[3] == "iverilog"
         assert worker.call_args_list[0].kwargs["tokens"] == [0]
+        compact = worker.call_args_list[0].args[1]
+        assert (compact.BANKS, compact.QUEUE_DEPTH, compact.TILE_K,
+                compact.TILE_ROWS, compact.MAX_SEQ_LEN) == (1, 1, 8, 1, 1)
         assert worker.call_args_list[1].args[3] == "verilator"
         assert worker.call_args_list[1].kwargs["tokens"] == tokens
         assert result["tier_dispatch"]["compact_smoke"] == smoke
-    assert not validate_simulation_tier(A_PORTABILITY, "iverilog", [0])
+    assert not validate_simulation_tier(replace(A_PORTABILITY, BANKS=1), "iverilog", [0])
     try:
         validate_simulation_tier(A, "unknown", [1])
     except ValueError:
@@ -169,6 +215,10 @@ def dispatch_sensitivity():
             mocks[name] = stack.enter_context(patch.object(
                 verify, name, return_value=[] if name in
                 ("memory_maps", "compatibility", "boundaries", "integration_faults") else {}))
+        stack.enter_context(patch.object(
+            verify, "original_icarus_coverage",
+            return_value={"status": "passed", "missing": [],
+                          "scope": "mocked dispatch-only fixture, no simulations"}))
         stack.enter_context(patch.object(verify, "write_json"))
         verify.numerical_matrix(fake)
     observed = Counter()
