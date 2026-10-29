@@ -830,7 +830,7 @@ endmodule
         bench, inference = instrument_upload(bench)
     if reset_validation:
         from reset_integration import instrument_resets
-        bench, inference = instrument_resets(bench)
+        bench, inference = instrument_resets(bench, model)
     if poisoned is not None:
         bench = bench.replace("integer response_writes=0;", r"""
 integer poison_address,poison_bits,original_bits,poison_seen=0,uploads_completed=0;
@@ -2661,6 +2661,9 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "upload-conflict-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("pending_upload_busy_ownership",))
+    elif name == "reset-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=("reset_descriptor_validity",))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

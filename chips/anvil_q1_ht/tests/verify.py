@@ -411,7 +411,7 @@ def main():
                                            "faults", "orphan-fault", "abort-states",
                                            "command-checks", "command-sensitivity",
                                            "upload-conflicts", "upload-conflict-sensitivity",
-                                           "reset-integration",
+                                           "reset-integration", "reset-sensitivity",
                                            "numerical-faults", "numerical-fault-smoke",
                                            "numerical-fault-sensitivity",
                                            "synthesis-small", "synthesis-control", "fixture-integrity",

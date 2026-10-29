@@ -8,7 +8,8 @@ image. This is reset recovery, not persistent-image reuse across new_sequence.
 from experiments import measurement_records, top_probe
 
 
-def instrument_resets(bench):
+def instrument_resets(bench, model):
+    weight = next(entry for entry in model.descriptors if entry[1:4] == (1, 0, 0))
     declarations = r"""
 reg reset_hold_write=0,reset_stall_read=0;
 integer reset_epochs=0,reset_recovery_logits=0,reset_observed_bins=0;
@@ -110,7 +111,8 @@ task reset_active_case(input integer phase);
    before_reads=reads;
    reset_start_token();
    if(phase==1 || phase==2) begin
-    while(!((phase==1 && avm_readdatavalid===1) ||
+    while(!((phase==1 && avm_readdatavalid===1 &&
+             (cursor-1)*64>=RESET_WEIGHT_BASE && (cursor-1)*64<RESET_WEIGHT_END) ||
             (phase==2 && avm_read===1 && avm_waitrequest===1)) && waiting<100000) begin
      @(negedge ddr_clk);#0.001;waiting=waiting+1;
      if(done!==0 || error!==0 || logit_valid!==0)
@@ -165,6 +167,8 @@ endtask
     marker = "task run_token("
     if bench.count(marker) != 1:
         raise AssertionError("reset test cannot identify the public token driver")
+    declarations = declarations.replace("RESET_WEIGHT_BASE", str(weight[4])).replace(
+        "RESET_WEIGHT_END", str(weight[4] + weight[5]))
     bench = bench.replace(marker, declarations + "\n" + marker, 1)
     marker = "if (writes>response_writes) begin"
     if bench.count(marker) != 1:

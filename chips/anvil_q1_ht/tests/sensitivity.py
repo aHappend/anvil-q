@@ -91,6 +91,11 @@ def run_sensitivity(parent, seed, only=None):
          "!configuration_busy && !csr_active &&",
          lambda run: top_probe(run, "AWQ", seed, pending_upload_validation=True),
          "PENDING_UPLOAD_BUSY_STALL_CHANGED"),
+        ("reset_descriptor_validity", "anvil_q1_ht_descriptors.sv",
+         "if (state == INITIALIZE) descriptors[scan_index] <= 0;",
+         "if (state == INITIALIZE) descriptors[scan_index] <= descriptors[scan_index];",
+         lambda run: top_probe(run, "AWQ", seed, reset_validation=True),
+         "CSR_MISMATCH"),
     )
     if only is not None:
         selected = set(only)
