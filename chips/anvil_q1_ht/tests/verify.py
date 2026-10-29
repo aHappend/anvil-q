@@ -410,6 +410,8 @@ def main():
                                            "arithmetic-sensitivity",
                                            "faults", "orphan-fault", "abort-states",
                                            "command-checks", "command-sensitivity",
+                                           "upload-conflicts", "upload-conflict-sensitivity",
+                                           "reset-integration",
                                            "numerical-faults", "numerical-fault-smoke",
                                            "numerical-fault-sensitivity",
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
@@ -479,7 +481,7 @@ def main():
         campaign = (
             "fixture-integrity", "checkpoint-repack", "parameters", "dequant", "tensor", "math",
             "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults",
-            "command-checks",
+            "command-checks", "upload-conflicts", "reset-integration",
             "orphan-fault", "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
             "synthesis", "kernel-default", "projection-default", "bf16-default",
             "vocabulary-default", "layer-awq", "layer-bf16",

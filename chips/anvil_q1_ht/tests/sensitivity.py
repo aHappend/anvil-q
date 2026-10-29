@@ -86,6 +86,11 @@ def run_sensitivity(parent, seed, only=None):
          "csr_address[1:0] != 0 || (mutation && busy)", "csr_address[1:0] != 0",
          lambda run: top_probe(run, "AWQ", seed, config=1, command_validation=True),
          "CSR_MISMATCH"),
+        ("pending_upload_busy_ownership", "anvil_q1_ht_image_guard.sv",
+         "!engine_busy && !configuration_busy && !csr_active &&",
+         "!configuration_busy && !csr_active &&",
+         lambda run: top_probe(run, "AWQ", seed, pending_upload_validation=True),
+         "PENDING_UPLOAD_BUSY_STALL_CHANGED"),
     )
     if only is not None:
         selected = set(only)

@@ -458,9 +458,20 @@ def top_probe(evidence, mode, seed, upload_only=False, config=0,
               fault_read=-1, fault_write=-1, orphan_fault=False, abort_stage=None,
               diagnostic_first_token=False, simulator="verilator",
               cxx_optimization="-O3", flatten=False, reusable_build=True,
-              numerical_fault=None, command_validation=False):
+              numerical_fault=None, command_validation=False, pending_upload_validation=False,
+              reset_validation=False):
     shape = MATRIX[config]
     model = EngineeringModel(shape, seed, mode)
+    if reset_validation and (
+            config != 0 or not reusable_build or upload_only or fault_read >= 0 or
+            fault_write >= 0 or orphan_fault or abort_stage or diagnostic_first_token or
+            numerical_fault is not None or command_validation or pending_upload_validation):
+        raise ValueError("reset validation requires a separate compact integration case")
+    if pending_upload_validation and (
+            config != 0 or not reusable_build or upload_only or fault_read >= 0 or
+            fault_write >= 0 or orphan_fault or abort_stage or diagnostic_first_token or
+            numerical_fault is not None or command_validation):
+        raise ValueError("pending upload validation requires a separate compact integration case")
     if command_validation and (
             config != 1 or not reusable_build or upload_only or fault_read >= 0 or
             fault_write >= 0 or orphan_fault or abort_stage or diagnostic_first_token or
@@ -814,6 +825,12 @@ endmodule
     if command_validation:
         from command_checks import instrument_commands
         bench, inference = instrument_commands(bench, model)
+    if pending_upload_validation:
+        from upload_conflicts import instrument_upload
+        bench, inference = instrument_upload(bench)
+    if reset_validation:
+        from reset_integration import instrument_resets
+        bench, inference = instrument_resets(bench)
     if poisoned is not None:
         bench = bench.replace("integer response_writes=0;", r"""
 integer poison_address,poison_bits,original_bits,poison_seen=0,uploads_completed=0;
@@ -1109,7 +1126,8 @@ endtask
   csr(1,descriptor_words[case_index][47:32],descriptor_words[case_index][31:0],0,0);
 """)
         if not (upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or abort_stage
-                or numerical_fault is not None or command_validation):
+                or numerical_fault is not None or command_validation or pending_upload_validation
+                or reset_validation):
             bench = bench.replace("AFTER_COMMIT", runtime_inference)
         else:
             bench = bench.replace("AFTER_COMMIT", inference)
@@ -1179,6 +1197,8 @@ endtask
         "abort_stage": abort_stage,
         "numerical_fault": poisoned,
         "command_validation": command_validation,
+        "pending_upload_validation": pending_upload_validation,
+        "reset_validation": reset_validation,
         "descriptors": model.descriptors,
     }
     runtime_case["engineering_fixture"] = evidence.record["engineering_fixture"]
@@ -2556,6 +2576,12 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "command-checks":
         from command_checks import command_checks
         command_checks(evidence, seed)
+    elif name == "upload-conflicts":
+        from upload_conflicts import upload_conflicts
+        upload_conflicts(evidence, seed)
+    elif name == "reset-integration":
+        from reset_integration import reset_integration
+        reset_integration(evidence, seed)
     elif name in ("numerical-faults", "numerical-fault-smoke"):
         from numerical_faults import numerical_faults
         numerical_faults(evidence, seed, selected=(
@@ -2632,6 +2658,9 @@ def run_probe(evidence, name, seed, config=0):
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=(
             "command_new_sequence_position", "command_busy_mode_mutation"))
+    elif name == "upload-conflict-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=("pending_upload_busy_ownership",))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1
