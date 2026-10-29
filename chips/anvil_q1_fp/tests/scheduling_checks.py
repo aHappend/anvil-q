@@ -32,6 +32,11 @@ def check(root, ev):
     good = ev.assertion("compiled_never_downgraded",
                         verify.simulation_tier("verilator") == "verilator") and good
     jobs = verify.l1_jobs()
+    ev.receipt["planned_l1_shards"] = [
+        {"name": name, "check": check.__name__, "args": list(args),
+         "options": options, "status": "planned"}
+        for name, check, args, options in jobs]
+    ev.finish("running")
     names = [name for name, _, _, _ in jobs]
     integrations = [
         (name, mode, seed, options)

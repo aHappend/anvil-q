@@ -125,6 +125,30 @@ def input_check(ev, production=False):
                         records=(index-8)//28,
                         text_sha256=verify.digest(text), binary_sha256=verify.digest(binary)) and good
     if not production:
+        executable = ev.path / "operator-icarus.vvp"
+        parameters = {"OP": 3, **dict(zip(architecture.PARAMETERS, config))}
+        compiled = verify.compile_simulation(ev, "operator-icarus-compile", [
+            "iverilog", "-g2012", "-Wall", "-s", "operator_tb",
+            "-o", str(executable.relative_to(verify.ROOT)),
+            *[f"-Poperator_tb.{key}={value}" for key, value in parameters.items()],
+            *[str(p.relative_to(verify.ROOT)) for p in sorted(verify.ROOT.glob("rtl/*.sv"))],
+            "tests/operator_tb.sv",
+        ], executable)
+        argv = ["vvp", str(executable.relative_to(verify.ROOT)), *text_argv[1:]]
+        argv = [arg if not arg.startswith("+trace=") else
+                "+trace=" + str((ev.path / "operator-icarus.trace").relative_to(verify.ROOT))
+                for arg in argv]
+        executed = compiled and ev.run("operator-icarus", argv, timeout=86400)
+        record = ev.receipt["records"][-1]
+        coverage = (binary_trace.read_text().splitlines()[-1].split()
+                    if executed else [])
+        good = ev.assertion(
+            "compact_icarus_operator_exact_trace",
+            executed and record["elapsed_s"] < 60 and
+            verify.digest(ev.path / "operator-icarus.trace") == verify.digest(binary_trace)
+            and int(coverage[-2]) < 500000,
+            elapsed_s=record.get("elapsed_s"), coverage=coverage,
+            wall_clock_allowance_s=86400) and good
         for name, contents, diagnostic in (
             ("header", b"INVALID!" + data[8:], "OPERATOR_BINARY_OPEN"),
             ("truncated", data[:-1], "OPERATOR_EXTRA_REQUEST"),
@@ -189,16 +213,48 @@ def check(ev, production=False):
     return input_check(ev, production) and good
 
 
+def compare_runs(ev, paths):
+    prior, current = [verify.ROOT / path for path in paths]
+    receipts = [json.loads(path.read_text()) for path in (prior, current)]
+    dependencies = [str(path.relative_to(verify.ROOT))
+                    for folder in ("rtl", "anvil_q1_reference/rtl")
+                    for path in verify.ROOT.glob(folder + "/*.sv")]
+    dependencies += ["tests/" + name for name in (
+        "architecture.py", "numerical.py", "operators.py", "operator_tb.sv",
+        "operator_input.cpp")]
+    bound = all(receipts[0]["source_sha256"][name] ==
+                receipts[1]["source_sha256"][name] == verify.digest(verify.ROOT / name)
+                for name in dependencies)
+    names = ("gemv-selector4-mode1.requests", "gemv-selector4-mode1.requests.bin",
+             "gemv-selector4-mode1-revised.trace",
+             "gemv-selector4-mode1-revised-reference.json")
+    identical = all(verify.digest(prior.parent / name) ==
+                    verify.digest(current.parent / name) for name in names)
+    for path in (prior, current):
+        ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(verify.ROOT))] = verify.digest(path)
+        for name in names:
+            artifact = path.parent / name
+            ev.receipt["data_sha256"][str(artifact.relative_to(verify.ROOT))] = verify.digest(artifact)
+    return ev.assertion("optimized_and_original_source_bound_exact_results",
+                        bound and identical and all(r["status"] == "passed" for r in receipts),
+                        receipts=[str(path.relative_to(verify.ROOT)) for path in (prior, current)],
+                        identical_artifacts=list(names))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--production", action="store_true")
     parser.add_argument("--input-only", action="store_true")
+    parser.add_argument("--compare", nargs=2, type=Path)
     args = parser.parse_args()
     ev = verify.Evidence("operator-performance")
     good = False
     try:
-        good = ev.versions() and (
-            input_check(ev, args.production) if args.input_only else check(ev, args.production))
+        if args.compare:
+            good = compare_runs(ev, args.compare)
+        else:
+            good = ev.versions() and (
+                input_check(ev, args.production) if args.input_only else check(ev, args.production))
     except (ValueError, KeyError, OSError, AssertionError) as error:
         ev.assertion("repair_probe_exception", False, diagnostic=repr(error))
     finally:

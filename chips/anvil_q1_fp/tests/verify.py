@@ -1451,6 +1451,28 @@ def benchmark_fixture_check(ev):
     return check(ROOT, ev)
 
 
+def critical_path_check(ev):
+    results = parallel_components(ev, [
+        ("production-gemv6-mode2", operator_check, (), {
+            "production": True, "operations": {"gemv": (6,)},
+            "cases": (("gemv", 6, 2),)}),
+        ("integration-defects", integration_defect_check, (), {}),
+        ("production-gemv4-mode0", operator_check, (), {
+            "production": True, "operations": {"gemv": (4,)},
+            "cases": (("gemv", 4, 0),)}),
+        ("integration-gqa7-mode0-seed89", integration_check, (), {
+            "full": True, "configurations": {"gqa7": CONFIGURATIONS["gqa7"]},
+            "modes": (0,), "seeds": (89,)}),
+        ("integration-layers24-mode2-seed89", integration_check, (), {
+            "full": True, "configurations": {"layers24": CONFIGURATIONS["layers24"]},
+            "modes": (2,), "seeds": (89,)}),
+        ("leaves-full", leaf_check, (), {"full": True}),
+        ("leaf-defects", leaf_defect_check, (), {}),
+    ])
+    return ev.assertion("bounded_critical_path_subset", all(results.values()),
+                        results=results, full_l1_executed=False)
+
+
 def l1_jobs():
     jobs = [
         ("benchmark-validator", benchmark_fixture_check, (), {}),
@@ -1509,7 +1531,7 @@ def main():
         "protocol-accelerated", "portable-smoke", "operators", "production-operators",
         "maximum-position", "production-top-addresses", "preservation", "input-inventory",
         "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation",
-        "receipt-publication", "interpreter-consistency", "scheduling"))
+        "receipt-publication", "interpreter-consistency", "scheduling", "critical-path"))
     parser.add_argument("--repair-of", type=Path)
     parser.add_argument("--diagnostic-repair-of", type=Path, action="append", default=[])
     parser.add_argument("--python-facility", type=Path, action="append", default=[])
@@ -1592,6 +1614,8 @@ def main():
             ok = check_interpreter(ROOT, ev)
         elif args.probe == "scheduling":
             ok = ev.versions() and scheduling_check(ev)
+        elif args.probe == "critical-path":
+            ok = ev.versions() and critical_path_check(ev)
         elif args.probe == "facilities":
             from recovery import facilities
             ok = facilities(ROOT, ev, args.python_facility)
