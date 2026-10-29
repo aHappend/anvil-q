@@ -330,7 +330,8 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                  prelude=0, label=None, rtl=None, mutation_assertions=(),
                  boundary=0, restart_at=None, fault_scenario=0, adversarial=False,
                  implementation="q3", native_asset=None, testbench="tests/top_tb.sv",
-                 stream_compare=True, sparse_scan=True, compiled_host=False):
+                 stream_compare=True, sparse_scan=True, compiled_host=False,
+                 host_cycle_limit=2000000000):
     tokens = tokens if tokens is not None else [1, 4, 2, 6, 3, 5, 7]
     if validate_simulation_tier(g, simulator, tokens):
         from dataclasses import replace
@@ -447,6 +448,8 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                 f"+fault={fault_scenario}", f"+boundary={boundary}",
                 f"+restart={-1 if restart_at is None else restart_at}",
                 f"+stream_compare={int(stream_compare)}", f"+sparse_scan={int(sparse_scan)}"]
+    if compiled_host:
+        command.append(f"+host_cycles={host_cycle_limit}")
     text, receipt = run.tool(command, expected=(0, 1, -6) if mutation_assertions else (0,),
                              timeout=14400)
     if mutation_assertions:

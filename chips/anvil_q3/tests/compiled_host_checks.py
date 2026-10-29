@@ -20,7 +20,7 @@ def equivalence(run, banks):
         pair = run.parallel([
             lambda host=host: decoder_case(
                 run, g, simulator="verilator", tokens=[1, 4], prefill_tokens=1,
-                label="host" if host else "sv", compiled_host=host)
+                label="host" if host else "sv", compiled_host=host, host_cycle_limit=1000000)
             for host in (False, True)])
         for field in set(pair[0]) - {"result_path", "driver"}:
             assert pair[0][field] == pair[1][field], (field, pair[0][field], pair[1][field])
