@@ -15,13 +15,13 @@ import zlib
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from benchmark import load_json, require, sha
+from benchmark import artifact_path, load_json, require, sha
 from packed_storage import CHUNK_BYTES, RECORD, Reader, Writer
 from sparse_transactions import TRACE_CHUNK_BYTES
 from verify import Evidence, ROOT, now
 
 
-PRIOR = "evidence/preparation/verifier-packed-storage-e6dq66yt/receipt.json"
+REPAIR_OF = "evidence/preparation/verifier-maximum-frame-memory-86vr_f_a/receipt.json"
 SOURCES = ("tests/memory_capacity_checks.py", "tests/memory_map_fixture.cpp",
            "tests/packed_producer_fixture.cpp", "tests/packed_storage.py",
            "tests/sparse_transactions.py", "tests/packed_stream.py",
@@ -29,6 +29,167 @@ SOURCES = ("tests/memory_capacity_checks.py", "tests/memory_map_fixture.cpp",
            "tests/production_sim.cpp", "tests/production_sim.py",
            "tests/fp64_reference.py", "tests/awq_prepare.py",
            "tests/teacher_reference.py", "tests/collection_capacity.py")
+
+
+def validate_codec_receipt(relative, expected_sources):
+    path = artifact_path(ROOT, str(relative))
+    record = load_json(path)
+    require(record["status"] == "passed", f"codec receipt did not pass: {relative}")
+    require(record["source_sha256"] == expected_sources,
+            f"stale codec source bindings: {relative}")
+    require(record["assertions"] and
+            all(item["passed"] is True for item in record["assertions"]),
+            f"codec assertions failed or absent: {relative}")
+    commands = {item["label"]: item for item in record["records"]}
+    for label in ("codec-roundtrip-corruption", "complete-packed-capacity-assessment"):
+        command = commands[label]
+        require(command["exit_code"] == 0 and command["timed_out"] is False,
+                f"codec command failed: {relative}: {label}")
+        for field in ("stdout", "stderr"):
+            require(command[field] in record["outputs"],
+                    f"unbound codec log: {relative}: {command[field]}")
+    qualification = str(relative.parent/"synthetic/qualification.json")
+    require(qualification in record["outputs"],
+            f"unbound codec qualification: {relative}: {qualification}")
+    require(record["outputs"], f"codec outputs absent: {relative}")
+    for name, digest in record["outputs"].items():
+        output = artifact_path(ROOT, name)
+        require(output.is_relative_to(path.parent) and output != path,
+                f"codec output outside receipt directory: {relative}: {name}")
+        require(sha(output) == digest, f"codec output hash changed: {relative}: {name}")
+    return {"path": str(relative), "sha256": sha(path)}
+
+
+def generate_codec(ev, command=None, label="generate-codec-prerequisite"):
+    command = command if command is not None else [
+        sys.executable, "tests/packed_storage_checks.py"]
+    require(ev.run(label, command, timeout=3600),
+            f"codec prerequisite generator failed; see "
+            f"{ev.path.relative_to(ROOT)}/{label}.stderr and "
+            f"{ev.path.relative_to(ROOT)}/{label}.stdout")
+    summary = load_json(ev.path/(label+".stdout"))
+    require(summary["status"] == "passed", "codec generator reported failure")
+    relative = Path(summary["receipt"])
+    artifact_path(ROOT, str(relative))
+    return relative
+
+
+def codec_prerequisite(ev, candidates=None, generate=None):
+    expected = ev.receipt["source_sha256"]
+    if candidates is None:
+        candidates = sorted((ROOT/"evidence/preparation").glob(
+            "verifier-packed-storage-*/receipt.json"),
+            key=lambda path: path.stat().st_mtime_ns, reverse=True)
+        candidates = [path.relative_to(ROOT) for path in candidates]
+    rejected = []
+    ev.receipt["codec_prerequisite_candidates_rejected"] = rejected
+    for relative in candidates:
+        try:
+            result = validate_codec_receipt(relative, expected)
+        except (ValueError, KeyError, TypeError, OSError) as error:
+            rejected.append({"path": str(relative), "diagnostic": str(error)})
+        else:
+            ev.receipt["preceding_diagnostic"] = {**result, "generated": False}
+            return result
+    relative = generate() if generate is not None else generate_codec(ev)
+    ev.receipt["generated_codec_receipt"] = {"path": str(relative)}
+    result = validate_codec_receipt(relative, expected)
+    ev.receipt["generated_codec_receipt"] = result
+    ev.receipt["preceding_diagnostic"] = {**result, "generated": True}
+    return result
+
+
+def prerequisite_regressions(ev):
+    """Synthetic receipts test dispatch/validation, not codec qualification."""
+    import copy
+    from types import SimpleNamespace
+
+    directory = ev.path/"prerequisite-fixtures-v1"
+    directory.mkdir()
+    relative = directory.relative_to(ROOT)
+    output = directory/"qualification.json"
+    output.write_text('{"synthetic_prerequisite_fixture": true}\n')
+    name = str(output.relative_to(ROOT))
+    commands = [{"label": label, "exit_code": 0, "timed_out": False,
+                 "stdout": name, "stderr": name}
+                for label in ("codec-roundtrip-corruption",
+                              "complete-packed-capacity-assessment")]
+    # Keep the required qualification path distinct from the stub command logs.
+    synthetic = directory/"synthetic"
+    synthetic.mkdir()
+    qualification = synthetic/"qualification.json"
+    qualification.write_text(output.read_text())
+    valid = {"status": "passed", "source_sha256": ev.receipt["source_sha256"],
+             "assertions": [{"passed": True}], "records": commands,
+             "outputs": {name: sha(output),
+                         str(qualification.relative_to(ROOT)): sha(qualification)}}
+    good = directory/"receipt.json"
+    good.write_text(json.dumps(valid))
+    good_relative = good.relative_to(ROOT)
+    calls = []
+
+    def generated():
+        calls.append(True)
+        return good_relative
+
+    for label, change in (
+        ("missing", None),
+        ("stale", lambda row: row.update(source_sha256={})),
+        ("output-hash", lambda row: row["outputs"].update({name: "0"*64})),
+        ("missing-output", lambda row: row["outputs"].update({
+            str(relative/"absent-output"): "0"*64})),
+        ("failed-receipt", lambda row: row.update(status="failed")),
+        ("failed-command", lambda row: row["records"][0].update(exit_code=1)),
+    ):
+        candidate = directory/(label+".json")
+        if change is not None:
+            row = copy.deepcopy(valid)
+            change(row)
+            candidate.write_text(json.dumps(row))
+        holder = SimpleNamespace(receipt={"source_sha256": ev.receipt["source_sha256"]})
+        before = len(calls)
+        result = codec_prerequisite(holder, [candidate.relative_to(ROOT)], generated)
+        require(result["path"] == str(good_relative) and len(calls) == before+1 and
+                len(holder.receipt["codec_prerequisite_candidates_rejected"]) == 1,
+                f"prerequisite {label} did not regenerate exactly once")
+        diagnostic = holder.receipt["codec_prerequisite_candidates_rejected"][0]
+        ev.assertion("codec_prerequisite_"+label+"_regenerated", True, **diagnostic)
+    holder = SimpleNamespace(receipt={"source_sha256": ev.receipt["source_sha256"]})
+    before = len(calls)
+    codec_prerequisite(holder, [good_relative], generated)
+    require(len(calls) == before, "current codec receipt unnecessarily regenerated")
+    ev.assertion("current_codec_prerequisite_reused", True)
+
+    for label, command in (
+        ("nonzero", [sys.executable, "-c", "import sys; sys.exit(7)"]),
+        ("malformed-summary", [sys.executable, "-c", "print('not JSON')"]),
+        ("failed-summary", [sys.executable, "-c", "print('{\"status\":\"failed\"}')"]),
+    ):
+        holder = SimpleNamespace(receipt={"source_sha256": ev.receipt["source_sha256"]})
+        try:
+            codec_prerequisite(holder, [], lambda: generate_codec(
+                ev, command, "fixture-generator-"+label))
+        except ValueError as error:
+            ev.assertion("codec_generator_"+label+"_propagated", True,
+                         diagnostic=str(error), synthetic_fixture=True)
+        else:
+            raise ValueError(f"codec generator {label} failure was swallowed")
+
+    for label, generated_path, exception in (
+        ("missing", relative/"missing-generated.json", FileNotFoundError),
+        ("stale", relative/"stale.json", ValueError),
+        ("output-hash", relative/"output-hash.json", ValueError),
+    ):
+        holder = SimpleNamespace(receipt={"source_sha256": ev.receipt["source_sha256"]})
+        try:
+            codec_prerequisite(holder, [], lambda: generated_path)
+        except exception as error:
+            require(str(generated_path) in str(error),
+                    "invalid generated receipt diagnostic omitted its path")
+            ev.assertion("generated_codec_"+label+"_rejected", True,
+                         diagnostic=str(error), synthetic_fixture=True)
+        else:
+            raise ValueError(f"{label} generated codec receipt accepted")
 
 
 def process_sample(pid):
@@ -403,9 +564,11 @@ def main():
     ev = Evidence("maximum-frame-memory")
     ok = False
     try:
-        prior = load_json(ROOT / PRIOR)
-        require(prior["status"] == "passed", "preceding codec diagnostic missing")
-        ev.receipt["preceding_diagnostic"] = {"path": PRIOR, "sha256": sha(ROOT / PRIOR)}
+        previous = ROOT/REPAIR_OF
+        if previous.is_file():
+            ev.receipt["repair_of"] = {"path": REPAIR_OF, "sha256": sha(previous)}
+        prerequisite_regressions(ev)
+        codec_prerequisite(ev)
         ev.receipt["diagnostic_source_sha256"] = {name: sha(ROOT/name) for name in SOURCES}
         ev.receipt["purpose"] = "bounded-synthetic-maximum-frame-memory-not-capacity-admission"
         ev.receipt["codec_versions"] = {"zlib_build": zlib.ZLIB_VERSION,
@@ -446,8 +609,9 @@ def main():
             "production_collection": False, "rtl_built": False, "inference": False,
             "dependencies_installed": False, "complete_capacity_proven": False}
         ok = True
-    except (ValueError, KeyError, OSError, subprocess.TimeoutExpired) as error:
-        ev.assertion("maximum_frame_memory_exception", False, diagnostic=repr(error))
+    except (ValueError, KeyError, TypeError, OSError, subprocess.TimeoutExpired) as error:
+        ev.assertion("maximum_frame_memory_exception", False,
+                     diagnostic=f"{type(error).__name__}: {error}")
     finally:
         ev.receipt["outputs"] = {
             str(path.relative_to(ROOT)): sha(path) for path in ev.path.rglob("*")
