@@ -2576,6 +2576,12 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "command-checks":
         from command_checks import command_checks
         command_checks(evidence, seed)
+    elif name == "descriptor-checks":
+        from descriptor_checks import descriptor_checks
+        descriptor_checks(evidence, seed)
+    elif name == "address-checks":
+        from address_checks import address_checks
+        address_checks(evidence, seed)
     elif name == "upload-conflicts":
         from upload_conflicts import upload_conflicts
         upload_conflicts(evidence, seed)
@@ -2664,6 +2670,14 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "reset-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("reset_descriptor_validity",))
+    elif name == "descriptor-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=(
+            "descriptor_region_overlap", "descriptor_extended_bank_end"))
+    elif name == "address-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=(
+            "address_tail_stride", "address_byte_lane"))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

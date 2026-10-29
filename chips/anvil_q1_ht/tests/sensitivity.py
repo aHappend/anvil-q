@@ -9,6 +9,8 @@ from arithmetic_benchmark import arithmetic_default
 from layer_benchmark import layer_default
 from attention_benchmark import attention_context
 from numerical_faults import fault_cases
+from descriptor_checks import descriptor_case
+from address_checks import address_case
 
 
 def stored_number_trial(evidence, seed, name):
@@ -96,6 +98,26 @@ def run_sensitivity(parent, seed, only=None):
          "if (state == INITIALIZE) descriptors[scan_index] <= descriptors[scan_index];",
          lambda run: top_probe(run, "AWQ", seed, reset_validation=True),
          "CSR_MISMATCH"),
+        ("descriptor_region_overlap", "anvil_q1_ht_descriptors.sv",
+         "{1'b0, scan_entry[64:32]} < candidate_end",
+         "1'b0",
+         lambda run: descriptor_case(run, "AWQ", "verilator"),
+         "DESCRIPTOR_CSR_MISMATCH"),
+        ("descriptor_extended_bank_end", "anvil_q1_ht_descriptors.sv",
+         "stage_base[5:0] != 0 || stage_end > 34'h200000000",
+         "stage_base[5:0] != 0",
+         lambda run: descriptor_case(run, "BF16", "verilator"),
+         "DESCRIPTOR_CSR_MISMATCH"),
+        ("address_tail_stride", "anvil_q1_ht_address.sv",
+         "7'(output_count - panel_base) : 7'd64;",
+         "7'd64 : 7'd64;",
+         lambda run: address_case(run, "AWQ", "verilator", seed),
+         "ADDRESS_RESULT_MISMATCH"),
+        ("address_byte_lane", "anvil_q1_ht_address.sv",
+         "bit_offset <= {complete_address[5:0], 3'b0};",
+         "bit_offset <= {complete_address[5:0], 3'b0} + 9'd8;",
+         lambda run: address_case(run, "BF16", "verilator", seed),
+         "ADDRESS_RESULT_MISMATCH"),
     )
     if only is not None:
         selected = set(only)
