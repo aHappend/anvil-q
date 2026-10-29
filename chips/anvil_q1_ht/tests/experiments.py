@@ -2297,6 +2297,7 @@ def measurement_records(transcript, prefix):
 
 
 def dma_probe(evidence, depth, seed=17, *, ddr_period_ns=3.75, ddr_phase_ns=0):
+    """Keep nominal D1 measurements separate from phase/rate CDC stress runs."""
     if ddr_period_ns <= 0 or not 0 <= ddr_phase_ns < ddr_period_ns:
         raise ValueError("DMA test clocks require a positive period and an in-period phase")
     bench = CLOCK + r"""
@@ -2331,6 +2332,20 @@ integer core_cycles=0,first_issue=-1,last_response=-1,compared_last=-1;
 integer stalled_edges=0,max_stall=0,current_stall=0,immediate_beats=0,gap_edges=0;
 integer reset_compares=0,transfer_index=0,reset_wait=0,reset_fill=0,reset_stall=0,epoch=0;
 integer invalid_rejections=0;
+realtime previous_core_edge=-1,previous_ddr_edge=-1;
+integer observed_core_edges=0,observed_ddr_edges=0;
+always @(posedge clk) begin
+ if(previous_core_edge>=0 && $realtime-previous_core_edge!=10.0)
+  $fatal(1,"DMA_CORE_CLOCK_PERIOD");
+ previous_core_edge=$realtime;observed_core_edges=observed_core_edges+1;
+end
+always @(posedge ddr_clk) begin
+ if(previous_ddr_edge<0) begin
+  if($realtime!=DDR_FIRST_EDGE_VALUE) $fatal(1,"DMA_DDR_CLOCK_PHASE");
+ end else if($realtime-previous_ddr_edge!=DDR_PERIOD_VALUE)
+  $fatal(1,"DMA_DDR_CLOCK_PERIOD");
+ previous_ddr_edge=$realtime;observed_ddr_edges=observed_ddr_edges+1;
+end
 reg immediate=0,gapped=0,held=0;
 reg randomized=0;
 reg [31:0] random_state=SEED_VALUE;
@@ -2754,6 +2769,10 @@ initial begin
           invalid_rejections);
  $display("CHECKS_PASSED dma depth=DEPTH_VALUE beats=%0d tiles=%0d overlap=%0d bursts=%0d burst1=%0d burst2=%0d burst15=%0d burst16=%0d",
           comparisons,swaps,overlap,bursts,burst1,burst2,burst15,burst16);
+ if(observed_core_edges<2 || observed_ddr_edges<2)
+  $fatal(1,"DMA_MISSING_CLOCK_OBSERVATIONS");
+ $display("CHECKS_PASSED dma_clocks core_edges=%0d ddr_edges=%0d",
+          observed_core_edges,observed_ddr_edges);
  $finish;
 end
 endmodule
@@ -2768,12 +2787,17 @@ endmodule
         f"always #{ddr_period_ns / 2:g} ddr_clk=!ddr_clk;")
     transcript = evidence.simulate(
         f"dma-{depth}{clock_case}", bench.replace("DEPTH_VALUE", str(depth))
-        .replace("SEED_VALUE", str(seed or 1)),
+        .replace("SEED_VALUE", str(seed or 1))
+        .replace("DDR_PERIOD_VALUE", f"{ddr_period_ns:g}")
+        .replace("DDR_FIRST_EDGE_VALUE", f"{ddr_phase_ns + ddr_period_ns / 2:g}"),
         ["anvil_q1_ht_reset_sync.sv", "anvil_q1_ht_cdc_mailbox.sv",
          "anvil_q1_ht_tile_bank.sv", "anvil_q1_ht_weight_tiles.sv",
          "anvil_q1_ht_weight_dma.sv"])
     measured = measurement_records(transcript, "MEASURED_DMA")
     pipeline = measurement_records(transcript, "CHECKS_PASSED pipelined_dma")
+    clocks = measurement_records(transcript, "CHECKS_PASSED dma_clocks")
+    if len(clocks) != 1 or any(clocks[0][name] < 2 for name in ("core_edges", "ddr_edges")):
+        raise AssertionError("DMA clock period/phase comparisons are missing")
     if (len(pipeline) != 1 or pipeline[0]["beats"] != depth * 5 or
             pipeline[0]["tiles"] != 5 or pipeline[0]["compared_stalls"] < 39 or
             any(pipeline[0][name] != 1 for name in ("stall1", "stall7", "stall31")) or
@@ -2785,6 +2809,7 @@ endmodule
         "seed": seed, "observed": pipeline[0],
         "compute_period_ns": 10, "ddr_period_ns": ddr_period_ns,
         "ddr_phase_ns": ddr_phase_ns,
+        "compared_clock_edges": clocks[0],
         "oracle": "accepted read addresses in order against independent byte-address pattern "
                   "and final useful-byte mask; compares stalled payload before and after edges",
     })
