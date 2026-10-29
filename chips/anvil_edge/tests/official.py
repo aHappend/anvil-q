@@ -98,6 +98,66 @@ def run_official_discovery(evidence):
     )
 
 
+def discover_llama(directory):
+    """Read public provenance and test unauthenticated immutable-asset access."""
+    directory = Path(directory)
+    identity = "meta-llama/Llama-3.2-1B-Instruct"
+    url = f"https://huggingface.co/api/models/{identity}"
+    request = urllib.request.Request(url, headers={"User-Agent": "Anvil-Edge-verifier/1"})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        raw = response.read(4 * 1024 * 1024 + 1)
+    if len(raw) > 4 * 1024 * 1024:
+        raise RuntimeError("Llama public metadata exceeded the bounded response size")
+    with (directory / "llama-model-api.json").open("xb") as output:
+        output.write(raw)
+    metadata = json.loads(raw)
+    revision = metadata.get("sha", "")
+    if metadata.get("id") != identity or not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise RuntimeError("Official Llama metadata did not establish immutable identity")
+    asset_url = f"https://huggingface.co/{identity}/resolve/{revision}/tokenizer.json"
+    record = {
+        "identity": identity, "revision": revision, "metadata_url": url,
+        "metadata_sha256": hashlib.sha256(raw).hexdigest(),
+        "declared_license": metadata.get("cardData", {}).get("license"),
+        "declared_gated": metadata.get("gated"),
+        "asset_url": asset_url, "method": "HEAD", "credentials_used": False,
+        "payloads_retrieved": False, "functional_comparisons": 0,
+        "acceptance_evidence": False,
+        "scope": "Public provenance and access diagnostic only; no license acceptance, "
+                 "credential lookup, mirror, payload conversion or RTL execution",
+    }
+    request = urllib.request.Request(
+        asset_url, method="HEAD", headers={"User-Agent": "Anvil-Edge-verifier/1"})
+    failure = None
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            record["http_status"] = response.status
+            record["access"] = "Unauthenticated HEAD accepted; payload integrity untested"
+    except urllib.error.URLError as error:
+        failure = error
+        record.update(access="Unavailable through unauthenticated official endpoint",
+                      error_type=type(error).__name__, error=str(error))
+        if isinstance(error, urllib.error.HTTPError):
+            record["http_status"] = error.code
+            record["error_code"] = error.headers.get("X-Error-Code")
+    with (directory / "llama-access.json").open("x", encoding="ascii") as output:
+        json.dump(record, output, indent=2)
+        output.write("\n")
+    print(json.dumps(record, indent=2), flush=True)
+    if failure is not None:
+        raise RuntimeError(
+            "Official Llama tokenizer access failed; see llama-access.json. "
+            "No gated-access bypass or replacement tokenizer is attempted") from failure
+
+
+def run_llama_discovery(evidence):
+    evidence.tools(("python3",))
+    evidence.child(
+        ["python3", "tests/official.py", "discover-llama", evidence.relative(evidence.path)],
+        "llama-official-access",
+    )
+
+
 def fetch(directory):
     """Keep immutable raw files and their ordered bundle digest for inspection."""
     directory = Path(directory)
@@ -361,10 +421,11 @@ def run_official_intake(evidence):
 
 
 if __name__ == "__main__":
-    actions = {"discover": discover, "fetch": fetch, "validate": validate,
+    actions = {"discover": discover, "discover-llama": discover_llama,
+               "fetch": fetch, "validate": validate,
                "reference": reference, "identity": installed_identity}
     if len(sys.argv) != 3 or sys.argv[1] not in actions:
-        raise SystemExit("Usage: python3 tests/official.py discover|fetch|validate|reference|identity PROJECT_RELATIVE_EVIDENCE_DIRECTORY")
+        raise SystemExit("Usage: python3 tests/official.py discover|discover-llama|fetch|validate|reference|identity PROJECT_RELATIVE_EVIDENCE_DIRECTORY")
     destination = Path(sys.argv[2])
     if (destination.is_absolute() or ".." in destination.parts
             or destination.parts[:2] not in (

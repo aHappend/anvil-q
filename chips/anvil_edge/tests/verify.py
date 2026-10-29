@@ -56,6 +56,7 @@ from official import (
     run_official_checkpoint,
     run_official_environment,
     run_official_identity,
+    run_llama_discovery,
 )
 from qwen_tables import run_qwen_fragments
 from qwen_regex import run_qwen_regex
@@ -984,6 +985,7 @@ def main():
         "official-deepseek-integration",
         "official-deepseek-boot",
         "official-deepseek-bos",
+        "official-llama-discovery",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1166,6 +1168,9 @@ def main():
         elif args.probe == "official-deepseek-bos":
             run_deepseek_bos(evidence)
             reason = "Declared DeepSeek automatic-BOS token/byte policy checked; no wrapper or inference claim"
+        elif args.probe == "official-llama-discovery":
+            run_llama_discovery(evidence)
+            reason = "Official Llama public provenance/access checked; payload and RTL coverage unexecuted"
         elif args.probe == "official-qwen-reference":
             run_official_checkpoint(evidence)
         elif args.probe == "official-dependency-repair":

@@ -6,6 +6,8 @@ add_bos_token setting is recorded separately, not silently applied or certified.
 No weights, SPI boot or inference are supplied by this fixture.
 """
 
+import copy
+import difflib
 import hashlib
 import json
 from pathlib import Path
@@ -250,6 +252,59 @@ def run_deepseek_bos(evidence):
              "deepseek-bos-large"))
         for seed in (1, 17, 89)
     ])
+    compact = [row for row in ordinary if row["input_utf8_hex"] == "65cc81"]
+    require(len(compact) == 1, "Missing BOS sensitivity vector")
+    bos_mutations(evidence, info, compact)
+
+
+def bos_mutations(evidence, info, vectors):
+    source = "rtl/anvil_edge_bpe_tokenizer.sv"
+    original = (ROOT / source).read_text()
+    mutations = (
+        ("missing-prefix", "token_count<=cfg_metadata[5*32+:32];", "token_count<=0;"),
+        ("wrong-prefix", "tokens[0]<=cfg_metadata[6*32+:32];",
+         "tokens[0]<=cfg_metadata[6*32+:32]^32'd1;"),
+    )
+    for name, before, after in mutations:
+        require(original.count(before) == 1, f"Ambiguous BOS mutation: {name}")
+        directory = evidence.path / ("bos-mutant-" + name)
+        directory.mkdir()
+        path = directory / Path(source).name
+        changed = original.replace(before, after)
+        path.write_text(changed, encoding="ascii")
+        diff = directory / "mutation.diff"
+        diff.write_text("".join(difflib.unified_diff(
+            original.splitlines(True), changed.splitlines(True),
+            fromfile=source, tofile="mutant/" + source)), encoding="ascii")
+        mutant = copy.copy(evidence)
+        mutant.path = directory
+        mutant.source_overrides = {**evidence.source_overrides, source: evidence.relative(path)}
+        mutant.name_prefix = "bos-mutant-" + name + "-"
+        first = len(evidence.record["coverage"])
+        failure = None
+        try:
+            rtl_case(mutant, info, vectors, 17, "verilator", 64, 500000, "deepseek-bos")
+        except Exception as error:
+            failure = error
+        rows = evidence.record["coverage"][first:]
+        require(len(rows) == 1 and failure is not None,
+                f"BOS mutant lacks exactly one executed functional rejection: {name}; "
+                f"observed error={failure}")
+        row = rows[0]
+        child = row.get("simulation_receipt", {})
+        require(row.get("compile_receipt", {}).get("exit_code") == 0 and
+                child.get("exit_code") not in (0, None) and not child.get("timed_out") and
+                child.get("child_settled") and child.get("process_group_settled"),
+                f"BOS mutant lacks a compiled, settled functional rejection: {name}")
+        output = (ROOT / child["stdout"]).read_text() + (ROOT / child["stderr"]).read_text()
+        assertion = "DEEPSEEK-BOS_OFFICIAL_TOKEN"
+        require(assertion in output and "%Error:" in output,
+                f"BOS mutant missed original token assertion: {name}")
+        row.update(status="expected-functional-rejection", mutation_assertion=assertion)
+        evidence.record.setdefault("bos_mutations", []).append({
+            "name": name, "status": "killed", "assertion": assertion,
+            "diff": evidence.relative(diff), "simulation": child,
+        })
 
 
 def run_deepseek_boot(evidence):

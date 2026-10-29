@@ -103,6 +103,7 @@ def source_contract():
                       "run_unicode_rtl", "run_official_checkpoint",
                       "run_deepseek_reference", "run_deepseek_dfa",
                       "run_deepseek_integration", "run_deepseek_boot",
+                      "run_deepseek_bos",
                       "run_qwen_integration", "run_qwen_boot", "run_qwen_shell"]
     incomplete = l1[0].body[-1]
     assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
