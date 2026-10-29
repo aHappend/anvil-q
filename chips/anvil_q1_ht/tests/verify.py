@@ -454,6 +454,7 @@ def main():
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
                                            "dma-compiled", "dma-bandwidth", "dma-upload", "dma-upload-sensitivity",
                                            "kernel-default", "projection-default", "projection-k",
+                                           "projection-bandwidth",
                                            "layer-awq", "layer-bf16", "layer-sensitivity",
                                            "attention-context", "attention-default", "attention-sensitivity",
                                            "arithmetic-default",

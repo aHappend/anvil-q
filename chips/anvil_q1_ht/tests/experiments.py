@@ -3051,6 +3051,10 @@ def integration_matrix(evidence, configurations=range(3), seeds=(17, 89, 257),
 
 
 def run_probe(evidence, name, seed, config=0):
+    if name == "projection-bandwidth":
+        from projection_bandwidth import run
+        run(evidence, seed)
+        return
     if name == "compatibility-matrix":
         from compatibility import compatibility_matrix
         compatibility_matrix(evidence)

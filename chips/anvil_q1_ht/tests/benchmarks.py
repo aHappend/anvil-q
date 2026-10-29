@@ -21,7 +21,8 @@ def projection_default(evidence, seed, projections=range(7), simulator="verilato
         arithmetic_default(evidence, seed)
 
 
-def projection_case(evidence, seed, projection, simulator, mode="AWQ"):
+def projection_case(evidence, seed, projection, simulator, mode="AWQ", *,
+                    bandwidth_stall=None):
     if mode not in ("AWQ", "BF16") or projection not in range(8):
         raise ValueError("unsupported default projection benchmark")
     has_parent = mode == "AWQ" and projection < 7
@@ -430,6 +431,11 @@ endmodule
     }
     for key, value in substitutions.items():
         bench = bench.replace(key, str(value))
+    if bandwidth_stall is not None:
+        from projection_bandwidth import instrument
+        bench = instrument(evidence, bench, mode, projection, inputs, outputs, seed,
+                           bandwidth_stall, activation, qweight, qzero, scale, bias,
+                           dense_bits, expected)
     root = evidence.folder / "sources"
     sources = sorted((root / "rtl").glob("*.sv"))
     sources += [root / "anvil_q1_reference/rtl" / name for name in (
@@ -458,6 +464,9 @@ endmodule
     evidence.flush()
     transcript = evidence.simulate(f"projection-{mode.lower()}-{projection}", bench, sources=sources,
                                    timeout=14400, simulator=simulator)
+    if bandwidth_stall is not None:
+        from projection_bandwidth import retain_measurement
+        retain_measurement(evidence, transcript, mode, inputs, outputs, bandwidth_stall)
     lines = [line for line in transcript.splitlines() if line.startswith("MEASURED ")]
     if len(lines) != 1:
         raise AssertionError("projection benchmark missing unique measured cycle record")
