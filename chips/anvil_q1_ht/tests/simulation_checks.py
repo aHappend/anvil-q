@@ -129,6 +129,21 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertEqual(len(cleanup["removed"]), 3)
         self.assertTrue((ROOT / cleanup["build"] / "Vtb.cpp").is_file())
 
+    def test_native_profile_keeps_assertions_and_requires_completed_samples(self):
+        trial = self.evidence()
+        trial.native_profile = True
+        with patch("verify.shutil.which", return_value="verilator"):
+            with self.assertRaisesRegex(RuntimeError, "exactly one completed sample"):
+                trial.simulate("profile", "module tb; endmodule", sources=[],
+                               simulator="verilator")
+        _, _, compile_command, simulation = trial.record["commands"]
+        argv = compile_command["argv"]
+        self.assertIn("--assert", argv)
+        self.assertIn("-pg", argv)
+        self.assertEqual(argv[argv.index("-LDFLAGS") + 1], "-pg")
+        self.assertEqual(simulation["argv"][0], "env")
+        self.assertTrue(simulation["argv"][1].startswith("GMON_OUT_PREFIX=evidence/preparation/"))
+
     def test_cleanup_rejects_external_directory(self):
         trial = self.evidence()
         with self.assertRaisesRegex(ValueError, "project preparation evidence"):

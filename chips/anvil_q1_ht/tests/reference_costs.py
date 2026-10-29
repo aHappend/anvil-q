@@ -3,6 +3,8 @@
 Run ``python3 -B tests/reference_costs.py``. Two consecutive real default-model
 prompt-prefix tokens per mode expose initial sampling and steady-state costs.
 All mandatory prompts, logits and decode lengths remain in the L1 entrypoint.
+--complete-prompt compares every prefill step and sixteen greedy decode steps
+of the first frozen prompt in both modes against bound original evaluators.
 """
 
 import argparse

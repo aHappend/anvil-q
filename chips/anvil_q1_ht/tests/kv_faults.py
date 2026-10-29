@@ -7,7 +7,7 @@ measurement. Existing KV/attention workloads remain separate and unchanged.
 from experiments import CLOCK, measurement_records
 
 
-def kv_fault_case(evidence, depth, seed, simulator):
+def kv_fault_case(evidence, depth, seed, simulator, cxx_optimization="-Os"):
     bench = CLOCK + r"""
 localparam WINDOW=@WINDOW@,POSITIONS=WINDOW+2,WIDTH=16,WORDS=2*2*POSITIONS*WIDTH;
 reg new_sequence=0,req_valid=0,req_write=0,req_value=0,rsp_ready=0;
@@ -258,7 +258,8 @@ endmodule
 """
     bench = bench.replace("@WINDOW@", str(depth)).replace("@SEED@", str(seed))
     text = evidence.simulate(f"kv-service-{depth}-{simulator}", bench,
-                             ["anvil_q1_ht_kv_window.sv"], simulator=simulator)
+                             ["anvil_q1_ht_kv_window.sv"], simulator=simulator,
+                             cxx_optimization=cxx_optimization)
     records = measurement_records(text, "CHECKS_PASSED kv_service")
     if len(records) != 1:
         raise AssertionError("KV service lacks a unique observed coverage ledger")
@@ -279,6 +280,7 @@ endmodule
     evidence.record.setdefault("kv_service_checks", []).append({
         "scope": "public_KV_logical_spill_port_not_EMIF_or_full_model_acceptance",
         "simulator": simulator, "window": depth, "seed": seed,
+        "cxx_optimization": cxx_optimization if simulator == "verilator" else None,
         "geometry": {"layers": 2, "kv_heads": 2, "head_dim": 8},
         "observed": counts,
         "response_services": ["request-edge response", "delayed 1 cycle", "delayed 7 cycles"],
