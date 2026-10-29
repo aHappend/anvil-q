@@ -2467,6 +2467,10 @@ def run_probe(evidence, name, seed, config=0):
         from attention_benchmark import attention_context
         for window, positions in ((1, 1), (3, 3), (3, 9), (128, 131)):
             attention_context(evidence, seed, window, positions)
+    elif name == "attention-default":
+        from attention_benchmark import attention_context
+        for window, positions in ((128, 3), (3, 5)):
+            attention_context(evidence, seed, window, positions, default_width=True)
     elif name in ("layer-awq", "layer-bf16"):
         from layer_benchmark import layer_default
         layer_default(evidence, seed, name[6:].upper())

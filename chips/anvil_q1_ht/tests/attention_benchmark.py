@@ -1,8 +1,12 @@
 """D3 public kernel/logical-memory/KV integration with independent causal sums.
 
 Cold backing storage is a logical device-local spill service, not an EMIF or
-board measurement. Complete context means every position of the stated compact
-configuration; it does not mean the default 32768-position checkpoint workload.
+board measurement. Complete context means every position through the stated
+command position, not the default 32768-position checkpoint workload.
+
+Run python3 -B tests/verify.py --probe attention-context for compact widths,
+or python3 -B tests/verify.py --probe attention-default for default attention
+widths with bounded context. Both experiments retain two-layer results.
 """
 
 import hashlib
@@ -13,11 +17,13 @@ from experiments import CLOCK, measurement_records
 from reference import exp_q24, round_div, sat32, signed
 
 
-def attention_context(evidence, seed, window, positions):
-    if window not in (1, 3, 128) or positions < window or positions > 131:
+def attention_context(evidence, seed, window, positions, default_width=False):
+    if window not in (1, 3, 128) or not 1 <= positions <= 131:
         raise ValueError("unsupported bounded attention experiment")
-    layers, heads, kvheads, dimension = 2, 4, 2, 8
+    layers, kvheads = 2, 2
+    heads, dimension = (14, 64) if default_width else (4, 8)
     hidden, width = heads * dimension, kvheads * dimension
+    max_sequence = max(window, positions)
     rng = random.Random(seed)
     queries = [[rng.randrange(-65536, 65537) for _ in range(hidden)]
                for _ in range(layers)]
@@ -51,7 +57,7 @@ def attention_context(evidence, seed, window, positions):
         raise AssertionError("cold context did not affect independently expected attention")
 
     def fixture(name, values):
-        path = evidence.folder / f"attention-{window}-{positions}-{name}.hex"
+        path = evidence.folder / f"attention-{hidden}-{window}-{positions}-{name}.hex"
         path.write_text("".join(f"{value & 0xffffffff:08x}\n" for value in values))
         evidence.record.setdefault("runtime_input_sha256", {})[evidence.relative(path)] = (
             hashlib.sha256(path.read_bytes()).hexdigest())
@@ -63,7 +69,9 @@ def attention_context(evidence, seed, window, positions):
     expected_path = fixture("expected", [x for row in expected for x in row])
     evidence.flush()
     bench = CLOCK + r"""
-localparam WINDOW=@WINDOW@,POSITIONS=@POSITIONS@,LAYERS=2,HIDDEN=32,WIDTH=16;
+localparam WINDOW=@WINDOW@,POSITIONS=@POSITIONS@,LAYERS=2,HIDDEN=@HIDDEN@,WIDTH=@WIDTH@;
+localparam DIM=@DIM@,HEADS=@HEADS@,MAXIMUM_SEQUENCE=@MAXIMUM_SEQUENCE@;
+localparam COLD_POSITIONS=POSITIONS>WINDOW ? POSITIONS-WINDOW : 0;
 localparam CACHE_WORDS=LAYERS*2*POSITIONS*WIDTH;
 reg host_mode=1,host_valid=0,host_write=0,host_rsp_ready=0;
 reg [3:0] host_kind=0;
@@ -93,12 +101,12 @@ integer compared=0,kv_compared=0,hot_reads=0,cold_reads=0;
 integer pending_kv=0,wanted_hit=0,wanted_write=0;
 reg [31:0] wanted_data;
 integer visits[0:LAYERS*2*POSITIONS*WIDTH-1];
-integer i,l,p,v,c,host_transfers=0,reset_compares=0;
+integer i,l,p,v,c,host_transfers=0,host_readbacks=0,reset_compares=0;
 integer address=0,kv_address=0;
 reg held_spill=0,held_k=0,held_rsp=0;
 reg [129:0] held_spill_payload;
 reg [135:0] held_k_payload;
-reg [33:0] held_rsp_payload;
+reg [32:0] held_rsp_payload;
 wire [129:0] spill_payload={spill_write,spill_value,spill_layer,spill_pos,spill_col,spill_wdata};
 wire [135:0] k_payload={k_write,k_kind,k_layer,k_proj,k_row,k_col,k_wdata};
 function automatic integer location(input integer layer,value,position,column);
@@ -109,8 +117,8 @@ function automatic integer location(input integer layer,value,position,column);
   location=((layer*2+value)*POSITIONS+position)*WIDTH+column;
  end
 endfunction
-anvil_q1_ht_kernel #(.NUM_LAYERS(2),.HIDDEN_SIZE(32),.INTERMEDIATE_SIZE(32),
- .NUM_Q_HEADS(4),.NUM_KV_HEADS(2),.HEAD_DIM(8),.MAX_SEQ_LEN(POSITIONS)) kernel(
+anvil_q1_ht_kernel #(.NUM_LAYERS(2),.HIDDEN_SIZE(HIDDEN),.INTERMEDIATE_SIZE(HIDDEN),
+ .NUM_Q_HEADS(HEADS),.NUM_KV_HEADS(2),.HEAD_DIM(DIM),.MAX_SEQ_LEN(MAXIMUM_SEQUENCE)) kernel(
  .clk(clk),.rst_n(rst_n),.abort_error(1'b0),.cmd_valid(cmd_valid),.cmd_ready(cmd_ready),
  .cmd_op(3'd7),.cmd_layer(cmd_layer),.cmd_pos(32'(POSITIONS-1)),.done(done),.error(error),
  .mem_req_valid(k_valid),.mem_req_ready(k_ready),.mem_req_write(k_write),
@@ -122,8 +130,8 @@ assign k_ready=!host_mode && mem_ready;
 assign k_rsp_valid=!host_mode && mem_rsp_valid;
 assign k_rsp_data=!host_mode ? mem_rsp_data : 0;
 assign k_rsp_error=!host_mode && mem_rsp_error;
-anvil_q1_ht_logical_memory #(.NUM_LAYERS(2),.HIDDEN_SIZE(32),.INTERMEDIATE_SIZE(32),
- .NUM_KV_HEADS(2),.HEAD_DIM(8),.MAX_SEQ_LEN(POSITIONS)) memory(
+anvil_q1_ht_logical_memory #(.NUM_LAYERS(2),.HIDDEN_SIZE(HIDDEN),.INTERMEDIATE_SIZE(HIDDEN),
+ .NUM_KV_HEADS(2),.HEAD_DIM(DIM),.MAX_SEQ_LEN(MAXIMUM_SEQUENCE)) memory(
  .clk(clk),.rst_n(rst_n),.req_valid(host_mode ? host_valid : k_valid),.req_ready(mem_ready),
  .req_write(host_mode ? host_write : k_write),.req_kind(host_mode ? host_kind : k_kind),
  .req_layer(host_mode ? host_layer : k_layer),.req_proj(host_mode ? 3'b0 : k_proj),
@@ -139,8 +147,8 @@ anvil_q1_ht_logical_memory #(.NUM_LAYERS(2),.HIDDEN_SIZE(32),.INTERMEDIATE_SIZE(
  .kv_layer(kv_layer),.kv_head(kv_head),.kv_pos(kv_pos),.kv_dim(kv_dim),.kv_wdata(kv_wdata),
  .kv_rsp_valid(kv_rsp_valid),.kv_rsp_ready(kv_rsp_ready),.kv_rsp_data(kv_rsp_data),
  .kv_rsp_error(kv_rsp_error));
-anvil_q1_ht_kv_window #(.NUM_LAYERS(2),.NUM_KV_HEADS(2),.HEAD_DIM(8),
- .MAX_SEQ_LEN(POSITIONS),.KV_WINDOW(WINDOW)) cache(
+anvil_q1_ht_kv_window #(.NUM_LAYERS(2),.NUM_KV_HEADS(2),.HEAD_DIM(DIM),
+ .MAX_SEQ_LEN(MAXIMUM_SEQUENCE),.KV_WINDOW(WINDOW)) cache(
  .clk(clk),.rst_n(rst_n),.new_sequence(1'b0),.initialized(initialized),
  .req_valid(kv_valid),.req_ready(kv_ready),.req_write(kv_write),.req_value(kv_value),
  .req_layer(kv_layer),.req_head(kv_head),.req_pos(kv_pos),.req_dim(kv_dim),.req_wdata(kv_wdata),
@@ -176,10 +184,10 @@ always @(posedge clk) if(rst_n) begin
  held_k=k_valid && !k_ready;
  if(held_k) held_k_payload=k_payload;
  if(held_rsp && (mem_rsp_valid!==1 ||
-    {mem_rsp_error,mem_rsp_data}!==held_rsp_payload[32:0]))
+    {mem_rsp_error,mem_rsp_data}!==held_rsp_payload))
   $fatal(1,"ATTENTION_RESPONSE_STALL");
  held_rsp=mem_rsp_valid && !(host_mode ? host_rsp_ready : k_rsp_ready);
- if(held_rsp) held_rsp_payload={1'b0,mem_rsp_error,mem_rsp_data};
+ if(held_rsp) held_rsp_payload={mem_rsp_error,mem_rsp_data};
  if(held_spill && (spill_valid!==1 || spill_payload!==held_spill_payload))
   $fatal(1,"ATTENTION_SPILL_STALL");
  held_spill=spill_valid && !spill_ready;
@@ -216,11 +224,11 @@ always @(posedge clk) if(rst_n) begin
   end
  end
  if(kv_valid && kv_ready) begin
-  if(pending_kv || kv_head>=2 || kv_dim>=8) $fatal(1,"ATTENTION_KV_PROTOCOL");
-  kv_address=location(kv_layer,kv_value,kv_pos,kv_head*8+kv_dim);
+  if(pending_kv || kv_head>=2 || kv_dim>=DIM) $fatal(1,"ATTENTION_KV_PROTOCOL");
+  kv_address=location(kv_layer,kv_value,kv_pos,kv_head*DIM+kv_dim);
   wanted_write=kv_write;wanted_data=history[kv_address];
   if(kv_write && kv_wdata!==wanted_data) $fatal(1,"ATTENTION_KV_WRITE_REFERENCE");
-  wanted_hit=kv_pos>=POSITIONS-WINDOW;
+  wanted_hit=kv_pos>=COLD_POSITIONS;
   pending_kv=1;
   if(!kv_write) visits[kv_address]=visits[kv_address]+1;
  end
@@ -254,6 +262,28 @@ task host_put(input integer kind,layer,row,col,input reg [31:0] data);
   @(negedge clk);host_rsp_ready=0;host_transfers=host_transfers+1;
  end
 endtask
+task read_context(input integer layer,column);
+ integer wait_edges;
+ begin
+  @(negedge clk);
+  host_valid=1;host_write=0;host_kind=8;
+  host_layer=0;host_row=5;host_col=column;host_wdata=0;
+  wait_edges=0;
+  while(mem_ready!==1 && wait_edges<10000) begin edge_tick();wait_edges=wait_edges+1;end
+  if(mem_ready!==1) $fatal(1,"ATTENTION_READBACK_REQUEST_TIMEOUT");
+  edge_tick();
+  @(negedge clk);host_valid=0;
+  wait_edges=0;
+  while(mem_rsp_valid!==1 && wait_edges<10000) begin edge_tick();wait_edges=wait_edges+1;end
+  if(mem_rsp_valid!==1 || mem_rsp_error!==0 ||
+     mem_rsp_data!==expected[layer*HIDDEN+column])
+   $fatal(1,"ATTENTION_CONTEXT_READBACK_MISMATCH");
+  repeat(3) edge_tick();
+  @(negedge clk);host_rsp_ready=1;
+  edge_tick();
+  @(negedge clk);host_rsp_ready=0;host_readbacks=host_readbacks+1;
+ end
+endtask
 task run_layer(input integer layer);
  integer start,elapsed,hot_before,cold_before,reads_before,writes_before,count_before;
  begin
@@ -268,12 +298,12 @@ task run_layer(input integer layer);
   if(cmd_ready!==0 || done!==0) $fatal(1,"ATTENTION_ACCEPT_EDGE");
   @(negedge clk);cmd_valid=0;
   elapsed=0;
-  while(done!==1 && elapsed<100000000) begin edge_tick();elapsed=elapsed+1;end
+  while(done!==1 && elapsed<1000000000) begin edge_tick();elapsed=elapsed+1;end
   if(done!==1 || error!==0 || compared-count_before!=HIDDEN ||
      pending_kv!=0 || pending_spill!=0 || k_valid!==0 || kv_valid!==0)
    $fatal(1,"ATTENTION_COMPLETION_OR_COVERAGE");
   if(spill_reads-reads_before!=cold_reads-cold_before ||
-     (POSITIONS==WINDOW && (cold_reads!=cold_before || spill_writes!=writes_before)) ||
+     (POSITIONS<=WINDOW && (cold_reads!=cold_before || spill_writes!=writes_before)) ||
      (POSITIONS>WINDOW && cold_reads==cold_before))
    $fatal(1,"ATTENTION_RESIDENCY_OR_COLD_READ_CONSERVATION");
   $display("MEASURED_ATTENTION window=%0d positions=%0d layer=%0d cycles=%0d compared=%0d hot_reads=%0d cold_reads=%0d spill_reads=%0d spill_writes=%0d",
@@ -282,6 +312,7 @@ task run_layer(input integer layer);
   edge_tick();
   if(done!==0 || cmd_ready!==1) $fatal(1,"ATTENTION_COMPLETION_PULSE");
   @(negedge clk);host_mode=1;
+  for(c=0;c<HIDDEN;c=c+1) read_context(layer,c);
  end
 endtask
 initial begin
@@ -302,13 +333,15 @@ initial begin
  end
  for(i=0;i<LAYERS*HIDDEN;i=i+1)
   if(seen_output[i]!==1) $fatal(1,"ATTENTION_MISSING_CONTEXT_OUTPUT");
- if(compared!=LAYERS*HIDDEN || kv_compared!=hot_reads+cold_reads ||
+ if(compared!=LAYERS*HIDDEN || host_readbacks!=LAYERS*HIDDEN ||
+    kv_compared!=hot_reads+cold_reads ||
     spill_reads!=cold_reads || reset_compares==0 ||
-    spill_writes!=LAYERS*2*(POSITIONS-WINDOW)*WIDTH ||
+    spill_writes!=LAYERS*2*COLD_POSITIONS*WIDTH ||
     (POSITIONS>WINDOW && spill_stalls==0))
   $fatal(1,"ATTENTION_FINAL_COVERAGE");
- $display("CHECKS_PASSED attention_context window=%0d positions=%0d outputs=%0d cache_words=%0d hot_reads=%0d cold_reads=%0d spill_writes=%0d spill_stalls=%0d reset_samples=%0d",
-          WINDOW,POSITIONS,compared,kv_compared,hot_reads,cold_reads,spill_writes,spill_stalls,reset_compares);
+ $display("CHECKS_PASSED attention_context window=%0d positions=%0d outputs=%0d readbacks=%0d cache_words=%0d hot_reads=%0d cold_reads=%0d spill_writes=%0d spill_stalls=%0d reset_samples=%0d",
+          WINDOW,POSITIONS,compared,host_readbacks,kv_compared,hot_reads,cold_reads,
+          spill_writes,spill_stalls,reset_compares);
  $finish;
 end
 endmodule
@@ -316,9 +349,11 @@ endmodule
     for key, value in {
         "WINDOW": window, "POSITIONS": positions, "QUERY": query_path,
         "HISTORY": history_path, "EXPECTED": expected_path,
+        "HIDDEN": hidden, "WIDTH": width, "DIM": dimension, "HEADS": heads,
+        "MAXIMUM_SEQUENCE": max_sequence,
     }.items():
         bench = bench.replace("@" + key + "@", str(value))
-    transcript = evidence.simulate(f"attention-{window}-{positions}", bench,
+    transcript = evidence.simulate(f"attention-{hidden}-{window}-{positions}", bench,
                                    simulator="verilator", timeout=14400)
     measured = measurement_records(transcript, "MEASURED_ATTENTION")
     if (len(measured) != layers or {row["layer"] for row in measured} != set(range(layers))
@@ -327,10 +362,12 @@ endmodule
                    for row in measured)):
         raise AssertionError("attention measurements lack independently compared results")
     evidence.record.setdefault("attention_benchmarks", []).append({
-        "scope": "D3_compact_full_causal_kernel_logical_memory_KV_not_EMIF_or_checkpoint",
+        "scope": ("D3_default_width_bounded_context_two_layers_not_EMIF_or_checkpoint"
+                  if default_width else
+                  "D3_compact_full_causal_kernel_logical_memory_KV_not_EMIF_or_checkpoint"),
         "seed": seed, "layers": layers, "hidden": hidden, "qheads": heads,
         "kvheads": kvheads, "head_dim": dimension, "window": window,
-        "max_sequence": positions, "position": positions - 1,
+        "max_sequence": max_sequence, "position": positions - 1,
         "compared_causal_positions": list(range(positions)),
         "cold_context_sensitive_output_elements": cold_differences,
         "compute_period_ns": 10,
@@ -341,7 +378,8 @@ endmodule
                          "response delay cycles modulo 5 at acceptance, held until ready",
         "observed": measured,
         "limitations": ["logical spill transactions are not physical DDR beat measurements",
-                        "compact dimensions do not certify default-width 32768-position context",
+                        "bounded context and two layers do not certify the default "
+                        "24-layer 32768-position context",
                         "synthetic input tensors are not checkpoint-backed inference"],
     })
     evidence.flush()
