@@ -94,6 +94,17 @@ def write_json(path, value):
         output.write("\n")
 
 
+def storage_snapshot(path):
+    usage = shutil.disk_usage(path)
+    filesystem = os.statvfs(path)
+    return {
+        "total_bytes": usage.total, "used_bytes": usage.used,
+        "available_bytes": usage.free,
+        "available_inodes": filesystem.f_favail,
+        "observed_utc": utc(),
+    }
+
+
 class Evidence:
     def __init__(self, label, preparation=False):
         parent = ROOT / "evidence" / ("preparation" if preparation else "verification")
@@ -141,6 +152,14 @@ class Evidence:
                     target = self.path / "sources" / rel
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(path, target)
+        write_json(self.path / "launch.json", {
+            "argv": self.record["argv"], "cwd": self.record["cwd"],
+            "start_utc": self.record["start_utc"],
+            "source_sha256": self.record["source_sha256"],
+            "storage": storage_snapshot(self.path),
+            "final_receipt": self.relative(self.path / "receipt.json"),
+            "status": "initialized; final outcome requires receipt.json",
+        })
 
     def relative(self, path):
         return str(path.relative_to(ROOT))
@@ -228,6 +247,12 @@ class Evidence:
             "timed_out": False, "child_settled": False,
             "queue_duration_s": queue_seconds,
         }
+        record["storage_before"] = storage_snapshot(directory)
+        write_json(directory / "initial.json", {
+            **record, "status": "launch pending; not an execution result",
+            "source_manifest": self.relative(self._root.path / "launch.json"),
+            "tool_versions": self.record["tool_versions"],
+        })
         start = time.monotonic()
         interrupted = None
         with (directory / "stdout.log").open("xb") as stdout:
@@ -249,6 +274,13 @@ class Evidence:
                         self._root._peak_children = max(
                             self._root._peak_children, len(self._root._active_children))
                     try:
+                        write_json(directory / "launch.json", {
+                            "argv": record["argv"], "cwd": record["cwd"],
+                            "launched_utc": utc(), "pid": process.pid,
+                            "process_group": process.pid,
+                            "storage": storage_snapshot(directory),
+                            "status": "launched; final outcome requires receipt.json",
+                        })
                         deadline = start + timeout
                         while True:
                             pid, status, usage = os.wait4(process.pid, os.WNOHANG)
@@ -296,6 +328,7 @@ class Evidence:
                         record["process_group_settled"] = False
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
+        record["storage_after"] = storage_snapshot(directory)
         write_json(directory / "receipt.json", record)
         self.record["children"].append(record)
         if interrupted is not None:
@@ -913,6 +946,8 @@ def main():
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
+    parser.add_argument("--incomplete-predecessor", action="append", default=[],
+                        help="Prior project preparation directory lacking a final receipt")
     parser.add_argument("--schedule-receipt", action="append", default=[],
                         help="Measured preparation receipt for the read-only schedule probe")
     args = parser.parse_args()
@@ -920,6 +955,28 @@ def main():
     evidence = Evidence(label, preparation=args.probe is not None)
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
     try:
+        evidence.record["incomplete_predecessors"] = []
+        for name in args.incomplete_predecessor:
+            relative = Path(name)
+            if (relative.is_absolute() or ".." in relative.parts or
+                    relative.parts[:2] != ("evidence", "preparation") or
+                    not (ROOT / relative).is_dir() or
+                    (ROOT / relative / "receipt.json").exists()):
+                raise VerificationFailure("Expected an incomplete project preparation directory")
+            prior = ROOT / relative
+            entry = {
+                "path": name, "final_receipt_present": False,
+                "retained_diagnostics_sha256": {
+                    str(path.relative_to(ROOT)): digest(path)
+                    for path in sorted(prior.rglob("*"))
+                    if path.is_file() and path.name in
+                    ("receipt.json", "stdout.log", "stderr.log")
+                },
+                "interpretation": "Incomplete predecessor; no final simulation outcome inferred",
+            }
+            evidence.record["incomplete_predecessors"].append(entry)
+        write_json(evidence.path / "predecessors.json",
+                   evidence.record["incomplete_predecessors"])
         evidence.record["repair_of"] = []
         for name in args.repair_of:
             relative = Path(name)

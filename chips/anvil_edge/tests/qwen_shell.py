@@ -335,6 +335,9 @@ module bench;
             end
             boot_offset=boot_offset+4; writes=writes+1;
             if (boot_offset>=segment_length[boot_segment]) begin
+              $display("QWEN_SHELL_BOOT_SEGMENT segment=%0d cycles=%0d",
+                       boot_segment,cycles);
+              $fflush();
               boot_segment=boot_segment+1; boot_offset=0;
             end
           end else begin
@@ -375,9 +378,11 @@ module bench;
                     64'd32*expected_tokens[operation_index]+4*embedding_index)
                   $fatal(1,"QWEN_SHELL_PREFILL_FEEDBACK frame=%0d op=%0d token=%0d address=%h",
                          frame,operation_index,expected_tokens[operation_index],ddr_req_addr);
-                if (embedding_index==0)
+                if (embedding_index==0) begin
                   $display("QWEN_SHELL_OPERATION frame=%0d position=%0d token=%0d cycles=%0d",
                            frame,operation_index,expected_tokens[operation_index],cycles);
+                  $fflush();
+                end
               end else if (ddr_req_addr!==segment_base[2]+4*(embedding_index-8))
                 $fatal(1,"QWEN_SHELL_HEAD_FRAME_ORDER");
               embedding_reads=embedding_reads+1;
@@ -422,6 +427,8 @@ module bench;
           for (integer item=0;item<write_count;item=item+1)
             if (!write_seen[item]) $fatal(1,"QWEN_SHELL_MISSING_WRITE item=%0d",item);
           frame_done=frame_done+1; completions=completions+1; comparisons=comparisons+1;
+          $display("QWEN_SHELL_COMPLETION frame=%0d cycles=%0d",frame,cycles);
+          $fflush();
         end
       end
     end
@@ -475,6 +482,7 @@ module bench;
         $fatal(1,"QWEN_SHELL_BOOT_CONSERVATION");
       $display("QWEN_SHELL_BOOT writes=%0d reads=%0d acknowledgements=%0d cycles=%0d",
                writes,reads,acknowledgements,cycles);
+      $fflush();
       comparisons=comparisons+1;
     end
   endtask
@@ -514,6 +522,8 @@ module bench;
         $fatal(1,"QWEN_SHELL_DELAYED_CALIBRATION");
     end
     @(negedge clk); #1; ddr_cal_done=1;
+    $display("QWEN_SHELL_START transport=%0d cycles=%0d",BYPASS,cycles);
+    $fflush();
     wait_boot();
     for (frame=0;frame<FRAMES;frame=frame+1) begin
       @LOAD_CASE@
@@ -551,6 +561,7 @@ module bench;
       $display("QWEN_SHELL_FRAME frame=%0d transport=%0d prompt_bytes=%0d operations=%0d output_bytes=%0d embedding_reads=%0d activation_writes=%0d cycles=%0d",
                frame,BYPASS,input_count,operation_count,outputs,embedding_reads,
                activation_writes,cycles);
+      $fflush();
       running=0;
       if (frame==0 && FRAMES>1) reload_image();
     end
@@ -559,7 +570,7 @@ module bench;
       $fatal(1,"QWEN_SHELL_COVERAGE");
     $display("QWEN_SHELL_COUNTS frames=%0d reloads=%0d request_stalls=%0d output_stalls=%0d",
              completions,reloads,request_stalls,output_stalls);
-    $display("COMPARED %0d",comparisons); $finish;
+    $display("COMPARED %0d",comparisons); $fflush(); $finish;
   end
 endmodule
 """
