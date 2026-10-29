@@ -31,7 +31,7 @@ module anvil_q1_top #(
     READ_ACTIVATION=10, WAIT_ACTIVATION=11, READ_WEIGHT=12, WAIT_WEIGHT=13,
     CONVERT_WEIGHT=14, MULTIPLY=15, MULTIPLY_WAIT=16,
     ACCUMULATE=17, NEXT_COMPONENT=18, ROUND=19, LOGIT=20,
-    INVALID_COMMAND=21, FINISH=22;
+    INVALID_COMMAND=21, FINISH=22, REUSE_ACTIVATION=23;
   reg [4:0] state;
   reg failed, sequence_valid;
   reg [31:0] token, position, next_position, component, vocabulary, layer;
@@ -39,6 +39,10 @@ module anvil_q1_top #(
   reg signed [31:0] activation, weight_value, result;
   reg signed [63:0] logit_product;
   reg signed [95:0] logit_sum;
+  reg activation_reuse_valid;
+  (* ramstyle = "M20K", nomem2reg *)
+  reg [31:0] head_activations [0:HIDDEN_SIZE-1];
+  reg [31:0] head_activation_q;
   wire multiply_ready, multiply_valid;
   wire signed [63:0] product;
   wire [1:0] ready, finished, faults;
@@ -102,20 +106,34 @@ module anvil_q1_top #(
     if (rst_n && port_idle) case (state)
       EMBEDDING_READ: begin issue=1; kind=0; row=token; col=component; end
       EMBEDDING_WRITE: begin issue=1; write_request=1; kind=8; col=component; write_data=activation; end
-      READ_ACTIVATION: begin issue=1; kind=8; row=14; col=component; end
+      READ_ACTIVATION: if (!activation_reuse_valid) begin
+        issue=1; kind=8; row=14; col=component;
+      end
       READ_WEIGHT: begin issue=1; kind=0; row=vocabulary; col=component; end
       default: begin end
     endcase
+  end
+  always @(posedge clk) begin
+    if (rst_n && !fault) begin
+      if (state==WAIT_ACTIVATION && complete)
+        head_activations[component]<=read_data;
+      if (state==READ_ACTIVATION && activation_reuse_valid)
+        head_activation_q<=head_activations[component];
+    end
   end
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       state<=IDLE; failed<=0; sequence_valid<=1; token<=0; position<=0;
       next_position<=0; component<=0; vocabulary<=0; layer<=0; tensor_f16<=0;
       activation<=0; weight_value<=0; result<=0; logit_product<=0; logit_sum<=0;
-    end else if (fault) begin failed<=1; sequence_valid<=0; state<=FINISH; end
+      activation_reuse_valid<=0;
+    end else if (fault) begin
+      failed<=1; sequence_valid<=0; activation_reuse_valid<=0; state<=FINISH;
+    end
     else case (state)
       IDLE: if (token_valid && token_ready) begin
         failed<=0;
+        activation_reuse_valid<=0;
         if (token_id>=VOCAB_SIZE || token_pos>=MAX_SEQ_LEN ||
             (new_sequence && token_pos!=0) ||
             (!new_sequence && (!sequence_valid || token_pos!=next_position))) begin
@@ -128,7 +146,7 @@ module anvil_q1_top #(
       EMBEDDING_READ: if (issue) state<=EMBEDDING_WAIT;
       EMBEDDING_WAIT: if (complete) begin
         if (anvil_edge_numeric_pkg::f16_invalid(read_data[15:0])) begin
-          failed<=1; sequence_valid<=0; state<=FINISH;
+          failed<=1; sequence_valid<=0; activation_reuse_valid<=0; state<=FINISH;
         end else begin tensor_f16<=read_data[15:0]; state<=EMBEDDING_CONVERT; end
       end
       EMBEDDING_CONVERT: begin activation<=anvil_edge_numeric_pkg::f16_q16(tensor_f16); state<=EMBEDDING_WRITE; end
@@ -139,21 +157,33 @@ module anvil_q1_top #(
       end
       LAYER: if (ready[0]) state<=LAYER_WAIT;
       LAYER_WAIT: if (finished[0]) begin
-        if (faults[0]) begin failed<=1; sequence_valid<=0; state<=FINISH; end
+        if (faults[0]) begin
+          failed<=1; sequence_valid<=0; activation_reuse_valid<=0; state<=FINISH;
+        end
         else if (layer+1<NUM_LAYERS) begin layer<=layer+1; state<=LAYER; end
         else state<=FINAL_NORM;
       end
       FINAL_NORM: if (ready[1]) state<=FINAL_NORM_WAIT;
       FINAL_NORM_WAIT: if (finished[1]) begin
-        if (faults[1]) begin failed<=1; sequence_valid<=0; state<=FINISH; end
+        if (faults[1]) begin
+          failed<=1; sequence_valid<=0; activation_reuse_valid<=0; state<=FINISH;
+        end
         else begin component<=0; vocabulary<=0; logit_sum<=0; state<=READ_ACTIVATION; end
       end
-      READ_ACTIVATION: if (issue) state<=WAIT_ACTIVATION;
-      WAIT_ACTIVATION: if (complete) begin activation<=read_data; state<=READ_WEIGHT; end
+      READ_ACTIVATION: begin
+        if (activation_reuse_valid) state<=REUSE_ACTIVATION;
+        else if (issue) state<=WAIT_ACTIVATION;
+      end
+      WAIT_ACTIVATION: if (complete) begin
+        activation<=read_data;
+        if (component==HIDDEN_SIZE-1) activation_reuse_valid<=1;
+        state<=READ_WEIGHT;
+      end
+      REUSE_ACTIVATION: begin activation<=head_activation_q; state<=READ_WEIGHT; end
       READ_WEIGHT: if (issue) state<=WAIT_WEIGHT;
       WAIT_WEIGHT: if (complete) begin
         if (anvil_edge_numeric_pkg::f16_invalid(read_data[15:0])) begin
-          failed<=1; sequence_valid<=0; state<=FINISH;
+          failed<=1; sequence_valid<=0; activation_reuse_valid<=0; state<=FINISH;
         end else begin tensor_f16<=read_data[15:0]; state<=CONVERT_WEIGHT; end
       end
       CONVERT_WEIGHT: begin weight_value<=anvil_edge_numeric_pkg::f16_q16(tensor_f16); state<=MULTIPLY; end
@@ -175,8 +205,10 @@ module anvil_q1_top #(
         end else begin next_position<=position+1; sequence_valid<=1; state<=FINISH; end
       end
       INVALID_COMMAND: state<=FINISH;
-      FINISH: state<=IDLE;
-      default: begin failed<=1; sequence_valid<=0; state<=FINISH; end
+      FINISH: begin activation_reuse_valid<=0; state<=IDLE; end
+      default: begin
+        failed<=1; sequence_valid<=0; activation_reuse_valid<=0; state<=FINISH;
+      end
     endcase
   end
 endmodule

@@ -74,6 +74,10 @@ module anvil_edge_tensor_mapper #(
   reg [63:0] cache_offset [0:1], cache_extent [0:1];
   reg [31:0] cache_rows [0:1], cache_columns [0:1];
   reg [31:0] cache_format [0:1], cache_permissions [0:1];
+  reg [1:0] cache_row_valid;
+  reg [31:0] cache_row [0:1];
+  reg [63:0] cache_row_base [0:1];
+  reg descriptor_cache_index;
   integer cache_reset_index;
   wire cache_context_matches=cfg_directory_base==directory_base &&
     cfg_directory_count==directory_count &&
@@ -84,6 +88,10 @@ module anvil_edge_tensor_mapper #(
   wire cache_hit_1=cache_valid[1] && cache_kind[1]==request_kind &&
     cache_layer[1]==request_layer && cache_projection[1]==request_projection;
   wire cache_hit_index=!cache_hit_0 && cache_hit_1;
+  wire row_base_hit=config_valid && cache_context_matches &&
+    transaction_cacheable && cache_valid[descriptor_cache_index] &&
+    cache_row_valid[descriptor_cache_index] &&
+    cache_row[descriptor_cache_index]==request_row;
   wire multiply_ready, multiply_valid;
   wire signed [127:0] multiply_product;
   wire multiply_extent=state==EXTENT_MULTIPLY || state==EXTENT_WAIT;
@@ -139,6 +147,7 @@ module anvil_edge_tensor_mapper #(
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       cache_valid<=0;
+      cache_row_valid<=0;
       cache_victim<=0;
       transaction_cacheable<=0;
       for (cache_reset_index=0; cache_reset_index<2;
@@ -153,6 +162,8 @@ module anvil_edge_tensor_mapper #(
         cache_columns[cache_reset_index]<=0;
         cache_format[cache_reset_index]<=0;
         cache_permissions[cache_reset_index]<=0;
+        cache_row[cache_reset_index]<=0;
+        cache_row_base[cache_reset_index]<=0;
       end
     end else begin
       if (mem_req_valid && mem_req_ready) transaction_cacheable<=1;
@@ -161,6 +172,7 @@ module anvil_edge_tensor_mapper #(
       // Epoch withdrawal wins over a simultaneous completed descriptor fill.
       if (!config_valid || !cache_context_matches) begin
         cache_valid<=0;
+        cache_row_valid<=0;
         cache_victim<=0;
       end else if (state==EXTENT_CHECK && descriptor_extent_valid &&
                    transaction_cacheable) begin
@@ -175,7 +187,17 @@ module anvil_edge_tensor_mapper #(
         cache_format[cache_victim]<=region_format;
         cache_permissions[cache_victim]<=region_permissions;
         cache_valid[cache_victim]<=1;
+        cache_row_valid[cache_victim]<=0;
         cache_victim<=!cache_victim;
+      end else if (state==INDEX_WAIT && multiply_valid &&
+                   multiply_product[127:64]==0 && transaction_cacheable &&
+                   cache_valid[descriptor_cache_index] &&
+                   cache_kind[descriptor_cache_index]==request_kind &&
+                   cache_layer[descriptor_cache_index]==request_layer &&
+                   cache_projection[descriptor_cache_index]==request_projection) begin
+        cache_row[descriptor_cache_index]<=request_row;
+        cache_row_base[descriptor_cache_index]<=multiply_product[63:0];
+        cache_row_valid[descriptor_cache_index]<=1;
       end
     end
   end
@@ -282,6 +304,7 @@ module anvil_edge_tensor_mapper #(
       physical_address<=0; segment_base<=0; segment_bytes<=0;
       read_data<=0; response_data<=0; response_error<=0;
       descriptor_cached<=0;
+      descriptor_cache_index<=0;
     end else case (state)
       IDLE: if (mem_req_valid && mem_req_ready) begin
         request_write<=mem_req_write;
@@ -337,6 +360,7 @@ module anvil_edge_tensor_mapper #(
           region_format<=cache_format[cache_hit_index];
           region_permissions<=cache_permissions[cache_hit_index];
           descriptor_cached<=1;
+          descriptor_cache_index<=cache_hit_index;
           state<=REGION_CHECK;
         end else state<=DIR_OFFSET;
       end
@@ -404,7 +428,10 @@ module anvil_edge_tensor_mapper #(
         end else begin
           segment_base<=writable_key ? writable_base : immutable_base;
           segment_bytes<=writable_key ? writable_bytes : immutable_bytes;
-          if (descriptor_cached) state<=INDEX_MULTIPLY;
+          if (descriptor_cached && row_base_hit) begin
+            element_index<={1'b0,cache_row_base[descriptor_cache_index]};
+            state<=INDEX_ADD;
+          end else if (descriptor_cached) state<=INDEX_MULTIPLY;
           else state<=EXTENT_MULTIPLY;
         end
       end
@@ -420,7 +447,10 @@ module anvil_edge_tensor_mapper #(
       EXTENT_CHECK: begin
         if (!descriptor_extent_valid) begin
           response_error<=1; state<=RETURN;
-        end else state<=INDEX_MULTIPLY;
+        end else begin
+          descriptor_cache_index<=cache_victim;
+          state<=INDEX_MULTIPLY;
+        end
       end
       INDEX_MULTIPLY: if (multiply_ready) state<=INDEX_WAIT;
       INDEX_WAIT: if (multiply_valid) begin

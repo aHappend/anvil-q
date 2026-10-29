@@ -49,7 +49,10 @@ than 10.0 ns. Static elaboration is not timing acceptance.
 | Mapper cache hit/miss | Two fixed entries, keyed by kind/layer/projection. A hit registers metadata before shape/permission and per-access arithmetic checks; a miss scans DDR and fills only after complete descriptor validation. |
 | Mapper cache replacement | Successful fills alternate victims 0 and 1; hits do not change replacement order. One outstanding request prevents concurrent fill/lookup races. |
 | Mapper cache reset/reload | Reset or sampled configuration withdrawal invalidates both entries before reuse; invalidation wins over fill. Even a same-address reload starts cold. First post-reset requests cannot hit. |
+| Mapper row-base reuse | Each descriptor slot retains one registered unsigned64 `row*columns` and its row. Only a validated descriptor hit in the same live epoch can reuse it, after request and metadata checks. Replacement invalidates that slot's row base; withdrawal overrides row-base fill, including during an outstanding request. |
 | Mapper held response | Cache invalidation never changes an outstanding DDR request or a held typed response. Completion still requires the recorded DDR acknowledgement. |
+| Output-head activation capture | Each successful first-vocabulary-row activation response writes one synchronous buffer entry. Only the last component's successful completion makes the complete vector reusable. Errors/reset/new accepted core commands invalidate it. No uninitialized buffer entry is consumed. |
+| Output-head activation reuse | `READ_ACTIVATION` registers the selected buffer word; `REUSE_ACTIVATION` captures that old registered word on the next edge before `READ_WEIGHT`. Even for a one-row vocabulary the first row uses DDR, not unfilled storage. Component wrap occurs only after the current row's held logit is accepted. |
 
 ## Error codes
 
@@ -282,8 +285,9 @@ opaque tensor-storage bases, which identify their data directly.
 The mapper snapshots the committed bundle at typed-request capture. A fixed
 two-entry fully associative cache retains only validated directory metadata,
 keyed by the complete tensor identity (kind, layer, projection) within that
-committed configuration epoch. Rows, columns, write direction and data are not
-cached answers: each request is checked independently. On a miss it searches
+committed configuration epoch. Each descriptor slot additionally retains one
+registered row product and its row identity; columns, write direction and data
+are not cached answers, and every request is checked independently. On a miss it searches
 the sorted DDR directory one record at a time, reading three key words first
 and only the remaining nine words on a match. There is no model-sized on-chip
 directory and no tensor-value or logit cache. The boot validator remains responsible for
@@ -298,8 +302,10 @@ format, permissions, storage kind, alignment, checked rows-times-columns byte
 extent and segment bounds have passed. Failed/incomplete descriptor reads or
 validation never fill an entry. Hits reuse the validated extent product, but
 still check configuration/window legality, request-specific bounds and writes,
-descriptor shape/format/permissions, registered row multiplication, column and
-byte-offset arithmetic, region/segment bounds and final DDR address. Tensor-data
+descriptor shape/format/permissions, column and byte-offset arithmetic,
+region/segment bounds and final DDR address. A row-product hit reuses only the
+previously registered unsigned64 `row*columns` for that same descriptor and
+row; a miss performs the original checked registered multiplication. Tensor-data
 reads and writes always reach DDR and consume its real success/error response.
 Data errors cannot become cache-provided successes.
 
@@ -312,7 +318,12 @@ epoch, without cancelling its captured transaction or changing a stalled
 response. Reload must still be idle-only; changing DDR directory contents
 without withdrawal is outside the immutable committed-table contract. Reload
 at the same addresses must withdraw validity and therefore cannot retain stale
-metadata.
+metadata or row products. Descriptor replacement invalidates the replaced
+slot's row product. Row products fill only from successful, nonoverflowing
+index-multiplier results while the captured transaction remains cacheable in
+the current configuration. A request that observes withdrawal cannot later
+refill either cache, even if validity returns with identical addresses before
+its DDR response arrives. No wrapping epoch counter is used.
 
 Registered states separate request capture, configuration/window checks,
 directory address calculation, held request, response capture, record consume,
@@ -328,7 +339,7 @@ values. No runtime division or remainder computes an address.
 | Directory read | `DIR_OFFSET` / `DIR_ADDRESS` register the address; `READ_REQUEST` holds it until ready; `READ_RESPONSE` waits for success/error; `READ_CONSUME` captures the selected word. |
 | Directory search | `KEY_CHECK` reads the remaining matching words, advances one sorted record, or returns an explicit missing-key error. |
 | Descriptor validation/fill | `REGION_CHECK` checks metadata; misses use `EXTENT_MULTIPLY` / `EXTENT_WAIT` / `EXTENT_CHECK`, filling only on successful extent validation. Hits skip only that immutable extent calculation. |
-| Per-access address | `INDEX_MULTIPLY` / `INDEX_WAIT` await the registered multiplier; `INDEX_ADD` through `PHYSICAL_CHECK` check row/column, byte offset, segment and DDR bounds on hits and misses alike. |
+| Per-access address | After metadata checks, `REGION_CHECK` registers a matching cached row product and enters `INDEX_ADD`, or enters `INDEX_MULTIPLY` / `INDEX_WAIT` for a checked product. A descriptor miss validates/fills its descriptor before index multiplication. `INDEX_ADD` through `PHYSICAL_CHECK` retain column, byte-offset, segment and DDR bounds checks on all paths. |
 | Tensor transaction | `DATA_REQUEST` holds fields until ready; `DATA_RESPONSE` waits for the mandatory acknowledgement, including writes, and captures errors without retry/substitution. |
 | Typed response | `RETURN` holds response fields until acceptance, then returns to `IDLE`; cache activity cannot retire or alter this response. |
 
@@ -528,6 +539,26 @@ The production top retains shared embedding/output kind 0, full physical
 vocabulary logits and sequence validation. Embedding FP16 conversion, output
 FP16 conversion, signed32 product, signed96 accumulation and logit rounding
 are separate registered states.
+
+The output head retains the final-normalized activation vector in a
+`HIDDEN_SIZE`-word synchronous local buffer (32 bits per word). The first
+physical vocabulary row still reads each kind-8/row-14 component from DDR,
+storing only successful responses. Completion of its last component enables
+reuse for subsequent vocabulary rows of this core operation. Final normalization
+has finished, and the core does not modify that activation slot during output
+traversal. New accepted core commands, reset, every error and completion
+invalidate reuse; neither prompt nor feedback operations share activation data.
+Buffer contents and its registered read word need no reset because validity
+guards every read and the read/capture states are separate.
+
+For a successful operation this changes output-head activation reads from
+`HIDDEN_SIZE*VOCAB_SIZE` to `HIDDEN_SIZE`; it does not change embedding reads or
+the `HIDDEN_SIZE*VOCAB_SIZE` physical head-weight reads. Every physical vocabulary
+row, signed product, ordered signed96 accumulation, rounding/saturation,
+held logit and completion handshake remains required. Actual DDR requests
+still propagate errors; omitted redundant activation reads are not simulated
+DDR successes. These traffic counts are implementation intent, not measured
+throughput or independent correctness results.
 
 `anvil_edge_core_adapter` preserves every supplied `anvil_q1_top` parameter
 and public token/logit/done/error/typed-memory port. Additional inputs

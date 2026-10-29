@@ -90,6 +90,18 @@ registered query/KV head bases and a head-within-group counter. RoPE shares
 one multiplier for its four pair products. Decoder and MLP retain the supplied
 operation ordering; the top emits the entire physical vocabulary.
 
+After final normalization, the output head fills a synchronous, non-reset
+`HIDDEN_SIZE`-by-32 buffer from the first vocabulary row's successful activation
+reads. A resettable validity bit becomes set only after the last component
+arrives. Later rows register a buffer read and then capture it in a separate
+state before requesting the weight. No arithmetic or reduction ordering
+changes. All physical head-weight reads and all physical logits remain;
+output-head activation traffic becomes one vector per operation instead of
+one vector per vocabulary row. The buffer occupies 28,672 data bits at the
+default H=896, independent of vocabulary size. Reset, error, completion and
+every new accepted token invalidate it. Thus feedback and prefill operations
+cannot inherit earlier activations, and no buffer reset loop is required.
+
 The adapter buffers only active logits but drains and validates every physical
 index and waits for real core completion. It cannot certify non-Q1 arithmetic.
 Retiming explicitly preserves intermediate low64/65/69/96/128 captures,
@@ -110,25 +122,45 @@ the alternating activation/embedding identities in the Q1 output head. Misses
 scan sorted directory keys in DDR. Matching records are checked
 against the requested core geometry, permissions, format, storage segment and
 row-specific activation bounds. A registered multiplier computes the physical
-row stride; later states add the column, region offset and segment base and
+row stride on a row-base miss; later states add the column, region offset and segment base and
 check the DDR window. Invalid tuples cannot reach tensor-data issue.
 
-Entries contain only immutable directory metadata (complete kind/layer/projection
+Entries contain immutable directory metadata (complete kind/layer/projection
 key, storage kind, offset, extent, shape, format and permissions), never tensor
-values. A fill follows successful metadata and registered extent validation;
+values. Each slot also retains one row ID, its registered unsigned64
+row-times-columns product and a separate valid bit (194 row-storage bits plus
+one captured descriptor-slot bit).
+A fill follows successful metadata and registered extent validation;
 two alternating victims bound storage independently of vocabulary/model size.
 Hits register metadata and retain all per-request legality, permission, index,
-offset and DDR checks, skipping only directory reads and the already validated
-extent product. Every tensor access still requires a real DDR response.
+offset and DDR checks, skipping directory reads and the already validated
+extent product. After those checks, a matching row in the same descriptor slot
+can also skip index multiplication; its registered base still passes through
+column addition and every offset/segment/physical-window check. A different
+row computes and replaces that slot's row product. Every tensor access still
+requires a real DDR response.
 
 Reset, configuration withdrawal and directory/storage-bundle changes invalidate
-both entries. Withdrawal also disqualifies an in-flight request from refilling
-the bank, so a same-address reload cannot reuse old metadata. Invalidation does
+both entries and their row products. Descriptor replacement clears its row-base
+validity before a new product can fill. Withdrawal also disqualifies an in-flight
+request from refilling either bank, so a same-address reload cannot reuse old
+metadata or row products. Invalidation does
 not cancel outstanding transactions or alter held responses. `SPEC.md` records
 the cycle boundaries and hit/miss state transitions. This is an optimization
 hypothesis, not a measured throughput result: independent verification must
-compare cycles and directory transactions against the retained uncached source,
-exercise errors/eviction/reload, and only then retry complete-table inference.
+compare numerical results, addresses, transaction counts, simulated cycles and
+elapsed time against retained before-repair sources, exercise stalls,
+errors/reset/eviction/reload (including withdrawal while outstanding), and kill
+compiled functional mutations before any independently admitted complete-table
+continuation within the unchanged 2700-second budget.
+
+The bounded repair follows the incomplete bypass diagnostic at
+`evidence/preparation/official-qwen-shell-general-bypass-712c10b7d55d402ea5765e7ba02b0280/receipt.json`
+and the earlier UART/bypass timeout at
+`evidence/preparation/official-qwen-shell-general-79870737978648f58850a61e30a567f0/receipt.json`.
+Their failed receipts and before-repair source snapshots remain unchanged.
+Progressing execution and timeout are not numerical mismatches, and the repair
+does not establish that the complete-table case will finish within budget.
 
 Table clients are read-only. The arbiter scans the sixteen committed table
 ranges one per stage, permits exact raw-byte tail-word access only for kind
