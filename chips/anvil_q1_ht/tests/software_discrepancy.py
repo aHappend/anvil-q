@@ -7,6 +7,7 @@ or expected hardware result is changed by a nonzero software discrepancy.
 """
 
 import argparse
+import copy
 import ctypes
 import json
 import math
@@ -19,6 +20,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from checkpoint_reference import CPP, sha
 from fixtures import project_path, validate
+from prompts import FrozenTokenizer, PROMPTS, canonical_chat, merge_heap, merge_scan
 
 
 FLOAT_CPP = CPP + r"""
@@ -211,6 +213,7 @@ def qualify(engine, seed):
         raise AssertionError("missing floating reference qualification")
     return {"floating_dot_comparisons": compared, "invalid_inputs_rejected": rejected,
             "finite_storage_conversions": conversions,
+            "checker_regression": checker_regression(),
             "arithmetic": "binary64, contraction disabled; Python math.fsum cross-check"}
 
 
@@ -346,6 +349,106 @@ def compare(fixed, floating):
     }
 
 
+def validate_trajectory(transcript):
+    rows = transcript["rows"]
+    if not rows or type(transcript["smoke_only"]) is not bool:
+        raise ValueError("missing reference trajectory or explicit scope")
+    seen = set()
+    for row in rows:
+        identity = row["mode"], row["prompt_index"]
+        if (row["mode"] not in ("AWQ", "BF16") or identity in seen or
+                type(row["prompt_index"]) is not int or
+                not 0 <= row["prompt_index"] < len(PROMPTS) or
+                row["prompt"] != PROMPTS[row["prompt_index"]]):
+            raise ValueError("unexpected, duplicate or mislabeled reference prompt")
+        seen.add(identity)
+        prefill, steps = row["prefill_token_ids"], row["steps"]
+        if not prefill or any(type(token) is not int or not 0 <= token < 151936
+                              for token in prefill):
+            raise ValueError("invalid reference prefill tokens")
+        if len(steps) != len(prefill) + (0 if transcript["smoke_only"] else 15):
+            raise ValueError("reference trajectory omits required prefill or decode steps")
+        for position, step in enumerate(steps):
+            expected = prefill[position] if position < len(prefill) else steps[position - 1]["selected_token"]
+            if (step["position"] != position or step["input_token"] != expected or
+                    step["ordered_logit_count"] != 151936 or
+                    type(step["selected_token"]) is not int or
+                    not 0 <= step["selected_token"] < 151936):
+                raise ValueError("invalid reference position, token chain or output shape")
+        selected = [step["selected_token"] for step in steps[len(prefill) - 1:]]
+        if row["decode_token_ids"] != selected:
+            raise ValueError("reference decode sequence differs from ordered logit selections")
+        if transcript["smoke_only"] and (row["prompt_index"] != 0 or len(steps) != 1):
+            raise ValueError("smoke reference is not exactly one first-prompt token")
+    for mode in {row["mode"] for row in rows}:
+        expected = {(mode, 0)} if transcript["smoke_only"] else {
+            (mode, index) for index in range(len(PROMPTS))}
+        if {identity for identity in seen if identity[0] == mode} != expected:
+            raise ValueError("reference mode omits a required frozen prompt")
+    if sum(len(row["steps"]) for row in rows) != transcript["ordered_logit_vectors"]:
+        raise ValueError("reference vector count differs from actual trajectory")
+
+
+def checker_regression():
+    fixed = [65536] * 151936
+    identical = compare(fixed, [1.0] * len(fixed))
+    changed = [1.0] * len(fixed)
+    changed[7] = 3.0
+    different = compare(fixed, changed)
+    if (identical["max_absolute_error"] != 0 or not identical["greedy_agreement"] or
+            identical["fixed_point_greedy_token"] != 0 or
+            different["max_absolute_error"] != 2 or different["greedy_agreement"] or
+            different["floating_greedy_token"] != 7):
+        raise AssertionError("software discrepancy checker misses equality, difference or tie order")
+    rejected = 0
+    for floating in ([], [math.nan] * len(fixed), [math.inf] * len(fixed)):
+        try:
+            compare(fixed, floating)
+        except AssertionError:
+            rejected += 1
+        else:
+            raise AssertionError("discrepancy checker accepts incomplete/nonfinite logits")
+    valid = {
+        "smoke_only": True, "ordered_logit_vectors": 1,
+        "rows": [{"mode": "AWQ", "prompt_index": 0, "prompt": PROMPTS[0],
+                  "prefill_token_ids": [151644], "decode_token_ids": [7],
+                  "steps": [{"position": 0, "input_token": 151644,
+                             "selected_token": 7, "ordered_logit_count": 151936}]}],
+    }
+    validate_trajectory(valid)
+    defects = []
+    for field, value in (("position", 1), ("input_token", 0),
+                         ("selected_token", 151936), ("ordered_logit_count", 1)):
+        malformed = copy.deepcopy(valid)
+        malformed["rows"][0]["steps"][0][field] = value
+        defects.append(malformed)
+    for field, value in (("mode", "FP16"), ("prompt", "wrong"),
+                         ("decode_token_ids", [8]), ("prefill_token_ids", [])):
+        malformed = copy.deepcopy(valid)
+        malformed["rows"][0][field] = value
+        defects.append(malformed)
+    malformed = copy.deepcopy(valid)
+    malformed["rows"].append(copy.deepcopy(malformed["rows"][0]))
+    defects.append(malformed)
+    malformed = copy.deepcopy(valid)
+    malformed["smoke_only"] = False
+    defects.append(malformed)
+    malformed = copy.deepcopy(valid)
+    malformed["ordered_logit_vectors"] = 2
+    defects.append(malformed)
+    for malformed in defects:
+        try:
+            validate_trajectory(malformed)
+        except ValueError:
+            rejected += 1
+        else:
+            raise AssertionError("discrepancy checker accepts malformed reference trajectory")
+    if rejected != 14:
+        raise AssertionError("software checker negative regression is incomplete")
+    return {"known_discrepancy_and_tie_cases": 2, "malformed_inputs_rejected": rejected,
+            "scope": "software_checker_only_not_RTL_defect_sensitivity"}
+
+
 def measure(evidence, manifest_path):
     """Compare a retained reference trajectory without changing its evidence."""
     evidence.command(["python3", "--version"], "software-python-version")
@@ -357,9 +460,15 @@ def measure(evidence, manifest_path):
     bindings = receipt["runtime_input_sha256"]
     if bindings.get(str(manifest_path)) != sha(manifest_path):
         raise ValueError("reference manifest is not bound to its successful receipt")
+    for name in ("checkpoint_reference.py", "reference.py", "fixtures.py",
+                 "repack.py", "prompts.py"):
+        path = Path("tests") / name
+        if receipt["source_sha256"].get(str(path)) != sha(path):
+            raise ValueError("reference numerical source differs from current evaluator")
     transcript = json.loads(manifest_path.read_text())
     if transcript.get("scope") != "checkpoint_fixed_point_reference_not_RTL_or_board":
         raise ValueError("not a checkpoint integer-reference transcript")
+    validate_trajectory(transcript)
     root = project_path("fixtures/qwen2.5-0.5b")
     metadata = validate(root)
     evidence.record.setdefault("runtime_input_sha256", {}).update({
@@ -373,6 +482,18 @@ def measure(evidence, manifest_path):
             if bindings.get(path) != record["sha256"]:
                 raise ValueError("reference fixture binding differs from pinned checkpoint")
             evidence.record["runtime_input_sha256"][path] = record["sha256"]
+        folder = root / mode.lower()
+        tokenizer = FrozenTokenizer(json.loads((folder / "tokenizer.json").read_text()),
+                                    json.loads((folder / "tokenizer_config.json").read_text()))
+        for row in (row for row in transcript["rows"] if row["mode"] == mode):
+            text = canonical_chat(row["prompt"])
+            tokens = tokenizer.encode(text, merge_heap)
+            if tokens != tokenizer.encode(text, merge_scan):
+                raise AssertionError("independent prompt tokenizers disagree")
+            if transcript["smoke_only"]:
+                tokens = tokens[:1]
+            if row["prefill_token_ids"] != tokens:
+                raise ValueError("reference prefill differs from pinned tokenizer")
     engine = FloatingGEMV(evidence)
     evidence.record["floating_qualification"] = qualify(engine, 17)
     report = {
@@ -448,6 +569,23 @@ def measure(evidence, manifest_path):
     evidence.flush()
 
 
+def prepare_and_measure(evidence, seed=17, smoke=False):
+    """Fresh integer reference and discrepancy within the existing L1 stage."""
+    from checkpoint_reference import prepare
+    from verify import Evidence
+    producer = Evidence("checkpoint-reference-input")
+    producer.record["seed"] = seed
+    evidence.record["checkpoint_reference_child"] = producer.relative(producer.folder / "receipt.json")
+    evidence.flush()
+    try:
+        prepare(producer, smoke=smoke, seed=seed)
+        producer.finish("probe_passed", "Integer checkpoint reference; not RTL or board acceptance.")
+    except Exception as exc:
+        producer.finish("probe_failed", f"{type(exc).__name__}: {exc}")
+        raise
+    measure(evidence, producer.relative(producer.folder / "checkpoint-reference.json"))
+
+
 def main():
     from verify import Evidence
     parser = argparse.ArgumentParser(description=__doc__)
@@ -455,6 +593,8 @@ def main():
     selection.add_argument("--reference-manifest",
                         help="project-relative retained checkpoint-reference.json")
     selection.add_argument("--qualification-only", action="store_true")
+    selection.add_argument("--fresh-reference-smoke", action="store_true",
+                           help="one real default-model token per mode, not acceptance")
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     evidence = Evidence("software-discrepancy", args.repair_of)
@@ -463,6 +603,9 @@ def main():
             engine = FloatingGEMV(evidence)
             evidence.record["floating_qualification"] = qualify(engine, 17)
             evidence.finish("probe_passed", "Software GEMV qualification only; no network comparison.")
+        elif args.fresh_reference_smoke:
+            prepare_and_measure(evidence, smoke=True)
+            evidence.finish("probe_passed", "One-token fresh-reference/discrepancy smoke per mode only.")
         else:
             measure(evidence, args.reference_manifest)
             evidence.finish("probe_passed", "FP64 discrepancy measured; no hardware acceptance claim.")

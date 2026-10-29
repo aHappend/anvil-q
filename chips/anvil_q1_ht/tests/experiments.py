@@ -1,5 +1,6 @@
 """Embedded, public-pin experiments and independent expected-vector generation."""
 
+import hashlib
 import json
 import math
 import random
@@ -252,9 +253,12 @@ endmodule
 
 
 def dequant(evidence, seed, rtl_root=None):
+    """Exhaust encodings and compare every lane/nibble pair at three finite scales."""
     rng = random.Random(seed)
     path = evidence.folder / "dequant-vectors.hex"
     count = 0
+    expected_errors = []
+    directed_scales = (0x0001, 0x2400, 0x7bff)
     with path.open("w") as out:
         for mode in range(2):
             for bits in range(65536):
@@ -273,6 +277,21 @@ def dequant(evidence, seed, rtl_root=None):
                 out.write(f"{mode:x}{qw:08x}{qz:08x}{lane:x}{bits:04x}"
                           f"{expected & ((1 << 37)-1):010x}{error:x}\n")
                 count += 1
+                expected_errors.append(error)
+        for lane, shift in enumerate(AWQ_SHIFTS):
+            for q in range(16):
+                for z in range(16):
+                    for bits in directed_scales:
+                        qw = (rng.getrandbits(32) & ~(15 << shift)) | (q << shift)
+                        qz = (rng.getrandbits(32) & ~(15 << shift)) | (z << shift)
+                        expected = (q - z) * fp_q16(bits, 5, 10, True)
+                        out.write(f"0{qw:08x}{qz:08x}{lane:x}{bits:04x}"
+                                  f"{expected & ((1 << 37)-1):010x}0\n")
+                        count += 1
+                        expected_errors.append(0)
+    evidence.record.setdefault("runtime_input_sha256", {})[evidence.relative(path)] = (
+        hashlib.sha256(path.read_bytes()).hexdigest())
+    evidence.flush()
     bench = CLOCK + r"""
 reg in_valid=0,in_bf16=0,out_ready=0;
 reg [31:0] in_qweight=0,in_qzero=0;
@@ -280,10 +299,13 @@ reg [2:0] in_lane=0;
 reg [15:0] in_value=0;
 wire in_ready,out_valid,out_error;
 wire signed [36:0] out_weight;
-reg [131:0] vectors [0:131071];
+reg [131:0] vectors [0:VECTOR_COUNT-1];
 reg [36:0] expected;
 reg expected_error;
 integer i,stall,errors=0,comparisons=0,cycle_count=0;
+integer pair_bins=0,lane_bins=0,shift,q,z,scale_index,bin_index;
+reg pair_seen [0:6143];
+reg [7:0] lane_seen=0;
 always @(posedge clk) cycle_count=cycle_count+1;
 anvil_q1_ht_dequant product(
   .clk(clk),.rst_n(rst_n),.in_valid(in_valid),.in_ready(in_ready),
@@ -299,6 +321,7 @@ endtask
 always @(posedge clk or negedge clk) if (!rst_n) check_reset();
 initial begin
   rst_n=0; `RESET_DELTA check_reset();
+  for(i=0;i<6144;i=i+1) pair_seen[i]=0;
   $readmemh("VECTOR_PATH",vectors);
   repeat (3) edge_tick();
   @(negedge clk); rst_n=1;
@@ -331,10 +354,37 @@ initial begin
     if (out_valid !== 0) $fatal(1,"DEQUANT_RETIRE");
     @(negedge clk); out_ready=0;
     comparisons=comparisons+1;
+    if(i>=131072) begin
+      case(in_lane)
+       0:shift=0; 1:shift=16; 2:shift=4; 3:shift=20;
+       4:shift=8; 5:shift=24; 6:shift=12; 7:shift=28;
+       default:$fatal(1,"DEQUANT_DIRECTED_LANE_XZ");
+      endcase
+      case(in_value)
+       16'h0001:scale_index=0;
+       16'h2400:scale_index=1;
+       16'h7bff:scale_index=2;
+       default:$fatal(1,"DEQUANT_DIRECTED_SCALE");
+      endcase
+      if(in_bf16!==0 || expected_error!==0)
+       $fatal(1,"DEQUANT_DIRECTED_MODE_OR_ERROR");
+      q=(in_qweight>>shift)&15;
+      z=(in_qzero>>shift)&15;
+      bin_index=((in_lane*16+q)*16+z)*3+scale_index;
+      if(!pair_seen[bin_index]) begin
+       pair_seen[bin_index]=1;pair_bins=pair_bins+1;
+      end
+      if(!lane_seen[in_lane]) begin
+       lane_seen[in_lane]=1;lane_bins=lane_bins+1;
+      end
+    end
   end
-  if (errors==0) $fatal(1,"DEQUANT_NO_INVALID_ENCODINGS_OBSERVED");
-  $display("CHECKS_PASSED dequant encodings=%0d expected_errors=%0d cycles=%0d",
-           comparisons,errors,cycle_count);
+  if(errors!=EXPECTED_ERRORS || pair_bins!=EXPECTED_PAIRS ||
+     lane_bins!=EXPECTED_LANES)
+   $fatal(1,"DEQUANT_ENCODING_OR_NIBBLE_COVERAGE errors=%0d pairs=%0d lanes=%0d",
+          errors,pair_bins,lane_bins);
+  $display("CHECKS_PASSED dequant encodings=%0d expected_errors=%0d cycles=%0d directed_pairs=%0d physical_lanes=%0d",
+           comparisons,errors,cycle_count,pair_bins,lane_bins);
   $finish;
 end
 endmodule
@@ -344,22 +394,39 @@ endmodule
         sources.insert(0, "anvil_q1_ht_00_numeric_pkg.sv")
     interpreted = getattr(evidence, "default_simulator", "iverilog") == "iverilog"
     # Keep the AWQ-to-BF16 transition inside one batch, not across a reset.
-    batches = ((0, 65537), (65537, count)) if interpreted else ((0, count),)
-    compared = 0
+    batches = ((0, 65537), (65537, 131072), (131072, count)) if interpreted else ((0, count),)
+    compared = pair_bins = 0
     for index, (start, stop) in enumerate(batches):
+        pairs = max(0, stop - max(start, 131072))
+        errors = sum(expected_errors[start:stop])
         program = bench.replace("VECTOR_PATH", evidence.relative(path)).replace(
-            "VECTOR_START", str(start)).replace("VECTOR_STOP", str(stop))
+            "VECTOR_START", str(start)).replace("VECTOR_STOP", str(stop)).replace(
+            "VECTOR_COUNT", str(count)).replace("EXPECTED_ERRORS", str(errors)).replace(
+            "EXPECTED_PAIRS", str(pairs)).replace("EXPECTED_LANES", "8" if pairs else "0")
         evidence.simulate(f"dequant-{index}", program, sources, rtl_root=rtl_root)
         counters = evidence.record["observations"][-1]["observed_counters"]
         if (len(counters) != 1 or counters[0].get("encodings") != stop - start or
+                counters[0].get("expected_errors") != errors or
+                counters[0].get("directed_pairs") != pairs or
+                counters[0].get("physical_lanes") != (8 if pairs else 0) or
                 counters[0].get("cycles", 0) <= 0):
             raise AssertionError("dequant batch lacks complete observed encoding/cycle counts")
         if interpreted and counters[0]["cycles"] > 500000:
             raise AssertionError("Icarus harness tier exceeded 500000 cycles; use compiled simulation")
         compared += counters[0]["encodings"]
-    if compared != count:
+        pair_bins += counters[0]["directed_pairs"]
+    if compared != count or pair_bins != 8 * 16 * 16 * len(directed_scales):
         raise AssertionError("exhaustive dequant coverage is incomplete")
     evidence.record["dequant_encoding_count"] = compared
+    evidence.record["dequant_coverage"] = {
+        "exhaustive_FP16_AWQ_and_BF16_encodings": 131072,
+        "directed_compared_lane_qweight_qzero_scale_bins": pair_bins,
+        "physical_lanes": 8, "qweight_values": 16, "qzero_values": 16,
+        "directed_FP16_scale_bits": list(directed_scales),
+        "bin_event": "accepted public input, bit-exact output and error comparison, "
+                     "stall stability and response retirement",
+        "scope": "dequant_primitive_not_full_tensor_or_decoder_coverage",
+    }
     evidence.flush()
 
 
@@ -2573,10 +2640,15 @@ def run_probe(evidence, name, seed, config=0):
         from prompts import prepare
         prepare(evidence)
     elif name == "checkpoint-reference":
-        from checkpoint_reference import prepare
-        prepare(evidence, seed=seed)
+        from software_discrepancy import prepare_and_measure
+        prepare_and_measure(evidence, seed=seed)
     elif name == "dequant":
         dequant(evidence, seed)
+    elif name == "dequant-sensitivity":
+        from sensitivity import run_sensitivity
+        evidence.default_simulator = "verilator"
+        dequant(evidence, seed)
+        run_sensitivity(evidence, seed, only=("awq_permutation",))
     elif name == "math":
         math_probe(evidence, seed)
     elif name == "command-checks":

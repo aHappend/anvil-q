@@ -404,7 +404,8 @@ def file_sha256(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", choices=("tensor", "dequant", "math", "top-awq", "top-bf16",
+    parser.add_argument("--probe", choices=("tensor", "dequant", "dequant-sensitivity",
+                                           "math", "top-awq", "top-bf16",
                                            "csr-upload", "synthesis", "kv", "parameters", "dma",
                                            "sensitivity", "dma-pipeline-sensitivity",
                                            "arithmetic-sensitivity",
@@ -505,7 +506,6 @@ def main():
             "D3 separately measured hot-window and full-context cold retrieval",
             "D4 complete default-dimension decoder-layer comparisons",
             "D5 checkpoint repacking, tokenizer, independent full-model reference and bridge workloads",
-            "accepted-parent fixed-point versus independent software-model discrepancy report",
         ]
         evidence.flush()
         for stage in ledger:
