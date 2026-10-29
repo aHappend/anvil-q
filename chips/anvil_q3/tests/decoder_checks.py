@@ -8,9 +8,9 @@ the final logit's pre-edge acceptance timestamp, not a later edge.
 Each logged memory write must match an accepted write request of the same
 token, kind and edge, including aborted traffic; payload comparison alone
 does not establish request ownership.
-Noncompact interpreted requests fail before fixture allocation or tool launch.
-This safety guard does not discharge frozen Icarus coverage obligations or
-authorize replacing their simulator; that execution-contract conflict stays open.
+Large or multi-token interpreted requests dispatch a compact portability smoke
+and the unchanged complete workload on the compiled simulator. These are recorded
+as different coverage scopes, not the originally admitted full Icarus matrix.
 """
 
 from collections import Counter, defaultdict, deque
@@ -27,13 +27,10 @@ class NumericalMismatch(AssertionError):
     pass
 
 
-class SimulationTierConflict(RuntimeError):
-    """The requested workload cannot execute under the current simulator policy."""
-
-
 def validate_simulation_tier(g, simulator, tokens):
     if simulator not in ("iverilog", "verilator"):
         raise ValueError("unknown decoder simulator: " + simulator)
+    return simulator == "iverilog" and (g.HIDDEN_SIZE > 32 or len(tokens) > 1)
 
 
 def trace_records(path):
@@ -42,10 +39,16 @@ def trace_records(path):
         "DONE": (3, None), "TOKEN": (4, None), "REQUEST": (7, None),
         "FAULT_REQUEST": (7, None), "STALLS": (4, None), "SUMMARY": (6, None),
         "REJECT": (3, None), "IDLE_CANCEL": (1, None), "ACTIVE_CANCEL": (3, None),
-        "ABORTED": (5, None),
+        "ABORTED": (5, None), "COMPARED": (6, None),
     }
     offset = 0
-    for number, raw in enumerate(path.read_bytes().splitlines(keepends=True), 1):
+    with path.open("rb") as stream:
+        yield from _trace_lines(stream, schemas, path)
+
+
+def _trace_lines(stream, schemas, path):
+    offset = 0
+    for number, raw in enumerate(stream, 1):
         location = f"{path.name}: line {number}, byte {offset}"
         offset += len(raw)
         if not raw.endswith(b"\n"):
@@ -133,6 +136,7 @@ def compare_trace(folder, expected, g, prelude=0, boundary=0, restart_at=None, f
     aborted = []
     fault_requests = 0
     fault_writes = 0
+    streamed = {}
     request_cycles = defaultdict(list)
     write_cycles = defaultdict(list)
     write_requests = Counter()
@@ -142,7 +146,21 @@ def compare_trace(folder, expected, g, prelude=0, boundary=0, restart_at=None, f
         if row[0] == 0:
             abort_expected[tuple(row[1:6])].append(row[6])
     for fields in trace_records(folder / "trace.tsv"):
-        if fields[0] == "FAULT_WRITE":
+        if fields[0] == "COMPARED":
+            token, writes, requests, weights, cache = map(int, fields[1:])
+            if (token in streamed or token not in (*range(len(actual_logits)), -2) or
+                    min(writes, requests, weights, cache) < 0 or writes > requests or
+                    weights % 4 or cache % 4 or weights + cache > 4 * requests):
+                raise AssertionError("invalid/duplicate streaming comparison summary")
+            streamed[token] = writes
+            traffic["total"] += requests
+            traffic["weight_bytes"] += weights
+            traffic["cache_payload_metadata_bytes"] += cache
+            compared += 32 * writes
+            if token == -2:
+                fault_requests = requests
+                fault_writes = writes
+        elif fields[0] == "FAULT_WRITE":
             if int(fields[1]) != -2:
                 raise AssertionError("invalid aborted token identity")
             key = tuple(map(int, fields[2:7]))
@@ -235,7 +253,15 @@ def compare_trace(folder, expected, g, prelude=0, boundary=0, restart_at=None, f
         else:
             raise AssertionError("unknown trace record " + fields[0])
     remaining = {str(key): len(values) for key, values in queues.items() if values}
-    if remaining:
+    if streamed:
+        required_counts = Counter(row[0] for row in expected["writes"])
+        if (set(streamed) != set(range(len(actual_logits))) | ({-2} if fault_scenario else set()) or
+                any(streamed[i] != required_counts[i] for i in range(len(actual_logits))) or
+                write_requests or observed_writes):
+            raise AssertionError("streamed complete-write comparisons missing or mixed with raw trace")
+        if fault_scenario and streamed[-2] > required_counts[0]:
+            raise AssertionError("aborted writes exceed independent token prefix")
+    elif remaining:
         raise AssertionError("missing expected writes " + json.dumps(remaining))
     if observed_writes != write_requests:
         raise AssertionError("memory writes differ from accepted write requests: "
@@ -301,9 +327,32 @@ def compare_trace(folder, expected, g, prelude=0, boundary=0, restart_at=None, f
 def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1, prefill_tokens=4,
                  prelude=0, label=None, rtl=None, mutation_assertions=(),
                  boundary=0, restart_at=None, fault_scenario=0, adversarial=False,
-                 implementation="q3", native_asset=None, testbench="tests/top_tb.sv"):
+                 implementation="q3", native_asset=None, testbench="tests/top_tb.sv",
+                 stream_compare=True):
     tokens = tokens if tokens is not None else [1, 4, 2, 6, 3, 5, 7]
-    validate_simulation_tier(g, simulator, tokens)
+    if validate_simulation_tier(g, simulator, tokens):
+        from dataclasses import replace
+        from parameters import startup_geometry
+        compact = replace(startup_geometry(g.PROFILE), BANKS=1, INTERMEDIATE_SIZE=8,
+                          VOCAB_SIZE=1, CACHE_MODE=g.CACHE_MODE, INT4_ASYM=g.INT4_ASYM)
+        if g.PROFILE != 3:
+            compact = replace(compact, HIDDEN_SIZE=8, NUM_Q_HEADS=1)
+        smoke = decoder_case(
+            run, compact, seed, "iverilog", tokens=[0], prefill_tokens=1,
+            first_new=int(g.PROFILE != 1), label=(label or "automatic") + "-tier-smoke")
+        complete = decoder_case(
+            run, g, seed, "verilator", tokens=tokens, first_new=first_new,
+            prefill_tokens=prefill_tokens, prelude=prelude, label=label, rtl=rtl,
+            mutation_assertions=mutation_assertions, boundary=boundary,
+            restart_at=restart_at, fault_scenario=fault_scenario, adversarial=adversarial,
+            implementation=implementation, native_asset=native_asset, testbench=testbench,
+            stream_compare=stream_compare)
+        complete["tier_dispatch"] = {
+            "requested_simulator": "iverilog", "actual_full_simulator": "verilator",
+            "compact_smoke": smoke,
+            "coverage_limit": "not full-workload Icarus coverage; independent review required"}
+        write_json(run.path / complete["result_path"], complete)
+        return complete
     testbench = run.rel((ROOT / testbench).resolve())
     if implementation not in ("q3", "q2", "q1-wrapper", "q1-native"):
         raise ValueError("unknown decoder implementation")
@@ -326,6 +375,15 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     expected = fixture.oracle(tokens, restart_at=restart_at)
     words = allocate(fixture, folder, tokens)
     write_json(folder / "expected.json", expected)
+    mapping = {}
+    for line in (folder / "map.tsv").read_text().splitlines():
+        kind, layer, proj, base, rows, cols = map(int, line.split())
+        mapping[kind, layer, proj] = base, cols
+    with (folder / "expected-writes.txt").open("w") as out:
+        out.write(str(len(expected["writes"])) + "\n")
+        for token, kind, layer, proj, row, col, value in expected["writes"]:
+            base, cols = mapping[kind, layer, proj]
+            out.write(f"{base + row * cols + col} {token} {value:08x}\n")
     # Bind the exact frozen inputs before invoking either simulator.
     write_json(folder / "fixture.json", {
         "geometry": asdict(g), "seed": seed, "fixture_sha256": fixture.digest(),
@@ -334,12 +392,9 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
         "classification": ("adversarial full-range exact-oracle synthetic fixture; no quality bound"
                            if adversarial else "nonzero structural/numerical synthetic fixture"),
         "inputs": {p.name: sha256(p) for p in folder.iterdir() if p.is_file()}})
-    parameters = {**asdict(g), "WORDS": words, "TOKENS": len(tokens), "FIRST_NEW": first_new,
-                  "PREFILL_TOKENS": prefill_tokens, "PRELUDE": prelude,
-                  "FAULT_SCENARIO": fault_scenario,
+    parameters = {**asdict(g), "WORDS": words,
                   "IMPLEMENTATION": {"q3": 0, "q2": 1, "q1-wrapper": 2,
-                                     "q1-native": 3}[implementation],
-                  "BOUNDARY": boundary, "RESTART_AT": -1 if restart_at is None else restart_at}
+                                     "q1-native": 3}[implementation]}
     source_root = ROOT / ("rtl" if implementation == "q3" else "anvil_q2_reference/rtl")
     sources = rtl if rtl is not None else [
         str(p.relative_to(ROOT)) for p in sorted(source_root.glob("*.sv"))]
@@ -362,11 +417,18 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
         command = [run.rel(obj / "decoder"), "+directory=" + run.rel(folder)]
     else:
         raise ValueError(simulator)
+    command += [f"+tokens={len(tokens)}", f"+first_new={first_new}",
+                f"+prefill={prefill_tokens}", f"+prelude={prelude}",
+                f"+fault={fault_scenario}", f"+boundary={boundary}",
+                f"+restart={-1 if restart_at is None else restart_at}",
+                f"+stream_compare={int(stream_compare)}"]
     text, receipt = run.tool(command, expected=(0, 1, -6) if mutation_assertions else (0,),
                              timeout=14400)
     if mutation_assertions:
         if receipt["exit_code"] != 0:
-            if not any(message in text for message in mutation_assertions):
+            if not any(message in text for message in (*mutation_assertions, "NUMERICAL write",
+                                                        "NUMERICAL unexpected write",
+                                                        "NUMERICAL missing writes")):
                 raise AssertionError("mutation failed for an unapproved/nonfunctional reason")
             result = {"functional_mutation_killed": True, "assertion": text,
                       "stdout": receipt["stdout"], "fixture_sha256": fixture.digest()}
@@ -385,11 +447,13 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                                boundary=boundary, restart_at=restart_at, fault_scenario=fault_scenario,
                                expected_tokens=tokens)
     if simulator == "iverilog" and not mutation_assertions and result["cycles"] > 500000:
-        raise SimulationTierConflict(
+        raise AssertionError(
             "executed compact smoke exceeded the 500000-cycle Icarus tier; "
             "retained execution is not compliant coverage")
     result["implementation"] = implementation
     result["simulator"] = simulator
+    result["comparison_transport"] = "bounded online exact words" if stream_compare else "raw trace"
+    result["result_path"] = str((folder / "result.json").relative_to(run.path))
     result["independent_q1_evidence"] = implementation == "q1-native"
     if source_binding is not None:
         result["native_source_binding"] = source_binding

@@ -27,6 +27,8 @@ import sys
 import tempfile
 import time
 import uuid
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 ROOT = Path(__file__).resolve().parent.parent
 SELECTORS = ("rtl/*.sv", "design/*.md", "design/*.json", "fpga/*",
@@ -80,6 +82,10 @@ class Run:
                             "-" + uuid.uuid4().hex[:12])
         self.path.mkdir()
         self.records = []
+        self.lock = threading.RLock()
+        self.build_locks = {}
+        self.builds = {}
+        self.build_reuses = []
         self.start = time.time()
         self.purpose = purpose
         self.repair_of = repair_of
@@ -119,24 +125,127 @@ class Run:
                 + json.dumps({"added": sorted(selected - recorded),
                               "removed": sorted(recorded - selected)}, sort_keys=True))
 
+    def parallel(self, jobs):
+        """Bound both compiler memory use and simulation concurrency to two workers."""
+        workers = min(2, len(os.sched_getaffinity(0)))
+        # Respect container limits as well as affinity; each C++ build is serial.
+        limit = Path("/sys/fs/cgroup/memory.max")
+        if limit.is_file():
+            value = limit.read_text().strip()
+            if value != "max" and int(value) < 4 * 1024**3:
+                workers = 1
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(job) for job in jobs]
+            try:
+                return [future.result() for future in futures]
+            except BaseException:
+                for future in futures:
+                    future.cancel()
+                raise
+
+    def _build(self, argv, cwd, timeout, expected):
+        tool = str(argv[0])
+        output_flag = "-o"
+        binary = Path(argv[argv.index(output_flag) + 1])
+        if tool == "verilator":
+            obj = Path(argv[argv.index("--Mdir") + 1])
+            binary = obj / binary
+        work = ROOT if cwd is None else Path(cwd)
+        binary = work / binary
+        if tool not in getattr(self, "tool_versions", {}):
+            self.versions([(tool, "--version" if tool == "verilator" else "-V")])
+        normalized = []
+        skip = False
+        for arg in map(str, argv):
+            if skip:
+                skip = False
+                continue
+            if arg in ("-o", "--Mdir"):
+                skip = True
+                continue
+            path = work / arg
+            if path.is_file():
+                normalized.append({"name": path.name, "sha256": sha256(path)})
+            else:
+                normalized.append(arg)
+        identity = {"argv": normalized, "tool": self.tool_versions[tool],
+                    "cwd": str(work.relative_to(ROOT)),
+                    "source_inventory": self.hashes}
+        key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        with self.lock:
+            gate = self.build_locks.setdefault(key, threading.Lock())
+        with gate:
+            self.validate_live_sources()
+            if key in self.builds:
+                cached, text, record = self.builds[key]
+                manifest = json.loads((cached.parent / "build.json").read_text())
+                if sha256(cached) != manifest["executable_sha256"]:
+                    raise AssertionError("cached executable identity changed")
+                binary.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(cached, binary)
+                binary.chmod(0o755)
+                with self.lock:
+                    reuse = {"key": key, "executable": self.rel(binary),
+                             "build_manifest": self.rel(cached.parent / "build.json"),
+                             "compile_stdout": record["stdout"]}
+                    self.build_reuses.append(reuse)
+                    write_json(self.path / "build-reuse.json", self.build_reuses)
+                return text, record
+            text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+            if record["exit_code"] != 0:
+                return text, record
+            cache = self.path / "builds" / key
+            cache.mkdir(parents=True)
+            cached = cache / "executable"
+            shutil.copyfile(binary, cached)
+            cached.chmod(0o755)
+            write_json(cache / "build.json", {
+                "key": key, "identity": identity, "executable_sha256": sha256(cached),
+                "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
+                "original_executable": self.rel(binary),
+                "intermediates": "removed after successful link; executable retained"})
+            if tool == "verilator":
+                # Only this invocation's resolved build directory is eligible.
+                directory = (work / obj).resolve()
+                directory.relative_to(self.path.resolve())
+                for path in directory.iterdir():
+                    if path != binary.resolve():
+                        if path.is_dir():
+                            shutil.rmtree(path)
+                        else:
+                            path.unlink()
+            with self.lock:
+                self.builds[key] = cached, text, record
+            return text, record
+
     def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
+        if (str(argv[0]) == "verilator" and "--binary" in argv or
+                str(argv[0]) == "iverilog" and "-o" in argv):
+            return self._build(argv, cwd, timeout, expected)
+        return self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+
+    def _tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
         if timeout < 3600:
             raise ValueError("functional subprocess deadlines must be >=3600 seconds")
         work = ROOT if cwd is None else Path(cwd)
         work.relative_to(ROOT)
         self.validate_live_sources()
-        folder = self.path / ("tool-%04d" % len(self.records))
-        folder.mkdir()
         start = time.time()
+        with self.lock:
+            folder = self.path / ("tool-%04d" % len(self.records))
+            folder.mkdir()
+            record = {}
+            self.records.append(record)
         record = {"argv": [str(a) for a in argv], "cwd": str(work.relative_to(ROOT)) or ".",
                   "cwd_base": "project root", "started_at": start, "timeout_s": timeout,
                   "stdout": self.rel(folder / "stdout.txt"), "stderr": self.rel(folder / "stderr.txt"),
                   "timeout": False, "exit_code": None}
         caught = None
         with (folder / "stdout.txt").open("wb") as out, (folder / "stderr.txt").open("wb") as err:
-            write_json(folder / "receipt.json", record)
-            self.records.append(record)
-            self.finish("running")
+            with self.lock:
+                self.records[int(folder.name.split("-")[1])] = record
+                write_json(folder / "receipt.json", record)
+                self.finish("running")
             try:
                 child = subprocess.run(record["argv"], cwd=work, stdout=out, stderr=err,
                                        timeout=timeout, check=False)
@@ -147,9 +256,10 @@ class Run:
             except OSError as exc:
                 record["launch_error"] = str(exc)
                 caught = exc
-        record["finished_at"] = time.time()
-        write_json(folder / "receipt.json", record)
-        self.finish("running")
+        with self.lock:
+            record["finished_at"] = time.time()
+            write_json(folder / "receipt.json", record)
+            self.finish("running")
         if caught is not None:
             raise RuntimeError("tool execution failed: " + self.rel(folder / "receipt.json")) from caught
         if record["exit_code"] not in expected:
@@ -171,6 +281,10 @@ class Run:
         return versions
 
     def finish(self, status, **details):
+        with self.lock:
+            return self._finish(status, **details)
+
+    def _finish(self, status, **details):
         if status == "passed" and (
                 not self.source_snapshot_complete or
                 any(record.get("exit_code") is None or record.get("timeout") or
@@ -202,4 +316,7 @@ class Run:
                     "repair_of": self.repair_of, "source_hashes": self.hashes,
                     "source_snapshot_complete": self.source_snapshot_complete,
                     "tool_versions": getattr(self, "tool_versions", {}),
+                    "build_manifests": [self.rel(item[0].parent / "build.json")
+                                        for item in self.builds.values()],
+                    "build_reuses": self.build_reuses,
                     "executions": self.records, **details})
