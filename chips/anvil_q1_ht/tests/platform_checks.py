@@ -21,19 +21,29 @@ PREDECESSOR = (
 )
 
 
-def supervision_records():
+def supervision_records(attempt=309):
     """Report recorded enforcement, not permission inferred from narrative text."""
+    if attempt < 1:
+        raise ValueError("attempt must be positive")
+    folder = f".vulcan/engineering/run-0001/attempt-{attempt:04d}"
     paths = (
         ".vulcan/engineering/run-0001/state.json",
-        ".vulcan/engineering/run-0001/attempt-0309/result.json",
-        ".vulcan/engineering/run-0001/attempt-0309/patrol.json",
-        ".vulcan/engineering/run-0001/attempt-0309/settled.json",
+        folder + "/result.json",
+        folder + "/patrol.json",
+        folder + "/settled.json",
     )
     records = {name: json.loads((ROOT / name).read_text()) for name in paths}
     state, result, patrol, settled = (records[name] for name in paths)
     config = state["config"]
+    logs = {}
+    for name in ("stdout.log", "stderr.log"):
+        relative = folder + "/" + name
+        path = ROOT / relative
+        logs[relative] = {"sha256": file_sha256(path), "bytes": path.stat().st_size}
     return {
+        "attempt": attempt,
         "record_sha256": {name: file_sha256(ROOT / name) for name in paths},
+        "raw_logs": logs,
         "runtime_state_keys": sorted(state),
         "runtime_config_keys": sorted(config),
         "recorded_role_limits": config.get("role_limits"),
@@ -53,7 +63,7 @@ def supervision_records():
     }
 
 
-def audit_supervision():
+def audit_supervision(attempt=309):
     evidence = Evidence(
         "supervision-record-audit",
         repair_of=(
@@ -65,9 +75,13 @@ def audit_supervision():
         evidence.command(["python3", "--version"], "python-version")
         text = evidence.command(
             ["python3", "-B", "tests/platform_checks.py",
-             "--inspect-supervision-records"], "retained-supervision-records")
+             "--inspect-supervision-records", "--attempt", str(attempt)],
+            "retained-supervision-records")
         observation = json.loads(text)
-        evidence.record["diagnostic_input_sha256"] = observation["record_sha256"]
+        evidence.record["diagnostic_input_sha256"] = {
+            **observation["record_sha256"],
+            **{name: row["sha256"] for name, row in observation["raw_logs"].items()},
+        }
         evidence.record["observations"].append(observation)
         evidence.finish(
             "diagnostic_completed",
@@ -88,12 +102,19 @@ def main():
                       help="retain a read-only audit of actual enforcement records")
     mode.add_argument("--inspect-supervision-records", action="store_true",
                       help=argparse.SUPPRESS)
+    parser.add_argument("--attempt", type=int, default=309,
+                        help="retained attempt to inspect with --audit-supervision")
     args = parser.parse_args()
+    if args.attempt < 1:
+        parser.error("--attempt must be positive")
+    if args.attempt != 309 and not (
+            args.audit_supervision or args.inspect_supervision_records):
+        parser.error("--attempt requires --audit-supervision")
     if args.inspect_supervision_records:
-        print(json.dumps(supervision_records(), indent=2))
+        print(json.dumps(supervision_records(args.attempt), indent=2))
         return 0
     if args.audit_supervision:
-        return audit_supervision()
+        return audit_supervision(args.attempt)
     evidence = Evidence("workflow-platform-diagnosis", repair_of=PREDECESSOR)
     evidence.record["scope"] = "read_only_prerequisites_not_acceptance"
     evidence.flush()
