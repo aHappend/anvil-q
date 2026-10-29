@@ -75,6 +75,10 @@ def check(root, ev):
         "missing_and_duplicate_shards_detected",
         sorted(production[1:]) != sorted(required) and
         sorted(production + production[:1]) != sorted(required)) and good
+    protocol = [options["modes"] for _, check, _, options in jobs
+                if check is verify.protocol_check]
+    good = ev.assertion("fresh_complete_protocol_mode_shards",
+                        sorted(protocol) == [(0,), (1,), (2,)]) and good
 
     parent = verify.Evidence("scheduling-inventory")
     parent.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(root))

@@ -877,7 +877,7 @@ def interface_check(ev):
     return result
 
 
-def protocol_check(ev, simulator="verilator"):
+def protocol_check(ev, simulator="verilator", modes=(0, 1, 2)):
     simulator = simulation_tier(simulator, protocol=True)
     config = (1, 8, 8, 1, 1, 8, 1, 3, 3)
     executable = ev.path / ("protocol.vvp" if simulator == "iverilog" else "protocol.sim")
@@ -908,7 +908,7 @@ def protocol_check(ev, simulator="verilator"):
         native_reference[precision] = [
             event[2] for event in model.events
             if event[0] == "O" and event[3] == "position0/layer0/logits"]
-    for mode in (0, 1, 2):
+    for mode in modes:
         fixture = ev.path / f"protocol-mode{mode}.hex"
         Architecture(config, mode, 17).write_fixture(fixture)
         ev.receipt.setdefault("data_sha256", {})[str(fixture.relative_to(ROOT))] = digest(fixture)
@@ -1473,6 +1473,13 @@ def critical_path_check(ev):
                         results=results, full_l1_executed=False)
 
 
+def protocol_shard_check(ev):
+    results = parallel_components(ev, [
+        (f"protocol-mode{mode}", protocol_check, (), {"modes": (mode,)})
+        for mode in (0, 1, 2)])
+    return all(results.values())
+
+
 def l1_jobs():
     jobs = [
         ("benchmark-validator", benchmark_fixture_check, (), {}),
@@ -1500,7 +1507,8 @@ def l1_jobs():
                         "cases": ((name, selector, mode),)}))
     jobs += [
         ("leaves-full", leaf_check, (), {"full": True}),
-        ("protocol", protocol_check, (), {}),
+        *[(f"protocol-mode{mode}", protocol_check, (), {"modes": (mode,)})
+          for mode in (0, 1, 2)],
         ("icarus-integration", startup_check, (), {}),
         ("icarus-leaves", leaf_check, (), {"full": False}),
         ("leaf-defects", leaf_defect_check, (), {}),
@@ -1531,7 +1539,8 @@ def main():
         "protocol-accelerated", "portable-smoke", "operators", "production-operators",
         "maximum-position", "production-top-addresses", "preservation", "input-inventory",
         "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation",
-        "receipt-publication", "interpreter-consistency", "scheduling", "critical-path"))
+        "receipt-publication", "interpreter-consistency", "scheduling", "critical-path",
+        "protocol-shards"))
     parser.add_argument("--repair-of", type=Path)
     parser.add_argument("--diagnostic-repair-of", type=Path, action="append", default=[])
     parser.add_argument("--python-facility", type=Path, action="append", default=[])
@@ -1616,6 +1625,8 @@ def main():
             ok = ev.versions() and scheduling_check(ev)
         elif args.probe == "critical-path":
             ok = ev.versions() and critical_path_check(ev)
+        elif args.probe == "protocol-shards":
+            ok = ev.versions() and protocol_shard_check(ev)
         elif args.probe == "facilities":
             from recovery import facilities
             ok = facilities(ROOT, ev, args.python_facility)
@@ -1643,7 +1654,7 @@ def main():
                 leaves_ok = results["leaves-full"] and results["icarus-leaves"]
                 defects_ok = results["leaf-defects"]
                 integration_defects_ok = results["integration-defects"]
-                protocol_ok = results["protocol"]
+                protocol_ok = all(results[f"protocol-mode{mode}"] for mode in (0, 1, 2))
                 icarus_ok = results["icarus-integration"]
                 integration_ok = all(
                     results[f"integration-{name}-mode{mode}-seed{seed}"]
