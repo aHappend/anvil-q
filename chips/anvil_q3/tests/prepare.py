@@ -10,6 +10,11 @@ The default seed remains 17; diagnostic results are not mandatory-gate acceptanc
 Decoder probes also forward --queue-depth, --tile-k and --tile-rows to the DUT:
 python3 tests/prepare.py --probe decoder --queue-depth 16 --tile-k 128 --tile-rows 8
 Omitting these controls retains the reduced profile's 3/24/3 defaults.
+Standalone compiled-host compatibility recovery diagnostic:
+python3 tests/prepare.py --probe compatibility-host
+This fixed PROFILE2/BANKS8/INT8/CACHE_BLOCK64/seed17 case executes seven
+tokens [1,2,1,2,1,2,1], with four prefill tokens and complete comparisons.
+It does not run driver equivalence or discharge the original Icarus matrix.
 Read-only physical-tool discovery (not fit, programming or HIL):
 python3 tests/prepare.py --probe physical-toolchain
 This probe fails on absent/invalid cable enumeration even when Quartus exits zero.
@@ -101,7 +106,7 @@ from accumulator_checks import accumulator_case
 from tensor_checks import activation_case, tensor_case
 from reproduce import reproduce
 from map_checks import map_case
-from parameters import A, defaults
+from parameters import A, compatibility_geometries, defaults
 from fpga_checks import host_case, bridge_case
 from hardware_checks import board_inputs, physical_cable_inventory
 
@@ -127,7 +132,7 @@ def main():
                                           "reconciliation-scope-checker",
                                           "baseline-index-checker",
                                           "native-baseline-checker",
-                                          "activation-storage"], required=True)
+                                          "activation-storage", "compatibility-host"], required=True)
     parser.add_argument("--failed-receipt",
                         help="retained decoder preparation receipt; reconciliation cannot "
                              "repair mandatory-check retention or runtime persistence")
@@ -160,10 +165,15 @@ def main():
     if args.official_defaults and args.probe not in ("memory-map", "synthesis"):
         parser.error("--official-defaults is supported only for memory-map or synthesis")
     run = Run("evidence/preparation/independent-" + args.probe, args.probe,
-              repair_of=args.repair_of)
+              repair_of=args.repair_of or (
+                  "evidence/check-behavior/20261029T201448Z-48169afcddba/"
+                  "tool-0190/receipt.json" if args.probe == "compatibility-host" else None))
     print(run.rel(run.path / "receipt.json"), flush=True)
     try:
-        if args.probe in ("physical-toolchain", "physical-inventory-checker",
+        if args.probe == "compatibility-host":
+            tools = [("python3", "--version"), ("verilator", "--version"),
+                     ("g++", "--version")]
+        elif args.probe in ("physical-toolchain", "physical-inventory-checker",
                           "fitted-summary-checker", "reconciliation-scope-checker",
                           "baseline-index-checker", "native-baseline-checker"):
             tools = [("python3", "--version")]
@@ -171,7 +181,15 @@ def main():
             tools = [("iverilog", "-V"), ("vvp", "-V")] if args.simulator == "iverilog" else [
                 ("verilator", "--version")]
         run.versions(tools)
-        if args.probe == "native-baseline-checker":
+        if args.probe == "compatibility-host":
+            legacy = next(g for g in compatibility_geometries()
+                          if g.PROFILE == 2 and g.BANKS == 8 and
+                          g.CACHE_MODE == 1 and g.CACHE_BLOCK == 64)
+            result = decoder_case(
+                run, legacy, seed=17, simulator="verilator",
+                tokens=[1, 2, 1, 2, 1, 2, 1], prefill_tokens=4,
+                first_new=1, label="compat-host", compiled_host=True)
+        elif args.probe == "native-baseline-checker":
             text, _ = run.tool([
                 "python3", "-c",
                 "import json,sys; sys.path.insert(0,'tests'); "
