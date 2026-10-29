@@ -58,7 +58,7 @@ def main():
         run.finish("failed", diagnosis=str(exc))
         raise
     run.finish("passed", result=result)
-    print(json.dumps({"result": result, "receipt": run.rel(run.path / "receipt.json")}))
+    print(json.dumps({"status": "passed", "receipt": run.rel(run.path / "receipt.json")}))
 
 
 if __name__ == "__main__":
