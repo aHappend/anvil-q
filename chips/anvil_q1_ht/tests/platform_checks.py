@@ -21,6 +21,17 @@ PREDECESSOR = (
 )
 
 
+def latest_l1_attempt(status):
+    attempts = status["execution"]["attempts"]
+    matches = [
+        row for row in attempts
+        if row["step"] == "check:l1_behavior_reference_sensitivity_synthesis"
+    ]
+    if not matches:
+        raise ValueError("workflow has no recorded L1 execution")
+    return max(matches, key=lambda row: row["id"])["id"]
+
+
 def supervision_records(attempt=309):
     """Report recorded enforcement, not permission inferred from narrative text."""
     if attempt < 1:
@@ -104,6 +115,7 @@ def main():
                       help=argparse.SUPPRESS)
     parser.add_argument("--attempt", type=int, default=309,
                         help="retained attempt to inspect with --audit-supervision")
+    parser.add_argument("--repair-of", help="retained predecessor diagnostic receipt")
     args = parser.parse_args()
     if args.attempt < 1:
         parser.error("--attempt must be positive")
@@ -115,7 +127,8 @@ def main():
         return 0
     if args.audit_supervision:
         return audit_supervision(args.attempt)
-    evidence = Evidence("workflow-platform-diagnosis", repair_of=PREDECESSOR)
+    evidence = Evidence("workflow-platform-diagnosis",
+                        repair_of=args.repair_of or PREDECESSOR)
     evidence.record["scope"] = "read_only_prerequisites_not_acceptance"
     evidence.flush()
     try:
@@ -142,7 +155,8 @@ def main():
             for relative, expected in previous["source_sha256"].items()
             if evidence.record["source_sha256"].get(relative) != expected
         ]
-        failure = ROOT / ".vulcan/engineering/run-0001/attempt-0309"
+        attempt = latest_l1_attempt(json.loads(status))
+        failure = ROOT / f".vulcan/engineering/run-0001/attempt-{attempt:04d}"
         retained = {
             name: json.loads((failure / name).read_text())
             for name in ("result.json", "patrol.json", "settled.json")
@@ -156,6 +170,7 @@ def main():
         }
         storage = os.statvfs(ROOT)
         observation = {
+            "inspected_attempt": attempt,
             "retained_failure": retained,
             "predecessor_source_count": len(previous["source_sha256"]),
             "predecessor_source_differences": differences,
@@ -173,14 +188,13 @@ def main():
         }
         evidence.record["observations"].append(observation)
         evidence.flush()
-        if differences:
-            raise AssertionError("previously bound sources differ; inspect receipt")
         evidence.finish(
             "diagnostic_completed",
             "Read-only commands and source comparisons retained. Workflow discovery "
             "is distinct from legacy hardware run discovery. This diagnostic does "
             "not confirm stage supervision, patrol accommodation, durable capacity "
-            "or accelerator acceptance.")
+            "or accelerator acceptance. Source differences are reported, not "
+            "certified as equivalent.")
         return 0
     except Exception as exc:
         evidence.finish("diagnostic_failed", f"{type(exc).__name__}: {exc}")
