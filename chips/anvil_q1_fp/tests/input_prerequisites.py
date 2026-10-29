@@ -182,6 +182,61 @@ def reference_dependencies(ev, interpreter):
     return ev.run("reference-dependencies", [str(interpreter), "-c", script], timeout=30)
 
 
+def reference_environment(ev):
+    """Validate the selected environment without choosing or modifying one."""
+    ev.receipt["scope"] = (
+        "Current PATH-resolved Python and its actual NumPy-importing child only. "
+        "No environment selection, installation, inference, capacity reservation "
+        "or collection authorization. A CLI environment is not shared-runtime clearance.")
+    previous = ROOT / "evidence/preparation/verifier-prerequisites-2lqylqym/receipt.json"
+    ev.receipt["retained_failure"] = {
+        "path": str(previous.relative_to(ROOT)), "sha256": digest(previous)}
+    script = """
+import json, os, subprocess, sys
+print("ANVIL_ENV " + json.dumps({
+    "event": "parent",
+    "python_version": sys.version,
+    "same_executable_as_probe": sys.executable == sys.argv[1],
+    "thread_settings": {key: os.environ.get(key) for key in (
+        "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+        "BLIS_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS")},
+}), flush=True)
+import numpy
+print("ANVIL_ENV " + json.dumps({"event": "parent_import", "numpy_version": numpy.__version__}),
+      flush=True)
+numpy.show_config()
+sys.stdout.flush()
+child = '''
+import json, sys, numpy
+assert sys.executable == sys.argv[1], "child interpreter changed"
+assert numpy.__version__ == sys.argv[2], "child NumPy version changed"
+print("ANVIL_ENV " + json.dumps({"event": "child_import", "numpy_version": numpy.__version__,
+                  "same_executable_as_parent": True}), flush=True)
+'''
+subprocess.run([sys.executable, "-c", child, sys.executable, numpy.__version__],
+               check=True)
+"""
+    completed = ev.run("path-parent-child-numpy-import", [
+        "python3", "-c", script, sys.executable], timeout=3600)
+    events = []
+    for line in (ev.path / "path-parent-child-numpy-import.stdout").read_text().splitlines():
+        if line.startswith("ANVIL_ENV "):
+            events.append(json.loads(line.removeprefix("ANVIL_ENV ")))
+    expected = ("parent", "parent_import", "child_import")
+    valid = (completed and tuple(row.get("event") for row in events) == expected and
+             events[0]["same_executable_as_probe"] is True and
+             events[1]["numpy_version"] == events[2]["numpy_version"] and
+             events[2]["same_executable_as_parent"] is True)
+    ev.receipt["environment_observations"] = events
+    ev.receipt["outputs"] = {
+        str(path.relative_to(ROOT)): digest(path)
+        for path in ev.path.iterdir() if path.is_file() and path.name != "receipt.json"}
+    return ev.assertion("selected_parent_and_child_numpy_import", valid,
+                        environment_changed=False, collection_launched=False,
+                        shared_runtime_environment_qualified=False,
+                        full_suite_capacity_proven=False)
+
+
 def remaining_inputs(ev, interpreter, metadata_receipt, acquisition_receipt):
     metadata = load_json(ROOT / metadata_receipt)
     previous = load_json(ROOT / acquisition_receipt)
@@ -476,7 +531,7 @@ def main():
                         "execution-facilities", "reference-dependencies",
                         "native-streams", "fp64-diagnostic", "remaining-inputs",
                         "logic-upstream", "docker-isolation", "bridge-capabilities",
-                        "production-interface",
+                        "production-interface", "reference-environment",
                         "helper-validation"), required=True)
     parser.add_argument("--metadata-receipt", type=Path)
     parser.add_argument("--python-facility", type=Path, default=Path(sys.executable))
@@ -494,6 +549,8 @@ def main():
             ok = acquire_files(ev, args.metadata_receipt)
         elif args.probe == "reference-dependencies":
             ok = reference_dependencies(ev, args.python_facility)
+        elif args.probe == "reference-environment":
+            ok = reference_environment(ev)
         elif args.probe == "logic-upstream":
             ok = logic_upstream(ev)
         elif args.probe == "docker-isolation":
