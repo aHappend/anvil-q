@@ -130,9 +130,14 @@ def execute(failure, storage):
         fresh_records = b"".join(line for line in fresh_trace.splitlines(keepends=True)
                                  if line.startswith((b"IN ", b"OUT ")))
         difference = byte_difference(old_records, fresh_records)
+        old_payload = b"".join(line for line in old_trace.splitlines(keepends=True)
+                               if b"$finish" not in line)
+        fresh_payload = b"".join(line for line in fresh_trace.splitlines(keepends=True)
+                                 if b"$finish" not in line)
         run.finish(
             "passed-focused-only", historical=historical, children=children,
             record_byte_difference=difference,
+            transcript_byte_difference=byte_difference(old_payload, fresh_payload),
             limitations="Fresh successful retention does not identify the historical loss mechanism; "
                         "no RTL or capture repair is inferred from non-reproduction.")
         return 0
