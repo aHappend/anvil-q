@@ -46,10 +46,157 @@ def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+def stream_stat(stat):
+    return dict(device=stat.st_dev, inode=stat.st_ino, links=stat.st_nlink,
+                size=stat.st_size, mtime_ns=stat.st_mtime_ns, ctime_ns=stat.st_ctime_ns)
+
+
+def reopen_capture(name):
+    path = Path(name)
+    assert not path.is_absolute() and ".." not in path.parts
+    (ROOT / path).resolve().relative_to(ROOT / "evidence")
+    observations = [json.loads(line) for line in (ROOT / path).read_text().splitlines()]
+    failures = [row for row in observations if row["errors"]]
+    assert not failures, f"capture previously failed: {failures[0] if failures else ''}"
+    final = next(row for row in reversed(observations) if row["phase"] == "pre-close")
+    assert not final["errors"], final["errors"]
+    results = {}
+    for name, expected in final["streams"].items():
+        target = ROOT / name
+        target.resolve().relative_to(ROOT / "evidence")
+        with target.open("rb") as stream:
+            before = stream_stat(os.fstat(stream.fileno()))
+            pathname = stream_stat(target.stat())
+            assert before == expected["descriptor"] == pathname, (
+                f"reopened stream identity/size changed: {name}")
+            digest = hashlib.sha256()
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+            after = stream_stat(os.fstat(stream.fileno()))
+            assert before == after == stream_stat(target.stat()), (
+                f"stream changed during separate-process reopening: {name}")
+        results[name] = dict(descriptor=after, pathname=pathname, sha256=digest.hexdigest())
+    print(json.dumps(dict(phase="separate-process-reopen", timestamp=now(), streams=results)))
+
+
+class Capture:
+    """Observe retained pathname/descriptor identity throughout child execution."""
+
+    def __init__(self, run, record, out, err, text=False):
+        self.run, self.record = run, record
+        self.paths = (out, err)
+        self.text = text
+        self.stop = threading.Event()
+        self.process = None
+        self.failure = None
+        self.previous = {}
+
+    def checkpoint(self, phase):
+        row = dict(phase=phase, timestamp=now(), monotonic_s=time.monotonic(),
+                   streams={}, errors=[])
+        for path, stream in zip(self.paths, self.streams):
+            name = self.run.relative(path)
+            try:
+                stream.flush()
+                os.fsync(stream.fileno())
+                descriptor = stream_stat(os.fstat(stream.fileno()))
+                observed = dict(descriptor=descriptor)
+                row["streams"][name] = observed
+                pathname = stream_stat(path.stat())
+                observed["pathname"] = pathname
+                if (descriptor["device"], descriptor["inode"]) != (
+                        pathname["device"], pathname["inode"]):
+                    row["errors"].append(f"pathname replaced: {name}")
+                if descriptor["links"] == 0:
+                    row["errors"].append(f"open descriptor unlinked: {name}")
+                if descriptor["size"] < self.previous.get(name, 0):
+                    row["errors"].append(f"stream truncated: {name}")
+                self.previous[name] = descriptor["size"]
+            except OSError as exc:
+                row["errors"].append(f"{name}: {type(exc).__name__}: {exc}")
+        if row["errors"] and self.failure is None:
+            self.failure = row
+            self.record["first_capture_failure"] = row
+        self.observations.write(json.dumps(row) + "\n")
+        self.observations.flush()
+        os.fsync(self.observations.fileno())
+        return row
+
+    def monitor(self):
+        while not self.stop.wait(0.25):
+            try:
+                self.checkpoint("live")
+            except OSError as exc:
+                self.failure = self.failure or dict(
+                    phase="live", timestamp=now(), errors=[f"observation write failed: {exc}"])
+                self.record.setdefault("first_capture_failure", self.failure)
+            if self.failure:
+                if self.process is not None and self.process.poll() is None:
+                    self.process.kill()
+                return
+
+    def __enter__(self):
+        observation_path = self.paths[0].with_suffix(".capture.jsonl")
+        self.record["capture_observations"] = self.run.relative(observation_path)
+        self.observations = observation_path.open("x")
+        self.streams = []
+        try:
+            for path in self.paths:
+                self.streams.append(path.open("x" if self.text else "xb"))
+            self.checkpoint("creation")
+            if self.failure:
+                raise RuntimeError(f"capture creation failed: {self.failure['errors']}")
+        except BaseException:
+            for stream in self.streams:
+                stream.close()
+            self.observations.close()
+            raise
+        self.thread = threading.Thread(target=self.monitor, daemon=True)
+        self.thread.start()
+        return self
+
+    def __exit__(self, kind, value, traceback):
+        self.stop.set()
+        self.thread.join()
+        try:
+            self.checkpoint("pre-close")
+        finally:
+            for stream in self.streams:
+                stream.close()
+            self.observations.close()
+        stdout = self.paths[0].with_suffix(".reopen.stdout.txt")
+        stderr = self.paths[0].with_suffix(".reopen.stderr.txt")
+        argv = ["python3", "tests/retained.py", "--reopen-capture",
+                self.record["capture_observations"]]
+        reopening = dict(argv=argv, cwd=".", started_at=now(), timeout_s=3600)
+        self.record["capture_reopen"] = reopening
+        self.record["capture_reopen_stdout"] = self.run.relative(stdout)
+        self.record["capture_reopen_stderr"] = self.run.relative(stderr)
+        with stdout.open("xb") as out, stderr.open("xb") as err:
+            try:
+                result = subprocess.run(argv, cwd=ROOT, stdout=out, stderr=err,
+                                        timeout=3600, check=False)
+                reopening.update(exit_code=result.returncode, timed_out=False)
+            except subprocess.TimeoutExpired:
+                reopening.update(exit_code=None, timed_out=True)
+            out.flush()
+            err.flush()
+            os.fsync(out.fileno())
+            os.fsync(err.fileno())
+        reopening["ended_at"] = now()
+        if self.failure or reopening["exit_code"] != 0:
+            raise RuntimeError(
+                f"raw stream retention failure; see {self.record['capture_observations']} "
+                f"and {self.record['capture_reopen_stderr']}") from value
+
+
 def audit_streams(commands):
     hashes, errors = {}, {}
     for command in commands:
-        for field in ("stdout", "stderr"):
+        for field in ("stdout", "stderr", "capture_observations",
+                      "capture_reopen_stdout", "capture_reopen_stderr"):
+            if field not in command:
+                continue
             name = command[field]
             path = Path(name)
             if path.is_absolute() or ".." in path.parts:
@@ -115,17 +262,24 @@ class Run:
             record["environment_overrides"] = environment
         self.receipt["commands"].append(record)
         start = time.monotonic()
-        with out.open("xb") as stdout, err.open("xb") as stderr:
-            try:
-                completed = subprocess.run(
-                    argv, cwd=ROOT, stdout=stdout, stderr=stderr, timeout=timeout, check=False,
+        try:
+            with Capture(self, record, out, err) as capture:
+                process = subprocess.Popen(
+                    argv, cwd=ROOT, stdout=capture.streams[0], stderr=capture.streams[1],
                     env=(os.environ | environment) if environment else None)
-                record["exit_code"] = completed.returncode
-            except subprocess.TimeoutExpired:
-                record["exit_code"] = None
-                record["timed_out"] = True
-        record["ended_at"] = now()
-        record["duration_s"] = time.monotonic() - start
+                capture.process = process
+                try:
+                    process.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    record["timed_out"] = True
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                    process.wait()
+                    record["exit_code"] = process.returncode
+        finally:
+            record["ended_at"] = now()
+            record["duration_s"] = time.monotonic() - start
         if record["timed_out"] or record["exit_code"] not in expected_codes:
             raise RuntimeError(f"{label}: tool failure; see {self.relative(err)}")
         return out
@@ -158,10 +312,12 @@ class Run:
         }
         self.receipt["commands"].append(record)
         start = time.monotonic()
-        with out.open("x") as stdout, err.open("x") as stderr:
+        with Capture(self, record, out, err, text=True) as capture:
+            stdout, stderr = capture.streams
             process = subprocess.Popen(
                 argv, cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=stderr, text=True, bufsize=1)
+            capture.process = process
 
             def expire():
                 record["timed_out"] = True
@@ -223,6 +379,12 @@ def audit_preparation_receipt(name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--audit-preparation-receipt", required=True,
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--audit-preparation-receipt",
                         help="read-only audit of a project-relative advisory receipt")
-    raise SystemExit(audit_preparation_receipt(parser.parse_args().audit_preparation_receipt))
+    group.add_argument("--reopen-capture", help="separate-process capture identity/size audit")
+    args = parser.parse_args()
+    if args.reopen_capture:
+        reopen_capture(args.reopen_capture)
+    else:
+        raise SystemExit(audit_preparation_receipt(args.audit_preparation_receipt))

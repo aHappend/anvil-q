@@ -53,6 +53,9 @@ must not alter any legal configuration.
 | Top scalar request buffer empty | scalar mux valid && buffer ready | capture complete request; scheduler can first accept it at the next edge |
 | Top scalar request buffer full | scheduler client ready | transfer once and clear occupancy; no same-edge refill or combinational ready look-through |
 | Top scalar buffer reset/cancel/fault annul | numerical core reset asserted | discard requests not yet accepted by scheduler; scheduler still drains its accepted transactions |
+| Attention request buffer empty | selected local memory request valid && local ready | capture complete request; expose downstream valid after edge, with earliest downstream transfer at following edge |
+| Attention request buffer full | downstream valid && ready | retire once and clear occupancy; no same-edge refill or ready look-through; otherwise hold every payload bit |
+| Attention request buffer reset | rst_n=0 (numerical core annul when integrated) | clear occupancy and payload; discard only locally buffered work, never scheduler-owned transactions |
 | Lane first && last | accepted singleton beat | reset logical accumulator to +0, add this product once, emit last=1 |
 | Lane bubble | !in_valid or !in_ready | no arithmetic/accumulator update for that beat |
 | Back-to-back dots | next accepted first follows prior last | no interleaving; next first replaces accumulator base with +0 in S3 |
@@ -100,6 +103,15 @@ return through the existing muxes without an added register. This adds one
 unstalled request cycle, not an arithmetic stage or a change to the public
 memory ABI. BANKS projection clients bypass this scalar-only buffer and retain
 independent scheduler access.
+
+Attention additionally registers its complete scalar request immediately after
+its local cache/scratch mux, before the decoder and top muxes. This one-entry,
+non-fall-through buffer adds one unstalled request cycle for attention traffic.
+Its upstream acceptance does not complete a memory operation: the originating
+controller still waits for the actual downstream response. Response routing,
+numerical operation order and the three-stage tensor lane are unchanged.
+Reset clears the buffer; integrated cancellation uses the numerical core reset
+while the parent scheduler retains responsibility for previously accepted tags.
 
 Required source hierarchy:
 

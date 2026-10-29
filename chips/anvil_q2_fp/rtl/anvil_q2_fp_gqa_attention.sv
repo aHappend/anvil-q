@@ -41,6 +41,15 @@ module anvil_q2_fp_gqa_attention #(
   wire [7:0] reqk;
   wire [5:0] reqp;
   wire [63:0] reql, reqrow, reqcol, reqwd, rsprd;
+  wire mux_req_valid, mux_req_ready, mux_req_write;
+  wire [3:0] mux_req_kind;
+  wire [2:0] mux_req_proj;
+  wire [31:0] mux_req_layer, mux_req_row, mux_req_col, mux_req_wdata;
+  (* preserve, dont_merge *) reg request_pending, request_write;
+  (* preserve, dont_merge *) reg [3:0] request_kind;
+  (* preserve, dont_merge *) reg [2:0] request_proj;
+  (* preserve, dont_merge *) reg [31:0] request_layer, request_row;
+  (* preserve, dont_merge *) reg [31:0] request_col, request_wdata;
   wire idle, complete, fault;
   wire [31:0] rd;
   wire issue=rst_n && idle && (state==QUERY || state==WRITE);
@@ -101,9 +110,33 @@ module anvil_q2_fp_gqa_attention #(
     .mem_rsp_rdata(rsprd[32+:32]),.mem_rsp_error(rspe[1]));
   anvil_q2_bus_mux #(2) bus(
     rst_n,{31'd0,cache_selected},reqv,reqr,reqw,reqk,reql,reqp,reqrow,reqcol,reqwd,
-    rspv,rspr,rsprd,rspe,mem_req_valid,mem_req_ready,mem_req_write,mem_req_kind,
-    mem_req_layer,mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata,
+    rspv,rspr,rsprd,rspe,mux_req_valid,mux_req_ready,mux_req_write,mux_req_kind,
+    mux_req_layer,mux_req_proj,mux_req_row,mux_req_col,mux_req_wdata,
     mem_rsp_valid,mem_rsp_ready,mem_rsp_rdata,mem_rsp_error);
+  // Isolate state-dependent cache selection from the outer request muxes.
+  assign mux_req_ready=rst_n && !request_pending;
+  assign mem_req_valid=rst_n && request_pending;
+  assign mem_req_write=rst_n ? request_write : 1'b0;
+  assign mem_req_kind=rst_n ? request_kind : 4'd0;
+  assign mem_req_layer=rst_n ? request_layer : 32'd0;
+  assign mem_req_proj=rst_n ? request_proj : 3'd0;
+  assign mem_req_row=rst_n ? request_row : 32'd0;
+  assign mem_req_col=rst_n ? request_col : 32'd0;
+  assign mem_req_wdata=rst_n ? request_wdata : 32'd0;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      request_pending<=0; request_write<=0; request_kind<=0; request_proj<=0;
+      request_layer<=0; request_row<=0; request_col<=0; request_wdata<=0;
+    end else if (request_pending) begin
+      if (mem_req_ready) request_pending<=0;
+    end else if (mux_req_valid && mux_req_ready) begin
+      request_pending<=1;
+      request_write<=mux_req_write; request_kind<=mux_req_kind;
+      request_layer<=mux_req_layer; request_proj<=mux_req_proj;
+      request_row<=mux_req_row; request_col<=mux_req_col;
+      request_wdata<=mux_req_wdata;
+    end
+  end
   always @* begin
     alu_valid=0; alu_op=0; alu_a=0; alu_b=0;
     if (rst_n) case (state)

@@ -142,6 +142,19 @@ All score/exponential RAM entries read by a command have first been written
 by that command. The RAM has synchronous accesses and no physical reset;
 asynchronously reset control prevents stale reads.
 
+The attention cache/scratch request mux feeds a local one-entry registered
+request buffer. Occupancy and all payload fields have `preserve`/`dont_merge`
+attributes, as at the existing top scalar boundary. Neither valid nor ready
+falls through: capture into an empty slot and downstream acceptance are
+separate edges, with no same-edge refill. This separates attention's
+state-dependent cache selection from the decoder/top request muxes. It adds
+one unstalled cycle per attention memory request without changing arithmetic,
+causal traversal, cache visibility or independent projection-bank access.
+Responses retain the existing unbuffered route; the selected controller waits
+for the response, so selection cannot change while the buffer owns a request.
+Reset annuls local occupancy/payload. Integrated cancellation resets this
+buffer with the numerical core, while scheduler-accepted traffic still drains.
+
 At native geometry this temporary RAM contains 32768*32 bits, reused across
 heads, layers and tokens. A compressed block buffer contains
 CACHE_BLOCK*16 native bits, ceil(CACHE_BLOCK/4)*32 packed bits and one
@@ -191,6 +204,20 @@ flush-edge accounting, and a new sequence cannot reuse the discarded request.
 The original reported setup slack was -4.362 ns at 10.000 ns; this register
 boundary is a timing repair candidate, not a measured timing-closure claim.
 Independent functional checks and shared-runtime Quartus STA must rerun.
+
+The retained setup summary's complete launch name is
+`anvil_q2_fp_decoder_layer:decoder|anvil_q2_fp_gqa_attention:attention|state.VALUE`;
+its endpoints include `anvil_q2_bank_scheduler:bank_scheduler|col[1][21]`
+and `anvil_q2_bank_scheduler:bank_scheduler|layer[1][19]`. Hierarchy separators
+are part of these node names, not an endpoint delimiter. The available report
+lists endpoints/slack but not the intervening cell arcs. Its report timestamp
+also precedes the retained map/fit reports, despite the staged RTL matching
+the inspected sources. Therefore the historical -4.362 ns failure must remain
+recorded, but cannot certify either failure or closure of the current fitted
+netlist. The local attention boundary addresses the identified request/control
+cone; fresh independent functional verification and complete post-fit timing
+paths are required. The reported HIDDEN_SIZE=16, two-query/one-KV-head build
+is reduced, not native timing/resource acceptance.
 
 The top retains the parent's serial vocabulary projection: for each logit,
 it walks normalized components in ascending order, rounds the linear input
