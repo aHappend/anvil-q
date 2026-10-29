@@ -4,6 +4,8 @@
 The shared runtime executes --check l1 and --check clean-reproduction.
 --probe creates advisory preparation evidence only.
 No design sources or prior evidence are modified.
+Independent official stages own isolated artifact scopes. Complete-table producers
+are shared only within one invocation, validated by hashes and rebuilt if stale.
 """
 
 import argparse
@@ -75,7 +77,7 @@ from deepseek_shell import run_deepseek_shell_compact, run_deepseek_shell_feasib
 from cycle_driver import (
     run_driver_comparison, run_driver_scaling, run_driver_capacity, EXPLICIT_CLOCK,
 )
-from retained import audit_controller
+from retained import audit_controller, audit_provenance
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -984,9 +986,9 @@ def main():
     group.add_argument("--check", choices=("l1", "clean-reproduction"))
     group.add_argument("--probe", choices=(
         "arithmetic", "fifo", "controller", "controller-build-repair",
-        "retained-controller-audit",
+        "retained-controller-audit", "retained-provenance-audit",
         "compile-cache-recovery",
-        "boot-performance", "official-stage-performance",
+        "boot-performance", "official-stage-performance", "performance-controls",
         "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
         "reproduction",
@@ -1126,10 +1128,20 @@ def main():
         elif args.probe == "official-stage-performance":
             from performance import stage_performance
             stage_performance(evidence)
+        elif args.probe == "performance-controls":
+            from performance import performance_controls
+            performance_controls(evidence, args.repair_of)
         elif args.probe == "retained-controller-audit":
             evidence.tools(("python3",))
             audit_controller(evidence, ROOT, digest, write_json, VerificationFailure)
             reason = "Retained controller evidence audited; no new simulation or acceptance"
+        elif args.probe == "retained-provenance-audit":
+            evidence.tools(("python3",))
+            evidence.child(
+                ["python3", "tests/test_retained.py", evidence.relative(evidence.path)],
+                "retained-provenance-regression")
+            audit_provenance(evidence, ROOT, digest, write_json, VerificationFailure)
+            reason = "Retained receipt ancestry audited; no functional or acceptance claim"
         elif args.probe == "controller-build-repair":
             import importlib.util
             from protocol import controller_test

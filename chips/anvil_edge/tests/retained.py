@@ -3,11 +3,84 @@
 Use tests/verify.py --probe retained-controller-audit --repair-of <recovery receipt>.
 Additional --repair-of arguments link prior audits of that same recovery.
 Missing historical receipts are reported with nonzero exit, never reconstructed.
+The retained-provenance-audit probe checks linked receipt hashes recursively;
+it does not certify their functional results or restore missing artifacts.
 """
 
 import json
 from pathlib import Path
 import re
+
+
+def receipt_graph(root, links, digest, failure):
+    """Inventory receipt ancestry without executing producers or changing evidence."""
+    root = root.resolve()
+    report = {
+        "scope": "Receipt ancestry/hash audit only; no functional or acceptance claim",
+        "receipts": [], "gaps": [], "historical_provenance_complete": False,
+    }
+    visited, active = {}, set()
+
+    def visit(link):
+        name, expected = link["path"], link["sha256"]
+        relative = Path(name)
+        if (relative.is_absolute() or ".." in relative.parts
+                or relative.parts[:2] not in (
+                    ("evidence", "preparation"), ("evidence", "verification"))
+                or relative.name != "receipt.json"):
+            raise failure(f"Nonportable retained receipt path: {name}")
+        candidate = root / relative
+        if not candidate.resolve().is_relative_to((root / "evidence").resolve()):
+            raise failure(f"Retained receipt escapes project evidence: {name}")
+        if not isinstance(expected, str) or re.fullmatch(r"[0-9a-f]{64}", expected) is None:
+            raise failure(f"Invalid retained receipt hash: {name}")
+        if name in active:
+            report["gaps"].append({"path": name, "issue": "cyclic receipt ancestry"})
+            return
+        if name in visited:
+            if visited[name] != expected:
+                report["gaps"].append({
+                    "path": name, "issue": "conflicting recorded hashes",
+                    "expected_sha256": expected, "other_sha256": visited[name]})
+            return
+        visited[name] = expected
+        entry = {"path": name, "expected_sha256": expected}
+        report["receipts"].append(entry)
+        try:
+            actual = digest(candidate)
+        except FileNotFoundError:
+            entry["present"] = False
+            report["gaps"].append(dict(entry, issue="missing authentic receipt"))
+            return
+        entry.update(present=True, actual_sha256=actual)
+        if actual != expected:
+            report["gaps"].append(dict(entry, issue="receipt hash mismatch"))
+            return
+        receipt = json.loads(candidate.read_text())
+        entry["recorded_exit_code"] = receipt["exit_code"]
+        entry["interpretation"] = "Hash-bound historical record, not re-execution"
+        active.add(name)
+        for predecessor in receipt.get("repair_of", []):
+            visit(predecessor)
+        active.remove(name)
+
+    if not links:
+        raise failure("Provenance audit requires at least one --repair-of receipt")
+    for link in links:
+        visit(link)
+    report["historical_provenance_complete"] = not report["gaps"]
+    return report
+
+
+def audit_provenance(evidence, root, digest, write_json, failure):
+    report = receipt_graph(root, evidence.record["repair_of"], digest, failure)
+    evidence.record["retained_provenance_audit"] = report
+    write_json(evidence.path / "retained-provenance-audit.json", report)
+    if report["gaps"]:
+        raise failure(
+            f"Historical provenance incomplete: {len(report['gaps'])} receipt gaps. "
+            "See retained-provenance-audit.json. Authentic restoration belongs to "
+            "the shared runtime; no producers or simulations were rerun")
 
 
 def audit_controller(evidence, root, digest, write_json, failure):

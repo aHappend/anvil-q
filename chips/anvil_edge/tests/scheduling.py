@@ -263,6 +263,7 @@ def scheduling_controls(evidence):
         assert (Path(__file__).resolve().parent.parent / result["stdout"]).read_text() == f"CASE {index}\n"
 
     expected_error = None
+    first_child = len(evidence.record["children"])
     try:
         evidence.run_cases([
             (f"command-{index}", lambda scope, index=index: command(scope, index))
@@ -271,7 +272,7 @@ def scheduling_controls(evidence):
     except Exception as error:
         expected_error = error
     batch = evidence.record["case_batches"][-1]
-    children = list(evidence.record["children"])
+    children = evidence.record["children"][first_child:]
     assert expected_error is not None and batch["status"] == "failed"
     assert len(batch["results"]) == evidence._limits["workers"]
     assert sum(row["status"] == "failed" for row in batch["results"]) == 1

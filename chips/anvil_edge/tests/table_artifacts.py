@@ -14,7 +14,10 @@ def sha256(path):
 def validate_producer(root, entry):
     from qwen_integration import validate_table_source
 
-    directory = root.path / entry["directory"]
+    relative = Path(entry["directory"])
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError("Complete-table producer must belong to this fresh invocation")
+    directory = root.path / relative
     manifest_path = directory / "producer.json"
     if sha256(manifest_path) != entry["manifest_sha256"]:
         raise ValueError("Complete-table producer manifest changed")
@@ -46,7 +49,7 @@ def complete_tables(evidence, family, *, model_bos=False):
         if entry is not None:
             try:
                 directory, info = validate_producer(root, entry)
-            except (OSError, ValueError) as error:
+            except (FileNotFoundError, ValueError) as error:
                 recovery = {"previous_producer": dict(entry),
                             "reason": f"{type(error).__name__}: {error}"}
                 root.record.setdefault("table_producer_recoveries", []).append(recovery)

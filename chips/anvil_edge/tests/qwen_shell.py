@@ -32,6 +32,10 @@ def build_inputs(directory, compact=False, physical_capacity=None, *, table_sour
     directory = Path(directory)
     if table_source is not None:
         require(not compact, "Complete table source is not a compact fixture")
+        table_source = Path(table_source)
+        require(not table_source.is_absolute() and ".." not in table_source.parts and
+                table_source.parts[:3] == directory.parts[:3],
+                "Complete tables must belong to the same fresh invocation")
         table_source = ROOT / table_source
         info = json.loads((table_source / "complete-table-fixture.json").read_bytes())
         validate_table_source(info, table_source / "tables.hex")

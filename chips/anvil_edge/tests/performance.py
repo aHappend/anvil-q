@@ -4,7 +4,6 @@ import copy
 import hashlib
 import json
 from pathlib import Path
-import re
 import time
 
 
@@ -189,3 +188,124 @@ def stage_performance(evidence):
     }
     evidence.record["official_stage_performance"] = summary
     save(evidence.path / "official-stage-performance.json", summary)
+
+
+def performance_controls(evidence, prior_receipts):
+    """Current-source producer policy, shell preparation and mutation regressions."""
+    from unittest.mock import patch
+    from deepseek_integration import bos_mutations
+    from mutations import run_mutations
+    from qwen_integration import run_rtl, save
+    from scheduling import scheduling_controls
+    from table_artifacts import complete_tables, sha256, validate_producer
+    from verify import fifo_test
+
+    evidence.tools(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+    parents = []
+    for name in prior_receipts:
+        prior = json.loads((ROOT / name).read_bytes())
+        assert prior["sources_unchanged"] and prior["child_settled"]
+        if prior["exit_code"] != 0:
+            assert "performance-controls-" in name
+            evidence.record.setdefault("retained_failed_controls", []).append({
+                "path": name, "sha256": sha256(ROOT / name),
+                "reason": prior["reason"], "acceptance_evidence": False})
+            continue
+        assert all(not child["timed_out"] and child["child_settled"] and
+                   child["process_group_settled"] for child in prior["children"])
+        assert all(evidence.record["source_sha256"][source] == expected
+                   for source, expected in prior["source_sha256"].items()
+                   if not source.startswith("tests/"))
+        parents.append({"path": name, "sha256": sha256(ROOT / name)})
+    evidence.record["performance_parents"] = parents
+    evidence.child(["python3", "tests/scheduling.py", "--source-contract"],
+                   "source-contract")
+    evidence.child(["python3", "tests/test_qwen_templates.py"], "template-regression")
+    scheduling_controls(evidence)
+
+    producer, _ = complete_tables(evidence, "qwen")
+    entry = dict(evidence.complete_table_producers["qwen-raw"])
+    before_children = len(evidence.record["children"])
+    denied = PermissionError(13, "Synthetic denied-path control", str(producer / "producer.json"))
+    with patch("table_artifacts.validate_producer", side_effect=denied):
+        try:
+            complete_tables(evidence, "qwen")
+        except PermissionError as error:
+            assert error is denied
+        else:
+            raise AssertionError("Denied producer access was bypassed")
+    assert len(evidence.record["children"]) == before_children
+    assert evidence.complete_table_producers["qwen-raw"] == entry
+    validate_producer(evidence, entry)
+    evidence.record["denied_producer_control"] = {
+        "scope": "Synthetic PermissionError fixture, not an actual filesystem denial",
+        "error": str(denied), "propagated": True, "regeneration_attempted": False}
+
+    generated = {}
+    for variant in ("standalone", "reused"):
+        directory = evidence.path / ("shell-images-" + variant)
+        directory.mkdir()
+        argv = ["./.venv/bin/python", "tests/qwen_shell.py", evidence.relative(directory)]
+        if variant == "reused":
+            validated, _ = complete_tables(evidence, "qwen")
+            assert validated == producer
+            argv.extend(("--table-source", evidence.relative(validated)))
+        child = evidence.child(argv, "shell-images-" + variant)
+        reference = json.loads((directory / "shell-reference.json").read_bytes())
+        files = {path.name: sha256(path) for path in sorted(directory.glob("shell-*.hex"))}
+        assert len(files) == 32 and len(reference["cases"]) == 5
+        generated[variant] = {"reference": reference, "files": files, "child": child}
+
+    def without_paths(value):
+        if isinstance(value, dict):
+            return {key: without_paths(item) for key, item in value.items() if key != "path"}
+        if isinstance(value, list):
+            return [without_paths(item) for item in value]
+        return value
+
+    assert generated["standalone"]["files"] == generated["reused"]["files"]
+    assert without_paths(generated["standalone"]["reference"]) == without_paths(
+        generated["reused"]["reference"])
+    evidence.record["shell_image_reuse"] = {
+        "scope": "Image/reference preparation only; full-table shell simulation not run",
+        "files_sha256": generated["reused"]["files"],
+        "complete_references_equal_except_paths": True,
+        "standalone_seconds": generated["standalone"]["child"]["duration_s"],
+        "reuse_seconds": generated["reused"]["child"]["duration_s"],
+    }
+
+    previous = next(json.loads((ROOT / name).read_bytes()) for name in prior_receipts
+                    if "official-stage-performance-" in name)
+    old_producer = next(row["producer"] for row in previous["complete_table_producers"]
+                        if row["key"] == "qwen-raw")
+    rejected = evidence.path / "rejected-cross-invocation"
+    rejected.mkdir()
+    result = evidence.child(
+        ["./.venv/bin/python", "tests/qwen_shell.py", evidence.relative(rejected),
+         "--table-source", old_producer], "cross-invocation-rejection", allow_failure=True)
+    output = (ROOT / result["stdout"]).read_text() + (ROOT / result["stderr"]).read_text()
+    assert (result["exit_code"] not in (0, None) and not result["timed_out"] and
+            result["child_settled"] and result["process_group_settled"] and
+            "Complete tables must belong to the same fresh invocation" in output)
+    assert not list(rejected.iterdir())
+    evidence.record["cross_invocation_producer_rejected"] = result
+
+    producer, info = complete_tables(evidence, "deepseek", model_bos=True)
+    record = json.loads((producer / "model-bos-vectors.json").read_bytes())
+    vectors = [{"case": index, "input_utf8_hex": row["utf8_hex"],
+                "token_ids": row["token_ids"], "decoded_utf8_hex": row["decoded_utf8_hex"]}
+               for index, row in enumerate(record["vectors"])]
+    compact = [row for row in vectors if row["input_utf8_hex"] == "65cc81"]
+    assert len(compact) == 1
+    run_rtl(evidence, info, vectors[:5] + compact, "deepseek-bos",
+            table_source=producer / "tables.hex")
+    bos_mutations(evidence, info, compact, table_source=producer / "tables.hex")
+    assert len(evidence.record["bos_mutations"]) == 2
+    run_mutations(evidence, fifo_test)
+    save(evidence.path / "performance-controls.json", {
+        "scope": "Bounded current-source harness and defect-sensitivity checks, not full L1",
+        "parents": parents, "denied_access_propagated": True,
+        "cross_invocation_rejected": True, "bos_mutants_killed": 2,
+        "shell_image_reuse": evidence.record["shell_image_reuse"],
+        "original_mutation_suite": evidence.relative(evidence.path / "mutation-results.json"),
+    })

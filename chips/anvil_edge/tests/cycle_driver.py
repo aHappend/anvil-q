@@ -1,10 +1,10 @@
-"""Explicit shell clock driver and bounded paired feasibility experiments.
+"""Explicit shell/boot clock driver and bounded paired feasibility experiments.
 
 The candidate removes only the recurring SV clock-delay coroutine. Verilator
 timing support remains for the original edge waits and post-edge stimulus delays;
 removing those would change the experiment rather than measure the clock driver.
-Supported shell benches select this driver explicitly; all other benches retain
-their existing driver. The timed SV driver remains available for paired probes.
+Only the exact shell and boot clock templates support this driver. Other benches
+retain their existing driver; the timed SV driver remains for paired probes.
 """
 
 import copy
