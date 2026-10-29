@@ -58,6 +58,12 @@ def run_sensitivity(parent, seed, only=None):
          "mask_data != 0 && tag_data == position && selected_valid",
          "mask_data != 0 && selected_valid",
          lambda run: kv_probe(run, 1), "KV_DATA_OR_TAG_MISMATCH"),
+        ("kv_default_layer_alias", "anvil_q1_ht_kv_window.sv",
+         "lookup_word = lookup_entry*KV_WIDTH + column;",
+         "lookup_word = ((layer & 32'd15)*KV_WINDOW + "
+         "{{(32-SLOT_BITS){1'b0}}, slot})*KV_WIDTH + column;",
+         lambda run: kv_probe(run, 128, max_sequence=32768, layers=24, head_dim=64),
+         "KV_DATA_OR_TAG_MISMATCH"),
         ("kv_eviction_error_ignored", "anvil_q1_ht_kv_window.sv",
          "if (spill_rsp_error) begin\n"
          "              result_error <= 1;\n"

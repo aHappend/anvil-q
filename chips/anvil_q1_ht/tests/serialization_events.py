@@ -4,6 +4,13 @@
 python3 -B tests/serialization_events.py --build-only
 New per-evaluation raw driver responses are retained losslessly as
 driver-stdout.log.gz; decompress with gzip -dc to inspect the complete stream.
+
+The recovery plan has independent admission, but larger complete comparisons
+still require shared-runtime confirmation of separate-stage supervision,
+effective patrol/child limits, durable evidence retention and compatibility
+with the admitted absolute deadline. Plan approval is not that confirmation.
+Keep the larger-comparison guard until that prerequisite is resolved; neither
+longer inner watchdogs nor progress output overrides shared-runtime enforcement.
 """
 
 import argparse
@@ -1262,7 +1269,11 @@ def main():
     if args.cost_only and (args.mode is None or args.cost_cycles <= 0 or args.cost_cycles % 3 == 0):
         parser.error("cost probes require one mode and positive cost cycles not divisible by three")
     if args.config != 0 and not (args.build_only or args.cost_only):
-        parser.error("complete larger comparisons await independent execution-feasibility admission")
+        parser.error(
+            "complete larger comparisons require shared-runtime confirmation of "
+            "separate-stage supervision, effective patrol/child limits, durable evidence "
+            "retention and compatibility with the admitted absolute deadline; "
+            "independent recovery-plan admission does not establish that confirmation")
     evidence = Evidence("serialization-events", repair_of=args.repair_of)
     try:
         executable = (load_build(evidence, args.build_receipt, args.config)

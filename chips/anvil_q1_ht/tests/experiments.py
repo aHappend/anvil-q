@@ -1967,10 +1967,15 @@ def invalid_parameters(evidence):
         evidence.flush()
 
 
-def kv_probe(evidence, depth, max_sequence=None):
+def kv_probe(evidence, depth, max_sequence=None, *, layers=2, head_dim=8):
+    """Compare public KV words and spill traffic; full geometry uses compiled simulation."""
     max_sequence = depth + 2 if max_sequence is None else max_sequence
+    if layers not in (2, 24) or head_dim not in (8, 64):
+        raise ValueError("unsupported KV verification geometry")
+    kv_width = 2 * head_dim
     bench = CLOCK + r"""
 localparam WINDOW=DEPTH_VALUE, SEQUENCE=DEPTH_VALUE+2, MAXIMUM_SEQUENCE=SEQUENCE_VALUE;
+localparam LAYERS=LAYERS_VALUE,HEAD_DIM=HEAD_DIM_VALUE,WIDTH=2*HEAD_DIM;
 reg new_sequence=0,req_valid=0,req_write=0,req_value=0,rsp_ready=0;
 reg [31:0] req_layer=0,req_head=0,req_pos=0,req_dim=0;
 reg signed [31:0] req_wdata=0;
@@ -1981,8 +1986,8 @@ wire [31:0] spill_layer,spill_pos,spill_col;
 wire signed [31:0] spill_wdata;
 reg spill_ready=0,spill_rsp_valid=0,spill_rsp_error=0;
 reg signed [31:0] spill_rsp_data=0;
-reg [31:0] backing [0:8*SEQUENCE*16-1];
-reg present [0:8*SEQUENCE*16-1];
+reg [31:0] backing [0:LAYERS*2*SEQUENCE*WIDTH-1];
+reg present [0:LAYERS*2*SEQUENCE*WIDTH-1];
 integer spill_reads=0,spill_writes=0,comparisons=0,hot_reads=0,cold_reads=0;
 integer layer,position,value_bit,column,i,cycles=0,pending=0,pending_address=0;
 integer startup_edges=0,sequence_edges=0,reset_compares=0,stale_rejections=0;
@@ -1994,11 +1999,11 @@ integer held_address;
 reg held_spill=0;
 reg [129:0] held_payload;
 wire [129:0] spill_payload={spill_write,spill_value,spill_layer,spill_pos,spill_col,spill_wdata};
-wire [31:0] backing_address=(((spill_layer*2+spill_value)*SEQUENCE+spill_pos)*16)+spill_col;
+wire [31:0] backing_address=(((spill_layer*2+spill_value)*SEQUENCE+spill_pos)*WIDTH)+spill_col;
 function automatic [31:0] expected_word(input integer l,p,c,v);
  begin expected_word=(l+1)*1000000+p*1000+c*10+v; end
 endfunction
-anvil_q1_ht_kv_window #(.NUM_LAYERS(2),.NUM_KV_HEADS(2),.HEAD_DIM(8),
+anvil_q1_ht_kv_window #(.NUM_LAYERS(LAYERS),.NUM_KV_HEADS(2),.HEAD_DIM(HEAD_DIM),
  .MAX_SEQ_LEN(MAXIMUM_SEQUENCE),.KV_WINDOW(WINDOW)) product(
  .clk(clk),.rst_n(rst_n),.new_sequence(new_sequence),.initialized(initialized),
  .req_valid(req_valid),.req_ready(req_ready),.req_write(req_write),.req_value(req_value),
@@ -2035,7 +2040,7 @@ always @(posedge clk) if(rst_n) begin
  held_spill=spill_valid && !spill_ready;
  if(held_spill) held_payload=spill_payload;
  if(spill_valid && spill_ready) begin
-  if(pending || spill_layer>=2 || spill_col>=16 || spill_pos>=SEQUENCE)
+  if(pending || spill_layer>=LAYERS || spill_col>=WIDTH || spill_pos>=SEQUENCE)
    $fatal(1,"KV_SPILL_OUTSTANDING_OR_SHAPE");
   pending=1;pending_address=backing_address;pending_write=spill_write;
   if(spill_write) begin
@@ -2062,7 +2067,7 @@ task transaction(input wr,input integer l,p,c,v,input expected_hit);
  reg saved_hit;
  begin
   @(negedge clk);
-  req_valid=1;req_write=wr;req_layer=l;req_pos=p;req_head=c/8;req_dim=c%8;
+  req_valid=1;req_write=wr;req_layer=l;req_pos=p;req_head=c/HEAD_DIM;req_dim=c%HEAD_DIM;
   req_value=v;req_wdata=expected_word(l,p,c,v);
   before_reads=spill_reads;
   if(req_ready!==1) $fatal(1,"KV_REQUEST_NOT_READY");
@@ -2153,7 +2158,7 @@ task reset_abort_read(input integer p,phase);
 endtask
 initial begin
  rst_n=0;`RESET_DELTA check_reset();
- for(i=0;i<8*SEQUENCE*16;i=i+1) begin present[i]=0;backing[i]=0;end
+ for(i=0;i<LAYERS*2*SEQUENCE*WIDTH;i=i+1) begin present[i]=0;backing[i]=0;end
  repeat(3) edge_tick();
  @(negedge clk);rst_n=1;
  edge_tick();
@@ -2163,20 +2168,31 @@ initial begin
  repeat(2) edge_tick();
  @(negedge clk);rst_n=1;
  await_initialization(startup_edges);
- for(position=0;position<WINDOW+2;position=position+1)
-  for(layer=0;layer<2;layer=layer+1) begin
+ for(position=0;position<WINDOW+2;position=position+1) begin
+  for(layer=0;layer<LAYERS;layer=layer+1) begin
    for(value_bit=0;value_bit<2;value_bit=value_bit+1)
-    for(column=0;column<16;column=column+1)
+    for(column=0;column<WIDTH;column=column+1)
      transaction(1,layer,position,column,value_bit,0);
    for(value_bit=0;value_bit<2;value_bit=value_bit+1)
-    for(column=0;column<16;column=column+1)
+    for(column=0;column<WIDTH;column=column+1)
      transaction(0,layer,position,column,value_bit,1);
   end
- for(layer=0;layer<2;layer=layer+1)
+  if(LAYERS>2 && position==0)
+   for(layer=0;layer<LAYERS;layer=layer+1)
+    for(value_bit=0;value_bit<2;value_bit=value_bit+1)
+     for(column=0;column<WIDTH;column=column+1)
+      transaction(0,layer,position,column,value_bit,1);
+ end
+ if(LAYERS>2)
+  for(layer=0;layer<LAYERS;layer=layer+1)
+   for(value_bit=0;value_bit<2;value_bit=value_bit+1)
+    for(column=0;column<WIDTH;column=column+1)
+     transaction(0,layer,WINDOW+1,column,value_bit,1);
+ for(layer=0;layer<LAYERS;layer=layer+1)
   for(value_bit=0;value_bit<2;value_bit=value_bit+1)
-   for(column=0;column<16;column=column+1)
+   for(column=0;column<WIDTH;column=column+1)
     transaction(0,layer,0,column,value_bit,0);
- if(spill_writes!==128 || hot_reads==0 || cold_reads!==64)
+ if(spill_writes!==4*LAYERS*WIDTH || hot_reads==0 || cold_reads!==2*LAYERS*WIDTH)
   $fatal(1,"KV_MISSING_COVERAGE spills=%0d hot=%0d cold=%0d",spill_writes,hot_reads,cold_reads);
  $display("MEASURED_KV hot_reads=%0d hot_cycles=%0d hot_min=%0d hot_max=%0d cold_reads=%0d cold_cycles=%0d cold_min=%0d cold_max=%0d spill_reads=%0d spill_writes=%0d",
           hot_reads,hot_cycles,hot_min,hot_max,cold_reads,cold_cycles,cold_min,cold_max,
@@ -2215,9 +2231,15 @@ end
 endmodule
 """
     name = f"kv-{depth}" + (f"-sequence-{max_sequence}" if max_sequence != depth + 2 else "")
+    if (layers, head_dim) != (2, 8):
+        name += f"-layers-{layers}-head-{head_dim}"
     transcript = evidence.simulate(name, bench.replace("DEPTH_VALUE", str(depth))
-                                  .replace("SEQUENCE_VALUE", str(max_sequence)),
-                                  ["anvil_q1_ht_kv_window.sv"])
+                                  .replace("SEQUENCE_VALUE", str(max_sequence))
+                                  .replace("LAYERS_VALUE", str(layers))
+                                  .replace("HEAD_DIM_VALUE", str(head_dim)),
+                                  ["anvil_q1_ht_kv_window.sv"],
+                                  simulator=("verilator" if head_dim >= 64 or layers > 2
+                                             else getattr(evidence, "default_simulator", "iverilog")))
     measured = measurement_records(transcript, "MEASURED_KV")
     if len(measured) != 1:
         raise AssertionError("KV benchmark lacks a unique measured record")
@@ -2234,7 +2256,9 @@ endmodule
         "reset_source_policy": "quiesce external spill source and cancel its outstanding response",
         "recovery": "no ghost transaction, then independently compare two fresh hit words",
     })
-    if (counters["hot_reads"] <= 0 or counters["cold_reads"] != 64 or
+    expected_hot = (depth + 2 + 2 * int(layers > 2)) * layers * 2 * kv_width
+    if (counters["hot_reads"] != expected_hot or counters["cold_reads"] != layers * 2 * kv_width or
+            counters["spill_writes"] != 4 * layers * kv_width or
             counters["spill_reads"] != counters["cold_reads"] or
             counters["hot_cycles"] != 2 * counters["hot_reads"] or
             counters["hot_min"] != 2 or counters["hot_max"] != 2):
@@ -2242,7 +2266,9 @@ endmodule
     evidence.record.setdefault("kv_benchmarks", []).append({
         "scope": "D3_KV_primitive_not_complete_attention_or_physical_DDR",
         "window": depth, "max_sequence": max_sequence,
-        "layers": 2, "kv_heads": 2, "head_dim": 8,
+        "layers": layers, "kv_heads": 2, "head_dim": head_dim,
+        "cross_layer_reread_sweeps": 2 if layers > 2 else 0,
+        "cross_layer_reread_words": 4 * layers * kv_width if layers > 2 else 0,
         "compute_period_ns": 10,
         "measurement": "accepted public request edge to post-edge rsp_valid; "
                        "excludes three deliberate response-hold cycles, request retirement "
@@ -2959,6 +2985,11 @@ def run_probe(evidence, name, seed, config=0):
             kv_probe(evidence, depth, max_sequence=32768)
         from kv_faults import kv_faults
         kv_faults(evidence, seed)
+    elif name in ("kv-default", "kv-default-sensitivity"):
+        kv_probe(evidence, 128, max_sequence=32768, layers=24, head_dim=64)
+        if name == "kv-default-sensitivity":
+            from sensitivity import run_sensitivity
+            run_sensitivity(evidence, seed, only=("kv_default_layer_alias",))
     elif name in ("kv-faults", "kv-fault-sensitivity"):
         from kv_faults import kv_faults
         if name == "kv-fault-sensitivity":

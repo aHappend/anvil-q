@@ -22,6 +22,34 @@ import verify
 import persistence
 import experiments
 import nested_retention
+import serialization_events
+
+
+class SupervisionPrerequisiteChecks(unittest.TestCase):
+    def test_larger_comparisons_stop_before_evidence_build_or_simulation(self):
+        for config in (1, 2):
+            for mode in ("AWQ", "BF16"):
+                with self.subTest(config=config, mode=mode):
+                    diagnostic = io.StringIO()
+                    with patch.object(sys, "argv", [
+                            "tests/serialization_events.py", "--config", str(config),
+                            "--mode", mode]), \
+                            patch.object(serialization_events, "Evidence") as evidence, \
+                            patch.object(serialization_events, "build") as build, \
+                            patch.object(serialization_events, "compare") as compare, \
+                            contextlib.redirect_stderr(diagnostic):
+                        with self.assertRaises(SystemExit) as caught:
+                            serialization_events.main()
+                    self.assertEqual(caught.exception.code, 2)
+                    for requirement in (
+                            "shared-runtime confirmation", "separate-stage supervision",
+                            "effective patrol/child limits", "durable evidence retention",
+                            "admitted absolute deadline",
+                            "independent recovery-plan admission does not establish"):
+                        self.assertIn(requirement, diagnostic.getvalue())
+                    evidence.assert_not_called()
+                    build.assert_not_called()
+                    compare.assert_not_called()
 
 
 class NestedRetentionChecks(unittest.TestCase):

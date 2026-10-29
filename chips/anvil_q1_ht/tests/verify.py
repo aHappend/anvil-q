@@ -406,7 +406,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", choices=("tensor", "tensor-sensitivity", "dequant", "dequant-sensitivity",
                                            "math", "math-sensitivity", "top-awq", "top-bf16",
-                                           "csr-upload", "synthesis", "kv", "kv-faults",
+                                           "csr-upload", "synthesis", "kv", "kv-default",
+                                           "kv-default-sensitivity", "kv-faults",
                                            "kv-fault-sensitivity", "parameters", "dma",
                                            "late-read-faults", "late-read-sensitivity",
                                            "sensitivity", "dma-pipeline-sensitivity",
