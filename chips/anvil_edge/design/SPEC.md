@@ -45,6 +45,11 @@ than 10.0 ns. Static elaboration is not timing acceptance.
 | Generated-token stall | ID and last remain stable; no feedback request is launched. |
 | Finish stall | Finish remains asserted; it cannot pass an older generated token. |
 | UART FIFO overflow | Sticky explicit transport error; never silently claim successful input. |
+| Mapper cache capture | E0 captures the typed request and configuration; registered configuration checks precede lookup. No DDR or typed response retires at E0. |
+| Mapper cache hit/miss | Two fixed entries, keyed by kind/layer/projection. A hit registers metadata before shape/permission and per-access arithmetic checks; a miss scans DDR and fills only after complete descriptor validation. |
+| Mapper cache replacement | Successful fills alternate victims 0 and 1; hits do not change replacement order. One outstanding request prevents concurrent fill/lookup races. |
+| Mapper cache reset/reload | Reset or sampled configuration withdrawal invalidates both entries before reuse; invalidation wins over fill. Even a same-address reload starts cold. First post-reset requests cannot hit. |
+| Mapper held response | Cache invalidation never changes an outstanding DDR request or a held typed response. Completion still requires the recorded DDR acknowledgement. |
 
 ## Error codes
 
@@ -274,15 +279,40 @@ inputs are `config_valid`, `cfg_directory_base[63:0]`,
 `cfg_writable_bytes[63:0]`. All bases identify segment headers except the two
 opaque tensor-storage bases, which identify their data directly.
 
-The mapper snapshots the committed bundle at typed-request capture. It searches
-the sorted DDR directory one record at a time; it does not keep a model-sized
-associative on-chip directory. It reads three key words first and only reads the
-remaining nine words on a match. The boot validator remains responsible for
+The mapper snapshots the committed bundle at typed-request capture. A fixed
+two-entry fully associative cache retains only validated directory metadata,
+keyed by the complete tensor identity (kind, layer, projection) within that
+committed configuration epoch. Rows, columns, write direction and data are not
+cached answers: each request is checked independently. On a miss it searches
+the sorted DDR directory one record at a time, reading three key words first
+and only the remaining nine words on a match. There is no model-sized on-chip
+directory and no tensor-value or logit cache. The boot validator remains responsible for
 whole-directory validation before commit. Runtime mapping additionally checks
 the matched shape, format, permissions, segment, row/column and region extent.
 Activation slot 13 and row-specific padding are inaccessible. Bad requests
 produce a held error response and no tensor-data transaction; malformed
 directory records can have only bounded directory-validation reads.
+
+An entry becomes valid only after all twelve matching descriptor words, shape,
+format, permissions, storage kind, alignment, checked rows-times-columns byte
+extent and segment bounds have passed. Failed/incomplete descriptor reads or
+validation never fill an entry. Hits reuse the validated extent product, but
+still check configuration/window legality, request-specific bounds and writes,
+descriptor shape/format/permissions, registered row multiplication, column and
+byte-offset arithmetic, region/segment bounds and final DDR address. Tensor-data
+reads and writes always reach DDR and consume its real success/error response.
+Data errors cannot become cache-provided successes.
+
+Reset and every sampled low `config_valid` invalidate both entries and reset
+the alternating replacement pointer. The bank's epoch is represented by these
+valid bits, not a wrapping epoch counter. A changed directory/storage bundle
+also invalidates it, even if a caller fails to withdraw validity. A withdrawal
+during an outstanding request prevents that request from refilling the new
+epoch, without cancelling its captured transaction or changing a stalled
+response. Reload must still be idle-only; changing DDR directory contents
+without withdrawal is outside the immutable committed-table contract. Reload
+at the same addresses must withdraw validity and therefore cannot retain stale
+metadata.
 
 Registered states separate request capture, configuration/window checks,
 directory address calculation, held request, response capture, record consume,
@@ -290,6 +320,17 @@ key comparison, shape checks, index multiply, offset addition, segment/DDR
 checks, data request and held typed response. Multiplication uses
 `anvil_edge_signed_multiplier` with 64-bit operands padded from unsigned32
 values. No runtime division or remainder computes an address.
+
+| Mapper variable-latency operation | Transition and completion |
+| --- | --- |
+| Request/configuration | `IDLE` captures only on handshake; `CONFIG_CHECK` rejects illegal requests before lookup or DDR. |
+| Cache lookup | `CACHE_LOOKUP` registers a hit then enters `REGION_CHECK`; a miss enters `DIR_OFFSET`. |
+| Directory read | `DIR_OFFSET` / `DIR_ADDRESS` register the address; `READ_REQUEST` holds it until ready; `READ_RESPONSE` waits for success/error; `READ_CONSUME` captures the selected word. |
+| Directory search | `KEY_CHECK` reads the remaining matching words, advances one sorted record, or returns an explicit missing-key error. |
+| Descriptor validation/fill | `REGION_CHECK` checks metadata; misses use `EXTENT_MULTIPLY` / `EXTENT_WAIT` / `EXTENT_CHECK`, filling only on successful extent validation. Hits skip only that immutable extent calculation. |
+| Per-access address | `INDEX_MULTIPLY` / `INDEX_WAIT` await the registered multiplier; `INDEX_ADD` through `PHYSICAL_CHECK` check row/column, byte offset, segment and DDR bounds on hits and misses alike. |
+| Tensor transaction | `DATA_REQUEST` holds fields until ready; `DATA_RESPONSE` waits for the mandatory acknowledgement, including writes, and captures errors without retry/substitution. |
+| Typed response | `RETURN` holds response fields until acceptance, then returns to `IDLE`; cache activity cannot retire or alter this response. |
 
 `anvil_edge_memory_subsystem` instantiates this mapper. It has the same geometry
 and DDR-window parameters and the same configuration ports. Its typed upstream

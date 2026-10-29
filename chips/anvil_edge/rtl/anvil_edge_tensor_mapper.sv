@@ -43,7 +43,7 @@ module anvil_edge_tensor_mapper #(
     REGION_CHECK=8, EXTENT_MULTIPLY=9, EXTENT_WAIT=10, EXTENT_CHECK=11,
     INDEX_MULTIPLY=12, INDEX_WAIT=13, INDEX_ADD=14, OFFSET_ADD=15,
     SEGMENT_CHECK=16, PHYSICAL_ADD=17, PHYSICAL_CHECK=18,
-    DATA_REQUEST=19, DATA_RESPONSE=20, RETURN=21;
+    DATA_REQUEST=19, DATA_RESPONSE=20, RETURN=21, CACHE_LOOKUP=22;
   reg [4:0] state;
   reg request_write;
   reg [3:0] request_kind;
@@ -65,6 +65,25 @@ module anvil_edge_tensor_mapper #(
   reg [31:0] legal_columns;
   reg legal_key, writable_key;
   reg [31:0] projection_inputs, projection_outputs, projection_groups;
+  reg [1:0] cache_valid;
+  reg cache_victim, descriptor_cached, transaction_cacheable;
+  reg [3:0] cache_kind [0:1];
+  reg [31:0] cache_layer [0:1];
+  reg [2:0] cache_projection [0:1];
+  reg [31:0] cache_storage_kind [0:1];
+  reg [63:0] cache_offset [0:1], cache_extent [0:1];
+  reg [31:0] cache_rows [0:1], cache_columns [0:1];
+  reg [31:0] cache_format [0:1], cache_permissions [0:1];
+  integer cache_reset_index;
+  wire cache_context_matches=cfg_directory_base==directory_base &&
+    cfg_directory_count==directory_count &&
+    cfg_immutable_base==immutable_base && cfg_immutable_bytes==immutable_bytes &&
+    cfg_writable_base==writable_base && cfg_writable_bytes==writable_bytes;
+  wire cache_hit_0=cache_valid[0] && cache_kind[0]==request_kind &&
+    cache_layer[0]==request_layer && cache_projection[0]==request_projection;
+  wire cache_hit_1=cache_valid[1] && cache_kind[1]==request_kind &&
+    cache_layer[1]==request_layer && cache_projection[1]==request_projection;
+  wire cache_hit_index=!cache_hit_0 && cache_hit_1;
   wire multiply_ready, multiply_valid;
   wire signed [127:0] multiply_product;
   wire multiply_extent=state==EXTENT_MULTIPLY || state==EXTENT_WAIT;
@@ -77,6 +96,8 @@ module anvil_edge_tensor_mapper #(
   wire [64:0] immutable_end={1'b0,immutable_base}+{1'b0,immutable_bytes};
   wire [64:0] writable_end={1'b0,writable_base}+{1'b0,writable_bytes};
   wire [65:0] region_end={2'b0,region_offset}+{2'b0,region_extent};
+  wire descriptor_extent_valid=extent_value=={1'b0,region_extent} &&
+    region_end[65:64]==0 && region_end<={2'b0,segment_bytes};
   wire key_equal=key_kind=={28'd0,request_kind} &&
     key_layer==request_layer && key_projection=={29'd0,request_projection};
   wire key_later=key_kind>{28'd0,request_kind} ||
@@ -114,6 +135,50 @@ module anvil_edge_tensor_mapper #(
   assign ddr_req_wdata=rst_n && state==DATA_REQUEST ? request_data : 0;
   assign ddr_req_wstrb=rst_n && state==DATA_REQUEST && request_write ? 4'hf : 0;
   assign ddr_rsp_ready=rst_n && (state==READ_RESPONSE || state==DATA_RESPONSE);
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      cache_valid<=0;
+      cache_victim<=0;
+      transaction_cacheable<=0;
+      for (cache_reset_index=0; cache_reset_index<2;
+           cache_reset_index=cache_reset_index+1) begin
+        cache_kind[cache_reset_index]<=0;
+        cache_layer[cache_reset_index]<=0;
+        cache_projection[cache_reset_index]<=0;
+        cache_storage_kind[cache_reset_index]<=0;
+        cache_offset[cache_reset_index]<=0;
+        cache_extent[cache_reset_index]<=0;
+        cache_rows[cache_reset_index]<=0;
+        cache_columns[cache_reset_index]<=0;
+        cache_format[cache_reset_index]<=0;
+        cache_permissions[cache_reset_index]<=0;
+      end
+    end else begin
+      if (mem_req_valid && mem_req_ready) transaction_cacheable<=1;
+      else if (!config_valid || !cache_context_matches) transaction_cacheable<=0;
+
+      // Epoch withdrawal wins over a simultaneous completed descriptor fill.
+      if (!config_valid || !cache_context_matches) begin
+        cache_valid<=0;
+        cache_victim<=0;
+      end else if (state==EXTENT_CHECK && descriptor_extent_valid &&
+                   transaction_cacheable) begin
+        cache_kind[cache_victim]<=request_kind;
+        cache_layer[cache_victim]<=request_layer;
+        cache_projection[cache_victim]<=request_projection;
+        cache_storage_kind[cache_victim]<=storage_kind;
+        cache_offset[cache_victim]<=region_offset;
+        cache_extent[cache_victim]<=region_extent;
+        cache_rows[cache_victim]<=region_rows;
+        cache_columns[cache_victim]<=region_columns;
+        cache_format[cache_victim]<=region_format;
+        cache_permissions[cache_victim]<=region_permissions;
+        cache_valid[cache_victim]<=1;
+        cache_victim<=!cache_victim;
+      end
+    end
+  end
 
   always @* begin
     expected_rows=0;
@@ -216,6 +281,7 @@ module anvil_edge_tensor_mapper #(
       element_index<=0; element_offset<=0; segment_offset<=0;
       physical_address<=0; segment_base<=0; segment_bytes<=0;
       read_data<=0; response_data<=0; response_error<=0;
+      descriptor_cached<=0;
     end else case (state)
       IDLE: if (mem_req_valid && mem_req_ready) begin
         request_write<=mem_req_write;
@@ -232,6 +298,7 @@ module anvil_edge_tensor_mapper #(
         writable_base<=cfg_writable_base;
         writable_bytes<=cfg_writable_bytes;
         record_index<=0; record_word<=0;
+        descriptor_cached<=0;
         response_error<=0; response_data<=0;
         state<=CONFIG_CHECK;
       end
@@ -254,6 +321,23 @@ module anvil_edge_tensor_mapper #(
             !((directory_end<={2'b0,writable_base}) ||
               ({1'b0,writable_end}<={2'b0,directory_base}))) begin
           response_error<=1; state<=RETURN;
+        end else state<=CACHE_LOOKUP;
+      end
+      CACHE_LOOKUP: begin
+        if (config_valid && cache_context_matches && transaction_cacheable &&
+            (cache_hit_0 || cache_hit_1)) begin
+          key_kind<={28'd0,cache_kind[cache_hit_index]};
+          key_layer<=cache_layer[cache_hit_index];
+          key_projection<={29'd0,cache_projection[cache_hit_index]};
+          storage_kind<=cache_storage_kind[cache_hit_index];
+          region_offset<=cache_offset[cache_hit_index];
+          region_extent<=cache_extent[cache_hit_index];
+          region_rows<=cache_rows[cache_hit_index];
+          region_columns<=cache_columns[cache_hit_index];
+          region_format<=cache_format[cache_hit_index];
+          region_permissions<=cache_permissions[cache_hit_index];
+          descriptor_cached<=1;
+          state<=REGION_CHECK;
         end else state<=DIR_OFFSET;
       end
       DIR_OFFSET: begin
@@ -320,7 +404,8 @@ module anvil_edge_tensor_mapper #(
         end else begin
           segment_base<=writable_key ? writable_base : immutable_base;
           segment_bytes<=writable_key ? writable_bytes : immutable_bytes;
-          state<=EXTENT_MULTIPLY;
+          if (descriptor_cached) state<=INDEX_MULTIPLY;
+          else state<=EXTENT_MULTIPLY;
         end
       end
       EXTENT_MULTIPLY: if (multiply_ready) state<=EXTENT_WAIT;
@@ -333,8 +418,7 @@ module anvil_edge_tensor_mapper #(
         end
       end
       EXTENT_CHECK: begin
-        if (extent_value!={1'b0,region_extent} || region_end[65:64]!=0 ||
-            region_end>{2'b0,segment_bytes}) begin
+        if (!descriptor_extent_valid) begin
           response_error<=1; state<=RETURN;
         end else state<=INDEX_MULTIPLY;
       end

@@ -105,11 +105,30 @@ before commit. A captured request owns its downstream response through the
 owner's acceptance; configuration withdrawal never reroutes that response.
 Reload must wait for the subsystem's idle indication.
 
-The mapper scans sorted directory keys in DDR. Matching records are checked
+The mapper uses a fixed two-entry validated-descriptor cache, enough to retain
+the alternating activation/embedding identities in the Q1 output head. Misses
+scan sorted directory keys in DDR. Matching records are checked
 against the requested core geometry, permissions, format, storage segment and
 row-specific activation bounds. A registered multiplier computes the physical
 row stride; later states add the column, region offset and segment base and
 check the DDR window. Invalid tuples cannot reach tensor-data issue.
+
+Entries contain only immutable directory metadata (complete kind/layer/projection
+key, storage kind, offset, extent, shape, format and permissions), never tensor
+values. A fill follows successful metadata and registered extent validation;
+two alternating victims bound storage independently of vocabulary/model size.
+Hits register metadata and retain all per-request legality, permission, index,
+offset and DDR checks, skipping only directory reads and the already validated
+extent product. Every tensor access still requires a real DDR response.
+
+Reset, configuration withdrawal and directory/storage-bundle changes invalidate
+both entries. Withdrawal also disqualifies an in-flight request from refilling
+the bank, so a same-address reload cannot reuse old metadata. Invalidation does
+not cancel outstanding transactions or alter held responses. `SPEC.md` records
+the cycle boundaries and hit/miss state transitions. This is an optimization
+hypothesis, not a measured throughput result: independent verification must
+compare cycles and directory transactions against the retained uncached source,
+exercise errors/eviction/reload, and only then retry complete-table inference.
 
 Table clients are read-only. The arbiter scans the sixteen committed table
 ranges one per stage, permits exact raw-byte tail-word access only for kind
