@@ -72,11 +72,12 @@ def failure_diagnostics_check(root, ev):
 
 def component_diagnostics_check(root, ev):
     """Failed children must expose their receipt and original assertion."""
-    from contextlib import redirect_stderr
+    from contextlib import nullcontext, redirect_stderr
     import io
     from types import SimpleNamespace
     from unittest.mock import patch
     import verify
+    import threading
 
     good = True
     for label in ("passed", "failed", "false-with-passed-assertion",
@@ -107,6 +108,7 @@ def component_diagnostics_check(root, ev):
         child = SimpleNamespace(
             path=ev.path / ("synthetic-child-" + label),
             receipt={"assertions": child_assertions})
+        child.profile = lambda name: nullcontext()
         statuses, parent_assertions = [], []
         child.finish = statuses.append
 
@@ -115,7 +117,7 @@ def component_diagnostics_check(root, ev):
                 dict(name=name, passed=bool(passed), **detail))
 
         child.assertion = child_assertion
-        parent = SimpleNamespace(path=ev.path, receipt={})
+        parent = SimpleNamespace(path=ev.path, receipt={}, lock=threading.RLock())
 
         def assertion(name, passed, **detail):
             parent_assertions.append(dict(name=name, passed=bool(passed), **detail))

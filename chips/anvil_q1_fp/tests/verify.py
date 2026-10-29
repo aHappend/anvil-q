@@ -10,8 +10,8 @@ Reproduce from the project root:
 L1 combines rational IEEE leaf references, FP64 transformer/operator models,
 public-pin transaction scoreboards, read-only parent differentials, disposable
 defects, parameter diagnostics, source rules and generic Yosys synthesis.
-Icarus/vvp remains mandatory; installed Verilator optionally accelerates the
-larger matrix. Neither simulator establishes device timing or physical results.
+Icarus/vvp remains mandatory for compact four-state smoke; compiled Verilator
+executes the full matrices. Neither establishes device timing or physical results.
 The portable entrypoint compiles and runs an exact fresh declared-source copy
 on the minimum legal configuration, all modes, and synthesizes its hierarchy.
 It is bounded clean-copy reproduction, not a full-model benchmark.
@@ -23,6 +23,8 @@ The shared runtime, not this script, owns Arria timing and physical gates.
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import datetime
 import hashlib
 import itertools
@@ -34,6 +36,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from numerical import (binary32, check_scalar, dot_reference, dot_vectors,
@@ -55,6 +58,9 @@ REQUIRED_COVERAGE = (
     "illegal_parameter_diagnostics", "complete_hierarchy_synthesis",
     "static_arithmetic_assignment_rules",
 )
+_INVENTORY = {}
+_INVENTORY_LOCK = threading.RLock()
+_BUILDS = None
 
 
 def now():
@@ -78,21 +84,42 @@ def sources(root=ROOT):
     return sorted(selected)
 
 
+def source_inventory():
+    # Hash unchanged large model inputs once per invocation, never across runs.
+    with _INVENTORY_LOCK:
+        inventory = {}
+        for path in sources():
+            stat = path.stat()
+            identity = (stat.st_dev, stat.st_ino, stat.st_size,
+                        stat.st_mtime_ns, stat.st_ctime_ns)
+            cached = _INVENTORY.get(path)
+            if cached is None or cached[0] != identity:
+                cached = (identity, digest(path))
+                _INVENTORY[path] = cached
+            inventory[str(path.relative_to(ROOT))] = cached[1]
+        return inventory
+
+
 class Evidence:
     def __init__(self, name):
         parent = ROOT / "evidence" / "preparation"
         parent.mkdir(parents=True, exist_ok=True)
         self.path = Path(tempfile.mkdtemp(prefix="verifier-" + name + "-", dir=parent))
+        self.lock = threading.RLock()
         self.receipt = {
             "schema": 1, "acceptance_evidence": False,
             "argv": [sys.executable, *sys.argv], "cwd": ".",
             "python_version": sys.version,
             "started_at": now(), "records": [], "assertions": [],
-            "source_sha256": {str(p.relative_to(ROOT)): digest(p) for p in sources()},
+            "source_sha256": source_inventory(),
         }
         self.finish("running")
 
     def finish(self, status):
+        with self.lock:
+            self._finish(status)
+
+    def _finish(self, status):
         self.receipt["status"] = status
         self.receipt["ended_at"] = now()
         serialized = json.dumps(self.receipt, indent=2) + "\n"
@@ -112,10 +139,29 @@ class Evidence:
             os.close(directory)
 
     def assertion(self, name, passed, **detail):
-        self.receipt["assertions"].append(
-            {"name": name, "passed": bool(passed), **detail})
-        self.finish("running")
+        with self.lock:
+            self.receipt["assertions"].append(
+                {"name": name, "passed": bool(passed), **detail})
+            self.finish("running")
         return passed
+
+    @contextmanager
+    def profile(self, name):
+        started = time.monotonic()
+        record = {"name": name, "started_at": now()}
+        try:
+            yield
+        finally:
+            record.update(ended_at=now(), elapsed_s=time.monotonic()-started)
+            with self.lock:
+                self.receipt.setdefault("profiles", []).append(record)
+                self.finish("running")
+
+    def elapsed(self, name, started):
+        self.receipt.setdefault("profiles", []).append(
+            {"name": name, "ended_at": now(),
+             "elapsed_s": time.monotonic()-started})
+        self.finish("running")
 
     def run(self, label, argv, timeout=3600, cwd=ROOT):
         stdout = self.path / (label + ".stdout")
@@ -126,8 +172,9 @@ class Evidence:
             "timeout_s": timeout, "stdout": str(stdout.relative_to(ROOT)),
             "stderr": str(stderr.relative_to(ROOT)), "timed_out": False,
         }
-        self.receipt["records"].append(record)
-        self.finish("running")
+        with self.lock:
+            self.receipt["records"].append(record)
+            self.finish("running")
         started = time.monotonic()
         with stdout.open("xb") as out, stderr.open("xb") as err:
             try:
@@ -169,12 +216,115 @@ class Evidence:
         return result
 
 
+def simulation_tier(requested, *, hidden=0, tokens=1, seeds=1, full=False,
+                    mutation=False, protocol=False):
+    if requested not in ("iverilog", "verilator"):
+        raise ValueError("Unsupported simulator: " + requested)
+    compiled = (requested == "verilator" or hidden > 32 or tokens > 1 or
+                seeds > 1 or full or mutation or protocol)
+    return "verilator" if compiled else "iverilog"
+
+
+class BuildCache:
+    """Source/parameter-bound single-flight builds, scoped to this invocation."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.entries = {}
+        self.slots = threading.BoundedSemaphore(2)
+
+    def compile(self, ev, label, argv, executable):
+        normalized = []
+        index = 0
+        while index < len(argv):
+            argument = str(argv[index])
+            if argument in ("-o", "--Mdir"):
+                index += 2
+                continue
+            path = ROOT / argument
+            normalized.append((argument, digest(path)) if path.is_file() else argument)
+            index += 1
+        tool = Path(shutil.which(str(argv[0])) or str(argv[0]))
+        if not tool.is_file():
+            return ev.run(label, argv)
+        key = hashlib.sha256(json.dumps(
+            [normalized, str(tool.resolve()), digest(tool)], sort_keys=True).encode()).hexdigest()
+        with self.lock:
+            entry = self.entries.get(key)
+            if entry is not None and entry["event"].is_set() and entry["passed"] and (
+                    not entry["binary"].is_file() or
+                    digest(entry["binary"]) != entry["binary_sha256"]):
+                entry = None
+            owner = entry is None
+            if owner:
+                entry = {"event": threading.Event(), "passed": False}
+                self.entries[key] = entry
+        if owner:
+            child = Evidence("build-" + key[:12])
+            child.receipt["tool_versions_receipt"] = ev.receipt.get(
+                "tool_versions_receipt", str((ev.path / "receipt.json").relative_to(ROOT)))
+            entry["receipt"] = str((child.path / "receipt.json").relative_to(ROOT))
+            entry["binary"] = child.path / executable.name
+            child.receipt["compile_inputs"] = {}
+            for argument in map(str, argv):
+                source = ROOT / argument
+                if source.is_file() and source.suffix == ".sv":
+                    snapshot = child.path / "compile-inputs" / source.relative_to(ROOT)
+                    snapshot.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, snapshot)
+                    child.receipt["compile_inputs"][str(source.relative_to(ROOT))] = {
+                        "sha256": digest(source),
+                        "snapshot": str(snapshot.relative_to(ROOT))}
+            command = list(map(str, argv))
+            for flag, value in (("-o", str(entry["binary"].resolve())),
+                                ("--Mdir", str((child.path / "compile-obj").relative_to(ROOT)))):
+                if flag in command:
+                    command[command.index(flag)+1] = value
+            try:
+                with self.slots, child.profile("build"):
+                    entry["passed"] = child.run("compile", command)
+                entry["passed"] = child.assertion(
+                    "compiled_binary_present", entry["passed"] and entry["binary"].is_file())
+                if entry["passed"]:
+                    entry["binary_sha256"] = digest(entry["binary"])
+                    child.receipt["binary_sha256"] = entry["binary_sha256"]
+                    # Preserve executable, generated sources and logs, not compiler scratch.
+                    removed = []
+                    for path in (child.path / "compile-obj").glob("*"):
+                        if path.is_file() and path.suffix in (".o", ".a", ".gch"):
+                            path.unlink()
+                            removed.append(path.name)
+                    child.receipt["removed_completed_intermediates"] = removed
+            finally:
+                child.finish("passed" if entry["passed"] else "failed")
+                entry["event"].set()
+        else:
+            with ev.profile(label + "-build-wait"):
+                entry["event"].wait()
+        with ev.lock:
+            ev.receipt.setdefault("builds", []).append({
+                "label": label, "key": key, "reused": not owner,
+                "receipt": entry["receipt"],
+            })
+        if entry["passed"]:
+            shutil.copy2(entry["binary"], executable)
+        return entry["passed"]
+
+
+def compile_simulation(ev, label, argv, executable):
+    global _BUILDS
+    if _BUILDS is None:
+        _BUILDS = BuildCache()
+    return _BUILDS.compile(ev, label, argv, executable)
+
+
 def component(ev, name, check, *args, **kwargs):
     child = Evidence(name)
     child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
     passed = False
     try:
-        result = bool(check(child, *args, **kwargs))
+        with child.profile("component"):
+            result = bool(check(child, *args, **kwargs))
         if not child.receipt["assertions"]:
             child.assertion("component_assertions_present", False,
                             error="component returned without recording an assertion")
@@ -191,11 +341,30 @@ def component(ev, name, check, *args, **kwargs):
     finally:
         child.finish("passed" if passed else "failed")
         receipt = str((child.path / "receipt.json").relative_to(ROOT))
-        ev.receipt.setdefault("children", []).append(
-            receipt)
-        ev.assertion("component_" + name, passed, child_receipt=receipt)
+        with ev.lock:
+            ev.receipt.setdefault("children", []).append(receipt)
+            ev.assertion("component_" + name, passed, child_receipt=receipt)
         if not passed:
             report_failures(child)
+
+
+def parallel_components(ev, jobs):
+    """Run all obligations; each owns its receipt, traces and output names."""
+    def execute(job):
+        name, check, args, kwargs = job
+        try:
+            return component(ev, name, check, *args, **kwargs)
+        except (AssertionError, ValueError, KeyError, OSError, OverflowError):
+            # component retained and reported the original exception.
+            return False
+
+    ev.receipt["scheduling"] = {"component_workers": 4, "compiler_slots": 2,
+                               "compiler_jobs_per_slot": 2,
+                               "reuse_scope": "this invocation only"}
+    with ev.profile("parallel-components"), ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {name: pool.submit(execute, (name, check, args, kwargs))
+                   for name, check, args, kwargs in jobs}
+        return {name: future.result() for name, future in futures.items()}
 
 
 def report_failures(ev):
@@ -226,7 +395,9 @@ def reference_selftest(ev):
     ev.assertion("independent_reference_known_answers", True, comparisons=len(cases) + 4)
 
 
-def leaf_check(ev, full, rtl_directory=None):
+def leaf_check(ev, full, rtl_directory=None, simulator="iverilog"):
+    simulator = simulation_tier(simulator, full=full, mutation=rtl_directory is not None)
+    generated_at = time.monotonic()
     reference_selftest(ev)
     stimulus = ev.path / "leaf-input.txt"
     expected = ev.path / "leaf-expected.jsonl"
@@ -265,22 +436,38 @@ def leaf_check(ev, full, rtl_directory=None):
             emit(1, 0, idle, 0)
     for path in (stimulus, expected):
         ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(ROOT))] = digest(path)
+    ev.elapsed("leaf-reference-generation", generated_at)
+    ev.assertion("leaf_simulation_tier", simulator == "verilator" or count <= 500000,
+                 simulator=simulator, stimulus_cycles=count, full_vectors=full)
     rtl = sorted((rtl_directory or ROOT / "rtl").glob("*.sv"))
-    executable = ev.path / "leaf.vvp"
-    compile_ok = ev.run("leaf-compile", [
-        "iverilog", "-g2012", "-Wall", "-s", "leaf_tb", "-o",
-        str(executable.relative_to(ROOT)), *[str(p.relative_to(ROOT)) for p in rtl],
-        "tests/leaf_tb.sv",
-    ])
+    executable = ev.path / ("leaf.vvp" if simulator == "iverilog" else "leaf.sim")
+    argv = (["iverilog", "-g2012", "-Wall", "-s", "leaf_tb",
+             "-DICARUS_SMOKE", "-o", str(executable.relative_to(ROOT))]
+            if simulator == "iverilog" else [
+                "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                "--top-module", "leaf_tb", "--Mdir",
+                str((ev.path / "leaf-build").relative_to(ROOT)),
+                "-o", str(executable.resolve())])
+    compile_ok = compile_simulation(ev, "leaf-compile", [
+        *argv, *[str(p.relative_to(ROOT)) for p in rtl], "tests/leaf_tb.sv",
+    ], executable)
     if not ev.assertion("leaf_compile", compile_ok):
         return False
     run_ok = ev.run("leaf-simulate", [
-        "vvp", str(executable.relative_to(ROOT)),
+        *(["vvp", str(executable.relative_to(ROOT))]
+          if simulator == "iverilog" else [str(executable)]),
         "+input=" + str(stimulus.relative_to(ROOT)),
         "+output=" + str(trace.relative_to(ROOT)),
     ], timeout=86400)
     if not ev.assertion("leaf_behavior_latency_bubbles_reset_xz", run_ok):
         return False
+    budget_ok = True
+    if simulator == "iverilog":
+        budget_ok = ev.assertion("leaf_icarus_measured_budget",
+                                 ev.receipt["records"][-1]["elapsed_s"] < 60,
+                                 elapsed_s=ev.receipt["records"][-1]["elapsed_s"],
+                                 cycles=count, wall_clock_allowance_s=86400)
+    compared_at = time.monotonic()
     pending = {}
     failures = []
     mismatch_counts = dict.fromkeys(("dot", "exp", "reciprocal", "rsqrt"), 0)
@@ -327,13 +514,14 @@ def leaf_check(ev, full, rtl_directory=None):
                         })
             rows += 1
     assert rows == count and not pending
+    ev.elapsed("leaf-reference-comparison", compared_at)
     (ev.path / "leaf-mismatches.json").write_text(json.dumps({
         "comparisons": comparisons, "mismatch_counts": mismatch_counts,
         "first_failures": failures, "full_vectors": full,
     }, indent=2) + "\n")
     return ev.assertion("leaf_independent_numerical", not any(mismatch_counts.values()),
                         comparisons=comparisons, mismatch_counts=mismatch_counts,
-                        diagnostics=str((ev.path / "leaf-mismatches.json").relative_to(ROOT)))
+                        diagnostics=str((ev.path / "leaf-mismatches.json").relative_to(ROOT))) and budget_ok
 
 
 def benchmark_contract(ev):
@@ -454,6 +642,15 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
         seeds = (17, 53, 89) if full else (17,)
     result = True
     for name, config in configurations.items():
+        selected_simulator = simulation_tier(
+            simulator, hidden=config[1], tokens=config[-1], seeds=len(seeds), full=full,
+            mutation=rtl_directory is not None)
+        ev.receipt.setdefault("simulation_routes", []).append({
+            "configuration": name, "requested": simulator, "selected": selected_simulator,
+            "tokens": config[-1], "seeds": list(seeds), "hidden": config[1]})
+        # All subsequent choices use the selected tier, including probe entrypoints.
+        requested_simulator = simulator
+        simulator = selected_simulator
         binaries = {}
         for parent in ((False, True) if 0 in modes else (False,)):
             label = name + ("-parent" if parent else "-revised")
@@ -462,7 +659,7 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
             rtl = sorted(directory.glob("*.sv"))
             if simulator == "iverilog":
                 argv = ["iverilog", "-g2012", "-Wall", "-s", "integration_tb",
-                        "-o", str(executable.relative_to(ROOT))]
+                        "-DICARUS_SMOKE", "-o", str(executable.relative_to(ROOT))]
             elif simulator == "verilator":
                 argv = [
                     "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
@@ -478,17 +675,18 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
             argv += [f"{parameter_prefix}{key}={value}"
                      for key, value in zip(PARAMETERS, config)]
             argv += [str(p.relative_to(ROOT)) for p in rtl] + ["tests/integration_tb.sv"]
-            compiled = ev.run(label + "-compile", argv)
+            compiled = compile_simulation(ev, label + "-compile", argv, executable)
             result = ev.assertion(label + "_compile", compiled) and result
             if compiled:
                 binaries[parent] = executable
         for mode in modes:
             for seed in seeds:
                 label = f"{name}-mode{mode}-seed{seed}"
-                model = Architecture(config, mode, seed)
                 fixture = ev.path / (label + ".hex")
-                model.write_fixture(fixture)
-                model.execute()
+                with ev.profile(label + "-reference-generation"):
+                    model = Architecture(config, mode, seed)
+                    model.write_fixture(fixture)
+                    model.execute()
                 ev.receipt.setdefault("data_sha256", {})[str(fixture.relative_to(ROOT))] = digest(fixture)
                 traces = {}
                 for parent in ((False, True) if mode == 0 else (False,)):
@@ -506,11 +704,18 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
                         f"+mode={mode}", f"+seed={seed}",
                     ], timeout=86400)
                     result = ev.assertion(label + suffix + "_protocol", executed) and result
+                    if executed and simulator == "iverilog":
+                        record = ev.receipt["records"][-1]
+                        result = ev.assertion(
+                            label + suffix + "_icarus_measured_budget",
+                            record["elapsed_s"] < 60, elapsed_s=record["elapsed_s"],
+                            cycle_limit=500000, wall_clock_allowance_s=86400) and result
                     if executed:
                         traces[parent] = trace
                 if False in traces:
                     report = ev.path / (label + "-reference.json")
-                    compared = compare_trace(model, traces[False], report)
+                    with ev.profile(label + "-reference-comparison"):
+                        compared = compare_trace(model, traces[False], report)
                     result = ev.assertion(
                         label + "_independent_architecture_numerical", compared,
                         report=str(report.relative_to(ROOT))) and result
@@ -523,6 +728,7 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
                     result = ev.assertion(label + "_parent_differential", equal,
                                           events=len(revised),
                                           parent_events=len(parent)) and result
+        simulator = requested_simulator
     return result
 
 
@@ -578,7 +784,8 @@ def interface_check(ev):
     return result
 
 
-def protocol_check(ev, simulator="iverilog"):
+def protocol_check(ev, simulator="verilator"):
+    simulator = simulation_tier(simulator, protocol=True)
     config = (1, 8, 8, 1, 1, 8, 1, 3, 3)
     executable = ev.path / ("protocol.vvp" if simulator == "iverilog" else "protocol.sim")
     if simulator == "iverilog":
@@ -593,11 +800,11 @@ def protocol_check(ev, simulator="iverilog"):
         ]
     else:
         raise ValueError("Unsupported simulator: " + simulator)
-    compiled = ev.run("protocol-compile", [
+    compiled = compile_simulation(ev, "protocol-compile", [
         *argv,
         *[str(p.relative_to(ROOT)) for p in sorted(ROOT.glob("rtl/*.sv"))],
         "tests/protocol_tb.sv",
-    ])
+    ], executable)
     if not ev.assertion("protocol_compile", compiled):
         return False
     result = True
@@ -767,7 +974,7 @@ def preservation_check(ev):
 def operator_check(ev, production=False, config=None, operations=None, cases=None):
     if config is None:
         config = PRODUCTION if production else CONFIGURATIONS["nonpower"]
-    simulator = "verilator" if shutil.which("verilator") else "iverilog"
+    simulator = "verilator"
     result = True
     for name, op in OPERATOR_IDS.items():
         if operations is not None and name not in operations:
@@ -796,7 +1003,7 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
             rtl = ROOT / ("anvil_q1_reference/rtl" if parent else "rtl")
             argv += [str(p.relative_to(ROOT)) for p in sorted(rtl.glob("*.sv"))]
             argv.append("tests/operator_tb.sv")
-            compiled = ev.run(label+"-compile", argv)
+            compiled = compile_simulation(ev, label+"-compile", argv, executable)
             result = ev.assertion(label+"_compile", compiled) and result
             if compiled:
                 binaries[parent] = executable
@@ -812,7 +1019,7 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                 oracle = ev.path / (label + ".requests")
                 position = config[-1]-1 if name == "rope" else (
                     min(2, config[-1]-1) if name == "attention" else 0)
-                with oracle.open("w") as stream:
+                with ev.profile(label+"-reference-generation"), oracle.open("w") as stream:
                     reference = OperatorReference(config, mode, 17, stream)
                     reference.execute_operator(name, selector, position, config[0]-1)
                 ev.receipt.setdefault("data_sha256", {})[str(oracle.relative_to(ROOT))] = digest(oracle)
@@ -834,7 +1041,8 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                     result = ev.assertion(label+suffix+"_architecture_protocol", executed) and result
                     if executed:
                         report = ev.path / (label+suffix+"-reference.json")
-                        passed = compare_operator(reference, trace, report)
+                        with ev.profile(label+suffix+"-reference-comparison"):
+                            passed = compare_operator(reference, trace, report)
                         result = ev.assertion(label+suffix+"_reference", passed,
                                               report=str(report.relative_to(ROOT))) and result
                         traces[parent] = trace
@@ -926,7 +1134,7 @@ def production_recovery(ev, prior):
 
 
 def top_address_check(ev):
-    simulator = "verilator" if shutil.which("verilator") else "iverilog"
+    simulator = "verilator"
     result = True
     binaries = {}
     for parent in (False, True):
@@ -947,7 +1155,7 @@ def top_address_check(ev):
         rtl = ROOT / ("anvil_q1_reference/rtl" if parent else "rtl")
         argv += [str(p.relative_to(ROOT)) for p in sorted(rtl.glob("*.sv"))]
         argv.append("tests/top_address_tb.sv")
-        compiled = ev.run(label+"-compile", argv)
+        compiled = compile_simulation(ev, label+"-compile", argv, executable)
         result = ev.assertion(label+"_compile", compiled) and result
         if compiled:
             binaries[parent] = executable
@@ -989,7 +1197,7 @@ def top_address_check(ev):
 def leaf_defect_check(ev):
     baseline = Evidence("leaf-defect-pristine")
     baseline.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
-    pristine = leaf_check(baseline, full=False)
+    pristine = leaf_check(baseline, full=False, simulator="verilator")
     baseline.finish("passed" if pristine else "failed")
     ev.receipt.setdefault("children", []).append(str((baseline.path / "receipt.json").relative_to(ROOT)))
     if not ev.assertion("leaf_defect_pristine", pristine):
@@ -1072,7 +1280,7 @@ def integration_defect_check(ev):
         configurations = {configuration: (
             (1, 112, 8, 14, 2, 8, 8, 1, 1) if configuration == "gqa14"
             else CONFIGURATIONS[configuration])}
-        simulator = "verilator" if shutil.which("verilator") else "iverilog"
+        simulator = "verilator"
         passed = integration_check(pristine, configurations=configurations,
                                    modes=(mode,), seeds=(17,), simulator=simulator)
         pristine.finish("passed" if passed else "failed")
@@ -1133,6 +1341,8 @@ def integration_defect_check(ev):
 
 
 def main():
+    global _BUILDS
+    _BUILDS = BuildCache()
     parser = argparse.ArgumentParser()
     entry = parser.add_mutually_exclusive_group(required=True)
     entry.add_argument("--check", choices=(
@@ -1144,7 +1354,7 @@ def main():
         "protocol-accelerated", "portable-smoke", "operators", "production-operators",
         "maximum-position", "production-top-addresses", "preservation", "input-inventory",
         "production-recovery", "benchmark-fixtures", "facilities", "integration-reconciliation",
-        "receipt-publication", "interpreter-consistency"))
+        "receipt-publication", "interpreter-consistency", "scheduling"))
     parser.add_argument("--repair-of", type=Path)
     parser.add_argument("--diagnostic-repair-of", type=Path, action="append", default=[])
     parser.add_argument("--python-facility", type=Path, action="append", default=[])
@@ -1192,7 +1402,7 @@ def main():
             tools_ok = ev.versions()
             if tools_ok:
                 leaves_ok = leaf_check(ev, full=False)
-                integration_ok = integration_check(ev)
+                integration_ok = integration_check(ev, simulator="verilator")
                 synthesis_ok = synthesis_check(ev)
                 preservation_ok = preservation_check(ev)
                 ok = leaves_ok and integration_ok and synthesis_ok and preservation_ok
@@ -1224,6 +1434,9 @@ def main():
         elif args.probe == "interpreter-consistency":
             from interpreter_consistency import check as check_interpreter
             ok = check_interpreter(ROOT, ev)
+        elif args.probe == "scheduling":
+            from scheduling_checks import check as check_scheduling
+            ok = ev.versions() and check_scheduling(ROOT, ev)
         elif args.probe == "facilities":
             from recovery import facilities
             ok = facilities(ROOT, ev, args.python_facility)
@@ -1243,29 +1456,42 @@ def main():
                 from benchmark_fixtures import check as check_fixtures
                 benchmark_validator_ok = component(
                     ev, "l1-benchmark-validator", lambda child: check_fixtures(ROOT, child))
-                static_ok = static_check(ev)
-                parameters_ok = parameter_check(ev)
-                synthesis_ok = synthesis_check(ev)
-                dot_synthesis_ok = synthesis_check(ev, "anvil_q1_fp_dot8")
-                leaves_ok = leaf_check(ev, full=True)
-                defects_ok = leaf_defect_check(ev)
-                integration_defects_ok = integration_defect_check(ev)
-                simulator = "verilator" if shutil.which("verilator") else "iverilog"
-                protocol_ok = protocol_check(ev, simulator=simulator)
-                # Keep a four-state Icarus integration oracle even when the
-                # larger matrix uses the optional cycle-accurate accelerator.
-                icarus_ok = component(ev, "l1-icarus-integration", integration_check)
-                integration_ok = component(
-                    ev, "l1-integration-matrix", integration_check,
-                    full=True, simulator=simulator)
-                operators_ok = component(
-                    ev, "l1-production-operators", operator_check, production=True)
-                maximum_position_ok = component(
-                    ev, "l1-maximum-position", operator_check,
-                    config=(1, 8, 8, 1, 1, 8, 1, 1, 16777215),
-                    operations={"rope": (0,)})
-                top_address_ok = component(ev, "l1-production-top-addresses", top_address_check)
-                preservation_ok = preservation_check(ev)
+                # Synthetic validator monkeypatches are deliberately completed
+                # before concurrent engineering components begin.
+                jobs = [
+                    ("synthesis-top", synthesis_check, (), {}),
+                    ("integration-matrix", integration_check, (), {"full": True}),
+                    ("production-operators", operator_check, (), {"production": True}),
+                    ("integration-defects", integration_defect_check, (), {}),
+                    ("leaves-full", leaf_check, (), {"full": True}),
+                    ("protocol", protocol_check, (), {}),
+                    ("icarus-integration", integration_check, (), {}),
+                    ("icarus-leaves", leaf_check, (), {"full": False}),
+                    ("leaf-defects", leaf_defect_check, (), {}),
+                    ("synthesis-dot", synthesis_check, ("anvil_q1_fp_dot8",), {}),
+                    ("maximum-position", operator_check, (), {
+                        "config": (1, 8, 8, 1, 1, 8, 1, 1, 16777215),
+                        "operations": {"rope": (0,)}}),
+                    ("production-top-addresses", top_address_check, (), {}),
+                    ("parameters", parameter_check, (), {}),
+                    ("static", static_check, (), {}),
+                    ("preservation", preservation_check, (), {}),
+                ]
+                results = parallel_components(ev, jobs)
+                static_ok = results["static"]
+                parameters_ok = results["parameters"]
+                synthesis_ok = results["synthesis-top"]
+                dot_synthesis_ok = results["synthesis-dot"]
+                leaves_ok = results["leaves-full"] and results["icarus-leaves"]
+                defects_ok = results["leaf-defects"]
+                integration_defects_ok = results["integration-defects"]
+                protocol_ok = results["protocol"]
+                icarus_ok = results["icarus-integration"]
+                integration_ok = results["integration-matrix"]
+                operators_ok = results["production-operators"]
+                maximum_position_ok = results["maximum-position"]
+                top_address_ok = results["production-top-addresses"]
+                preservation_ok = results["preservation"]
                 ok = (benchmark_validator_ok and static_ok and parameters_ok and synthesis_ok and
                       dot_synthesis_ok and leaves_ok and defects_ok and
                       integration_defects_ok and protocol_ok and icarus_ok and
@@ -1296,6 +1522,7 @@ def main():
     except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
         ev.assertion("verification_exception", False, error=repr(error))
     finally:
+        ok = ok and all(a["passed"] for a in ev.receipt["assertions"])
         ev.finish("passed" if ok else "failed")
     if not ok:
         report_failures(ev)

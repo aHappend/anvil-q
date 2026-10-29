@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import stat
 import sys
+import threading
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -25,6 +26,7 @@ def exercise(case, directory):
     directory = directory.resolve()
     directory.mkdir()
     holder = Evidence.__new__(Evidence)
+    holder.lock = threading.RLock()
     holder.path = directory
     holder.receipt = OLD.copy()
     holder.finish("running")
