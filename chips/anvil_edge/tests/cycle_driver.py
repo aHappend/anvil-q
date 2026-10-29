@@ -142,7 +142,8 @@ def pair(evidence, info, family, seeds, transports, general_only, reject):
         rejected = controls(scope, baseline, family) if reject else []
         observations[driver] = {"measurements": measurements, "controls": rejected,
                                 "rows": rows}
-        save(evidence.path / f"{family}-{driver}-measurements.json",
+        save(evidence.path /
+             f"{family}-{info['physical_capacity']}-{driver}-measurements.json",
              {"measurements": measurements, "controls": rejected})
     a, b = (observations[key] for key in ("timed-SV", "explicit-cycle"))
     comparisons = []
@@ -224,3 +225,25 @@ def run_driver_scaling(evidence, receipts):
     evidence.record["driver_scaling_limit"] = (
         "Measured supported synthetic capacities only; complete-table execution, "
         "large working-set behavior and full-model/hardware acceptance remain unproven.")
+    ratios = [row["speed_ratio"] for point in results for row in point["comparisons"]]
+    summary = {
+        "capacities": [point["capacity"] for point in results],
+        "measured_speed_ratio_range": [min(ratios), max(ratios)],
+        "ratios_are": "baseline simulation seconds / candidate simulation seconds; "
+                      "single serial pairs on shared tool execution, not a timing guarantee",
+        "measurements": [{
+            "capacity": point["capacity"], "driver": driver,
+            "cycles": row["frames"][-1]["cycles"],
+            "simulation_seconds": row["simulation_seconds"],
+            "compile_seconds": row["compile_seconds"],
+            "compared_transactions": row["actual_comparisons"],
+            "cycles_per_second": row["frames"][-1]["cycles"] / row["simulation_seconds"],
+        } for point in results for driver, data in point["drivers"].items()
+            for row in data["measurements"]],
+        "complete_table_retry_authorized": False,
+        "limitation": "Clock scheduling for delayed stimulus remains enabled. Removing "
+                      "the SV clock coroutine is not proof of eliminating scheduling cost. "
+                      "No measured capacity reaches the official complete-table extent.",
+    }
+    save(evidence.path / "driver-scaling-summary.json", summary)
+    evidence.record["driver_scaling_summary"] = summary
