@@ -23,6 +23,99 @@ import persistence
 import experiments
 import nested_retention
 import serialization_events
+import campaign_costs
+
+
+class HistoricalComparisonChecks(unittest.TestCase):
+    def setUp(self):
+        self.root = SCRATCH / self._testMethodName
+        self.root.mkdir(parents=True, exist_ok=False)
+        binding = patch.object(campaign_costs, "ROOT", self.root)
+        binding.start()
+        self.addCleanup(binding.stop)
+        self.evidence = SimpleNamespace(
+            folder=self.root / "evidence/preparation/current-01234567",
+            record={"source_sha256": {"rtl/example.sv": "rtl-hash"}},
+            relative=lambda path: str(path.relative_to(self.root)),
+            flush=lambda: None,
+        )
+        self.evidence.folder.mkdir(parents=True)
+        self.original = self.root / "evidence/preparation/historical-01234567/receipt.json"
+        self.original.parent.mkdir()
+        self.fixture = {
+            "shape": vars(campaign_costs.MATRIX[0]), "seed": 17, "mode": "AWQ",
+            "tokens": [{"expected_logits": [42]}],
+        }
+        self.child = {
+            "probe": "matrix-0-17-awq", "outcome": "probe_passed",
+            "start_time": "2026-10-29T00:00:00+00:00",
+            "end_time": "2026-10-29T00:00:01+00:00",
+            "source_sha256": {"rtl/example.sv": "rtl-hash"},
+            "engineering_fixture": self.fixture,
+            "commands": [{
+                "label": "top-awq-simulation", "argv": ["Vtb"],
+                "process_settled": True, "elapsed_seconds": 1,
+            }],
+            "observations": [{"observed_counters": {"tokens": 1, "logits": 1}}],
+            "simulation_builds": [{"key": "build-key", "reused": False}],
+        }
+        self.original.write_text(json.dumps(self.child))
+        campaign_costs.historical_costs(self.evidence)
+        self.sample, = self.evidence.record["historical_cost_inventory"]
+        self.capture = self.root / self.sample["comparison_receipt"]
+        self.fresh = self.evidence.folder / "fresh.json"
+        self.fresh.write_text(json.dumps(self.child))
+        self.evidence.record["integration_matrix"] = [{
+            "receipt": self.evidence.relative(self.fresh),
+            "configuration": 0, "seed": 17, "mode": "AWQ",
+            "tokens": 1, "ordered_logits": 1,
+        }]
+
+    def test_exact_capture_survives_original_loss_without_recreating_it(self):
+        self.assertEqual(self.capture.read_bytes(), self.original.read_bytes())
+        self.assertEqual(self.evidence.record["runtime_input_sha256"][
+            self.sample["comparison_receipt"]], verify.file_sha256(self.capture))
+        self.original.unlink()
+        campaign_costs.compare_retained(self.evidence)
+        comparison, = self.evidence.record["complete_case_comparisons"]
+        self.assertEqual(comparison["matching_complete_historical_receipts"],
+                         [self.evidence.relative(self.original)])
+        matched, = comparison["historical_comparison_inputs"]
+        self.assertEqual(matched["original_receipt"], self.evidence.relative(self.original))
+        self.assertEqual(matched["captured_receipt"], self.sample["comparison_receipt"])
+        self.assertFalse(self.original.exists())
+
+    def test_changed_capture_is_rejected(self):
+        self.capture.write_text("{}")
+        with self.assertRaisesRegex(AssertionError, "historical comparison receipt changed"):
+            campaign_costs.compare_retained(self.evidence)
+
+    def test_missing_capture_does_not_fall_back_to_original(self):
+        self.capture.unlink()
+        with self.assertRaises(FileNotFoundError):
+            campaign_costs.compare_retained(self.evidence)
+        self.assertTrue(self.original.exists())
+        self.assertFalse(self.capture.exists())
+
+    def test_missing_fresh_result_is_not_replaced_by_history(self):
+        self.fresh.unlink()
+        with self.assertRaises(FileNotFoundError):
+            campaign_costs.compare_retained(self.evidence)
+
+    def test_counter_mismatch_remains_a_failure(self):
+        self.child["observations"][-1]["observed_counters"]["tokens"] = 2
+        self.fresh.write_text(json.dumps(self.child))
+        with self.assertRaisesRegex(AssertionError, "complete-case counters changed"):
+            campaign_costs.compare_retained(self.evidence)
+
+    def test_incompatible_historical_sources_are_not_used(self):
+        self.evidence.record["historical_cost_inventory"].append({
+            **self.sample, "rtl_and_reference_match_current": False,
+            "comparison_receipt": "not-captured.json",
+        })
+        campaign_costs.compare_retained(self.evidence)
+        comparison, = self.evidence.record["complete_case_comparisons"]
+        self.assertEqual(len(comparison["historical_comparison_inputs"]), 1)
 
 
 class SupervisionPrerequisiteChecks(unittest.TestCase):

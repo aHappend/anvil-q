@@ -4,6 +4,8 @@
 python3 -B tests/campaign_costs.py --config 1 --seeds 17
 executes all tokens in both storage modes with independently generated inputs.
 Historical costs are labeled diagnostic observations, never reused test results.
+Historical comparison receipts are captured before simulation and hash-checked
+afterward; this does not establish retention of their original locations.
 """
 
 import argparse
@@ -37,11 +39,13 @@ def historical_costs(evidence):
         if path == evidence.folder / "receipt.json":
             continue
         # A missing or malformed historical receipt is not a successful cost sample.
+        raw = path.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
         try:
-            record = json.loads(path.read_text())
+            record = json.loads(raw)
         except json.JSONDecodeError as exc:
-            gaps.append({"receipt": evidence.relative(path), "sha256": file_sha256(path),
-                         "size_bytes": path.stat().st_size, "error": str(exc),
+            gaps.append({"receipt": evidence.relative(path), "sha256": digest,
+                         "size_bytes": len(raw), "error": str(exc),
                          "status": "malformed_historical_evidence_not_repaired",
                          "used_as_cost_or_acceptance_sample": False})
             evidence.flush()
@@ -51,7 +55,7 @@ def historical_costs(evidence):
                    if command.get("process_settled") and "elapsed_seconds" in command]
         if settled:
             row = {
-                "receipt": evidence.relative(path), "sha256": file_sha256(path),
+                "receipt": evidence.relative(path), "sha256": digest,
                 "probe": record.get("probe"), "outcome": record.get("outcome", "unfinished"),
                 "end_time": record.get("end_time"),
                 "command_seconds": sum(command["elapsed_seconds"] for command in settled),
@@ -77,6 +81,14 @@ def historical_costs(evidence):
                                ("mode", "seed", "shape", "read_fault_beat", "write_fault_beat",
                                 "orphan_response_fault", "abort_stage")}
                 row["token_count"] = len(fixture.get("tokens", []))
+                if row["outcome"] == "probe_passed" and row["rtl_and_reference_match_current"]:
+                    capture = evidence.folder / "historical-receipts" / (path.parent.name + ".json")
+                    capture.parent.mkdir(exist_ok=True)
+                    with capture.open("xb") as stream:
+                        stream.write(raw)
+                    row["comparison_receipt"] = evidence.relative(capture)
+                    evidence.record.setdefault("runtime_input_sha256", {})[
+                        row["comparison_receipt"]] = digest
             builds = record.get("simulation_builds", [])
             if builds:
                 row["build_key"] = builds[-1]["key"]
@@ -96,7 +108,7 @@ def historical_costs(evidence):
                            datetime.datetime.fromisoformat(stage["start_time"])).total_seconds()
                 stages.setdefault(stage["probe"], []).append({
                     "seconds": elapsed, "receipt": evidence.relative(path),
-                    "receipt_sha256": file_sha256(path),
+                    "receipt_sha256": digest,
                 })
     evidence.record["historical_cost_inventory"] = rows
     evidence.record["whole_campaign_cost_breakdown"] = [
@@ -185,13 +197,20 @@ def compare_retained(evidence):
         child = json.loads((ROOT / row["receipt"]).read_text())
         fixture = child["engineering_fixture"]
         candidates = []
+        captures = []
         for sample in evidence.record["historical_cost_inventory"]:
             case = sample.get("case", {})
             if (sample["outcome"] == "probe_passed" and
+                    sample["rtl_and_reference_match_current"] and
                     case.get("shape") == fixture["shape"] and
                     case.get("mode") == fixture["mode"] and
                     case.get("seed") == fixture["seed"]):
-                old = json.loads((ROOT / sample["receipt"]).read_text())
+                capture = ROOT / sample["comparison_receipt"]
+                raw = capture.read_bytes()
+                if hashlib.sha256(raw).hexdigest() != sample["sha256"]:
+                    raise AssertionError("historical comparison receipt changed: " +
+                                         sample["comparison_receipt"])
+                old = json.loads(raw)
                 bindings = child["source_sha256"]
                 if any(old["source_sha256"].get(name) != digest for name, digest in bindings.items()
                        if name.startswith(("rtl/", "anvil_q1_reference/")) or
@@ -203,9 +222,15 @@ def compare_retained(evidence):
                 if counters != child["observations"][-1]["observed_counters"]:
                     raise AssertionError("complete-case counters changed: " + sample["receipt"])
                 candidates.append(sample["receipt"])
+                captures.append({
+                    "original_receipt": sample["receipt"],
+                    "captured_receipt": sample["comparison_receipt"],
+                    "sha256": sample["sha256"],
+                })
         comparisons.append({
             "configuration": row["configuration"], "seed": row["seed"], "mode": row["mode"],
             "fresh_receipt": row["receipt"], "matching_complete_historical_receipts": candidates,
+            "historical_comparison_inputs": captures,
             "tokens": row["tokens"], "ordered_logits": row["ordered_logits"],
             "observed_counters": child["observations"][-1]["observed_counters"],
             "expectations_sha256": hashlib.sha256(
