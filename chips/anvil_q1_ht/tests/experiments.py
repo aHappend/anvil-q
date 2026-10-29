@@ -3079,9 +3079,12 @@ def run_probe(evidence, name, seed, config=0):
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("reset_descriptor_validity",))
     elif name == "descriptor-sensitivity":
+        from descriptor_checks import descriptor_checks
+        descriptor_checks(evidence, seed)
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=(
-            "descriptor_region_overlap", "descriptor_extended_bank_end"))
+            "descriptor_region_overlap", "descriptor_extended_bank_end",
+            "descriptor_token_snapshot_bypass", "descriptor_read_snapshot_bypass"))
     elif name == "address-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=(

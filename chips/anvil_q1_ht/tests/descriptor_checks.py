@@ -1,7 +1,8 @@
 """Public descriptor/CSR validation against independently sized tensor regions.
 
-Compact manifests exercise the complete AWQ and BF16 descriptor sets without
-claiming checkpoint, decoder, EMIF timing or board verification.
+Compact manifests exercise the complete AWQ and BF16 descriptor sets and
+low/high counter snapshots without claiming checkpoint, decoder, EMIF timing
+or board verification. Counter inputs are driven only through public ports.
 """
 
 import hashlib
@@ -48,6 +49,7 @@ def descriptor_case(evidence, mode, simulator):
     entries = manifest(shape, mode)
     instructions = []
     bins = {}
+    counter_comparisons = 0
 
     def emit(opcode, *arguments):
         words = (opcode, *arguments, *(0 for _ in range(5 - len(arguments))))
@@ -56,7 +58,13 @@ def descriptor_case(evidence, mode, simulator):
         instructions.append("".join(f"{word:08x}" for word in words))
 
     def csr(write, address, data=0, error=0, expected=0):
+        nonlocal counter_comparisons
         emit(0, write, address, data, error, expected)
+        if not write and address in (0x30, 0x34, 0x38, 0x3c):
+            counter_comparisons += 1
+
+    def counters(token, reads):
+        emit(5, token >> 32, token & 0xffffffff, reads >> 32, reads & 0xffffffff)
 
     def lookup(index, base, length, error):
         emit(2, index, base & 0xffffffff, base >> 32, length, error)
@@ -99,6 +107,38 @@ def descriptor_case(evidence, mode, simulator):
         csr(0, address, error=1)
         csr(1, address, 0xffffffff, error=1)
     observed("undefined_and_unaligned_CSR")
+    counters(0x12345678ffffffff, 0x87654321ffffffff)
+    csr(0, 0x34, expected=0x12345678)
+    csr(0, 0x3c, expected=0x87654321)
+    observed("counter_high_without_low")
+    csr(0, 0x30, expected=0xffffffff)
+    csr(0, 0x38, expected=0xffffffff)
+    counters(0x1234567900000000, 0x8765432200000000)
+    csr(0, 0x34, expected=0x12345678)
+    csr(0, 0x3c, expected=0x87654321)
+    observed("independent_counter_rollover_snapshots")
+    csr(0, 0x34, expected=0x12345679)
+    csr(0, 0x3c, expected=0x87654322)
+    observed("counter_high_consumes_snapshot_once")
+    csr(0, 0x30, expected=0)
+    csr(0, 0x38, expected=0)
+    counters(0xffffffffffffffff, 0)
+    csr(0, 0x30, expected=0xffffffff)
+    csr(0, 0x38, expected=0)
+    counters(0, 0xabcdef0187654321)
+    csr(0, 0x34, expected=0xffffffff)
+    csr(0, 0x3c, expected=0)
+    observed("repeated_counter_low_replaces_snapshot")
+    csr(0, 0x30, expected=0)
+    csr(0, 0x38, expected=0x87654321)
+    for address in (0x30, 0x34, 0x38, 0x3c):
+        csr(1, address, 0xffffffff, error=1)
+    csr(0, 0x31, error=1)
+    csr(0, 0x39, error=1)
+    counters(0x1111111122222222, 0x3333333344444444)
+    csr(0, 0x34, expected=0)
+    csr(0, 0x3c, expected=0xabcdef01)
+    observed("rejected_counter_access_preserves_snapshots")
     csr(1, 0x0c, int(mode == "BF16"))
     csr(1, 8, 2, error=1)
     image(0)
@@ -195,7 +235,7 @@ reg [31:0] lookup_index=0;
 wire lookup_ready,lookup_rsp_valid,lookup_error;
 wire [32:0] lookup_base;
 wire [31:0] lookup_length;
-integer comparisons=0,lookups=0,stalls=0,n,waiting;
+integer comparisons=0,lookups=0,stalls=0,counter_reads=0,n,waiting;
 integer observed_bins [0:BIN_LAST];
 reg [191:0] instructions [0:INSTRUCTION_LAST];
 reg [191:0] instruction;
@@ -251,6 +291,9 @@ task csr(input wr,input [15:0] address,input [31:0] data,
   if(csr_rsp_valid!==0) $fatal(1,"DESCRIPTOR_CSR_NOT_RETIRED");
   @(negedge clk);csr_rsp_ready=0;
   comparisons=comparisons+1;
+  if(!wr && (address==16'h0030 || address==16'h0034 ||
+             address==16'h0038 || address==16'h003c))
+   counter_reads=counter_reads+1;
  end
 endtask
 task lookup(input [31:0] index,input [32:0] expected_base,
@@ -315,13 +358,18 @@ initial begin
         default: $fatal(1,"DESCRIPTOR_INVALID_INPUT_INSTRUCTION");
        endcase
       end
+   5: begin
+       @(negedge clk);
+       token_cycles=instruction[159:96];
+       read_beats=instruction[95:32];
+      end
    default: $fatal(1,"DESCRIPTOR_INVALID_INSTRUCTION");
   endcase
  end
  for(n=0;n<=BIN_LAST;n=n+1)
   if(observed_bins[n]<1) $fatal(1,"DESCRIPTOR_UNOBSERVED_BIN index=%0d",n);
- $display("CHECKS_PASSED descriptor_validation csr=%0d lookups=%0d stalls=%0d bins=%0d",
-          comparisons,lookups,stalls,BIN_LAST+1);
+ $display("CHECKS_PASSED descriptor_validation csr=%0d lookups=%0d stalls=%0d bins=%0d counter_reads=%0d",
+          comparisons,lookups,stalls,BIN_LAST+1,counter_reads);
  $finish;
 end
 endmodule
@@ -342,6 +390,7 @@ endmodule
     if (len(counters) != 1 or counters[0]["bins"] != len(bins) or
             counters[0]["csr"] < len(entries) * 14 or
             counters[0]["lookups"] < len(entries) or
+            counters[0]["counter_reads"] != counter_comparisons or
             counters[0]["stalls"] != counters[0]["csr"] * 7):
         raise AssertionError("descriptor validation lacks required observed comparisons")
     evidence.record["observations"].append({
