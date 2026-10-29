@@ -12,6 +12,25 @@ from retained import ROOT, Run, audit_streams
 
 
 FAILED_BENCHMARK = "evidence/l1/l1-benchmark-20261029T053434Z-037abc33/receipt.json"
+FAILED_BENCHMARK_SHA256 = "659015c5be09b925d359301cb11731959673b90e74249b10f40c768ef3f33f4f"
+ADMITTED_DESIGNER = (
+    "evidence/preparation/designer-attention-request-static-20261029T062619Z-54e76ddf/"
+    "receipt.json")
+ADMITTED_DESIGNER_SHA256 = "4a563731c49577f61fc910500c167c9676b9374939f9cf27ce35b2371eff4fce"
+ADMITTED_TRANSITION = {
+    "rtl/anvil_q2_fp_gqa_attention.sv": (
+        "0d144e671dd14580ccb86a96210d3b2adfcbb2dbe238b91f51f7d6a731bdcf22",
+        "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181"),
+    "design/SPEC.md": (
+        "fc7b8c1a30f2e6da37eb839ab4d05f29e82b8eb5b1b88848429aeac2d43bf9e0",
+        "66c19ac4cc97712a4fdddf72990c889992e47b82f1f0066d54c3a1f627151bf2"),
+    "design/ARCHITECTURE.md": (
+        "5e15d80b09e0edc1449f8a51d04c34fa14a2bc61be65aff0c445c9a4d1db68ce",
+        "1db03d55d8a46919c961bd8fa5ce0cbf36327495a5b6edf6eab5028147b93f8e"),
+    "design/INTEGRATION.md": (
+        "d28f45de29bb54c1e6f1d18d8840585cdeb11617a588daaa8cc8cd9e4550da4a",
+        "c0cbbff5ebd17679705ed8b992b1c6df38993cd21e7ffce4cebf4b2b66c3292f"),
+}
 
 FIXTURE = r"""
 import json, os, sys, time
@@ -97,21 +116,53 @@ def probe():
     run = Run("attention-capture-recovery")
     run.receipt["repair_of"] = FAILED_BENCHMARK
     try:
-        failed = (ROOT / FAILED_BENCHMARK).read_bytes()
-        run.receipt["input_sha256"] = {FAILED_BENCHMARK: hashlib.sha256(failed).hexdigest()}
-        historical = json.loads(failed)
+        admitted = {}
+        run.receipt["input_sha256"] = {}
+        for name, expected in ((FAILED_BENCHMARK, FAILED_BENCHMARK_SHA256),
+                               (ADMITTED_DESIGNER, ADMITTED_DESIGNER_SHA256)):
+            data = (ROOT / name).read_bytes()
+            digest = hashlib.sha256(data).hexdigest()
+            run.receipt["input_sha256"][name] = digest
+            assert digest == expected, f"admitted provenance receipt changed: {name}"
+            admitted[name] = json.loads(data)
+        historical = admitted[FAILED_BENCHMARK]
+        revised = admitted[ADMITTED_DESIGNER]["source_sha256"]
         run.receipt["historical_failure"] = historical.get("failure")
         protected = {name: expected for name, expected in historical["source_sha256"].items()
                      if name.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
         assert protected, "historical source provenance unavailable"
-        assert all(run.receipt["source_sha256"].get(name) == expected
-                   for name, expected in protected.items()), "protected product source changed"
-        run.receipt["unchanged_product_source_count"] = len(protected)
+        for name, (before, after) in ADMITTED_TRANSITION.items():
+            assert protected.get(name) == before, f"historical transition mismatch: {name}"
+            assert revised.get(name) == after, f"revised transition mismatch: {name}"
+        expected_product = dict(protected)
+        expected_product.update({name: pair[1] for name, pair in ADMITTED_TRANSITION.items()})
+        revised_product = {name: digest for name, digest in revised.items()
+                           if name.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
+        current_product = {
+            name: digest for name, digest in run.receipt["source_sha256"].items()
+            if name.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
+        assert revised_product == expected_product, "unadmitted Designer product transition"
+        assert current_product == expected_product, "protected product source changed"
+        run.receipt["admitted_product_transition"] = {
+            "admission": "call-0036",
+            "description": "Registered non-fall-through attention request buffer and its "
+                           "SPEC, ARCHITECTURE and INTEGRATION documentation; "
+                           "no numerical or transaction assertion change.",
+            "sources": {name: dict(historical=pair[0], revised=pair[1])
+                        for name, pair in ADMITTED_TRANSITION.items()}}
+        run.receipt["unchanged_product_source_count"] = len(protected) - len(ADMITTED_TRANSITION)
         run.receipt["verification_source_changes"] = [
             name for name, current in run.receipt["source_sha256"].items()
             if name.startswith("tests/") and historical["source_sha256"].get(name) != current]
         assert set(run.receipt["verification_source_changes"]) == {
             "tests/retained.py", "tests/capture_retention_checks.py"}
+        revised_tests = {name: digest for name, digest in revised.items()
+                         if name.startswith("tests/") and
+                         name != "tests/capture_retention_checks.py"}
+        current_tests = {name: digest for name, digest in run.receipt["source_sha256"].items()
+                         if name.startswith("tests/") and
+                         name != "tests/capture_retention_checks.py"}
+        assert current_tests == revised_tests, "unadmitted verification source changed"
         run.command(["python3", "--version"], "python-version")
         output = run.command(
             ["python3", "tests/attention_checks.py", "--seed", "17", "--reduced"],
