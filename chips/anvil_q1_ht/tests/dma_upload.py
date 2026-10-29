@@ -41,7 +41,8 @@ def instrument_upload(bench, seed):
             ((0, 3, 11)[index % 3] << 513) | (1 << 512) | expected[slot])
     # One upload stays open across three independently addressed, reordered beats.
     for index, slot in enumerate((2, 0, 1)):
-        data = rng.getrandbits(512)
+        data = expected[slot] ^ sum(rng.randrange(1, 256) << (8 * lane)
+                                    for lane in range(64))
         expected[slot] = data
         vectors.append(
             (ADDRESSES[slot] << 1099) | (data << 587) | (((1 << 64) - 1) << 523) |
