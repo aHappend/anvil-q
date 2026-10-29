@@ -425,7 +425,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                          "KV_DIM": g.NUM_KV_HEADS * g.HEAD_DIM,
                          "INTERMEDIATE": g.INTERMEDIATE_SIZE, "HIDDEN": g.HIDDEN_SIZE,
                          "VOCAB": g.VOCAB_SIZE}
-            flags = "-std=c++20 " + " ".join(f"-DHOST_{k}={v}" for k, v in constants.items())
+            flags = "-O3 -std=c++20 " + " ".join(f"-DHOST_{k}={v}" for k, v in constants.items())
             argv = ["verilator", "--cc", "--exe", "--build", "--assert", "-Wno-fatal",
                     *VERILATOR_UNROLL, "--top-module", "anvil_q3_top",
                     "--Mdir", run.rel(obj), "-o", "decoder", "-CFLAGS", flags]
