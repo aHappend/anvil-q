@@ -3021,7 +3021,8 @@ def run_probe(evidence, name, seed, config=0):
         late_read_faults(evidence, seed)
         if name == "late-read-sensitivity":
             from sensitivity import run_sensitivity
-            run_sensitivity(evidence, seed, only=("late_read_error_ignored",))
+            run_sensitivity(evidence, seed, only=(
+                "late_read_error_ignored", "late_read_sequence_reuse"))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

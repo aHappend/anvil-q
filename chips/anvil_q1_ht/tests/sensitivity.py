@@ -170,6 +170,11 @@ def run_sensitivity(parent, seed, only=None):
          "(client_readdatavalid[client] || client_writeresponsevalid[client]) ? "
          "(avm_readdatavalid ? 2'b0 : avm_response) : 2'b0;",
          lambda run: late_read_case(run, "AWQ", seed), "LATE_READ_POSTFAULT_LOGIT"),
+        ("late_read_sequence_reuse", "anvil_q1_ht_decoder.sv",
+         "(!new_sequence && (!sequence_valid || token_pos != next_position))",
+         "(!new_sequence && (token_pos != next_position))",
+         lambda run: late_read_case(run, "AWQ", seed),
+         "LATE_READ_CONTINUATION_REJECTION_DEADLINE"),
     )
     if only is not None:
         selected = set(only)
