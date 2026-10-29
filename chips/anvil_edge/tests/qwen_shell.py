@@ -27,13 +27,17 @@ MAX_NEW = 8
 PERIOD = 16
 
 
-def build_inputs(directory, compact=False):
+def build_inputs(directory, compact=False, physical_capacity=None):
     """Runs with the already installed, independently identified official oracle."""
     directory = Path(directory)
     if not compact:
         prepare(directory)
     directory = ROOT / directory
     vocabulary, capacity = (257, 257) if compact else (VOCABULARY, CAPACITY)
+    if physical_capacity is not None:
+        require(compact and 257 <= physical_capacity <= 4097,
+                "Capacity sweep is a bounded synthetic-shell diagnostic only")
+        capacity = physical_capacity
     if compact:
         vectors = [
             {"input_utf8_hex": b"ABC".hex(), "token_ids": [256, 67]},
@@ -732,11 +736,14 @@ def run_shell_scoreboard(evidence):
 
 
 if __name__ == "__main__":
-    require(len(sys.argv) in (2, 3) and (len(sys.argv) == 2 or sys.argv[2] == "--compact"),
-            "Usage: ./.venv/bin/python tests/qwen_shell.py EVIDENCE_DIRECTORY [--compact]")
+    require(len(sys.argv) in (2, 3, 4) and
+            (len(sys.argv) == 2 or sys.argv[2] == "--compact") and
+            (len(sys.argv) != 4 or sys.argv[3].isdigit()),
+            "Usage: ./.venv/bin/python tests/qwen_shell.py EVIDENCE_DIRECTORY [--compact [PHYSICAL_CAPACITY]]")
     destination = Path(sys.argv[1])
     require(not destination.is_absolute() and ".." not in destination.parts
             and destination.is_dir() and destination.parts[:2] in (
                 ("evidence", "preparation"), ("evidence", "verification")),
             "Shell inputs require a fresh project evidence directory")
-    build_inputs(destination, compact=len(sys.argv) == 3)
+    build_inputs(destination, compact=len(sys.argv) >= 3,
+                 physical_capacity=int(sys.argv[3]) if len(sys.argv) == 4 else None)

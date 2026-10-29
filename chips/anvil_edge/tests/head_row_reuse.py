@@ -346,7 +346,19 @@ def run_head_row_reuse(evidence, comparison=False):
         lifecycle_bench, lifecycle_labels = fixture_bench(evidence, seed, True, row_reuse=True)
         result = evidence.simulate(f"row-lifecycle-s{seed}", lifecycle_bench, SOURCES,
                                    len(lifecycle_labels))
-        measured(evidence, result, lifecycle_labels)
+        lifecycle_rows = measured(evidence, result, lifecycle_labels)
+        by_label = {row["label"]: row for row in lifecycle_rows}
+        for label in ("withdraw-row-refill", "reset-refill", "same-address-reload"):
+            require(by_label[label]["directory_requests"] > 0,
+                    f"Epoch invalidation did not cause descriptor refill: {label}")
+        for label in ("withdraw-warm-row", "withdraw-row-hit", "reset-hit",
+                      "same-address-hit"):
+            require(by_label[label]["directory_requests"] == 0,
+                    f"Warm row/descriptor hit not observed: {label}")
+        evidence.record.setdefault("row_reuse_lifecycle", []).append({
+            "seed": seed, "rows": lifecycle_rows,
+            "simulation_receipt": result["simulation_receipt"],
+        })
     evidence.record["row_reuse_measurements"] = row_metrics
     for name, edits, assertion in (
         ("wrong-component", [("head_activation_q<=head_activations[component];",
@@ -369,3 +381,55 @@ def run_head_row_reuse(evidence, comparison=False):
         killed(evidence, name, SOURCES[-1], edits,
                lambda scope: scope.simulate("row-lifecycle", lifecycle_bench, SOURCES,
                                              len(lifecycle_labels)), assertion)
+
+
+def run_head_row_shell(evidence):
+    """Same SPI image and public DDR/byte oracle before/after, two small extents."""
+    from qwen_shell import shell_case
+
+    before = historical(evidence)
+    measurements = []
+    for capacity in (257, 1025):
+        inputs = evidence.path / f"shell-capacity-{capacity}"
+        inputs.mkdir()
+        evidence.child(["./.venv/bin/python", "tests/qwen_shell.py",
+                        evidence.relative(inputs), "--compact", str(capacity)],
+                       f"reuse-shell-reference-{capacity}")
+        info = json.loads((inputs / "shell-reference.json").read_bytes())
+        pair = {}
+        for label, scope in (("before", before), ("after", evidence)):
+            case = copy.copy(scope)
+            case.name_prefix = f"reuse-shell-{capacity}-{label}-"
+            result = shell_case(case, info, 17, 1, True)
+            text = (ROOT / result["simulation_receipt"]["stdout"]).read_text()
+            operations = [
+                {"position": int(m[1]), "token": int(m[2]), "cycle": int(m[3])}
+                for m in re.finditer(
+                    r"QWEN_SHELL_OPERATION frame=0 position=(\d+) token=(\d+) cycles=(\d+)",
+                    text)]
+            boot = re.findall(r"QWEN_SHELL_BOOT .* cycles=(\d+)", text)
+            completion = re.findall(r"QWEN_SHELL_COMPLETION frame=0 cycles=(\d+)", text)
+            require(len(boot) == len(completion) == 1 and len(operations) == 9,
+                    "Missing integrated cycle/operation measurements")
+            pair[label] = {
+                "operations": operations, "boot_cycle": int(boot[0]),
+                "completion_cycle": int(completion[0]),
+                "inference_cycles": int(completion[0]) - operations[0]["cycle"],
+                "simulation_seconds": result["simulation_receipt"]["duration_s"],
+                "bench_sha256": result["bench_sha256"],
+                "simulation_receipt": result["simulation_receipt"],
+                "comparisons": result["actual_comparisons"],
+            }
+        require(pair["before"]["bench_sha256"] == pair["after"]["bench_sha256"] and
+                pair["before"]["boot_cycle"] == pair["after"]["boot_cycle"] and
+                pair["after"]["inference_cycles"] < pair["before"]["inference_cycles"] and
+                [(r["position"], r["token"]) for r in pair["before"]["operations"]] ==
+                [(r["position"], r["token"]) for r in pair["after"]["operations"]],
+                "Integrated A/B changed stimulus, boot, feedback identity or did not improve")
+        measurements.append({"capacity": capacity, "active_vocabulary": 257,
+                             "seed": 17, "transport": "bypass", **pair})
+    evidence.record["head_row_shell_measurements"] = measurements
+    evidence.record["head_row_shell_scope"] = (
+        "Synthetic H8/L1, two physical capacities, same byte/physical-weight/write oracle. "
+        "Not complete tokenizer tables, full-model execution or an authorized full-table retry."
+    )

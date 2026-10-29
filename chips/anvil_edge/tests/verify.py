@@ -47,7 +47,7 @@ from parameters import run_parameters
 from adapters import run_adapters
 from memory import run_memory
 from mapper_cache import run_mapper_cache
-from head_row_reuse import run_head_row_reuse
+from head_row_reuse import run_head_row_reuse, run_head_row_shell
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
 from scheduling import resource_limits, scheduling_probe, scheduling_controls
 from interactions import run_top_interactions, run_top_token_capacity, run_drain_prompts
@@ -486,9 +486,16 @@ class Evidence:
                         name + "-compile",
                     )
                     binary = object_dir / "simulation"
-                    cached = (binary, compile_record, digest(binary))
+                    removed = []
+                    for artifact in sorted(object_dir.rglob("*")):
+                        if artifact.is_file() and artifact.suffix in (".o", ".a", ".gch"):
+                            removed.append({"path": self.relative(artifact),
+                                            "sha256": digest(artifact),
+                                            "bytes": artifact.stat().st_size})
+                            artifact.unlink()
+                    cached = (binary, compile_record, digest(binary), removed)
                     self.compiled_simulations[cache_key] = cached
-            binary, compile_record, binary_hash = cached
+            binary, compile_record, binary_hash, removed = cached
             if digest(binary) != binary_hash:
                 raise VerificationFailure("Compiled simulation changed before reuse")
             record.update(
@@ -497,6 +504,7 @@ class Evidence:
                 runtime_arguments=runtime_args, input_files=input_files,
                 compile_cache_hit=cache_hit, compile_tool=tool_identity,
                 compile_options=compile_options, source_sha256=source_hashes,
+                compile_intermediates_removed=removed,
             )
             result = self.child([self.relative(binary), *runtime_args], name + "-simulate",
                                 allow_failure=True)
@@ -961,6 +969,7 @@ def main():
         "shell-scoreboard",
         "mapper-cache",
         "head-row-reuse",
+        "head-row-shell",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1029,6 +1038,8 @@ def main():
             run_mapper_cache(evidence, comparison=True)
         elif args.probe == "head-row-reuse":
             run_head_row_reuse(evidence, comparison=True)
+        elif args.probe == "head-row-shell":
+            run_head_row_shell(evidence)
         elif args.probe == "top":
             run_top(evidence)
         elif args.probe == "top-uart":
