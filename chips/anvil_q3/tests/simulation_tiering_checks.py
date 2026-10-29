@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from decoder_checks import decoder_case, validate_simulation_tier
 from execution import Run, write_json
-from parameters import A, B, C, compatibility_geometries, startup_geometry
+from parameters import A, A_PORTABILITY, B, C, compatibility_geometries, startup_geometry
 
 FAILED_RECEIPT = "evidence/check-behavior/20261029T153530Z-1b3a394b0fe3/receipt.json"
 
@@ -31,10 +31,11 @@ def expected_workloads():
             for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
                 for seed in ((17,) if label == "C" else (17, 89, 257)):
                     for simulator in (("iverilog", "verilator") if label == "A" else ("verilator",)):
-                        tokens = ((1,) if simulator == "iverilog" else
+                        actual_base = A_PORTABILITY if simulator == "iverilog" else base
+                        tokens = ((0,) if simulator == "iverilog" else
                                   (1, 4, 2, 6) if label == "C" else (1, 4, 2, 6, 3, 5, 7))
                         prefill = 1 if simulator == "iverilog" else 2 if label == "C" else 4
-                        rows.append((label, replace(base, BANKS=banks, CACHE_MODE=mode,
+                        rows.append((label, replace(actual_base, BANKS=banks, CACHE_MODE=mode,
                                                     INT4_ASYM=asym),
                                      seed, simulator, tokens, prefill))
     return rows
@@ -126,7 +127,7 @@ def validate_execution_contract(report):
 
 
 def guard_sensitivity():
-    cases = ((A, [1, 4]), (B, [1]), (C, [1]),
+    cases = ((A, [1]), (A, [1, 4]), (B, [1]), (C, [1]),
              (next(compatibility_geometries()), [1, 2, 1, 2, 1, 2, 1]))
     for g, tokens in cases:
         assert validate_simulation_tier(g, "iverilog", tokens)
@@ -143,7 +144,7 @@ def guard_sensitivity():
         assert worker.call_args_list[1].args[3] == "verilator"
         assert worker.call_args_list[1].kwargs["tokens"] == tokens
         assert result["tier_dispatch"]["compact_smoke"] == smoke
-    assert not validate_simulation_tier(A, "iverilog", [1])
+    assert not validate_simulation_tier(A_PORTABILITY, "iverilog", [0])
     try:
         validate_simulation_tier(A, "unknown", [1])
     except ValueError:

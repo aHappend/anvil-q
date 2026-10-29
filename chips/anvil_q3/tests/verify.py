@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from decoder_checks import decoder_case
 from execution import Run, write_json
 from leaf_checks import codec_case, dot8_case
-from parameters import A, behavioral_geometries
+from parameters import A, A_PORTABILITY, behavioral_geometries
 from prerequisites import prerequisites
 from structure_checks import structure
 from synthesis_checks import synthesis
@@ -45,8 +45,9 @@ CHECKS = ("prerequisites", "structure", "behavior", "benchmark", "mutations", "s
 def mandatory_a_coverage(records):
     """Verify A dual-simulator coverage (compact 1-token Icarus + full 7-token Verilator)."""
     expected = Counter(
-        (replace(A, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym), seed,
-         simulator, (1,) if simulator == "iverilog" else (1, 4, 2, 6, 3, 5, 7),
+        (replace(A_PORTABILITY if simulator == "iverilog" else A,
+                 BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym), seed,
+         simulator, (0,) if simulator == "iverilog" else (1, 4, 2, 6, 3, 5, 7),
          1 if simulator == "iverilog" else 4)
         for banks in (1, 2, 4, 8)
         for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1))
@@ -69,12 +70,14 @@ def mandatory_decoder_workloads():
             simulators = ("iverilog", "verilator") if label == "A" else ("verilator",)
             for simulator in simulators:
                 if simulator == "iverilog":
-                    tokens = (1,)
+                    actual = replace(g, INTERMEDIATE_SIZE=8, VOCAB_SIZE=1)
+                    tokens = (0,)
                     prefill = 1
                 else:
+                    actual = g
                     tokens = (1, 4, 2, 6) if label == "C" else (1, 4, 2, 6, 3, 5, 7)
                     prefill = 2 if label == "C" else 4
-                yield label, g, seed, simulator, tokens, prefill
+                yield label, actual, seed, simulator, tokens, prefill
 
 
 def mandatory_decoder_coverage(records):

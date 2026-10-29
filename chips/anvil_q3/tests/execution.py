@@ -101,7 +101,8 @@ class Run:
         self.records = []
         self.lock = threading.RLock()
         self.build_locks = {}
-        self.compiler_slots = threading.BoundedSemaphore(min(2, execution_resources()["workers"]))
+        self.resources = execution_resources()
+        self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
         self.builds = {}
         self.build_reuses = []
         self.start = time.time()
@@ -145,7 +146,7 @@ class Run:
 
     def parallel(self, jobs):
         """Bound simulations by CPU/memory availability and compilers separately."""
-        workers = execution_resources()["workers"]
+        workers = self.resources["workers"]
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(job) for job in jobs]
             try:
@@ -159,7 +160,7 @@ class Run:
         argv = list(argv)
         tool = str(argv[0])
         if tool == "verilator" and "-j" not in argv:
-            argv[1:1] = ["-j", str(execution_resources()["build_jobs"])]
+            argv[1:1] = ["-j", str(self.resources["build_jobs"])]
         output_flag = "-o"
         binary = Path(argv[argv.index(output_flag) + 1])
         if tool == "verilator":
@@ -308,6 +309,10 @@ class Run:
             raise AssertionError("incomplete verification execution cannot be finalized as passed")
         if status == "passed":
             self.validate_live_sources()
+            for cached, _, _ in self.builds.values():
+                manifest = json.loads((cached.parent / "build.json").read_text())
+                if sha256(cached) != manifest["executable_sha256"]:
+                    raise AssertionError("retained cached executable identity changed")
             for name, digest in self.hashes.items():
                 snapshot = self.path / "sources" / name
                 if not snapshot.is_file() or sha256(snapshot) != digest:
@@ -335,5 +340,5 @@ class Run:
                     "build_manifests": [self.rel(item[0].parent / "build.json")
                                         for item in self.builds.values()],
                     "build_reuses": self.build_reuses,
-                    "execution_resources": execution_resources(),
+                    "execution_resources": self.resources,
                     "executions": self.records, **details})

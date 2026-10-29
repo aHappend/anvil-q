@@ -30,7 +30,9 @@ class NumericalMismatch(AssertionError):
 def validate_simulation_tier(g, simulator, tokens):
     if simulator not in ("iverilog", "verilator"):
         raise ValueError("unknown decoder simulator: " + simulator)
-    return simulator == "iverilog" and (g.HIDDEN_SIZE > 32 or len(tokens) > 1)
+    return simulator == "iverilog" and not (
+        g.HIDDEN_SIZE <= 32 and g.NUM_LAYERS == 1 and
+        g.INTERMEDIATE_SIZE <= 8 and g.VOCAB_SIZE == 1 and len(tokens) == 1)
 
 
 def trace_records(path):
@@ -148,7 +150,7 @@ def compare_trace(folder, expected, g, prelude=0, boundary=0, restart_at=None, f
     for fields in trace_records(folder / "trace.tsv"):
         if fields[0] == "COMPARED":
             token, writes, requests, weights, cache = map(int, fields[1:])
-            if (token in streamed or token not in (*range(len(actual_logits)), -2) or
+            if (token in streamed or not (0 <= token < len(actual_logits) or token == -2) or
                     min(writes, requests, weights, cache) < 0 or writes > requests or
                     weights % 4 or cache % 4 or weights + cache > 4 * requests):
                 raise AssertionError("invalid/duplicate streaming comparison summary")
