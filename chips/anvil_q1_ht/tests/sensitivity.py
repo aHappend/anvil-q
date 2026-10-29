@@ -78,6 +78,14 @@ def run_sensitivity(parent, seed, only=None):
          "scale_invalid = fp16_invalid(value);",
          lambda run: stored_number_trial(run, seed, "awq_scale_0_negative"),
          "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
+        ("command_new_sequence_position", "anvil_q1_ht_decoder.sv",
+         "(new_sequence && token_pos != 0)", "1'b0",
+         lambda run: top_probe(run, "AWQ", seed, config=1, command_validation=True),
+         "COMMAND_REJECTION_DEADLINE"),
+        ("command_busy_mode_mutation", "anvil_q1_ht_descriptors.sv",
+         "csr_address[1:0] != 0 || (mutation && busy)", "csr_address[1:0] != 0",
+         lambda run: top_probe(run, "AWQ", seed, config=1, command_validation=True),
+         "CSR_MISMATCH"),
     )
     if only is not None:
         selected = set(only)

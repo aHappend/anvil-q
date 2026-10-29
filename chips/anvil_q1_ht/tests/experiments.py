@@ -2628,6 +2628,10 @@ def run_probe(evidence, name, seed, config=0):
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=(
             "stored_fp16_nonfinite", "stored_bf16_nonfinite", "stored_negative_scale"))
+    elif name == "command-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=(
+            "command_new_sequence_position", "command_busy_mode_mutation"))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

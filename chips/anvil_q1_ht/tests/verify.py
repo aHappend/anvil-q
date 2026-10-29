@@ -409,7 +409,7 @@ def main():
                                            "sensitivity", "dma-pipeline-sensitivity",
                                            "arithmetic-sensitivity",
                                            "faults", "orphan-fault", "abort-states",
-                                           "command-checks",
+                                           "command-checks", "command-sensitivity",
                                            "numerical-faults", "numerical-fault-smoke",
                                            "numerical-fault-sensitivity",
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
