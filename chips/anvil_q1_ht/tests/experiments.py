@@ -2288,6 +2288,7 @@ initial begin
  repeat(6) edge_tick();
  run_transfer(33'd4032,DEPTH_VALUE*5,51,1,0,1);
  run_transfer(33'd8128,DEPTH_VALUE*5,64,0,1,7);
+ run_transfer(33'h100000fc0,DEPTH_VALUE*5,23,0,1,7);
  run_transfer(33'h1ffffffc0,1,64,1,0,31);
  if(DEPTH_VALUE==256) begin
   run_transfer(33'd0,2,64,0,0,0);
@@ -2339,8 +2340,13 @@ endmodule
         "oracle": "accepted read addresses in order against independent byte-address pattern "
                   "and final useful-byte mask; compares stalled payload before and after edges",
     })
-    if len(measured) != (10 if depth == 256 else 7):
+    if len(measured) != (11 if depth == 256 else 8):
         raise AssertionError("DMA benchmark missing transfer measurements")
+    upper = [row for row in measured if row["base"] == 0x100000fc0]
+    if (len(upper) != 1 or upper[0]["beats"] != depth * 5 or
+            upper[0]["useful_bytes"] != (depth * 5 - 1) * 64 + 23 or
+            upper[0]["same_edge"] != 0 or upper[0]["gapped"] != 1):
+        raise AssertionError("DMA upper-bank multibeat byte-address comparison missing")
     for counters in measured:
         beats = counters["beats"]
         if (beats <= 0 or counters["useful_bytes"] <= 0 or
