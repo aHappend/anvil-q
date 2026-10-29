@@ -552,16 +552,27 @@ class Evidence:
             record["stage"] = "compile"
             with cache_lock:
                 cached = self.compiled_simulations.get(cache_key)
-                if cached is not None and not cached[0].exists():
-                    record["compile_cache_recovery"] = {
-                        "reason": "cached executable absent",
-                        "missing_executable": self.relative(cached[0]),
-                        "previous_compile_receipt": cached[1],
-                        "policy": "Fresh build in this simulation's output directory; "
-                                  "prior evidence is neither restored nor overwritten",
-                    }
-                    del self.compiled_simulations[cache_key]
-                    cached = None
+                if cached is not None:
+                    try:
+                        actual_hash = digest(cached[0])
+                    except FileNotFoundError:
+                        actual_hash = None
+                    if actual_hash != cached[2]:
+                        record["compile_cache_recovery"] = {
+                            "reason": ("cached executable absent" if actual_hash is None
+                                       else "cached executable hash mismatch"),
+                            "previous_executable": self.relative(cached[0]),
+                            "expected_sha256": cached[2],
+                            "actual_sha256": actual_hash,
+                            "previous_compile_receipt": cached[1],
+                            "policy": "Fresh build in this simulation's output directory; "
+                                      "prior evidence is neither restored nor overwritten",
+                        }
+                        if actual_hash is None:
+                            record["compile_cache_recovery"]["missing_executable"] = (
+                                self.relative(cached[0]))
+                        del self.compiled_simulations[cache_key]
+                        cached = None
                 cache_hit = cached is not None
                 if cached is None:
                     object_dir = directory / "obj"
@@ -1154,7 +1165,7 @@ def main():
         elif args.probe == "controller":
             run_controller(evidence)
         elif args.probe == "compile-cache-recovery":
-            cache_recovery(evidence, VerificationFailure)
+            cache_recovery(evidence)
         elif args.probe == "boot-performance":
             from performance import boot_performance
             boot_performance(evidence, args.repair_of)

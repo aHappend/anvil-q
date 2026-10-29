@@ -195,11 +195,11 @@ def scheduling_probe(evidence):
     }
 
 
-def cache_recovery(evidence, failure):
-    """Rebuild absent cache outputs; reject changed identities without editing evidence.
+def cache_recovery(evidence):
+    """Rebuild absent or stale cache outputs without executing unverified binaries.
 
-    Run with tests/verify.py --probe compile-cache-recovery. The absent output
-    is an in-memory cache fixture, not removal of a historical artifact.
+    Run with tests/verify.py --probe compile-cache-recovery. Both absent-output
+    and stale-hash faults affect only in-memory entries, never retained artifacts.
     """
     from protocol import UART
     bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
@@ -212,7 +212,7 @@ def cache_recovery(evidence, failure):
     evidence.compiled_simulations[key] = (missing, *original[1:])
     evidence.record["compile_cache_recovery"] = {
         "scope": "Harness recovery fixture, not full product acceptance",
-        "fault": "In-memory cache points to an absent output; retained files unchanged",
+        "fault": "In-memory absent-output and stale-hash entries; retained files unchanged",
         "absent_output": evidence.relative(missing),
         "original_compile_receipt": first["compile_receipt"],
     }
@@ -225,25 +225,29 @@ def cache_recovery(evidence, failure):
     assert reused["compile_receipt"] == rebuilt["compile_receipt"]
     cached = evidence.compiled_simulations[key]
     evidence.compiled_simulations[key] = (*cached[:2], "invalid-fixture-hash", cached[3])
-    before = len(evidence.record["children"])
-    try:
-        evidence.simulate("cache-identity-rejected", bench, sources, 78, simulator="verilator")
-    except failure as error:
-        assert str(error) == "Compiled simulation changed before reuse"
-    else:
-        raise AssertionError("Changed cached executable identity was accepted")
-    finally:
-        evidence.compiled_simulations[key] = cached
-    assert len(evidence.record["children"]) == before
-    rejected = evidence.record["coverage"][-1]
-    rejected["status"] = "expected-harness-rejection"
-    rejected["expected_rejection"] = "Compiled simulation changed before reuse"
+    stale = evidence.simulate("cache-stale-rebuilt", bench, sources, 78,
+                              simulator="verilator")
+    assert not stale["compile_cache_hit"]
+    assert stale["compile_cache_recovery"]["reason"] == "cached executable hash mismatch"
+    assert stale["compile_cache_recovery"]["expected_sha256"] == "invalid-fixture-hash"
+    assert stale["compile_cache_recovery"]["actual_sha256"] == cached[2]
+    assert stale["compile_receipt"] != rebuilt["compile_receipt"]
+    assert stale["simulation_receipt"]["argv"][0] != reused["simulation_receipt"]["argv"][0]
+    final = evidence.simulate("cache-stale-reused", bench, sources, 78,
+                              simulator="verilator")
+    assert final["compile_cache_hit"]
+    assert final["compile_receipt"] == stale["compile_receipt"]
+    root = Path(__file__).resolve().parent.parent
+    for binary, _, expected, _ in (original, cached):
+        assert hashlib.sha256((root / binary).read_bytes()).hexdigest() == expected
     evidence.record["compile_cache_recovery"].update(
         rebuilt_compile_receipt=rebuilt["compile_receipt"],
+        stale_rebuilt_compile_receipt=stale["compile_receipt"],
         compared_uart_transactions=sum(row["actual_comparisons"]
-                                      for row in (first, rebuilt, reused)),
+                                      for row in (first, rebuilt, reused, stale, final)),
         unchanged_cache_reused=True,
-        changed_identity_rejected_before_execution=True,
+        changed_identity_rebuilt_before_execution=True,
+        retained_binaries_unchanged=True,
     )
 
 
