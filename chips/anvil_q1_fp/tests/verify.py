@@ -1501,10 +1501,11 @@ def main():
             tools_ok = ev.versions()
             if tools_ok:
                 leaves_ok = leaf_check(ev, full=False)
+                startup_ok = component(ev, "clean-icarus-startup", startup_check)
                 integration_ok = integration_check(ev, simulator="verilator")
                 synthesis_ok = synthesis_check(ev)
                 preservation_ok = preservation_check(ev)
-                ok = leaves_ok and integration_ok and synthesis_ok and preservation_ok
+                ok = leaves_ok and startup_ok and integration_ok and synthesis_ok and preservation_ok
         elif args.probe == "portable-smoke":
             ok = ev.versions() and portable_check(ev)
         elif args.probe in ("operators", "production-operators"):
