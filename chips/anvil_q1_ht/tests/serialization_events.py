@@ -2,9 +2,12 @@
 """Bounded scheduler-free save/restore capability experiment, not campaign admission.
 
 python3 -B tests/serialization_events.py --build-only
+New per-evaluation raw driver responses are retained losslessly as
+driver-stdout.log.gz; decompress with gzip -dc to inspect the complete stream.
 """
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -121,7 +124,10 @@ def project_path(relative):
 class Driver:
     def __init__(self, executable, folder):
         self.stderr = (folder / "driver-stderr.log").open("xb")
-        self.stdout = (folder / "driver-stdout.log").open("x")
+        self.stdout_path = folder / "driver-stdout.log.gz"
+        self.stdout = gzip.open(self.stdout_path, "xt")
+        self.stdout_digest = hashlib.sha256()
+        self.stdout_bytes = 0
         self.process = subprocess.Popen(
             [str(project_path(executable))], cwd=ROOT, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=self.stderr, text=True, bufsize=1)
@@ -132,6 +138,9 @@ class Driver:
         self.process.stdin.flush()
         line = self.process.stdout.readline()
         self.stdout.write(line)
+        raw = line.encode()
+        self.stdout_digest.update(raw)
+        self.stdout_bytes += len(raw)
         if not line:
             raise RuntimeError(f"driver stopped during {text.split()[0]}")
         return line.strip()
@@ -179,8 +188,10 @@ class Driver:
                 self.process.wait()
             raise RuntimeError("driver failed to settle")
         finally:
-            self.stdout.close()
-            self.stderr.close()
+            try:
+                self.stdout.close()
+            finally:
+                self.stderr.close()
         if code != 0:
             raise RuntimeError(f"driver exit {code}")
 
@@ -922,15 +933,30 @@ def execute_worker(spec_path, output_path, restore_path, segmented, stop_time=No
             "dut_state_bytes": (project_path(manifest["dut_state"]).stat().st_size
                                 if checkpoint else 0),
         }
-        payload = json.dumps(manifest, sort_keys=True).encode()
-        manifest["identity"] = hashlib.sha256(payload).hexdigest()
-        write_json(folder / "manifest.json", manifest)
-        print(f"WORKER_SETTLED sequence={sequence} complete={int(controller.s['complete'])} "
-              f"checkpoint={checkpoint} time={controller.s['time']}", flush=True)
     finally:
-        if not controller.trace.closed:
-            controller.trace.close()
-        driver.close()
+        try:
+            if not controller.trace.closed:
+                controller.trace.close()
+        finally:
+            driver.close()
+    digest, size = hashlib.sha256(), 0
+    with gzip.open(driver.stdout_path, "rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
+    if digest.hexdigest() != driver.stdout_digest.hexdigest() or size != driver.stdout_bytes:
+        raise AssertionError("lossless driver response retention mismatch")
+    manifest["driver_stdout"] = {
+        "path": str(driver.stdout_path.relative_to(ROOT)),
+        "compression": "gzip",
+        "sha256": file_sha256(driver.stdout_path),
+        "uncompressed_sha256": digest.hexdigest(), "uncompressed_bytes": size,
+    }
+    payload = json.dumps(manifest, sort_keys=True).encode()
+    manifest["identity"] = hashlib.sha256(payload).hexdigest()
+    write_json(folder / "manifest.json", manifest)
+    print(f"WORKER_SETTLED sequence={sequence} complete={int(controller.s['complete'])} "
+          f"checkpoint={checkpoint} time={controller.s['time']}", flush=True)
 
 
 def negative_segments(evidence, spec, manifests):
@@ -1090,7 +1116,8 @@ def fresh_process_binding_trials(evidence, spec, spec_path, predecessor, mode):
         ], f"{mode.lower()}-fresh-process-reject-{label}", expected_codes=(1,))
         if "binding mismatch" not in text and "changed workload input" not in text:
             raise AssertionError(f"fresh-process {label} rejection was not a binding failure")
-        if (output / "driver-stdout.log").exists():
+        if any((output / name).exists()
+               for name in ("driver-stdout.log", "driver-stdout.log.gz")):
             raise AssertionError("binding mismatch launched the DUT driver")
     evidence.record["fresh_process_binding_rejections"] = list(changes)
     evidence.flush()
