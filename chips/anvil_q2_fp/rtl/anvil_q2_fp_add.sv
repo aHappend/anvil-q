@@ -20,7 +20,7 @@ module anvil_q2_fp_add(
 
   wire a_is_big=a[30:0]>=b[30:0];
   wire [31:0] big=a_is_big ? a : b;
-  wire [31:0] small=a_is_big ? b : a;
+  wire [31:0] smaller=a_is_big ? b : a;
   wire [8:0] distance_next=big_exponent-small_exponent;
   wire [26:0] aligned_next=shift_jam27(small_mantissa,{23'd0,distance});
   wire [27:0] total_next=subtract ?
@@ -71,11 +71,11 @@ module anvil_q2_fp_add(
     end else case (state)
       IDLE: if (in_valid) begin a<=in_a; b<=in_b; state<=ORDER; end
       ORDER: begin
-        sign_bit<=big[31]; subtract<=big[31]!=small[31];
+        sign_bit<=big[31]; subtract<=big[31]!=smaller[31];
         big_mantissa<={fp_sig(big),3'd0};
-        small_mantissa<={fp_sig(small),3'd0};
+        small_mantissa<={fp_sig(smaller),3'd0};
         big_exponent<=big[30:23]==0 ? 9'd1 : {1'b0,big[30:23]};
-        small_exponent<=small[30:23]==0 ? 9'd1 : {1'b0,small[30:23]};
+        small_exponent<=smaller[30:23]==0 ? 9'd1 : {1'b0,smaller[30:23]};
         special<=1;
         if (fp_is_nan(a) || fp_is_nan(b) ||
             (fp_is_inf(a) && fp_is_inf(b) && a[31]!=b[31]))

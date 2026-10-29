@@ -219,9 +219,14 @@ def execute(case, fmt):
     try:
         run.command(["iverilog", "-V"], "iverilog-version")
         run.command(["vvp", "-V"], "vvp-version")
-        if case == "scalar":
-            vectors = list(scalar_vectors())
+        if case in ("scalar", "add"):
+            vectors = [v for v in scalar_vectors()
+                       if case == "scalar" or ((v >> 64) & 7) == 0]
             bench_text, width = SCALAR_BENCH, 25
+            if case == "add":
+                bench_text = bench_text.replace(
+                    "anvil_q2_fp_scalar dut(clk,rst_n,in_valid,in_ready,in_op,in_a,in_b,",
+                    "anvil_q2_fp_add dut(clk,rst_n,in_valid,in_ready,in_a,in_b,")
         else:
             vectors = list(lane_vectors(fmt))
             bench_text, width = LANE_BENCH, 37
@@ -233,7 +238,8 @@ def execute(case, fmt):
             run.relative(p): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in (vector_path, bench)}
         binary = run.path / "bench.vvp"
-        module = "anvil_q2_fp_scalar.sv" if case == "scalar" else "anvil_q2_fp_dot_lane.sv"
+        module = {"scalar": "anvil_q2_fp_scalar.sv", "add": "anvil_q2_fp_add.sv",
+                  "lane": "anvil_q2_fp_dot_lane.sv"}[case]
         run.command(["iverilog", "-g2012", "-Wall", "-s", "tb",
                      f"-Ptb.COUNT={len(vectors)}",
                      *([f"-Ptb.FORMAT={int(fmt == 'fp16')}"] if case == "lane" else []),
@@ -241,7 +247,7 @@ def execute(case, fmt):
                      f"rtl/{module}", run.relative(bench)], "compile")
         trace = run.command(["vvp", run.relative(binary)], "simulation")
         require_time_zero(trace)
-        if case == "scalar":
+        if case in ("scalar", "add"):
             assert f"SCALAR_COMPARED {len(vectors)} {len(vectors)}" in trace.read_text()
             metrics = {"accepted": len(vectors), "results_compared": len(vectors)}
         else:
@@ -256,7 +262,7 @@ def execute(case, fmt):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", choices=("scalar", "lane"), required=True)
+    parser.add_argument("--case", choices=("scalar", "add", "lane"), required=True)
     parser.add_argument("--format", choices=("bf16", "fp16"), default="bf16")
     args = parser.parse_args()
     return execute(args.case, args.format)

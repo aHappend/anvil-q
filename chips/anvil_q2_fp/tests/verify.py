@@ -39,6 +39,8 @@ from top_lifecycle_checks import SCENARIOS
 
 def behavior_jobs():
     yield "fp32-scalar", ["tests/numerical_checks.py", "--case", "scalar"], "IEEE FP32 arithmetic"
+    yield "fp32-bias-add", ["tests/numerical_checks.py", "--case", "add"], (
+        "registered GEMV bias adder: IEEE FP32, special values, RNE and output stalls")
     yield "exp", ["tests/exp_checks.py"], "normative exp, high-precision <=1e-5"
     yield "parameters", ["tests/parameter_checks.py"], "native/legal elaboration and illegal diagnostics"
     for fmt in ("bf16", "fp16"):

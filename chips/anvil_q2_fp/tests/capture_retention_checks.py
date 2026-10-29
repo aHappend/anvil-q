@@ -62,6 +62,79 @@ if action != "healthy":
 """
 
 
+def source_lineage(historical, revised, current):
+    prefixes = ("rtl/", "design/", "anvil_q2_reference/rtl/")
+    protected = {name: digest for name, digest in historical.items()
+                 if name.startswith(prefixes)}
+    assert protected, "historical source provenance unavailable"
+    expected_revision = dict(protected)
+    for name, (before, after) in ADMITTED_TRANSITION.items():
+        assert protected.get(name) == before, f"historical transition mismatch: {name}"
+        assert revised.get(name) == after, f"revised transition mismatch: {name}"
+        expected_revision[name] = after
+    revised_product = {name: digest for name, digest in revised.items()
+                       if name.startswith(prefixes)}
+    assert revised_product == expected_revision, "historical Designer transition mismatch"
+    reference = {name: digest for name, digest in historical.items()
+                 if name.startswith("anvil_q2_reference/rtl/")}
+    current_reference = {name: digest for name, digest in current.items()
+                         if name.startswith("anvil_q2_reference/rtl/")}
+    assert reference and current_reference == reference, "accepted parent RTL changed"
+
+    def changes(before, after):
+        return {name: dict(historical=before.get(name), current=after.get(name))
+                for name in sorted(before.keys() | after.keys())
+                if before.get(name) != after.get(name)}
+
+    return dict(
+        historical_transition_source_count=len(ADMITTED_TRANSITION),
+        unchanged_reference_source_count=len(reference),
+        product_changes_since_historical_transition=changes(
+            revised_product, {name: digest for name, digest in current.items()
+                              if name.startswith(prefixes)}),
+        verification_changes_since_failure=changes(
+            {name: digest for name, digest in historical.items() if name.startswith("tests/")},
+            {name: digest for name, digest in current.items() if name.startswith("tests/")}))
+
+
+def lineage_fixtures():
+    historical = {name: pair[0] for name, pair in ADMITTED_TRANSITION.items()}
+    historical.update({"anvil_q2_reference/rtl/parent.sv": "parent",
+                       "rtl/unchanged.sv": "unchanged", "tests/check.py": "old-check"})
+    revised = historical | {name: pair[1] for name, pair in ADMITTED_TRANSITION.items()}
+    current = revised | {"rtl/new_adder.sv": "adder", "tests/check.py": "new-check"}
+    current.pop("rtl/unchanged.sv")
+    lineage = source_lineage(historical, revised, current)
+    assert lineage["product_changes_since_historical_transition"] == {
+        "rtl/new_adder.sv": dict(historical=None, current="adder"),
+        "rtl/unchanged.sv": dict(historical="unchanged", current=None)}
+    assert lineage["verification_changes_since_failure"] == {
+        "tests/check.py": dict(historical="old-check", current="new-check")}
+    assert not source_lineage(historical, revised, revised)[
+        "product_changes_since_historical_transition"]
+    rejected = []
+    for label, old, revision, present, expected in (
+        ("historical-transition", historical | {"design/SPEC.md": "corrupted"},
+         revised, current, "historical transition mismatch"),
+        ("historical-revision", historical, revised | {"rtl/unrecorded.sv": "unexpected"},
+         current, "historical Designer transition mismatch"),
+        ("parent-change", historical, revised,
+         current | {"anvil_q2_reference/rtl/parent.sv": "changed"}, "accepted parent RTL changed"),
+        ("parent-removal", historical, revised,
+         {name: digest for name, digest in current.items()
+          if not name.startswith("anvil_q2_reference/rtl/")}, "accepted parent RTL changed"),
+    ):
+        try:
+            source_lineage(old, revision, present)
+        except AssertionError as exc:
+            assert expected in str(exc), str(exc)
+            rejected.append(label)
+        else:
+            raise AssertionError(f"lineage corruption was not rejected: {label}")
+    return dict(revision_deltas_compared=3, unchanged_revision_compared=True,
+                rejected_corruptions=rejected)
+
+
 def existing_root_fixture(run):
     root = run.relative(run.path / "root-reuse")
     children = []
@@ -149,6 +222,7 @@ def fixtures(repair_of=None):
         run.receipt["repair_of"] = repair_of
     try:
         run.command(["python3", "--version"], "python-version")
+        lineage = lineage_fixtures()
         results = []
         for interactive in (False, True):
             for action in ("healthy", "missing", "replaced", "truncated"):
@@ -188,6 +262,7 @@ def fixtures(repair_of=None):
                                         receipt=child.relative(child.path / "receipt.json")))
         root_reuse = existing_root_fixture(run)
         run.finish("passed-focused-only", fixtures=results, root_reuse=root_reuse,
+                   source_lineage_fixtures=lineage,
                    limitations="Synthetic retention failure handling only; not RTL evidence.")
         return 0
     except (AssertionError, RuntimeError, OSError, ValueError, KeyError) as exc:
@@ -196,9 +271,10 @@ def fixtures(repair_of=None):
         return 1
 
 
-def probe():
+def probe(repair_of=None):
     run = Run("attention-capture-recovery")
-    run.receipt["repair_of"] = FAILED_BENCHMARK
+    run.receipt["repair_of"] = repair_of or FAILED_BENCHMARK
+    run.receipt["historical_benchmark_receipt"] = FAILED_BENCHMARK
     try:
         admitted = {}
         run.receipt["input_sha256"] = {}
@@ -212,41 +288,19 @@ def probe():
         historical = admitted[FAILED_BENCHMARK]
         revised = admitted[ADMITTED_DESIGNER]["source_sha256"]
         run.receipt["historical_failure"] = historical.get("failure")
-        protected = {name: expected for name, expected in historical["source_sha256"].items()
-                     if name.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
-        assert protected, "historical source provenance unavailable"
-        for name, (before, after) in ADMITTED_TRANSITION.items():
-            assert protected.get(name) == before, f"historical transition mismatch: {name}"
-            assert revised.get(name) == after, f"revised transition mismatch: {name}"
-        expected_product = dict(protected)
-        expected_product.update({name: pair[1] for name, pair in ADMITTED_TRANSITION.items()})
-        revised_product = {name: digest for name, digest in revised.items()
-                           if name.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
-        current_product = {
-            name: digest for name, digest in run.receipt["source_sha256"].items()
-            if name.startswith(("rtl/", "design/", "anvil_q2_reference/rtl/"))}
-        assert revised_product == expected_product, "unadmitted Designer product transition"
-        assert current_product == expected_product, "protected product source changed"
-        run.receipt["admitted_product_transition"] = {
+        run.receipt["source_lineage"] = source_lineage(
+            historical["source_sha256"], revised, run.receipt["source_sha256"])
+        run.receipt["historical_admitted_product_transition"] = {
             "admission": "call-0036",
             "description": "Registered non-fall-through attention request buffer and its "
                            "SPEC, ARCHITECTURE and INTEGRATION documentation; "
                            "no numerical or transaction assertion change.",
             "sources": {name: dict(historical=pair[0], revised=pair[1])
                         for name, pair in ADMITTED_TRANSITION.items()}}
-        run.receipt["unchanged_product_source_count"] = len(protected) - len(ADMITTED_TRANSITION)
-        run.receipt["verification_source_changes"] = [
-            name for name, current in run.receipt["source_sha256"].items()
-            if name.startswith("tests/") and historical["source_sha256"].get(name) != current]
-        assert set(run.receipt["verification_source_changes"]) == {
-            "tests/retained.py", "tests/capture_retention_checks.py"}
-        revised_tests = {name: digest for name, digest in revised.items()
-                         if name.startswith("tests/") and
-                         name != "tests/capture_retention_checks.py"}
-        current_tests = {name: digest for name, digest in run.receipt["source_sha256"].items()
-                         if name.startswith("tests/") and
-                         name != "tests/capture_retention_checks.py"}
-        assert current_tests == revised_tests, "unadmitted verification source changed"
+        run.receipt["source_binding_policy"] = (
+            "Historical receipts establish provenance, not a passing baseline or a freeze "
+            "on later product revisions. The current source_sha256 binds this invocation; "
+            "child execution must match it exactly. Accepted parent RTL remains unchanged.")
         run.command(["python3", "--version"], "python-version")
         run.receipt["root_reuse"] = existing_root_fixture(run)
         output = run.command(
@@ -300,4 +354,5 @@ if __name__ == "__main__":
     parser.add_argument("--action", required=True, choices=("fixtures", "probe"))
     parser.add_argument("--repair-of", help="prior failed preparation receipt, kept unchanged")
     args = parser.parse_args()
-    raise SystemExit(fixtures(args.repair_of) if args.action == "fixtures" else probe())
+    raise SystemExit(fixtures(args.repair_of) if args.action == "fixtures"
+                     else probe(args.repair_of))
