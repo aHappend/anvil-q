@@ -6,19 +6,26 @@ The shared runtime remains responsible for engineering check execution.
 Compact Icarus portability and complete compiled workloads are accounted
 separately. execution-contract.json explicitly retains the discrepancy from
 the originally admitted full Icarus matrix for independent review.
+
+Planning only (prints exact, self-contained argv for every shard):
+  python3 tests/verify.py --check behavior --list-shards --output evidence/check-behavior/shards
+Shard collection requires independent append-only admission first. The unchanged
+behavior command collects missing/stale cases automatically, then retains its
+original full-Icarus coverage gate. A shard success is not a behavior-matrix pass.
 """
 
 import argparse
 from collections import Counter
 from dataclasses import asdict, replace
+import json
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from decoder_checks import decoder_case
-from execution import Run, write_json
+from execution import Run, WORKLOAD_ROOT, workload, write_json
 from leaf_checks import codec_case, dot8_case
-from parameters import A, A_PORTABILITY, behavioral_geometries
+from parameters import A, A_PORTABILITY, behavioral_geometries, defaults, legal, startup_geometry
 from prerequisites import prerequisites
 from structure_checks import structure
 from synthesis_checks import synthesis
@@ -30,10 +37,11 @@ from benchmark_checks import benchmark
 from hardware_checks import board_hil, quartus_sta
 from scheduler_checks import scheduler_case
 from prefetch_checks import prefetch_case
-from boundary_checks import boundaries, integration_faults
+from boundary_checks import boundaries as _boundaries, integration_faults as _integration_faults
+from boundary_checks import singleton_case
 from math_memory_checks import math_memory_case
 from accumulator_checks import accumulator_case
-from map_checks import memory_maps
+from map_checks import memory_maps as _memory_maps, map_case
 from fpga_checks import host_case, bridge_case
 from tensor_checks import activation_case
 
@@ -164,71 +172,191 @@ def behavior_execution_preflight(run):
                  "not numerical or engineering acceptance"})
 
 
-def numerical_matrix(run):
-    behavior_execution_preflight(run)
-    a_coverage = []
-    decoder_coverage = []
-    ledger = memory_maps(run)
+def memory_maps(run, plan=False):
+    if not plan:
+        return _memory_maps(run)
+    jobs = []
     for simulator in ("iverilog", "verilator"):
-        ledger.append(host_case(run, simulator))
+        for mode in (0, 1, 2):
+            jobs.append(workload(run, "memory-map", "map_case", map_case,
+                                 replace(A, CACHE_MODE=mode), simulator))
+            jobs.append(workload(run, "memory-map", "map_case", map_case,
+                                 replace(defaults(3), CACHE_MODE=mode), simulator, "official"))
+        for profile in (1, 2):
+            for mode in ((0,) if profile == 1 else (0, 1)):
+                jobs.append(workload(run, "memory-map", "map_case", map_case,
+                                     replace(defaults(profile), CACHE_MODE=mode),
+                                     simulator, "official"))
+    return jobs
+
+
+def boundaries(run, plan=False):
+    if not plan:
+        return _boundaries(run)
+    jobs = []
+    for banks in (1, 2, 4, 8):
+        for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
+            jobs.append(workload(run, "boundary", "singleton_case", singleton_case,
+                                 banks, mode, asym, "verilator"))
+    g = replace(A, BANKS=8, CACHE_MODE=2, INT4_ASYM=1,
+                QUEUE_DEPTH=16, TILE_K=128, TILE_ROWS=8)
+    if not legal(g):
+        raise AssertionError("maximum queue/tile geometry must remain legal")
+    jobs.append(workload(
+        run, "boundary", "decoder_case", decoder_case, g, simulator="verilator",
+        tokens=[1, 4, 2, 6, 3, 5, 7], prefill_tokens=4, label="queue-tile-maxima"))
+    for profile in (1, 2, 3):
+        g = startup_geometry(profile)
+        for boundary in (1, 2, 3, 4):
+            if boundary == 2 and profile == 1:
+                continue
+            prefix = g.MAX_SEQ_LEN if boundary == 1 else 2 if boundary == 2 else 1
+            tokens = [1, 4, 2, 6, 3, 5, 7, 8, 9][:prefix] + [2]
+            jobs.append(workload(
+                run, "boundary", "decoder_case", decoder_case, g, simulator="verilator",
+                tokens=tokens, prefill_tokens=1 if boundary == 2 else g.MAX_SEQ_LEN,
+                boundary=boundary, restart_at=prefix, label=f"boundary-{boundary}"))
+    return jobs
+
+
+def integration_faults(run, plan=False):
+    if not plan:
+        return _integration_faults(run)
+    jobs = []
+    for profile in (1, 2, 3):
+        for scenario in range(1, 10):
+            if profile == 1 and scenario == 9:
+                continue
+            g = startup_geometry(profile)
+            if scenario == 9:
+                g = replace(g, CACHE_MODE=1 if profile == 2 else 2,
+                            INT4_ASYM=int(profile == 3))
+            jobs.append(workload(
+                run, "integration-fault", "decoder_case", decoder_case,
+                g, simulator="verilator", tokens=[1, 4],
+                fault_scenario=scenario, label=f"integration-fault-{scenario}"))
+    return jobs
+
+
+def behavior_inventory(run=None):
+    """Plan every existing case before submitting any work; no phase barriers."""
+    jobs = memory_maps(run, plan=True)
+    for simulator in ("iverilog", "verilator"):
+        jobs.append(workload(run, "host", "host_case", host_case, simulator))
         for banks in (1, 2, 4, 8):
             for mode in (0, 1, 2):
-                ledger.append(bridge_case(run, banks, mode, simulator))
-    ledger.extend(compatibility(run))
-    ledger.extend(boundaries(run))
-    ledger.extend(integration_faults(run))
-    jobs = []
+                jobs.append(workload(run, "bridge", "bridge_case", bridge_case,
+                                     banks, mode, simulator))
+    jobs.extend(compatibility(run, plan=True))
+    jobs.extend(boundaries(run, plan=True))
+    jobs.extend(integration_faults(run, plan=True))
     for banks in (1, 2, 4, 8):
         for depth in (1, 3, 16):
             for simulator in ("iverilog", "verilator"):
-                jobs.append(lambda b=banks, d=depth, s=simulator: scheduler_case(run, b, d, s))
+                jobs.append(workload(run, "scheduler", "scheduler_case", scheduler_case,
+                                     banks, depth, simulator))
                 for wrap in (1, 2):
-                    jobs.append(lambda b=banks, d=depth, s=simulator, w=wrap:
-                                scheduler_case(run, b, d, s, wrap=w))
+                    jobs.append(workload(run, "scheduler", "scheduler_case", scheduler_case,
+                                         banks, depth, simulator, wrap=wrap))
         for tile_k in (8, 24, 128):
             for tile_rows in (1, 3, 8):
                 for simulator in ("iverilog", "verilator"):
-                    jobs.append(lambda b=banks, k=tile_k, r=tile_rows, s=simulator:
-                                prefetch_case(run, b, k, r, s))
-    ledger.extend(run.parallel(jobs))
-    write_json(run.path / "scheduler-prefetch-matrix.json", ledger)
-    jobs = []
+                    jobs.append(workload(run, "prefetch", "prefetch_case", prefetch_case,
+                                         banks, tile_k, tile_rows, simulator))
     for seed in (17, 89, 257):
         for simulator in ("iverilog", "verilator"):
-            jobs.append(lambda s=simulator, n=seed: accumulator_case(run, s, n))
+            jobs.append(workload(run, "accumulator", "accumulator_case",
+                                 accumulator_case, simulator, seed))
             for unit in (0, 1):
-                jobs.append(lambda u=unit, s=simulator, n=seed: math_memory_case(run, u, s, n))
+                jobs.append(workload(run, "math-memory", "math_memory_case",
+                                     math_memory_case, unit, simulator, seed))
             for unit in range(5):
-                jobs.append(lambda u=unit, s=simulator, n=seed: scalar_case(run, s, u, n))
-            jobs.append(lambda s=simulator, n=seed: dot8_case(run, s, n))
+                jobs.append(workload(run, "scalar", "scalar_case", scalar_case,
+                                     simulator, unit, seed))
+            jobs.append(workload(run, "dot8", "dot8_case", dot8_case, simulator, seed))
             for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
-                jobs.append(lambda m=mode, a=asym, s=simulator, n=seed:
-                            codec_case(run, s, m, a, seed=n))
+                jobs.append(workload(run, "codec", "codec_case", codec_case,
+                                     simulator, mode, asym, seed=seed))
         for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
-            jobs.append(lambda m=mode, a=asym, n=seed: decoder_case(
-                run, replace(A, CACHE_MODE=m, INT4_ASYM=a),
-                seed=n, simulator="verilator", tokens=[1, 4],
+            jobs.append(workload(
+                run, "adversarial", "decoder_case", decoder_case,
+                replace(A, CACHE_MODE=mode, INT4_ASYM=asym),
+                seed=seed, simulator="verilator", tokens=[1, 4],
                 compiled_host=True, adversarial=True, label="adversarial-full-range"))
-    ledger.extend(run.parallel(jobs))
-    jobs = []
-    for workload in mandatory_decoder_workloads():
-        label, g, seed, simulator, tokens, prefill = workload
-        jobs.append(lambda g=g, n=seed, s=simulator, t=tokens, p=prefill:
-                    decoder_case(run, g, n, s, tokens=list(t), prefill_tokens=p,
-                                 compiled_host=s == "verilator"))
-        decoder_coverage.append(workload)
-        if label == "A":
-            a_coverage.append((g, seed, simulator, tokens, prefill))
-    ledger.extend(run.parallel(jobs))
-    write_json(run.path / "numerical-matrix.json", ledger)
+    for row in mandatory_decoder_workloads():
+        label, g, seed, simulator, tokens, prefill = row
+        jobs.append(workload_case(run, g, seed, simulator, tokens, prefill))
     for simulator in ("iverilog", "verilator"):
         for banks in (1, 2, 4, 8):
-            ledger.append(activation_case(run, banks, simulator,
-                                         capacity=11008 if banks == 8 and simulator == "verilator" else
-                                         8 if banks == 1 else 120))
-            write_json(run.path / "activation-matrix.json", ledger)
-    ledger.append(activation_case(run, 8, "verilator", capacity=120))
-    write_json(run.path / "activation-matrix.json", ledger)
+            jobs.append(workload(
+                run, "activation", "activation_case", activation_case, banks, simulator,
+                capacity=11008 if banks == 8 and simulator == "verilator" else
+                8 if banks == 1 else 120))
+    jobs.append(workload(run, "activation", "activation_case", activation_case,
+                         8, "verilator", capacity=120))
+    ids = [job.id for job in jobs]
+    if len(set(ids)) != len(ids):
+        raise AssertionError("duplicate behavior shard identity")
+    return jobs
+
+
+def workload_case(run, g, seed, simulator, tokens, prefill):
+    return workload(run, "decoder", "decoder_case", decoder_case,
+                    g, seed, simulator, tokens=list(tokens), prefill_tokens=prefill,
+                    compiled_host=simulator == "verilator")
+
+
+def shard_inventory(output=WORKLOAD_ROOT):
+    jobs = behavior_inventory()
+    ordered = sorted(jobs, key=lambda job: (-job.cost, job.id))
+    return {
+        "schema": 1, "scope": "planning only; no simulation or acceptance",
+        "original_full_icarus_obligations": 112,
+        "ambiguous_objective": "unresolved; these shards do not waive original coverage",
+        "required_shards": len(jobs),
+        "scheduling": "descending analytical work estimate, then deterministic shard id",
+        "cold_budget_feasibility": "unestablished",
+        "aggregate_argv": ["python3", "tests/verify.py", "--check", "behavior",
+                           "--output", "evidence/check-behavior"],
+        "shards": [
+            {"id": job.id, "workload": job.descriptor, "scheduling_cost": job.cost,
+             "argv": ["python3", "tests/verify.py", "--check", "behavior",
+                      "--behavior-shard", job.id, "--output", str(Path(output) / job.id)],
+             "outputs": sorted({str(Path(output) / job.id), WORKLOAD_ROOT + "/" + job.id}),
+             "requires": ["python3", "iverilog", "vvp", "verilator", "g++", "make"],
+             "evidence_requirements": [
+                 "settled source/toolchain/workload-bound receipt and raw logs",
+                 "unchanged independent comparison and generated fixture artifacts"],
+             "retained_root": WORKLOAD_ROOT + "/" + job.id}
+            for job in ordered]}
+
+
+def numerical_matrix(run):
+    behavior_execution_preflight(run)
+    jobs = behavior_inventory(run)
+    ledger = run.parallel(jobs)
+    if len(ledger) != len(jobs):
+        raise AssertionError("behavior inventory/result count mismatch")
+    for job, result in zip(jobs, ledger):
+        if job.group == "portability" and result["cycles"] > 500000:
+            raise AssertionError("portability smoke exceeds compact cycle tier")
+    for filename, groups in (
+            ("memory-map-results.json", {"memory-map"}),
+            ("compatibility-results.json", {"compatibility", "portability"}),
+            ("boundary-results.json", {"boundary"}),
+            ("integration-faults.json", {"integration-fault"}),
+            ("scheduler-prefetch-matrix.json", {"scheduler", "prefetch"}),
+            ("activation-matrix.json", {"activation"})):
+        write_json(run.path / filename, [result for job, result in zip(jobs, ledger)
+                                         if job.group in groups])
+    write_json(run.path / "numerical-matrix.json", ledger)
+    labels = {row[1:]: row[0] for row in mandatory_decoder_workloads()}
+    decoder_coverage = []
+    for job in jobs:
+        if job.group == "decoder":
+            requested = (*job.args, tuple(job.kwargs["tokens"]), job.kwargs["prefill_tokens"])
+            decoder_coverage.append((labels.get(requested, "unknown"), *requested))
+    a_coverage = [row[1:] for row in decoder_coverage if row[0] == "A"]
     mandatory_a_coverage(a_coverage)
     mandatory_decoder_coverage(decoder_coverage)
     original = original_icarus_coverage(ledger)
@@ -245,7 +373,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", required=True, choices=CHECKS)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--list-shards", action="store_true",
+                        help="print exact workload/command inventory without executing tools")
+    parser.add_argument("--behavior-shard",
+                        help="execute one inventory case; not aggregate behavior acceptance")
     args = parser.parse_args()
+    if (args.list_shards or args.behavior_shard) and args.check != "behavior":
+        parser.error("shard options require --check behavior")
+    if args.list_shards:
+        print(json.dumps(shard_inventory(args.output), indent=2, sort_keys=True))
+        return 0
+    selected = None
+    if args.behavior_shard:
+        selected = next((job for job in behavior_inventory()
+                         if job.id == args.behavior_shard), None)
+        if selected is None:
+            parser.error("unknown behavior shard; use --list-shards")
     run = Run(args.output, args.check)
     print(run.rel(run.path / "receipt.json"), flush=True)
     try:
@@ -256,7 +399,11 @@ def main():
             result = structure(run)
         elif args.check == "behavior":
             run.versions([("iverilog", "-V"), ("vvp", "-V"), ("verilator", "--version")])
-            result = numerical_matrix(run)
+            if selected is None:
+                result = numerical_matrix(run)
+            else:
+                result = {"scope": "single shard only; original coverage remains unresolved",
+                          "id": selected.id, "result": run.parallel([selected])[0]}
         elif args.check == "synthesis":
             result = synthesis(run)
         elif args.check == "reproduce":

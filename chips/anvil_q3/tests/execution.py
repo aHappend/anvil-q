@@ -13,9 +13,18 @@ The complete public-source inventory must match too, including added files.
 Successful finalization requires a complete snapshot and settled child records;
 completed expected-negative tests may retain nonzero exit codes.
 Snapshot content, raw logs and child receipts must still exist at finalization.
+
+Workload shards retain independent invocation receipts under WORKLOAD_ROOT.
+Reuse requires matching public sources, tool executables/version outputs,
+deterministic fixture inputs and complete workload arguments, plus intact
+snapshots, generated fixtures, comparisons and raw tool evidence. The aggregate
+automatically executes cases without reusable evidence and revalidates every
+child at finalization. These content bindings do not adjudicate runtime-owned
+identifiers, waive coverage gates or establish a cold-run time budget.
 """
 
 from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, is_dataclass
 import errno
 import hashlib
 import json
@@ -34,6 +43,60 @@ ROOT = Path(__file__).resolve().parent.parent
 SELECTORS = ("rtl/*.sv", "design/*.md", "design/*.json", "fpga/*",
              "tests/**", "anvil_q2_reference/rtl/*.sv")
 VERILATOR_UNROLL = ("--unroll-count", "1024", "--unroll-stmts", "1000000")
+WORKLOAD_ROOT = "evidence/check-behavior/shards"
+
+
+def canonical(value):
+    if is_dataclass(value):
+        return canonical(asdict(value))
+    if isinstance(value, dict):
+        return {key: canonical(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [canonical(item) for item in value]
+    return value
+
+
+def content_hash(value):
+    return hashlib.sha256(json.dumps(canonical(value), sort_keys=True).encode()).hexdigest()
+
+
+@dataclass
+class Workload:
+    """One unchanged case; cost is a scheduling heuristic, never a time claim."""
+
+    group: str
+    name: str
+    action: object
+    run: object
+    args: tuple
+    kwargs: dict
+    cost: int = 1
+
+    @property
+    def descriptor(self):
+        return canonical({"group": self.group, "call": self.name,
+                          "args": self.args, "kwargs": self.kwargs})
+
+    @property
+    def id(self):
+        return self.group + "-" + content_hash(self.descriptor)[:20]
+
+    def execute(self, run):
+        return self.action(run, *self.args, **self.kwargs)
+
+    def __call__(self):
+        return self.execute(self.run)
+
+
+def workload(run, group, name, action, *args, cost=1, **kwargs):
+    if name == "decoder_case":
+        g = args[0]
+        tokens = kwargs.get("tokens", (1, 4, 2, 6, 3, 5, 7))
+        cost = len(tokens) * (
+            g.NUM_LAYERS * (4 * g.HIDDEN_SIZE**2 +
+                            3 * g.HIDDEN_SIZE * g.INTERMEDIATE_SIZE) +
+            g.VOCAB_SIZE * g.HIDDEN_SIZE)
+    return Workload(group, name, action, run, args, kwargs, cost)
 
 
 def execution_resources():
@@ -105,6 +168,7 @@ class Run:
         self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
         self.builds = {}
         self.build_reuses = []
+        self.workload_results = []
         self.start = time.time()
         self.purpose = purpose
         self.repair_of = repair_of
@@ -145,16 +209,176 @@ class Run:
                               "removed": sorted(recorded - selected)}, sort_keys=True))
 
     def parallel(self, jobs):
-        """Bound simulations by CPU/memory availability and compilers separately."""
+        """Submit the complete inventory longest-first, retaining inventory order."""
+        jobs = list(jobs)
+        order = list(range(len(jobs)))
+        if any(isinstance(job, Workload) for job in jobs):
+            order.sort(key=lambda i: (-getattr(jobs[i], "cost", 1),
+                                      getattr(jobs[i], "id", ""), i))
+            self.workload_toolchain()
+            write_json(self.path / "workload-inventory.json", [
+                {"id": job.id, "workload": job.descriptor, "scheduling_cost": job.cost}
+                for job in jobs if isinstance(job, Workload)])
         workers = self.resources["workers"]
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = [pool.submit(job) for job in jobs]
+            futures = {}
+            for index in order:
+                job = jobs[index]
+                futures[index] = (pool.submit(self.collect_workload, job)
+                                  if isinstance(job, Workload) else pool.submit(job))
             try:
-                return [future.result() for future in futures]
+                return [futures[index].result() for index in range(len(jobs))]
             except BaseException:
-                for future in futures:
+                for future in futures.values():
                     future.cancel()
                 raise
+
+    def workload_toolchain(self):
+        if hasattr(self, "workload_toolchain_identity"):
+            return self.workload_toolchain_identity
+        tools = (("python3", "--version"), ("iverilog", "-V"), ("vvp", "-V"),
+                 ("verilator", "--version"), ("g++", "--version"), ("make", "--version"))
+        versions = self.versions(tools)
+        identity = {}
+        for name, _ in tools:
+            version = versions[name]
+            identity[name] = {"available": version["available"]}
+            if version["available"]:
+                record = next(record for record in reversed(self.records)
+                              if record["stdout"] == version["version_output"])
+                identity[name].update({
+                    "executable_sha256": sha256(Path(shutil.which(name)).resolve()),
+                    "stdout_sha256": sha256(ROOT / record["stdout"]),
+                    "stderr_sha256": sha256(ROOT / record["stderr"])})
+        identity["environment_sha256"] = content_hash({
+            name: os.environ.get(name) for name in
+            ("CC", "CXX", "CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "MAKEFLAGS",
+             "VERILATOR_ROOT", "IVERILOG_ICONFIG")})
+        self.workload_toolchain_identity = identity
+        return identity
+
+    def reusable_workload(self, receipt, binding):
+        """Incomplete, stale or damaged receipts trigger execution, not acceptance."""
+        try:
+            saved = json.loads(receipt.read_text())
+            if (not isinstance(saved, dict) or saved.get("status") != "passed" or
+                    saved.get("source_snapshot_complete") is not True or
+                    saved.get("source_hashes") != self.hashes or
+                    saved.get("workload_binding") != binding or
+                    not isinstance(saved.get("finished_at"), (int, float)) or
+                    "result" not in saved or not saved.get("executions") or
+                    not isinstance(saved["executions"], list) or
+                    not isinstance(saved.get("workload_artifacts"), dict) or
+                    not saved["workload_artifacts"] or
+                    not isinstance(saved.get("workload_dependencies"), dict) or
+                    not saved["workload_dependencies"] or
+                    saved.get("result_sha256") != content_hash(saved["result"])):
+                return None, "incomplete or stale binding/result"
+            for index, record in enumerate(saved["executions"]):
+                if (not isinstance(record, dict) or
+                        record.get("exit_code") is None or record.get("timeout") or
+                        record["exit_code"] not in record.get("expected_exit_codes", ()) or
+                        "launch_error" in record or "finished_at" not in record):
+                    return None, "unsettled tool execution"
+                folder = receipt.parent / ("tool-%04d" % index)
+                child = folder / "receipt.json"
+                if json.loads(child.read_text()) != record:
+                    return None, "changed tool receipt"
+                for stream in ("stdout", "stderr"):
+                    if record.get(stream) != self.rel(folder / (stream + ".txt")):
+                        return None, "misbound tool log"
+            for name, digest in saved["workload_artifacts"].items():
+                path = (receipt.parent / name).resolve()
+                path.relative_to(receipt.parent.resolve())
+                if sha256(path) != digest:
+                    return None, "changed retained artifact: " + name
+            for name, digest in saved["workload_dependencies"].items():
+                path = (ROOT / name).resolve()
+                path.relative_to(ROOT.resolve())
+                if sha256(path) != digest:
+                    return None, "changed retained dependency: " + name
+            actual = {str(path.relative_to(receipt.parent))
+                      for path in receipt.parent.rglob("*")
+                      if path.is_file() and path != receipt}
+            if actual != set(saved["workload_artifacts"]):
+                return None, "changed retained artifact inventory"
+            for name, digest in self.hashes.items():
+                if sha256(receipt.parent / "sources" / name) != digest:
+                    return None, "changed source snapshot: " + name
+            return saved["result"], None
+        except (FileNotFoundError, IsADirectoryError, json.JSONDecodeError,
+                UnicodeDecodeError, KeyError, TypeError, ValueError):
+            return None, "missing or malformed retained evidence"
+
+    def collect_workload(self, job):
+        self.validate_live_sources()
+        binding = {"workload": job.descriptor, "source_hashes": self.hashes,
+                   "toolchain": self.workload_toolchain(),
+                   "fixture_inputs": "source-bound deterministic generators, seeds and assets"}
+        root = ROOT / WORKLOAD_ROOT / job.id
+        decisions = []
+        for receipt in sorted(root.glob("*/receipt.json"), reverse=True):
+            result, reason = self.reusable_workload(receipt, binding)
+            decisions.append({"receipt": self.rel(receipt), "rejection": reason})
+            if reason is None:
+                self.validate_live_sources()
+                with self.lock:
+                    if not hasattr(self, "workload_reuses"):
+                        self.workload_reuses = []
+                    self.workload_reuses.append({"id": job.id, "receipt": self.rel(receipt)})
+                    self.workload_results.append({
+                        "receipt": self.rel(receipt), "binding": binding,
+                        "result_sha256": content_hash(result)})
+                    write_json(self.path / "workload-reuse.json", self.workload_reuses)
+                return result
+        child = Run(self.rel(root), "behavior-shard:" + job.id)
+        child.workload_toolchain_identity = binding["toolchain"]
+        child.tool_versions = self.tool_versions
+        child.resources = self.resources
+        child.compiler_slots = self.compiler_slots
+        child.lock = self.lock
+        child.build_locks = self.build_locks
+        child.shared_builds = self.builds
+        child.workload_binding = binding
+        child.finish("running", reuse_candidates=decisions)
+        try:
+            if child.hashes != self.hashes:
+                raise AssertionError("shard source snapshot differs from inventory snapshot")
+            self.validate_live_sources()
+            result = job.execute(child)
+            if job.group == "portability" and result["cycles"] > 500000:
+                raise AssertionError("portability smoke exceeds compact cycle tier")
+            if isinstance(result, dict):
+                result = {**result, "evidence_receipt": child.rel(child.path / "receipt.json")}
+            child.workload_artifacts = {
+                str(path.relative_to(child.path)): sha256(path)
+                for path in sorted(child.path.rglob("*"))
+                if path.is_file() and path != child.path / "receipt.json"}
+            dependencies = set()
+            for version in self.tool_versions.values():
+                if version["available"]:
+                    folder = (ROOT / version["version_output"]).parent
+                    dependencies.update(folder / name for name in
+                                        ("receipt.json", "stdout.txt", "stderr.txt"))
+            with self.lock:
+                builds = list(self.builds.values())
+            for cached, _, record in builds:
+                dependencies.update((cached, cached.parent / "build.json"))
+                folder = (ROOT / record["stdout"]).parent
+                dependencies.update(folder / name for name in
+                                    ("receipt.json", "stdout.txt", "stderr.txt"))
+            child.workload_dependencies = {self.rel(path): sha256(path)
+                                           for path in sorted(dependencies)}
+            child.finish("passed", result=result, result_sha256=content_hash(result),
+                         reuse_candidates=decisions)
+        except BaseException as exc:
+            child.finish("failed", diagnosis=str(exc), reuse_candidates=decisions)
+            raise
+        with self.lock:
+            self.workload_results.append({
+                "receipt": self.rel(child.path / "receipt.json"), "binding": binding,
+                "result_sha256": content_hash(result)})
+        return result
 
     def _build(self, argv, cwd, timeout, expected):
         argv = list(argv)
@@ -196,8 +420,9 @@ class Run:
             gate = self.build_locks.setdefault(key, threading.Lock())
         with gate:
             self.validate_live_sources()
-            if key in self.builds:
-                cached, text, record = self.builds[key]
+            cache_entries = getattr(self, "shared_builds", self.builds)
+            if key in cache_entries:
+                cached, text, record = cache_entries[key]
                 manifest = json.loads((cached.parent / "build.json").read_text())
                 if sha256(cached) != manifest["executable_sha256"]:
                     raise AssertionError("cached executable identity changed")
@@ -205,6 +430,7 @@ class Run:
                 shutil.copyfile(cached, binary)
                 binary.chmod(0o755)
                 with self.lock:
+                    self.builds[key] = cached, text, record
                     reuse = {"key": key, "executable": self.rel(binary),
                              "build_manifest": self.rel(cached.parent / "build.json"),
                              "compile_stdout": record["stdout"]}
@@ -237,6 +463,7 @@ class Run:
                             path.unlink()
             with self.lock:
                 self.builds[key] = cached, text, record
+                cache_entries[key] = cached, text, record
             return text, record
 
     def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
@@ -260,6 +487,7 @@ class Run:
             self.records.append(record)
         record = {"argv": [str(a) for a in argv], "cwd": str(work.relative_to(ROOT)) or ".",
                   "cwd_base": "project root", "started_at": start, "timeout_s": timeout,
+                  "expected_exit_codes": list(expected),
                   "stdout": self.rel(folder / "stdout.txt"), "stderr": self.rel(folder / "stderr.txt"),
                   "timeout": False, "exit_code": None}
         caught = None
@@ -314,6 +542,11 @@ class Run:
             raise AssertionError("incomplete verification execution cannot be finalized as passed")
         if status == "passed":
             self.validate_live_sources()
+            for item in self.workload_results:
+                result, reason = self.reusable_workload(ROOT / item["receipt"], item["binding"])
+                if reason is not None or content_hash(result) != item["result_sha256"]:
+                    raise AssertionError("missing/stale workload at finalization: "
+                                         + item["receipt"] + ": " + str(reason))
             for cached, _, _ in self.builds.values():
                 manifest = json.loads((cached.parent / "build.json").read_text())
                 if sha256(cached) != manifest["executable_sha256"]:
@@ -345,5 +578,12 @@ class Run:
                     "build_manifests": [self.rel(item[0].parent / "build.json")
                                         for item in self.builds.values()],
                     "build_reuses": self.build_reuses,
+                    "workload_results": self.workload_results,
                     "execution_resources": self.resources,
+                    **({"workload_binding": self.workload_binding}
+                       if hasattr(self, "workload_binding") else {}),
+                    **({"workload_artifacts": self.workload_artifacts}
+                       if hasattr(self, "workload_artifacts") else {}),
+                    **({"workload_dependencies": self.workload_dependencies}
+                       if hasattr(self, "workload_dependencies") else {}),
                     "executions": self.records, **details})
