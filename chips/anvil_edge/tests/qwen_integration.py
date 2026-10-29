@@ -252,7 +252,7 @@ def run_qwen_integration(evidence):
     ], "official-qwen-complete-table-preparation")
     info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
     vectors = json.loads((evidence.path / "official-vectors.json").read_bytes())
-    run_rtl(evidence, info, vectors)
+    run_rtl(evidence, info, vectors, table_source=evidence.path / "tables.hex")
 
 
 def run_qwen_boot(evidence):
@@ -291,8 +291,10 @@ def run_qwen_boot(evidence):
               fixture=fixture, label="complete-official-qwen-tables")
 
 
-def run_rtl(evidence, info, vectors, family="qwen"):
-    raw = (evidence.path / "tables.hex").read_bytes()
+def validate_table_source(info, table_source):
+    """Bind the explicit producing-stage memory and its constituent table files."""
+    table_source = Path(table_source)
+    raw = table_source.read_bytes()
     require(hashlib.sha256(raw).hexdigest() == info["memory_hex_sha256"],
             "Complete table memory changed before RTL execution")
     memory = b"".join(struct.pack("<I", int(word, 16)) for word in raw.splitlines())
@@ -300,23 +302,32 @@ def run_rtl(evidence, info, vectors, family="qwen"):
             hashlib.sha256(memory).hexdigest() == info["memory_sha256"],
             "Complete table memory contents differ from serialized inputs")
     for entry in info["tables"]:
-        blob = (evidence.path / f"table-{entry['kind']:03x}.bin").read_bytes()
+        blob = (table_source.parent / f"table-{entry['kind']:03x}.bin").read_bytes()
         start = entry["base"] - BASE
         require(hashlib.sha256(blob).hexdigest() == entry["sha256"] and
                 len(blob) == entry["bytes"] and memory[start:start + len(blob)] == blob,
                 "Serialized complete table differs from RTL memory")
+    return table_source
+
+
+def run_rtl(evidence, info, vectors, family="qwen", *, table_source):
+    table_source = validate_table_source(info, table_source)
     compact = [row for row in vectors if row["input_utf8_hex"] == "65cc81"]
     require(len(compact) == 1, "Missing compact complete-profile portability case")
-    rtl_case(evidence, info, compact, 17, "iverilog", 64, 500000, family)
+    rtl_case(evidence, info, compact, 17, "iverilog", 64, 500000, family,
+             table_source=table_source)
     evidence.run_cases([
         (f"{family}-complete-profile-{seed}",
          lambda scope, seed=seed: rtl_case(
-             scope, info, vectors, seed, "verilator", 4096, 50000000, family))
+             scope, info, vectors, seed, "verilator", 4096, 50000000, family,
+             table_source=table_source))
         for seed in (1, 17, 89)
     ])
 
 
-def rtl_case(evidence, info, vectors, seed, simulator, capacity, cycles, family="qwen"):
+def rtl_case(evidence, info, vectors, seed, simulator, capacity, cycles, family="qwen",
+             *, table_source):
+    table_path = validate_table_source(info, table_source)
     directory = evidence.path / f"{family}-vectors-{simulator}-s{seed}"
     directory.mkdir()
     flat = {"input": [], "token": [], "byte": [], "length": []}
@@ -335,8 +346,6 @@ def rtl_case(evidence, info, vectors, seed, simulator, capacity, cycles, family=
         with path.open("x", encoding="ascii") as output:
             output.write("".join(f"{value:08x}\n" for value in values))
         paths[name] = evidence.relative(path)
-    # A case scope lives below the preparation root; tables remain immutable there.
-    table_path = evidence._root.path / "tables.hex"
     pack = lambda values, width: sum(value << (width * index) for index, value in enumerate(values))
     allowed = " || ".join(
         f"(address>=64'h{entry['base'] + 32:x} && "

@@ -1022,6 +1022,7 @@ def main():
         "official-qwen-fragments",
         "official-qwen-regex",
         "qwen-artifact-scopes",
+        "qwen-complete-artifacts",
         "official-unicode-sources",
         "unicode-intake",
         "unicode-conversion",
@@ -1427,6 +1428,9 @@ def main():
         elif args.probe == "qwen-artifact-scopes":
             from test_qwen_artifacts import run_composition_regression
             run_composition_regression(evidence)
+        elif args.probe == "qwen-complete-artifacts":
+            from test_qwen_artifacts import run_complete_table_regression
+            run_complete_table_regression(evidence)
         elif args.probe == "official-unicode-sources":
             run_unicode_sources(evidence)
         elif args.probe == "unicode-intake":

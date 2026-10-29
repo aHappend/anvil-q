@@ -1,6 +1,7 @@
 """Artifact isolation regressions; real composition uses the production stage runner."""
 
 import hashlib
+import copy
 import json
 from pathlib import Path
 import shutil
@@ -103,6 +104,115 @@ def run_composition_regression(evidence):
         "stages": results, "earlier_artifacts_unchanged": True,
         "regex_exhaustive_sequences": regex["exhaustive_sequences"],
         "regex_random_sequences_by_seed": regex["random_sequences_by_seed"],
+    })
+
+
+def run_complete_table_regression(evidence):
+    """Execute real complete-table consumers below isolated production stages."""
+    from deepseek_integration import bos_mutations
+    from qwen_integration import rtl_case, run_rtl, validate_table_source
+    from verify import write_json
+
+    evidence.tools(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+    results = []
+
+    def stage(scope, family, script, bos):
+        argv = ["./.venv/bin/python", script, scope.relative(scope.path)]
+        if bos:
+            argv.append("--model-bos")
+        scope.child(argv, family + "-complete-table-preparation")
+        info = json.loads((scope.path / "complete-table-fixture.json").read_bytes())
+        table_source = scope.path / "tables.hex"
+        assert table_source != evidence.path / "tables.hex"
+        validate_table_source(info, table_source)
+        frozen = hashes(scope.path)
+        record = json.loads((scope.path / (
+            "model-bos-vectors.json" if bos else "official-vectors.json")).read_bytes())
+        if family == "qwen":
+            vectors = record
+        else:
+            vectors = [{"case": index, "input_utf8_hex": row["utf8_hex"],
+                        "token_ids": row["token_ids"],
+                        "decoded_utf8_hex": row["decoded_utf8_hex"]}
+                       for index, row in enumerate(record["vectors"])]
+        compact = [row for row in vectors if row["input_utf8_hex"] == "65cc81"]
+        assert len(compact) == 1
+        # Five exact benchmark inputs plus the existing compact portability
+        # witness; these are tokenizer comparisons, not weighted inference.
+        selected = vectors[:5] + compact
+        assert len({row["input_utf8_hex"] for row in selected}) == 6
+        run_rtl(scope, info, selected, family, table_source=table_source)
+
+        def nested(parent):
+            parent.run_cases([
+                ("capacity-eight", lambda leaf: rtl_case(
+                    leaf, info, compact, 89, "verilator", 8, 500000, family,
+                    table_source=table_source)),
+            ], workers=1)
+        scope.run_cases([("nested-table-consumer", nested)], workers=1)
+        if bos:
+            scope.run_cases([
+                ("bos-mutation-scope", lambda mutant_scope: bos_mutations(
+                    mutant_scope, info, compact, table_source=table_source)),
+            ], workers=1)
+
+        rejected = []
+        bad_directory = scope.path / "invalid-table-source"
+        bad_directory.mkdir()
+        bad_table = bad_directory / "tables.hex"
+        bad_table.write_text("00000000\n", encoding="ascii")
+        corrupt_info = copy.deepcopy(info)
+        corrupt_info["tables"][0]["sha256"] = "0" * 64
+        for label, fixture, source, expected in (
+                ("missing", info, bad_directory / "missing.hex", FileNotFoundError),
+                ("corrupt-memory", info, bad_table, ValueError),
+                ("corrupt-table-hash", corrupt_info, table_source, ValueError)):
+            with patch.object(scope, "simulate") as simulate:
+                try:
+                    rtl_case(scope, fixture, compact, 17, "iverilog", 64, 500000,
+                             family, table_source=source)
+                except expected as error:
+                    rejected.append({"case": label, "error": str(error)})
+                else:
+                    raise AssertionError(f"Invalid table source accepted: {label}")
+                simulate.assert_not_called()
+        assert len(rejected) == 3
+        bindings = []
+        for bench in sorted(scope.path.rglob("bench.sv")):
+            text = bench.read_text()
+            expected = f'$readmemh("{scope.relative(table_source)}",table_words);'
+            assert expected in text, f"Wrong producing-stage table in {bench}"
+            bindings.append({"bench": scope.relative(bench),
+                             "bench_sha256": hashlib.sha256(bench.read_bytes()).hexdigest(),
+                             "table_source": scope.relative(table_source),
+                             "table_sha256": info["memory_hex_sha256"]})
+        assert len(bindings) == (7 if bos else 5), bindings
+        for name, digest in frozen.items():
+            assert hashlib.sha256((scope.path / name).read_bytes()).hexdigest() == digest, (
+                f"Consumer mutated producing-stage artifact: {name}")
+        assert not (evidence.path / "tables.hex").exists(), "Aggregate-root table copy"
+        results.append({"family": family, "producer": scope.relative(scope.path),
+                        "fixture_sha256": frozen["complete-table-fixture.json"],
+                        "bindings": bindings, "invalid_sources_rejected": rejected,
+                        "producer_artifacts_unchanged": frozen})
+
+    evidence.run_cases([
+        ("complete-table-qwen", lambda scope: stage(
+            scope, "qwen", "tests/qwen_integration.py", False)),
+        ("complete-table-deepseek", lambda scope: stage(
+            scope, "deepseek", "tests/deepseek_integration.py", False)),
+        ("complete-table-deepseek-bos", lambda scope: stage(
+            scope, "deepseek-bos", "tests/deepseek_integration.py", True)),
+    ], workers=1)
+    rows = [row for row in evidence.record["coverage"] if "simulator" in row]
+    assert len(rows) == 17 and sum(row["status"] == "passed" for row in rows) == 15
+    assert len(evidence.record["bos_mutations"]) == 2
+    write_json(evidence.path / "complete-table-artifact-regression.json", {
+        "scope": "Bounded artifact-path repair; complete official tables, six selected "
+                 "vectors per family/policy, not full profile matrix or product acceptance",
+        "families": results, "passed_simulations": 15,
+        "bos_mutations": evidence.record["bos_mutations"],
+        "aggregate_root_has_no_tables": True,
     })
 
 

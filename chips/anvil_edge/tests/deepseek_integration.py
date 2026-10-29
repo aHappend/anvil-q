@@ -218,11 +218,13 @@ def run_deepseek_integration(evidence):
                  "All individual AddedTokens and 32-token concatenations execute at 4096. "
                  "Existing default-capacity rejection tests remain mandatory",
     })
-    run_rtl(evidence, info, ordinary, "deepseek")
+    table_source = evidence.path / "tables.hex"
+    run_rtl(evidence, info, ordinary, "deepseek", table_source=table_source)
     evidence.run_cases([
         (f"deepseek-large-profile-{seed}",
          lambda scope, seed=seed: rtl_case(
-             scope, info, large, seed, "verilator", capacity, 50000000, "deepseek-large"))
+             scope, info, large, seed, "verilator", capacity, 50000000, "deepseek-large",
+             table_source=table_source))
         for seed in (1, 17, 89)
     ])
 
@@ -244,20 +246,21 @@ def run_deepseek_bos(evidence):
             "Incomplete automatic-BOS matrix")
     largest = max(len(bytes.fromhex(row["input_utf8_hex"])) for row in large)
     capacity = 1 << (largest - 1).bit_length()
-    run_rtl(evidence, info, ordinary, "deepseek-bos")
+    table_source = evidence.path / "tables.hex"
+    run_rtl(evidence, info, ordinary, "deepseek-bos", table_source=table_source)
     evidence.run_cases([
         (f"deepseek-bos-large-profile-{seed}",
          lambda scope, seed=seed: rtl_case(
              scope, info, large, seed, "verilator", capacity, 50000000,
-             "deepseek-bos-large"))
+             "deepseek-bos-large", table_source=table_source))
         for seed in (1, 17, 89)
     ])
     compact = [row for row in ordinary if row["input_utf8_hex"] == "65cc81"]
     require(len(compact) == 1, "Missing BOS sensitivity vector")
-    bos_mutations(evidence, info, compact)
+    bos_mutations(evidence, info, compact, table_source=table_source)
 
 
-def bos_mutations(evidence, info, vectors):
+def bos_mutations(evidence, info, vectors, *, table_source):
     source = "rtl/anvil_edge_bpe_tokenizer.sv"
     original = (ROOT / source).read_text()
     mutations = (
@@ -283,7 +286,8 @@ def bos_mutations(evidence, info, vectors):
         first = len(evidence.record["coverage"])
         failure = None
         try:
-            rtl_case(mutant, info, vectors, 17, "verilator", 64, 500000, "deepseek-bos")
+            rtl_case(mutant, info, vectors, 17, "verilator", 64, 500000, "deepseek-bos",
+                     table_source=table_source)
         except Exception as error:
             failure = error
         rows = evidence.record["coverage"][first:]
