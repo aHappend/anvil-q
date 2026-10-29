@@ -124,9 +124,10 @@ def tensor(evidence, seed):
         for index, (activation, weights) in enumerate(beats):
             gap = (0, 1, 2, 5, 11)[(dot_index + index) % 5]
             first, last = int(index == 0), int(index == len(beats) - 1)
-            value = packed(expected, 32) if last else 0
-            for field, width in ((mask, 64), (packed(weights, 37), 2368),
-                                 (activation & 0xffffffff, 32), (last, 1), (first, 1), (gap, 8)):
+            value = gap
+            for field, width in ((first, 1), (last, 1), (activation & 0xffffffff, 32),
+                                 (packed(weights, 37), 2368), (mask, 64),
+                                 (packed(expected, 32) if last else 0, 2048)):
                 value = (value << width) | field
             records.append(f"{value:01131x}\n")
         bins[category] += 1
@@ -2944,6 +2945,17 @@ def run_probe(evidence, name, seed, config=0):
         for depth in (1, 3, 128):
             kv_probe(evidence, depth)
             kv_probe(evidence, depth, max_sequence=32768)
+        from kv_faults import kv_faults
+        kv_faults(evidence, seed)
+    elif name in ("kv-faults", "kv-fault-sensitivity"):
+        from kv_faults import kv_faults
+        if name == "kv-fault-sensitivity":
+            from sensitivity import run_sensitivity
+            evidence.default_simulator = "verilator"
+        kv_faults(evidence, seed)
+        if name == "kv-fault-sensitivity":
+            run_sensitivity(evidence, seed, only=(
+                "kv_eviction_error_ignored", "kv_cold_error_ignored"))
     elif name == "parameters":
         invalid_parameters(evidence)
     elif name in ("dma", "dma-compiled"):

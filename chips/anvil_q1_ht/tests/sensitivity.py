@@ -12,6 +12,7 @@ from numerical_faults import fault_cases
 from descriptor_checks import descriptor_case
 from address_checks import address_case
 from scalar_checks import scalar_case
+from kv_faults import kv_fault_case
 
 
 def stored_number_trial(evidence, seed, name):
@@ -56,6 +57,28 @@ def run_sensitivity(parent, seed, only=None):
          "mask_data != 0 && tag_data == position && selected_valid",
          "mask_data != 0 && selected_valid",
          lambda run: kv_probe(run, 1), "KV_DATA_OR_TAG_MISMATCH"),
+        ("kv_eviction_error_ignored", "anvil_q1_ht_kv_window.sv",
+         "if (spill_rsp_error) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "              state <= RESULT;\n"
+         "            end else if (evict_column + 1 < KV_WIDTH)",
+         "if (1'b0) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "              state <= RESULT;\n"
+         "            end else if (evict_column + 1 < KV_WIDTH)",
+         lambda run: kv_fault_case(run, 1, seed, "verilator"), "KV_SERVICE_RESULT_MISMATCH"),
+        ("kv_cold_error_ignored", "anvil_q1_ht_kv_window.sv",
+         "if (spill_rsp_error) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "            end else result_data <= spill_rsp_data;",
+         "if (1'b0) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "            end else result_data <= spill_rsp_data;",
+         lambda run: kv_fault_case(run, 1, seed, "verilator"), "KV_SERVICE_RESULT_MISMATCH"),
         ("final_logit_stall", "anvil_q1_ht_decoder.sv",
          "wire final_transfer = logit_valid && logit_ready && logit_index == VOCAB_SIZE-1;",
          "wire final_transfer = logit_valid && logit_index == VOCAB_SIZE-1;",
