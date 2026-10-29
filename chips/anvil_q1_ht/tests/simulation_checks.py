@@ -5,6 +5,8 @@ python3 -B tests/simulation_checks.py --compact compares one AWQ and one BF16
 first token with Icarus and Verilator. --performance separately compares the
 same configuration-2, seed-89 AWQ first token using -Os and -O3 C++ builds.
 --flatten-performance compares -O3 builds with and without module inlining.
+--redirect checks that an explicit multi-token Icarus request executes a separate
+compact portability smoke and the complete original workload with Verilator.
 None of these commands replaces any mandatory matrix row or native gate.
 """
 
@@ -139,6 +141,49 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertNotIn("diagnostic_scope", trial.record)
         self.assertEqual(calls[0][2]["simulator"], "iverilog")
         self.assertEqual(calls[1][2]["simulator"], "verilator")
+
+    def test_explicit_multitoken_icarus_request_redirects_without_losing_tokens(self):
+        trial = self.evidence()
+        calls = []
+        trial.simulate = lambda name, bench, **kwargs: calls.append((name, bench, kwargs))
+        with patch("experiments.compact_integration_smoke",
+                   return_value="compact-smoke/receipt.json") as smoke:
+            experiments.top_probe(trial, "AWQ", 17, simulator="iverilog")
+        smoke.assert_called_once_with(trial, "AWQ", 17)
+        self.assertEqual(len(trial.record["engineering_fixture"]["tokens"]), 2)
+        self.assertNotIn("diagnostic_scope", trial.record)
+        self.assertEqual([call[2]["simulator"] for call in calls],
+                         ["iverilog", "verilator"])
+        self.assertEqual(calls[0][2]["defines"], ("RESET_ONLY",))
+        self.assertEqual(trial.record["simulation_tier_redirects"][0]["configuration"], 0)
+
+    def test_explicit_large_icarus_request_keeps_original_geometry_and_workload(self):
+        trial = self.evidence()
+        calls = []
+        trial.simulate = lambda name, bench, **kwargs: calls.append((name, bench, kwargs))
+        with patch("experiments.compact_integration_smoke",
+                   return_value="compact-smoke/receipt.json") as smoke:
+            experiments.top_probe(trial, "BF16", 89, config=2, simulator="iverilog")
+        smoke.assert_called_once_with(trial, "BF16", 89)
+        fixture = trial.record["engineering_fixture"]
+        self.assertEqual(fixture["shape"]["hidden"], 128)
+        self.assertEqual(len(fixture["tokens"]), 8)
+        self.assertNotIn("diagnostic_scope", trial.record)
+        self.assertEqual([call[2]["simulator"] for call in calls],
+                         ["iverilog", "verilator"])
+        self.assertEqual(calls[0][2]["defines"], ("RESET_ONLY",))
+
+    def test_explicit_compact_single_token_icarus_request_stays_interpreted(self):
+        trial = self.evidence()
+        calls = []
+        trial.simulate = lambda name, bench, **kwargs: calls.append((name, bench, kwargs))
+        with patch("experiments.compact_integration_smoke") as smoke:
+            experiments.top_probe(trial, "AWQ", 17, diagnostic_first_token=True,
+                                  simulator="iverilog")
+        smoke.assert_not_called()
+        self.assertEqual(len(trial.record["engineering_fixture"]["tokens"]), 1)
+        self.assertEqual([call[2]["simulator"] for call in calls], ["iverilog"])
+        self.assertNotIn("simulation_tier_redirects", trial.record)
 
     def test_cpp_comparison_does_not_accept_arbitrary_flags(self):
         trial = self.evidence()
@@ -319,6 +364,43 @@ def run(args):
                                             flattened["simulation_seconds"],
                 "scope": "host simulator only; not accelerator speedup or budget closure",
             }
+        if args.redirect:
+            for mode in ("AWQ", "BF16"):
+                trial = Evidence("redirect-" + mode.lower(),
+                                 source_root=evidence.folder / "sources")
+                try:
+                    experiments.top_probe(trial, mode, 89, simulator="iverilog")
+                    fixture = trial.record["engineering_fixture"]
+                    if len(fixture["tokens"]) != 2 or "diagnostic_scope" in trial.record:
+                        raise AssertionError("redirect reduced the original workload")
+                    redirects = trial.record["simulation_tier_redirects"]
+                    if len(redirects) != 1:
+                        raise AssertionError("missing simulator redirect provenance")
+                    import json
+                    smoke_path = ROOT / redirects[0]["compact_smoke_receipt"]
+                    smoke = json.loads(smoke_path.read_text())
+                    if (smoke.get("outcome") != "probe_passed" or
+                            len(smoke["engineering_fixture"]["tokens"]) != 1):
+                        raise AssertionError("missing completed compact portability smoke")
+                    rows = trial.record["observations"][-1]["observed_counters"]
+                    tokens = [row for row in rows if "position" in row]
+                    if len(tokens) != 2 or any(row["logits"] != 8 for row in tokens):
+                        raise AssertionError("missing complete redirected numerical comparisons")
+                    if trial.record["commands"][-1]["argv"][0] == "vvp":
+                        raise AssertionError("requested workload still ran interpreted")
+                    trial.finish("probe_passed", "Complete redirected compact workload and "
+                                 "separate single-token portability smoke.")
+                except (OSError, RuntimeError, AssertionError, ValueError) as exc:
+                    trial.finish("failed", str(exc))
+                    raise
+                evidence.record["observations"].append({
+                    "mode": mode, "receipt": evidence.relative(trial.folder / "receipt.json"),
+                    "compact_smoke_receipt": redirects[0]["compact_smoke_receipt"],
+                    "compared_tokens": len(tokens),
+                    "ordered_logits": sum(row["logits"] for row in tokens),
+                    "scope": "simulator routing only; no large-case patrol closure",
+                })
+                evidence.flush()
         evidence.finish("probe_passed", "Bounded tiering diagnosis; full L1 remains incomplete.")
         return 0
     except (OSError, RuntimeError, AssertionError, ValueError) as exc:
@@ -331,6 +413,7 @@ if __name__ == "__main__":
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--performance", action="store_true")
     parser.add_argument("--flatten-performance", action="store_true")
+    parser.add_argument("--redirect", action="store_true")
     parser.add_argument("--repair-of")
     parser.add_argument("--regression-child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scratch", help=argparse.SUPPRESS)
@@ -346,7 +429,8 @@ if __name__ == "__main__":
         SCRATCH = SCRATCH.resolve()
         sys.argv = sys.argv[:1]
         unittest.main()
-    elif arguments.compact or arguments.performance or arguments.flatten_performance:
+    elif (arguments.compact or arguments.performance or arguments.flatten_performance or
+          arguments.redirect):
         raise SystemExit(run(arguments))
     else:
-        parser.error("choose --compact, --performance or --flatten-performance")
+        parser.error("choose --compact, --performance, --flatten-performance or --redirect")

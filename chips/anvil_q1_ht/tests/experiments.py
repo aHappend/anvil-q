@@ -740,6 +740,25 @@ endmodule
         evidence.flush()
 
 
+def compact_integration_smoke(evidence, mode, seed):
+    """Keep portability coverage separate from a redirected compiled workload."""
+    from verify import Evidence
+    trial = Evidence(
+        "tier-smoke-" + mode.lower(),
+        repair_of=evidence.relative(evidence.folder / "receipt.json"),
+        source_root=evidence.folder / "sources")
+    if hasattr(evidence, "rtl_root"):
+        trial.rtl_root = evidence.rtl_root
+    try:
+        top_probe(trial, mode, seed, config=0, diagnostic_first_token=True,
+                  simulator="iverilog")
+        trial.finish("probe_passed", "Compact single-token Icarus portability smoke only.")
+    except (OSError, RuntimeError, AssertionError, ValueError) as exc:
+        trial.finish("failed", str(exc))
+        raise
+    return evidence.relative(trial.folder / "receipt.json")
+
+
 def top_probe(evidence, mode, seed, upload_only=False, config=0,
               fault_read=-1, fault_write=-1, orphan_fault=False, abort_stage=None,
               diagnostic_first_token=False, simulator="verilator",
@@ -747,6 +766,19 @@ def top_probe(evidence, mode, seed, upload_only=False, config=0,
               numerical_fault=None, command_validation=False, pending_upload_validation=False,
               reset_validation=False, late_read_fault=False):
     shape = MATRIX[config]
+    if simulator == "iverilog" and (shape.hidden > 32 or not diagnostic_first_token):
+        smoke = compact_integration_smoke(evidence, mode, seed)
+        evidence.record.setdefault("simulation_tier_redirects", []).append({
+            "requested_simulator": "iverilog",
+            "workload_simulator": "verilator",
+            "configuration": config,
+            "mode": mode,
+            "seed": seed,
+            "compact_smoke_receipt": smoke,
+            "scope": "Unchanged requested workload; separate compact portability coverage.",
+        })
+        evidence.flush()
+        simulator = "verilator"
     if late_read_fault:
         if (config != 0 or not reusable_build or upload_only or fault_read >= 0 or
                 fault_write >= 0 or orphan_fault or abort_stage or diagnostic_first_token or
