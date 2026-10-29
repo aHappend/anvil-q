@@ -7,6 +7,8 @@ It must also reject missing or changed snapshots and missing raw child evidence.
 Live-source drift must reject success without rewriting the retained receipt.
 It must also reject the next tool launch before creating a child invocation.
 Added public sources must reject both launch and successful finalization.
+Handoff fixtures use an isolated project root so both mandatory-check and
+preparation output locations exercise the unchanged preparation-only path guard.
 These fixtures do not repair missing retained evidence or runtime storage.
 Optional --comparison-receipt audits a retained public-source snapshot against
 the current handoff, retaining hashes and readable diffs without restoring files.
@@ -73,7 +75,12 @@ def handoff_source_comparison(receipt):
 
 
 def handoff_comparison_sensitivity(folder):
-    fixture = folder / "handoff-fixture"
+    with patch(__name__ + ".ROOT", folder):
+        return _handoff_comparison_fixtures(folder)
+
+
+def _handoff_comparison_fixtures(folder):
+    fixture = folder / "evidence/preparation/handoff-fixture"
     snapshot = fixture / "sources/tests/fixture.py"
     snapshot.parent.mkdir(parents=True)
     snapshot.write_text("# retained handoff fixture\n")
@@ -84,6 +91,14 @@ def handoff_comparison_sensitivity(folder):
               "source_hashes": {"tests/fixture.py": sha256(snapshot)}}
     write_json(receipt, record)
     relative = receipt.relative_to(ROOT)
+    for rejected_path in (receipt, Path("../receipt.json"),
+                          Path("evidence/check-structure/receipt.json")):
+        try:
+            handoff_source_comparison(rejected_path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("out-of-scope handoff receipt accepted: " + str(rejected_path))
     # Redirect only the isolated public source name; no shipped file is changed.
     class FixturePath:
         def relative_to(self, root):
@@ -134,7 +149,9 @@ def handoff_comparison_sensitivity(folder):
         raise AssertionError("incomplete handoff snapshot accepted")
     return {"identical_control": True,
             "rejected": ["changed-live", "damaged-snapshot", "missing-live", "added-live",
-                         "invalid-manifest-path", "incomplete-snapshot"],
+                         "invalid-manifest-path", "incomplete-snapshot",
+                         "absolute-receipt", "parent-traversal-receipt",
+                         "non-preparation-receipt"],
             "scope": "isolated offline fixtures; not persistence recovery"}
 
 
