@@ -7,7 +7,7 @@ import shutil
 from experiments import dequant, dma_probe, kv_probe, tensor, top_probe
 
 
-def run_sensitivity(parent, seed):
+def run_sensitivity(parent, seed, only=None):
     cases = (
         ("awq_permutation", "anvil_q1_ht_00_numeric_pkg.sv",
          "awq_shift = {lane[0], lane[2:1], 2'b00};",
@@ -33,7 +33,16 @@ def run_sensitivity(parent, seed):
          "wire final_transfer = logit_valid && logit_ready && logit_index == VOCAB_SIZE-1;",
          "wire final_transfer = logit_valid && logit_index == VOCAB_SIZE-1;",
          lambda run: top_probe(run, "AWQ", seed), "TOP_STALLED_LOGIT_CHANGED"),
+        ("tile_read_backpressure", "anvil_q1_ht_weight_tiles.sv",
+         "wire move_request = request_pending && output_space && !core_failed;",
+         "wire move_request = request_pending && !core_failed;",
+         lambda run: dma_probe(run, 3, seed), "PIPELINED_DMA_POSTEDGE_STALLED_PAYLOAD_CHANGED"),
     )
+    if only is not None:
+        selected = set(only)
+        if not selected or not selected.issubset({case[0] for case in cases}):
+            raise ValueError("sensitivity selection must name existing defects")
+        cases = tuple(case for case in cases if case[0] in selected)
     for name, filename, before, after, experiment, rejection in cases:
         trial = parent.__class__("mutation-" + name,
                                  source_root=parent.folder / "sources")

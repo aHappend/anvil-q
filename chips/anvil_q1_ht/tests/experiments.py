@@ -98,7 +98,8 @@ reg [63:0] in_mask=0;
 wire in_ready, out_valid, protocol_error;
 wire [2047:0] out_data;
 wire [63:0] out_mask;
-integer compared=0, vectors=0, n;
+integer compared=0, vectors=0, n, protocol_rejections=0, recovery_dots=0;
+integer reset_aborts=0;
 anvil_q1_ht_tensor_array product(
   .clk(clk),.rst_n(rst_n),.in_valid(in_valid),.in_ready(in_ready),
   .in_first(in_first),.in_last(in_last),.in_activation(in_activation),
@@ -148,6 +149,71 @@ task result(input [2047:0] expected, input [63:0] mask);
     compared=compared+1;
   end
 endtask
+task rejected_dot(input integer violation);
+  integer wait_edge;
+  begin
+    @(negedge clk); rst_n=0; in_valid=0; out_ready=0;
+    edge_tick();
+    @(negedge clk); rst_n=1;
+    feed(1,0,32'd1,2368'd1,64'd3);
+    @(negedge clk);
+    in_valid=1; in_first=(violation!=0); in_last=(violation!=1);
+    in_mask=(violation==0 ? 64'd1 : 64'd3);
+    #0.001;
+    if(in_ready !== 1) $fatal(1,"TENSOR_PROTOCOL_STIMULUS_NOT_ACCEPTED");
+    edge_tick();
+    if(protocol_error !== 1 || out_valid !== 0 || in_ready !== 0)
+      $fatal(1,"TENSOR_PROTOCOL_VIOLATION_NOT_REJECTED case=%0d",violation);
+    @(negedge clk); in_valid=0; out_ready=1;
+    for(wait_edge=0;wait_edge<15;wait_edge=wait_edge+1) begin
+      edge_tick();
+      if(protocol_error !== 1 || out_valid !== 0 || in_ready !== 0)
+        $fatal(1,"TENSOR_PROTOCOL_FAILURE_NOT_STICKY case=%0d",violation);
+    end
+    protocol_rejections=protocol_rejections+1;
+    @(negedge clk); rst_n=0; out_ready=0;
+    edge_tick();
+    @(negedge clk); rst_n=1;
+    feed(1,1,32'd65536,{64{37'd65536}},64'hffffffffffffffff);
+    result({64{32'd65536}},64'hffffffffffffffff);
+    recovery_dots=recovery_dots+1;
+  end
+endtask
+task reset_abort(input integer phase);
+  integer wait_edge;
+  begin
+    feed(1,phase!=0,32'd65536,{64{37'd65536}},64'hffffffffffffffff);
+    @(negedge clk); in_valid=0;
+    if(phase==0) begin
+      if(in_ready !== 1 || out_valid !== 0 || protocol_error !== 0)
+        $fatal(1,"TENSOR_OPEN_RESET_PRECONDITION");
+    end else begin
+      for(wait_edge=1;wait_edge<=(phase==1 ? 2 : 10);wait_edge=wait_edge+1) begin
+        edge_tick();
+        if(in_ready !== 0 || protocol_error !== 0 ||
+           out_valid !== (wait_edge==10))
+          $fatal(1,"TENSOR_RESET_PIPELINE_PRECONDITION phase=%0d",phase);
+      end
+      if(phase==2 && (out_data !== {64{32'd65536}} ||
+                     out_mask !== 64'hffffffffffffffff || out_ready !== 0))
+        $fatal(1,"TENSOR_STALLED_RESET_PRECONDITION");
+    end
+    @(negedge clk); #1; rst_n=0;
+    #0.001; reset_check();
+    repeat(3) edge_tick();
+    @(negedge clk); rst_n=1;
+    for(wait_edge=0;wait_edge<15;wait_edge=wait_edge+1) begin
+      edge_tick();
+      if(in_ready !== 1 || out_valid !== 0 || out_data !== 2048'b0 ||
+         out_mask !== 64'b0 || protocol_error !== 0)
+        $fatal(1,"TENSOR_RESET_GHOST_RESULT phase=%0d",phase);
+    end
+    feed(1,1,-32'sd65536,{64{37'd65536}},64'hffffffffffffffff);
+    result({64{32'hffff0000}},64'hffffffffffffffff);
+    reset_aborts=reset_aborts+1;
+    recovery_dots=recovery_dots+1;
+  end
+endtask
 initial begin
   rst_n=0; `RESET_DELTA reset_check();
   repeat (3) edge_tick();
@@ -165,23 +231,21 @@ initial begin
     if (protocol_error !== 1 || out_valid !== 0 || in_ready !== 0)
       $fatal(1,"TENSOR_ILLEGAL_SUCCESS");
   end
-  @(negedge clk); rst_n=0;
-  edge_tick();
-  @(negedge clk); rst_n=1;
-  feed(1,0,32'd1,2368'd1,64'd3);
-  feed_mask_change();
-  $display("CHECKS_PASSED tensor dots=%0d lane_comparisons=%0d vectors=%0d latency=10 stall_edges=7",
-           compared,compared*64,vectors);
+  protocol_rejections=protocol_rejections+1;
+  rejected_dot(0);
+  rejected_dot(1);
+  rejected_dot(2);
+  if(protocol_rejections!=4 || recovery_dots!=3)
+    $fatal(1,"TENSOR_PROTOCOL_COVERAGE_MISSING");
+  reset_abort(0);
+  reset_abort(1);
+  reset_abort(2);
+  if(reset_aborts!=3 || recovery_dots!=6)
+    $fatal(1,"TENSOR_RESET_ABORT_COVERAGE_MISSING");
+  $display("CHECKS_PASSED tensor dots=%0d lane_comparisons=%0d vectors=%0d latency=10 stall_edges=7 protocol_rejections=%0d recovery_dots=%0d reset_aborts=%0d",
+           compared,compared*64,vectors,protocol_rejections,recovery_dots,reset_aborts);
   $finish;
 end
-task feed_mask_change;
-  begin
-    @(negedge clk); in_mask=64'd1; in_first=0; in_last=1;
-    edge_tick();
-    if (protocol_error !== 1 || out_valid !== 0)
-      $fatal(1,"TENSOR_MASK_CHANGE_NOT_REJECTED");
-  end
-endtask
 endmodule
 """
     evidence.simulate("tensor", bench, ["anvil_q1_ht_mac_lane.sv", "anvil_q1_ht_tensor_array.sv"])
@@ -1512,6 +1576,8 @@ reg present [0:8*SEQUENCE*16-1];
 integer spill_reads=0,spill_writes=0,comparisons=0,hot_reads=0,cold_reads=0;
 integer layer,position,value_bit,column,i,cycles=0,pending=0,pending_address=0;
 integer startup_edges=0,sequence_edges=0,reset_compares=0,stale_rejections=0;
+integer reset_aborts=0,reset_recoveries=0;
+reg hold_spill_response=0;
 integer hot_cycles=0,cold_cycles=0,hot_min=1000000,hot_max=0,cold_min=1000000,cold_max=0;
 reg pending_write=0;
 integer held_address;
@@ -1577,7 +1643,7 @@ end
 always @(negedge clk) begin
  cycles=cycles+1;
  spill_ready=rst_n && cycles%7>2 && !pending;
- spill_rsp_valid=rst_n && pending && cycles%5==0;
+ spill_rsp_valid=rst_n && pending && !hold_spill_response && cycles%5==0;
  spill_rsp_data=pending && !pending_write ? backing[pending_address] : 0;
 end
 task transaction(input wr,input integer l,p,c,v,input expected_hit);
@@ -1626,6 +1692,55 @@ task transaction(input wr,input integer l,p,c,v,input expected_hit);
   comparisons=comparisons+1;
  end
 endtask
+task reset_abort_read(input integer p,phase);
+ integer waiting,reinitialize_edges,before_reads,before_writes;
+ begin
+  @(negedge clk);
+  hold_spill_response=(phase==1);
+  req_valid=1;req_write=0;req_layer=0;req_head=0;req_pos=p;req_dim=0;req_value=0;
+  if(req_ready!==1) $fatal(1,"KV_RESET_REQUEST_NOT_READY");
+  edge_tick();
+  if(rsp_valid!==0) $fatal(1,"KV_RESET_REQUEST_PREMATURE_RESPONSE");
+  @(negedge clk);req_valid=0;
+  if(phase==1) begin
+   waiting=0;
+   while(!(pending && spill_rsp_ready===1) && waiting<10000) begin
+    edge_tick();waiting=waiting+1;
+   end
+   if(!pending || pending_write || spill_rsp_ready!==1 || rsp_valid!==0)
+    $fatal(1,"KV_RESET_OUTSTANDING_SPILL_NOT_OBSERVED");
+  end else if(phase==2) begin
+   waiting=0;
+   while(rsp_valid!==1 && waiting<10000) begin edge_tick();waiting=waiting+1;end
+   repeat(3) begin
+    if({rsp_valid,rsp_error,rsp_hit,protocol_error}!==4'b1010 ||
+       rsp_data!==expected_word(0,p,0,0) || rsp_ready!==0)
+     $fatal(1,"KV_RESET_STALLED_RESPONSE_NOT_OBSERVED");
+    edge_tick();
+   end
+  end else if({rsp_valid,spill_valid,protocol_error}!==3'b0)
+   $fatal(1,"KV_RESET_LOOKUP_PRECONDITION");
+  #1;rst_n=0;
+  // Reset also quiesces the external spill responder.
+  pending=0;held_spill=0;spill_rsp_valid=0;spill_ready=0;
+  #0.001;check_reset();
+  repeat(3) edge_tick();
+  @(negedge clk);hold_spill_response=0;rst_n=1;
+  await_initialization(reinitialize_edges);
+  before_reads=spill_reads;before_writes=spill_writes;
+  repeat(15) begin
+   edge_tick();
+   if({req_ready,rsp_valid,protocol_error,spill_valid}!==4'b1000 ||
+      spill_reads!==before_reads || spill_writes!==before_writes)
+    $fatal(1,"KV_RESET_GHOST_TRANSACTION phase=%0d",phase);
+  end
+  transaction(1,0,0,0,0,0);
+  transaction(1,0,0,1,0,0);
+  transaction(0,0,0,0,0,1);
+  transaction(0,0,0,1,0,1);
+  reset_aborts=reset_aborts+1;reset_recoveries=reset_recoveries+1;
+ end
+endtask
 initial begin
  rst_n=0;`RESET_DELTA check_reset();
  for(i=0;i<8*SEQUENCE*16;i=i+1) begin present[i]=0;backing[i]=0;end
@@ -1653,6 +1768,14 @@ initial begin
     transaction(0,layer,0,column,value_bit,0);
  if(spill_writes!==128 || hot_reads==0 || cold_reads!==64)
   $fatal(1,"KV_MISSING_COVERAGE spills=%0d hot=%0d cold=%0d",spill_writes,hot_reads,cold_reads);
+ $display("MEASURED_KV hot_reads=%0d hot_cycles=%0d hot_min=%0d hot_max=%0d cold_reads=%0d cold_cycles=%0d cold_min=%0d cold_max=%0d spill_reads=%0d spill_writes=%0d",
+          hot_reads,hot_cycles,hot_min,hot_max,cold_reads,cold_cycles,cold_min,cold_max,
+          spill_reads,spill_writes);
+ reset_abort_read(0,1);
+ reset_abort_read(0,0);
+ reset_abort_read(0,2);
+ if(reset_aborts!==3 || reset_recoveries!==3)
+  $fatal(1,"KV_RESET_ABORT_COVERAGE_MISSING");
  @(negedge clk);new_sequence=1;
  edge_tick();
  if(initialized!==0) $fatal(1,"KV_NEW_SEQUENCE_NOT_INVALIDATED");
@@ -1675,9 +1798,8 @@ initial begin
  $display("CHECKS_PASSED kv window=%0d max_sequence=%0d compares=%0d hot=%0d cold=%0d spill_writes=%0d startup_edges=%0d sequence_edges=%0d reset_compares=%0d stale_rejections=%0d",
            WINDOW,MAXIMUM_SEQUENCE,comparisons,hot_reads,cold_reads,spill_writes,
            startup_edges,sequence_edges,reset_compares,stale_rejections);
- $display("MEASURED_KV hot_reads=%0d hot_cycles=%0d hot_min=%0d hot_max=%0d cold_reads=%0d cold_cycles=%0d cold_min=%0d cold_max=%0d spill_reads=%0d spill_writes=%0d",
-          hot_reads,hot_cycles,hot_min,hot_max,cold_reads,cold_cycles,cold_min,cold_max,
-          spill_reads,spill_writes);
+ $display("CHECKS_PASSED kv_reset window=%0d max_sequence=%0d reset_aborts=%0d reset_recoveries=%0d",
+          WINDOW,MAXIMUM_SEQUENCE,reset_aborts,reset_recoveries);
  $finish;
 end
 endmodule
@@ -1690,6 +1812,18 @@ endmodule
     if len(measured) != 1:
         raise AssertionError("KV benchmark lacks a unique measured record")
     counters = measured[0]
+    reset_records = measurement_records(transcript, "CHECKS_PASSED kv_reset")
+    if (len(reset_records) != 1 or reset_records[0]["reset_aborts"] != 3 or
+            reset_records[0]["reset_recoveries"] != 3):
+        raise AssertionError("KV reset-abort/recovery coverage missing")
+    evidence.record.setdefault("kv_reset_checks", []).append({
+        "window": depth, "max_sequence": max_sequence,
+        "observed": reset_records[0],
+        "phases": ["accepted cold spill awaiting response", "accepted hit lookup",
+                   "stalled hit response"],
+        "reset_source_policy": "quiesce external spill source and cancel its outstanding response",
+        "recovery": "no ghost transaction, then independently compare two fresh hit words",
+    })
     if (counters["hot_reads"] <= 0 or counters["cold_reads"] != 64 or
             counters["spill_reads"] != counters["cold_reads"] or
             counters["hot_cycles"] != 2 * counters["hot_reads"] or
@@ -1701,7 +1835,8 @@ endmodule
         "layers": 2, "kv_heads": 2, "head_dim": 8,
         "compute_period_ns": 10,
         "measurement": "accepted public request edge to post-edge rsp_valid; "
-                       "excludes three deliberate response-hold cycles and request retirement",
+                       "excludes three deliberate response-hold cycles, request retirement "
+                       "and subsequent reset-abort/recovery trials",
         "service": "spill_ready when cycle modulo 7 exceeds 2 and no response outstanding; "
                    "spill response on cycle modulo 5 equal to zero; "
                    "clock counter includes startup and all transactions",
@@ -1721,7 +1856,7 @@ def measurement_records(transcript, prefix):
     for line in transcript.splitlines():
         if line.startswith(prefix + " "):
             records.append({key: int(value) for key, value in
-                            (field.split("=", 1) for field in line.split()[1:])})
+                            (field.split("=", 1) for field in line[len(prefix):].split())})
     return records
 
 
@@ -1750,7 +1885,8 @@ wire [511:0] avm_writedata;
 wire [63:0] avm_byteenable;
 wire [63:0] accepted_read_beats;
 wire protocol_error;
-integer ddr_cycles=0,response_remaining=0,service_address=0;
+integer ddr_cycles=0,response_remaining=0;
+reg [32:0] service_address=0;
 integer reads=0,bursts=0,overlap=0,comparisons=0,swaps=0,stall_remaining=0;
 integer burst1=0,burst2=0,burst15=0,burst16=0;
 integer core_cycles=0,first_issue=-1,last_response=-1,compared_last=-1;
@@ -1821,7 +1957,7 @@ always @(posedge clk or negedge clk or posedge ddr_clk or negedge ddr_clk)
 always @(posedge clk) if(rst_n) core_cycles<=core_cycles+1;
 always @(posedge ddr_clk) begin
  if(!rst_n) begin
-  response_remaining<=0;service_address<=0;ddr_cycles<=0;
+  response_remaining<=0;service_address<=0;ddr_cycles<=0;last_response<=-1;
  end else begin
   ddr_cycles<=ddr_cycles+1;
   if(first_issue<0 && avm_read) first_issue=ddr_cycles;
@@ -1852,7 +1988,7 @@ always @(posedge ddr_clk) begin
    response_remaining<=response_remaining-1;service_address<=service_address+64;
   end
   if(avm_readdatavalid) begin
-   reads=reads+1;last_response=ddr_cycles;
+   reads=reads+1;last_response<=ddr_cycles;
    if(avm_read && !avm_waitrequest && response_remaining==0)
     immediate_beats=immediate_beats+1;
   end
@@ -1880,7 +2016,7 @@ task run_transfer(input [32:0] base,input integer count,input integer tail,
  reg [511:0] expected;
  begin
   immediate=same_edge;gapped=gaps;issue_stall=stalls;
-  first_issue=-1;last_response=-1;compared_last=-1;
+  first_issue=-1;compared_last=-1;
   stalled_edges=0;max_stall=0;current_stall=0;immediate_beats=0;gap_edges=0;
   before_reads=reads;total_tiles=(count+DEPTH_VALUE-1)/DEPTH_VALUE;
   before_compares=comparisons;before_bursts=bursts;before_overlap=overlap;
@@ -1944,8 +2080,10 @@ task run_transfer(input [32:0] base,input integer count,input integer tail,
      (!randomized && max_stall!=stalls) ||
      (same_edge && immediate_beats!=bursts-before_bursts) ||
      (!same_edge && immediate_beats!=0) || (gaps && count>16 && gap_edges==0))
-   $fatal(1,"DMA_MISSING_MEASUREMENT_OR_STALL_COVERAGE max_stall=%0d expected=%0d",
-           max_stall,stalls);
+   $fatal(1,"DMA_MISSING_MEASUREMENT_OR_STALL_COVERAGE comparisons=%0d expected=%0d first_issue=%0d request_ddr=%0d last_response=%0d compared_last=%0d started_core=%0d max_stall=%0d expected_stall=%0d immediate_beats=%0d bursts=%0d gaps=%0d same_edge=%0d gapped=%0d",
+           comparisons-before_compares,count,first_issue,request_ddr,last_response,
+           compared_last,started_core,max_stall,stalls,immediate_beats,
+           bursts-before_bursts,gap_edges,same_edge,gaps);
   $display("MEASURED_DMA transfer=%0d epoch=%0d depth=DEPTH_VALUE base=%0d beats=%0d useful_bytes=%0d tiles=%0d bursts=%0d overlap=%0d same_edge=%0d gapped=%0d randomized=%0d requested_stall=%0d stalled_edges=%0d max_stall=%0d immediate_beats=%0d gap_edges=%0d ddr_request_cycles=%0d ddr_service_cycles=%0d core_consumption_cycles=%0d core_completion_cycles=%0d",
            transfer_index,epoch,base,count,(count-1)*64+tail,total_tiles,bursts-before_bursts,
            overlap-before_overlap,same_edge,gaps,randomized,stalls,stalled_edges,max_stall,
@@ -2044,6 +2182,105 @@ task invalid_transfer(input [32:0] base,input [31:0] length);
   invalid_rejections=invalid_rejections+1;
  end
 endtask
+task pipelined_transfer(input [32:0] base,input integer count,input integer tail);
+ integer waiting,tile_index,offset,beats,n,sent,received,total_tiles,before_reads;
+ integer simultaneous,consecutive,longest_run,request_run,queued,stall_edges,stall_run;
+ integer stalls1,stalls7,stalls31,compared_stalls,stall_slot,phase;
+ reg take_request,take_response,was_stalled;
+ reg [511:0] expected,saved_data;
+ reg [63:0] expected_mask,saved_mask,expected_tail;
+ begin
+  immediate=1;gapped=0;issue_stall=0;
+  before_reads=reads;total_tiles=(count+DEPTH_VALUE-1)/DEPTH_VALUE;
+  simultaneous=0;consecutive=0;longest_run=0;queued=0;stall_edges=0;
+  stalls1=0;stalls7=0;stalls31=0;compared_stalls=0;
+  expected_tail=(64'd1<<tail)-1;
+  @(negedge clk);request_address=base;request_bytes=(count-1)*64+tail;request_valid=1;
+  if(request_ready!==1) $fatal(1,"PIPELINED_DMA_REQUEST_NOT_READY");
+  edge_tick();
+  @(negedge clk);request_valid=0;
+  offset=0;
+  for(tile_index=0;tile_index<total_tiles;tile_index=tile_index+1) begin
+   waiting=0;
+   while(tile_valid!==1 && waiting<100000) begin edge_tick();waiting=waiting+1;end
+   beats=count-offset>DEPTH_VALUE ? DEPTH_VALUE : count-offset;
+   if(tile_valid!==1 || tile_beats!==beats || tile_bank!==(swaps%2) ||
+      tile_tail!==(tile_index==total_tiles-1 ? expected_tail : 64'hffffffffffffffff))
+    $fatal(1,"PIPELINED_DMA_TILE_METADATA");
+   @(negedge clk);tile_ready=1;
+   edge_tick();
+   @(negedge clk);tile_ready=0;
+   sent=0;received=0;n=0;request_run=0;stall_run=0;was_stalled=0;
+   // Each of the first three tiles holds its first response for a distinct duration.
+   stall_slot=tile_index<3 ? (tile_index==0 ? 1 : tile_index==1 ? 7 : 31) : 0;
+   phase=0;
+   while(received<beats && n<100000) begin
+    read_valid=sent<beats;read_address=sent;
+    if(stall_slot>0 && received==0) read_rsp_ready=0;
+    else read_rsp_ready=(tile_index<3 || n<8 || n%11>3);
+    #0.001;
+    @(posedge clk);
+    take_request=read_valid && read_ready;
+    take_response=read_rsp_valid && read_rsp_ready;
+    if((^{read_ready,read_rsp_valid,compute_error})===1'bx || compute_error!==0)
+     $fatal(1,"PIPELINED_DMA_ACTIVE_XZ_OR_ERROR");
+    if(was_stalled && (read_rsp_valid!==1 || read_data!==saved_data || read_mask!==saved_mask))
+     $fatal(1,"PIPELINED_DMA_STALLED_PAYLOAD_CHANGED");
+    if(read_rsp_valid===1) begin
+     if(received>=sent) $fatal(1,"PIPELINED_DMA_UNREQUESTED_RESPONSE");
+     expected=pattern(base+(offset+received)*64);
+     expected_mask=offset+received==count-1 ? expected_tail : 64'hffffffffffffffff;
+     if(read_data!==expected || read_mask!==expected_mask)
+      $fatal(1,"PIPELINED_DMA_ORDER_DATA_MASK tile=%0d response=%0d",tile_index,received);
+     if(!read_rsp_ready) begin
+      stall_edges=stall_edges+1;stall_run=stall_run+1;compared_stalls=compared_stalls+1;
+      if(stall_slot>0 && stall_run==stall_slot) begin
+       case(stall_slot)
+        1:stalls1=stalls1+1;7:stalls7=stalls7+1;31:stalls31=stalls31+1;
+       endcase
+       phase=1;
+      end
+     end
+    end
+    was_stalled=read_rsp_valid && !read_rsp_ready;
+    if(was_stalled) begin saved_data=read_data;saved_mask=read_mask;end
+    if(take_request && take_response) simultaneous=simultaneous+1;
+    if(take_request) begin
+     sent=sent+1;request_run=request_run+1;
+     if(request_run>longest_run) longest_run=request_run;
+     if(request_run>=3) consecutive=consecutive+1;
+    end else request_run=0;
+    if(take_response) begin received=received+1;comparisons=comparisons+1;end
+    if(sent-received>1) queued=queued+1;
+    #0.001;
+    if(was_stalled && (read_rsp_valid!==1 || read_data!==saved_data || read_mask!==saved_mask))
+     $fatal(1,"PIPELINED_DMA_POSTEDGE_STALLED_PAYLOAD_CHANGED");
+    if(phase==1) begin stall_slot=0;phase=2;end
+    @(negedge clk);n=n+1;
+   end
+   read_valid=0;read_rsp_ready=0;
+   if(received!==beats || sent!==beats || read_rsp_valid!==0 || release_ready!==1)
+    $fatal(1,"PIPELINED_DMA_CONSERVATION_OR_TIMEOUT");
+   release_valid=1;
+   edge_tick();
+   @(negedge clk);release_valid=0;
+   offset=offset+beats;swaps=swaps+1;
+  end
+  waiting=0;
+  while(completion_valid!==1 && waiting<10000) begin edge_tick();waiting=waiting+1;end
+  if(completion_valid!==1 || completion_error!==0 || completion_tiles!==total_tiles ||
+     reads-before_reads!==count || accepted_read_beats!==reads ||
+     stalls1!==1 || stalls7!==1 || stalls31!==1 || compared_stalls<39 ||
+     (DEPTH_VALUE>=3 && (simultaneous==0 || queued==0 || consecutive==0)))
+   $fatal(1,"PIPELINED_DMA_MISSING_COVERAGE_OR_COMPLETION");
+  @(negedge clk);completion_ready=1;
+  edge_tick();
+  @(negedge clk);completion_ready=0;
+  $display("CHECKS_PASSED pipelined_dma depth=DEPTH_VALUE beats=%0d tiles=%0d simultaneous=%0d queued=%0d consecutive=%0d longest_request_run=%0d stalled_edges=%0d compared_stalls=%0d stall1=%0d stall7=%0d stall31=%0d",
+           count,total_tiles,simultaneous,queued,consecutive,longest_run,stall_edges,
+           compared_stalls,stalls1,stalls7,stalls31);
+ end
+endtask
 initial begin
  rst_n=0;`RESET_DELTA check_reset();
  repeat(6) edge_tick();
@@ -2068,6 +2305,7 @@ initial begin
  invalid_transfer(33'd1,32'd64);
  invalid_transfer(33'd0,32'd0);
  invalid_transfer(33'h1ffffffc0,32'd65);
+ pipelined_transfer(33'd28672,DEPTH_VALUE*5,19);
  if(reset_wait!==1 || reset_fill!==1 || reset_stall!==1 || reset_compares==0)
   $fatal(1,"DMA_MISSING_RESET_COVERAGE");
  if(invalid_rejections!==3) $fatal(1,"DMA_MISSING_INVALID_RANGE_COVERAGE");
@@ -2088,6 +2326,19 @@ endmodule
          "anvil_q1_ht_tile_bank.sv", "anvil_q1_ht_weight_tiles.sv",
          "anvil_q1_ht_weight_dma.sv"])
     measured = measurement_records(transcript, "MEASURED_DMA")
+    pipeline = measurement_records(transcript, "CHECKS_PASSED pipelined_dma")
+    if (len(pipeline) != 1 or pipeline[0]["beats"] != depth * 5 or
+            pipeline[0]["tiles"] != 5 or pipeline[0]["compared_stalls"] < 39 or
+            any(pipeline[0][name] != 1 for name in ("stall1", "stall7", "stall31")) or
+            (depth >= 3 and any(pipeline[0][name] <= 0 for name in
+                               ("simultaneous", "queued", "consecutive")))):
+        raise AssertionError("DMA pipelined public-pin comparisons lack required coverage")
+    evidence.record["observations"].append({
+        "scope": "public_DMA_tiles_pipelined_read_order_and_backpressure",
+        "seed": seed, "observed": pipeline[0],
+        "oracle": "accepted read addresses in order against independent byte-address pattern "
+                  "and final useful-byte mask; compares stalled payload before and after edges",
+    })
     if len(measured) != (10 if depth == 256 else 7):
         raise AssertionError("DMA benchmark missing transfer measurements")
     for counters in measured:
@@ -2233,12 +2484,17 @@ def run_probe(evidence, name, seed, config=0):
             kv_probe(evidence, depth, max_sequence=32768)
     elif name == "parameters":
         invalid_parameters(evidence)
-    elif name == "dma":
+    elif name in ("dma", "dma-compiled"):
+        if name == "dma-compiled":
+            evidence.default_simulator = "verilator"
         for depth in (1, 3, 256):
             dma_probe(evidence, depth, seed)
     elif name == "sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed)
+    elif name == "dma-pipeline-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=("tile_read_backpressure",))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

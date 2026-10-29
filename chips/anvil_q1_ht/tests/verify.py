@@ -406,8 +406,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", choices=("tensor", "dequant", "math", "top-awq", "top-bf16",
                                            "csr-upload", "synthesis", "kv", "parameters", "dma",
-                                           "sensitivity", "faults", "orphan-fault", "abort-states",
+                                           "sensitivity", "dma-pipeline-sensitivity",
+                                           "faults", "orphan-fault", "abort-states",
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
+                                           "dma-compiled",
                                            "kernel-default", "projection-default", "projection-k",
                                            "integration-matrix", "matrix-config", "compatibility",
                                            "compatibility-matrix", "bf16-default", "vocabulary-default",
