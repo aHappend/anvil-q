@@ -326,6 +326,8 @@ def compile_simulation(ev, label, argv, executable):
     global _BUILDS
     if _BUILDS is None:
         _BUILDS = BuildCache()
+    if str(argv[0]) == "verilator" and "--binary" in argv and "-MAKEFLAGS" not in argv:
+        argv = [*argv, "-MAKEFLAGS", "OPT_FAST=-O3"]
     return _BUILDS.compile(ev, label, argv, executable)
 
 

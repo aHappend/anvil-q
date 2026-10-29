@@ -192,11 +192,13 @@ def check(ev, production=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--production", action="store_true")
+    parser.add_argument("--input-only", action="store_true")
     args = parser.parse_args()
     ev = verify.Evidence("operator-performance")
     good = False
     try:
-        good = ev.versions() and check(ev, args.production)
+        good = ev.versions() and (
+            input_check(ev, args.production) if args.input_only else check(ev, args.production))
     except (ValueError, KeyError, OSError, AssertionError) as error:
         ev.assertion("repair_probe_exception", False, diagnostic=repr(error))
     finally:
