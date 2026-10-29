@@ -5,6 +5,8 @@ The offered request is never withdrawn before acceptance. Its completion must
 invalidate the image; recommit must recover the same independently modeled logits.
 """
 
+from pathlib import Path
+
 from experiments import measurement_records, top_probe
 
 
@@ -142,7 +144,7 @@ def upload_conflicts(evidence, seed):
             transcript = next(
                 (trial.folder.parents[2] / command["stdout"]).read_text()
                 for command in reversed(trial.record["commands"])
-                if command["argv"][0].endswith("/compiled/Vtb"))
+                if Path(command["argv"][0]).parts[-2:] == ("compiled", "Vtb"))
             records = measurement_records(transcript, "CHECKS_PASSED pending_upload")
             expected = {"suppressed_edges": 31, "accepted": 1, "completed": 1,
                         "final_transfers": 2, "ordered_logits": 16}

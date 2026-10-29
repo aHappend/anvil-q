@@ -5,6 +5,8 @@ not. Each recovery explicitly reinstalls descriptors and uploads the synthetic
 image. This is reset recovery, not persistent-image reuse across new_sequence.
 """
 
+from pathlib import Path
+
 from experiments import measurement_records, top_probe
 
 
@@ -212,7 +214,7 @@ def reset_integration(evidence, seed):
             transcript = next(
                 (trial.folder.parents[2] / command["stdout"]).read_text()
                 for command in reversed(trial.record["commands"])
-                if command["argv"][0].endswith("/compiled/Vtb"))
+                if Path(command["argv"][0]).parts[-2:] == ("compiled", "Vtb"))
             records = measurement_records(transcript, "CHECKS_PASSED active_reset")
             expected = {"epochs": 5, "bins": 31, "wait_edges": 7, "aborted_tokens": 3,
                         "cancelled_write_responses": 1, "recovery_logits": 40}

@@ -5,6 +5,8 @@ commands are checked at the specified edges without consuming DDR traffic; valid
 commands still compare every logit with the independent integer model.
 """
 
+from pathlib import Path
+
 from experiments import measurement_records, top_probe
 
 
@@ -165,7 +167,7 @@ def command_checks(evidence, seed):
             transcript = next(
                 (trial.folder.parents[2] / command["stdout"]).read_text()
                 for command in reversed(trial.record["commands"])
-                if command["argv"][0].endswith("/compiled/Vtb"))
+                if Path(command["argv"][0]).parts[-2:] == ("compiled", "Vtb"))
             records = measurement_records(transcript, "CHECKS_PASSED command_checks")
             if (len(records) != 1 or records[0]["rejected"] != 8 or
                     records[0]["maximum_rejection_edges"] not in (0, 1, 2) or

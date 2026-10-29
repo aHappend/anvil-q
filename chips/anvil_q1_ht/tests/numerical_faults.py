@@ -5,6 +5,8 @@ Every case retains an observed poisoned DDR response, a drained one-cycle error
 completion, and ordered reference logits after an explicitly repaired upload.
 """
 
+from pathlib import Path
+
 from reference import fp_q16
 
 
@@ -85,7 +87,7 @@ def numerical_faults(evidence, seed, selected=None):
             transcript = next(
                 (trial.folder.parents[2] / command["stdout"]).read_text()
                 for command in reversed(trial.record["commands"])
-                if command["argv"][0].endswith("/compiled/Vtb"))
+                if Path(command["argv"][0]).parts[-2:] == ("compiled", "Vtb"))
             records = measurement_records(transcript, "CHECKS_PASSED numerical_fault")
             if (len(records) != 1 or records[0]["poison_seen"] < 1 or
                     records[0]["error_completion"] != 1 or records[0]["drained"] != 1 or

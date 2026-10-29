@@ -2582,6 +2582,9 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "address-checks":
         from address_checks import address_checks
         address_checks(evidence, seed)
+    elif name == "scalar-checks":
+        from scalar_checks import scalar_checks
+        scalar_checks(evidence, seed)
     elif name == "upload-conflicts":
         from upload_conflicts import upload_conflicts
         upload_conflicts(evidence, seed)
@@ -2678,6 +2681,10 @@ def run_probe(evidence, name, seed, config=0):
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=(
             "address_tail_stride", "address_byte_lane"))
+    elif name == "scalar-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=(
+            "scalar_issue_response", "scalar_response_error"))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

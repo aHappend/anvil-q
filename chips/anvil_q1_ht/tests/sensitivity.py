@@ -11,6 +11,7 @@ from attention_benchmark import attention_context
 from numerical_faults import fault_cases
 from descriptor_checks import descriptor_case
 from address_checks import address_case
+from scalar_checks import scalar_case
 
 
 def stored_number_trial(evidence, seed, name):
@@ -118,6 +119,13 @@ def run_sensitivity(parent, seed, only=None):
          "bit_offset <= {complete_address[5:0], 3'b0} + 9'd8;",
          lambda run: address_case(run, "BF16", "verilator", seed),
          "ADDRESS_RESULT_MISMATCH"),
+        ("scalar_issue_response", "anvil_q1_ht_ddr_scalar.sv",
+         "wire response_allowed = state == WAIT_RESPONSE || accepted;",
+         "wire response_allowed = state == WAIT_RESPONSE;",
+         lambda run: scalar_case(run, "verilator", seed), "SCALAR_RESULT_MISMATCH"),
+        ("scalar_response_error", "anvil_q1_ht_ddr_scalar.sv",
+         "failed <= avm_response != 0;", "failed <= 0;",
+         lambda run: scalar_case(run, "verilator", seed), "SCALAR_RESULT_MISMATCH"),
     )
     if only is not None:
         selected = set(only)
