@@ -60,6 +60,42 @@ if action != "healthy":
 """
 
 
+def existing_root_fixture(run):
+    root = run.relative(run.path / "root-reuse")
+    children = []
+    preserved = {}
+    compared_files = 0
+    for index in range(2):
+        child = Run("same-name", root=root)
+        try:
+            assert child.path not in children, "reused a prior run directory"
+            for name, expected in preserved.items():
+                assert (ROOT / name).read_bytes() == expected, (
+                    f"allocating a new run changed prior evidence: {name}")
+            output = child.command(
+                ["python3", "-c", f"print('root-reuse-{index}')"], "payload")
+            assert output.read_text() == f"root-reuse-{index}\n"
+            child.finish("passed-focused-only", fixture="existing-root",
+                         invocation=index)
+            for name, expected in preserved.items():
+                assert (ROOT / name).read_bytes() == expected, (
+                    f"executing a new run changed prior evidence: {name}")
+            compared_files += len(preserved)
+            children.append(child.path)
+            for path in child.path.rglob("*"):
+                if path.is_file():
+                    preserved[run.relative(path)] = path.read_bytes()
+        except (AssertionError, RuntimeError, OSError, ValueError, KeyError) as exc:
+            if not (child.path / "receipt.json").exists():
+                child.finish("failed", failure=f"{type(exc).__name__}: {exc}")
+            raise
+    return dict(
+        root=root, receipts=[run.relative(path / "receipt.json") for path in children],
+        invocations_compared=len(children), preserved_files_compared=compared_files,
+        preserved_sha256={name: hashlib.sha256(data).hexdigest()
+                          for name, data in preserved.items()})
+
+
 def fixtures(repair_of=None):
     run = Run("capture-retention-fixtures")
     if repair_of:
@@ -103,7 +139,8 @@ def fixtures(repair_of=None):
                     assert record["capture_reopen"]["exit_code"] != 0
                     results.append(dict(action=action, interactive=interactive, rejected=True,
                                         receipt=child.relative(child.path / "receipt.json")))
-        run.finish("passed-focused-only", fixtures=results,
+        root_reuse = existing_root_fixture(run)
+        run.finish("passed-focused-only", fixtures=results, root_reuse=root_reuse,
                    limitations="Synthetic retention failure handling only; not RTL evidence.")
         return 0
     except (AssertionError, RuntimeError, OSError, ValueError, KeyError) as exc:
