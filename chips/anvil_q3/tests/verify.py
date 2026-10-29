@@ -208,13 +208,14 @@ def numerical_matrix(run):
             jobs.append(lambda m=mode, a=asym, n=seed: decoder_case(
                 run, replace(A, CACHE_MODE=m, INT4_ASYM=a),
                 seed=n, simulator="verilator", tokens=[1, 4],
-                adversarial=True, label="adversarial-full-range"))
+                compiled_host=True, adversarial=True, label="adversarial-full-range"))
     ledger.extend(run.parallel(jobs))
     jobs = []
     for workload in mandatory_decoder_workloads():
         label, g, seed, simulator, tokens, prefill = workload
         jobs.append(lambda g=g, n=seed, s=simulator, t=tokens, p=prefill:
-                    decoder_case(run, g, n, s, tokens=list(t), prefill_tokens=p))
+                    decoder_case(run, g, n, s, tokens=list(t), prefill_tokens=p,
+                                 compiled_host=s == "verilator"))
         decoder_coverage.append(workload)
         if label == "A":
             a_coverage.append((g, seed, simulator, tokens, prefill))

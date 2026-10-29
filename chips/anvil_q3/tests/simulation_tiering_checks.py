@@ -223,6 +223,8 @@ def dispatch_sensitivity():
         verify.numerical_matrix(fake)
     observed = Counter()
     for call in mocks["decoder_case"].call_args_list:
+        simulator = call.kwargs.get("simulator", call.args[3] if len(call.args) > 3 else None)
+        assert call.kwargs["compiled_host"] == (simulator == "verilator")
         if call.kwargs.get("adversarial"):
             continue
         g, seed, simulator = call.args[1:]
@@ -272,6 +274,16 @@ def secondary_dispatch_sensitivity(fake):
         assert call.kwargs["simulator"] == "verilator"
         assert call.kwargs["tokens"] == (
             [1, 2, 1, 2, 1, 2, 1] if call in legacy else [1, 4])
+        assert call.kwargs.get("compiled_host", False) == (
+            call in legacy or call.kwargs["label"] == "implicit-startup")
+    for call in recovery:
+        expected_prelude = {
+            "implicit-startup": 0, "explicit-startup-recovery": 1,
+            "bad-first-position": 2, "idle-cancel-recovery": 3,
+            "bad-token-recovery": 4, "active-cancel-recovery": 5,
+        }[call.kwargs["label"]]
+        assert call.kwargs["prelude"] == expected_prelude
+        assert call.kwargs["prefill_tokens"] == 1
     for call in compact:
         g = call.args[1]
         assert (g.HIDDEN_SIZE <= 32 and g.BANKS == 1 and g.VOCAB_SIZE == 1 and

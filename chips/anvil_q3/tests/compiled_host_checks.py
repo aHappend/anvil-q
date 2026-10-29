@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from decoder_checks import decoder_case
 from execution import Run
-from parameters import A, A_PORTABILITY, C
+from parameters import A, A_PORTABILITY, C, compatibility_geometries, startup_geometry
 
 
 def equivalence(run, banks):
@@ -29,9 +29,31 @@ def equivalence(run, banks):
     return {"results": results, "scope": "exact public trace/complete comparison equivalence"}
 
 
+def compatibility_equivalence(run):
+    legacy = next(g for g in compatibility_geometries()
+                  if g.PROFILE == 2 and g.CACHE_MODE == 1 and g.CACHE_BLOCK == 64)
+    cases = ((startup_geometry(1), [1, 4], 1, 0),
+             (legacy, [1, 2, 1, 2, 1, 2, 1], 4, 1))
+    jobs = []
+    for g, tokens, prefill, first_new in cases:
+        for host in (False, True):
+            jobs.append(lambda g=g, t=tokens, p=prefill, n=first_new, h=host: decoder_case(
+                run, g, simulator="verilator", tokens=t, prefill_tokens=p, first_new=n,
+                label="compat-host" if h else "compat-sv", compiled_host=h))
+    results = run.parallel(jobs)
+    for sv, host in zip(results[::2], results[1::2]):
+        assert set(sv) == set(host)
+        for field in set(sv) - {"result_path", "driver"}:
+            assert sv[field] == host[field], (field, sv[field], host[field])
+    return {"results": results,
+            "scope": "PROFILE1 implicit startup and seven-token PROFILE2 legacy-C64 "
+                     "complete numerical/public-trace equivalence; not the compatibility matrix"}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", choices=("equivalence", "C", "compact"), default="equivalence")
+    parser.add_argument("--probe", choices=("equivalence", "compatibility-equivalence", "C", "compact"),
+                        default="equivalence")
     parser.add_argument("--banks", type=int, choices=(1, 2, 4, 8), default=8)
     parser.add_argument("--tokens", type=int, choices=(1, 4), default=4,
                         help="C diagnostic prefix length; four tokens by default")
@@ -41,14 +63,18 @@ def main():
     args = parser.parse_args()
     run = Run("evidence/preparation/compiled-host-" + args.probe,
               "public-pin compiled decoder driver diagnostic",
-              repair_of="evidence/preparation/compiled-host-equivalence/"
-                        "20261029T192252Z-3b6ff5174f03/receipt.json")
+              repair_of=("evidence/check-behavior/20261029T201448Z-48169afcddba/"
+                         "tool-0190/receipt.json" if args.probe == "compatibility-equivalence" else
+                         "evidence/preparation/compiled-host-equivalence/"
+                         "20261029T192252Z-3b6ff5174f03/receipt.json"))
     print(run.rel(run.path / "receipt.json"), flush=True)
     try:
         run.versions([("verilator", "--version"), ("iverilog", "-V"), ("vvp", "-V"),
                       ("g++", "--version")])
         if args.probe == "equivalence":
             result = equivalence(run, args.banks)
+        elif args.probe == "compatibility-equivalence":
+            result = compatibility_equivalence(run)
         elif args.probe == "C":
             result = decoder_case(
                 run, replace(C, BANKS=args.banks, CACHE_MODE=2, INT4_ASYM=1),

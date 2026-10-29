@@ -45,6 +45,7 @@ def compatibility(run):
         jobs.append(lambda g=g, p=profile: decoder_case(
             run, g, simulator="verilator", tokens=[1, 4], first_new=int(p != 1),
             prelude=0 if p == 1 else 1, prefill_tokens=1,
+            compiled_host=p == 1,
             label="implicit-startup" if p == 1 else "explicit-startup-recovery"))
         for prelude, label in ((2, "bad-first-position"), (3, "idle-cancel-recovery"),
                                (4, "bad-token-recovery"), (5, "active-cancel-recovery")):
@@ -60,7 +61,7 @@ def compatibility(run):
             if simulator == "verilator":
                 jobs.append(lambda g=g, s=simulator: decoder_case(
                     run, g, simulator=s, tokens=[1, 2, 1, 2, 1, 2, 1],
-                    first_new=1, label=f"legacy-c{g.CACHE_BLOCK}"))
+                    first_new=1, compiled_host=True, label=f"legacy-c{g.CACHE_BLOCK}"))
     ledger.extend(run.parallel(jobs))
     write_json(run.path / "compatibility-results.json", ledger)
     return ledger
