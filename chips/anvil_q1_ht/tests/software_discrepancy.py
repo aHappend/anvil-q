@@ -105,7 +105,23 @@ extern "C" int floating_gemv(
             }
         } else {
             unsigned mask = format == 1 ? 0x7f80 : 0x7c00;
-            for (unsigned c = 0; c < outputs; ++c) {
+            unsigned c = 0;
+            // Independent columns hide reduction latency; each retains the
+            // original increasing-r binary64 additions, without contraction.
+            for (; c + 4 <= outputs; c += 4) {
+                double totals[4] = {};
+                for (unsigned r = 0; r < inputs; ++r) {
+                    for (unsigned lane = 0; lane < 4; ++lane) {
+                        uint16_t bits = little16(
+                            data + w + 2 * (uint64_t(c + lane) * inputs + r));
+                        if ((bits & mask) == mask)
+                            throw std::runtime_error("nonfinite floating input");
+                        totals[lane] += activation[r] * table.values[format == 1 ? 1 : 0][bits];
+                    }
+                }
+                for (unsigned lane = 0; lane < 4; ++lane) result[c + lane] = totals[lane];
+            }
+            for (; c < outputs; ++c) {
                 double total = 0;
                 for (unsigned r = 0; r < inputs; ++r) {
                     uint16_t bits = little16(data + w + 2 * (uint64_t(c) * inputs + r));

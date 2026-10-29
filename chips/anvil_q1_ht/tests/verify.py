@@ -238,6 +238,8 @@ class Evidence:
             build = folder / "compiled"
             options = ["--binary", "--timing", "--assert", "-Wno-fatal",
                        "-j", "2", "-CFLAGS", cxx_optimization,
+                       *(["-CFLAGS", "-pg", "-LDFLAGS", "-pg"]
+                         if getattr(self, "native_profile", False) else []),
                        *(["--flatten"] if flatten else []),
                        "--top-module", "tb", *["-D" + value for value in defines]]
             identity = {
@@ -280,7 +282,18 @@ class Evidence:
             command = [cached["executable"]]
         else:
             raise ValueError(f"unsupported simulation tool: {simulator}")
+        if simulator == "verilator" and getattr(self, "native_profile", False):
+            command = ["env", "GMON_OUT_PREFIX=" + self.relative(folder / "gmon"), *command]
         output = self.command([*command, *runtime_args], name + "-simulation", timeout=timeout)
+        if simulator == "verilator" and getattr(self, "native_profile", False):
+            profiles = sorted(folder.glob("gmon.*"))
+            if len(profiles) != 1:
+                raise RuntimeError("native profile did not produce exactly one completed sample")
+            self.command(["gprof", "--version"], name + "-profiler-version")
+            self.command(["gprof", "-b", cached["executable"], self.relative(profiles[0])],
+                         name + "-native-profile")
+            self.record.setdefault("runtime_input_sha256", {})[
+                self.relative(profiles[0])] = file_sha256(profiles[0])
         if "CHECKS_PASSED " not in output:
             raise AssertionError(f"{name}: missing completed assertion ledger")
         ledgers = []

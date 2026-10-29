@@ -170,37 +170,53 @@ extern "C" int gemv(const uint8_t* data, uint64_t size, int format,
         if (format == 0) {
             std::vector<int64_t> scales(outputs);
             std::vector<unsigned> zeros(outputs);
-            for (unsigned r = 0; r < inputs; ++r) {
-                if (r % group == 0) {
-                    for (unsigned c = 0; c < outputs; ++c) {
-                        uint64_t packed_index = uint64_t(r / group) * (outputs / 8) + c / 8;
-                        zeros[c] = (little32(data + z + 4 * packed_index)
-                                    >> shifts[c % 8]) & 15;
-                        scales[c] = q16(little16(data +
-                                             s + 2 * (uint64_t(r / group) * outputs + c)),
-                                        false, true);
+            std::vector<int64_t> group_sums(outputs);
+            for (unsigned begin = 0; begin < inputs; begin += group) {
+                for (unsigned c = 0; c < outputs; ++c) {
+                    uint64_t packed_index = uint64_t(begin / group) * (outputs / 8) + c / 8;
+                    zeros[c] = (little32(data + z + 4 * packed_index)
+                                >> shifts[c % 8]) & 15;
+                    scales[c] = q16(little16(data +
+                                         s + 2 * (uint64_t(begin / group) * outputs + c)),
+                                    false, true);
+                }
+                std::fill(group_sums.begin(), group_sums.end(), 0);
+                // At most 4864 * 2^31 * 15: exact in int64, with no rounding.
+                for (unsigned r = begin; r < begin + group; ++r) {
+                    for (unsigned c = 0; c < outputs; c += 8) {
+                        uint32_t packed = little32(data +
+                                              w + 4 * (uint64_t(r) * (outputs / 8) + c / 8));
+                        for (unsigned lane = 0; lane < 8; ++lane)
+                            group_sums[c + lane] += int64_t(activation[r]) *
+                                (int((packed >> shifts[lane]) & 15) - int(zeros[c + lane]));
                     }
                 }
-                for (unsigned c = 0; c < outputs; c += 8) {
-                    uint32_t packed = little32(data +
-                                          w + 4 * (uint64_t(r) * (outputs / 8) + c / 8));
-                    for (unsigned lane = 0; lane < 8; ++lane) {
-                        int64_t weight = (int((packed >> shifts[lane]) & 15) -
-                                          int(zeros[c + lane])) * scales[c + lane];
-                        sums[c + lane] += (__int128)activation[r] * weight;
-                    }
-                }
+                for (unsigned c = 0; c < outputs; ++c)
+                    sums[c] += (__int128)group_sums[c] * scales[c];
             }
         } else {
             static const DenseConversions table;
-            for (unsigned c = 0; c < outputs; ++c)
-                for (unsigned r = 0; r < inputs; ++r) {
-                    uint16_t bits = little16(data + w + 2 * (uint64_t(c) * inputs + r));
-                    if (!table.valid[format - 1][bits])
-                        throw std::runtime_error("invalid dense checkpoint weight");
-                    int64_t weight = table.values[format - 1][bits];
-                    sums[c] += (__int128)activation[r] * weight;
+            uint64_t maximum = 0;
+            for (unsigned r = 0; r < inputs; ++r) {
+                int64_t value = activation[r];
+                maximum = std::max(maximum, uint64_t(value < 0 ? -value : value));
+            }
+            // Every converted dense weight has magnitude <= 2^31.
+            unsigned block = maximum == 0 ? inputs : unsigned(std::min(
+                uint64_t(inputs), uint64_t(0x7fffffffffffffff) / (maximum << 31)));
+            for (unsigned c = 0; c < outputs; ++c) {
+                for (unsigned begin = 0; begin < inputs; begin += block) {
+                    int64_t partial = 0;
+                    unsigned end = std::min(inputs, begin + block);
+                    for (unsigned r = begin; r < end; ++r) {
+                        uint16_t bits = little16(data + w + 2 * (uint64_t(c) * inputs + r));
+                        if (!table.valid[format - 1][bits])
+                            throw std::runtime_error("invalid dense checkpoint weight");
+                        partial += int64_t(activation[r]) * table.values[format - 1][bits];
+                    }
+                    sums[c] += partial;
                 }
+            }
         }
         for (unsigned c = 0; c < outputs; ++c) {
             result[c] = rounded(sums[c]);
@@ -326,7 +342,8 @@ def qualify(engine, seed):
                 raise AssertionError("dense conversion table accepts invalid encoding")
     rng = random.Random(seed)
     coordinates = accumulators = 0
-    for inputs, outputs, group in ((8, 8, 1), (24, 72, 8), (256, 64, 32)):
+    for inputs, outputs, group in (
+            (8, 8, 1), (24, 72, 8), (256, 64, 32), (4864, 8, 4864)):
         activation = [rng.randrange(-(1 << 31), 1 << 31) for _ in range(inputs)]
         activation[:4] = [1, -1, -(1 << 31), (1 << 31) - 1]
         bias_bits = [0x8000, 0x3c00, 0xbc00, 1] * (outputs // 4)

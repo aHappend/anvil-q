@@ -282,7 +282,7 @@ def dispatch_audit(evidence):
 
 
 def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=None,
-           original_source_receipt=None):
+           original_source_receipt=None, complete_prompt=False):
     dispatch_audit(evidence)
     root = project_path("fixtures/qwen2.5-0.5b")
     metadata, _ = profiled(evidence, "fixture-validation", lambda: validate(root))
@@ -349,9 +349,12 @@ def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=N
         folder = root / mode.lower()
         tokenizer = FrozenTokenizer(json.loads((folder / "tokenizer.json").read_text()),
                                     json.loads((folder / "tokenizer_config.json").read_text()))
-        prefix = tokenizer.encode(canonical_chat(PROMPTS[0]), merge_heap)[:2]
-        if len(prefix) != 2:
+        prefill = tokenizer.encode(canonical_chat(PROMPTS[0]), merge_heap)
+        prefix = prefill if complete_prompt else prefill[:2]
+        if not complete_prompt and len(prefix) != 2:
             raise AssertionError("checkpoint cost probe requires two real prompt-prefix tokens")
+        if complete_prompt and not baseline:
+            raise ValueError("complete-prompt cost comparison requires an original evaluator")
         new_int, new_float = RecordedGEMV(integer), RecordedGEMV(floating)
         old_int = RecordedGEMV(old_integer) if baseline else None
         old_floating_engine = RecordedGEMV(old_float) if baseline else None
@@ -364,7 +367,10 @@ def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=N
                            root, metadata["models"][mode], mode, old_floating_engine)
                            if baseline else None)
         try:
-            for position, input_token in enumerate(prefix):
+            selected = None
+            total = len(prefix) + (15 if complete_prompt else 0)
+            for position in range(total):
+                input_token = prefix[position] if position < len(prefix) else selected
                 fixed, integer_profile = profiled(
                     evidence, f"{mode.lower()}-integer-{position}",
                     lambda: fixed_model.token(input_token, position, position == 0))
@@ -403,6 +409,7 @@ def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=N
                 metrics, metrics_profile = profiled(
                     evidence, f"{mode.lower()}-discrepancy-{position}",
                     lambda: compare(fixed, floating_values))
+                selected = metrics["fixed_point_greedy_token"]
                 payload = struct.pack("<151936i", *fixed)
                 output = evidence.folder / f"{mode.lower()}-{position}-logits.bin"
 
@@ -455,7 +462,8 @@ def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=N
                 old_fixed_model.close()
                 old_float_model.close()
     evidence.record["cost_diagnosis"] = {
-        "scope": "two_token_cost_probe_not_full_prompt_or_RTL_acceptance",
+        "scope": ("complete_first_frozen_prompt_both_modes_not_full_suite_or_RTL_acceptance"
+                  if complete_prompt else "two_token_cost_probe_not_full_prompt_or_RTL_acceptance"),
         "profile_overhead_included": True, "rows": rows,
         "categories": "profiles retain inclusive and self times; categories are not additive"}
     evidence.flush()
@@ -495,6 +503,8 @@ def main():
                         help="also retain compact dual-simulator and numerical-leaf checks")
     parser.add_argument("--measure-smoke", action="store_true",
                         help="also profile fresh-reference/measurement plumbing in both modes")
+    parser.add_argument("--complete-prompt", action="store_true",
+                        help="compare all prefill and sixteen decode steps of the first frozen prompt")
     parser.add_argument("--reference-diagnosis",
                         help="bind a completed original reference receipt for cost diagnosis only")
     args = parser.parse_args()
@@ -505,11 +515,13 @@ def main():
     try:
         if args.worker:
             worker(evidence, args.compare_to, args.measure_smoke, args.reference_diagnosis,
-                   args.original_source_receipt)
+                   args.original_source_receipt, args.complete_prompt)
         else:
             options = ["--compare-to", args.compare_to] if args.compare_to else []
             if args.measure_smoke:
                 options.append("--measure-smoke")
+            if args.complete_prompt:
+                options.append("--complete-prompt")
             if args.reference_diagnosis:
                 options += ["--reference-diagnosis", args.reference_diagnosis]
             if args.original_source_receipt:
