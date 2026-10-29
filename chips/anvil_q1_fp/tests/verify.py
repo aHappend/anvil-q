@@ -1061,7 +1061,36 @@ def preservation_check(ev):
         unclassified_items=len(result["unclassified"]),
         threshold_percent=85, report=str(report.relative_to(ROOT)),
         diagnostics=result["failures"])
-    return parser_ok and audit_ok
+    from preservation_review import manual_audit
+    binding_ok = True
+    hashes = result["source_sha256"]
+    cases = []
+    for path in sorted(hashes):
+        changed = dict(hashes, **{path: "0" * 64})
+        cases.append(("changed_" + path, result["modules"], changed, "source audit"))
+    removed = dict(hashes)
+    removed.pop("rtl/anvil_q1_fp_top.sv")
+    cases.append(("removed_source", result["modules"], removed, "source audit"))
+    added = dict(hashes, **{"rtl/unreviewed.sv": "0" * 64})
+    cases.append(("added_source", result["modules"], added, "source audit"))
+    changed_inventory = json.loads(json.dumps(result["modules"]))
+    changed_inventory["top"]["items"][0]["text"] += " changed"
+    cases.append(("changed_inventory", changed_inventory, hashes, "inventory audit"))
+    omitted_inventory = json.loads(json.dumps(result["modules"]))
+    omitted_inventory["top"]["items"].pop()
+    cases.append(("omitted_inventory_item", omitted_inventory, hashes, "inventory audit"))
+    for name, modules, source_hashes, diagnostic in cases:
+        rejected = False
+        error_text = ""
+        try:
+           manual_audit(ROOT, modules, source_hashes)
+        except ValueError as error:
+           error_text = str(error)
+           rejected = "requires renewed " + diagnostic in error_text
+        binding_ok = ev.assertion(
+           "preservation_binding_" + name, rejected,
+           diagnostic=error_text) and binding_ok
+    return parser_ok and audit_ok and binding_ok
 
 
 def operator_check(ev, production=False, config=None, operations=None, cases=None):

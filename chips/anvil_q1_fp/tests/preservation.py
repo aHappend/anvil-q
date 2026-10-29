@@ -390,10 +390,12 @@ def audit(root, report, digest):
         sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     audit_path = root / "tests/preservation_review.py"
     supplied = {}
+    review_basis = None
     failures = []
     if audit_path.is_file():
         from preservation_review import manual_audit
         data = manual_audit(root, modules, hashes)
+        review_basis = data.get("review_basis")
         if data["schema"] != 1 or data["source_sha256"] != hashes:
             failures.append("Manual source audit is not bound to these complete RTL source trees")
         entries = data["items"]
@@ -421,6 +423,7 @@ def audit(root, report, digest):
         "inventory_sha256": inventory_sha256,
         "automatic_classifications": automatic,
         "manual_audit": str(audit_path.relative_to(root)),
+        "manual_review_basis": review_basis,
         "manual_classifications": supplied,
         "classification_counts": dict(counts), "complete_original_denominator": len(expected),
         "unclassified": unresolved, "failures": failures,
