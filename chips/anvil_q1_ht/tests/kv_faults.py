@@ -20,7 +20,7 @@ wire spill_rsp_valid,spill_rsp_error;
 wire [31:0] spill_rsp_data;
 reg [31:0] backing[0:WORDS-1];
 reg present[0:WORDS-1];
-reg immediate=0,pending=0,pending_error=0,pending_write=0;
+reg immediate=0,pending=0,pending_error=0;
 reg [31:0] pending_data=0;
 integer response_delay=0,service_delay=0,traffic_index=0,cycles=0;
 integer fault_index=-1;
@@ -91,7 +91,7 @@ always @(posedge clk) begin
     if(spill_rsp_valid!==1 || spill_rsp_ready!==1)
      $fatal(1,"KV_SERVICE_IMMEDIATE_RESPONSE_NOT_COINCIDENT");
    end else begin
-    pending<=1;pending_write<=spill_write;
+    pending<=1;
     pending_error<=immediate_fault;
     pending_data<=spill_write ? 32'b0 : backing[address];
     response_delay<=service_delay;
@@ -124,6 +124,7 @@ endtask
 task request(input integer wr,layer,position,column,value_bit,expect_error,expect_hit);
  integer wait_edges,old_reads,old_writes,n;
  reg [31:0] expected_data;
+ reg saved_hit;
  begin
   @(negedge clk);
   req_valid=1;req_write=wr;req_layer=layer;req_pos=position;
@@ -140,9 +141,10 @@ task request(input integer wr,layer,position,column,value_bit,expect_error,expec
   expected_data=wr || expect_error ? 32'b0 : expected_word(layer,position,column,value_bit);
   if(rsp_valid!==1 || rsp_error!==1'(expect_error) ||
      protocol_error!==1'(expect_error) || rsp_data!==expected_data ||
-     (!wr && rsp_hit!==1'(expect_hit)))
+     (rsp_hit!==0 && rsp_hit!==1) || (!wr && rsp_hit!==1'(expect_hit)))
    $fatal(1,"KV_SERVICE_RESULT_MISMATCH wr=%0d l=%0d p=%0d c=%0d err=%b hit=%b got=%h expected=%h",
           wr,layer,position,column,rsp_error,rsp_hit,rsp_data,expected_data);
+  saved_hit=rsp_hit;
   if(!wr && !expect_error) begin
    if(expect_hit) begin
     if(reads!==old_reads || writes!==old_writes || wait_edges!==2)
@@ -158,7 +160,7 @@ task request(input integer wr,layer,position,column,value_bit,expect_error,expec
    edge_tick();
    if(rsp_valid!==1 || rsp_error!==1'(expect_error) || rsp_data!==expected_data ||
       req_ready!==0 || spill_valid!==0 ||
-      protocol_error!==1'(expect_error) || (!wr && rsp_hit!==1'(expect_hit)))
+      protocol_error!==1'(expect_error) || rsp_hit!==saved_hit)
     $fatal(1,"KV_SERVICE_RESPONSE_STALL_CHANGED");
    response_stalls=response_stalls+1;
   end
@@ -262,7 +264,10 @@ endmodule
         raise AssertionError("KV service lacks a unique observed coverage ledger")
     counts = records[0]
     required = {"successful_services": 3, "eviction_faults": 6, "read_faults": 2,
-                "invalid_cases": 8, "faults": 8, "hot": 192, "cold": 192}
+                "invalid_cases": 8, "faults": 8, "hot": 192, "cold": 192,
+                "commands": 548, "responses": 548, "immediate_returns": 210,
+                "delayed_returns": 338, "epochs": 19,
+                "comparisons": 448 * depth + 656}
     if any(counts.get(key) != value for key, value in required.items()):
         raise AssertionError("KV service did not observe every required response/fault bin")
     if (counts["commands"] != counts["responses"] or
