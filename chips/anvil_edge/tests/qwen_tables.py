@@ -8,6 +8,7 @@ The RTL probes bypass boot deliberately and cannot establish tokenizer equivalen
 import hashlib
 import json
 from pathlib import Path
+import re
 import struct
 import sys
 
@@ -359,7 +360,17 @@ def memory_function(evidence, manifest_data, allowed):
 def replace_memory(bench, replacement):
     first = bench.index("  function automatic [31:0] memory(")
     last = bench.index("  endfunction", first) + len("  endfunction")
-    return bench[:first] + replacement + bench[last:]
+    # The replacement already includes module-scope storage and initialization.
+    return (bench[:first] + replacement + bench[last:]).replace(
+        "@MEMORY_DECLARATIONS@", "")
+
+
+def render_bench(bench, replacements):
+    for key, value in replacements.items():
+        bench = bench.replace(f"@{key}@", value)
+    unresolved = sorted(set(re.findall(r"@[A-Z][A-Z0-9_]*@", bench)))
+    require(not unresolved, f"Unresolved Qwen fragment template fields: {unresolved}")
+    return bench
 
 
 def detokenizer_probe(evidence, info, pieces, byte_ids, seed):
@@ -406,8 +417,7 @@ def detokenizer_probe(evidence, info, pieces, byte_ids, seed):
         "STIMULUS": "\n".join(f"token({token},{int(i==len(tokens)-1)});"
                               for i, token in enumerate(tokens)),
     }
-    for key, value in replacements.items():
-        bench = bench.replace(f"@{key}@", value)
+    bench = render_bench(bench, replacements)
     bench = bench.replace('    $display("DETOK_REQUESTS', """
     if (request_stalls==0 || output_stalls==0)
       $fatal(1,"QWEN_DETOK_MISSING_STALL_COVERAGE");
@@ -452,8 +462,7 @@ def bpe_probe(evidence, info, byte_ids, merges, seed):
         "STIMULUS": "\n".join(f"item(32'd{token},{int(i==len(tokens)-1)});"
                               for i, token in enumerate(tokens)),
     }
-    for key, value in replacements.items():
-        bench = bench.replace(f"@{key}@", value)
+    bench = render_bench(bench, replacements)
     evidence.simulate(f"qwen-fragment-bpe-s{seed}", bench,
                       ["rtl/anvil_edge_ranked_bpe.sv"], None, simulator="verilator")
     return {"scope": "One explicitly isolated BPE span, no regex/normalization/special processing",
@@ -540,8 +549,7 @@ def trie_probe(evidence, info, source, seed):
             for index, address in enumerate(expected_reads)),
         "STIMULUS": "",
     }
-    for key, value in replacements.items():
-        bench = bench.replace(f"@{key}@", value)
+    bench = render_bench(bench, replacements)
     evidence.simulate(f"qwen-fragment-trie-s{seed}", bench, [
         "rtl/anvil_edge_special_trie_validator.sv", "rtl/anvil_edge_boot_segment_reader.sv",
     ], None, simulator="verilator")
@@ -551,6 +559,10 @@ def trie_probe(evidence, info, source, seed):
 
 def run_qwen_fragments(evidence):
     evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.child(
+        ["python3", "tests/test_qwen_templates.py"],
+        "qwen-fragment-template-regression",
+    )
     evidence.child(
         ["python3", "tests/qwen_tables.py", evidence.relative(evidence.path)],
         "qwen-independent-fragment-conversion",
