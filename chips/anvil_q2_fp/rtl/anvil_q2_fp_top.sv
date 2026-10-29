@@ -66,10 +66,11 @@ module anvil_q2_fp_top #(
   wire [3:0] scalar_req_kind;
   wire [2:0] scalar_req_proj;
   wire [31:0] scalar_req_layer, scalar_req_row, scalar_req_col, scalar_req_wdata;
-  reg scalar_pending, scalar_write;
-  reg [3:0] scalar_kind;
-  reg [2:0] scalar_proj;
-  reg [31:0] scalar_layer, scalar_row, scalar_col, scalar_wdata;
+  // Keep the physical timing cut across the nested scalar muxes.
+  (* preserve, dont_merge *) reg scalar_pending, scalar_write;
+  (* preserve, dont_merge *) reg [3:0] scalar_kind;
+  (* preserve, dont_merge *) reg [2:0] scalar_proj;
+  (* preserve, dont_merge *) reg [31:0] scalar_layer, scalar_row, scalar_col, scalar_wdata;
   anvil_q2_fp_parameters #(
     NUM_LAYERS,HIDDEN_SIZE,INTERMEDIATE_SIZE,NUM_Q_HEADS,NUM_KV_HEADS,
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,VOCAB_SIZE,MAX_SEQ_LEN,

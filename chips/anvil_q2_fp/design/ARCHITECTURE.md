@@ -170,6 +170,11 @@ The scalar-operation client now registers its complete request after the top
 bus mux and before scheduler ingress. This cuts the reported attention
 `state.VALUE` to scheduler `col`/`layer` path at the nested numerical mux
 boundary, rather than modifying the accepted scheduler. The one-entry buffer
+uses Quartus `preserve` and `dont_merge` attributes on its occupancy and
+payload registers to retain this physical boundary through register
+optimization. These attributes do not change simulation or handshake behavior;
+they are not evidence that synthesis previously removed the boundary.
+The buffer
 has no valid fall-through or ready look-through: an empty slot accepts the
 selected scalar request at one edge, and the scheduler can accept it starting
 at the next edge. While full, all fields hold and upstream readiness is low;
