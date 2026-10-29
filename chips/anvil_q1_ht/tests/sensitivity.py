@@ -14,6 +14,7 @@ from address_checks import address_case
 from scalar_checks import scalar_case
 from kv_faults import kv_fault_case
 from late_faults import late_read_case
+from projection_bandwidth import sensitivity_trial
 
 
 def stored_number_trial(evidence, seed, name):
@@ -23,6 +24,15 @@ def stored_number_trial(evidence, seed, name):
 
 def run_sensitivity(parent, seed, only=None):
     cases = (
+        ("projection_bandwidth_lane_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: sensitivity_trial(run, seed), "BANDWIDTH_TENSOR_RESULT_MISMATCH"),
+        ("projection_bandwidth_dma_cursor", "anvil_q1_ht_weight_dma.sv",
+         "cursor <= {cursor[33:6] + 28'd1, 6'b0};",
+         "cursor <= {cursor[33:6] + 28'd2, 6'b0};",
+         lambda run: sensitivity_trial(run, seed), "BANDWIDTH_TENSOR_OPERAND_MISMATCH"),
         ("tensor_bubble_accumulation", "anvil_q1_ht_mac_lane.sv",
          "if (valid_pipe[3]) begin", "if (valid_pipe[3] || !in_valid) begin",
          lambda run: tensor(run, seed), "TENSOR_MISMATCH"),

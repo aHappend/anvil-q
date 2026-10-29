@@ -4,6 +4,8 @@ The bounded projection-bandwidth probe keeps the original unstalled parent
 comparison and independently checks every accepted lane operand and result.
 Additional 1/7/31-cycle burst-command stalls are diagnostic measurements, not a
 replacement for the frozen unstalled >=8x service-inclusive acceptance.
+The same integrated comparisons must reject separately compiled lane-sign and
+DMA-address defects in disposable RTL copies.
 """
 
 import hashlib
@@ -190,6 +192,11 @@ def retain_measurement(evidence, transcript, mode, inputs, outputs, stall):
     evidence.flush()
 
 
+def sensitivity_trial(evidence, seed):
+    from benchmarks import projection_case
+    projection_case(evidence, seed, 1, "verilator", mode="AWQ", bandwidth_stall=7)
+
+
 def run(evidence, seed):
     from benchmarks import projection_case
     for stall in (0, 1, 7, 31):
@@ -211,3 +218,6 @@ def run(evidence, seed):
             except Exception as exc:
                 child.finish("failed", f"{type(exc).__name__}: {exc}")
                 raise
+    from sensitivity import run_sensitivity
+    run_sensitivity(evidence, seed, only=(
+        "projection_bandwidth_lane_sign", "projection_bandwidth_dma_cursor"))

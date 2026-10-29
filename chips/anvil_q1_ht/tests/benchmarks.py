@@ -437,7 +437,7 @@ endmodule
                            bandwidth_stall, activation, qweight, qzero, scale, bias,
                            dense_bits, expected)
     root = evidence.folder / "sources"
-    sources = sorted((root / "rtl").glob("*.sv"))
+    sources = sorted(getattr(evidence, "rtl_root", root / "rtl").glob("*.sv"))
     sources += [root / "anvil_q1_reference/rtl" / name for name in (
         "anvil_q1_00_pkg.sv", "anvil_q1_awq_dequant.sv",
         "anvil_q1_parameters.sv", "anvil_q1_w4a16_gemv.sv")]
