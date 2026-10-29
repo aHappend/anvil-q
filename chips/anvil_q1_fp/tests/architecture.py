@@ -11,6 +11,7 @@ import random
 
 from numerical import bits32, decode, float32, floor_log2, power_two, round_even
 from fractions import Fraction
+from functools import lru_cache
 
 
 CONFIGURATIONS = {
@@ -22,6 +23,7 @@ CONFIGURATIONS = {
 PARAMETERS = ("L", "H", "I", "Q", "K", "D", "G", "V", "S")
 
 
+@lru_cache(maxsize=8192, typed=True)
 def encode16(value, mode):
     eb, fb = (8, 7) if mode == 1 else (5, 10)
     sign = int(value < 0)

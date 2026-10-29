@@ -8,6 +8,8 @@ production-sized dense memory or complete transformer checkpoint is allocated.
 from collections import defaultdict
 import json
 import math
+import struct
+from functools import lru_cache
 
 from architecture import Architecture, PARAMETERS, encode16, metrics
 from numerical import bits32, decode, float32
@@ -15,16 +17,28 @@ from numerical import bits32, decode, float32
 
 PRODUCTION = (24, 896, 4864, 14, 2, 64, 128, 151936, 32768)
 OPERATOR_IDS = {"norm": 0, "rope": 1, "attention": 2, "gemv": 3, "elementwise": 4}
+REQUEST_MAGIC = b"ANVQ1OP1"
+REQUEST_RECORD = struct.Struct("<7I")
+
+
+@lru_cache(maxsize=4096, typed=True)
+def stored_value(value, mode):
+    encoded = encode16(value, mode)
+    eb, fb = (8, 7) if mode == 1 else (5, 10)
+    return float(decode(encoded, eb, fb)[3])
 
 
 class OperatorReference(Architecture):
-    def __init__(self, config, mode, seed, requests):
+    def __init__(self, config, mode, seed, requests, binary_requests=None):
         self.config = dict(zip(PARAMETERS, config))
         self.mode, self.seed = mode, seed
         self.memory = {}
         self.group = ""
         self.position = 0
         self.requests = requests
+        self.binary_requests = binary_requests
+        if binary_requests is not None:
+            binary_requests.write(REQUEST_MAGIC)
         self.expected_writes = []
         self.count = 0
 
@@ -49,9 +63,7 @@ class OperatorReference(Architecture):
         else:
             value = ((mixed & 63)-32)/(1024 if kind == 12 else 128)
         if kind in (0, 4, 5, 6, 7, 12):
-            encoded = encode16(value, self.mode or 2)
-            eb, fb = (8, 7) if self.mode == 1 else (5, 10)
-            return float(decode(encoded, eb, fb)[3])
+            return stored_value(value, self.mode or 2)
         return value
 
     def raw(self, key, value):
@@ -66,6 +78,8 @@ class OperatorReference(Architecture):
 
     def emit(self, write, key, raw):
         self.requests.write(f"{write} {' '.join(map(str, key))} {raw:08x}\n")
+        if self.binary_requests is not None:
+            self.binary_requests.write(REQUEST_RECORD.pack(write, *key, raw))
         self.count += 1
 
     def read(self, kind, layer=0, proj=0, row=0, col=0):

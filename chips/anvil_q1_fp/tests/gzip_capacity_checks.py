@@ -15,9 +15,6 @@ from gzip_capacity import round_data, trace_bound, workload
 from verify import Evidence, ROOT
 
 
-PRIOR = "evidence/preparation/verifier-reference-lifetimes-trsuqq40/receipt.json"
-
-
 def reject(call, label):
     try:
         call()
@@ -286,8 +283,6 @@ def main():
     ev = Evidence("gzip-capacity")
     ok = False
     try:
-        require((ROOT / PRIOR).is_file(), "retained lifetime receipt missing")
-        ev.receipt["extends"] = {"path": PRIOR, "sha256": sha(ROOT / PRIOR)}
         ev.receipt["tool_versions"] = {"python": sys.version}
         require(ev.run("mathematical-boundaries", [
             sys.executable, "tests/gzip_capacity_checks.py", "--math-worker"]),

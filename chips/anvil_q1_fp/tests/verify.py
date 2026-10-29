@@ -270,7 +270,7 @@ class BuildCache:
                 child.receipt["compile_inputs"] = {}
                 for argument in map(str, argv):
                     source = ROOT / argument
-                    if source.is_file() and source.suffix == ".sv":
+                    if source.is_file() and source.suffix in (".sv", ".cpp"):
                         snapshot = child.path / "compile-inputs" / source.relative_to(ROOT)
                         snapshot.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(source, snapshot)
@@ -1051,6 +1051,8 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
             rtl = ROOT / ("anvil_q1_reference/rtl" if parent else "rtl")
             argv += [str(p.relative_to(ROOT)) for p in sorted(rtl.glob("*.sv"))]
             argv.append("tests/operator_tb.sv")
+            if simulator == "verilator":
+                argv.append(str((ROOT / "tests/operator_input.cpp").resolve()))
             compiled = compile_simulation(ev, label+"-compile", argv, executable)
             result = ev.assertion(label+"_compile", compiled) and result
             if compiled:
@@ -1065,12 +1067,15 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                     continue
                 label = f"{name}-selector{selector}-mode{mode}"
                 oracle = ev.path / (label + ".requests")
+                binary_oracle = ev.path / (label + ".requests.bin")
                 position = config[-1]-1 if name == "rope" else (
                     min(2, config[-1]-1) if name == "attention" else 0)
-                with ev.profile(label+"-reference-generation"), oracle.open("w") as stream:
-                    reference = OperatorReference(config, mode, 17, stream)
+                with ev.profile(label+"-reference-generation"), oracle.open("w") as stream, \
+                        binary_oracle.open("wb") as binary_stream:
+                    reference = OperatorReference(config, mode, 17, stream, binary_stream)
                     reference.execute_operator(name, selector, position, config[0]-1)
                 ev.receipt.setdefault("data_sha256", {})[str(oracle.relative_to(ROOT))] = digest(oracle)
+                ev.receipt["data_sha256"][str(binary_oracle.relative_to(ROOT))] = digest(binary_oracle)
                 traces = {}
                 for parent in ((False, True) if mode == 0 else (False,)):
                     if parent not in binaries:
@@ -1082,6 +1087,7 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                                if simulator == "iverilog" else [str(binaries[parent])])
                     executed = ev.run(label+suffix, [
                         *command, "+oracle="+str(oracle.relative_to(ROOT)),
+                        "+oracle_binary="+str(binary_oracle.relative_to(ROOT)),
                         "+trace="+str(trace.relative_to(ROOT)),
                         f"+mode={mode}", "+seed=17", f"+selector={selector}",
                         f"+position={position}", f"+layer={config[0]-1}",
