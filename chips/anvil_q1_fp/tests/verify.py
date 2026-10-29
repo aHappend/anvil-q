@@ -42,7 +42,7 @@ from architecture import Architecture, CONFIGURATIONS, PARAMETERS, compare_trace
 from operators import OPERATOR_IDS, PRODUCTION, OperatorReference, compare_operator
 from preservation import audit as audit_preservation, parser_selftest
 from rtl_rules import inspect as inspect_rtl, matched, tokens
-from benchmark import FORBIDDEN, artifact_path, check as check_benchmark
+from benchmark import FORBIDDEN, artifact_path, check as check_benchmark, validate_input_manifests
 
 ROOT = Path(__file__).resolve().parents[1]
 SELECTORS = ("rtl/*.sv", "design/*.md", "fpga/*", "tests/**",
@@ -436,7 +436,11 @@ def prerequisites(ev):
     ev.assertion("reference_numpy_import", numpy_ok,
                  reason="Production FP64 references require an importable NumPy; "
                         "dependency discovery alone is not availability validation")
-    files_ok = benchmark_contract(ev)
+    try:
+        _, _, cases, _ = validate_input_manifests(ROOT, ev)
+        files_ok = ev.assertion("prerequisite_input_manifests", True, cases=len(cases))
+    except Exception as exc:
+        files_ok = ev.assertion("prerequisite_input_manifests", False, reason=f"{type(exc).__name__}: {exc}")
     return tool_ok and dependency_ok and numpy_ok and files_ok
 
 

@@ -70,6 +70,7 @@ def deep_size(value):
 
 def raw_storage(rows, block):
     from collection_capacity import array_allocation, transactions
+    from gzip_capacity import workload as gzip_workload
     from production_schedule import PRODUCTION
 
     allocation = array_allocation(rows, block)
@@ -95,6 +96,7 @@ def raw_storage(rows, block):
         "decoded_trace_bytes_success_plus_one_retained_failure":
             {key: value * 88 for key, value in counts.items()},
         "gzip_retained_bytes_bound": None,
+        "source_backed_gzip_schedule_envelope_accounting": gzip_workload(rows, block),
         "additional_costs": {
             "gzip_payloads_and_flush_overhead": None,
             "events_and_child_stdout_stderr": None,
@@ -109,8 +111,9 @@ def raw_storage(rows, block):
         "compression_ratio_assumed": False,
         "packed_collection_enabled": False,
         "limitation": "Decoded trace bytes are workload counts, not a gzip size bound "
-                     "or a compressed-size lower bound. Flush/log/metadata/build costs "
-                     "are not capped by the admitted command. No complete finite "
+                     "or a compressed-size lower bound. The separate source-backed gzip "
+                     "schedule-envelope budget does not cap erroneous traffic, logs, "
+                     "metadata or build costs under the admitted command. No complete finite "
                      "filesystem bound is established; arrays alone already require "
                      "the stated budget. Existing retained evidence is not deleted.",
     }

@@ -29,6 +29,7 @@ BINDINGS = (
     "tests/packed_storage.py",
     "tests/sparse_transactions.py",
     "tests/packed_stream.py", "tests/packed_stream.hpp", "tests/production_storage.hpp",
+    "tests/gzip_capacity.py",
 )
 
 
@@ -611,6 +612,8 @@ def assess():
     allocation = array_allocation(rows, filesystem["fragment_bytes"])
     packed_allocation = packed_array_allocation(rows, filesystem["fragment_bytes"])
     packed_complete = packed_workload_accounting(rows, filesystem["fragment_bytes"])
+    from gzip_capacity import workload as gzip_workload
+    legacy_gzip = gzip_workload(rows, filesystem["fragment_bytes"])
     packed_complete["available_bytes_at_assessment"] = available_bytes
     packed_complete["bounded_data_budget_gap_before_unbounded_costs"] = max(
         0, packed_complete["bounded_data_blocks_success_plus_one_retained_failure"] -
@@ -659,6 +662,7 @@ def assess():
         "filesystem_array_data_planning": allocation,
         "prospective_packed_array_data_bound": packed_allocation,
         "direct_packed_complete_workload_accounting": packed_complete,
+        "legacy_gzip_schedule_envelope_accounting": legacy_gzip,
         "prospective_packed_trace_bound": {
             "format": "anvil-transactions-v2", "producer_enabled": False,
             "raw_fallback_logical_bytes_one_successful_attempt": packed_trace_bound,
@@ -672,9 +676,9 @@ def assess():
             "format": "gzip level 1; each decoded record is 44 bytes",
             "compressed_bytes": None,
             "capacity_proven": False,
-            "reason": "Actual gzip ratio and progress-flush counts are unmeasured for complete "
-                      "teacher/generation traces. Raw counts are not compressed-byte predictions. "
-                      "No three-position compression ratio is extrapolated."},
+            "reason": "A source-backed no-ratio schedule-envelope budget is reported separately. "
+                      "It is not a measured compressed size, a bound for unrestricted erroneous "
+                      "DUT traffic, linked-library attestation or filesystem qualification."},
         "filesystem": {"storage_root": ".", "measured_at": now(), **filesystem,
                        "free_bytes_are_not_reserved": True},
         "retained_preparation": retained,
