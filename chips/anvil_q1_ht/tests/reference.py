@@ -4,6 +4,7 @@ import math
 import random
 import struct
 from dataclasses import dataclass
+from functools import lru_cache
 
 
 def signed(value, bits):
@@ -30,6 +31,7 @@ def trunc_div(value, denominator):
     return (-1 if value < 0 else 1) * (abs(value) // denominator)
 
 
+@lru_cache(maxsize=131072)
 def fp_q16(bits, exponent_bits, fraction_bits, unsigned_scale=False):
     sign = bits >> 15
     exponent = (bits >> fraction_bits) & ((1 << exponent_bits) - 1)
@@ -78,6 +80,7 @@ def norm(vector, gamma):
             for x, g in zip(vector, gamma)]
 
 
+@lru_cache(maxsize=65536)
 def exp_q24(value):
     if value < -1048576:
         return 0

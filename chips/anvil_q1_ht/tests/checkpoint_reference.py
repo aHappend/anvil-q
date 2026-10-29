@@ -87,6 +87,29 @@ int64_t q16(uint16_t x, bool bfloat, bool scale = false) {
     if (negative) return -int64_t(std::min(magnitude, uint64_t(0x80000000)));
     return int64_t(std::min(magnitude, uint64_t(0x7fffffff)));
 }
+struct DenseConversions {
+    int64_t values[3][65536];
+    bool valid[3][65536];
+    DenseConversions() {
+        for (unsigned format = 1; format <= 3; ++format) {
+            for (unsigned bits = 0; bits < 65536; ++bits) {
+                unsigned exponent = (bits >> 7) & 255;
+                bool finite = format == 2 ? (bits & 0x7c00) != 0x7c00 :
+                    exponent != 255 && (format != 3 || exponent < 143);
+                valid[format - 1][bits] = finite;
+                if (finite)
+                    values[format - 1][bits] = format == 1 ? q16(bits, true) :
+                        q16(half_storage(bits, format == 3 ? 1 : 0), false);
+            }
+        }
+    }
+};
+int64_t dense_q16(uint16_t bits, unsigned format) {
+    static const DenseConversions table;
+    if (!table.valid[format - 1][bits])
+        throw std::runtime_error("invalid dense checkpoint weight");
+    return table.values[format - 1][bits];
+}
 uint64_t word(const uint8_t* data, uint64_t size, uint64_t offset, unsigned width) {
     if (offset > size || width > size - offset) throw std::runtime_error("tensor bounds");
     uint64_t value = 0;
@@ -163,8 +186,7 @@ extern "C" int gemv(const uint8_t* data, uint64_t size, int format,
             for (unsigned c = 0; c < outputs; ++c)
                 for (unsigned r = 0; r < inputs; ++r) {
                     uint16_t bits = word(data, size, w + 2 * (uint64_t(c) * inputs + r), 2);
-                    int64_t weight = format == 1 ? q16(bits, true) :
-                        q16(half_storage(bits, format == 3 ? 1 : 0), false);
+                    int64_t weight = dense_q16(bits, format);
                     sums[c] += (__int128)activation[r] * weight;
                 }
         }
@@ -244,14 +266,20 @@ class IntegerGEMV:
 
 def qualify(engine, seed):
     compared, rejected = 0, 0
+    dense_encodings = {format_id: [] for format_id in (1, 2, 3)}
+    dense_expected = {format_id: [] for format_id in (1, 2, 3)}
+    dense_invalid = {format_id: [] for format_id in (1, 2, 3)}
     for bits in range(65536):
         for format_id, conversion in (
                 (0, fp16), (1, bf16),
                 (2, lambda x: fp_q16(x, 5, 10, True)),
                 (3, lambda x: fp16_storage(words(x.to_bytes(2, "little"), 2), "BF16")[0][0])):
+            dense_format = {0: 2, 1: 1, 3: 3}.get(format_id)
             try:
                 expected = conversion(bits)
             except ValueError:
+                if dense_format is not None:
+                    dense_invalid[dense_format].append(bits)
                 try:
                     engine.conversion(bits, format_id)
                 except ValueError:
@@ -262,6 +290,28 @@ def qualify(engine, seed):
                 if engine.conversion(bits, format_id) != expected:
                     raise AssertionError(f"reference conversion mismatch {format_id}/{bits:04x}")
                 compared += 1
+                if dense_format is not None:
+                    dense_encodings[dense_format].append(bits)
+                    dense_expected[dense_format].append(
+                        fp16(expected) if format_id == 3 else expected)
+    dense_compared = dense_rejected = 0
+    for format_id, encodings in dense_encodings.items():
+        payload = struct.pack(f"<{len(encodings)}H", *encodings)
+        storage = ctypes.create_string_buffer(payload)
+        actual, exact = engine.evaluate(
+            storage, len(payload), format_id, [65536], len(encodings), 1, (0, 0, 0, 0))
+        expected = dense_expected[format_id]
+        if actual != expected or exact != [value * 65536 for value in expected]:
+            raise AssertionError("dense conversion table differs from exhaustive Python values")
+        dense_compared += len(encodings)
+        for encoding in dense_invalid[format_id]:
+            storage = ctypes.create_string_buffer(struct.pack("<H", encoding))
+            try:
+                engine.evaluate(storage, 2, format_id, [65536], 1, 1, (0, 0, 0, 0))
+            except ValueError:
+                dense_rejected += 1
+            else:
+                raise AssertionError("dense conversion table accepts invalid encoding")
     rng = random.Random(seed)
     coordinates = accumulators = 0
     for inputs, outputs, group in ((8, 8, 1), (24, 72, 8), (256, 64, 32)):
@@ -315,7 +365,9 @@ def qualify(engine, seed):
             else:
                 raise AssertionError("reference evaluator accepted out-of-range tensor")
     return {"finite_conversion_comparisons": compared, "invalid_inputs_rejected": rejected,
-            "mathematical_weight_coordinates": coordinates, "exact_accumulators_compared": accumulators}
+            "mathematical_weight_coordinates": coordinates, "exact_accumulators_compared": accumulators,
+            "dense_table_conversion_comparisons": dense_compared,
+            "dense_table_invalid_encodings_rejected": dense_rejected}
 
 
 class Embedding:

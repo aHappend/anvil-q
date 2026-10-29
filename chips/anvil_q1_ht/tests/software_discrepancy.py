@@ -25,7 +25,7 @@ from prompts import FrozenTokenizer, PROMPTS, canonical_chat, merge_heap, merge_
 
 FLOAT_CPP = CPP + r"""
 namespace {
-double floating(uint16_t x, bool bfloat) {
+double floating_value(uint16_t x, bool bfloat) {
     unsigned fraction_bits = bfloat ? 7 : 10, limit = bfloat ? 255 : 31;
     unsigned e = (x >> fraction_bits) & limit;
     unsigned f = x & ((1u << fraction_bits) - 1);
@@ -34,6 +34,23 @@ double floating(uint16_t x, bool bfloat) {
     double magnitude = std::ldexp(double(e ? (1u << fraction_bits) + f : f),
                                   int(e ? e : 1) - bias - int(fraction_bits));
     return x & 0x8000 ? -magnitude : magnitude;
+}
+struct FloatingConversions {
+    double values[2][65536];
+    FloatingConversions() {
+        for (unsigned format = 0; format < 2; ++format)
+            for (unsigned bits = 0; bits < 65536; ++bits) {
+                unsigned mask = format ? 0x7f80 : 0x7c00;
+                if ((bits & mask) != mask)
+                    values[format][bits] = floating_value(bits, format != 0);
+            }
+    }
+};
+double floating(uint16_t bits, bool bfloat) {
+    unsigned mask = bfloat ? 0x7f80 : 0x7c00;
+    if ((bits & mask) == mask) throw std::runtime_error("nonfinite floating input");
+    static const FloatingConversions table;
+    return table.values[bfloat ? 1 : 0][bits];
 }
 }
 extern "C" int floating_gemv(
