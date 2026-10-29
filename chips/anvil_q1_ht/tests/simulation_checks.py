@@ -7,10 +7,14 @@ same configuration-2, seed-89 AWQ first token using -Os and -O3 C++ builds.
 --flatten-performance compares -O3 builds with and without module inlining.
 --redirect checks that an explicit multi-token Icarus request executes a separate
 compact portability smoke and the complete original workload with Verilator.
+Diagnostic modes are mutually exclusive. Redirect evidence uses the separate
+verifier-simulation-redirect-* parent namespace; performance routing is unchanged.
 None of these commands replaces any mandatory matrix row or native gate.
 """
 
 import argparse
+import contextlib
+import io
 from pathlib import Path
 import shutil
 import sys
@@ -22,7 +26,41 @@ import experiments
 from verify import Evidence, NONPORTABLE_PATH, ROOT, file_sha256
 
 
+def argument_parser():
+    parser = argparse.ArgumentParser(description=__doc__)
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--compact", action="store_true")
+    modes.add_argument("--performance", action="store_true")
+    modes.add_argument("--flatten-performance", action="store_true")
+    modes.add_argument("--redirect", action="store_true")
+    parser.add_argument("--repair-of")
+    parser.add_argument("--regression-child", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--scratch", help=argparse.SUPPRESS)
+    return parser
+
+
 class SimulationTierChecks(unittest.TestCase):
+    def test_diagnostic_parent_output_routing(self):
+        for mode in ("compact", "performance", "flatten-performance", "redirect"):
+            with self.subTest(mode=mode):
+                args = argument_parser().parse_args(["--" + mode])
+                with patch.object(sys.modules[__name__], "Evidence",
+                                  side_effect=RuntimeError("stop before execution")) as factory:
+                    with self.assertRaisesRegex(RuntimeError, "stop before execution"):
+                        run(args)
+                expected = "simulation-redirect" if mode == "redirect" else "simulation-tiering"
+                factory.assert_called_once_with(expected, None)
+
+    def test_combined_diagnostic_modes_are_rejected_before_execution(self):
+        modes = ("--compact", "--performance", "--flatten-performance", "--redirect")
+        for index, first in enumerate(modes):
+            for second in modes[index + 1:]:
+                with self.subTest(first=first, second=second):
+                    with contextlib.redirect_stderr(io.StringIO()):
+                        with self.assertRaises(SystemExit) as rejection:
+                            argument_parser().parse_args([first, second])
+                    self.assertEqual(rejection.exception.code, 2)
+
     def evidence(self):
         trial = Evidence.__new__(Evidence)
         trial.folder = SCRATCH / self._testMethodName
@@ -312,7 +350,8 @@ def compared_case(parent, label, mode, simulator, config=0, optimization="-O3",
 
 
 def run(args):
-    evidence = Evidence("simulation-tiering", args.repair_of)
+    evidence = Evidence("simulation-redirect" if args.redirect else "simulation-tiering",
+                        args.repair_of)
     evidence.record["scope"] = (
         "Harness regression and simulator performance diagnosis only; "
         "no requirement, mandatory check, or patrol limit is changed.")
@@ -367,6 +406,7 @@ def run(args):
         if args.redirect:
             for mode in ("AWQ", "BF16"):
                 trial = Evidence("redirect-" + mode.lower(),
+                                 repair_of=evidence.relative(evidence.folder / "receipt.json"),
                                  source_root=evidence.folder / "sources")
                 try:
                     experiments.top_probe(trial, mode, 89, simulator="iverilog")
@@ -409,14 +449,7 @@ def run(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--compact", action="store_true")
-    parser.add_argument("--performance", action="store_true")
-    parser.add_argument("--flatten-performance", action="store_true")
-    parser.add_argument("--redirect", action="store_true")
-    parser.add_argument("--repair-of")
-    parser.add_argument("--regression-child", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--scratch", help=argparse.SUPPRESS)
+    parser = argument_parser()
     arguments = parser.parse_args()
     if arguments.regression_child:
         if not arguments.scratch:
