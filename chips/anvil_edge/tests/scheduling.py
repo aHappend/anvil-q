@@ -92,19 +92,32 @@ def source_contract():
     assert len(scheduled) == 1
     assert any(isinstance(node, ast.Name) and node.id == "L1_SUITES"
                for node in ast.walk(scheduled[0]))
-    official = [node for statement in l1[0].body for node in ast.walk(statement)
-                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
-                and node.func.id == "run_official_checkpoint"]
-    assert len(official) == 1
+    stages = next(node for node in trees["verify"].body
+                  if isinstance(node, ast.Assign)
+                  and any(isinstance(target, ast.Name) and target.id == "OFFICIAL_STAGES"
+                          for target in node.targets))
+    stage_names = [node.id for node in stages.value.elts]
     direct = [statement.value.func.id for statement in l1[0].body
               if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call)
               and isinstance(statement.value.func, ast.Name)]
-    assert direct == ["run_qwen_fragments", "run_qwen_regex",
-                      "run_unicode_rtl", "run_official_checkpoint",
-                      "run_deepseek_reference", "run_deepseek_dfa",
-                      "run_deepseek_integration", "run_deepseek_boot",
-                      "run_deepseek_bos",
-                      "run_qwen_integration", "run_qwen_boot", "run_qwen_shell"]
+    assert direct == ["run_stages"]
+    assert stage_names == ["run_qwen_fragments", "run_qwen_regex",
+                           "run_unicode_rtl", "run_official_checkpoint",
+                           "run_deepseek_reference", "run_deepseek_dfa",
+                           "run_deepseek_integration", "run_deepseek_boot",
+                           "run_deepseek_bos",
+                           "run_qwen_integration", "run_qwen_boot", "run_qwen_shell"]
+    stage_call, = [node for node in ast.walk(l1[0])
+                   if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                   and node.func.id == "run_stages"]
+    assert [node.id for node in stage_call.args] == ["evidence", "OFFICIAL_STAGES"]
+    loop, = definitions["run_stages"].body[1:]
+    assert isinstance(loop, ast.For) and isinstance(loop.iter, ast.Name)
+    assert loop.iter.id == "stages"
+    scoped, = [node for node in ast.walk(loop) if isinstance(node, ast.Call)
+               and isinstance(node.func, ast.Attribute) and node.func.attr == "run_cases"]
+    assert any(item.arg == "workers" and isinstance(item.value, ast.Constant)
+               and item.value.value == 1 for item in scoped.keywords)
     incomplete = l1[0].body[-1]
     assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
     assert isinstance(incomplete.exc.args[0], ast.Constant)

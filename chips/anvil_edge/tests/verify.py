@@ -109,6 +109,12 @@ def write_json(path, value):
         output.write("\n")
 
 
+def run_stages(evidence, stages):
+    """Keep sequential converters' exclusive artifacts in independent case scopes."""
+    for stage in stages:
+        evidence.run_cases([(stage.__name__, stage)], workers=1)
+
+
 def storage_snapshot(path):
     usage = shutil.disk_usage(path)
     filesystem = os.statvfs(path)
@@ -944,6 +950,14 @@ def run_fifo(evidence):
             fifo_test(evidence, depth, seed)
 
 
+OFFICIAL_STAGES = (
+    run_qwen_fragments, run_qwen_regex, run_unicode_rtl, run_official_checkpoint,
+    run_deepseek_reference, run_deepseek_dfa, run_deepseek_integration,
+    run_deepseek_boot, run_deepseek_bos,
+    run_qwen_integration, run_qwen_boot, run_qwen_shell,
+)
+
+
 L1_SUITES = (
     run_arithmetic, run_fifo, run_controller, run_uart, run_detokenizer,
     run_boot, run_config, run_mapper, run_bpe, run_normalization, run_dfa,
@@ -1007,6 +1021,7 @@ def main():
         "official-oracle-identity",
         "official-qwen-fragments",
         "official-qwen-regex",
+        "qwen-artifact-scopes",
         "official-unicode-sources",
         "unicode-intake",
         "unicode-conversion",
@@ -1409,6 +1424,9 @@ def main():
             run_qwen_fragments(evidence)
         elif args.probe == "official-qwen-regex":
             run_qwen_regex(evidence)
+        elif args.probe == "qwen-artifact-scopes":
+            from test_qwen_artifacts import run_composition_regression
+            run_composition_regression(evidence)
         elif args.probe == "official-unicode-sources":
             run_unicode_sources(evidence)
         elif args.probe == "unicode-intake":
@@ -1478,18 +1496,10 @@ def main():
             evidence.tools(("iverilog", "vvp", "yosys"))
             evidence.run_cases((f"suite-{index}-{suite.__name__}", suite)
                                for index, suite in enumerate(L1_SUITES))
-            run_qwen_fragments(evidence)
-            run_qwen_regex(evidence)
-            run_unicode_rtl(evidence)
-            run_official_checkpoint(evidence)
-            run_deepseek_reference(evidence)
-            run_deepseek_dfa(evidence)
-            run_deepseek_integration(evidence)
-            run_deepseek_boot(evidence)
-            run_deepseek_bos(evidence)
-            run_qwen_integration(evidence)
-            run_qwen_boot(evidence)
-            run_qwen_shell(evidence)
+            evidence.child(["python3", "tests/test_qwen_artifacts.py",
+                            evidence.relative(evidence.path)],
+                           "qwen-artifact-integrity-regression")
+            run_stages(evidence, OFFICIAL_STAGES)
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "
                 "coverage; exact official-profile conversion/RTL boot/tokenization and "
