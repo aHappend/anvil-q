@@ -24,7 +24,8 @@ def library_entrypoint_check(root, ev):
         not record["timed_out"] and stdout == "" and
         "validation library, not an inference entrypoint" in stderr and
         "python3 tests/verify.py --check benchmark-contract" in stderr and
-        "that command does not perform inference" in stderr,
+        "explicitly declared replay artifacts rerun " in stderr and
+        "actual RTL and independent FP64 inference" in stderr,
         scope=NOTICE, exit_code=record["exit_code"],
         diagnostic=stderr,
     )

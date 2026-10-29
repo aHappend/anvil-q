@@ -2,7 +2,9 @@
 """Collect real production RTL observations; never fabricate benchmark results.
 
 Default selection is all fifty cases, three modes and two independent processes
-for both teacher forcing and greedy generation. --teacher-prefix explicitly
+for both teacher forcing and greedy generation. Windows are consumed under
+unchanged numerical assertions and bound to executable reset-origin replays.
+--teacher-prefix explicitly
 collects an incomplete prefix, without changing RTL parameters or acceptance.
 All outputs are advisory preparation, not tests/data/full_model_results.json.
 """
@@ -350,7 +352,8 @@ def run_collection(ev, args):
     model, suite, _, config = validate_inputs(ev)
     selected = None
     if not (args.build_only or args.qualify_trace or args.qualify_comparisons):
-        selected = storage_preflight(ev, args, suite)
+        from streaming_production import select_cases
+        selected = select_cases(ROOT, args, suite, checked, ev)
     if args.qualify_comparisons:
         import numpy as np
         first_case = next(iter(suite["domains"].values()))["cases"][0]
@@ -467,94 +470,8 @@ def run_collection(ev, args):
     if args.build_only:
         ev.assertion("production_binary_built_not_executed", True)
         return
-    require(selected is not None, "collection selection was not preflighted")
-    index = {
-        "schema": 1, "purpose": "incomplete-production-rtl-observations",
-        "acceptance_evidence": False, "backend": "verilator",
-        "production_dimensions_unchanged": True, "required_cases": 50,
-        "required_modes": list(MODES), "required_independent_repeats": 2,
-        "model_manifest": descriptor(ROOT / "tests/data/model_manifest.json"),
-        "benchmark_manifest": descriptor(ROOT / "tests/data/benchmark_manifest.json"),
-        "runs": [], "complete_benchmark": False,
-        "limitations": "Raw public-pin collection only. Full result assembly, independent "
-        "repeat/numerical validation, task evaluation and arithmetic/control attribution "
-        "remain mandatory. Simulation never replaces target timing/resources/physical HIL."}
-    for case_number, (key, case) in enumerate(selected, args.case_start):
-        teacher = load_json(checked(ev, case["teacher_tokens"]))
-        prompt = load_json(checked(ev, case["prompt_tokens"]))
-        if args.teacher_prefix is not None:
-            teacher = teacher[:args.teacher_prefix]
-        require(teacher and prompt and all(type(x) is int and 0 <= x < 151936
-                                          for x in teacher + prompt), "invalid token IDs")
-        directory = ev.path / f"case-{case_number:02d}"
-        directory.mkdir()
-        # Recompute missing references from independent mathematics, never saved
-        # DUT outputs or an absent historical collector directory.
-        reference_tokens = directory / "reference-tokens.json"
-        write_json(reference_tokens, teacher)
-        ev.receipt.setdefault("data_sha256", {})[str(reference_tokens.relative_to(ROOT))] = sha(reference_tokens)
-        require(ev.run(f"case-{case_number:02d}-independent-fp64", [
-            sys.executable, "tests/production_sim.py", "--reference-worker",
-            "--tokens", str(reference_tokens.relative_to(ROOT)),
-            "--destination", str((directory / "references").relative_to(ROOT)),
-            "--modes", *args.modes, *(["--packed-storage"] if args.packed_storage else [])],
-            timeout=args.timeout),
-            "independent FP64 reference preparation failed")
-        references = load_json(directory / "references/references.json")
-        for mode in args.modes:
-            table = memory_table(ev, model, mode, directory / (mode + ".memory"))
-            for workload in (("teacher",) if args.teacher_prefix else ("teacher", "greedy")):
-                tokens = teacher if workload == "teacher" else prompt
-                token_path = directory / (mode + "-" + workload + ".tokens")
-                with token_path.open("x") as output:
-                    output.write("\n".join(map(str, tokens)) + "\n")
-                rope_path = prepare_rope(
-                    directory / (mode + "-" + workload + ".rope"),
-                    len(tokens) + (128 if workload == "greedy" else 0), mode)
-                runs = []
-                for repeat in range(2):
-                    run = directory / f"{mode}-{workload}-repeat-{repeat}"
-                    run.mkdir()
-                    runs.append(run)
-                    label = f"case-{case_number:02d}-{mode}-{workload}-{repeat}"
-                    command = [
-                        str(executable.relative_to(ROOT)), str(table.relative_to(ROOT)),
-                        str(token_path.relative_to(ROOT)), str(rope_path.relative_to(ROOT)),
-                        str(run.relative_to(ROOT)), str(MODES[mode]), workload,
-                        ",".join(map(str, config["eos_token_id"] if
-                                     isinstance(config["eos_token_id"], list) else
-                                     [config["eos_token_id"]])),
-                        "preparation-only",
-                        references[mode]["layers"]["path"] if workload == "teacher" else "-",
-                        references[mode]["logits"]["path"] if workload == "teacher" else "-",
-                        str(len(tokens))]
-                    if args.packed_storage:
-                        command.append("--packed-storage")
-                    for path in (table, token_path, rope_path):
-                        ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(ROOT))] = sha(path)
-                    passed = ev.run(label, command, timeout=args.timeout)
-                    record = {"case": key, "mode": mode, "workload": workload,
-                              "repeat": repeat, "teacher_positions": len(teacher),
-                              "complete_process": passed, "path": str(run.relative_to(ROOT))}
-                    index["runs"].append(record)
-                    write_json(ev.path / f"progress-{len(index['runs']):04d}.json", index)
-                    require(passed, "production simulation incomplete/failed; retained " + label)
-                    summary = load_json(run / "summary.json")
-                    require(summary["positions_completed"] >= len(tokens),
-                            "simulator did not complete all supplied tokens")
-                    ev.assertion(label + "_actual_rtl_completed", True, **record)
-                if workload == "teacher":
-                    compare_teacher(ev, key, mode, runs, references, len(teacher),
-                                    directory / (mode + "-teacher-comparison"))
-                else:
-                    eos = config["eos_token_id"]
-                    compare_greedy(ev, key, mode, runs, prompt,
-                                   directory / (mode + "-greedy-comparison.json"),
-                                   eos if isinstance(eos, list) else [eos])
-    # A collection pass is not the complete benchmark check or a physical claim.
-    write_json(ev.path / "collection.json", index)
-    ev.assertion("selected_collection_completed_not_benchmark_acceptance", True,
-                 runs=len(index["runs"]), teacher_prefix=args.teacher_prefix)
+    from streaming_production import collect as stream_collection
+    stream_collection(ev, args, executable, model, suite, config, selected)
 
 
 def main():

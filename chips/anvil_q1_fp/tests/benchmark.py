@@ -1,4 +1,4 @@
-"""Source/data-bound full-model evidence validation; never performs model inference.
+"""Source/data-bound full-model validation, including explicitly declared RTL replay.
 
 The on-disk schema is documented in tests/BENCHMARK.md. Numerical summaries are
 recomputed from full binary arrays, not accepted from self-reported metrics.
@@ -136,6 +136,13 @@ class Validator:
         self.artifacts = {}
         self.metrics = []
         self.decoders = {}
+        self.replay = None
+
+    def replay_resolver(self):
+        if self.replay is None:
+            from streaming_replay import Resolver
+            self.replay = Resolver(self.root, self.ev)
+        return self.replay
 
     def artifact(self, descriptor):
         require(isinstance(descriptor, dict), "artifact must be a path/sha256 descriptor")
@@ -167,7 +174,7 @@ class Validator:
                 "generated text differs from pinned token decoding")
         return expected
 
-    def run(self, descriptor, bindings, purpose="full-model-execution"):
+    def run(self, descriptor, bindings, purpose="full-model-execution", replay_role=None):
         run = self.document(descriptor)
         require(type(run["schema"]) is int and run["schema"] == 1 and run["purpose"] == purpose,
                 "fixture/reduced/synthetic records cannot establish model execution")
@@ -190,7 +197,11 @@ class Validator:
             self.artifact(run[key])
         require(run["outputs"], "execution output bindings missing")
         for output in run["outputs"]:
-            self.artifact(output)
+            if "replay" in output:
+                require(replay_role is not None, "replay output requires an explicit origin role")
+                self.replay_resolver().bind(output, role=replay_role)
+            else:
+                self.artifact(output)
         return run
 
     @staticmethod
@@ -336,7 +347,25 @@ class Validator:
 
     def array_bytes(self, descriptor, dtype, width):
         from packed_storage import array_bytes
+        if "replay" in descriptor:
+            return self.replay_resolver().read(descriptor, dtype, width)
         return array_bytes(self.artifact(descriptor), descriptor, dtype, width)
+
+    def replay_context(self, descriptor, key, mode, workload, contexts, position,
+                       name, dtype, width, offset=0):
+        if "replay" not in descriptor:
+            return
+        resolver = self.replay_resolver()
+        identity, _ = resolver.bind(descriptor)
+        spec = resolver.manifests[identity][0]["spec"]
+        require(spec["case"] == key and spec["mode"] == mode and
+                spec["workload"] == workload and spec["tokens"] == contexts,
+                "replay case/mode/context substituted")
+        view = descriptor["replay"]
+        require(all(view[field] == expected for field, expected in (
+            ("position", position), ("name", name), ("dtype", dtype),
+            ("width", width), ("offset", offset))),
+            "replay numerical vector substituted/reordered")
 
     def arrays(self, actual, reference, repeat, width, threshold, label, wide=False):
         encoding = "d" if wide else "f"
@@ -388,11 +417,12 @@ class Validator:
         require(results["bindings"] == bindings, "results bound to different sources/data")
         records = results["cases"]
         require(len(records) == 150, "requires 50 cases in each of three modes")
-        execution = self.run(results["execution"], bindings)
-        repeated = self.run(results["repeat_execution"], bindings)
+        execution = self.run(results["execution"], bindings, replay_role="observation")
+        repeated = self.run(results["repeat_execution"], bindings, replay_role="repeat")
         require(results["execution"] != results["repeat_execution"],
                 "repeat execution must be an independent run record")
-        reference = self.run(results["reference_execution"], bindings, "full-model-reference")
+        reference = self.run(results["reference_execution"], bindings, "full-model-reference",
+                             replay_role="reference")
         require(reference["arithmetic"] == "ieee-fp64" and
                 reference["independent_of_rtl"] is True and
                 reference["weight_semantics"] == "decoded-selected-stream",
@@ -410,6 +440,12 @@ class Validator:
         def retained_files(run):
             identities = set()
             for descriptor in (*run["outputs"], run["stdout"], run["stderr"]):
+                if "replay" in descriptor:
+                    _, origin = self.replay_resolver().bind(descriptor)
+                    for entry in (origin["stdout"], origin["stderr"]):
+                        stat = self.artifact(entry).stat()
+                        identities.add((stat.st_dev, stat.st_ino))
+                    continue
                 stat = self.artifact(descriptor).stat()
                 identities.add((stat.st_dev, stat.st_ino))
             return identities
@@ -483,6 +519,12 @@ class Validator:
                                   ("decoded_weight_logits", reference),
                                   ("checkpoint_fp64_logits", reference)):
                     self.produced(position[name], run)
+                    reference_name = ("checkpoint-logits.f64" if name == "checkpoint_fp64_logits"
+                                      else "selected-logits.f64")
+                    self.replay_context(
+                        position[name], key, mode, "teacher", contexts, position["position"],
+                        "logits.f32" if name in ("logits", "repeat_logits") else reference_name,
+                        "<f4" if name in ("logits", "repeat_logits") else "<f8", 151936)
                 require(self.array_bytes(position["fp64_logits"], "<f8", 151936) ==
                         self.array_bytes(position["decoded_weight_logits"], "<f8", 151936),
                         "selected-weight FP64 references differ: " + label)
@@ -495,6 +537,11 @@ class Validator:
                     for name, run in (("output", execution), ("repeat_output", repeated),
                                       ("fp64_output", reference)):
                         self.produced(layer[name], run)
+                        wide = name == "fp64_output"
+                        self.replay_context(
+                            layer[name], key, mode, "teacher", contexts, position["position"],
+                            "selected-layers.f64" if wide else "layers.f32",
+                            "<f8" if wide else "<f4", 896, layer["layer"] * 896 * (8 if wide else 4))
                     self.arrays(layer["output"], layer["fp64_output"],
                                 layer["repeat_output"], 896,
                                 (.9999, .002) if mode != "w4a16" else (-1, float("inf")),
@@ -524,6 +571,10 @@ class Validator:
             for index, step in enumerate(greedy["steps"]):
                 self.produced(step["logits"], execution)
                 self.produced(step["repeat_logits"], repeated)
+                prompt = self.document(case["prompt_tokens"])
+                for descriptor in (step["logits"], step["repeat_logits"]):
+                    self.replay_context(descriptor, key, mode, "greedy", prompt,
+                                        len(prompt) + index - 1, "logits.f32", "<f4", 151936)
                 actual = self.array_bytes(step["logits"], "<f4", 151936)
                 repeated_logits = self.array_bytes(step["repeat_logits"], "<f4", 151936)
                 require(actual == repeated_logits,
@@ -604,7 +655,13 @@ class Validator:
         bindings = dict(model_manifest=descriptors["model_manifest"],
                         benchmark_manifest=descriptors["benchmark_manifest"],
                         source_sha256=source_hashes)
-        scores = self.results(results, cases, bindings, model)
+        success = False
+        try:
+            scores = self.results(results, cases, bindings, model)
+            success = True
+        finally:
+            if self.replay is not None:
+                self.replay.close(success)
         return dict(cases=150, task_scores=scores, numerical=self.metrics,
                     backend_note="Simulation and physical evidence are not interchangeable")
 
@@ -734,7 +791,8 @@ if __name__ == "__main__":
     print(
         "tests/benchmark.py is a validation library, not an inference entrypoint. "
         "Use python3 tests/verify.py --check benchmark-contract to validate "
-        "existing full-model evidence; that command does not perform inference.",
+        "existing full-model evidence; explicitly declared replay artifacts rerun "
+        "actual RTL and independent FP64 inference into fresh bounded windows.",
         file=sys.stderr,
     )
     sys.exit(2)

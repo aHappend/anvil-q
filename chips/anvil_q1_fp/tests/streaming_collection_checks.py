@@ -5,7 +5,6 @@ import argparse
 import gzip
 import json
 import math
-import os
 from pathlib import Path
 import resource
 import struct
@@ -99,7 +98,7 @@ def worker(args):
               "lifecycle": args.lifecycle, "vectors_compared": 0,
               "transactions_compared": 0, "metrics": [],
               "peak_fixture_allocated_bytes": allocation(inputs),
-              "peak_fixture_and_output_allocated_bytes": 0}
+              "peak_fixture_and_output_allocated_bytes": allocation(inputs) + allocation(directory)}
     streams = []
     try:
         observed = transactions(inputs / "transactions.u32.gz")
@@ -114,6 +113,7 @@ def worker(args):
         names = ("actual", "repeat", "reference", "checkpoint")
         streams = [(inputs / (name + ".bin")).open("rb") for name in names]
         validator = Validator(ROOT, Observation())
+        report["metrics"] = validator.metrics
         released = None
         for position, layer, width in vectors():
             paths = []
@@ -148,7 +148,6 @@ def worker(args):
                     path.unlink()
         require(all(stream.read(1) == b"" for stream in streams),
                 "trailing array stream payload")
-        report["metrics"] = validator.metrics
         if args.lifecycle == "streaming":
             # A fresh validator must reread the bytes; cached hashes are not evidence.
             try:
@@ -184,8 +183,14 @@ def main():
     ev = Evidence("streaming-collection")
     passed = False
     try:
-        ev.receipt["repair_of"] = item(
-            ROOT / "evidence/preparation/verifier-production-simulation-6s9_bb4j/receipt.json")
+        for field, name in (
+            ("diagnosed_collection_failure",
+             "verifier-production-simulation-6s9_bb4j"),
+            ("repair_of", "verifier-streaming-collection-0nxrhbxm"),
+        ):
+            previous = ROOT / "evidence/preparation" / name / "receipt.json"
+            if previous.is_file():
+                ev.receipt[field] = item(previous)
         require(ev.run("python-version", [sys.executable, "--version"], timeout=30),
                 "Python version unavailable")
         inputs = ev.path / "pristine-inputs"
@@ -221,7 +226,7 @@ def main():
             ("numerical", "numerical fidelity failed"),
             ("repeat", "nondeterministic output"),
             ("missing-transaction", "transaction missing/duplicate/reordered"),
-            ("duplicate-transaction", "transaction missing/duplicate/reordered"),
+            ("duplicate-transaction", "single-outstanding cycle order"),
             ("truncated-array", "truncated array payload"),
             ("truncated-transaction", "partial"),
         ):
