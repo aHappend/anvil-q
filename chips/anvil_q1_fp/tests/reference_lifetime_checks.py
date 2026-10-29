@@ -14,7 +14,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import load_json, require, sha
 from memory_capacity_checks import Monitor, availability, process_sample
-from reference_memory_checks import extents
+from reference_memory_checks import THREAD_KEYS, extents
 from verify import Evidence, ROOT
 
 
@@ -207,13 +207,13 @@ def metadata_fixture(rows, snapshot):
              reference_position_records=2 * positions,
              observed_layer_records=positions * 24, metric_records=positions * 26)
     del reference_indexes, observed, metrics, comparison, comparison_json
-    greedy_steps = [{"context": [17] * (row["greedy_positions_maximum"] - 127 + step),
+    greedy_positions = max(row["greedy_positions_maximum"] for row in rows)
+    greedy_steps = [{"context": [17] * (greedy_positions - 127 + step),
                      "logits": descriptor(f"synthetic/greedy-{step}/logits.f32"),
                      "repeat_logits": descriptor(f"synthetic/repeat-{step}/logits.f32")}
                     for step in range(128)]
     greedy_size = deep_size((index, evidence, greedy_steps, encoded))
-    require(len(greedy_steps[-1]["context"]) == max(
-        row["greedy_positions_maximum"] for row in rows),
+    require(len(greedy_steps[-1]["context"]) == greedy_positions,
         "greedy metadata maximum extent differs")
     snapshot("maximum-greedy-context-metadata", deep_object_graph_bytes=greedy_size)
     return {"runs": 600, "child_records": 650, "assertions": 900,
@@ -246,6 +246,7 @@ def worker(destination):
               "whole_process_memory_qualified": False, "numpy_version": np.__version__,
               "python_version": sys.version, "teacher_positions": positions,
               "observer_positions": observer, "token_sha256": bindings,
+              "thread_settings": {key: os.environ.get(key) for key in THREAD_KEYS},
               "phases": [], "repeats": []}
 
     def snapshot(phase, **detail):
@@ -358,7 +359,37 @@ def worker(destination):
             report["repeats"][0]["logit_sha256"] == report["repeats"][1]["logit_sha256"],
             "synthetic serial repeats differ")
     report["metadata_fixture"] = metadata_fixture(rows, snapshot)
-    report["visible_payload_accounting"] = memory_accounting(rows)
+    accounting = memory_accounting(rows)
+    report["visible_payload_accounting"] = accounting
+    model = load_json(ROOT / "tests/data/model_manifest.json")
+    mapped_files = {
+        mode: sum((ROOT / stream[key]["path"]).stat().st_size
+                  for key in ("weights", "zeros", "scales") if key in stream)
+        for mode, stream in model["streams"].items()}
+    mapped_files["checkpoint"] = sum((ROOT / item["path"]).stat().st_size
+                                     for item in model["checkpoint"])
+    report["phase_allocation_planning"] = {
+        "mapped_weight_file_bytes_by_semantics": mapped_files,
+        "full_reference_visible_arrays_plus_all_selected_file_bytes":
+            accounting["conservative_visible_reference_array_budget_bytes"] +
+            max(mapped_files.values()),
+        "comparison_two_complete_raw_reference_mappings":
+            2 * positions * (24 * 896 + 151936) * 8,
+        "comparison_additional_array_tuple_and_iteration_payload_allowance":
+            128 * 151936,
+        "orchestration_and_comparison_object_graph_fixture_bytes":
+            report["metadata_fixture"]["teacher_comparison_fixture_object_graph_bytes"],
+        "whole_process_peak_bound_bytes": None,
+        "unbounded_additive_terms": [
+            "Interpreter/modules, Python/NumPy/malloc metadata, fragmentation and retention.",
+            "BLAS and numerical-library workspaces/threads, expression implementation scratch.",
+            "Real orchestrator/JSON/log/hash metadata beyond the synthetic short-path fixture.",
+            "Compiler/linker/Verilated peaks, C++ allocator and gzip library workspaces.",
+            "Page tables, mapping objects, kernel/file cache charges and concurrent processes."],
+        "policy": "Visible payload planning is deliberately additive across disjoint "
+                  "lifetimes and charges every selected weight file byte as resident. "
+                  "The metadata object-graph quantity is a fixture observation, not an "
+                  "allocation cap. Unknown additive terms prevent a whole-process bound."}
     report["scope"] = (
         "Actual unchanged AWQStream decoding in both maximum matrix orientations; "
         "two serial complete 24-layer reference_case calls at maximum frozen teacher "
@@ -409,6 +440,10 @@ def main():
                 sys.executable, "tests/reference_lifetime_checks.py", "--worker",
                 str(destination.relative_to(ROOT))], timeout=3600)
         ev.receipt["sampled_orchestrator_and_worker"] = monitor.report()
+        ev.receipt["sampled_orchestrator_and_worker"]["scope"] = (
+            "This Evidence orchestrator and lifetime worker subtree, not production "
+            "collection. Shared pages double-counted; 20-ms samples can miss peaks. "
+            "Observed RSS is not a bound or reserved capacity.")
         require(ok, "reference lifetime worker failed")
         require((ev.path / "reference-lifetime-worker.stderr").stat().st_size == 0,
                 "reference lifetime worker emitted stderr")
