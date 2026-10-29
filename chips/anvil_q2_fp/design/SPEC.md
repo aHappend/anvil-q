@@ -72,6 +72,10 @@ must not alter any legal configuration.
 | Cancel/flush plus held memory handshake | held valid && ready before flush edge | parent scheduler accounts for accepted request and drains its response |
 | Cancel/flush plus response | accepted response before edge | account once; never commit cancelled arithmetic into new token |
 | Fault versus normal completion | fault on same edge | token fails and outstanding accepted traffic drains |
+| GEMV bias command | BIAS_ADD and bias adder ready | capture selected final sum and expanded bias once; hold row index while waiting |
+| GEMV bias arithmetic | command accepted at E0 | operand capture E0, order/classify E1, distance E2, align E3, add/subtract E4, normalization distance E5, normalize E6, RNE E7, pack/output E8; earliest result transfer E9 |
+| GEMV bias completion | BIAS_ADD_WAIT and adder valid | reject nonfinite result or write exactly the held row; only then advance row or start scratch writes |
+| GEMV bias reset/cancel | numerical core reset asserted | annul pending arithmetic and result; no partial bias result writes a sum |
 
 All sequential RTL uses `always @(posedge clk or negedge rst_n)` and
 nonblocking state assignments. Combinational division and modulo are forbidden.

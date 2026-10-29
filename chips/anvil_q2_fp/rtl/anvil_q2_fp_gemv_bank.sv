@@ -23,7 +23,7 @@ module anvil_q2_fp_gemv_bank #(
     SCALE_REQ=4, SCALE_WAIT=5, ACT_REQ=6, ACT_WAIT=7, ACT_CONVERT=8,
     WEIGHT_REQ=9, WEIGHT_WAIT=10, DEQUANT=11, DEQUANT_WAIT=12,
     FEED=13, SUM_WAIT=14, BIAS_REQ=15, BIAS_WAIT=16, BIAS_ADD=17,
-    WRITE_REQ=18, WRITE_WAIT=19, OUTPUT=20, BAD_COMMAND=21;
+    WRITE_REQ=18, WRITE_WAIT=19, OUTPUT=20, BAD_COMMAND=21, BIAS_ADD_WAIT=22;
   reg [4:0] state;
   reg failed;
   reg [31:0] layer, position, column, row_base, inputs, outputs;
@@ -41,7 +41,8 @@ module anvil_q2_fp_gemv_bank #(
   wire [15:0] converted_activation=narrow16(activation32,FP_FORMAT);
   wire dequant_ready, dequant_valid, dequant_error;
   wire [15:0] dequant_weight;
-  wire [31:0] bias_sum=fp_add(sums[element],bias32);
+  wire bias_ready, bias_valid, bias_error;
+  wire [31:0] bias_sum;
   reg bad_sum;
   integer i;
   always @* begin
@@ -66,6 +67,11 @@ module anvil_q2_fp_gemv_bank #(
     .in_ready(dequant_ready),.in_qweight(qweight),.in_qzero(qzero),
     .in_scale(scales[element]),.in_lane(element),.out_valid(dequant_valid),
     .out_ready(1'b1),.out_weight(dequant_weight),.out_error(dequant_error));
+  anvil_q2_fp_add bias_adder(
+    .clk(clk),.rst_n(rst_n),.in_valid(rst_n && state==BIAS_ADD),
+    .in_ready(bias_ready),.in_a(sums[element]),.in_b(bias32),
+    .out_valid(bias_valid),.out_ready(1'b1),.out_data(bias_sum),
+    .out_error(bias_error));
   anvil_q2_mem_port memory_port(
     .clk(clk),.rst_n(rst_n),.issue(issue),.write(write),.kind(kind),
     .layer(address_layer),.proj(address_proj),.row(address_row),.col(address_col),
@@ -210,8 +216,9 @@ module anvil_q2_fp_gemv_bank #(
           failed<=1; state<=OUTPUT;
         end else begin bias32<=expand16(read_data[15:0],FP_FORMAT); state<=BIAS_ADD; end
       end
-      BIAS_ADD: begin
-        if (!fp_is_finite(bias_sum)) begin failed<=1; state<=OUTPUT; end
+      BIAS_ADD: if (bias_ready) state<=BIAS_ADD_WAIT;
+      BIAS_ADD_WAIT: if (bias_valid) begin
+        if (bias_error) begin failed<=1; state<=OUTPUT; end
         else begin
           sums[element]<=bias_sum;
           if (element==7 || row_base+{29'd0,element}+1>=outputs) begin

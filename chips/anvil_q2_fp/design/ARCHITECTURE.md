@@ -90,6 +90,20 @@ with explicit GROUP_SIZE wrap counters. Inactive banks finish without memory
 traffic; tail rows are masked. Q/K/V add each selected-format bias once.
 Every active running sum is checked for nonfinite execution results.
 
+Each bank's final bias addition uses `bias_adder:anvil_q2_fp_add`, a
+single-command registered FP32 unit. The selected sum and bias are captured
+before arithmetic; ordering/classification, exponent distance, sticky alignment,
+add/subtract, normalization distance, normalization, RNE increment and result
+packing occupy separate clocks. The bank holds its row index until the
+adder response and writes back only a finite result. This removes the
+reported `element[1]` to `sums[1][28:29]` cone that combined indexed selection,
+the entire FP32 add and indexed writeback. All eight final sums, tail masking,
+bias-once semantics and memory coordinates remain unchanged. The added latency
+is outside the tensor lane: its three captures and one-beat initiation interval
+are unchanged. Both direct decoder and MLP GEMV instances use this controller.
+The retained -4.035 ns setup failure motivates this repair; only fresh shared
+runtime Quartus STA can establish timing closure.
+
 RMSNorm performs an ascending square-and-sum pass and a reread/output pass.
 Mean, epsilon addition, square root, reciprocal and output multiplications
 are separate FP32 operations. Elementwise modes retain the parent's three
