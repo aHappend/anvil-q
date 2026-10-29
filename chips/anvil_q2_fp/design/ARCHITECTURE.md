@@ -94,6 +94,36 @@ control boundary. There is no additional command or memory cycle. Both changes
 require independent numerical/protocol checking and fresh shared-runtime STA;
 the -0.255 ns report remains a failure, not evidence of repaired timing closure.
 
+The next timing repair evaluates both operand orders before magnitude selection.
+Close subtraction computes its two exact 25-bit candidates in parallel, then
+selects the nonnegative candidate before leading-zero detection. Far alignment
+computes each operand's sticky shift using the opposite exponent distance in
+parallel, then selects the aligned smaller operand. Only the selected direction's
+distance is meaningful; the unused speculative result cannot affect arithmetic
+or exceptional-value handling. This removes magnitude-compare/mux delay ahead
+of subtraction and sticky alignment, at the cost of duplicated combinational
+logic. The existing normalization, RNE, three register captures and recurrence
+order remain unchanged. Independent verification must cover equal exponents,
+subnormal effective exponents, distance one, distant operands in both orders,
+cancellation, rounding boundaries and stalls.
+
+The decoder now places a preserved one-entry request register directly after
+its six-engine scalar mux, separating local engine/mode selection from the
+top's scalar mux and request buffer. It captures the complete request only
+when empty, holds it through downstream stalls and retires without same-edge
+refill. Responses retain their original route. Each engine waits for its
+response before completion, so decoder selection cannot change while the
+buffer owns traffic. Reset clears occupancy and payload; integrated cancellation
+annuls locally buffered work while the parent scheduler drains accepted tags.
+The added latency is one unstalled cycle per decoder scalar transaction, not
+an arithmetic stage or a change to independent GEMV bank traffic.
+
+The retained -0.255 ns report still fails the unchanged 10.000 ns target.
+Its endpoint summary does not contain cell arcs, and its referenced detailed
+STA report was unavailable during this repair. Neither the speculative
+arithmetic nor the new decoder boundary establishes timing closure without
+fresh shared-runtime post-fit STA. No timing exception or waiver is introduced.
+
 Scalar arithmetic shares one command slot. Add uses a registered FP32
 adder; multiply registers its exact product before rounding. Divide performs
 one restoring quotient bit per cycle, and square root performs one radix-4

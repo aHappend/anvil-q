@@ -254,12 +254,13 @@ package anvil_q2_fp_pkg;
     reg [31:0] big, smaller;
     reg a_is_big, subtract, close_path;
     reg [7:0] ae, be, big_exp, distance_ab, distance_ba, distance;
+    reg [26:0] aligned_a, aligned_b;
     reg [26:0] far_big, far_small, far_normalized;
     reg [27:0] far_total;
     reg [24:0] far_rounded;
     reg [8:0] far_exp, far_packed_exp;
     reg [7:0] far_encoded_exp;
-    reg [24:0] close_small, close_total, close_normalized;
+    reg [24:0] close_ab, close_ba, close_total, close_normalized;
     reg [23:0] close_rounded, close_significand;
     reg [4:0] close_leading, close_shift;
     reg [7:0] available_shift, close_exp, close_encoded_exp;
@@ -279,8 +280,13 @@ package anvil_q2_fp_pkg;
 
       // Only close subtraction can cancel by more than one leading bit.
       // Its one-bit alignment is exact, so normalization needs no sticky barrel.
-      close_small=distance[0] ? {1'b0,fp_sig(smaller)} : {fp_sig(smaller),1'b0};
-      close_total={fp_sig(big),1'b0}-close_small;
+      // Speculate both orders before magnitude selection, so the comparator
+      // does not precede the subtractor or either sticky-alignment barrel.
+      close_ab={fp_sig(a),1'b0}-
+        (distance_ab[0] ? {1'b0,fp_sig(b)} : {fp_sig(b),1'b0});
+      close_ba={fp_sig(b),1'b0}-
+        (distance_ba[0] ? {1'b0,fp_sig(a)} : {fp_sig(a),1'b0});
+      close_total=a_is_big ? close_ab : close_ba;
       close_leading=fp_leading_zeros27({close_total,2'd0});
       available_shift=big_exp-8'd1;
       close_shift=available_shift<{3'd0,close_leading} ?
@@ -300,7 +306,9 @@ package anvil_q2_fp_pkg;
       // Same-sign addition or distant subtraction needs at most one-bit
       // normalization; the general cancellation detector is off this path.
       far_big={fp_sig(big),3'd0};
-      far_small=shift_jam27({fp_sig(smaller),3'd0},{24'd0,distance});
+      aligned_a=shift_jam27({fp_sig(a),3'd0},{24'd0,distance_ba});
+      aligned_b=shift_jam27({fp_sig(b),3'd0},{24'd0,distance_ab});
+      far_small=a_is_big ? aligned_b : aligned_a;
       far_total=fp_add28({1'b0,far_big},
         {1'b0,far_small}^{28{subtract}},subtract);
       if (far_total[27]) begin

@@ -50,6 +50,14 @@ module anvil_q2_fp_decoder_layer #(
   wire [SB*3-1:0] eg_reqp, mg_reqp;
   wire [SB*32-1:0] eg_reql, eg_reqrow, eg_reqcol, eg_reqwd, eg_rsprd;
   wire [SB*32-1:0] mg_reql, mg_reqrow, mg_reqcol, mg_reqwd, mg_rsprd;
+  wire scalar_req_valid, scalar_req_ready, scalar_req_write;
+  wire [3:0] scalar_req_kind;
+  wire [2:0] scalar_req_proj;
+  wire [31:0] scalar_req_layer, scalar_req_row, scalar_req_col, scalar_req_wdata;
+  (* preserve, dont_merge *) reg scalar_pending, scalar_write;
+  (* preserve, dont_merge *) reg [3:0] scalar_kind;
+  (* preserve, dont_merge *) reg [2:0] scalar_proj;
+  (* preserve, dont_merge *) reg [31:0] scalar_layer, scalar_row, scalar_col, scalar_wdata;
   genvar g;
   generate for(g=0;g<6;g=g+1) begin: commands
     assign command[g]=rst_n && state==1 && selected==g;
@@ -132,9 +140,32 @@ module anvil_q2_fp_decoder_layer #(
     reqrow[160+:32],reqcol[160+:32],reqwd[160+:32],rspv[5],rspr[5],rsprd[160+:32],rspe[5]);
   anvil_q2_bus_mux #(6) bus(
     rst_n,selected,reqv,reqr,reqw,reqk,reql,reqp,reqrow,reqcol,reqwd,
-    rspv,rspr,rsprd,rspe,mem_req_valid,mem_req_ready,mem_req_write,mem_req_kind,
-    mem_req_layer,mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata,
+    rspv,rspr,rsprd,rspe,scalar_req_valid,scalar_req_ready,scalar_req_write,scalar_req_kind,
+    scalar_req_layer,scalar_req_proj,scalar_req_row,scalar_req_col,scalar_req_wdata,
     mem_rsp_valid,mem_rsp_ready,mem_rsp_rdata,mem_rsp_error);
+  assign scalar_req_ready=rst_n && !scalar_pending;
+  assign mem_req_valid=rst_n && scalar_pending;
+  assign mem_req_write=rst_n && scalar_write;
+  assign mem_req_kind=rst_n ? scalar_kind : 4'd0;
+  assign mem_req_layer=rst_n ? scalar_layer : 32'd0;
+  assign mem_req_proj=rst_n ? scalar_proj : 3'd0;
+  assign mem_req_row=rst_n ? scalar_row : 32'd0;
+  assign mem_req_col=rst_n ? scalar_col : 32'd0;
+  assign mem_req_wdata=rst_n ? scalar_wdata : 32'd0;
+  always @(posedge clk or negedge rst_n) begin
+    if(!rst_n) begin
+      scalar_pending<=0; scalar_write<=0; scalar_kind<=0; scalar_proj<=0;
+      scalar_layer<=0; scalar_row<=0; scalar_col<=0; scalar_wdata<=0;
+    end else if(scalar_pending) begin
+      if(mem_req_ready) scalar_pending<=0;
+    end else if(scalar_req_valid && scalar_req_ready) begin
+      scalar_pending<=1;
+      scalar_write<=scalar_req_write; scalar_kind<=scalar_req_kind;
+      scalar_layer<=scalar_req_layer; scalar_proj<=scalar_req_proj;
+      scalar_row<=scalar_req_row; scalar_col<=scalar_req_col;
+      scalar_wdata<=scalar_req_wdata;
+    end
+  end
   always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
       state<=0; step<=0; failed<=0; layer<=0; position<=0; phase<=0;

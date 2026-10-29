@@ -56,6 +56,9 @@ must not alter any legal configuration.
 | Attention request buffer empty | selected local memory request valid && local ready | capture complete request; expose downstream valid after edge, with earliest downstream transfer at following edge |
 | Attention request buffer full | downstream valid && ready | retire once and clear occupancy; no same-edge refill or ready look-through; otherwise hold every payload bit |
 | Attention request buffer reset | rst_n=0 (numerical core annul when integrated) | clear occupancy and payload; discard only locally buffered work, never scheduler-owned transactions |
+| Decoder scalar buffer empty | selected engine request valid && local ready | register complete request after six-engine mux; earliest downstream acceptance at next edge |
+| Decoder scalar buffer full | downstream valid && ready | retire once, without same-edge refill; otherwise hold valid and every payload bit |
+| Decoder scalar buffer reset/cancel | numerical core reset asserted | clear occupancy and payload; scheduler-owned requests remain subject to parent draining |
 | Lane first && last | accepted singleton beat | reset logical accumulator to +0, add this product once, emit last=1 |
 | Lane first reaches S3 | ready3 && v2 && first2 | select the rounded product after the ordinary accumulation cone; canonicalize either product zero to +0, exactly matching RNE(+0 + product) |
 | Lane bubble | !in_valid or !in_ready | no arithmetic/accumulator update for that beat |
@@ -120,6 +123,14 @@ controller still waits for the actual downstream response. Response routing,
 numerical operation order and the three-stage tensor lane are unchanged.
 Reset clears the buffer; integrated cancellation uses the numerical core reset
 while the parent scheduler retains responsibility for previously accepted tags.
+
+The decoder also registers its scalar request after the six-engine mux and
+before the top mux. It uses the same one-entry, non-fall-through semantics,
+adding one unstalled cycle per decoder scalar request. The selected engine
+continues waiting for the actual memory response, so routing cannot change
+while this buffer owns a request. Responses are not registered here; independent
+GEMV bank traffic does not traverse this buffer. Reset clears all its outputs
+and integrated cancellation annuls only requests not yet scheduler-owned.
 
 Required source hierarchy:
 
