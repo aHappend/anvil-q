@@ -1,10 +1,12 @@
 """Bounded capture recovery: failure fixtures and unchanged reduced RTL attention."""
 
 import argparse
+import datetime
 import hashlib
 import json
 import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -63,10 +65,12 @@ if action != "healthy":
 def existing_root_fixture(run):
     root = run.relative(run.path / "root-reuse")
     children = []
+    intervals = []
     preserved = {}
     compared_files = 0
-    for index in range(2):
-        output = run.command(
+
+    def launch(index):
+        return run.command(
             ["python3", "-c",
              "import sys; sys.path.insert(0, 'tests'); "
              "from retained import Run; "
@@ -77,6 +81,16 @@ def existing_root_fixture(run):
              f"run.finish('passed-focused-only', fixture='existing-root', invocation={index})"],
             f"root-reuse-fresh-process-{index}",
             environment={"ANVIL_EVIDENCE_ROOT": root})
+
+    concurrent_outputs = []
+    for index in range(4):
+        if index < 2:
+            output = launch(index)
+        else:
+            if index == 2:
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    concurrent_outputs = list(pool.map(launch, range(2, 4)))
+            output = concurrent_outputs[index - 2]
         names = [line for line in output.read_text().splitlines()
                  if line.endswith("/receipt.json")]
         assert len(names) == 1, names
@@ -87,6 +101,8 @@ def existing_root_fixture(run):
         assert child["source_sha256"] == run.receipt["source_sha256"]
         assert child["outcome"] == "passed-focused-only"
         assert child["invocation"] == index
+        intervals.append({
+            "started_at": child["started_at"], "ended_at": child["ended_at"]})
         assert path.parent not in children, "reused a prior run directory"
         for name, expected in preserved.items():
             assert (ROOT / name).read_bytes() == expected, (
@@ -110,10 +126,17 @@ def existing_root_fixture(run):
     for name, expected in preserved.items():
         assert (ROOT / name).read_bytes() == expected, (
             f"independent reopening changed prior evidence: {name}")
-    assert len(children) == len(reopened) == 2 and compared_files > 0
+    assert len(children) == len(reopened) == 4 and compared_files > 0
+    overlap = (
+        min(datetime.datetime.fromisoformat(row["ended_at"]) for row in intervals[2:])
+        - max(datetime.datetime.fromisoformat(row["started_at"]) for row in intervals[2:])
+    ).total_seconds()
+    assert overlap > 0, "concurrent root-reuse invocations did not overlap"
     return dict(
         root=root, receipts=[run.relative(path / "receipt.json") for path in children],
         invocations_compared=len(children), preserved_files_compared=compared_files,
+        concurrent_invocations=2,
+        concurrent_overlap_s=overlap, invocation_intervals=intervals,
         allocation="fresh Python processes with ANVIL_EVIDENCE_ROOT",
         independent_reopens=reopened,
         preserved_sha256={name: hashlib.sha256(data).hexdigest()
