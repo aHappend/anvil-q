@@ -1,8 +1,10 @@
-"""Bounded explicit-clock experiment; never selects a delivery simulation tier.
+"""Explicit shell clock driver and bounded paired feasibility experiments.
 
 The candidate removes only the recurring SV clock-delay coroutine. Verilator
 timing support remains for the original edge waits and post-edge stimulus delays;
 removing those would change the experiment rather than measure the clock driver.
+Supported shell benches select this driver explicitly; all other benches retain
+their existing driver. The timed SV driver remains available for paired probes.
 """
 
 import copy
@@ -247,3 +249,65 @@ def run_driver_scaling(evidence, receipts):
     }
     save(evidence.path / "driver-scaling-summary.json", summary)
     evidence.record["driver_scaling_summary"] = summary
+
+
+def run_driver_capacity(evidence, receipts):
+    """One admitted synthetic capacity cell, never a complete-table retry."""
+    expected = (
+        "evidence/preparation/shell-driver-comparison-"
+        "90b7b32df583442187a2cd9bc10a8663/receipt.json",
+        "evidence/preparation/shell-driver-scaling-"
+        "4e63b60753ea4ae1a749fe0b83adbdee/receipt.json",
+    )
+    require(tuple(receipts) == expected, "Capacity probe requires both admitted parents")
+    parents = []
+    for name in receipts:
+        raw = (ROOT / name).read_bytes()
+        prior = json.loads(raw)
+        require(prior["exit_code"] == 0 and prior["child_settled"] and
+                prior["sources_unchanged"], "Parent experiment did not settle successfully")
+        for path, value in prior["source_sha256"].items():
+            if not path.startswith("tests/"):
+                require(hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == value,
+                        "Non-verification source changed after admitted parents: " + path)
+        parents.append({"path": name, "sha256": hashlib.sha256(raw).hexdigest()})
+    evidence.record["driver_capacity_parents"] = parents
+    evidence.record["driver_experiment_scope"] = (
+        "One serial synthetic capacity-16385, seed17/bypass pair, general-only; "
+        "eight selected tokens and all physical head rows. Supplemental diagnostic, "
+        "not official complete tables, pretrained weights or delivery acceptance.")
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    directory = evidence.path / "capacity-16385"
+    directory.mkdir()
+    generation = evidence.child(
+        ["./.venv/bin/python", "tests/qwen_shell.py", evidence.relative(directory),
+         "--compact", "16385"], "driver-capacity-inputs-16385")
+    info = json.loads((directory / "shell-reference.json").read_bytes())
+    require(info["physical_capacity"] == 16385 and
+            len(info["cases"][0]["generated_ids"]) == 8,
+            "Capacity probe must retain all eight generated tokens")
+    result = pair(evidence, info, "qwen", (17,), (1,),
+                  general_only=True, reject=False)
+    evidence.record["driver_capacity"] = result
+    save(evidence.path / "driver-capacity-16385.json", result)
+    summary = {
+        "capacity": 16385, "seed": 17, "bypass": True,
+        "generation_seconds": generation["duration_s"],
+        "measurements": [{
+            "driver": driver, "cycles": row["frames"][-1]["cycles"],
+            "operations": row["frames"][-1]["operations"],
+            "output_bytes": row["frames"][-1]["output_bytes"],
+            "simulation_seconds": row["simulation_seconds"],
+            "compile_seconds": row["compile_seconds"],
+            "compared_transactions": row["actual_comparisons"],
+            "cycles_per_second": row["frames"][-1]["cycles"] / row["simulation_seconds"],
+            "raw_stdout": row["raw_stdout"],
+        } for driver, data in result["drivers"].items() for row in data["measurements"]],
+        "comparisons": result["comparisons"],
+        "complete_table_retry_authorized": False,
+        "limitation": "Single shared-execution pair, not a timing guarantee. Synthetic "
+                      "active vocabulary remains 257; full-model/table/hardware "
+                      "acceptance and all mandatory checks remain outstanding.",
+    }
+    save(evidence.path / "driver-capacity-summary.json", summary)
+    evidence.record["driver_capacity_summary"] = summary

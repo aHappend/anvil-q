@@ -35,7 +35,7 @@ def build_inputs(directory, compact=False, physical_capacity=None):
     directory = ROOT / directory
     vocabulary, capacity = (257, 257) if compact else (VOCABULARY, CAPACITY)
     if physical_capacity is not None:
-        require(compact and 257 <= physical_capacity <= 4097,
+        require(compact and 257 <= physical_capacity <= 16385,
                 "Capacity sweep is a bounded synthetic-shell diagnostic only")
         capacity = physical_capacity
     if compact:
@@ -655,7 +655,8 @@ def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen"):
         if path.name != "anvil_edge_numeric_pkg.sv"
     ]
     return evidence.simulate(f"{family}-shell-b{bypass}-s{seed}", bench, sources,
-                             None, simulator="verilator", optimize=True)
+                             None, simulator="verilator", optimize=True,
+                             explicit_clock=True)
 
 
 def run_qwen_shell(evidence, general_only=False, *, bypass_only=False):

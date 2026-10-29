@@ -72,7 +72,9 @@ from deepseek_assets import (
 from deepseek_dfa import run_deepseek_dfa
 from deepseek_integration import run_deepseek_integration, run_deepseek_boot, run_deepseek_bos
 from deepseek_shell import run_deepseek_shell_compact, run_deepseek_shell_feasibility
-from cycle_driver import run_driver_comparison, run_driver_scaling, EXPLICIT_CLOCK
+from cycle_driver import (
+    run_driver_comparison, run_driver_scaling, run_driver_capacity, EXPLICIT_CLOCK,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -125,7 +127,7 @@ class Evidence:
         self.source_overrides = {}
         self.name_prefix = ""
         self.simulator_override = None
-        self.explicit_clock = False
+        self.explicit_clock = None
         self.compiled_simulations = {}
         self._root = self
         self._lock = threading.RLock()
@@ -381,7 +383,7 @@ class Evidence:
                 self.record["tool_versions"][name] = record
 
     def simulate(self, name, bench, sources, comparisons, *, simulator=None,
-                 optimize=False):
+                 optimize=False, explicit_clock=False):
         # Only bounded arithmetic/FIFO leaves stay on the four-state interpreter.
         leaf = name == "half" or name.startswith(
             ("multiply-", "divide-", "sqrt-", "fifo-", "lowering-")
@@ -391,6 +393,8 @@ class Evidence:
         )
         if simulator not in ("iverilog", "verilator"):
             raise VerificationFailure(f"Unsupported simulator: {simulator}")
+        explicit_clock = (explicit_clock if self.explicit_clock is None
+                          else self.explicit_clock)
         name = self.name_prefix + name
         sources = [self.source_overrides.get(source, source) for source in sources]
         directory = self.path / name
@@ -455,7 +459,7 @@ class Evidence:
                     "module bench;", "module bench;\n" + "".join(input_functions), 1
                 )
             driver_source = None
-            if self.explicit_clock:
+            if explicit_clock:
                 clock = "  reg clk=0,rst_n;\n  always #5 clk=~clk;"
                 if compiled_bench.count(clock) != 1:
                     raise VerificationFailure("Explicit clock requires the supported shell clock")
@@ -469,7 +473,7 @@ class Evidence:
                 compiled_bench_sha256=digest(compiled_source),
                 reset_settle_delays_ps=reset_delays,
                 four_state=False,
-                clock_driver="explicit-cycle" if self.explicit_clock else "timed-SV",
+                clock_driver="explicit-cycle" if explicit_clock else "timed-SV",
             )
             source_hashes = [(path, digest(ROOT / path)) for path in sources]
             compile_options = [
@@ -494,7 +498,7 @@ class Evidence:
                 }
             cache_key = hashlib.sha256(json.dumps(
                 [compiled_bench, source_hashes, compile_options, tool_identity,
-                 EXPLICIT_CLOCK if self.explicit_clock else None],
+                 EXPLICIT_CLOCK if explicit_clock else None],
                 sort_keys=True
             ).encode()).hexdigest()
             with self._lock:
@@ -1008,6 +1012,7 @@ def main():
         "deepseek-shell-feasibility",
         "shell-driver-comparison",
         "shell-driver-scaling",
+        "shell-driver-capacity",
         "official-llama-discovery",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
@@ -1022,7 +1027,8 @@ def main():
         label, preparation=args.probe is not None,
         parent_budget_s=2700 if args.probe in (
             "official-qwen-shell-general-bypass", "deepseek-shell-compact",
-            "shell-driver-comparison", "shell-driver-scaling") else None,
+            "shell-driver-comparison", "shell-driver-scaling",
+            "shell-driver-capacity") else None,
     )
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
     try:
@@ -1237,6 +1243,8 @@ def main():
             run_driver_comparison(evidence)
         elif args.probe == "shell-driver-scaling":
             run_driver_scaling(evidence, args.schedule_receipt)
+        elif args.probe == "shell-driver-capacity":
+            run_driver_capacity(evidence, args.schedule_receipt)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):
