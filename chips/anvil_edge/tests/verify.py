@@ -6,6 +6,8 @@ The shared runtime executes --check l1 and --check clean-reproduction.
 No design sources or prior evidence are modified.
 Independent official stages own isolated artifact scopes. Complete-table producers
 are shared only within one invocation, validated by hashes and rebuilt if stale.
+Attempt records distinguish compilation, simulation and comparison failures;
+a failed compile never counts as a functional mutation kill.
 """
 
 import argparse
@@ -411,26 +413,46 @@ class Evidence:
         directory.mkdir()
         source = directory / "bench.sv"
         source.write_text(bench, encoding="ascii")
-        binary = directory / "simulation.vvp"
         record = {
             "name": name,
             "bench_sha256": digest(source),
             "required_comparisons": comparisons,
             "simulator": simulator,
             "status": "not-run",
+            "stage": "scheduled",
         }
         self.record["coverage"].append(record)
+        try:
+            return self._simulate_attempt(
+                record, bench, sources, comparisons,
+                optimize=optimize, explicit_clock=explicit_clock)
+        except BaseException as error:
+            record.update(
+                status="failed", failure_stage=record["stage"],
+                diagnostic=f"{type(error).__name__}: {error}")
+            raise
+
+    def _simulate_attempt(self, record, bench, sources, comparisons, *,
+                          optimize, explicit_clock):
+        name, simulator = record["name"], record["simulator"]
+        directory = self.path / name
+        source = directory / "bench.sv"
+        binary = directory / "simulation.vvp"
+        record.update(status="running", stage="tool-discovery")
         if simulator == "iverilog":
             self.tools(("iverilog", "vvp"))
+            record["stage"] = "compile"
             record["compile_receipt"] = self.child(
                 ["iverilog", "-g2012", "-Wall", "-s", "bench", "-o",
                  self.relative(binary), *sources, self.relative(source)],
                 name + "-compile",
             )
+            record["stage"] = "simulate"
             result = self.child(["vvp", self.relative(binary)], name + "-simulate",
                                 timeout=VVP_TIMEOUT, allow_failure=True)
         else:
             self.tools(("verilator", "g++", "make"))
+            record["stage"] = "input-binding"
             compiled_source = directory / "compiled-bench.sv"
             # Verilator has no inactive-region #0 support. Keep the original
             # bench, and settle reset 1 ps before checking, never a clock later.
@@ -527,6 +549,7 @@ class Evidence:
             ).encode()).hexdigest()
             with self._lock:
                 cache_lock = self._cache_locks.setdefault(cache_key, threading.Lock())
+            record["stage"] = "compile"
             with cache_lock:
                 cached = self.compiled_simulations.get(cache_key)
                 if cached is not None and not cached[0].exists():
@@ -560,6 +583,7 @@ class Evidence:
                     cached = (binary, compile_record, digest(binary), removed)
                     self.compiled_simulations[cache_key] = cached
             binary, compile_record, binary_hash, removed = cached
+            record["stage"] = "cache-validation"
             if digest(binary) != binary_hash:
                 raise VerificationFailure("Compiled simulation changed before reuse")
             record.update(
@@ -570,6 +594,7 @@ class Evidence:
                 compile_options=compile_options, source_sha256=source_hashes,
                 compile_intermediates_removed=removed,
             )
+            record["stage"] = "simulate"
             result = self.child([self.relative(binary), *runtime_args], name + "-simulate",
                                 allow_failure=True)
         record.update(simulation_receipt=result, status="failed")
@@ -577,6 +602,7 @@ class Evidence:
                 not result["child_settled"] or not result.get("process_group_settled", True)):
             receipt = str(Path(result["stdout"]).parent / "receipt.json")
             raise VerificationFailure(f"{name} failed; see {receipt}")
+        record["stage"] = "comparison-accounting"
         lines = (ROOT / result["stdout"]).read_text().splitlines()
         totals = [int(line.split()[1]) for line in lines if line.startswith("COMPARED ")]
         if len(totals) != 1 or totals[0] <= 0 or (
@@ -585,6 +611,7 @@ class Evidence:
             raise VerificationFailure(f"{name}: invalid comparison count {totals}, required {comparisons}")
         record["actual_comparisons"] = totals[0]
         record["status"] = "passed"
+        record["stage"] = "complete"
         return record
 
     def finish(self, exit_code, reason):
@@ -601,11 +628,17 @@ class Evidence:
                                          "failed", "not-run")},
             "passed_comparisons": sum(row.get("actual_comparisons", 0)
                                       for row in simulations if row["status"] == "passed"),
+            "rejected_attempts_by_stage": {
+                stage: sum(row.get("failure_stage") == stage for row in simulations)
+                for stage in sorted({row["failure_stage"] for row in simulations
+                                     if "failure_stage" in row})
+            },
             "case_batch_count": len(self.record["case_batches"]),
             "planned_cases": sum(len(batch["planned"]) for batch in self.record["case_batches"]),
             "settled_cases": sum(len(batch["results"]) for batch in self.record["case_batches"]),
             "scope": "Nested batch counts include suite nodes; simulation rows count actual "
-                     "attempts. Expected rejections require specific unchanged mutation assertions.",
+                     "attempts. Harness controls are separate from functional mutation kills, "
+                     "which require compiled execution and specific original assertions.",
         }
         self.record.update(
             end_utc=utc(), exit_code=exit_code, reason=reason,

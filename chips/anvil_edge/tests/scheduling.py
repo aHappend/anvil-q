@@ -312,10 +312,12 @@ def scheduling_controls(evidence):
     rejected = evidence.record["coverage"][-1]
     assert expected_error is not None and "invalid comparison count [0]" in str(expected_error)
     assert rejected["status"] == "failed"
+    assert rejected["failure_stage"] == "comparison-accounting"
     assert rejected["simulation_receipt"]["exit_code"] == 0
     assert rejected["simulation_receipt"]["process_group_settled"]
     rejected.update(status="expected-harness-rejection",
                     reason="Successful child exit with zero comparisons is not verification")
+    attempt_controls(evidence)
     evidence.record["scheduling_controls"] = {
         "expected_child_exit": 7, "expected_batch_rejections": 1,
         "settled_children": len(children), "distinct_log_paths": len(children),
@@ -323,6 +325,59 @@ def scheduling_controls(evidence):
         "passed_simulation_comparisons": sum(row["actual_comparisons"] for row in rows),
         "expected_zero_comparison_rejections": 1,
         "scope": "Harness diagnostic; deliberate child rejection is not an RTL mutation kill",
+    }
+
+
+def attempt_controls(evidence):
+    """Distinguish executed compiler/assertion failures from unstarted simulation."""
+    root = Path(__file__).resolve().parent.parent
+    results = []
+    for name, bench, stage, diagnostic in (
+        ("compiler", "module bench; initial begin syntax deliberately invalid; end endmodule\n",
+         "compile", "syntax error"),
+        ("assertion", 'module bench; initial $fatal(1,"ACCOUNTING_FUNCTIONAL_CONTROL"); endmodule\n',
+         "simulate", "ACCOUNTING_FUNCTIONAL_CONTROL"),
+        ("count", 'module bench; initial begin $display("COMPARED 2"); $finish; end endmodule\n',
+         "comparison-accounting", "COMPARED 2"),
+    ):
+        start = len(evidence.record["children"])
+        error = None
+        try:
+            evidence.simulate("accounting-control-" + name, bench, [], 1,
+                              simulator="iverilog")
+        except Exception as failure:
+            error = failure
+        row = evidence.record["coverage"][-1]
+        children = evidence.record["children"][start:]
+        assert error is not None and row["status"] == "failed"
+        assert row["failure_stage"] == row["stage"] == stage
+        assert row["diagnostic"] == f"{type(error).__name__}: {error}"
+        assert children and all(child["child_settled"] and
+                                child["process_group_settled"] and
+                                not child["timed_out"] for child in children)
+        compiles = [child for child in children if child["argv"][0] == "iverilog"
+                    and "-g2012" in child["argv"]]
+        simulations = [child for child in children if child["argv"][0] == "vvp"]
+        assert len(compiles) == 1
+        if stage == "compile":
+            assert compiles[0]["exit_code"] != 0 and not simulations
+            assert "simulation_receipt" not in row
+            observed = compiles[0]
+        else:
+            assert compiles[0]["exit_code"] == 0 and len(simulations) == 1
+            observed = simulations[0]
+            assert observed == row["simulation_receipt"]
+            assert (observed["exit_code"] == 0) == (stage == "comparison-accounting")
+        output = "".join((root / observed[key]).read_text() for key in ("stdout", "stderr"))
+        assert diagnostic in output
+        row.update(status="expected-harness-rejection",
+                   reason="Deliberate synthetic accounting control, not a production RTL mutant")
+        results.append({"case": name, "failure_stage": stage,
+                        "observed_diagnostic": diagnostic,
+                        "child_receipt": str(Path(observed["stdout"]).parent / "receipt.json")})
+    evidence.record["attempt_accounting_controls"] = {
+        "scope": "Real compact Icarus compiler and runtime controls; no product acceptance",
+        "results": results,
     }
 
 
