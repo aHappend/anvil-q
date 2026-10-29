@@ -71,6 +71,7 @@ SELECTORS = (
     "anvil_q1_reference/rtl/*.sv", "tests/*.py", "tests/data/*",
 )
 WALL_TIMEOUT = 3600
+VVP_TIMEOUT = 600
 
 
 class VerificationFailure(Exception):
@@ -392,7 +393,7 @@ class Evidence:
                 name + "-compile",
             )
             result = self.child(["vvp", self.relative(binary)], name + "-simulate",
-                                allow_failure=True)
+                                timeout=VVP_TIMEOUT, allow_failure=True)
         else:
             self.tools(("verilator", "g++", "make"))
             compiled_source = directory / "compiled-bench.sv"

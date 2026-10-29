@@ -75,7 +75,7 @@ def source_contract():
         "run_detokenizer", "run_boot", "run_config", "run_mapper", "run_bpe",
         "run_normalization", "run_dfa", "run_tokenizer", "run_numerical",
         "run_parameters", "run_adapters", "run_memory", "run_top", "run_top_resets",
-        "run_synthesis", "run_mutations", "run_metadata",
+        "run_synthesis", "run_mutations", "run_metadata", "run_mapper_cache",
     }
     assert len(roots) == len(set(roots)) and set(roots) == required_roots
     l1 = [node for node in ast.walk(trees["verify"]) if isinstance(node, ast.If)

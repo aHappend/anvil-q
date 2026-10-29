@@ -6,6 +6,7 @@ retained uncached mapper and the delivered mapper.
 """
 
 import copy
+import difflib
 import hashlib
 import json
 import re
@@ -201,14 +202,18 @@ def fixture_bench(evidence, seed, lifecycle):
     commands, labels = [], []
 
     def request(label, key, *, row=0, column=0, write=False, bad=False,
-                data_requests=None, offset=None):
+                data_requests=None, offset=None, layer=None):
         _, record = records[key]
         _, _, _, storage, displacement, _, columns, _, _, _ = record
         address = fixture["destinations"][storage] + (
             displacement if offset is None else offset) + 4 * (row * columns + column)
         fields = [int(write), *key, row, column, address, int(bad),
                   int(not bad) if data_requests is None else data_requests]
-        commands.append(f'transaction("{label}",' + ",".join(map(str, fields)) + ");")
+        if layer is not None:
+            fields[2] = layer
+        arguments = [f"{64 if index == 6 else 32}'d{value}"
+                     for index, value in enumerate(fields)]
+        commands.append(f'transaction("{label}",' + ",".join(arguments) + ");")
         labels.append(label)
 
     activation, embedding, gamma = (8, 0, 0), (0, 0, 0), (7, 0, 0)
@@ -219,8 +224,7 @@ def fixture_bench(evidence, seed, lifecycle):
         # Two warmed keys remain legal only for each new request's own coordinates.
         request("hit-bad-row", activation, row=13, bad=True)
         request("hit-bad-column", activation, row=3, column=8, bad=True)
-        request("hit-bad-layer", embedding, bad=True)
-        commands[-1] = commands[-1].replace(",0,0,0,0,0,", ",0,0,1,0,0,")
+        request("hit-bad-layer", embedding, layer=1, bad=True)
         request("hit-readonly-write", embedding, write=True, bad=True)
         request("hit-overflow-row", embedding, row=0xffffffff, bad=True)
         request("hit-good-write", activation, row=14, write=True)
@@ -265,6 +269,11 @@ def fixture_bench(evidence, seed, lifecycle):
         ])
         request("same-address-reload", gamma, offset=other_record[4])
         request("same-address-hit", gamma, column=7, offset=other_record[4])
+        commands.append("cfg_directory_count=31;")
+        request("hit-invalid-config", gamma, bad=True)
+        commands.append("cfg_directory_count=32;")
+        request("context-refill", gamma, offset=other_record[4])
+        request("hit-restored-context", gamma, offset=other_record[4])
         # Withdrawal during a miss must suppress its later fill. Its already
         # accepted DDR operation must nevertheless complete, without rerouting.
         commands.extend(["epoch();", "withdraw_on_request=1;"])
@@ -363,18 +372,72 @@ def run_mapper_cache(evidence, comparison=False):
             json.dumps(metrics, indent=2) + "\n", encoding="ascii")
     for seed in (1, 17, 89):
         bench, labels = fixture_bench(evidence, seed, True)
-        result = evidence.simulate(f"cache-lifecycle-s{seed}", bench, SOURCES, len(labels))
-        rows = measured(evidence, result, labels)
-        for row in rows:
-            label, count = row["label"], row["directory_requests"]
-            hit = ((label.startswith("alternate-") and label not in
-                    ("alternate-a0", "alternate-e0")) or
-                   label.startswith(("hit-", "repair-hit-", "directory-hit-")) or
-                   label in ("same-address-hit", "withdraw-hit", "reset-hit"))
-            require(count == 0 if hit else count > 0,
-                    f"Cache hit/miss lifecycle not observed: {label}: {count}")
-        evidence.record.setdefault("descriptor_cache_lifecycle", []).append({
-            "seed": seed, "compared": len(rows), "rows": rows,
-            "receipt": result["simulation_receipt"],
-            "scope": "Public request/address/error/data/stall observations, no DUT internals",
+        results = [evidence.simulate(f"cache-lifecycle-s{seed}", bench, SOURCES, len(labels))]
+        if seed == 17:
+            results.append(evidence.simulate("cache-lifecycle-four-state-s17",
+                                            bench, SOURCES, len(labels),
+                                            simulator="iverilog"))
+        for result in results:
+            rows = measured(evidence, result, labels)
+            for row in rows:
+                label, count = row["label"], row["directory_requests"]
+                hit = ((label.startswith("alternate-") and label not in
+                        ("alternate-a0", "alternate-e0")) or
+                       label.startswith(("hit-", "repair-hit-", "directory-hit-")) or
+                       label in ("same-address-hit", "withdraw-hit", "reset-hit"))
+                require(count == 0 if hit else count > 0,
+                        f"Cache hit/miss lifecycle not observed: {label}: {count}")
+            evidence.record.setdefault("descriptor_cache_lifecycle", []).append({
+                "seed": seed, "compared": len(rows), "rows": rows,
+                "simulator": result["simulator"], "receipt": result["simulation_receipt"],
+                "scope": "Public request/address/error/data/stall observations, no DUT internals",
+            })
+    run_cache_mutations(evidence, bench, labels)
+
+
+def run_cache_mutations(evidence, bench, labels):
+    root = Path(__file__).resolve().parent.parent
+    original = (root / SOURCES[-1]).read_text()
+    for name, before, after, assertion in (
+        ("offset", "cache_offset[cache_victim]<=region_offset;",
+         "cache_offset[cache_victim]<=region_offset+64'd4;", "CACHE_DATA_TUPLE"),
+        ("epoch", "if (!config_valid || !cache_context_matches) begin",
+         "if (1'b0) begin", "CACHE_RESPONSE"),
+    ):
+        require(original.count(before) == 1, f"Ambiguous cache mutation: {name}")
+        directory = evidence.path / f"cache-defect-{name}"
+        directory.mkdir()
+        source = directory / "mapper.sv"
+        changed = original.replace(before, after)
+        source.write_text(changed, encoding="ascii")
+        diff = directory / "mutation.diff"
+        diff.write_text("".join(difflib.unified_diff(
+            original.splitlines(True), changed.splitlines(True),
+            fromfile=SOURCES[-1], tofile=f"mutant-{name}/mapper.sv")), encoding="ascii")
+        mutant = copy.copy(evidence)
+        mutant.source_overrides = {**evidence.source_overrides,
+                                   SOURCES[-1]: evidence.relative(source)}
+        first = len(evidence.record["coverage"])
+        failure = None
+        try:
+            mutant.simulate(f"cache-mutant-{name}", bench, SOURCES, len(labels))
+        except Exception as error:
+            failure = error
+        rows = evidence.record["coverage"][first:]
+        require(len(rows) == 1 and failure is not None, f"Cache mutant {name} survived")
+        row = rows[0]
+        compile_receipt = row.get("compile_receipt", {})
+        result = row.get("simulation_receipt", {})
+        require(compile_receipt.get("exit_code") == 0 and result.get("exit_code") not in
+                (None, 0) and not result.get("timed_out") and result.get("child_settled")
+                and result.get("process_group_settled"),
+                f"Cache mutant {name} lacks a compiled bounded functional kill")
+        output = ((root / result["stdout"]).read_text() +
+                  (root / result["stderr"]).read_text())
+        require("%Error:" in output and assertion in output,
+                f"Cache mutant {name} missed required original assertion {assertion}")
+        row.update(status="expected-functional-rejection", mutation_assertion=assertion)
+        evidence.record.setdefault("descriptor_cache_mutations", []).append({
+            "name": name, "assertion": assertion, "diff": evidence.relative(diff),
+            "simulation_receipt": result,
         })
