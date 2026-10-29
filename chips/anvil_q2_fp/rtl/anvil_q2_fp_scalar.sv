@@ -34,6 +34,7 @@ module anvil_q2_fp_scalar(
   wire sqrt_subtract=sqrt_candidate>=sqrt_trial;
   wire [55:0] sqrt_difference=sqrt_subtract ?
     sqrt_candidate-sqrt_trial : sqrt_candidate;
+  wire [31:0] add_result=fp_add(a,b);
 
   assign in_ready=rst_n && state==IDLE;
   assign out_valid=rst_n && state==OUTPUT;
@@ -69,7 +70,7 @@ module anvil_q2_fp_scalar(
           default: begin result<=FP_NAN; state<=OUTPUT; end
         endcase
       end
-      ADD: begin result<=fp_add(a,b); state<=OUTPUT; end
+      ADD: begin result<=add_result; state<=OUTPUT; end
       MUL_EXACT: begin product<=exact_product(a,b); state<=MUL_ROUND; end
       MUL_ROUND: begin result<=round_product(product); state<=OUTPUT; end
       DIV_PREPARE: begin

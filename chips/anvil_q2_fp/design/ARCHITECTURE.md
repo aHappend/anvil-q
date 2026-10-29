@@ -40,19 +40,39 @@ the product itself, except that either signed zero becomes +0; S2 already
 canonicalizes NaNs. This bypass does not depend on the previous dot's
 accumulator, including a previous nonfinite result. Constant-index
 combinational wires feed both S3 sum and accumulator registers, outside
-the sequential processes.
+the sequential processes. Quartus `keep` attributes retain the ordinary-add
+and first-product combinational result boundaries before the first-beat mux.
+They request preservation of this late selection, not another register.
 
-The shared combinational FP32 adder uses nine-bit exponent arithmetic,
-a five-level sticky alignment barrel and a five-level leading-zero tree
-instead of integer-width exponent chains and a serial highest-bit priority
-loop. Sign-controlled two's-complement addition shares the mantissa
-add/subtract carry path. RNE, subnormal handling, signed zeros and nonfinite
-classification are unchanged. These changes add no register captures,
-do not reassociate accumulation and leave elastic advancement unchanged.
-They are timing-repair candidates, not a measured timing pass. Independent
-Verifier must check lane and scalar arithmetic, including singleton dots,
-consecutive dots, cancellation, special values and stalls; the shared
-runtime must obtain fresh post-fit STA at the unchanged 10.000 ns target.
+The shared combinational FP32 adder now has separate close and far paths.
+Effective exponent distances in both directions are computed in parallel
+with magnitude ordering. Opposite-sign operands with effective exponent
+distance zero or one use exact 25-bit subtraction with at most one-bit input
+alignment. This close path alone has a five-level leading-zero tree and
+normalization barrel. An unshifted result has only one possible rounding bit;
+its ties-to-even increment is calculated in parallel with normalization.
+Any nonzero left normalization shift makes the result exact, avoiding a
+rounding carry chain after the barrel. Normalization is limited by the
+minimum normal exponent to retain gradual underflow.
+
+Same-sign addition and opposite-sign operands farther apart use the far
+path. It has sticky alignment followed by sign-controlled mantissa addition,
+but needs only fixed one-bit left/right normalization, not cancellation
+detection and a variable normalization barrel. Eight-bit effective exponents
+and distances suffice; overflow/rounding exponent calculations use nine bits.
+Final selection retains canonical NaNs, infinity propagation and signed-zero
+rules. The scalar controller evaluates this same combinational helper outside
+its clocked process and captures only its result, keeping helper temporaries
+out of sequential state inference.
+
+These changes add no register captures, do not reassociate accumulation and
+leave elastic advancement unchanged. They are timing-repair candidates, not
+a measured timing pass. Independent Verifier must check lane and scalar
+arithmetic, especially equal/adjacent/distant exponents, both tie parities,
+deep cancellation, the normal/subnormal boundary, singleton/consecutive dots,
+special values and stalls. The shared runtime must obtain fresh post-fit STA
+at the unchanged 10.000 ns target; the retained -4.076 ns failure is not
+reclassified by this source change.
 
 Scalar arithmetic shares one command slot. Add uses a registered FP32
 adder; multiply registers its exact product before rounding. Divide performs

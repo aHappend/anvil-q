@@ -146,9 +146,35 @@ def scalar_vectors():
     operations = (add, multiply, divide, lambda a, b: square_root(a))
     for op, function in enumerate(operations):
         pairs = [(a, b) for a in directed for b in directed]
+        if op == 0:
+            pairs += list(addition_boundary_pairs())
         pairs += [(rng.getrandbits(32), rng.getrandbits(32)) for _ in range(512)]
         for a, b in pairs:
             yield (function(a, b) << 67) | (op << 64) | (a << 32) | b
+
+
+def addition_boundary_pairs():
+    """Exercise cancellation, sticky alignment and both rounding parities."""
+    fractions = (0, 1, 2, 0x3FFFFF, 0x7FFFFE, 0x7FFFFF)
+    for exponent in (0, 1, 2, 126, 127, 253, 254):
+        for distance in (0, 1, 2, 23, 24, 25, 27):
+            other_exponent = max(0, exponent - distance)
+            for fraction in fractions:
+                for other_fraction in fractions:
+                    a = (exponent << 23) | fraction
+                    b = (other_exponent << 23) | other_fraction
+                    for signs in range(4):
+                        left = a | ((signs & 1) << 31)
+                        right = b | ((signs >> 1) << 31)
+                        yield left, right
+                        yield right, left
+    for exponent in (1, 2, 126, 127, 253):
+        for bit in range(23):
+            a = (exponent << 23) | (1 << bit)
+            for delta in (-1, 0, 1):
+                b = (a + delta) ^ 0x80000000
+                yield a, b
+                yield b, a
 
 
 def lane_vectors(fmt, count=4096):

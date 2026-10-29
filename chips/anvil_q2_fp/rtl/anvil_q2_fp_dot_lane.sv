@@ -26,9 +26,9 @@ module anvil_q2_fp_dot_lane #(
       initial $fatal(1,"ANVIL_Q2_FP PARAMETER ERROR: lane format");
     end
     for (j=0;j<8;j=j+1) begin: outputs
-      wire [31:0] accumulated_sum=fp_add(accumulator[j],product2[j]);
+      (* keep *) wire [31:0] accumulated_sum=fp_add(accumulator[j],product2[j]);
       // +0 plus -0 is +0 under RNE; other rounded products pass unchanged.
-      wire [31:0] first_sum=fp_is_zero(product2[j]) ? FP_ZERO : product2[j];
+      (* keep *) wire [31:0] first_sum=fp_is_zero(product2[j]) ? FP_ZERO : product2[j];
       wire [31:0] next_sum=first2 ? first_sum : accumulated_sum;
       assign out_sum[j*32+:32]=rst_n ? sum3[j] : 32'd0;
       always @(posedge clk or negedge rst_n) begin

@@ -171,6 +171,13 @@ register. Initiation interval is one beat/clock. Bubbles do not accumulate;
 elastic stalling must neither replay nor discard a sum. The dot stream cannot
 interleave unfinished dots.
 
+S3 uses parallel close-subtraction and far-addition paths, selected by operand
+signs and effective exponent distance. Close subtraction preserves an exact
+25-bit difference; far addition uses guard/round/sticky alignment with at
+most one-bit normalization. This changes neither the RNE FP32 operation nor
+the cycle table. First-beat selection remains after the ordinary-add result,
+with combinational preservation attributes and no added register capture.
+
 Linear inputs round to A16 at GEMV entry; native weights, scales, biases,
 embeddings and norm weights are selected-format 16-bit tensors.
 Q/K/V round at the attention/cache boundary. Residuals and logits stay FP32.

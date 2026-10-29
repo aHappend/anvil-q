@@ -212,42 +212,77 @@ package anvil_q2_fp_pkg;
 
   function automatic [31:0] fp_add(input [31:0] a,b);
     reg [31:0] big, smaller;
-    reg [26:0] bm, sm, normalized;
-    reg [27:0] total;
-    reg [24:0] rounded;
-    reg subtract;
-    reg [7:0] encoded_exp;
-    reg [8:0] be, se, exponent, distance, available_shift;
-    reg [4:0] leading, shift;
+    reg a_is_big, subtract, close_path;
+    reg [7:0] ae, be, big_exp, distance_ab, distance_ba, distance;
+    reg [26:0] far_big, far_small, far_normalized;
+    reg [27:0] far_total;
+    reg [24:0] far_rounded;
+    reg [8:0] far_exp, far_packed_exp;
+    reg [7:0] far_encoded_exp;
+    reg [24:0] close_small, close_total, close_normalized;
+    reg [23:0] close_rounded, close_significand;
+    reg [4:0] close_leading, close_shift;
+    reg [7:0] available_shift, close_exp, close_encoded_exp;
+    reg [31:0] far_result, close_result;
     begin
-      if (a[30:0]>=b[30:0]) begin big=a; smaller=b; end
+      a_is_big=a[30:0]>=b[30:0];
+      if (a_is_big) begin big=a; smaller=b; end
       else begin big=b; smaller=a; end
-      be=big[30:23]==0 ? 9'd1 : {1'b0,big[30:23]};
-      se=smaller[30:23]==0 ? 9'd1 : {1'b0,smaller[30:23]};
-      distance=be-se;
-      bm={fp_sig(big),3'd0};
-      sm=shift_jam27({fp_sig(smaller),3'd0},{23'd0,distance});
+      ae=a[30:23]==0 ? 8'd1 : a[30:23];
+      be=b[30:23]==0 ? 8'd1 : b[30:23];
+      distance_ab=ae-be;
+      distance_ba=be-ae;
+      distance=a_is_big ? distance_ab : distance_ba;
+      big_exp=a_is_big ? ae : be;
       subtract=big[31]^smaller[31];
-      total={1'b0,bm}+({1'b0,sm}^{28{subtract}})+{27'd0,subtract};
-      leading=fp_leading_zeros27(total[26:0]);
-      available_shift=be-9'd1;
-      shift=available_shift<{4'd0,leading} ? available_shift[4:0] : leading;
-      if (total[27]) begin
-        normalized={total[27:2],(total[1]|total[0])};
-        exponent=be+9'd1;
+      close_path=subtract && distance<=8'd1;
+
+      // Only close subtraction can cancel by more than one leading bit.
+      // Its one-bit alignment is exact, so normalization needs no sticky barrel.
+      close_small=distance[0] ? {1'b0,fp_sig(smaller)} : {fp_sig(smaller),1'b0};
+      close_total={fp_sig(big),1'b0}-close_small;
+      close_leading=fp_leading_zeros27({close_total,2'd0});
+      available_shift=big_exp-8'd1;
+      close_shift=available_shift<{3'd0,close_leading} ?
+        available_shift[4:0] : close_leading;
+      close_normalized=close_total << close_shift;
+      // A nonzero left shift makes the result exact. Round the unshifted
+      // candidate in parallel with leading-zero detection, not after the barrel.
+      close_rounded=close_total[24:1]+
+        {23'd0,(close_total[0] && close_total[1])};
+      close_significand=(close_shift==0) ? close_rounded : close_normalized[24:1];
+      close_exp=big_exp-{3'd0,close_shift};
+      close_encoded_exp=(close_exp==8'd1 && !close_significand[23]) ?
+        8'd0 : close_exp;
+      close_result={big[31],close_encoded_exp,close_significand[22:0]};
+      if (close_total==0) close_result=FP_ZERO;
+
+      // Same-sign addition or distant subtraction needs at most one-bit
+      // normalization; the general cancellation detector is off this path.
+      far_big={fp_sig(big),3'd0};
+      far_small=shift_jam27({fp_sig(smaller),3'd0},{24'd0,distance});
+      far_total={1'b0,far_big}+({1'b0,far_small}^{28{subtract}})+{27'd0,subtract};
+      if (far_total[27]) begin
+        far_normalized={far_total[27:2],(far_total[1]|far_total[0])};
+        far_exp={1'b0,big_exp}+9'd1;
+      end else if (subtract && !far_total[26] && big_exp>8'd1) begin
+        far_normalized={far_total[25:0],1'b0};
+        far_exp={1'b0,big_exp}-9'd1;
       end else begin
-        normalized=total[26:0] << shift;
-        exponent=be-{4'd0,shift};
+        far_normalized=far_total[26:0];
+        far_exp={1'b0,big_exp};
       end
-      rounded={1'b0,normalized[26:3]}+
-        {24'd0,(normalized[2] && ((|normalized[1:0]) || normalized[3]))};
-      if (rounded[24]) exponent=exponent+9'd1;
-      encoded_exp=(exponent==9'd1 && !rounded[23] && !rounded[24]) ?
-        8'd0 : exponent[7:0];
-      if (rounded[24]) fp_add={big[31],encoded_exp,rounded[23:1]};
-      else fp_add={big[31],encoded_exp,rounded[22:0]};
-      if (exponent>=9'd255) fp_add={big[31],8'hff,23'd0};
-      if (total==0) fp_add=FP_ZERO;
+      far_rounded={1'b0,far_normalized[26:3]}+
+        {24'd0,(far_normalized[2] && ((|far_normalized[1:0]) || far_normalized[3]))};
+      far_packed_exp=far_exp+{8'd0,far_rounded[24]};
+      far_encoded_exp=(far_packed_exp==9'd1 && !far_rounded[23] && !far_rounded[24]) ?
+        8'd0 : far_packed_exp[7:0];
+      if (far_rounded[24]) far_result={big[31],far_encoded_exp,far_rounded[23:1]};
+      else far_result={big[31],far_encoded_exp,far_rounded[22:0]};
+      if (far_packed_exp>=9'd255) far_result={big[31],8'hff,23'd0};
+      if (far_total==0) far_result=FP_ZERO;
+
+      fp_add=close_path ? close_result : far_result;
       if (fp_is_nan(a) || fp_is_nan(b)) fp_add=FP_NAN;
       else if (fp_is_inf(a) && fp_is_inf(b) && (a[31]!=b[31])) fp_add=FP_NAN;
       else if (fp_is_inf(a)) fp_add=a;

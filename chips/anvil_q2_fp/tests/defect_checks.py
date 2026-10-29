@@ -22,8 +22,8 @@ from scheduler_checks import BENCH as SCHEDULER_BENCH, compare as compare_schedu
 MUTATIONS = {
     "accumulation": (
         "anvil_q2_fp_dot_lane.sv",
-        "accumulator[i]<=fp_add(first2 ? FP_ZERO : accumulator[i],product2[i]);",
-        "accumulator[i]<=FP_ZERO;",
+        "accumulator[j]<=next_sum;",
+        "accumulator[j]<=FP_ZERO;",
         "LANE_MISMATCH",
     ),
     "awq-nibbles": (
