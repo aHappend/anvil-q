@@ -40,7 +40,7 @@ import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from numerical import (binary32, check_scalar, dot_reference, dot_vectors,
-                       float32, power_two, scalar_vectors)
+                       bits32, float32, power_two, scalar_vectors)
 from architecture import Architecture, CONFIGURATIONS, PARAMETERS, compare_trace, metrics
 from operators import OPERATOR_IDS, PRODUCTION, OperatorReference, compare_operator
 from preservation import audit as audit_preservation, parser_selftest
@@ -216,11 +216,11 @@ class Evidence:
         return result
 
 
-def simulation_tier(requested, *, hidden=0, tokens=1, seeds=1, full=False,
-                    mutation=False, protocol=False):
+def simulation_tier(requested, *, hidden=0, tokens=1, seeds=1, cycles=0,
+                    full=False, mutation=False, protocol=False):
     if requested not in ("iverilog", "verilator"):
         raise ValueError("Unsupported simulator: " + requested)
-    compiled = (requested == "verilator" or hidden > 32 or tokens > 1 or
+    compiled = (requested == "verilator" or hidden > 32 or cycles > 500000 or tokens > 1 or
                 seeds > 1 or full or mutation or protocol)
     return "verilator" if compiled else "iverilog"
 
@@ -260,27 +260,28 @@ class BuildCache:
                 entry = {"event": threading.Event(), "passed": False}
                 self.entries[key] = entry
         if owner:
-            child = Evidence("build-" + key[:12])
-            child.receipt["tool_versions_receipt"] = ev.receipt.get(
-                "tool_versions_receipt", str((ev.path / "receipt.json").relative_to(ROOT)))
-            entry["receipt"] = str((child.path / "receipt.json").relative_to(ROOT))
-            entry["binary"] = child.path / executable.name
-            child.receipt["compile_inputs"] = {}
-            for argument in map(str, argv):
-                source = ROOT / argument
-                if source.is_file() and source.suffix == ".sv":
-                    snapshot = child.path / "compile-inputs" / source.relative_to(ROOT)
-                    snapshot.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(source, snapshot)
-                    child.receipt["compile_inputs"][str(source.relative_to(ROOT))] = {
-                        "sha256": digest(source),
-                        "snapshot": str(snapshot.relative_to(ROOT))}
-            command = list(map(str, argv))
-            for flag, value in (("-o", str(entry["binary"].resolve())),
-                                ("--Mdir", str((child.path / "compile-obj").relative_to(ROOT)))):
-                if flag in command:
-                    command[command.index(flag)+1] = value
+            child = None
             try:
+                child = Evidence("build-" + key[:12])
+                child.receipt["tool_versions_receipt"] = ev.receipt.get(
+                    "tool_versions_receipt", str((ev.path / "receipt.json").relative_to(ROOT)))
+                entry["receipt"] = str((child.path / "receipt.json").relative_to(ROOT))
+                entry["binary"] = child.path / executable.name
+                child.receipt["compile_inputs"] = {}
+                for argument in map(str, argv):
+                    source = ROOT / argument
+                    if source.is_file() and source.suffix == ".sv":
+                        snapshot = child.path / "compile-inputs" / source.relative_to(ROOT)
+                        snapshot.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(source, snapshot)
+                        child.receipt["compile_inputs"][str(source.relative_to(ROOT))] = {
+                            "sha256": digest(source),
+                            "snapshot": str(snapshot.relative_to(ROOT))}
+                command = list(map(str, argv))
+                for flag, value in (("-o", str(entry["binary"].resolve())),
+                                    ("--Mdir", str((child.path / "compile-obj").relative_to(ROOT)))):
+                    if flag in command:
+                        command[command.index(flag)+1] = value
                 with self.slots, child.profile("build"):
                     entry["passed"] = child.run("compile", command)
                 entry["passed"] = child.assertion(
@@ -295,12 +296,22 @@ class BuildCache:
                             path.unlink()
                             removed.append(path.name)
                     child.receipt["removed_completed_intermediates"] = removed
+            except (OSError, ValueError, KeyError) as error:
+                entry["passed"] = False
+                if child is not None:
+                    child.assertion("build_exception", False, error=repr(error))
+                raise
             finally:
-                child.finish("passed" if entry["passed"] else "failed")
-                entry["event"].set()
+                try:
+                    if child is not None:
+                        child.finish("passed" if entry["passed"] else "failed")
+                finally:
+                    entry["event"].set()
         else:
             with ev.profile(label + "-build-wait"):
                 entry["event"].wait()
+        if "receipt" not in entry:
+            raise OSError("build receipt allocation failed for " + key)
         with ev.lock:
             ev.receipt.setdefault("builds", []).append({
                 "label": label, "key": key, "reused": not owner,
@@ -437,6 +448,7 @@ def leaf_check(ev, full, rtl_directory=None, simulator="iverilog"):
     for path in (stimulus, expected):
         ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(ROOT))] = digest(path)
     ev.elapsed("leaf-reference-generation", generated_at)
+    simulator = simulation_tier(simulator, cycles=count)
     ev.assertion("leaf_simulation_tier", simulator == "verilator" or count <= 500000,
                  simulator=simulator, stimulus_cycles=count, full_vectors=full)
     rtl = sorted((rtl_directory or ROOT / "rtl").glob("*.sv"))
@@ -632,8 +644,40 @@ def prerequisites(ev):
     return tool_ok and dependency_ok and numpy_ok and files_ok
 
 
+def compare_startup(model, trace, report):
+    observed = [line.split() for line in trace.read_text().splitlines()]
+    wanted_count = 2*model.config["H"]+1
+    expected = model.events[:wanted_count]
+    if not observed or observed[-1] != [
+            "S", str(wanted_count), str(wanted_count), str(model.mode), str(model.seed)]:
+        raise ValueError("missing acknowledged startup coverage")
+    events = observed[:-1]
+    if len(events) != wanted_count:
+        raise ValueError("startup trace length mismatch")
+    writes = 0
+    for index, (actual, wanted) in enumerate(zip(events, expected)):
+        if actual[0] != "M" or wanted[0] != "M" or len(actual) != 9:
+            raise ValueError("malformed startup memory event")
+        if tuple(map(int, actual[1:7])) != wanted[1:7]:
+            raise ValueError("startup request address/order event " + str(index))
+        if wanted[1]:
+            raw = bits32(wanted[7]) if model.mode else round(wanted[7]*65536) & 0xffffffff
+            if int(actual[7], 16) != raw:
+                raise ValueError("startup embedding write mismatch")
+            writes += 1
+    passed = writes == model.config["H"]
+    report.write_text(json.dumps({"passed": passed, "requests_compared": len(events),
+                                  "exact_embedding_writes": writes,
+                                  "scope": "Startup prefix only; no completed token"}, indent=2)+"\n")
+    return passed
+
+
+def startup_check(ev):
+    return integration_check(ev, simulator="iverilog", startup=True)
+
+
 def integration_check(ev, full=False, configurations=None, modes=None, seeds=None,
-                      rtl_directory=None, simulator="iverilog"):
+                      rtl_directory=None, simulator="verilator", startup=False):
     if configurations is None:
         configurations = CONFIGURATIONS if full else {"minimum": CONFIGURATIONS["minimum"]}
     if modes is None:
@@ -643,7 +687,8 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
     result = True
     for name, config in configurations.items():
         selected_simulator = simulation_tier(
-            simulator, hidden=config[1], tokens=config[-1], seeds=len(seeds), full=full,
+            simulator, hidden=config[1], tokens=config[-1], seeds=len(seeds),
+            full=full or not startup,
             mutation=rtl_directory is not None)
         ev.receipt.setdefault("simulation_routes", []).append({
             "configuration": name, "requested": simulator, "selected": selected_simulator,
@@ -702,6 +747,7 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
                         "+fixture=" + str(fixture.relative_to(ROOT)),
                         "+trace=" + str(trace.relative_to(ROOT)),
                         f"+mode={mode}", f"+seed={seed}",
+                        f"+startup={int(startup)}",
                     ], timeout=86400)
                     result = ev.assertion(label + suffix + "_protocol", executed) and result
                     if executed and simulator == "iverilog":
@@ -715,9 +761,11 @@ def integration_check(ev, full=False, configurations=None, modes=None, seeds=Non
                 if False in traces:
                     report = ev.path / (label + "-reference.json")
                     with ev.profile(label + "-reference-comparison"):
-                        compared = compare_trace(model, traces[False], report)
+                        compared = (compare_startup(model, traces[False], report) if startup else
+                                    compare_trace(model, traces[False], report))
                     result = ev.assertion(
-                        label + "_independent_architecture_numerical", compared,
+                        label + ("_startup_addresses_embedding" if startup else
+                                 "_independent_architecture_numerical"), compared,
                         report=str(report.relative_to(ROOT))) and result
                 if mode == 0 and len(traces) == 2:
                     def logical_trace(path):
@@ -1054,11 +1102,11 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                     result = ev.assertion(label+"_parent_differential",
                                           revised == parent and len(revised) > 0,
                                           writes=len(revised), parent_writes=len(parent)) and result
-    assertion = ("production_operator_subset" if cases is not None else
+    assertion = ("production_operator_subset" if cases is not None or operations is not None else
                  "production_individual_operators" if production else "operator_smoke")
     return ev.assertion(assertion,
                         result, configuration=dict(zip(PARAMETERS, config)),
-                        selected_cases=cases,
+                        selected_cases=cases, selected_operations=operations,
                         scope="Synthetic isolated-operator engineering coverage, not benchmark") and result
 
 
@@ -1340,6 +1388,57 @@ def integration_defect_check(ev):
     return result
 
 
+def scheduling_check(ev):
+    from scheduling_checks import check
+    return check(ROOT, ev)
+
+
+def l1_jobs():
+    # Split the expensive projections without changing any case, mode or seed.
+    # All projection shards share the identical parameter-bound operator build.
+    jobs = [
+        ("synthesis-top", synthesis_check, (), {}),
+        ("production-gemv4", operator_check, (), {
+            "production": True, "operations": {"gemv": (4,)}}),
+        ("production-gemv6", operator_check, (), {
+            "production": True, "operations": {"gemv": (6,)}}),
+        ("integration-gqa7", integration_check, (), {
+            "full": True, "configurations": {"gqa7": CONFIGURATIONS["gqa7"]}}),
+        ("production-gemv5", operator_check, (), {
+            "production": True, "operations": {"gemv": (5,)}}),
+        ("integration-defects", integration_defect_check, (), {}),
+    ]
+    for name in CONFIGURATIONS:
+        if name != "gqa7":
+            jobs.append(("integration-" + name, integration_check, (), {
+                "full": True, "configurations": {name: CONFIGURATIONS[name]}}))
+    for projection in (0, 1, 2, 3):
+        jobs.append(("production-gemv" + str(projection), operator_check, (), {
+            "production": True, "operations": {"gemv": (projection,)}}))
+    for name in OPERATOR_IDS:
+        if name != "gemv":
+            selectors = (0, 1, 2) if name in ("norm", "elementwise") else (0,)
+            jobs.append(("production-" + name, operator_check, (), {
+                "production": True, "operations": {name: selectors}}))
+    jobs += [
+        ("leaves-full", leaf_check, (), {"full": True}),
+        ("protocol", protocol_check, (), {}),
+        ("icarus-integration", startup_check, (), {}),
+        ("icarus-leaves", leaf_check, (), {"full": False}),
+        ("leaf-defects", leaf_defect_check, (), {}),
+        ("synthesis-dot", synthesis_check, ("anvil_q1_fp_dot8",), {}),
+        ("maximum-position", operator_check, (), {
+            "config": (1, 8, 8, 1, 1, 8, 1, 1, 16777215),
+            "operations": {"rope": (0,)}}),
+        ("production-top-addresses", top_address_check, (), {}),
+        ("parameters", parameter_check, (), {}),
+        ("static", static_check, (), {}),
+        ("preservation", preservation_check, (), {}),
+        ("scheduling", scheduling_check, (), {}),
+    ]
+    return jobs
+
+
 def main():
     global _BUILDS
     _BUILDS = BuildCache()
@@ -1435,8 +1534,7 @@ def main():
             from interpreter_consistency import check as check_interpreter
             ok = check_interpreter(ROOT, ev)
         elif args.probe == "scheduling":
-            from scheduling_checks import check as check_scheduling
-            ok = ev.versions() and check_scheduling(ROOT, ev)
+            ok = ev.versions() and scheduling_check(ev)
         elif args.probe == "facilities":
             from recovery import facilities
             ok = facilities(ROOT, ev, args.python_facility)
@@ -1458,26 +1556,7 @@ def main():
                     ev, "l1-benchmark-validator", lambda child: check_fixtures(ROOT, child))
                 # Synthetic validator monkeypatches are deliberately completed
                 # before concurrent engineering components begin.
-                jobs = [
-                    ("synthesis-top", synthesis_check, (), {}),
-                    ("integration-matrix", integration_check, (), {"full": True}),
-                    ("production-operators", operator_check, (), {"production": True}),
-                    ("integration-defects", integration_defect_check, (), {}),
-                    ("leaves-full", leaf_check, (), {"full": True}),
-                    ("protocol", protocol_check, (), {}),
-                    ("icarus-integration", integration_check, (), {}),
-                    ("icarus-leaves", leaf_check, (), {"full": False}),
-                    ("leaf-defects", leaf_defect_check, (), {}),
-                    ("synthesis-dot", synthesis_check, ("anvil_q1_fp_dot8",), {}),
-                    ("maximum-position", operator_check, (), {
-                        "config": (1, 8, 8, 1, 1, 8, 1, 1, 16777215),
-                        "operations": {"rope": (0,)}}),
-                    ("production-top-addresses", top_address_check, (), {}),
-                    ("parameters", parameter_check, (), {}),
-                    ("static", static_check, (), {}),
-                    ("preservation", preservation_check, (), {}),
-                ]
-                results = parallel_components(ev, jobs)
+                results = parallel_components(ev, l1_jobs())
                 static_ok = results["static"]
                 parameters_ok = results["parameters"]
                 synthesis_ok = results["synthesis-top"]
@@ -1487,8 +1566,12 @@ def main():
                 integration_defects_ok = results["integration-defects"]
                 protocol_ok = results["protocol"]
                 icarus_ok = results["icarus-integration"]
-                integration_ok = results["integration-matrix"]
-                operators_ok = results["production-operators"]
+                integration_ok = all(results["integration-" + name]
+                                     for name in CONFIGURATIONS)
+                operators_ok = all(
+                    results["production-gemv" + str(projection)] for projection in range(7))
+                operators_ok = all(results["production-" + name]
+                                   for name in OPERATOR_IDS if name != "gemv") and operators_ok
                 maximum_position_ok = results["maximum-position"]
                 top_address_ok = results["production-top-addresses"]
                 preservation_ok = results["preservation"]
@@ -1496,7 +1579,7 @@ def main():
                       dot_synthesis_ok and leaves_ok and defects_ok and
                       integration_defects_ok and protocol_ok and icarus_ok and
                       integration_ok and operators_ok and maximum_position_ok and
-                      top_address_ok and preservation_ok)
+                      top_address_ok and preservation_ok and results["scheduling"])
                 covered = {
                     "integration_all_legal_modes_seeds": integration_ok,
                     "24_layer_integration": integration_ok,

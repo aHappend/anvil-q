@@ -1,6 +1,7 @@
 """Bounded routing, single-flight build reuse and dual-simulator regressions."""
 
 from concurrent.futures import ThreadPoolExecutor
+import json
 
 
 def check(root, ev):
@@ -17,6 +18,8 @@ def check(root, ev):
         ("medium64", {"hidden": 64}, "verilator"),
         ("multi-token", {"tokens": 3}, "verilator"),
         ("multi-seed", {"seeds": 3}, "verilator"),
+        ("cycle-boundary", {"cycles": 500000}, "iverilog"),
+        ("long-cycle", {"cycles": 500001}, "verilator"),
         ("full-leaves", {"full": True}, "verilator"),
         ("mutant", {"mutation": True}, "verilator"),
         ("protocol", {"protocol": True}, "verilator"),
@@ -28,6 +31,37 @@ def check(root, ev):
                             options=options, expected=expected, observed=actual) and good
     good = ev.assertion("compiled_never_downgraded",
                         verify.simulation_tier("verilator") == "verilator") and good
+    jobs = verify.l1_jobs()
+    names = [name for name, _, _, _ in jobs]
+    integrations = {name.removeprefix("integration-"): options
+                    for name, check, _, options in jobs
+                    if check is verify.integration_check and options.get("full")}
+    good = ev.assertion(
+        "fresh_complete_integration_shards",
+        len(names) == len(set(names)) and
+        set(integrations) == set(verify.CONFIGURATIONS) and all(
+            options["configurations"] == {name: verify.CONFIGURATIONS[name]}
+            for name, options in integrations.items()),
+        configurations=list(integrations), modes=[0, 1, 2], seeds=[17, 53, 89]) and good
+    production = [
+        (operator, selector, mode)
+        for _, check, _, options in jobs
+        if check is verify.operator_check and options.get("production")
+        for operator, selectors in options["operations"].items()
+        for selector in selectors for mode in (0, 1, 2)]
+    required = [(operator, selector, mode)
+                for operator in verify.OPERATOR_IDS
+                for selector in (range(7) if operator == "gemv" else
+                                 range(3) if operator in ("norm", "elementwise") else (0,))
+                for mode in (0, 1, 2)]
+    good = ev.assertion(
+        "fresh_complete_production_shards",
+        sorted(production) == sorted(required),
+        expected_cases=len(required), scheduled_cases=len(production)) and good
+    good = ev.assertion(
+        "missing_and_duplicate_shards_detected",
+        sorted(production[1:]) != sorted(required) and
+        sorted(production + production[:1]) != sorted(required)) and good
 
     fixture = ev.path / "cache-fixture.sv"
     original_source = (
@@ -36,7 +70,7 @@ def check(root, ev):
     fixture.write_text(original_source)
     ev.receipt.setdefault("data_sha256", {})[str(fixture.relative_to(root))] = verify.digest(fixture)
 
-    def build_run(index, value=17):
+    def build_run(index, value=17, tag="CACHE_VALUE"):
         child = verify.Evidence("scheduling-cache-" + str(index))
         child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(root))
         binary = child.path / "fixture.sim"
@@ -49,7 +83,8 @@ def check(root, ev):
             compiled = verify.compile_simulation(child, "fixture-compile", argv, binary)
             executed = compiled and child.run("fixture-run", [str(binary)])
             output = (child.path / "fixture-run.stdout").read_text() if executed else ""
-            passed = child.assertion("fixture_result", executed and f"CACHE_VALUE {value}" in output)
+            passed = child.assertion(
+                "fixture_result", executed and f"{tag} {value}" in output.splitlines())
             return passed, child
         finally:
             child.finish("passed" if passed else "failed")
@@ -67,7 +102,7 @@ def check(root, ev):
         changed_parameter and parameter_child.receipt["builds"][0]["key"] != builds[0]["key"]
         and not parameter_child.receipt["builds"][0]["reused"]) and good
     fixture.write_text(fixture.read_text().replace("CACHE_VALUE", "CHANGED_CACHE_VALUE"))
-    changed_source, source_child = build_run("source")
+    changed_source, source_child = build_run("source", tag="CHANGED_CACHE_VALUE")
     good = ev.assertion(
         "source_change_rebuilds",
         changed_source and source_child.receipt["builds"][0]["key"] != builds[0]["key"]
@@ -94,11 +129,25 @@ def check(root, ev):
         ev.receipt["children"].append(str((child.path / "receipt.json").relative_to(root)))
 
     # Actual public-pin, unchanged numerical assertions in both simulators.
+    leaves = []
     for name, simulator in (("icarus", "iverilog"), ("compiled", "verilator")):
         good = verify.component(ev, "scheduling-leaf-" + name, verify.leaf_check,
                                 full=False, simulator=simulator) and good
+        leaves.append(root / ev.receipt["children"][-1])
+    good = ev.assertion(
+        "compact_dual_simulator_exact_trace",
+        all(verify.digest(leaves[0].parent / name) ==
+            verify.digest(leaves[1].parent / name)
+            for name in ("leaf-input.txt", "leaf-output.txt")),
+        receipts=[str(path.relative_to(root)) for path in leaves]) and good
     good = verify.component(
         ev, "scheduling-auto-integration", verify.integration_check,
         configurations={"minimum": verify.CONFIGURATIONS["minimum"]},
         modes=(1,), seeds=(17, 53), simulator="iverilog") and good
+    integration = json.loads((root / ev.receipt["children"][-1]).read_text())
+    good = ev.assertion(
+        "multi_seed_actually_compiled",
+        integration["simulation_routes"][0]["selected"] == "verilator" and
+        all(record["argv"][0] != "vvp" for record in integration["records"])) and good
+    good = verify.component(ev, "scheduling-icarus-startup", verify.startup_check) and good
     return good
