@@ -1,4 +1,11 @@
-"""Embedded, public-pin experiments and independent expected-vector generation."""
+"""Embedded, public-pin experiments and independent expected-vector generation.
+
+The bounded ``verify.py --probe dma-bandwidth`` command compares streamed tile
+bytes and measured service/retirement windows for stalled and unstalled sinks.
+It covers depths 1/3/256, compact dual-simulator parity and a compiled ownership
+defect rejection. It does not repair aggregate supervision or certify tensor
+consumption, physical EMIF bandwidth, checkpoint inference or native gates.
+"""
 
 import hashlib
 import json
@@ -2668,21 +2675,27 @@ task invalid_transfer(input [32:0] base,input [31:0] length);
   invalid_rejections=invalid_rejections+1;
  end
 endtask
-task pipelined_transfer(input [32:0] base,input integer count,input integer tail);
+task pipelined_transfer(input [32:0] base,input integer count,input integer tail,
+                       input stall_sink);
  integer waiting,tile_index,offset,beats,n,sent,received,total_tiles,before_reads;
  integer simultaneous,consecutive,longest_run,request_run,queued,stall_edges,stall_run;
  integer stalls1,stalls7,stalls31,compared_stalls,stall_slot,phase;
+ integer started_core,request_ddr,before_bursts,before_compares,before_overlap,retired_core;
  reg take_request,take_response,was_stalled;
  reg [511:0] expected,saved_data;
  reg [63:0] expected_mask,saved_mask,expected_tail;
  begin
   immediate=1;gapped=0;issue_stall=0;
+  first_issue=-1;stalled_edges=0;gap_edges=0;
   before_reads=reads;total_tiles=(count+DEPTH_VALUE-1)/DEPTH_VALUE;
+  before_bursts=bursts;before_compares=comparisons;before_overlap=overlap;
+  retired_core=-1;
   simultaneous=0;consecutive=0;longest_run=0;queued=0;stall_edges=0;
   stalls1=0;stalls7=0;stalls31=0;compared_stalls=0;
   expected_tail=(64'd1<<tail)-1;
   @(negedge clk);request_address=base;request_bytes=(count-1)*64+tail;request_valid=1;
   if(request_ready!==1) $fatal(1,"PIPELINED_DMA_REQUEST_NOT_READY");
+  started_core=core_cycles;request_ddr=ddr_cycles;
   edge_tick();
   @(negedge clk);request_valid=0;
   offset=0;
@@ -2698,12 +2711,12 @@ task pipelined_transfer(input [32:0] base,input integer count,input integer tail
    @(negedge clk);tile_ready=0;
    sent=0;received=0;n=0;request_run=0;stall_run=0;was_stalled=0;
    // Each of the first three tiles holds its first response for a distinct duration.
-   stall_slot=tile_index<3 ? (tile_index==0 ? 1 : tile_index==1 ? 7 : 31) : 0;
+   stall_slot=stall_sink && tile_index<3 ? (tile_index==0 ? 1 : tile_index==1 ? 7 : 31) : 0;
    phase=0;
    while(received<beats && n<100000) begin
     read_valid=sent<beats;read_address=sent;
     if(stall_slot>0 && received==0) read_rsp_ready=0;
-    else read_rsp_ready=(tile_index<3 || n<8 || n%11>3);
+    else read_rsp_ready=(!stall_sink || tile_index<3 || n<8 || n%11>3);
     #0.001;
     @(posedge clk);
     take_request=read_valid && read_ready;
@@ -2736,7 +2749,9 @@ task pipelined_transfer(input [32:0] base,input integer count,input integer tail
      if(request_run>longest_run) longest_run=request_run;
      if(request_run>=3) consecutive=consecutive+1;
     end else request_run=0;
-    if(take_response) begin received=received+1;comparisons=comparisons+1;end
+    if(take_response) begin
+     received=received+1;comparisons=comparisons+1;retired_core=core_cycles+1;
+    end
     if(sent-received>1) queued=queued+1;
     #0.001;
     if(was_stalled && (read_rsp_valid!==1 || read_data!==saved_data || read_mask!==saved_mask))
@@ -2756,14 +2771,25 @@ task pipelined_transfer(input [32:0] base,input integer count,input integer tail
   while(completion_valid!==1 && waiting<10000) begin edge_tick();waiting=waiting+1;end
   if(completion_valid!==1 || completion_error!==0 || completion_tiles!==total_tiles ||
      reads-before_reads!==count || accepted_read_beats!==reads ||
-     stalls1!==1 || stalls7!==1 || stalls31!==1 || compared_stalls<39 ||
+     (stall_sink && (stalls1!==1 || stalls7!==1 || stalls31!==1 || compared_stalls<39)) ||
+     (!stall_sink && (stall_edges!==0 || compared_stalls!==0 ||
+                     stalls1!==0 || stalls7!==0 || stalls31!==0)) ||
      (DEPTH_VALUE>=3 && (simultaneous==0 || queued==0 || consecutive==0)))
    $fatal(1,"PIPELINED_DMA_MISSING_COVERAGE_OR_COMPLETION");
+  if(comparisons-before_compares!==count || first_issue<request_ddr ||
+     last_response<first_issue || retired_core<=started_core ||
+     stalled_edges!==0 || gap_edges!==0 || overlap-before_overlap<=0)
+   $fatal(1,"PIPELINED_DMA_MISSING_MEASUREMENT");
+  $display("MEASURED_DMA_PIPELINE depth=DEPTH_VALUE sink_stalled=%0d beats=%0d useful_bytes=%0d compared_beats=%0d tiles=%0d bursts=%0d overlap=%0d command_stalled_edges=%0d response_gap_edges=%0d ddr_request_cycles=%0d ddr_service_cycles=%0d core_consumption_cycles=%0d core_completion_cycles=%0d",
+           stall_sink,count,(count-1)*64+tail,comparisons-before_compares,total_tiles,
+           bursts-before_bursts,overlap-before_overlap,stalled_edges,gap_edges,
+           last_response-request_ddr+1,last_response-first_issue+1,
+           retired_core-started_core,core_cycles-started_core);
   @(negedge clk);completion_ready=1;
   edge_tick();
   @(negedge clk);completion_ready=0;
-  $display("CHECKS_PASSED pipelined_dma depth=DEPTH_VALUE beats=%0d tiles=%0d simultaneous=%0d queued=%0d consecutive=%0d longest_request_run=%0d stalled_edges=%0d compared_stalls=%0d stall1=%0d stall7=%0d stall31=%0d",
-           count,total_tiles,simultaneous,queued,consecutive,longest_run,stall_edges,
+  $display("CHECKS_PASSED pipelined_dma depth=DEPTH_VALUE sink_stalled=%0d beats=%0d tiles=%0d simultaneous=%0d queued=%0d consecutive=%0d longest_request_run=%0d stalled_edges=%0d compared_stalls=%0d stall1=%0d stall7=%0d stall31=%0d",
+           stall_sink,count,total_tiles,simultaneous,queued,consecutive,longest_run,stall_edges,
            compared_stalls,stalls1,stalls7,stalls31);
  end
 endtask
@@ -2792,7 +2818,8 @@ initial begin
  invalid_transfer(33'd1,32'd64);
  invalid_transfer(33'd0,32'd0);
  invalid_transfer(33'h1ffffffc0,32'd65);
- pipelined_transfer(33'd28672,DEPTH_VALUE*5,19);
+ pipelined_transfer(33'd28672,DEPTH_VALUE*5,19,1);
+ pipelined_transfer(33'd32768,DEPTH_VALUE*5,19,0);
  if(reset_wait!==1 || reset_fill!==1 || reset_stall!==1 || reset_compares==0)
   $fatal(1,"DMA_MISSING_RESET_COVERAGE");
  if(invalid_rejections!==3) $fatal(1,"DMA_MISSING_INVALID_RANGE_COVERAGE");
@@ -2824,6 +2851,8 @@ endmodule
     simulation_name = f"dma-{depth}{clock_case}"
     if upload_validation:
         simulation_name += f"-upload-{getattr(evidence, 'default_simulator', 'iverilog')}"
+    else:
+        simulation_name += f"-{getattr(evidence, 'default_simulator', 'iverilog')}"
     transcript = evidence.simulate(
         simulation_name,
         bench.replace("DEPTH_VALUE", str(depth))
@@ -2839,24 +2868,81 @@ endmodule
         return measurement_records(transcript, "CHECKS_PASSED dma_upload")
     measured = measurement_records(transcript, "MEASURED_DMA")
     pipeline = measurement_records(transcript, "CHECKS_PASSED pipelined_dma")
+    pipeline_measurements = measurement_records(transcript, "MEASURED_DMA_PIPELINE")
     clocks = measurement_records(transcript, "CHECKS_PASSED dma_clocks")
     if len(clocks) != 1 or any(clocks[0][name] < 2 for name in ("core_edges", "ddr_edges")):
         raise AssertionError("DMA clock period/phase comparisons are missing")
-    if (len(pipeline) != 1 or pipeline[0]["beats"] != depth * 5 or
+    if (len(pipeline) != 2 or [row["sink_stalled"] for row in pipeline] != [1, 0] or
+            pipeline[0]["beats"] != depth * 5 or
             pipeline[0]["tiles"] != 5 or pipeline[0]["compared_stalls"] < 39 or
             any(pipeline[0][name] != 1 for name in ("stall1", "stall7", "stall31")) or
             (depth >= 3 and any(pipeline[0][name] <= 0 for name in
                                ("simultaneous", "queued", "consecutive")))):
         raise AssertionError("DMA pipelined public-pin comparisons lack required coverage")
+    unstalled = pipeline[1]
+    if (unstalled["beats"] != depth * 5 or unstalled["tiles"] != 5 or
+            unstalled["longest_request_run"] != depth or
+            any(unstalled[name] != 0 for name in
+                ("stalled_edges", "compared_stalls", "stall1", "stall7", "stall31")) or
+            (depth >= 3 and any(unstalled[name] <= 0 for name in
+                               ("simultaneous", "queued", "consecutive")))):
+        raise AssertionError("DMA unstalled pipelined sink comparisons are missing")
     evidence.record["observations"].append({
         "scope": "public_DMA_tiles_pipelined_read_order_and_backpressure",
-        "seed": seed, "observed": pipeline[0],
+        "seed": seed, "observed": pipeline,
         "compute_period_ns": 10, "ddr_period_ns": ddr_period_ns,
         "ddr_phase_ns": ddr_phase_ns,
         "compared_clock_edges": clocks[0],
         "oracle": "accepted read addresses in order against independent byte-address pattern "
                   "and final useful-byte mask; compares stalled payload before and after edges",
     })
+    if (len(pipeline_measurements) != 2 or
+            [row["sink_stalled"] for row in pipeline_measurements] != [1, 0]):
+        raise AssertionError("DMA pipelined bandwidth measurements are missing")
+    for counters in pipeline_measurements:
+        if (counters["depth"] != depth or counters["beats"] != depth * 5 or
+                counters["compared_beats"] != depth * 5 or counters["tiles"] != 5 or
+                counters["useful_bytes"] != (depth * 5 - 1) * 64 + 19 or
+                counters["overlap"] <= 0 or counters["bursts"] <= 0 or
+                counters["command_stalled_edges"] != 0 or counters["response_gap_edges"] != 0 or
+                any(counters[name] <= 0 for name in
+                    ("ddr_request_cycles", "ddr_service_cycles",
+                     "core_consumption_cycles", "core_completion_cycles")) or
+                counters["ddr_service_cycles"] > counters["ddr_request_cycles"] or
+                counters["core_consumption_cycles"] > counters["core_completion_cycles"] or
+                counters["ddr_service_cycles"] < counters["beats"] or
+                counters["core_consumption_cycles"] < counters["compared_beats"]):
+            raise AssertionError("DMA pipelined bandwidth lacks conserved compared activity")
+        evidence.record.setdefault("dma_pipeline_benchmarks", []).append({
+            "scope": "D1_public_DMA_tiles_simulation_not_physical_EMIF",
+            "seed": seed, "observed": counters,
+            "compute_period_ns": 10, "ddr_period_ns": ddr_period_ns,
+            "ddr_phase_ns": ddr_phase_ns,
+            "raw_DDR_interface_peak_GBps": 64 / ddr_period_ns,
+            "single_beat_compute_peak_GBps": 64 / 10,
+            "DDR_service_GBps": counters["beats"] * 64 /
+                                (counters["ddr_service_cycles"] * ddr_period_ns),
+            "DDR_request_inclusive_GBps": counters["beats"] * 64 /
+                                         (counters["ddr_request_cycles"] * ddr_period_ns),
+            "compute_consumed_GBps": counters["useful_bytes"] /
+                                    (counters["core_consumption_cycles"] * 10),
+            "measurement": {
+                "ddr_request_cycles": "core request acceptance through final DDR response, "
+                                      "DDR edges inclusive",
+                "ddr_service_cycles": "first Avalon read assertion through final DDR response, "
+                                      "DDR edges inclusive, including tile ownership waits",
+                "core_consumption_cycles": "core request acceptance through last independently "
+                                           "compared tile response retirement, edges inclusive",
+                "core_completion_cycles": "core request acceptance through completion observation "
+                                          "after every tile release",
+            },
+            "sink": ("pipelined requests, response ready continuously asserted while consuming"
+                     if not counters["sink_stalled"] else
+                     "pipelined requests with observed 1/7/31-edge and periodic response stalls"),
+            "limitations": ["checked tile sink, not the tensor engine",
+                            "no physical EMIF bandwidth or timing claim",
+                            "no throughput floor is inferred from calculated interface peaks"],
+        })
     if len(measured) != (11 if depth == 256 else 8):
         raise AssertionError("DMA benchmark missing transfer measurements")
     upper = [row for row in measured if row["base"] == 0x100000fc0]
@@ -3086,9 +3172,29 @@ def run_probe(evidence, name, seed, config=0):
                 "kv_eviction_error_ignored", "kv_cold_error_ignored"))
     elif name == "parameters":
         invalid_parameters(evidence)
-    elif name in ("dma", "dma-compiled"):
-        if name == "dma-compiled":
+    elif name in ("dma", "dma-compiled", "dma-bandwidth"):
+        if name in ("dma-compiled", "dma-bandwidth"):
             evidence.default_simulator = "verilator"
+        if name == "dma-bandwidth":
+            for depth in (1, 3, 256):
+                dma_probe(evidence, depth, seed)
+            compiled = [row["observed"] for row in evidence.record["dma_pipeline_benchmarks"]
+                        if row["observed"]["depth"] == 3]
+            evidence.default_simulator = "iverilog"
+            dma_probe(evidence, 3, seed)
+            portable = [row["observed"] for row in
+                        evidence.record["dma_pipeline_benchmarks"][-2:]]
+            if compiled != portable:
+                raise AssertionError("DMA pipelined bandwidth differs between simulators")
+            evidence.record["observations"].append({
+                "scope": "compact_D1_pipelined_bandwidth_dual_simulator_parity",
+                "depth": 3, "seed": seed, "compared": compiled,
+                "simulators": ["verilator", "iverilog"],
+            })
+            evidence.flush()
+            from sensitivity import run_sensitivity
+            run_sensitivity(evidence, seed, only=("tile_read_backpressure",))
+            return
         for depth in (1, 3, 256):
             dma_probe(evidence, depth, seed)
         for period, phase in ((3.75, 1.25), (20, 2.5)):
