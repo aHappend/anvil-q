@@ -36,6 +36,23 @@ SELECTORS = ("rtl/*.sv", "design/*.md", "design/*.json", "fpga/*",
 VERILATOR_UNROLL = ("--unroll-count", "1024", "--unroll-stmts", "1000000")
 
 
+def execution_resources():
+    cpus = len(os.sched_getaffinity(0))
+    limit = Path("/sys/fs/cgroup/memory.max")
+    memory = None
+    if limit.is_file():
+        value = limit.read_text().strip()
+        memory = None if value == "max" else int(value)
+    workers = min(2, cpus)
+    if memory is not None and memory < 4 * 1024**3:
+        workers = 1
+    build_jobs = min(2, max(1, cpus // workers))
+    if memory is not None and memory < 8 * 1024**3:
+        build_jobs = 1
+    return {"workers": workers, "build_jobs": build_jobs,
+            "affinity_cpus": cpus, "memory_limit_bytes": memory}
+
+
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -127,13 +144,7 @@ class Run:
 
     def parallel(self, jobs):
         """Bound both compiler memory use and simulation concurrency to two workers."""
-        workers = min(2, len(os.sched_getaffinity(0)))
-        # Respect container limits as well as affinity; each C++ build is serial.
-        limit = Path("/sys/fs/cgroup/memory.max")
-        if limit.is_file():
-            value = limit.read_text().strip()
-            if value != "max" and int(value) < 4 * 1024**3:
-                workers = 1
+        workers = execution_resources()["workers"]
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(job) for job in jobs]
             try:
@@ -144,7 +155,10 @@ class Run:
                 raise
 
     def _build(self, argv, cwd, timeout, expected):
+        argv = list(argv)
         tool = str(argv[0])
+        if tool == "verilator" and "-j" not in argv:
+            argv[1:1] = ["-j", str(execution_resources()["build_jobs"])]
         output_flag = "-o"
         binary = Path(argv[argv.index(output_flag) + 1])
         if tool == "verilator":
@@ -319,4 +333,5 @@ class Run:
                     "build_manifests": [self.rel(item[0].parent / "build.json")
                                         for item in self.builds.values()],
                     "build_reuses": self.build_reuses,
+                    "execution_resources": execution_resources(),
                     "executions": self.records, **details})

@@ -9,6 +9,8 @@ import argparse
 from collections import Counter
 from contextlib import ExitStack
 from dataclasses import replace
+from copy import deepcopy
+import inspect
 import json
 from pathlib import Path
 import sys
@@ -70,6 +72,40 @@ def preflight_sensitivity():
         verify.behavior_execution_preflight(MagicMock())
     output.assert_called_once()
     report = output.call_args.args[1]
+    validate_execution_contract(report)
+    rejected = []
+    for label in ("status", "missing", "duplicate", "token", "phase", "original",
+                  "supplemental", "supplemental-simulator", "supplemental-token"):
+        changed = deepcopy(report)
+        if label == "status":
+            changed["status"] = "compatible"
+        elif label == "missing":
+            changed["obligations"].pop()
+        elif label == "duplicate":
+            changed["obligations"].append(changed["obligations"][0])
+        elif label == "token":
+            changed["obligations"][0]["tokens"] = [0]
+        elif label == "phase":
+            changed["obligations"][0]["prefill_tokens"] = 99
+        elif label == "original":
+            changed["original_coverage"]["discharged_by_compact_smoke"] = True
+        elif label == "supplemental":
+            changed["supplemental_obligations"] = []
+        elif label == "supplemental-simulator":
+            changed["supplemental_obligations"][0]["simulator"] = "iverilog"
+        else:
+            changed["supplemental_obligations"][0]["tokens"] = [1]
+        try:
+            validate_execution_contract(changed)
+        except AssertionError:
+            rejected.append(label)
+        else:
+            raise AssertionError("incorrect execution contract accepted: " + label)
+    return {"execution_contract": report, "rejected": rejected,
+            "scope": "offline dispatch inventory; not acceptance"}
+
+
+def validate_execution_contract(report):
     observed = Counter((row["profile"], replace(A, **row["geometry"]), row["seed"],
                         row["simulator"], tuple(row["tokens"]), row["prefill_tokens"])
                        for row in report["obligations"])
@@ -82,7 +118,11 @@ def preflight_sensitivity():
         "review_required": True}
     assert report["required_workloads"] == 160
     assert len(report["supplemental_obligations"]) == 1
-    return {"execution_contract": report, "scope": "offline dispatch inventory; not acceptance"}
+    row = report["supplemental_obligations"][0]
+    assert row["check_id"] == "supplemental-decoder-a-b8-int4-asymmetric-seed257"
+    assert replace(A, **row["geometry"]) == replace(A, BANKS=8, CACHE_MODE=2, INT4_ASYM=1)
+    assert (row["seed"], row["simulator"], row["tokens"], row["prefill_tokens"]) == (
+        257, "verilator", [1, 4, 2, 6, 3, 5, 7], 4)
 
 
 def guard_sensitivity():
@@ -140,10 +180,80 @@ def dispatch_sensitivity():
                  call.kwargs["prefill_tokens"]] += 1
     assert observed == Counter(expected_workloads())
     assert mocks["decoder_case"].call_count == 172
+    for name in ("host_case", "bridge_case", "scheduler_case", "prefetch_case",
+                 "accumulator_case", "math_memory_case", "scalar_case",
+                 "dot8_case", "codec_case", "activation_case"):
+        index = (3 if name in ("bridge_case", "scheduler_case") else
+                 4 if name == "prefetch_case" else
+                 2 if name in ("math_memory_case", "activation_case") else 1)
+        assert {call.args[index] for call in mocks[name].call_args_list} == {
+            "iverilog", "verilator"}, name
+    activation = Counter((call.args[1], call.args[2], call.kwargs["capacity"])
+                         for call in mocks["activation_case"].call_args_list)
+    expected_activation = Counter((b, s, 8 if b == 1 else 120)
+                                  for b in (1, 2, 4, 8)
+                                  for s in ("iverilog", "verilator"))
+    expected_activation[8, "verilator", 11008] += 1
+    assert activation == expected_activation
+    secondary = secondary_dispatch_sensitivity(fake)
     return {"decoder_dispatch_cases": 172, "coverage": coverage_sensitivity(),
             "execution_contract_preflight": preflight_sensitivity(),
+            "secondary_dispatch": secondary,
             "automatic_dispatch": guard_sensitivity(),
             "scope": "offline dispatch regression; no numerical acceptance"}
+
+
+def secondary_dispatch_sensitivity(fake):
+    import boundary_checks
+    import compatibility_checks
+    import mutation_checks
+    with (patch.object(compatibility_checks, "decoder_case", return_value={"cycles": 1}) as decoder,
+          patch.object(compatibility_checks, "codec_case", return_value={}) as codec,
+          patch.object(compatibility_checks, "write_json")):
+        compatibility_checks.compatibility(fake)
+    calls = decoder.call_args_list
+    compact = [call for call in calls if call.kwargs["label"] == "compact-portability"]
+    legacy = [call for call in calls if call.kwargs["label"].startswith("legacy-")]
+    recovery = [call for call in calls if call not in compact + legacy]
+    assert (len(compact), len(legacy), len(recovery), codec.call_count) == (14, 9, 15, 18)
+    assert Counter(call.args[1] for call in legacy) == Counter(compatibility_geometries())
+    for call in legacy + recovery:
+        assert call.kwargs["simulator"] == "verilator"
+        assert call.kwargs["tokens"] == (
+            [1, 2, 1, 2, 1, 2, 1] if call in legacy else [1, 4])
+    for call in compact:
+        g = call.args[1]
+        assert (g.HIDDEN_SIZE <= 32 and g.BANKS == 1 and g.VOCAB_SIZE == 1 and
+                g.INTERMEDIATE_SIZE == 8 and call.kwargs["tokens"] == [0])
+    for function in (boundary_checks.boundaries, boundary_checks.integration_faults):
+        with (patch.object(boundary_checks, "decoder_case", return_value={}) as decoder,
+              patch.object(boundary_checks, "write_json")):
+            function(fake)
+        assert decoder.called
+        assert all(call.kwargs["simulator"] == "verilator"
+                   for call in decoder.call_args_list)
+    with ExitStack() as stack:
+        mocks = {}
+        for name in ("decoder_case", "dot8_case", "scheduler_case", "prefetch_case",
+                     "codec_case", "activation_case", "mutation_case"):
+            mocks[name] = stack.enter_context(patch.object(
+                mutation_checks, name, return_value={"name": "mock", "killed": True}))
+        mocks["mutation_case"].side_effect = lambda run, spec: {"name": spec[0], "killed": True}
+        stack.enter_context(patch.object(mutation_checks, "write_json"))
+        mutation_checks.mutations(fake)
+    assert inspect.signature(mutation_checks.mutation_case).parameters[
+        "simulator"].default == "verilator"
+    assert mocks["mutation_case"].call_count == len(mutation_checks.MUTATIONS)
+    for name, mock in mocks.items():
+        if name == "mutation_case":
+            continue
+        for call in mock.call_args_list:
+            simulator = call.kwargs.get("simulator")
+            if simulator is None and len(call.args) > 1 and isinstance(call.args[1], str):
+                simulator = call.args[1]
+            assert simulator == "verilator", name
+    return {"legacy": len(legacy), "recovery": len(recovery), "compact": len(compact),
+            "mutations": len(mutation_checks.MUTATIONS)}
 
 
 def scalability(run):
@@ -157,7 +267,7 @@ def scalability(run):
                              prefill_tokens=2, label="different-stimulus"),
     ]
     results = run.parallel(jobs)
-    for field in ("logits", "compared_bits", "requests", "cycles", "traffic", "stalls"):
+    for field in set(results[0]) - {"trace_sha256", "result_path", "comparison_transport"}:
         assert results[0][field] == results[1][field], field
     # Also exercise a complete interrupted legacy workload, twice across seeds.
     legacy = next(compatibility_geometries())
