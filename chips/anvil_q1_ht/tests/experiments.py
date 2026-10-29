@@ -2572,6 +2572,9 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "checkpoint-prompts":
         from prompts import prepare
         prepare(evidence)
+    elif name == "checkpoint-reference":
+        from checkpoint_reference import prepare
+        prepare(evidence, seed=seed)
     elif name == "dequant":
         dequant(evidence, seed)
     elif name == "math":

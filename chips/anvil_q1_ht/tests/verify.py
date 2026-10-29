@@ -425,7 +425,7 @@ def main():
                                            "arithmetic-default",
                                            "integration-matrix", "matrix-config", "compatibility",
                                            "compatibility-matrix", "bf16-default", "vocabulary-default",
-                                           "checkpoint-repack", "checkpoint-prompts",
+                                           "checkpoint-repack", "checkpoint-prompts", "checkpoint-reference",
                                            "retention", "retention-audit",
                                            "retention-diagnosis"),
                         help="bounded advisory experiment")
@@ -483,7 +483,7 @@ def main():
                             "mandatory L1 and native acceptance remain separate.")
             return 0
         campaign = (
-            "fixture-integrity", "checkpoint-repack", "checkpoint-prompts",
+            "fixture-integrity", "checkpoint-repack", "checkpoint-prompts", "checkpoint-reference",
             "parameters", "dequant", "tensor", "math",
             "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults",
             "command-checks", "descriptor-checks", "address-checks", "scalar-checks",

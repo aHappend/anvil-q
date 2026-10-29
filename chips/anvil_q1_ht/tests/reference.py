@@ -292,5 +292,8 @@ class EngineeringModel:
             write(8, 0, 0, x)
         final = norm(x, self.gamma[0, 7])
         write(8, 0, 14, final)
+        return self.vocabulary(final)
+
+    def vocabulary(self, final):
         return [sat32(round_shift(sum(a * fp16(b) for a, b in zip(final, row)), 16))
                 for row in self.embedding]
