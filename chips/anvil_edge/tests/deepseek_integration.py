@@ -25,11 +25,75 @@ from qwen_tables import BASE, audit_fragments, encode_fragments, inverse_byte_al
 VOCABULARY = 128815
 
 
-def prepare(directory):
+def bos_vectors(directory, config, source):
+    """Compare explicit model-config policy with the installed tokenizer backend."""
+    import tokenizers
+
+    require(config["add_bos_token"] is True and config["add_eos_token"] is False
+            and config["clean_up_tokenization_spaces"] is False,
+            "Unrepresented DeepSeek model-level token policy")
+    bos = config["bos_token"]
+    require(bos == {"__type": "AddedToken",
+                    "content": "<\uff5cbegin\u2581of\u2581sentence\uff5c>",
+                    "lstrip": False, "normalized": True, "rstrip": False,
+                    "single_word": False}, "Unexpected pinned BOS policy")
+    added, = [item for item in source["added_tokens"] if item["content"] == bos["content"]]
+    require(added["id"] == 0 and added["special"] and added["normalized"] is False,
+            "BOS does not resolve to the pinned special token")
+    official = tokenizers.Tokenizer.from_file(str(ROOT / "tests/data/deepseek-tokenizer.json"))
+    require(json.loads(official.to_str())["post_processor"] == source["post_processor"],
+            "Unexpected raw backend postprocessor")
+    official.post_processor = tokenizers.processors.Sequence([
+        official.post_processor,
+        tokenizers.processors.TemplateProcessing(
+            single=f"{bos['content']}:0 $A:0",
+            special_tokens=[(bos["content"], added["id"])]),
+    ])
+    raw = json.loads((directory / "official-vectors.json").read_bytes())
+    prefix = bos["content"].encode()
+    vectors = []
+    for row in raw["vectors"]:
+        expected = [added["id"], *row["token_ids"]]
+        text = bytes.fromhex(row["utf8_hex"]).decode()
+        observed = official.encode(text, add_special_tokens=True)
+        decoded = official.decode(observed.ids, skip_special_tokens=False).encode()
+        require(observed.ids == expected and
+                observed.special_tokens_mask == [1, *([0] * len(row["token_ids"]))],
+                "Backend automatic-BOS token/mask mismatch")
+        require(decoded == prefix + bytes.fromhex(row["decoded_utf8_hex"]),
+                "Automatic-BOS decoded bytes differ from independent concatenation")
+        require(official.encode(text, add_special_tokens=False).ids == row["token_ids"],
+                "Automatic-BOS configuration altered raw-text policy")
+        vectors.append({**row, "token_ids": expected, "decoded_utf8_hex": decoded.hex()})
+    literal = [row for row in vectors if row["text"] == bos["content"]]
+    require(len(literal) == 1 and literal[0]["token_ids"] == [0, 0],
+            "Literal BOS must not silently suppress the automatic prefix")
+    save(directory / "model-bos-vectors.json", {
+        "policy": "Raw single-sequence text, no chat template; exactly one automatic "
+                  "BOS before the complete raw vector, no automatic EOS; "
+                  "decode with skip_special_tokens=False",
+        "oracle": "Independent prefix/byte concatenation from pinned model configuration "
+                  "cross-checked with installed tokenizers==0.21.4 TemplateProcessing",
+        "limit": "Transformers is not installed or executed. This checks the declared "
+                 "single-sequence configuration semantics, not that wrapper implementation, "
+                 "chat templates, paired input, model weights or inference",
+        "bos_token_id": added["id"], "bos_utf8_hex": prefix.hex(),
+        "normalization_policy": "The pinned raw AddedToken has normalized=false, "
+                                "whereas model config declares normalized=true. "
+                                "Preserve the raw table's policy; normalization is "
+                                "identity for this profile. No wrapper override is inferred",
+        "compared_token_vectors": len(vectors), "compared_byte_vectors": len(vectors),
+        "vectors": vectors,
+    })
+    return added["id"]
+
+
+def prepare(directory, model_bos=False):
     installed_identity(directory)
     reference(directory)
     source = json.loads((ROOT / "tests/data/deepseek-tokenizer.json").read_bytes())
     config = json.loads((ROOT / "tests/data/deepseek-tokenizer_config.json").read_bytes())
+    bos_id = bos_vectors(directory, config, source) if model_bos else 0
     assets = json.loads((ROOT / "tests/data/assets.json").read_bytes())
     entry, = [item for item in assets["official_tokenizers"] if item["family_id"] == 2]
     model = source["model"]
@@ -92,7 +156,7 @@ def prepare(directory):
                         "record_count": counts[index],
                         "sha256": hashlib.sha256(blob).hexdigest()})
         combined.extend(blob + bytes(-len(blob) % 4))
-    metadata = [2, 2, VOCABULARY, 0, 1, 0, 0, 1, 0x100000,
+    metadata = [2, 2, VOCABULARY, 0, 1, int(model_bos), bos_id, 1, 0x100000,
                 profile["classes"], profile["start"], profile["dead"],
                 32, 0, max(map(len, pieces)), 4096]
     metadata.extend(struct.unpack("<8I", bytes.fromhex(entry["bundle_sha256"])))
@@ -115,6 +179,13 @@ def prepare(directory):
         "model_wrapper_policy_scope": "Not applied by raw tokenizer.json fixture. "
                                       "Automatic-BOS profile integration remains separate",
     }
+    if model_bos:
+        info["model_wrapper_policy_scope"] = (
+            "Declared single-sequence automatic-BOS semantics applied in metadata. "
+            "Independent prefix/byte concatenation compared to the installed backend "
+            "configured with TemplateProcessing. Transformers wrapper is not executed")
+        info["scope"] = "Complete DeepSeek tables with declared automatic-BOS policy; " \
+                        "not SPI boot or weighted inference"
     save(directory / "complete-table-fixture.json", info)
     print(f"DEEPSEEK_COMPLETE_TABLES {len(tables)}; "
           f"OFFICIAL_VECTORS {len(vectors['vectors'])}")
@@ -154,6 +225,33 @@ def run_deepseek_integration(evidence):
     ])
 
 
+def run_deepseek_bos(evidence):
+    evidence.tools(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+    evidence.child([
+        "./.venv/bin/python", "tests/deepseek_integration.py",
+        evidence.relative(evidence.path), "--model-bos",
+    ], "deepseek-model-bos-preparation")
+    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
+    record = json.loads((evidence.path / "model-bos-vectors.json").read_bytes())
+    vectors = [{"case": index, "input_utf8_hex": row["utf8_hex"],
+                "token_ids": row["token_ids"], "decoded_utf8_hex": row["decoded_utf8_hex"]}
+               for index, row in enumerate(record["vectors"])]
+    ordinary = [row for row in vectors if len(bytes.fromhex(row["input_utf8_hex"])) <= 4096]
+    large = [row for row in vectors if len(bytes.fromhex(row["input_utf8_hex"])) > 4096]
+    require(len(large) == 1 and len(ordinary) + len(large) == len(vectors) == 881,
+            "Incomplete automatic-BOS matrix")
+    largest = max(len(bytes.fromhex(row["input_utf8_hex"])) for row in large)
+    capacity = 1 << (largest - 1).bit_length()
+    run_rtl(evidence, info, ordinary, "deepseek-bos")
+    evidence.run_cases([
+        (f"deepseek-bos-large-profile-{seed}",
+         lambda scope, seed=seed: rtl_case(
+             scope, info, large, seed, "verilator", capacity, 50000000,
+             "deepseek-bos-large"))
+        for seed in (1, 17, 89)
+    ])
+
+
 def run_deepseek_boot(evidence):
     from storage import boot_test, synthetic_image, words
 
@@ -188,9 +286,11 @@ def run_deepseek_boot(evidence):
 
 
 if __name__ == "__main__":
-    require(len(sys.argv) == 2, "Usage: ./.venv/bin/python tests/deepseek_integration.py FRESH")
+    require(len(sys.argv) in (2, 3) and
+            (len(sys.argv) == 2 or sys.argv[2] == "--model-bos"),
+            "Usage: ./.venv/bin/python tests/deepseek_integration.py FRESH [--model-bos]")
     directory = Path(sys.argv[1])
     require(not directory.is_absolute() and ".." not in directory.parts and
             directory.parts[:2] in (("evidence", "preparation"), ("evidence", "verification"))
             and directory.is_dir(), "A present project-relative evidence directory is required")
-    prepare(directory)
+    prepare(directory, model_bos=len(sys.argv) == 3)
