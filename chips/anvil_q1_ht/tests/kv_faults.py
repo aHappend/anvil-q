@@ -115,8 +115,8 @@ task reset_case(input integer instant,delay);
   #0.001;check_reset();
   repeat(3) edge_tick();
   @(negedge clk);rst_n=1;
-  repeat(POSITIONS+3) edge_tick();
-  if(req_ready!==1 || {rsp_valid,protocol_error,spill_valid}!==3'b0)
+  repeat((POSITIONS>2*WINDOW ? POSITIONS : 2*WINDOW)+3) edge_tick();
+  if(initialized!==1 || req_ready!==1 || {rsp_valid,protocol_error,spill_valid}!==3'b0)
    $fatal(1,"KV_SERVICE_RESET_NOT_IDLE");
   epochs=epochs+1;
  end
