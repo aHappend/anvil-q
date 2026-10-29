@@ -5,6 +5,7 @@ Run python3 -B tests/platform_checks.py. A successful diagnostic invocation does
 not authorize longer stages, alter patrol limits, or certify engineering gates.
 """
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -20,7 +21,79 @@ PREDECESSOR = (
 )
 
 
+def supervision_records():
+    """Report recorded enforcement, not permission inferred from narrative text."""
+    paths = (
+        ".vulcan/engineering/run-0001/state.json",
+        ".vulcan/engineering/run-0001/attempt-0309/result.json",
+        ".vulcan/engineering/run-0001/attempt-0309/patrol.json",
+        ".vulcan/engineering/run-0001/attempt-0309/settled.json",
+    )
+    records = {name: json.loads((ROOT / name).read_text()) for name in paths}
+    state, result, patrol, settled = (records[name] for name in paths)
+    config = state["config"]
+    return {
+        "record_sha256": {name: file_sha256(ROOT / name) for name in paths},
+        "runtime_state_keys": sorted(state),
+        "runtime_config_keys": sorted(config),
+        "recorded_role_limits": config.get("role_limits"),
+        "failed_command": result["argv"],
+        "failed_exit_code": result["exit_code"],
+        "failed_duration_seconds": result["duration_s"],
+        "recorded_interception": patrol["interception"],
+        "process_scope_settled": settled["process_scope_settled"],
+        "supervision_confirmation": "not_established",
+        "scope": (
+            "These records describe the existing execution and cancellation. "
+            "Role limits are not an override of the observed patrol. No separately "
+            "supervised-stage contract, effective patrol accommodation, original "
+            "absolute-deadline reconciliation or durable-retention confirmation "
+            "is established by this audit."
+        ),
+    }
+
+
+def audit_supervision():
+    evidence = Evidence(
+        "supervision-record-audit",
+        repair_of=(
+            "evidence/preparation/"
+            "verifier-workflow-platform-diagnosis-20261029T032417Z-dd670a9d/receipt.json"
+        ),
+    )
+    try:
+        evidence.command(["python3", "--version"], "python-version")
+        text = evidence.command(
+            ["python3", "-B", "tests/platform_checks.py",
+             "--inspect-supervision-records"], "retained-supervision-records")
+        observation = json.loads(text)
+        evidence.record["diagnostic_input_sha256"] = observation["record_sha256"]
+        evidence.record["observations"].append(observation)
+        evidence.finish(
+            "diagnostic_completed",
+            "Audited actual retained enforcement records without CLI discovery, "
+            "runtime changes or simulation. Stage accommodation remains "
+            "unestablished; this is not a passing engineering check.")
+        print(evidence.relative(evidence.folder / "receipt.json"))
+        return 0
+    except Exception as exc:
+        evidence.finish("diagnostic_failed", f"{type(exc).__name__}: {exc}")
+        return 1
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--audit-supervision", action="store_true",
+                      help="retain a read-only audit of actual enforcement records")
+    mode.add_argument("--inspect-supervision-records", action="store_true",
+                      help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    if args.inspect_supervision_records:
+        print(json.dumps(supervision_records(), indent=2))
+        return 0
+    if args.audit_supervision:
+        return audit_supervision()
     evidence = Evidence("workflow-platform-diagnosis", repair_of=PREDECESSOR)
     evidence.record["scope"] = "read_only_prerequisites_not_acceptance"
     evidence.flush()
