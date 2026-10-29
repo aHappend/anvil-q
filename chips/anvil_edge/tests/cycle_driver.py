@@ -258,14 +258,22 @@ def run_driver_capacity(evidence, receipts):
         "90b7b32df583442187a2cd9bc10a8663/receipt.json",
         "evidence/preparation/shell-driver-scaling-"
         "4e63b60753ea4ae1a749fe0b83adbdee/receipt.json",
+        "evidence/preparation/shell-driver-capacity-"
+        "37feda994948418a8f5ea7f292b74203/receipt.json",
     )
-    require(tuple(receipts) == expected, "Capacity probe requires both admitted parents")
+    require(tuple(receipts) == expected, "Capacity probe requires all three admitted parents")
     parents = []
     for name in receipts:
         raw = (ROOT / name).read_bytes()
         prior = json.loads(raw)
         require(prior["exit_code"] == 0 and prior["child_settled"] and
                 prior["sources_unchanged"], "Parent experiment did not settle successfully")
+        if name == expected[-1]:
+            require(prior["driver_capacity"]["capacity"] == 16385 and
+                    prior["driver_capacity"]["comparisons"][0]["identical_public_trace"] and
+                    [entry["path"] for entry in prior["driver_capacity_parents"]] ==
+                    list(expected[:2]),
+                    "Capacity-16385 must retain its paired comparison and admitted parents")
         for path, value in prior["source_sha256"].items():
             if not path.startswith("tests/"):
                 require(hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == value,
@@ -273,25 +281,26 @@ def run_driver_capacity(evidence, receipts):
         parents.append({"path": name, "sha256": hashlib.sha256(raw).hexdigest()})
     evidence.record["driver_capacity_parents"] = parents
     evidence.record["driver_experiment_scope"] = (
-        "One serial synthetic capacity-16385, seed17/bypass pair, general-only; "
+        "One serial synthetic capacity-32769, seed17/bypass pair, general-only; "
         "eight selected tokens and all physical head rows. Supplemental diagnostic, "
         "not official complete tables, pretrained weights or delivery acceptance.")
     evidence.tools(("python3", "verilator", "g++", "make"))
-    directory = evidence.path / "capacity-16385"
+    directory = evidence.path / "capacity-32769"
     directory.mkdir()
     generation = evidence.child(
         ["./.venv/bin/python", "tests/qwen_shell.py", evidence.relative(directory),
-         "--compact", "16385"], "driver-capacity-inputs-16385")
+         "--compact", "32769"], "driver-capacity-inputs-32769")
     info = json.loads((directory / "shell-reference.json").read_bytes())
-    require(info["physical_capacity"] == 16385 and
+    require(info["physical_capacity"] == 32769 and
+            info["active_vocabulary"] == 257 and
             len(info["cases"][0]["generated_ids"]) == 8,
             "Capacity probe must retain all eight generated tokens")
     result = pair(evidence, info, "qwen", (17,), (1,),
                   general_only=True, reject=False)
     evidence.record["driver_capacity"] = result
-    save(evidence.path / "driver-capacity-16385.json", result)
+    save(evidence.path / "driver-capacity-32769.json", result)
     summary = {
-        "capacity": 16385, "seed": 17, "bypass": True,
+        "capacity": 32769, "seed": 17, "bypass": True,
         "generation_seconds": generation["duration_s"],
         "measurements": [{
             "driver": driver, "cycles": row["frames"][-1]["cycles"],
