@@ -25,6 +25,7 @@ CAMPAIGN = (
     "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
     "synthesis", "kernel-default", "projection-default", "bf16-default",
     "vocabulary-default",
+    "layer-awq", "layer-bf16", "attention-context",
 )
 
 

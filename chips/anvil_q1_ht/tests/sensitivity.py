@@ -7,6 +7,7 @@ import shutil
 from experiments import dequant, dma_probe, kv_probe, tensor, top_probe
 from arithmetic_benchmark import arithmetic_default
 from layer_benchmark import layer_default
+from attention_benchmark import attention_context
 
 
 def run_sensitivity(parent, seed, only=None):
@@ -49,6 +50,15 @@ def run_sensitivity(parent, seed, only=None):
          ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
          "$signed(in_weight_q16[37*INDEX+:37]))",
          lambda run: layer_default(run, seed, "AWQ"), "LAYER_WRITE_MISMATCH"),
+        ("attention_cold_value", "anvil_q1_ht_kv_window.sv",
+         "else result_data <= spill_rsp_data;",
+         "else result_data <= spill_rsp_data ^ (value_select ? 32'h00010000 : 32'b0);",
+         lambda run: attention_context(run, seed, 3, 9), "ATTENTION_KV_REFERENCE_MISMATCH"),
+        ("attention_drop_cold_term", "anvil_q1_ht_kernel.sv",
+         "math_b <= {{63{math_value[64]}}, math_value[64:0]};",
+         "math_b <= time_index < 32'd6 ? 128'b0 : "
+         "{{63{math_value[64]}}, math_value[64:0]};",
+         lambda run: attention_context(run, seed, 3, 9), "ATTENTION_CONTEXT_MISMATCH"),
     )
     if only is not None:
         selected = set(only)

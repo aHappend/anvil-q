@@ -2463,6 +2463,10 @@ def run_probe(evidence, name, seed, config=0):
         math_probe(evidence, seed)
     elif name == "kernel-default":
         kernel_default(evidence, seed)
+    elif name == "attention-context":
+        from attention_benchmark import attention_context
+        for window, positions in ((1, 1), (3, 3), (3, 9), (128, 131)):
+            attention_context(evidence, seed, window, positions)
     elif name in ("layer-awq", "layer-bf16"):
         from layer_benchmark import layer_default
         layer_default(evidence, seed, name[6:].upper())
@@ -2513,6 +2517,9 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "layer-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("layer_lane_sign",))
+    elif name == "attention-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=("attention_cold_value", "attention_drop_cold_term"))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

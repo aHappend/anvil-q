@@ -413,6 +413,7 @@ def main():
                                            "dma-compiled",
                                            "kernel-default", "projection-default", "projection-k",
                                            "layer-awq", "layer-bf16", "layer-sensitivity",
+                                           "attention-context", "attention-sensitivity",
                                            "arithmetic-default",
                                            "integration-matrix", "matrix-config", "compatibility",
                                            "compatibility-matrix", "bf16-default", "vocabulary-default",
@@ -478,6 +479,7 @@ def main():
             "orphan-fault", "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
             "synthesis", "kernel-default", "projection-default", "bf16-default",
             "vocabulary-default", "layer-awq", "layer-bf16",
+            "attention-context",
         )
         ledger = [{"probe": name, "outcome": "not_run"} for name in campaign]
         evidence.record["mandatory_campaign"] = ledger
