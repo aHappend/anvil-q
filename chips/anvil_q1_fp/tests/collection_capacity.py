@@ -401,6 +401,7 @@ def memory_accounting(rows):
         "attention_named_arrays_old_head_and_expression_scratch": 10 * attention,
         "causal_mask_and_construction_scratch": 4 * teacher * teacher,
         "largest_weight_decode_expression_scratch": 48 * 4864 * 896,
+        "awq_decode_additional_conservative_expression_allowance": 64 * 4864 * 896,
         "vocabulary_block_rows_and_decode_scratch": 48 * 1024 * 896,
         "vocabulary_block_product_old_product_cast_and_tobytes": 4 * 1024 * teacher * 8,
         "argmax_maximum_indices_masks_and_indexing_scratch": 64 * teacher,
@@ -451,6 +452,24 @@ def memory_accounting(rows):
             "comparison": "Comparison runs after both observer repeats exit. Trace readers "
                           "may retain two 64-MiB frames plus caller references and decode "
                           "temporaries. References have separate two-chunk array caches.",
+            "awq": "AWQStream.weight simultaneously retains int16 codes, repeated int16 "
+                   "zeros and repeated FP64 scales. Its final subtract/multiply/divide "
+                   "also needs expression outputs. The additional 64 bytes per largest "
+                   "matrix element deliberately sums unpack/cast/repeat/scale and return "
+                   "expression payloads across disjoint phases; it is not a BLAS, "
+                   "allocator or whole-process bound.",
+            "vocabulary": "reference_case retains the complete layer stack and normalized "
+                          "final array through all 149 vocabulary blocks. Reassignment "
+                          "evaluates new rows and logits while their previous bindings "
+                          "are still live; astype/tobytes adds a cast and byte string. "
+                          "The last block has 384 rows, not 1024.",
+            "orchestrator": "Production index grows to 600 run records; Evidence also "
+                            "retains child records, assertions and data hashes. Progress "
+                            "JSON accumulates on disk. A teacher comparison retains two "
+                            "reference position indexes, observed positions and metrics; "
+                            "these are released between calls, not retained fifty-fold. "
+                            "JSON serialization temporarily coexists with these objects. "
+                            "Object sizes and allocator retention remain additional.",
         },
         "whole_process_memory_bound_bytes": None,
         "whole_process_memory_qualified": False,
