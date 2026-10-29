@@ -5,6 +5,7 @@ prompt-prefix tokens per mode expose initial sampling and steady-state costs.
 All mandatory prompts, logits and decode lengths remain in the L1 entrypoint.
 --complete-prompt compares every prefill step and sixteen greedy decode steps
 of the first frozen prompt in both modes against bound original evaluators.
+Complete-prompt and prefix diagnostics use distinct retained output namespaces.
 """
 
 import argparse
@@ -512,8 +513,8 @@ def main():
     args = parser.parse_args()
     if args.compare_to and args.original_source_receipt:
         parser.error("select an original cost receipt or original source receipt, not both")
-    evidence = Evidence("reference-costs-worker" if args.worker else "reference-costs",
-                        repair_of=args.repair_of)
+    stem = "reference-complete-prompt" if args.complete_prompt else "reference-costs"
+    evidence = Evidence(stem + "-worker" if args.worker else stem, repair_of=args.repair_of)
     try:
         if args.worker:
             worker(evidence, args.compare_to, args.measure_smoke, args.reference_diagnosis,

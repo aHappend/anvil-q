@@ -32,7 +32,7 @@ def main():
         "evidence/preparation/verifier-mandatory-20261029T214526Z-e7ab7728/receipt.json"))
     args = parser.parse_args()
     evidence = Evidence("kv-build-costs" if args.kv_build_compare else
-                        "integration-hotpaths" if args.integration_profile else
+                        f"integration-hotpaths-c{args.config}" if args.integration_profile else
                         "integration-inlining", repair_of=args.repair_of)
     try:
         if args.kv_build_compare:
