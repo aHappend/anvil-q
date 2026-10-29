@@ -2510,6 +2510,9 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "arithmetic-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("matched_arithmetic_lane_sign",))
+    elif name == "layer-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=("layer_lane_sign",))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

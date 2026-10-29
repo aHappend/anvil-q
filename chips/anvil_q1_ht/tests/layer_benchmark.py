@@ -291,7 +291,8 @@ task run(input integer id,position);
   @(negedge clk);token_valid=0;
   while(done!==1) edge_tick();
   if(error!==0 || compared-before_logits!=8 || final_stalls<31 || pending ||
-     block_active || packet_valid || writes==before_writes || tensor_vectors==before_vectors)
+     block_active || packet_valid || writes==before_writes || tensor_vectors==before_vectors ||
+     token_cycles!==64'(cycles-started-1))
    $fatal(1,"LAYER_COMPLETION_OR_MISSING_ACTIVITY");
   $display("MEASURED_LAYER mode=@MODE@ position=%0d core_cycles=%0d token_counter=%0d writes=%0d requests=%0d tensor_vectors=%0d logits=%0d",
            position,cycles-started,token_cycles,writes-before_writes,

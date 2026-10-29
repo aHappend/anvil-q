@@ -412,7 +412,7 @@ def main():
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
                                            "dma-compiled",
                                            "kernel-default", "projection-default", "projection-k",
-                                           "layer-awq", "layer-bf16",
+                                           "layer-awq", "layer-bf16", "layer-sensitivity",
                                            "arithmetic-default",
                                            "integration-matrix", "matrix-config", "compatibility",
                                            "compatibility-matrix", "bf16-default", "vocabulary-default",

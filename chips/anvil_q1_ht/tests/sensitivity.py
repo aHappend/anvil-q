@@ -6,6 +6,7 @@ import shutil
 
 from experiments import dequant, dma_probe, kv_probe, tensor, top_probe
 from arithmetic_benchmark import arithmetic_default
+from layer_benchmark import layer_default
 
 
 def run_sensitivity(parent, seed, only=None):
@@ -43,6 +44,11 @@ def run_sensitivity(parent, seed, only=None):
          ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
          "$signed(in_weight_q16[37*INDEX+:37]))",
          lambda run: arithmetic_default(run, seed), "ARITHMETIC_MISMATCH"),
+        ("layer_lane_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: layer_default(run, seed, "AWQ"), "LAYER_WRITE_MISMATCH"),
     )
     if only is not None:
         selected = set(only)
