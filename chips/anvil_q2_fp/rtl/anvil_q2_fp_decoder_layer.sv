@@ -31,9 +31,13 @@ module anvil_q2_fp_decoder_layer #(
   reg failed;
   reg [31:0] layer, position;
   reg phase;
-  reg [31:0] selected;
-  reg [2:0] projection;
-  reg [1:0] norm_mode, element_mode;
+  (* preserve, dont_merge *) reg [31:0] selected;
+  (* preserve, dont_merge *) reg [2:0] projection;
+  (* preserve, dont_merge *) reg [1:0] norm_mode, element_mode;
+  reg [31:0] next_selected;
+  reg [2:0] next_projection;
+  reg [1:0] next_norm_mode, next_element_mode;
+  wire [3:0] next_step=step+4'd1;
   wire [5:0] ready, finished, faults;
   wire [5:0] reqv, reqr, reqw, rspv, rspr, rspe;
   wire [23:0] reqk;
@@ -72,20 +76,20 @@ module anvil_q2_fp_decoder_layer #(
   assign done=rst_n && state==3;
   assign error=done && failed;
   always @* begin
-    selected=0; projection=0; norm_mode=0; element_mode=0;
-    case(step)
-      0: begin selected=0; norm_mode=0; end
-      1: begin selected=1; projection=0; end
-      2: begin selected=1; projection=1; end
-      3: begin selected=1; projection=2; end
-      4: selected=2;
-      5: selected=3;
-      6: begin selected=1; projection=3; end
-      7: begin selected=5; element_mode=0; end
-      8: begin selected=0; norm_mode=1; end
-      9: selected=4;
-      10: begin selected=5; element_mode=1; end
-      default: selected=0;
+    next_selected=0; next_projection=0; next_norm_mode=0; next_element_mode=0;
+    case(next_step)
+      0: begin next_selected=0; next_norm_mode=0; end
+      1: begin next_selected=1; next_projection=0; end
+      2: begin next_selected=1; next_projection=1; end
+      3: begin next_selected=1; next_projection=2; end
+      4: next_selected=2;
+      5: next_selected=3;
+      6: begin next_selected=1; next_projection=3; end
+      7: begin next_selected=5; next_element_mode=0; end
+      8: begin next_selected=0; next_norm_mode=1; end
+      9: next_selected=4;
+      10: begin next_selected=5; next_element_mode=1; end
+      default: next_selected=0;
     endcase
   end
   anvil_q2_fp_rmsnorm #(NUM_LAYERS,HIDDEN_SIZE,MAX_SEQ_LEN,FP_FORMAT) norm(
@@ -132,10 +136,14 @@ module anvil_q2_fp_decoder_layer #(
     mem_req_layer,mem_req_proj,mem_req_row,mem_req_col,mem_req_wdata,
     mem_rsp_valid,mem_rsp_ready,mem_rsp_rdata,mem_rsp_error);
   always @(posedge clk or negedge rst_n) begin
-    if(!rst_n) begin state<=0; step<=0; failed<=0; layer<=0; position<=0; phase<=0; end
+    if(!rst_n) begin
+      state<=0; step<=0; failed<=0; layer<=0; position<=0; phase<=0;
+      selected<=0; projection<=0; norm_mode<=0; element_mode<=0;
+    end
     else case(state)
       0: if(cmd_valid) begin
         layer<=cmd_layer; position<=cmd_pos; failed<=0; step<=0;
+        selected<=0; projection<=0; norm_mode<=0; element_mode<=0;
         phase<=EXPLICIT_PHASE ? cmd_phase : 1'b0;
         if(cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN)
           begin failed<=1; state<=4; end
@@ -145,7 +153,11 @@ module anvil_q2_fp_decoder_layer #(
       2: if(finished[selected]) begin
         if(faults[selected]) begin failed<=1; state<=3; end
         else if(step==10) state<=3;
-        else begin step<=step+1; state<=1; end
+        else begin
+          step<=next_step; state<=1;
+          selected<=next_selected; projection<=next_projection;
+          norm_mode<=next_norm_mode; element_mode<=next_element_mode;
+        end
       end
       3: state<=0;
       4: state<=3;

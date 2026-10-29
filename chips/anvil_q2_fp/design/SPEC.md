@@ -73,6 +73,9 @@ must not alter any legal configuration.
 | Cancel/flush plus held memory handshake | held valid && ready before flush edge | parent scheduler accounts for accepted request and drains its response |
 | Cancel/flush plus response | accepted response before edge | account once; never commit cancelled arithmetic into new token |
 | Fault versus normal completion | fault on same edge | token fails and outstanding accepted traffic drains |
+| Decoder command acceptance | idle and cmd_valid | register step zero and its normalization routing/modes together |
+| Decoder successful step completion | finished selected engine, no fault, step below ten | advance step and register next engine/projection/modes on the same edge; no extra command cycle |
+| Decoder in-flight or fault completion | no successful step transition | hold registered routing through all request/response ownership; reset or next command reinitializes it |
 | GEMV bias command | BIAS_ADD and bias adder ready | capture selected final sum, expanded bias and one-hot writeback destination once; hold row index while waiting |
 | GEMV bias arithmetic | command accepted at E0 | operand capture E0, order/classify E1, distance E2, align E3, add/subtract E4, normalization distance E5, normalize E6, RNE E7, pack/output E8; earliest result transfer E9 |
 | GEMV bias completion | BIAS_ADD_WAIT and adder valid | reject nonfinite result or write exactly the registered one-hot destination; only then advance row or start scratch writes |

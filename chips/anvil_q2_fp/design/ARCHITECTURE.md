@@ -74,6 +74,26 @@ special values and stalls. The shared runtime must obtain fresh post-fit STA
 at the unchanged 10.000 ns target; the retained -4.076 ns failure is not
 reclassified by this source change.
 
+The subsequent retained -0.255 ns setup failure is on an accumulator-to-
+accumulator path, with a second -0.252 ns path from decoder `step[3]` to
+top `scalar_pending`. The far-path significand add/subtract now uses four
+independent seven-bit sums, explicit group carry lookahead and bit-prefix
+increments. Its RNE increment uses five independent five-bit slices with
+input-prefix carry detection, rather than a second full-width carry chain.
+These are modulo-width integer identities: the FP32 alignment, normalization,
+rounding decision, exceptional results and three register captures are unchanged.
+No extra recurrence latency or reassociation is introduced.
+
+Decoder engine selection, projection and norm/residual modes are now registered
+together with each step transition, rather than decoded from `step` on every
+request path. Reset and command acceptance select the first normalization;
+successful completion selects the next step on the same edge that advances
+`step`. Routing remains fixed throughout command acceptance, memory traffic
+and response completion, including faults. Preservation attributes retain the
+control boundary. There is no additional command or memory cycle. Both changes
+require independent numerical/protocol checking and fresh shared-runtime STA;
+the -0.255 ns report remains a failure, not evidence of repaired timing closure.
+
 Scalar arithmetic shares one command slot. Add uses a registered FP32
 adder; multiply registers its exact product before rounding. Divide performs
 one restoring quotient bit per cycle, and square root performs one radix-4

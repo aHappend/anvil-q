@@ -210,6 +210,46 @@ package anvil_q2_fp_pkg;
     end
   endfunction
 
+  function automatic [6:0] fp_increment7(input [6:0] x, input increment);
+    begin
+      fp_increment7=x ^ {
+        increment && (&x[5:0]), increment && (&x[4:0]),
+        increment && (&x[3:0]), increment && (&x[2:0]),
+        increment && (&x[1:0]), increment && x[0], increment};
+    end
+  endfunction
+
+  function automatic [27:0] fp_add28(input [27:0] a,b, input carry_in);
+    reg [7:0] s0, s1, s2, s3;
+    reg p0, p1, p2, c1, c2, c3;
+    begin
+      // Independent seven-bit sums and group carry lookahead avoid a
+      // full-width carry chain after the sticky-alignment barrel.
+      s0={1'b0,a[6:0]}+{1'b0,b[6:0]};
+      s1={1'b0,a[13:7]}+{1'b0,b[13:7]};
+      s2={1'b0,a[20:14]}+{1'b0,b[20:14]};
+      s3={1'b0,a[27:21]}+{1'b0,b[27:21]};
+      p0=&s0[6:0]; p1=&s1[6:0]; p2=&s2[6:0];
+      c1=s0[7] || (p0 && carry_in);
+      c2=s1[7] || (p1 && s0[7]) || (p1 && p0 && carry_in);
+      c3=s2[7] || (p2 && s1[7]) || (p2 && p1 && s0[7]) ||
+        (p2 && p1 && p0 && carry_in);
+      fp_add28={fp_increment7(s3[6:0],c3),fp_increment7(s2[6:0],c2),
+        fp_increment7(s1[6:0],c1),fp_increment7(s0[6:0],carry_in)};
+    end
+  endfunction
+
+  function automatic [24:0] fp_increment25(input [24:0] x, input increment);
+    begin
+      // Five parallel short increments; each carry depends only on input bits.
+      fp_increment25[4:0]=x[4:0]+{4'd0,increment};
+      fp_increment25[9:5]=x[9:5]+{4'd0,(increment && (&x[4:0]))};
+      fp_increment25[14:10]=x[14:10]+{4'd0,(increment && (&x[9:0]))};
+      fp_increment25[19:15]=x[19:15]+{4'd0,(increment && (&x[14:0]))};
+      fp_increment25[24:20]=x[24:20]+{4'd0,(increment && (&x[19:0]))};
+    end
+  endfunction
+
   function automatic [31:0] fp_add(input [31:0] a,b);
     reg [31:0] big, smaller;
     reg a_is_big, subtract, close_path;
@@ -261,7 +301,8 @@ package anvil_q2_fp_pkg;
       // normalization; the general cancellation detector is off this path.
       far_big={fp_sig(big),3'd0};
       far_small=shift_jam27({fp_sig(smaller),3'd0},{24'd0,distance});
-      far_total={1'b0,far_big}+({1'b0,far_small}^{28{subtract}})+{27'd0,subtract};
+      far_total=fp_add28({1'b0,far_big},
+        {1'b0,far_small}^{28{subtract}},subtract);
       if (far_total[27]) begin
         far_normalized={far_total[27:2],(far_total[1]|far_total[0])};
         far_exp={1'b0,big_exp}+9'd1;
@@ -272,8 +313,8 @@ package anvil_q2_fp_pkg;
         far_normalized=far_total[26:0];
         far_exp={1'b0,big_exp};
       end
-      far_rounded={1'b0,far_normalized[26:3]}+
-        {24'd0,(far_normalized[2] && ((|far_normalized[1:0]) || far_normalized[3]))};
+      far_rounded=fp_increment25({1'b0,far_normalized[26:3]},
+        far_normalized[2] && ((|far_normalized[1:0]) || far_normalized[3]));
       far_packed_exp=far_exp+{8'd0,far_rounded[24]};
       far_encoded_exp=(far_packed_exp==9'd1 && !far_rounded[23] && !far_rounded[24]) ?
         8'd0 : far_packed_exp[7:0];
