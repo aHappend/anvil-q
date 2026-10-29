@@ -27,6 +27,7 @@ class Preprocessor:
     def __init__(self):
         raw, _ = inputs()
         self.categories = bytearray(LIMIT)
+        self.ccc, self.word = bytearray(LIMIT), bytearray(LIMIT)
         codes = {"L": 1, "N": 2, "M": 3, "P": 4, "S": 5}
         pending, previous = None, -1
         for line in raw["ucd-16.0.0-UnicodeData.txt"].decode().splitlines():
@@ -36,20 +37,25 @@ class Preprocessor:
             require(previous < value < LIMIT, "Unordered primary DeepSeek Unicode input")
             previous = value
             category = codes.get(fields[2][0], 0)
+            combining = int(fields[3])
+            word = int(category in (1, 2, 3) or fields[2] == "Pc")
             first = value
             if fields[1].endswith(", First>"):
                 require(pending is None, "Nested primary Unicode range")
-                pending = (value, fields[1].removesuffix(", First>"), category)
+                pending = (value, fields[1].removesuffix(", First>"), category, combining, word)
                 continue
             if fields[1].endswith(", Last>"):
                 require(pending is not None and
-                        pending[1:] == (fields[1].removesuffix(", Last>"), category),
+                        pending[1:] == (fields[1].removesuffix(", Last>"),
+                                        category, combining, word),
                         "Unmatched primary Unicode range")
-                first, _, _ = pending
+                first = pending[0]
                 pending = None
             else:
                 require(pending is None, "Unclosed primary Unicode range")
             self.categories[first:value + 1] = bytes([category]) * (value - first + 1)
+            self.ccc[first:value + 1] = bytes([combining]) * (value - first + 1)
+            self.word[first:value + 1] = bytes([word]) * (value - first + 1)
         require(pending is None, "Unclosed final primary Unicode range")
         self.whitespace = primary_whitespace(raw["ucd-16.0.0-PropList.txt"])
         self.unicode_hashes = {

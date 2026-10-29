@@ -131,7 +131,7 @@ def encode_fragments(pieces, flags, byte_ids, merges, added):
     return {kind: table(WIDTHS[kind], payload) for kind, payload in payloads.items()}
 
 
-def audit_fragments(fragments, source):
+def audit_fragments(fragments, source, vocabulary=VOCABULARY):
     """Reparse serialized bytes and compare every field against official source."""
     data, counts = {}, {}
     require(set(fragments) == set(WIDTHS), "Unexpected/missing fragment")
@@ -142,12 +142,18 @@ def audit_fragments(fragments, source):
         require(size == width * count and len(blob) == 32 + size,
                 "Malformed serialized table extent")
         data[kind], counts[kind] = blob[32:], count
-    require(counts[0x201] == VOCABULARY and counts[0x203] == 256,
+    require(counts[0x201] == vocabulary and counts[0x203] == 256,
             "Actual vocabulary was padded/truncated or byte count changed")
     records = list(struct.iter_unpack("<QII", data[0x201]))
     alphabet = inverse_byte_alphabet()
     original = {}
+    added_by_id = {item["id"]: item for item in source["added_tokens"]}
+    require(len(added_by_id) == len(source["added_tokens"]), "Duplicate AddedToken ID")
     for spelling, token in source["model"]["vocab"].items():
+        if token in added_by_id:
+            require(spelling == added_by_id[token]["content"],
+                    "AddedToken shadows a different base spelling")
+            continue
         original[token] = (bytes(alphabet[c] for c in spelling), 1)
     for item in source["added_tokens"]:
         original[item["id"]] = (item["content"].encode(), 2 if item["special"] else 3)
@@ -164,7 +170,7 @@ def audit_fragments(fragments, source):
     mapped = list(struct.unpack("<256I", data[0x203]))
     require(len(set(mapped)) == 256, "Serialized byte-map alias")
     for byte, token in enumerate(mapped):
-        require(token < VOCABULARY and records[token][2] & 1 and
+        require(token < vocabulary and records[token][2] & 1 and
                 pieces[token] == bytes([byte]), "Incorrect serialized base-byte map")
     merge_rows = list(struct.iter_unpack("<IIII", data[0x204]))
     source_pairs = {}
@@ -180,7 +186,7 @@ def audit_fragments(fragments, source):
         key = left, right
         require(previous is None or previous < key, "Merge key order/uniqueness")
         require(source_pairs[key] == (result, rank), "Source merge ID/rank mismatch")
-        require(all(token < VOCABULARY and records[token][2] & 1
+        require(all(token < vocabulary and records[token][2] & 1
                     for token in (left, right, result)), "Nonordinary merge token")
         require(pieces[left] + pieces[right] == pieces[result],
                 "Decoded merge concatenation mismatch")

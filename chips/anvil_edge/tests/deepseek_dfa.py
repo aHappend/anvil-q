@@ -5,6 +5,7 @@ Only pretokenization is tested here; this is not a complete tokenizer image.
 """
 
 from collections import deque
+import copy
 import hashlib
 import itertools
 import json
@@ -18,6 +19,7 @@ from deepseek_preprocessing import Preprocessor, require
 from official import ROOT
 from qwen_regex import reparse, serialize, table_oracle
 from unicode_tables import LIMIT, scalar
+from deepseek_preprocessing import ASCII_PUNCTUATION
 
 
 START = ("start",)
@@ -30,7 +32,6 @@ def properties(preprocessor, value):
     cjk = 0x4E00 <= value <= 0x9FA5 or 0x3040 <= value <= 0x30FF
     ascii_letter = "a" <= char <= "z" or "A" <= char <= "Z"
     # Distinguish the ASCII punctuation prefix from all other P/S scalars.
-    from deepseek_preprocessing import ASCII_PUNCTUATION
     return (category, bool(preprocessor.whitespace[value]), cjk,
             ascii_letter, char in ASCII_PUNCTUATION,
             char == " ", char in "\r\n")
@@ -48,10 +49,13 @@ def classify(preprocessor):
             symbols.append(key)
         identity = identifiers[key]
         classes.append(identity)
-        if ranges and ranges[-1][1] == value - 1 and ranges[-1][2] == identity:
-            ranges[-1] = (ranges[-1][0], value, identity, 0)
+        props = (preprocessor.ccc[value] | preprocessor.whitespace[value] << 8 |
+                 preprocessor.word[value] << 9)
+        if (ranges and ranges[-1][1] == value - 1 and
+                ranges[-1][2:] == (identity, props)):
+            ranges[-1] = (ranges[-1][0], value, identity, props)
         else:
-            ranges.append((value, value, identity, 0))
+            ranges.append((value, value, identity, props))
     require(len(classes) == LIMIT, "Incomplete classifier")
     return symbols, classes, ranges
 
@@ -254,6 +258,79 @@ def run_deepseek_dfa(evidence):
     evidence.tools(("python3", "verilator", "g++", "make"))
     evidence.child(["python3", "tests/deepseek_dfa.py", evidence.relative(evidence.path)],
                    "deepseek-compiled-preprocessing-audit")
+    preprocessor = Preprocessor()
+    symbols, classes, ranges = classify(preprocessor)
+    profile = compile_profile(symbols)
+    for kind, blob in serialize(profile).items():
+        require((evidence.path / f"deepseek-dfa-{kind:03x}.bin").read_bytes() == blob,
+                "DeepSeek DFA serialized bytes differ before RTL")
+    compact = copy.copy(evidence)
+    compact.simulator_override = "iverilog"
+    rtl_case(compact, preprocessor, profile, ranges, "\x00\x01Hello", 17,
+             "deepseek-dfa-compact", 64, 500000)
+    text = (
+        "\x00\x01Hello \x00\x01! \x00\x01 \x00a\x01b "
+        "   \u4e00   12 \t\u3040 "
+        "\u3040\u3041\u3099\u309b\u309f\u30a0\u30a1\u30fb\u30ff "
+        "a\u4e00b\u3042c  \r \n  \u4e00 a1234567b "
+        "a\u00b2\u2163\u0664\u096b0b !\u4e00!Hello "
+        "caf\u00e9 e\u0301 \U0001f600 \u1c89 \r\n"
+    )
+    representatives = [classes.index(index) for index in range(len(symbols))]
+    selected = sorted(set(representatives) | {
+        value for index, row in enumerate(ranges) if index % 37 == 0
+        for value in row[:2]
+    } | {0x10FFFF, 0x9FA5, 0x9FA6, 0x303F, 0x3040, 0x30FF, 0x3100})
+    text += " ".join(map(chr, selected)) + "\r\n\t\u00a0  "
+    require(len(text.encode()) < 4096 and len(spans(preprocessor, text)) > 100,
+            "Missing DeepSeek RTL span coverage")
+    evidence.run_cases([
+        (f"deepseek-dfa-s{seed}",
+         lambda scope, seed=seed: rtl_case(
+             scope, preprocessor, profile, ranges, text, seed,
+             "deepseek-dfa-full-classifier", 4096, 5000000))
+        for seed in (1, 17, 89)
+    ])
+
+
+def rtl_case(evidence, preprocessor, profile, ranges, text, seed, name, capacity, cycles):
+    from text import record, run_text_case, word_memory
+
+    memory = word_memory(0x1000, [record(*row) for row in ranges])
+    for base, key in ((0x40000, "states"), (0x50000, "transitions"),
+                      (0x60000, "ops"), (0x70000, "accepts")):
+        memory.update(word_memory(base, [record(*row) for row in profile[key]]))
+    expected = spans(preprocessor, text)
+    dut = f"""
+  wire [31:0] span_start,span_end;
+  assign out_value={{span_start,span_end}};
+  anvil_edge_tagged_dfa #(.MAX_SPAN_BYTES({capacity})) dut(
+    .clk(clk),.rst_n(rst_n),.start(start),.config_valid(1'b1),
+    .cfg_ranges_base(64'h1000),.cfg_states_base(64'h40000),
+    .cfg_transitions_base(64'h50000),.cfg_tag_ops_base(64'h60000),
+    .cfg_accepts_base(64'h70000),.cfg_range_count(32'd{len(ranges)}),
+    .cfg_class_count(32'd{profile['classes']}),.cfg_state_count(32'd{len(profile['states'])}),
+    .cfg_transition_count(32'd{len(profile['transitions'])}),
+    .cfg_tag_op_count(32'd{len(profile['ops'])}),
+    .cfg_accept_count(32'd{len(profile['accepts'])}),
+    .cfg_start_state(32'd{profile['start']}),.cfg_dead_state(32'd{profile['dead']}),
+    .cfg_tag_register_count(32'd{profile['registers']}),
+    .in_valid(in_valid),.in_ready(in_ready),.in_scalar(in_value),.in_last(in_last),
+    .out_valid(out_valid),.out_ready(out_ready),.out_start(span_start),
+    .out_end(span_end),.out_last(out_last),.busy(busy),.done(done),
+    .error(error),.error_code(error_code),.tbl_req_valid(tbl_req_valid),
+    .tbl_req_ready(tbl_req_ready),.tbl_req_addr(tbl_req_addr),
+    .tbl_rsp_valid(tbl_rsp_valid),.tbl_rsp_ready(tbl_rsp_ready),
+    .tbl_rsp_data(tbl_rsp_data),.tbl_rsp_error(tbl_rsp_error));
+"""
+    run_text_case(evidence, name, seed, dut, memory, list(map(ord, text)),
+                  [(first << 32) | end for first, end in expected], cycles=cycles,
+                  provenance={
+                      "scope": "Complete Unicode16 classifier with composed DeepSeek "
+                               "Split pretokenization only; no complete tokenizer or inference",
+                      "unicode_source_sha256": preprocessor.unicode_hashes,
+                      "input_utf8_hex": text.encode().hex(), "expected_byte_spans": expected,
+                  })
 
 
 if __name__ == "__main__":

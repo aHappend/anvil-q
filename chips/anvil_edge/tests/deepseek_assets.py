@@ -193,10 +193,14 @@ def reference(directory):
         "a!Hello \u3042\u3044\u30a2\u30a4 1234567",
         "<\uff5cbegin\u2581of\u2581sentence\uff5c>hello",
         "<\uff5cend\u2581of\u2581sentence\uff5c>",
+        "e\u0301",
     ]
     corpus.extend(item["content"] for item in source["added_tokens"]
                   if item["content"] not in corpus)
     corpus.append(" ".join(item["content"] for item in source["added_tokens"]))
+    for first in range(0, len(source["added_tokens"]), 32):
+        corpus.append(" ".join(item["content"]
+                               for item in source["added_tokens"][first:first + 32]))
     for seed in (1, 17, 89):
         rng = random.Random(seed)
         chars = list("aAzZ019 \t\r\n!?'") + [

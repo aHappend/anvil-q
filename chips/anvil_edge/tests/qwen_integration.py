@@ -291,7 +291,7 @@ def run_qwen_boot(evidence):
               fixture=fixture, label="complete-official-qwen-tables")
 
 
-def run_rtl(evidence, info, vectors):
+def run_rtl(evidence, info, vectors, family="qwen"):
     raw = (evidence.path / "tables.hex").read_bytes()
     require(hashlib.sha256(raw).hexdigest() == info["memory_hex_sha256"],
             "Complete table memory changed before RTL execution")
@@ -307,16 +307,17 @@ def run_rtl(evidence, info, vectors):
                 "Serialized complete table differs from RTL memory")
     compact = [row for row in vectors if row["input_utf8_hex"] == "65cc81"]
     require(len(compact) == 1, "Missing compact complete-profile portability case")
-    rtl_case(evidence, info, compact, 17, "iverilog", 64, 500000)
+    rtl_case(evidence, info, compact, 17, "iverilog", 64, 500000, family)
     evidence.run_cases([
-        (f"qwen-complete-profile-{seed}",
-         lambda scope, seed=seed: rtl_case(scope, info, vectors, seed, "verilator", 4096, 50000000))
+        (f"{family}-complete-profile-{seed}",
+         lambda scope, seed=seed: rtl_case(
+             scope, info, vectors, seed, "verilator", 4096, 50000000, family))
         for seed in (1, 17, 89)
     ])
 
 
-def rtl_case(evidence, info, vectors, seed, simulator, capacity, cycles):
-    directory = evidence.path / f"qwen-vectors-{simulator}-s{seed}"
+def rtl_case(evidence, info, vectors, seed, simulator, capacity, cycles, family="qwen"):
+    directory = evidence.path / f"{family}-vectors-{simulator}-s{seed}"
     directory.mkdir()
     flat = {"input": [], "token": [], "byte": [], "length": []}
     for row in vectors:
@@ -562,7 +563,7 @@ endmodule
     values = {
         "CAPACITY": capacity, "BASES": f"{pack(info['bases'], 64):x}",
         "COUNTS": f"{pack(info['counts'], 32):x}",
-        "METADATA": f"{pack(info['metadata'], 32):x}", "VOCABULARY": VOCABULARY,
+        "METADATA": f"{pack(info['metadata'], 32):x}", "VOCABULARY": info["metadata"][2],
         "RECORD_BASE": f"{info['bases'][1]:x}", "BYTE_BASE": f"{info['bases'][2]:x}",
         "BYTE_COUNT": info["counts"][2], "MAX_TOKEN_BYTES": info["metadata"][14],
         "MEMORY_LAST": info["memory_bytes"] // 4 - 1,
@@ -577,12 +578,13 @@ endmodule
     }
     for name, value in values.items():
         bench = bench.replace(f"@{name}@", str(value))
+    bench = bench.replace("QWEN_", family.upper() + "_")
     require(not re.search(r"@[A-Z_]+@", bench), "Unexpanded Qwen bench placeholder")
     sources = ["rtl/anvil_edge_numeric_pkg.sv"] + [
         str(path.relative_to(ROOT)) for path in sorted((ROOT / "rtl").glob("*.sv"))
         if path.name != "anvil_edge_numeric_pkg.sv"
     ]
-    evidence.simulate(f"qwen-complete-{simulator}-s{seed}", bench, sources,
+    evidence.simulate(f"{family}-complete-{simulator}-s{seed}", bench, sources,
                       None, simulator=simulator)
 
 
