@@ -207,8 +207,8 @@ def assessment(directory):
             "Python/module/orchestrator metadata, zlib workspace, interpreter/allocator "
             "overhead and retained earlier-mode allocations.",
             "NumPy/BLAS workspace, internal temporary allocations and retention beyond "
-            "the conservatively charged visible expressions; not executable in the "
-            "currently selected shared-runtime interpreter.",
+            "the conservatively charged visible expressions. Component observations "
+            "do not establish a complete reference-process bound.",
             "Mapped weight payload is fully charged above, but page tables, mapping "
             "objects, alignment and filesystem/kernel-cache overhead remain additional.",
             "Concurrent unrelated users/processes, unexposed cgroup constraints and "
