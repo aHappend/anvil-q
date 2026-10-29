@@ -5,9 +5,14 @@ python3 tests/prepare.py --probe snapshot-retention
 Successful finalization must reject incomplete snapshots and unfinished children.
 It must also reject missing or changed snapshots and missing raw child evidence.
 Live-source drift must reject success without rewriting the retained receipt.
+It must also reject the next tool launch before creating a child invocation.
 These fixtures do not repair missing retained evidence or runtime storage.
+Optional --comparison-receipt audits a retained public-source snapshot against
+the current handoff, retaining hashes and readable diffs without restoring files.
 """
 
+import argparse
+import difflib
 import errno
 import json
 from pathlib import Path
@@ -16,7 +21,120 @@ import sys
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, Run, sha256, write_json
+from execution import ROOT, Run, sha256, sources, write_json
+
+
+def handoff_source_comparison(receipt):
+    receipt = Path(receipt)
+    if receipt.is_absolute() or ".." in receipt.parts:
+        raise ValueError("handoff receipt must be project-relative")
+    receipt = (ROOT / receipt).resolve()
+    receipt.relative_to((ROOT / "evidence/preparation").resolve())
+    record = json.loads(receipt.read_text())
+    hashes = record.get("source_hashes")
+    if record.get("source_snapshot_complete") is not True or not isinstance(hashes, dict) or not hashes:
+        raise ValueError("handoff comparison requires a complete nonempty source snapshot")
+    live = {str(path.relative_to(ROOT)): path for path in sources()}
+    changes, damaged, differences = [], [], []
+    for name, digest in sorted(hashes.items()):
+        relative = Path(name)
+        if (not relative.parts or relative.is_absolute() or ".." in relative.parts or
+                relative.parts[0] not in ("rtl", "design", "fpga", "tests", "anvil_q2_reference") or
+                set(relative.parts).intersection((".vulcan", ".git", ".tooling", "VULCAN")) or
+                not isinstance(digest, str) or len(digest) != 64 or
+                any(c not in "0123456789abcdef" for c in digest)):
+            raise ValueError("invalid public-source handoff manifest entry: " + name)
+        snapshot = receipt.parent / "sources" / relative
+        snapshot.resolve().relative_to((receipt.parent / "sources").resolve())
+        retained = sha256(snapshot) if snapshot.is_file() else None
+        actual = sha256(live[name]) if name in live else None
+        if retained != digest:
+            damaged.append({"path": name, "recorded_sha256": digest, "snapshot_sha256": retained})
+        if actual != digest:
+            changes.append({"path": name, "retained_sha256": digest, "live_sha256": actual})
+            if retained == digest and name in live:
+                before, after = snapshot.read_bytes(), live[name].read_bytes()
+                try:
+                    old_text, new_text = before.decode("utf-8"), after.decode("utf-8")
+                except UnicodeDecodeError:
+                    differences.append("Binary source differs: " + name + "\n")
+                else:
+                    differences.extend(difflib.unified_diff(
+                        old_text.splitlines(True), new_text.splitlines(True),
+                        fromfile="retained/" + name, tofile="live/" + name))
+    added = sorted(set(live) - set(hashes))
+    return {"receipt": str(receipt.relative_to(ROOT)),
+            "receipt_sha256": sha256(receipt), "retained_status": record.get("status"),
+            "status": "different" if changes or damaged or added else "identical",
+            "changed_or_missing": changes, "damaged_snapshots": damaged, "added": added,
+            "diff": "".join(differences),
+            "scope": "read-only source identity; no writer attribution, repair or acceptance"}
+
+
+def handoff_comparison_sensitivity(folder):
+    fixture = folder / "handoff-fixture"
+    snapshot = fixture / "sources/tests/fixture.py"
+    snapshot.parent.mkdir(parents=True)
+    snapshot.write_text("# retained handoff fixture\n")
+    live = folder / "live-fixture.py"
+    live.write_bytes(snapshot.read_bytes())
+    receipt = fixture / "receipt.json"
+    record = {"source_snapshot_complete": True, "status": "passed",
+              "source_hashes": {"tests/fixture.py": sha256(snapshot)}}
+    write_json(receipt, record)
+    relative = receipt.relative_to(ROOT)
+    # Redirect only the isolated public source name; no shipped file is changed.
+    class FixturePath:
+        def relative_to(self, root):
+            return Path("tests/fixture.py")
+
+        def __fspath__(self):
+            return str(live)
+
+        def read_bytes(self):
+            return live.read_bytes()
+
+    with patch(__name__ + ".sources", return_value=[FixturePath()]):
+        if handoff_source_comparison(relative)["status"] != "identical":
+            raise AssertionError("identical handoff rejected")
+        live.write_text("# changed handoff fixture\n")
+        changed = handoff_source_comparison(relative)
+        if (changed["status"] != "different" or len(changed["changed_or_missing"]) != 1 or
+                "-# retained handoff fixture" not in changed["diff"] or
+                "+# changed handoff fixture" not in changed["diff"]):
+            raise AssertionError("changed handoff lost hashes or readable diff")
+        live.write_bytes(snapshot.read_bytes())
+        snapshot.write_text("# damaged retained fixture\n")
+        if len(handoff_source_comparison(relative)["damaged_snapshots"]) != 1:
+            raise AssertionError("damaged retained source accepted")
+    with patch(__name__ + ".sources", return_value=[]):
+        if handoff_source_comparison(relative)["changed_or_missing"][0]["live_sha256"] is not None:
+            raise AssertionError("missing handoff source accepted")
+    snapshot.write_bytes(live.read_bytes())
+    (folder / "added.py").write_text("# added handoff fixture\n")
+    with patch(__name__ + ".sources", return_value=[FixturePath(), folder / "added.py"]):
+        if handoff_source_comparison(relative)["added"] != [
+                str((folder / "added.py").relative_to(ROOT))]:
+            raise AssertionError("added handoff source omitted")
+    for name in ("", "../rtl/fixture.sv", ".vulcan/state.json", "/rtl/fixture.sv"):
+        write_json(receipt, dict(record, source_hashes={name: "0" * 64}))
+        try:
+            handoff_source_comparison(relative)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid handoff manifest path accepted: " + name)
+    write_json(receipt, dict(record, source_snapshot_complete=False))
+    try:
+        handoff_source_comparison(relative)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("incomplete handoff snapshot accepted")
+    return {"identical_control": True,
+            "rejected": ["changed-live", "damaged-snapshot", "missing-live", "added-live",
+                         "invalid-manifest-path", "incomplete-snapshot"],
+            "scope": "isolated offline fixtures; not persistence recovery"}
 
 
 def snapshot_retention_checks(folder):
@@ -200,6 +318,35 @@ def snapshot_retention_checks(folder):
         if receipt_path.read_bytes() != before:
             raise AssertionError("source-drift rejection changed retained receipt")
         candidate.finish("failed", diagnosis="deliberate offline source drift: " + defect)
+    launch_defects = ("changed-live-source", "missing-live-source", "incomplete-snapshot")
+    for defect in launch_defects:
+        live_source = folder / ("prelaunch-" + defect + ".py")
+        live_source.write_text("# isolated prelaunch identity fixture\n")
+        with patch("execution.sources", return_value=[live_source]):
+            candidate = Run(completion_output, "offline-prelaunch-" + defect)
+        if defect == "changed-live-source":
+            live_source.write_text("# changed before child launch\n")
+        elif defect == "missing-live-source":
+            live_source.unlink()
+        else:
+            candidate.source_snapshot_complete = False
+        receipt_path = candidate.path / "receipt.json"
+        before = receipt_path.read_bytes()
+        with patch("execution.subprocess.run") as child:
+            try:
+                candidate.tool(["python3", "-c", "print('must not launch')"])
+            except AssertionError as exc:
+                expected = ("incomplete verification snapshot" if defect == "incomplete-snapshot"
+                            else "live verification source changed during execution")
+                if expected not in str(exc):
+                    raise
+            else:
+                raise AssertionError("tool launched despite " + defect)
+            child.assert_not_called()
+        if (candidate.records or list(candidate.path.glob("tool-*")) or
+                receipt_path.read_bytes() != before):
+            raise AssertionError("prelaunch rejection changed retained execution evidence")
+        candidate.finish("failed", diagnosis="deliberate offline prelaunch defect: " + defect)
     return {"snapshot_failure_propagated": True, "failed_receipt_retained": True,
             "fresh_control_preserved_failure": True,
             "initial_incomplete_receipt_survives_failed_update": True,
@@ -209,8 +356,22 @@ def snapshot_retention_checks(folder):
             "completed_negative_test_preserved": True,
             "retention_defects_rejected": list(retention_defects),
             "live_source_defects_rejected": list(live_source_defects),
+            "prelaunch_defects_rejected": list(launch_defects),
+            "handoff_comparison": handoff_comparison_sensitivity(folder),
             "scope": "offline project fixtures only; not shared-runtime persistence recovery"}
 
 
 if __name__ == "__main__":
-    print(json.dumps(snapshot_retention_checks(Path(sys.argv[1])), sort_keys=True))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("folder")
+    parser.add_argument("--comparison-receipt")
+    args = parser.parse_args()
+    folder = Path(args.folder)
+    result = snapshot_retention_checks(folder)
+    if args.comparison_receipt:
+        comparison = handoff_source_comparison(args.comparison_receipt)
+        write_json(ROOT / folder / "handoff-comparison.json", comparison)
+        result["handoff_comparison_actual"] = comparison
+    print(json.dumps(result, sort_keys=True))
+    if args.comparison_receipt and comparison["status"] != "identical":
+        raise SystemExit(1)

@@ -43,6 +43,12 @@ python3 tests/prepare.py --probe snapshot-retention
 Missing or changed snapshots, missing raw logs and missing or changed child
 receipts reject success without rewriting the previous aggregate receipt.
 This detects project evidence loss; it does not repair shared-runtime retention.
+Add --comparison-receipt evidence/preparation/<probe>/<invocation>/receipt.json
+to the snapshot-retention probe for a read-only next-handoff comparison.
+Any changed, missing, added or damaged source fails and retains a readable diff;
+the probe never restores sources or attributes their writer.
+The same offline fixtures reject changed/missing live sources or an incomplete
+snapshot before launching a child, without attributing or repairing source drift.
 Full-default synthesis diagnostic (not the mandatory synthesis matrix or STA):
 python3 tests/prepare.py --probe synthesis --official-defaults --profile 3
 Without --official-defaults, synthesis retains the reduced A geometry.
@@ -233,8 +239,11 @@ def main():
             result = json.loads(text)
         elif args.probe == "snapshot-retention":
             run.versions([("python3", "--version")])
-            text, _ = run.tool(["python3", "tests/snapshot_retention_checks.py",
-                                run.rel(run.path / "snapshot-retention-fixtures")])
+            command = ["python3", "tests/snapshot_retention_checks.py",
+                       run.rel(run.path / "snapshot-retention-fixtures")]
+            if args.comparison_receipt:
+                command.extend(["--comparison-receipt", args.comparison_receipt])
+            text, _ = run.tool(command)
             result = json.loads(text)
         elif args.probe == "board-input-checker":
             result = board_prerequisite_sensitivity(run)

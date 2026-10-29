@@ -7,6 +7,8 @@ writes fail too, that receipt remains incomplete, never a successful snapshot.
 Every copied source must match its recorded hash before the snapshot is complete.
 Live sources must still match that snapshot at successful finalization; source
 drift fails the invocation rather than certifying a different workspace revision.
+Check the same identity before each child launch, so detected drift cannot start
+another tool. This guard detects changes, not their writer or shared-runtime cause.
 Successful finalization requires a complete snapshot and settled child records;
 completed expected-negative tests may retain nonzero exit codes.
 Snapshot content, raw logs and child receipts must still exist at finalization.
@@ -101,11 +103,20 @@ class Run:
     def rel(self, path):
         return str(Path(path).relative_to(ROOT))
 
+    def validate_live_sources(self):
+        if not self.source_snapshot_complete:
+            raise AssertionError("incomplete verification snapshot cannot launch a tool")
+        for name, digest in self.hashes.items():
+            source = ROOT / name
+            if not source.is_file() or sha256(source) != digest:
+                raise AssertionError("live verification source changed during execution: " + name)
+
     def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
         if timeout < 3600:
             raise ValueError("functional subprocess deadlines must be >=3600 seconds")
         work = ROOT if cwd is None else Path(cwd)
         work.relative_to(ROOT)
+        self.validate_live_sources()
         folder = self.path / ("tool-%04d" % len(self.records))
         folder.mkdir()
         start = time.time()
@@ -158,10 +169,8 @@ class Run:
                     "launch_error" in record for record in self.records)):
             raise AssertionError("incomplete verification execution cannot be finalized as passed")
         if status == "passed":
+            self.validate_live_sources()
             for name, digest in self.hashes.items():
-                source = ROOT / name
-                if not source.is_file() or sha256(source) != digest:
-                    raise AssertionError("live verification source changed during execution: " + name)
                 snapshot = self.path / "sources" / name
                 if not snapshot.is_file() or sha256(snapshot) != digest:
                     raise AssertionError("missing/changed retained verification artifact: "
