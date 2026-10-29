@@ -229,6 +229,135 @@ def run_deepseek_shell_compact(evidence):
     }
 
 
+def run_deepseek_shell_feasibility(evidence, receipts):
+    """Analyze retained production-shell runs; execute no complete-table retry."""
+    require(len(receipts) == 3,
+            "Supply compact DeepSeek, two-capacity shell and official DeepSeek boot receipts")
+    records, bindings = [], []
+    for name in receipts:
+        path = Path(name)
+        require(not path.is_absolute() and ".." not in path.parts and
+                path.parts[:2] == ("evidence", "preparation") and path.name == "receipt.json",
+                "Feasibility inputs must be project-relative preparation receipts")
+        raw = (ROOT / path).read_bytes()
+        record = json.loads(raw)
+        require(record["exit_code"] == 0 and record["child_settled"] and
+                record["sources_unchanged"], "Feasibility requires completed source-bound inputs")
+        bindings.append({"path": name, "sha256": hashlib.sha256(raw).hexdigest()})
+        records.append(record)
+    compact, head, boot = records
+    measures = compact["deepseek_shell_measurements"]
+    require(len(measures) == 12 and len(compact["deepseek_shell_controls"]) == 6,
+            "Both policies, transports, three seeds and six monitor controls are required")
+    head_points = sorted(head["head_row_shell_measurements"], key=lambda row: row["capacity"])
+    require([row["capacity"] for row in head_points] == [257, 1025],
+            "Two measured physical capacities are required")
+    # Bind compiled production sources, not historical before-optimization RTL.
+    for record, predicate in (
+        (compact, lambda row: row["status"] == "passed"),
+        (head, lambda row: "-after-" in row["name"]),
+        (boot, lambda row: row["status"] == "passed"),
+    ):
+        rows = [row for row in record["coverage"] if predicate(row)]
+        require(bool(rows), "No applicable source-bound simulations in feasibility input")
+        for row in rows:
+            for name, expected in row["source_sha256"]:
+                require(name.startswith("rtl/") and
+                        hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == expected,
+                        f"Production source changed since feasibility measurement: {name}")
+    operations = [point["after"]["operations"] for point in head_points]
+    require(len(operations[0]) == len(operations[1]) == 9 and
+            [(row["position"], row["token"]) for row in operations[0]] ==
+            [(row["position"], row["token"]) for row in operations[1]],
+            "Capacity slope must compare identical operations")
+    slope = ((head_points[1]["after"]["inference_cycles"] -
+              head_points[0]["after"]["inference_cycles"]) / (768 * 9))
+    require(slope > 0, "Invalid measured physical-row slope")
+    speeds = [row["cycles_per_second"] for row in measures]
+    boot_rows = [row for row in boot["coverage"] if row["status"] == "passed"]
+    require(len(boot_rows) == 1, "Expected one official full-table boot measurement")
+    boot_seconds = boot_rows[0]["simulation_receipt"]["duration_s"]
+    boot_directory = ROOT / Path(receipts[2]).parent
+    scope_bytes = (boot_directory / "official-boot-scope.json").read_bytes()
+    scope = json.loads(scope_bytes)
+    vector_bytes = (boot_directory / "official-vectors.json").read_bytes()
+    vectors = json.loads(vector_bytes)["vectors"][:5]
+    required = json.loads((ROOT / "tests/data/requirements.json").read_bytes())["prompts"]
+    require([row["text"] for row in vectors] == required and
+            scope["active_vocabulary"] == 128815 and scope["physical_capacity"] == 131072,
+            "Complete-table projection must retain all exact benchmark prompts and capacity")
+    estimates = []
+    for model_bos in (False, True):
+        counts = [len(row["token_ids"]) + int(model_bos) + 7 for row in vectors]
+        for label, count, boots in (
+            ("one-general-prompt", counts[0], 1),
+            ("all-five-prompts-with-idle-reload", sum(counts), 2),
+        ):
+            head_cycles = slope * scope["physical_capacity"] * count
+            estimates.append({
+                "policy": "automatic-BOS" if model_bos else "raw-text",
+                "selection": label, "core_operations": count, "boot_epochs": boots,
+                "head_cycle_linear_extrapolation": head_cycles,
+                "head_seconds_at_fastest_compact_rate": head_cycles / max(speeds),
+                "head_seconds_at_slowest_compact_rate": head_cycles / min(speeds),
+                "plus_observed_boot_seconds_fast": head_cycles / max(speeds) +
+                                                  boots * boot_seconds,
+                "plus_observed_boot_seconds_slow": head_cycles / min(speeds) +
+                                                  boots * boot_seconds,
+            })
+    missing = [{"path": row["path"], "sha256_at_repair_launch": row["sha256"],
+                "currently_accessible": (ROOT / row["path"]).is_file()}
+               for row in compact["repair_of"]]
+    result = {
+        "scope": "Advisory measured sizing, not a complete-table execution or timing guarantee",
+        "budget_seconds": 2700, "receipt_bindings": bindings,
+        "supplemental_inputs": {
+            "official_boot_scope_sha256": hashlib.sha256(scope_bytes).hexdigest(),
+            "official_vectors_sha256": hashlib.sha256(vector_bytes).hexdigest(),
+        },
+        "compact_elapsed_seconds": compact["duration_s"],
+        "compact_passed_comparisons": compact["simulation_accounting"]["passed_comparisons"],
+        "compact_frames": sum(len(row["frames"]) for row in measures),
+        "compact_operations": sum(frame["operations"] for row in measures for frame in row["frames"]),
+        "compact_output_bytes": sum(frame["output_bytes"] for row in measures for frame in row["frames"]),
+        "compact_activation_writes": sum(frame["activation_writes"] for row in measures
+                                         for frame in row["frames"]),
+        "compact_final_cycle_range": [min(row["last_reported_cycle"] for row in measures),
+                                      max(row["last_reported_cycle"] for row in measures)],
+        "compact_cycle_rate_range": [min(speeds), max(speeds)],
+        "physical_row_cycles_per_operation_fit": slope,
+        "fit_capacity_points": [{"capacity": row["capacity"],
+                                 "inference_cycles": row["after"]["inference_cycles"]}
+                                for row in head_points],
+        "observed_official_boot_seconds": boot_seconds,
+        "observed_official_boot_image_bytes": scope["image_bytes"],
+        "generation_assumption": "Eight non-EOS selections per prompt, as in the compact "
+                                 "fixture. Complete-table synthetic outputs have not been "
+                                 "calculated or executed here. Earlier EOS would reduce "
+                                 "operation counts and cannot be excluded by this sizing.",
+        "estimates": estimates,
+        "excluded_costs": ["official prompt tokenization and ranked merge/table searches",
+                           "non-head Transformer work and growing attention positions",
+                           "compilation, official input conversion and independent references",
+                           "DDR/flash extent and longer-sequence changes",
+                           "large working-set cache and simulator-rate changes",
+                           "remaining transports/seeds and functional controls"],
+        "interpretation": "The linear fit extrapolates far beyond measured capacities and "
+                          "uses whole-run compact clock throughput; it is not a proven "
+                          "lower/upper bound. One general-prompt candidate and the unchanged "
+                          "five-prompt matrix require separate independent feasibility review. "
+                          "Do not schedule a complete-table retry from this analysis alone.",
+        "prior_failure_access": missing,
+        "failure_preservation_limit": "The original compact raw fixture was rejected with "
+                                     "boot code06: a disabled BOS field incorrectly retained "
+                                     "a nonzero ID. The repair only zeros that disabled field. "
+                                     "A missing predecessor is not reconstructed or treated "
+                                     "as passing; its recorded launch hash is only a link.",
+    }
+    save(evidence.path / "measured-feasibility.json", result)
+    evidence.record["deepseek_shell_feasibility"] = result
+
+
 if __name__ == "__main__":
     require(len(sys.argv) == 3 and sys.argv[2] in ("raw", "bos"),
             "Usage: ./.venv/bin/python tests/deepseek_shell.py FRESH_DIRECTORY raw|bos")
