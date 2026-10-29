@@ -2296,7 +2296,9 @@ def measurement_records(transcript, prefix):
     return records
 
 
-def dma_probe(evidence, depth, seed=17):
+def dma_probe(evidence, depth, seed=17, *, ddr_period_ns=3.75, ddr_phase_ns=0):
+    if ddr_period_ns <= 0 or not 0 <= ddr_phase_ns < ddr_period_ns:
+        raise ValueError("DMA test clocks require a positive period and an in-period phase")
     bench = CLOCK + r"""
 reg ddr_clk=0;
 always #1.875 ddr_clk=!ddr_clk;
@@ -2756,8 +2758,16 @@ initial begin
 end
 endmodule
 """
+    clock_case = ("" if (ddr_period_ns, ddr_phase_ns) == (3.75, 0) else
+                  f"-ddr-{ddr_period_ns:g}-phase-{ddr_phase_ns:g}")
+    bench = bench.replace(
+        "always #1.875 ddr_clk=!ddr_clk;",
+        f"initial begin #{ddr_phase_ns:g}; "
+        f"forever #{ddr_period_ns / 2:g} ddr_clk=!ddr_clk; end"
+        if ddr_phase_ns else
+        f"always #{ddr_period_ns / 2:g} ddr_clk=!ddr_clk;")
     transcript = evidence.simulate(
-        f"dma-{depth}", bench.replace("DEPTH_VALUE", str(depth))
+        f"dma-{depth}{clock_case}", bench.replace("DEPTH_VALUE", str(depth))
         .replace("SEED_VALUE", str(seed or 1)),
         ["anvil_q1_ht_reset_sync.sv", "anvil_q1_ht_cdc_mailbox.sv",
          "anvil_q1_ht_tile_bank.sv", "anvil_q1_ht_weight_tiles.sv",
@@ -2773,6 +2783,8 @@ endmodule
     evidence.record["observations"].append({
         "scope": "public_DMA_tiles_pipelined_read_order_and_backpressure",
         "seed": seed, "observed": pipeline[0],
+        "compute_period_ns": 10, "ddr_period_ns": ddr_period_ns,
+        "ddr_phase_ns": ddr_phase_ns,
         "oracle": "accepted read addresses in order against independent byte-address pattern "
                   "and final useful-byte mask; compares stalled payload before and after edges",
     })
@@ -2794,11 +2806,15 @@ endmodule
             "scope": "D1_public_DMA_tiles_simulation_not_physical_EMIF",
             "seed": seed, "observed": counters,
             "random_lfsr_initial_state": (seed or 1) & 0xffffffff,
-            "compute_period_ns": 10, "ddr_period_ns": 3.75,
-            "raw_DDR_interface_peak_GBps": 64 / 3.75,
+            "compute_period_ns": 10, "ddr_period_ns": ddr_period_ns,
+            "ddr_phase_ns": ddr_phase_ns,
+            "clock_scope": ("nominal_application_clocks" if not clock_case else
+                            "functional_CDC_stress_not_board_frequency_or_timing_evidence"),
+            "raw_DDR_interface_peak_GBps": 64 / ddr_period_ns,
             "single_beat_compute_peak_GBps": 64 / 10,
-            "DDR_service_GBps": beats * 64 / (counters["ddr_service_cycles"] * 3.75),
-            "DDR_request_inclusive_GBps": beats * 64 / (counters["ddr_request_cycles"] * 3.75),
+            "DDR_service_GBps": beats * 64 / (counters["ddr_service_cycles"] * ddr_period_ns),
+            "DDR_request_inclusive_GBps": beats * 64 /
+                                         (counters["ddr_request_cycles"] * ddr_period_ns),
             "compute_consumed_GBps": counters["useful_bytes"] /
                                     (counters["core_consumption_cycles"] * 10),
             "measurement": {
@@ -3006,6 +3022,8 @@ def run_probe(evidence, name, seed, config=0):
             evidence.default_simulator = "verilator"
         for depth in (1, 3, 256):
             dma_probe(evidence, depth, seed)
+        for period, phase in ((3.75, 1.25), (20, 2.5)):
+            dma_probe(evidence, 3, seed, ddr_period_ns=period, ddr_phase_ns=phase)
     elif name == "sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed)
