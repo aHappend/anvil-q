@@ -53,6 +53,24 @@ def build_inputs(directory, compact=False, physical_capacity=None):
             require(hashlib.sha256(data).hexdigest() == entry["sha256"],
                     "Qwen table changed before shell image construction")
             payloads[entry["kind"]] = data
+    build_shell_inputs(
+        directory, vocabulary, capacity, vectors, payloads,
+        scope=("Synthetic compact scoreboard regression, not official tables; "
+               if compact else "Complete pinned Qwen tokenizer; "),
+        tokenizer_identity=manifest()["bundle_sha256"],
+        prompt_oracle=("Independent synthetic AB merge" if compact else
+                       "Installed pinned official tokenizer, add_special_tokens=False"),
+        piece_byte_offset=0 if compact else 33,
+    )
+    print(f"QWEN_SHELL_REFERENCE prompts={len(vectors)} max_new_tokens={MAX_NEW} "
+          f"active={vocabulary} capacity={capacity} compact={compact}")
+
+
+def build_shell_inputs(directory, vocabulary, capacity, vectors, payloads, *,
+                       scope, tokenizer_identity, prompt_oracle,
+                       piece_byte_offset=None, provenance=None):
+    """Serialize shared real-core fixtures without selecting tokenizer semantics."""
+    directory = ROOT / directory
     reference = Reference(Geometry(vocabulary=PERIOD, sequence=SEQUENCE), 17)
     initial = dict(reference.initial)
 
@@ -76,6 +94,7 @@ def build_inputs(directory, compact=False, physical_capacity=None):
                 output.write(f"{value:02x}\n")
         fixtures.append(fixture)
     fixture = fixtures[0]
+    eos = struct.unpack_from("<I", fixture["segments"][0x200], 28)[0]
     require(fixtures[1]["regions"] == fixture["regions"] and
             fixtures[1]["destinations"] == fixture["destinations"],
             "Transport-only images changed the tensor layout")
@@ -108,7 +127,7 @@ def build_inputs(directory, compact=False, physical_capacity=None):
                             "selected": winner, "active_logit_count": vocabulary,
                             "physical_logit_count": capacity})
             if position >= prompt_count - 1:
-                require(winner != 151645, "Synthetic output unexpectedly selected EOS")
+                require(winner != eos, "Synthetic output unexpectedly selected EOS")
                 generated.append(winner)
                 if len(generated) < MAX_NEW:
                     operations.append(winner)
@@ -121,8 +140,9 @@ def build_inputs(directory, compact=False, physical_capacity=None):
             require(flags == 1, "Synthetic argmax selected a special/malformed piece")
             output.extend(pieces[offset:offset + length])
         output.decode("utf-8", errors="strict")
-        require(bytes(output) == bytes(token + (0 if compact else 33) for token in generated),
-                "Periodic head must emit independently checked vocabulary pieces")
+        if piece_byte_offset is not None:
+            require(bytes(output) == bytes(token + piece_byte_offset for token in generated),
+                    "Periodic head must emit independently checked vocabulary pieces")
         trace = [(address(tuple(row["key"])), row["word"]) for row in ref.trace]
         inputs = list(bytes.fromhex(vector["input_utf8_hex"]))
         fields = {"input": inputs, "tokens": operations, "output": list(output),
@@ -156,14 +176,13 @@ def build_inputs(directory, compact=False, physical_capacity=None):
     require(extent <= 1 << 24 and cursor == len(fixture["image"]),
             "Image must fit standard 24-bit SPI NOR")
     save(directory / "shell-reference.json", {
-        "scope": ("Synthetic compact scoreboard regression, not official tables; "
-                  if compact else "Complete pinned Qwen tokenizer; ") +
+        "scope": scope +
                  "real production H8/L1 core, "
                  "independent synthetic periodic tensors; not pretrained inference, "
                  "default geometry, other tokenizer families, STA or physical acceptance",
-        "tokenizer_bundle_sha256": manifest()["bundle_sha256"],
-        "prompt_oracle": "Independent synthetic AB merge" if compact else
-                         "Installed pinned official tokenizer, add_special_tokens=False",
+        "tokenizer_bundle_sha256": tokenizer_identity,
+        "prompt_oracle": prompt_oracle,
+        "tokenizer_provenance": provenance,
         "active_vocabulary": vocabulary, "physical_capacity": capacity,
         "embedding_period": PERIOD, "synthetic_weight_seed": 17,
         "numerical_equivalence": "All active embedding/head rows repeat the sixteen "
@@ -185,8 +204,6 @@ def build_inputs(directory, compact=False, physical_capacity=None):
                              "handshakes are not claimed observed; their independent "
                              "public adapter/controller suites remain mandatory.",
     })
-    print(f"QWEN_SHELL_REFERENCE prompts={len(cases)} max_new_tokens={MAX_NEW} "
-          f"active={vocabulary} capacity={capacity} compact={compact}")
 
 
 SHELL = r"""
@@ -580,7 +597,7 @@ endmodule
 """
 
 
-def shell_case(evidence, info, seed, bypass, general_only):
+def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen"):
     cases = info["cases"][:1] if general_only else info["cases"]
     loads = []
     for frame, case in enumerate(cases):
@@ -630,12 +647,14 @@ def shell_case(evidence, info, seed, bypass, general_only):
     bench = SHELL
     for key, value in values.items():
         bench = bench.replace(f"@{key}@", str(value))
+    require(re.fullmatch(r"[a-z][a-z0-9-]*", family), "Invalid shell diagnostic family")
+    bench = bench.replace("QWEN_SHELL_", family.upper().replace("-", "_") + "_SHELL_")
     require(not re.search(r"@[A-Z_]+@", bench), "Unexpanded shell bench placeholder")
     sources = ["rtl/anvil_edge_numeric_pkg.sv"] + [
         str(path.relative_to(ROOT)) for path in sorted((ROOT / "rtl").glob("*.sv"))
         if path.name != "anvil_edge_numeric_pkg.sv"
     ]
-    return evidence.simulate(f"qwen-shell-b{bypass}-s{seed}", bench, sources,
+    return evidence.simulate(f"{family}-shell-b{bypass}-s{seed}", bench, sources,
                              None, simulator="verilator", optimize=True)
 
 
