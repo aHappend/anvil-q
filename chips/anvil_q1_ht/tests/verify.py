@@ -425,7 +425,8 @@ def main():
                                            "arithmetic-default",
                                            "integration-matrix", "matrix-config", "compatibility",
                                            "compatibility-matrix", "bf16-default", "vocabulary-default",
-                                           "checkpoint-repack", "retention", "retention-audit",
+                                           "checkpoint-repack", "checkpoint-prompts",
+                                           "retention", "retention-audit",
                                            "retention-diagnosis"),
                         help="bounded advisory experiment")
     parser.add_argument("--seed", type=int, default=17)
@@ -482,7 +483,8 @@ def main():
                             "mandatory L1 and native acceptance remain separate.")
             return 0
         campaign = (
-            "fixture-integrity", "checkpoint-repack", "parameters", "dequant", "tensor", "math",
+            "fixture-integrity", "checkpoint-repack", "checkpoint-prompts",
+            "parameters", "dequant", "tensor", "math",
             "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults",
             "command-checks", "descriptor-checks", "address-checks", "scalar-checks",
             "upload-conflicts", "reset-integration",
