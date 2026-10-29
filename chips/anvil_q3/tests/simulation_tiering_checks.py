@@ -53,7 +53,7 @@ def coverage_sensitivity():
                                 ("ABC", mandatory_decoder_coverage, complete)):
         for defect, changed in (
                 ("missing", rows[1:]), ("duplicate", rows + rows[:1]),
-                ("wrong-token", [(*rows[0][:-2], (0,), rows[0][-1]), *rows[1:]]),
+                ("wrong-token", [(*rows[0][:-2], (1,), rows[0][-1]), *rows[1:]]),
                 ("wrong-phase", [(*rows[0][:-1], 9), *rows[1:]])):
             try:
                 checker(changed)
@@ -85,7 +85,7 @@ def preflight_sensitivity():
         elif label == "duplicate":
             changed["obligations"].append(changed["obligations"][0])
         elif label == "token":
-            changed["obligations"][0]["tokens"] = [0]
+            changed["obligations"][0]["tokens"] = [1]
         elif label == "phase":
             changed["obligations"][0]["prefill_tokens"] = 99
         elif label == "original":

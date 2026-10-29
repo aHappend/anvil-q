@@ -330,7 +330,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                  prelude=0, label=None, rtl=None, mutation_assertions=(),
                  boundary=0, restart_at=None, fault_scenario=0, adversarial=False,
                  implementation="q3", native_asset=None, testbench="tests/top_tb.sv",
-                 stream_compare=True, sparse_scan=True):
+                 stream_compare=True, sparse_scan=True, compiled_host=False):
     tokens = tokens if tokens is not None else [1, 4, 2, 6, 3, 5, 7]
     if validate_simulation_tier(g, simulator, tokens):
         from dataclasses import replace
@@ -348,7 +348,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
             mutation_assertions=mutation_assertions, boundary=boundary,
             restart_at=restart_at, fault_scenario=fault_scenario, adversarial=adversarial,
             implementation=implementation, native_asset=native_asset, testbench=testbench,
-            stream_compare=stream_compare, sparse_scan=sparse_scan)
+            stream_compare=stream_compare, sparse_scan=sparse_scan, compiled_host=compiled_host)
         complete["tier_dispatch"] = {
             "requested_simulator": "iverilog", "actual_full_simulator": "verilator",
             "compact_smoke": smoke,
@@ -358,6 +358,11 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     testbench = run.rel((ROOT / testbench).resolve())
     if implementation not in ("q3", "q2", "q1-wrapper", "q1-native"):
         raise ValueError("unknown decoder implementation")
+    if compiled_host and (simulator != "verilator" or implementation != "q3" or
+                          prelude or boundary or restart_at is not None or
+                          fault_scenario or not sparse_scan or
+                          testbench != "tests/top_tb.sv"):
+        raise ValueError("compiled host supports normal Q3 public-pin workloads only")
     if implementation == "q1-native" and (
             native_asset is None or rtl is not None or g.PROFILE != 1 or
             g.BANKS != 1 or g.CACHE_MODE != 0 or prelude or boundary or fault_scenario):
@@ -389,7 +394,9 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     # Bind the exact frozen inputs before invoking either simulator.
     write_json(folder / "fixture.json", {
         "geometry": asdict(g), "seed": seed, "fixture_sha256": fixture.digest(),
-        "testbench": {"path": testbench, "sha256": sha256(ROOT / testbench)},
+        "testbench": {"path": "tests/decoder_host.cpp" if compiled_host else testbench,
+                      "sha256": sha256(ROOT / ("tests/decoder_host.cpp"
+                                              if compiled_host else testbench))},
         "tokens": tokens, "tokenizer": "synthetic integer IDs; no official tokenizer used",
         "classification": ("adversarial full-range exact-oracle synthetic fixture; no quality bound"
                            if adversarial else "nonzero structural/numerical synthetic fixture"),
@@ -411,11 +418,27 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
         command = ["vvp", run.rel(binary), "+directory=" + run.rel(folder)]
     elif simulator == "verilator":
         obj = folder / "obj"
-        argv = ["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
-                *VERILATOR_UNROLL,
-                "--top-module", "top_tb", "--Mdir", run.rel(obj), "-o", "decoder"]
-        argv += [f"-G{k}={v}" for k, v in parameters.items()]
-        run.tool(argv + sources + [testbench])
+        if compiled_host:
+            constants = {"BANKS": g.BANKS, "QUEUE_DEPTH": g.QUEUE_DEPTH,
+                         "LAYERS": g.NUM_LAYERS, "PROFILE": g.PROFILE,
+                         "KV_DIM": g.NUM_KV_HEADS * g.HEAD_DIM,
+                         "INTERMEDIATE": g.INTERMEDIATE_SIZE, "HIDDEN": g.HIDDEN_SIZE,
+                         "VOCAB": g.VOCAB_SIZE}
+            flags = "-std=c++20 " + " ".join(f"-DHOST_{k}={v}" for k, v in constants.items())
+            argv = ["verilator", "--cc", "--exe", "--build", "--assert", "-Wno-fatal",
+                    *VERILATOR_UNROLL, "--top-module", "anvil_q3_top",
+                    "--Mdir", run.rel(obj), "-o", "decoder", "-CFLAGS", flags]
+            argv += [f"-G{k}={v}" for k, v in asdict(g).items()]
+            # make resolves C++ paths from Mdir; keep the generated command project-relative.
+            import os
+            host = os.path.relpath(ROOT / "tests/decoder_host.cpp", obj)
+            run.tool(argv + sources + [host])
+        else:
+            argv = ["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
+                    *VERILATOR_UNROLL,
+                    "--top-module", "top_tb", "--Mdir", run.rel(obj), "-o", "decoder"]
+            argv += [f"-G{k}={v}" for k, v in parameters.items()]
+            run.tool(argv + sources + [testbench])
         command = [run.rel(obj / "decoder"), "+directory=" + run.rel(folder)]
     else:
         raise ValueError(simulator)
@@ -454,6 +477,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
             "retained execution is not compliant coverage")
     result["implementation"] = implementation
     result["simulator"] = simulator
+    result["driver"] = "clock-stepped-public-pins" if compiled_host else "systemverilog"
     result["comparison_transport"] = "bounded online exact words" if stream_compare else "raw trace"
     result["result_path"] = str((folder / "result.json").relative_to(run.path))
     result["independent_q1_evidence"] = implementation == "q1-native"

@@ -180,6 +180,8 @@ class Run:
                 skip = True
                 continue
             path = work / arg
+            if tool == "verilator" and arg.endswith(".cpp") and not path.is_file():
+                path = work / obj / arg
             if path.is_file():
                 normalized.append({"name": path.name, "sha256": sha256(path)})
             else:
@@ -236,7 +238,8 @@ class Run:
             return text, record
 
     def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
-        if (str(argv[0]) == "verilator" and "--binary" in argv or
+        if (str(argv[0]) == "verilator" and
+                ("--binary" in argv or "--build" in argv) or
                 str(argv[0]) == "iverilog" and "-o" in argv):
             return self._build(argv, cwd, timeout, expected)
         return self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
