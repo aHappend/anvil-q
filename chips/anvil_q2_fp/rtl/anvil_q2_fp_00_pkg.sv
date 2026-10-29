@@ -180,13 +180,33 @@ package anvil_q2_fp_pkg;
 
   function automatic [26:0] shift_jam27(input [26:0] x, input integer shift);
     reg [26:0] q;
-    reg sticky;
-    integer i;
     begin
-      q=x >> shift; sticky=0;
-      for (i=0;i<27;i=i+1) if (i<shift) sticky=sticky|x[i];
-      q[0]=q[0]|sticky;
+      q=x;
+      if (shift[0]) q={1'd0,q[26:2],(|q[1:0])};
+      if (shift[1]) q={2'd0,q[26:3],(|q[2:0])};
+      if (shift[2]) q={4'd0,q[26:5],(|q[4:0])};
+      if (shift[3]) q={8'd0,q[26:9],(|q[8:0])};
+      if (shift[4]) q={16'd0,q[26:17],(|q[16:0])};
+      if (shift>=27) q={26'd0,(|x)};
       shift_jam27=q;
+    end
+  endfunction
+
+  function automatic [4:0] fp_leading_zeros27(input [26:0] x);
+    reg [31:0] q;
+    reg [4:0] count;
+    begin
+      q={x,5'd0};
+      count[4]=!(|q[31:16]);
+      if (count[4]) q={q[15:0],16'd0};
+      count[3]=!(|q[31:24]);
+      if (count[3]) q={q[23:0],8'd0};
+      count[2]=!(|q[31:28]);
+      if (count[2]) q={q[27:0],4'd0};
+      count[1]=!(|q[31:30]);
+      if (count[1]) q={q[29:0],2'd0};
+      count[0]=!q[31];
+      fp_leading_zeros27=count;
     end
   endfunction
 
@@ -195,51 +215,44 @@ package anvil_q2_fp_pkg;
     reg [26:0] bm, sm, normalized;
     reg [27:0] total;
     reg [24:0] rounded;
-    reg sign_bit;
+    reg subtract;
     reg [7:0] encoded_exp;
-    integer be, se, exponent, i, top, shift;
+    reg [8:0] be, se, exponent, distance, available_shift;
+    reg [4:0] leading, shift;
     begin
-      big=0; smaller=0; bm=0; sm=0; normalized=0; total=0; rounded=0;
-      sign_bit=0; encoded_exp=0; be=0; se=0; exponent=0; top=-1; shift=0;
-      fp_add=FP_ZERO;
+      if (a[30:0]>=b[30:0]) begin big=a; smaller=b; end
+      else begin big=b; smaller=a; end
+      be=big[30:23]==0 ? 9'd1 : {1'b0,big[30:23]};
+      se=smaller[30:23]==0 ? 9'd1 : {1'b0,smaller[30:23]};
+      distance=be-se;
+      bm={fp_sig(big),3'd0};
+      sm=shift_jam27({fp_sig(smaller),3'd0},{23'd0,distance});
+      subtract=big[31]^smaller[31];
+      total={1'b0,bm}+({1'b0,sm}^{28{subtract}})+{27'd0,subtract};
+      leading=fp_leading_zeros27(total[26:0]);
+      available_shift=be-9'd1;
+      shift=available_shift<{4'd0,leading} ? available_shift[4:0] : leading;
+      if (total[27]) begin
+        normalized={total[27:2],(total[1]|total[0])};
+        exponent=be+9'd1;
+      end else begin
+        normalized=total[26:0] << shift;
+        exponent=be-{4'd0,shift};
+      end
+      rounded={1'b0,normalized[26:3]}+
+        {24'd0,(normalized[2] && ((|normalized[1:0]) || normalized[3]))};
+      if (rounded[24]) exponent=exponent+9'd1;
+      encoded_exp=(exponent==9'd1 && !rounded[23] && !rounded[24]) ?
+        8'd0 : exponent[7:0];
+      if (rounded[24]) fp_add={big[31],encoded_exp,rounded[23:1]};
+      else fp_add={big[31],encoded_exp,rounded[22:0]};
+      if (exponent>=9'd255) fp_add={big[31],8'hff,23'd0};
+      if (total==0) fp_add=FP_ZERO;
       if (fp_is_nan(a) || fp_is_nan(b)) fp_add=FP_NAN;
       else if (fp_is_inf(a) && fp_is_inf(b) && (a[31]!=b[31])) fp_add=FP_NAN;
       else if (fp_is_inf(a)) fp_add=a;
       else if (fp_is_inf(b)) fp_add=b;
       else if (fp_is_zero(a) && fp_is_zero(b)) fp_add={a[31]&b[31],31'd0};
-      else begin
-        if (a[30:0]>=b[30:0]) begin big=a; smaller=b; end
-        else begin big=b; smaller=a; end
-        sign_bit=big[31];
-        be=big[30:23]==0 ? 1 : {24'd0,big[30:23]};
-        se=smaller[30:23]==0 ? 1 : {24'd0,smaller[30:23]};
-        exponent=be;
-        bm={fp_sig(big),3'd0};
-        sm=shift_jam27({fp_sig(smaller),3'd0},be-se);
-        if (big[31]==smaller[31]) total={1'b0,bm}+{1'b0,sm};
-        else total={1'b0,bm}-{1'b0,sm};
-        if (total!=0) begin
-          if (total[27]) begin
-            normalized=total[27:1];
-            normalized[0]=total[1]|total[0];
-            exponent=exponent+1;
-          end else begin
-            for (i=0;i<27;i=i+1) if (total[i]) top=i;
-            shift=26-top;
-            if (shift>exponent-1) shift=exponent-1;
-            normalized=total[26:0] << shift;
-            exponent=exponent-shift;
-          end
-          rounded={1'b0,normalized[26:3]}+
-            ((normalized[2] && ((|normalized[1:0]) || normalized[3])) ? 25'd1 : 25'd0);
-          if (rounded[24]) begin rounded=rounded >> 1; exponent=exponent+1; end
-          if (exponent>=255) fp_add={sign_bit,8'hff,23'd0};
-          else begin
-            encoded_exp=(exponent==1 && !rounded[23]) ? 8'd0 : exponent;
-            fp_add={sign_bit,encoded_exp,rounded[22:0]};
-          end
-        end
-      end
     end
   endfunction
 

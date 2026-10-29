@@ -32,6 +32,28 @@ result with the persistent per-dot accumulators. S3 advancement, not output
 consumption, updates accumulator state. An occupied stalled S3 cannot
 reapply its product. A first marker resets the addition base to +0.
 
+The retained -4.076 ns setup failure launches from lane `first2` and ends
+at `sum3`/`accumulator`. The first-beat operation now selects its result
+after the FP32 addition cone rather than muxing the accumulator operand
+before alignment and normalization. Adding +0 to a rounded product is
+the product itself, except that either signed zero becomes +0; S2 already
+canonicalizes NaNs. This bypass does not depend on the previous dot's
+accumulator, including a previous nonfinite result. Constant-index
+combinational wires feed both S3 sum and accumulator registers, outside
+the sequential processes.
+
+The shared combinational FP32 adder uses nine-bit exponent arithmetic,
+a five-level sticky alignment barrel and a five-level leading-zero tree
+instead of integer-width exponent chains and a serial highest-bit priority
+loop. Sign-controlled two's-complement addition shares the mantissa
+add/subtract carry path. RNE, subnormal handling, signed zeros and nonfinite
+classification are unchanged. These changes add no register captures,
+do not reassociate accumulation and leave elastic advancement unchanged.
+They are timing-repair candidates, not a measured timing pass. Independent
+Verifier must check lane and scalar arithmetic, including singleton dots,
+consecutive dots, cancellation, special values and stalls; the shared
+runtime must obtain fresh post-fit STA at the unchanged 10.000 ns target.
+
 Scalar arithmetic shares one command slot. Add uses a registered FP32
 adder; multiply registers its exact product before rounding. Divide performs
 one restoring quotient bit per cycle, and square root performs one radix-4

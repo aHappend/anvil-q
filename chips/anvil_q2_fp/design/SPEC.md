@@ -57,6 +57,7 @@ must not alter any legal configuration.
 | Attention request buffer full | downstream valid && ready | retire once and clear occupancy; no same-edge refill or ready look-through; otherwise hold every payload bit |
 | Attention request buffer reset | rst_n=0 (numerical core annul when integrated) | clear occupancy and payload; discard only locally buffered work, never scheduler-owned transactions |
 | Lane first && last | accepted singleton beat | reset logical accumulator to +0, add this product once, emit last=1 |
+| Lane first reaches S3 | ready3 && v2 && first2 | select the rounded product after the ordinary accumulation cone; canonicalize either product zero to +0, exactly matching RNE(+0 + product) |
 | Lane bubble | !in_valid or !in_ready | no arithmetic/accumulator update for that beat |
 | Back-to-back dots | next accepted first follows prior last | no interleaving; next first replaces accumulator base with +0 in S3 |
 | Lane occupied output stall | out_valid && !out_ready | occupied stages freeze; no replay of S3 accumulation |

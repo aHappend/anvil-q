@@ -26,7 +26,20 @@ module anvil_q2_fp_dot_lane #(
       initial $fatal(1,"ANVIL_Q2_FP PARAMETER ERROR: lane format");
     end
     for (j=0;j<8;j=j+1) begin: outputs
+      wire [31:0] accumulated_sum=fp_add(accumulator[j],product2[j]);
+      // +0 plus -0 is +0 under RNE; other rounded products pass unchanged.
+      wire [31:0] first_sum=fp_is_zero(product2[j]) ? FP_ZERO : product2[j];
+      wire [31:0] next_sum=first2 ? first_sum : accumulated_sum;
       assign out_sum[j*32+:32]=rst_n ? sum3[j] : 32'd0;
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          sum3[j]<=0;
+          accumulator[j]<=0;
+        end else if (ready3 && v2) begin
+          sum3[j]<=next_sum;
+          accumulator[j]<=next_sum;
+        end
+      end
     end
   endgenerate
   integer i;
@@ -35,17 +48,13 @@ module anvil_q2_fp_dot_lane #(
       v1<=0; v2<=0; v3<=0;
       first1<=0; first2<=0; last1<=0; last2<=0; last3<=0;
       for (i=0;i<8;i=i+1) begin
-        product1[i]<=0; product2[i]<=0; sum3[i]<=0; accumulator[i]<=0;
+        product1[i]<=0; product2[i]<=0;
       end
     end else begin
       if (ready3) begin
         v3<=v2;
         if (v2) begin
           last3<=last2;
-          for (i=0;i<8;i=i+1) begin
-            sum3[i]<=fp_add(first2 ? FP_ZERO : accumulator[i],product2[i]);
-            accumulator[i]<=fp_add(first2 ? FP_ZERO : accumulator[i],product2[i]);
-          end
         end
       end
       if (ready2) begin
