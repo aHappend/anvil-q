@@ -3,8 +3,8 @@
 
 Unfinished gates are explicit failures, not skipped or accepted evidence.
 The shared runtime remains responsible for engineering check execution.
-Current decoder dispatch uses compiled Verilator, but that cannot satisfy the
-frozen Icarus matrix. Compact single-token smokes do not replace that coverage.
+Decoder dispatch and completion accounting retain the complete frozen simulator
+matrix. Compact single-token smokes do not replace multi-token Icarus coverage.
 Trace I/O already flushes only at DONE/SUMMARY, never per memory request.
 The behavior gate preflights every frozen decoder simulator obligation before
 launching tools; an incompatible execution policy fails, never skips coverage.
@@ -64,27 +64,44 @@ def mandatory_a_coverage(records):
     return {"required": sum(expected.values()), "observed": sum(observed.values())}
 
 
+def mandatory_decoder_workloads():
+    """Keep actual dispatch identical to the frozen preflight obligations."""
+    for label, g in behavioral_geometries():
+        for seed in ((17,) if label == "C" else (17, 89, 257)):
+            tokens = (1, 4, 2, 6) if label == "C" else (1, 4, 2, 6, 3, 5, 7)
+            simulators = ("iverilog", "verilator") if label == "A" or seed == 17 else ("iverilog",)
+            for simulator in simulators:
+                yield label, g, seed, simulator, tokens, 2 if label == "C" else 4
+
+
+def mandatory_decoder_coverage(records):
+    expected = Counter(mandatory_decoder_workloads())
+    observed = Counter(records)
+    if observed != expected:
+        missing, extra = expected - observed, observed - expected
+        raise AssertionError(
+            "mandatory decoder coverage incomplete: "
+            f"{sum(missing.values())} missing, {sum(extra.values())} unexpected/duplicate "
+            "workloads; each profile, geometry, seed, simulator, token and phase must match")
+    return {"required": sum(expected.values()), "observed": sum(observed.values())}
+
+
 def behavior_execution_preflight(run):
     """Expose frozen obligations incompatible with policy before decoder execution.
 
     B/C require all Icarus cases and selected Verilator cases spanning every
     bank/cache variant; seed17 supplies that selection without expanding it to
-    B's entire three-seed matrix. This inventory does not repair dispatch.
+    B's entire three-seed matrix. The policy guard still blocks incompatible runs.
     """
     obligations = []
-    for label, g in behavioral_geometries():
-        for seed in ((17,) if label == "C" else (17, 89, 257)):
-            tokens = [1, 4, 2, 6] if label == "C" else [1, 4, 2, 6, 3, 5, 7]
-            simulators = ("iverilog", "verilator") if label == "A" or seed == 17 else ("iverilog",)
-            for simulator in simulators:
-                row = {"profile": label, "geometry": asdict(g), "seed": seed,
-                       "simulator": simulator, "tokens": tokens,
-                       "prefill_tokens": 2 if label == "C" else 4}
-                try:
-                    validate_simulation_tier(g, simulator, tokens)
-                except SimulationTierConflict as exc:
-                    row["conflict"] = str(exc)
-                obligations.append(row)
+    for label, g, seed, simulator, tokens, prefill in mandatory_decoder_workloads():
+        row = {"profile": label, "geometry": asdict(g), "seed": seed,
+               "simulator": simulator, "tokens": list(tokens), "prefill_tokens": prefill}
+        try:
+            validate_simulation_tier(g, simulator, tokens)
+        except SimulationTierConflict as exc:
+            row["conflict"] = str(exc)
+        obligations.append(row)
     supplemental = {
         "check_id": "supplemental-decoder-a-b8-int4-asymmetric-seed257",
         "profile": "A", "geometry": asdict(replace(A, BANKS=8, CACHE_MODE=2, INT4_ASYM=1)),
@@ -122,6 +139,7 @@ def behavior_execution_preflight(run):
 def numerical_matrix(run):
     behavior_execution_preflight(run)
     a_coverage = []
+    decoder_coverage = []
     ledger = memory_maps(run)
     for simulator in ("iverilog", "verilator"):
         ledger.append(host_case(run, simulator))
@@ -158,19 +176,14 @@ def numerical_matrix(run):
                 run, replace(A, CACHE_MODE=mode, INT4_ASYM=asym),
                 seed=seed, simulator="verilator", tokens=[1, 4],
                 adversarial=True, label="adversarial-full-range"))
-    for label, g in behavioral_geometries():
-        seeds = (17,) if label == "C" else (17, 89, 257)
-        for seed in seeds:
-            simulators = ("verilator",)
-            for simulator in simulators:
-                tokens = [1, 4, 2, 6, 3, 5, 7] if label != "C" else [1, 4, 2, 6]
-                # C requires two prefill and two decode tokens, not four prefill.
-                # Its phase boundary is supplied by the parameterized transactor.
-                ledger.append(decoder_case(run, g, seed, simulator, tokens=tokens,
-                                           prefill_tokens=2 if label == "C" else 4))
-                if label == "A":
-                    a_coverage.append((g, seed, simulator, tuple(tokens), 4))
-                write_json(run.path / "numerical-matrix.json", ledger)
+    for workload in mandatory_decoder_workloads():
+        label, g, seed, simulator, tokens, prefill = workload
+        ledger.append(decoder_case(run, g, seed, simulator, tokens=list(tokens),
+                                   prefill_tokens=prefill))
+        decoder_coverage.append(workload)
+        if label == "A":
+            a_coverage.append((g, seed, simulator, tokens, prefill))
+        write_json(run.path / "numerical-matrix.json", ledger)
     for simulator in ("iverilog", "verilator"):
         for banks in (1, 2, 4, 8):
             ledger.append(activation_case(run, banks, simulator,
@@ -180,6 +193,7 @@ def numerical_matrix(run):
     ledger.append(activation_case(run, 8, "verilator", capacity=120))
     write_json(run.path / "activation-matrix.json", ledger)
     mandatory_a_coverage(a_coverage)
+    mandatory_decoder_coverage(decoder_coverage)
     write_json(run.path / "behavior-results.json", ledger)
     return ledger
 

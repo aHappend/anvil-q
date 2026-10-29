@@ -15,7 +15,9 @@ Offline coverage/preflight/dispatch probes are nonnumerical. The frozen matrix
 requires 96 A cases, 48 B Icarus cases plus 16 selected Verilator cases, and 16 C
 cases per simulator. Its 112 Icarus obligations conflict with the current guard;
 the separately admitted seven-token supplemental command selects Verilator and
-does not conflict. These probes do not repair dispatch or authorize substitution.
+does not conflict. Dispatch retains those obligations but cannot execute them
+until the policy conflict is independently reconciled; these probes authorize
+neither simulator substitution nor execution of a prohibited workload.
 """
 
 import argparse
@@ -40,7 +42,7 @@ FAILED_RECEIPT = "evidence/check-behavior/20261028T082607Z-96412cd96bb2/receipt.
 
 
 def coverage_sensitivity():
-    from verify import mandatory_a_coverage
+    from verify import mandatory_a_coverage, mandatory_decoder_coverage
 
     records = [
         (replace(A, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym),
@@ -70,7 +72,46 @@ def coverage_sensitivity():
                 raise
         else:
             raise AssertionError("incomplete coverage accepted: " + label)
+    complete = []
+    for label, base in (("A", A), ("B", B), ("C", C)):
+        for banks in (1, 2, 4, 8):
+            for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
+                for seed in ((17,) if label == "C" else (17, 89, 257)):
+                    for simulator in (("iverilog", "verilator")
+                                      if label == "A" or seed == 17 else ("iverilog",)):
+                        complete.append((
+                            label, replace(base, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym),
+                            seed, simulator,
+                            (1, 4, 2, 6) if label == "C" else (1, 4, 2, 6, 3, 5, 7),
+                            2 if label == "C" else 4))
+    if mandatory_decoder_coverage(complete) != {"required": 192, "observed": 192}:
+        raise AssertionError("incorrect complete decoder inventory")
+    rejected = []
+    for profile in ("A", "B", "C"):
+        index = next(i for i, row in enumerate(complete) if row[0] == profile)
+        row = complete[index]
+        variants = {
+            "missing": complete[:index] + complete[index + 1:],
+            "duplicate": complete + [row],
+            "simulator": complete[:index] + [
+                (*row[:3], "verilator" if row[3] == "iverilog" else "iverilog", *row[4:])
+            ] + complete[index + 1:],
+            "tokens": complete[:index] + [
+                (*row[:4], (*row[4][:-1], 0), row[5])
+            ] + complete[index + 1:],
+            "phase": complete[:index] + [(*row[:5], row[5] + 1)] + complete[index + 1:],
+        }
+        for defect, rows in variants.items():
+            try:
+                mandatory_decoder_coverage(rows)
+            except AssertionError as exc:
+                if "mandatory decoder coverage incomplete" not in str(exc):
+                    raise
+            else:
+                raise AssertionError("incomplete decoder inventory accepted: " + profile + defect)
+            rejected.append(profile + ":" + defect)
     return {"rejected": list(invalid), "required_A_workloads": 96,
+            "required_decoder_workloads": 192, "decoder_rejected": rejected,
             "scope": "synthetic coverage-accounting sensitivity only; "
                      "no simulator execution or numerical coverage established"}
 
@@ -244,24 +285,17 @@ def dispatch_sensitivity():
     mocks["behavior_execution_preflight"].assert_called_once_with(fake)
     calls = mocks["decoder_case"].call_args_list
     coverage_calls = mocks["mandatory_a_coverage"].call_args_list
-    if (len(coverage_calls) != 1 or len(coverage_calls[0].args[0]) != 48 or
-            any(row[2] != "verilator" for row in coverage_calls[0].args[0])):
-        raise AssertionError("pending compiled-only dispatch changed before reconciliation")
-    try:
-        verify.mandatory_a_coverage(coverage_calls[0].args[0])
-    except AssertionError as exc:
-        if "48 missing, 0 unexpected/duplicate" not in str(exc):
-            raise
-    else:
-        raise AssertionError("pending compiled-only dispatch falsely satisfies frozen coverage")
+    if len(coverage_calls) != 1:
+        raise AssertionError("mandatory A completion accounting was not executed")
+    if verify.mandatory_a_coverage(coverage_calls[0].args[0]) != {
+            "required": 96, "observed": 96}:
+        raise AssertionError("dispatch omits mandatory A dual-simulator workloads")
     observed = Counter()
     for call in calls:
         g = call.args[1]
         seed = call.args[2] if len(call.args) > 2 else call.kwargs["seed"]
         simulator = call.args[3] if len(call.args) > 3 else call.kwargs["simulator"]
-        if simulator != "verilator":
-            raise AssertionError("decoder matrix routed to interpreted simulation")
-        observed[g, seed, tuple(call.kwargs["tokens"]),
+        observed[g, seed, simulator, tuple(call.kwargs["tokens"]),
                  call.kwargs.get("prefill_tokens", 4),
                  call.kwargs.get("adversarial", False)] += 1
     expected = Counter()
@@ -272,12 +306,14 @@ def dispatch_sensitivity():
                 for seed in ((17,) if label == "C" else (17, 89, 257)):
                     g = replace(base, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym)
                     tokens = (1, 4, 2, 6) if label == "C" else (1, 4, 2, 6, 3, 5, 7)
-                    expected[g, seed, tokens, 2 if label == "C" else 4, False] += 1
+                    for simulator in (("iverilog", "verilator")
+                                      if label == "A" or seed == 17 else ("iverilog",)):
+                        expected[g, seed, simulator, tokens, 2 if label == "C" else 4, False] += 1
     for seed in (17, 89, 257):
         for mode, asym in ((0, 0), (1, 0), (2, 0), (2, 1)):
             expected[replace(A, CACHE_MODE=mode, INT4_ASYM=asym),
-                     seed, (1, 4), 4, True] += 1
-    if observed != expected or len(calls) != 124:
+                     seed, "verilator", (1, 4), 4, True] += 1
+    if observed != expected or len(calls) != 204:
         raise AssertionError("decoder geometry/seed/token/adversarial matrix changed")
     for name in ("host_case", "bridge_case", "scheduler_case", "prefetch_case",
                  "accumulator_case", "math_memory_case", "scalar_case",
@@ -361,9 +397,8 @@ def dispatch_sensitivity():
             "startup_recovery_cases": len(recovery), "compact_dual_simulator_cases": len(compact),
             "mutations": len(mutation_checks.MUTATIONS),
             "execution_contract_preflight": preflight,
-            "pending_A_dispatch": {"observed_compiled_workloads": 48,
-                                   "missing_Icarus_workloads": 48,
-                                   "frozen_coverage_rejected": True},
+            "A_dispatch": {"required_workloads": 96, "mocked_workloads": 96},
+            "decoder_coverage_sensitivity": coverage_sensitivity(),
             "scope": "mocked dispatch and inventory only; no numerical acceptance"}
 
 

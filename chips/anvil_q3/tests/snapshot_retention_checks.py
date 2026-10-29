@@ -6,6 +6,7 @@ Successful finalization must reject incomplete snapshots and unfinished children
 It must also reject missing or changed snapshots and missing raw child evidence.
 Live-source drift must reject success without rewriting the retained receipt.
 It must also reject the next tool launch before creating a child invocation.
+Added public sources must reject both launch and successful finalization.
 These fixtures do not repair missing retained evidence or runtime storage.
 Optional --comparison-receipt audits a retained public-source snapshot against
 the current handoff, retaining hashes and readable diffs without restoring files.
@@ -259,8 +260,9 @@ def snapshot_retention_checks(folder):
     with patch("execution.sources", return_value=[source]):
         completed = Run(completion_output, "offline-completed-negative-test")
     # Negative tests may deliberately accept a nonzero, completed child exit.
-    completed.tool(["python3", "-c", "raise SystemExit(1)"], expected=(1,))
-    completed.finish("passed")
+    with patch("execution.sources", return_value=[source]):
+        completed.tool(["python3", "-c", "raise SystemExit(1)"], expected=(1,))
+        completed.finish("passed")
     if json.loads((completed.path / "receipt.json").read_text())["status"] != "passed":
         raise AssertionError("completion guard rejected a completed negative test")
     retention_defects = (
@@ -270,7 +272,8 @@ def snapshot_retention_checks(folder):
     for defect in retention_defects:
         with patch("execution.sources", return_value=[source]):
             candidate = Run(completion_output, "offline-" + defect)
-        candidate.tool(["python3", "-c", "print('retention fixture')"])
+        with patch("execution.sources", return_value=[source]):
+            candidate.tool(["python3", "-c", "print('retention fixture')"])
         snapshot = candidate.path / "sources" / source.relative_to(ROOT)
         child_receipt = candidate.path / "tool-0000/receipt.json"
         if defect == "missing-source":
@@ -287,7 +290,8 @@ def snapshot_retention_checks(folder):
         receipt_path = candidate.path / "receipt.json"
         before = receipt_path.read_bytes()
         try:
-            candidate.finish("passed")
+            with patch("execution.sources", return_value=[source]):
+                candidate.finish("passed")
         except AssertionError as exc:
             if "retained verification artifact" not in str(exc):
                 raise
@@ -296,48 +300,67 @@ def snapshot_retention_checks(folder):
         if receipt_path.read_bytes() != before:
             raise AssertionError("rejected retention finalization changed receipt")
         candidate.finish("failed", diagnosis="deliberate offline retention defect: " + defect)
-    live_source_defects = ("changed-live-source", "missing-live-source")
+    live_source_defects = ("changed-live-source", "missing-live-source", "added-live-source")
     for defect in live_source_defects:
         live_source = folder / (defect + ".py")
         live_source.write_text("# isolated live-source identity fixture\n")
         with patch("execution.sources", return_value=[live_source]):
             candidate = Run(completion_output, "offline-" + defect)
+        selected = [live_source]
         if defect == "changed-live-source":
             live_source.write_text("# changed live-source identity fixture\n")
-        else:
+        elif defect == "missing-live-source":
             live_source.unlink()
+        else:
+            added = folder / "added-live-source-fixture.py"
+            added.write_text("# additional isolated public source\n")
+            selected.append(added)
         receipt_path = candidate.path / "receipt.json"
         before = receipt_path.read_bytes()
         try:
-            candidate.finish("passed")
+            with patch("execution.sources", return_value=selected):
+                candidate.finish("passed")
         except AssertionError as exc:
-            if "live verification source changed during execution" not in str(exc):
+            expected = ("live verification source selection changed during execution"
+                        if defect == "added-live-source"
+                        else "live verification source changed during execution")
+            if expected not in str(exc):
                 raise
         else:
             raise AssertionError("successful finalization accepted " + defect)
         if receipt_path.read_bytes() != before:
             raise AssertionError("source-drift rejection changed retained receipt")
         candidate.finish("failed", diagnosis="deliberate offline source drift: " + defect)
-    launch_defects = ("changed-live-source", "missing-live-source", "incomplete-snapshot")
+    launch_defects = ("changed-live-source", "missing-live-source", "added-live-source",
+                      "incomplete-snapshot")
     for defect in launch_defects:
         live_source = folder / ("prelaunch-" + defect + ".py")
         live_source.write_text("# isolated prelaunch identity fixture\n")
         with patch("execution.sources", return_value=[live_source]):
             candidate = Run(completion_output, "offline-prelaunch-" + defect)
+        selected = [live_source]
         if defect == "changed-live-source":
             live_source.write_text("# changed before child launch\n")
         elif defect == "missing-live-source":
             live_source.unlink()
+        elif defect == "added-live-source":
+            added = folder / "prelaunch-added-source-fixture.py"
+            added.write_text("# additional isolated prelaunch public source\n")
+            selected.append(added)
         else:
             candidate.source_snapshot_complete = False
         receipt_path = candidate.path / "receipt.json"
         before = receipt_path.read_bytes()
-        with patch("execution.subprocess.run") as child:
+        with (patch("execution.subprocess.run") as child,
+              patch("execution.sources", return_value=selected)):
             try:
                 candidate.tool(["python3", "-c", "print('must not launch')"])
             except AssertionError as exc:
-                expected = ("incomplete verification snapshot" if defect == "incomplete-snapshot"
-                            else "live verification source changed during execution")
+                expected = (
+                    "incomplete verification snapshot" if defect == "incomplete-snapshot"
+                    else "live verification source selection changed during execution"
+                    if defect == "added-live-source"
+                    else "live verification source changed during execution")
                 if expected not in str(exc):
                     raise
             else:

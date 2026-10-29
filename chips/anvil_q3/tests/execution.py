@@ -9,6 +9,7 @@ Live sources must still match that snapshot at successful finalization; source
 drift fails the invocation rather than certifying a different workspace revision.
 Check the same identity before each child launch, so detected drift cannot start
 another tool. This guard detects changes, not their writer or shared-runtime cause.
+The complete public-source inventory must match too, including added files.
 Successful finalization requires a complete snapshot and settled child records;
 completed expected-negative tests may retain nonzero exit codes.
 Snapshot content, raw logs and child receipts must still exist at finalization.
@@ -110,6 +111,13 @@ class Run:
             source = ROOT / name
             if not source.is_file() or sha256(source) != digest:
                 raise AssertionError("live verification source changed during execution: " + name)
+        selected = {str(source.relative_to(ROOT)) for source in sources()}
+        recorded = set(self.hashes)
+        if selected != recorded:
+            raise AssertionError(
+                "live verification source selection changed during execution: "
+                + json.dumps({"added": sorted(selected - recorded),
+                              "removed": sorted(recorded - selected)}, sort_keys=True))
 
     def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
         if timeout < 3600:
