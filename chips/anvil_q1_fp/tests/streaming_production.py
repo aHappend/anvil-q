@@ -6,7 +6,7 @@ from pathlib import Path
 import uuid
 
 from benchmark import Validator, greedy_stop, load_json, require
-from streaming_replay import (Process, data_bindings, item, specification,
+from streaming_replay import (Process, item, production_bindings, specification,
                               vector_descriptor, write_new)
 
 
@@ -92,9 +92,8 @@ def collect(ev, args, executable, model, suite, config, selected):
                           executable=item(root, executable),
                           records=ev.receipt["records"],
                           build_receipt=ev.receipt.get("build_receipt")))
-    inputs = data_bindings(root, model, suite)
-    for path in (root / "tests/data/model_manifest.json",
-                 root / "tests/data/benchmark_manifest.json", build, executable):
+    inputs = production_bindings(root, model, suite)
+    for path in (build, executable):
         entry = item(root, path)
         inputs[entry["path"]] = entry["sha256"]
     index = dict(schema=1, purpose="streamed-production-rtl-observations",

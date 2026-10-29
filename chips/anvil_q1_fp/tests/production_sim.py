@@ -352,7 +352,11 @@ def run_collection(ev, args):
             "packed production collection paused pending independent capacity "
             "qualification and shared-runtime environment repair")
     from teacher_reference import validate_inputs
+    from streaming_replay import production_bindings
     model, suite, _, config = validate_inputs(ev)
+    ev.receipt["replay_input_sha256"] = production_bindings(ROOT, model, suite)
+    ev.assertion("replay_binding_preflight_before_build", True,
+                 executable_inputs=len(ev.receipt["replay_input_sha256"]))
     selected = None
     if not (args.build_only or args.qualify_trace or args.qualify_comparisons):
         from streaming_production import select_cases

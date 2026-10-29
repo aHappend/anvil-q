@@ -7,16 +7,20 @@ import gzip
 import json
 import math
 from pathlib import Path
+import shutil
 import struct
 import subprocess
 import sys
+from types import SimpleNamespace
+from unittest.mock import patch
 import uuid
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import Validator, load_json, require, sha
 from streaming_production import compare_window
-from streaming_replay import (Process, Resolver, item, now, specification, validate_manifest,
+from streaming_replay import (Process, Resolver, data_bindings, item, now, production_bindings,
+                              specification, validate_manifest, validate_spec,
                               vector_descriptor, write_new)
 from verify import Evidence, ROOT
 
@@ -195,6 +199,134 @@ def rejection(ev, name, operation, diagnostic):
     raise ValueError(name + " escaped unchanged assertion")
 
 
+def binding_checks(ev):
+    """Exercise collection and production replay binding rules without a model run."""
+    root = ev.path / ("binding-pristine-" + uuid.uuid4().hex)
+    data = root / "tests/data"
+    data.mkdir(parents=True)
+    descriptors = {}
+    for name in ("checkpoint", "tokenizer", "chat-template", "corpus", "calibration",
+                 "recipe", "layout", "weights", "zeros", "scales"):
+        path = data / (name + ".bin")
+        path.write_bytes(("binding-fixture:" + name).encode())
+        descriptors[name] = item(root, path)
+    tokens = data / "tokens.json"
+    write_new(tokens, [17, 53, 89])
+    descriptors["tokens"] = item(root, tokens)
+    # A real dependency in evidence/preparation must still be checked. Only the
+    # explicit manifest field, not a path prefix, determines advisory status.
+    real_path = root / "evidence/preparation/real-input-fixture/recipe.json"
+    real_path.parent.mkdir(parents=True)
+    write_new(real_path, {"fixture": True})
+    descriptors["preparation-path-input"] = item(root, real_path)
+    advisory = dict(path="evidence/preparation/absent-history-fixture/receipt.json",
+                    sha256="0"*64)
+    model = dict(revision="fixed-binding-fixture-revision",
+                 checkpoint=[descriptors["checkpoint"]],
+                 tokenizer=descriptors["tokenizer"], chat_template=descriptors["chat-template"],
+                 streams={"fixture": {name: descriptors[name]
+                                      for name in ("layout", "weights", "zeros", "scales")}},
+                 quantization={name: descriptors[name] for name in ("calibration", "recipe")},
+                 executable_recipe=descriptors["preparation-path-input"],
+                 preparation_receipts=[advisory])
+    suite = dict(corpus=descriptors["corpus"], teacher_tokens=descriptors["tokens"])
+    write_new(data / "model_manifest.json", model)
+    write_new(data / "benchmark_manifest.json", suite)
+    inputs = production_bindings(root, model, suite)
+    require(len(inputs) == len(descriptors) + 2 and advisory["path"] not in inputs and
+            all(inputs[entry["path"]] == entry["sha256"] for entry in descriptors.values()),
+            "advisory exclusion dropped executable data or manifests")
+    spec = specification(
+        root, argv=["python3", "tests/streaming_replay.py", "--reference-worker",
+                    "--tokens", descriptors["tokens"]["path"], "--destination",
+                    "{output}", "--mode", "bf16"],
+        output_index=6, role="reference", case="synthetic/binding-only", mode="bf16",
+        workload="teacher", tokens=[17, 53, 89], inputs=inputs, tool_names=("python3",))
+    validate_spec(root, spec)
+    ev.assertion("missing_advisory_history_not_execution_input", True,
+                 bound_inputs=len(inputs), production_execution=False)
+
+    import production_sim
+    args = SimpleNamespace(build_only=True, qualify_trace=False, qualify_comparisons=False,
+                           build_receipt=None)
+    preparation = SimpleNamespace(
+        receipt={}, assertion=lambda name, passed, **details: ev.assertion(
+            "binding_fixture_" + name, passed, simulator_compilation_mocked=True, **details))
+
+    def prepare(project, documents):
+        with patch.object(production_sim, "ROOT", project), patch(
+                "teacher_reference.validate_inputs", return_value=(*documents, {}, {})), patch.object(
+                    production_sim, "compile_simulator", return_value=None) as compiler:
+            production_sim.run_collection(preparation, args)
+            compiler.assert_called_once_with(preparation, None)
+
+    prepare(root, (model, suite))
+    ev.assertion("collection_preparation_ignores_absent_advisory_receipts", True,
+                 simulator_compilation_mocked=True, production_execution=False)
+    advisory_path = root / advisory["path"]
+    advisory_path.parent.mkdir(parents=True)
+    advisory_path.write_bytes(b"not the recorded historical receipt")
+    require(production_bindings(root, model, suite) == inputs,
+            "advisory receipt bytes altered executable input bindings")
+    validate_spec(root, spec)
+    ev.assertion("altered_advisory_history_not_execution_input", True)
+
+    for name, descriptor in descriptors.items():
+        for defect in ("missing", "altered"):
+            project = ev.path / ("binding-" + name + "-" + defect + "-" + uuid.uuid4().hex)
+            shutil.copytree(root, project)
+            path = project / descriptor["path"]
+            if defect == "missing":
+                path.unlink()
+            else:
+                path.write_bytes(b"altered executable prerequisite")
+            documents = (load_json(project / "tests/data/model_manifest.json"),
+                         load_json(project / "tests/data/benchmark_manifest.json"))
+            rejection(ev, name + "-" + defect + "-collection",
+                      lambda: production_bindings(project, *documents),
+                      "missing or altered replay prerequisite")
+            rejection(ev, name + "-" + defect + "-replay",
+                      lambda: validate_spec(project, spec), "missing or altered replay prerequisite")
+            with patch.object(production_sim, "ROOT", project), patch(
+                    "teacher_reference.validate_inputs", return_value=(*documents, {}, {})), patch.object(
+                        production_sim, "compile_simulator",
+                        side_effect=AssertionError("expensive compilation preceded binding preflight")) as compiler:
+                rejection(ev, name + "-" + defect + "-before-build",
+                          lambda: production_sim.run_collection(preparation, args),
+                          "missing or altered replay prerequisite")
+                compiler.assert_not_called()
+        incomplete = copy.deepcopy(spec)
+        incomplete["inputs"].pop(descriptor["path"])
+        rejection(ev, name + "-omitted-replay-binding",
+                  lambda: validate_spec(root, incomplete),
+                  "incomplete replay model/dataset input bindings")
+
+    conflict = copy.deepcopy(suite)
+    conflict["duplicate_checkpoint"] = {
+        **descriptors["checkpoint"], "sha256": "0"*64}
+    rejection(ev, "conflicting-executable-hashes-collection",
+              lambda: production_bindings(root, model, conflict),
+              "conflicting replay input hashes")
+    project = ev.path / ("binding-conflicting-replay-" + uuid.uuid4().hex)
+    shutil.copytree(root, project)
+    suite_path = project / "tests/data/benchmark_manifest.json"
+    suite_path.write_text(json.dumps(conflict))
+    conflicting_spec = copy.deepcopy(spec)
+    conflicting_spec["inputs"][str(suite_path.relative_to(project))] = sha(suite_path)
+    rejection(ev, "conflicting-executable-hashes-replay",
+              lambda: validate_spec(project, conflicting_spec), "conflicting replay input hashes")
+    nested = {"execution": {"preparation_receipts": [advisory]}}
+    rejection(ev, "nested-field-not-an-advisory-exemption",
+              lambda: data_bindings(root, nested), "missing or altered replay prerequisite")
+    for manifest in ("model_manifest", "benchmark_manifest"):
+        project = ev.path / ("binding-altered-" + manifest + "-" + uuid.uuid4().hex)
+        shutil.copytree(root, project)
+        path = project / ("tests/data/" + manifest + ".json")
+        path.write_text(path.read_text() + "\n")
+        rejection(ev, "altered-hash-bound-" + manifest,
+                  lambda: validate_spec(project, spec), "missing or altered replay prerequisite")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--worker", action="store_true")
@@ -210,12 +342,17 @@ def main():
     ev = Evidence("streaming-replay")
     passed = False
     try:
+        attempt701 = ROOT / "evidence/preparation/verifier-production-simulation-boqrk5kr/receipt.json"
+        if attempt701.is_file():
+            ev.receipt["repair_of"] = item(ROOT, attempt701)
+            ev.receipt["diagnosed_attempt"] = 701
         original_failure = ROOT / "evidence/preparation/verifier-production-simulation-6s9_bb4j/receipt.json"
         if original_failure.is_file():
             ev.receipt["diagnosed_failure"] = item(ROOT, original_failure)
         previous = ROOT / "evidence/preparation/verifier-streaming-replay-v5_veqlg/receipt.json"
         if previous.is_file():
-            ev.receipt["repair_of"] = item(ROOT, previous)
+            ev.receipt["earlier_repair"] = item(ROOT, previous)
+        binding_checks(ev)
         require(ev.run("python-version", ["python3", "--version"], timeout=3600) and
                 ev.run("icarus-version", ["iverilog", "-V"], timeout=3600) and
                 ev.run("vvp-version", ["vvp", "-V"], timeout=3600),

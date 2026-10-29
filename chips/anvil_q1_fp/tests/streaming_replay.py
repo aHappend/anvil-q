@@ -75,17 +75,26 @@ def data_bindings(root, *documents):
         if isinstance(value, dict):
             if "path" in value and "sha256" in value:
                 descriptor = {key: value[key] for key in ("path", "sha256")}
-                checked(root, descriptor)
                 previous = result.setdefault(descriptor["path"], descriptor["sha256"])
                 require(previous == descriptor["sha256"], "conflicting replay input hashes")
+                checked(root, descriptor)
             for child in value.values():
                 visit(child)
         elif isinstance(value, list):
             for child in value:
                 visit(child)
     for document in documents:
-        visit(document)
+        # Only the manifest's explicit top-level provenance field is advisory.
+        # Never exempt executable inputs by directory or by a nested key name.
+        visit({key: value for key, value in document.items()
+               if key != "preparation_receipts"} if isinstance(document, dict) else document)
     return result
+
+
+def production_bindings(root, model, suite):
+    manifests = [item(root, root / "tests/data" / (name + ".json"))
+                 for name in ("model_manifest", "benchmark_manifest")]
+    return data_bindings(root, model, suite, manifests)
 
 
 def tools(root, names):
@@ -151,8 +160,8 @@ def validate_spec(root, spec, *, allow_fixture=False):
         manifests = [dict(path="tests/data/" + name + ".json",
                           sha256=spec["inputs"].get("tests/data/" + name + ".json"))
                      for name in ("model_manifest", "benchmark_manifest")]
-        required_inputs = data_bindings(root, *[load_json(checked(root, entry))
-                                                for entry in manifests])
+        required_inputs = production_bindings(root, *[load_json(checked(root, entry))
+                                                      for entry in manifests])
         require(all(spec["inputs"].get(name) == digest
                     for name, digest in required_inputs.items()),
                 "incomplete replay model/dataset input bindings")
