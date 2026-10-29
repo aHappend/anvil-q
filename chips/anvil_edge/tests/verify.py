@@ -72,6 +72,7 @@ from deepseek_assets import (
 from deepseek_dfa import run_deepseek_dfa
 from deepseek_integration import run_deepseek_integration, run_deepseek_boot, run_deepseek_bos
 from deepseek_shell import run_deepseek_shell_compact, run_deepseek_shell_feasibility
+from cycle_driver import run_driver_comparison, run_driver_scaling, EXPLICIT_CLOCK
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -124,6 +125,7 @@ class Evidence:
         self.source_overrides = {}
         self.name_prefix = ""
         self.simulator_override = None
+        self.explicit_clock = False
         self.compiled_simulations = {}
         self._root = self
         self._lock = threading.RLock()
@@ -452,11 +454,22 @@ class Evidence:
                 compiled_bench = compiled_bench.replace(
                     "module bench;", "module bench;\n" + "".join(input_functions), 1
                 )
+            driver_source = None
+            if self.explicit_clock:
+                clock = "  reg clk=0,rst_n;\n  always #5 clk=~clk;"
+                if compiled_bench.count(clock) != 1:
+                    raise VerificationFailure("Explicit clock requires the supported shell clock")
+                compiled_bench = compiled_bench.replace(
+                    "module bench;", "module bench(input wire clk);", 1
+                ).replace(clock, "  reg rst_n;", 1)
+                driver_source = directory / "clock-driver.cpp"
+                driver_source.write_text(EXPLICIT_CLOCK, encoding="ascii")
             compiled_source.write_text(compiled_bench, encoding="ascii")
             record.update(
                 compiled_bench_sha256=digest(compiled_source),
                 reset_settle_delays_ps=reset_delays,
                 four_state=False,
+                clock_driver="explicit-cycle" if self.explicit_clock else "timed-SV",
             )
             source_hashes = [(path, digest(ROOT / path)) for path in sources]
             compile_options = [
@@ -467,6 +480,9 @@ class Evidence:
             ]
             if optimize:
                 compile_options.extend(["-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3"])
+            if driver_source is not None:
+                compile_options[0:1] = ["--cc", "--exe", "--build"]
+                record["clock_driver_sha256"] = digest(driver_source)
             tool_identity = {}
             for tool_name in ("verilator", "g++", "make"):
                 tool = self.record["tool_versions"][tool_name]
@@ -477,7 +493,8 @@ class Evidence:
                     "executable_sha256": digest(Path(shutil.which(tool_name))),
                 }
             cache_key = hashlib.sha256(json.dumps(
-                [compiled_bench, source_hashes, compile_options, tool_identity],
+                [compiled_bench, source_hashes, compile_options, tool_identity,
+                 EXPLICIT_CLOCK if self.explicit_clock else None],
                 sort_keys=True
             ).encode()).hexdigest()
             with self._lock:
@@ -490,7 +507,8 @@ class Evidence:
                     compile_record = self.child(
                         ["verilator", *compile_options,
                          "--Mdir", self.relative(object_dir), "-o", "simulation",
-                         *sources, self.relative(compiled_source)],
+                         *sources, self.relative(compiled_source),
+                         *([str(driver_source.resolve())] if driver_source is not None else [])],
                         name + "-compile",
                     )
                     binary = object_dir / "simulation"
@@ -988,6 +1006,8 @@ def main():
         "official-deepseek-bos",
         "deepseek-shell-compact",
         "deepseek-shell-feasibility",
+        "shell-driver-comparison",
+        "shell-driver-scaling",
         "official-llama-discovery",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
@@ -1212,6 +1232,10 @@ def main():
             run_deepseek_shell_compact(evidence)
         elif args.probe == "deepseek-shell-feasibility":
             run_deepseek_shell_feasibility(evidence, args.schedule_receipt)
+        elif args.probe == "shell-driver-comparison":
+            run_driver_comparison(evidence)
+        elif args.probe == "shell-driver-scaling":
+            run_driver_scaling(evidence, args.schedule_receipt)
         elif args.probe == "simulator-tiering":
             bench = UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace("SEED", "1")
             for simulator in ("iverilog", "verilator"):
