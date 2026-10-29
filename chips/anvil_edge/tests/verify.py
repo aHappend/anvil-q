@@ -75,6 +75,7 @@ from deepseek_shell import run_deepseek_shell_compact, run_deepseek_shell_feasib
 from cycle_driver import (
     run_driver_comparison, run_driver_scaling, run_driver_capacity, EXPLICIT_CLOCK,
 )
+from retained import audit_controller
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -951,6 +952,7 @@ def main():
     group.add_argument("--check", choices=("l1", "clean-reproduction"))
     group.add_argument("--probe", choices=(
         "arithmetic", "fifo", "controller", "controller-build-repair",
+        "retained-controller-audit",
         "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
         "reproduction",
@@ -1080,6 +1082,10 @@ def main():
             run_fifo(evidence)
         elif args.probe == "controller":
             run_controller(evidence)
+        elif args.probe == "retained-controller-audit":
+            evidence.tools(("python3",))
+            audit_controller(evidence, ROOT, digest, write_json, VerificationFailure)
+            reason = "Retained controller evidence audited; no new simulation or acceptance"
         elif args.probe == "controller-build-repair":
             import importlib.util
             from protocol import controller_test
