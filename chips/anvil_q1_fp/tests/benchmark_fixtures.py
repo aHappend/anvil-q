@@ -164,7 +164,9 @@ def prerequisite_dependencies_check(root, ev):
     import verify
 
     good = True
-    for numpy_available in (False, True):
+    for numpy_available, manifests_available in (
+        (False, True), (True, True), (False, False), (True, False),
+    ):
         commands, assertions, manifest_calls = [], [], []
 
         def run(label, argv, **kwargs):
@@ -173,28 +175,39 @@ def prerequisite_dependencies_check(root, ev):
 
         def assertion(name, passed, **detail):
             assertions.append(dict(name=name, passed=bool(passed), **detail))
+            return bool(passed)
 
-        def manifests(holder):
-            manifest_calls.append(holder)
-            return True
+        def manifests(project, holder):
+            manifest_calls.append((project, holder))
+            if not manifests_available:
+                raise ValueError("synthetic missing input manifest")
+            return {}, {}, {"fixture": None}, {}
 
         holder = SimpleNamespace(versions=lambda: True, run=run, assertion=assertion)
-        with patch.object(verify, "benchmark_contract", side_effect=manifests):
+        with patch.object(verify, "validate_input_manifests", side_effect=manifests):
             result = verify.prerequisites(holder)
         labels = [row[0] for row in commands]
         numpy_commands = [row for row in commands if row[0] == "reference-numpy-import"]
         observed = (
-            result is numpy_available and manifest_calls == [holder] and
+            result is (numpy_available and manifests_available) and
+            manifest_calls == [(root, holder)] and
             labels == ["reference-dependency-discovery", "reference-numpy-import"] and
             numpy_commands[0][1] == [
                 sys.executable, "-c", "import numpy; print(numpy.__version__)"] and
             numpy_commands[0][2]["timeout"] == 30 and
-            len(assertions) == 1 and
+            len(assertions) == 2 and
             assertions[0]["name"] == "reference_numpy_import" and
-            assertions[0]["passed"] is numpy_available)
+            assertions[0]["passed"] is numpy_available and
+            assertions[1] == (
+                dict(name="prerequisite_input_manifests", passed=True, cases=1)
+                if manifests_available else
+                dict(name="prerequisite_input_manifests", passed=False,
+                     reason="ValueError: synthetic missing input manifest")))
         good = ev.assertion(
-            "fixture_prerequisites_numpy_" + ("available" if numpy_available else "missing"),
+            "fixture_prerequisites_numpy_" + ("available" if numpy_available else "missing") +
+            ("_missing_manifests" if not manifests_available else ""),
             observed, scope=NOTICE, numpy_available=numpy_available,
+            manifests_available=manifests_available,
             discovery_succeeded=True, prerequisite_result=result,
             input_validation_still_executed=bool(manifest_calls),
             observed_assertions=assertions, processes_executed=0) and good
@@ -1151,6 +1164,7 @@ def selected_weight_reference_check(root, ev):
             holder = SimpleNamespace(
                 run=lambda descriptor, *args: runs[descriptor],
                 artifact=validator.artifact, arrays=validator.arrays,
+                array_bytes=validator.array_bytes,
                 document=lambda descriptor: trace, produced=lambda *args: None)
             cases = {"fixture": ("Math", dict(
                 teacher_tokens={"sha256": "teacher"},
