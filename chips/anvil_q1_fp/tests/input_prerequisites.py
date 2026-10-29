@@ -182,6 +182,22 @@ def reference_dependencies(ev, interpreter):
     return ev.run("reference-dependencies", [str(interpreter), "-c", script], timeout=30)
 
 
+def qualified_reference_events(completed, events):
+    """Require the complete ordered import protocol, not discovery or a prefix."""
+    if not completed or len(events) != 3 or any(type(row) is not dict for row in events):
+        return False
+    parent, imported, child = events
+    version = imported.get("numpy_version")
+    return (
+        tuple(row.get("event") for row in events) ==
+        ("parent", "parent_import", "child_import") and
+        parent.get("same_executable_as_probe") is True and
+        type(version) is str and bool(version.strip()) and
+        version == child.get("numpy_version") and
+        child.get("same_executable_as_parent") is True
+    )
+
+
 def reference_environment(ev):
     """Validate the selected environment without choosing or modifying one."""
     ev.receipt["scope"] = (
@@ -222,11 +238,7 @@ subprocess.run([sys.executable, "-c", child, sys.executable, numpy.__version__],
     for line in (ev.path / "path-parent-child-numpy-import.stdout").read_text().splitlines():
         if line.startswith("ANVIL_ENV "):
             events.append(json.loads(line.removeprefix("ANVIL_ENV ")))
-    expected = ("parent", "parent_import", "child_import")
-    valid = (completed and tuple(row.get("event") for row in events) == expected and
-             events[0]["same_executable_as_probe"] is True and
-             events[1]["numpy_version"] == events[2]["numpy_version"] and
-             events[2]["same_executable_as_parent"] is True)
+    valid = qualified_reference_events(completed, events)
     ev.receipt["environment_observations"] = events
     ev.receipt["outputs"] = {
         str(path.relative_to(ROOT)): digest(path)

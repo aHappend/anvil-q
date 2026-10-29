@@ -201,6 +201,63 @@ def prerequisite_dependencies_check(root, ev):
     return good
 
 
+def reference_environment_check(root, ev):
+    """Synthetic protocol records cannot qualify the actual host environment."""
+    import copy
+    from input_prerequisites import qualified_reference_events
+
+    control = [
+        {"event": "parent", "same_executable_as_probe": True},
+        {"event": "parent_import", "numpy_version": "fixture-version"},
+        {"event": "child_import", "numpy_version": "fixture-version",
+         "same_executable_as_parent": True},
+    ]
+    cases = [("complete-control", True, control, True),
+             ("nonzero-exit", False, control, False)]
+    for length in range(3):
+        cases.append(("missing-event-" + str(length), True, control[:length], False))
+    cases.extend([
+        ("duplicate-event", True, control + [control[-1]], False),
+        ("reordered-events", True, control[::-1], False),
+        ("non-object-event", True, [control[0], None, control[2]], False),
+    ])
+    for label, index, field, value in (
+        ("parent-interpreter-mismatch", 0, "same_executable_as_probe", False),
+        ("parent-nonboolean-identity", 0, "same_executable_as_probe", 1),
+        ("child-interpreter-mismatch", 2, "same_executable_as_parent", False),
+        ("child-nonboolean-identity", 2, "same_executable_as_parent", 1),
+        ("numpy-version-mismatch", 2, "numpy_version", "other-fixture-version"),
+        ("missing-parent-event", 0, "event", None),
+        ("missing-child-version", 2, "numpy_version", None),
+    ):
+        events = copy.deepcopy(control)
+        if value is None:
+            del events[index][field]
+        else:
+            events[index][field] = value
+        cases.append((label, True, events, False))
+    for label, version in (("empty-version", ""), ("whitespace-version", " "),
+                           ("nonstring-version", 17), ("absent-version", None)):
+        events = copy.deepcopy(control)
+        for index in (1, 2):
+            if version is None:
+                del events[index]["numpy_version"]
+            else:
+                events[index]["numpy_version"] = version
+        cases.append((label, True, events, False))
+    good = True
+    for label, completed, events, expected in cases:
+        original = copy.deepcopy(events)
+        observed = qualified_reference_events(completed, events)
+        good = ev.assertion(
+            "fixture_reference_environment_" + label,
+            observed is expected and events == original,
+            scope=NOTICE, expected_qualified=expected,
+            observed_qualified=observed, processes_executed=0,
+            actual_environment_qualified=False) and good
+    return good
+
+
 def production_interface_check(root, ev):
     """Help success must never be promoted to endpoint qualification."""
     from types import SimpleNamespace
@@ -1360,6 +1417,7 @@ def check(root, ev):
     good = failure_diagnostics_check(root, ev) and good
     good = component_diagnostics_check(root, ev) and good
     good = prerequisite_dependencies_check(root, ev) and good
+    good = reference_environment_check(root, ev) and good
     good = production_interface_check(root, ev) and good
     good = artifact_path_check(root, ev) and good
     good = entry_document_path_check(root, ev) and good
