@@ -408,6 +408,7 @@ def main():
                                            "math", "math-sensitivity", "top-awq", "top-bf16",
                                            "csr-upload", "synthesis", "kv", "kv-faults",
                                            "kv-fault-sensitivity", "parameters", "dma",
+                                           "late-read-faults", "late-read-sensitivity",
                                            "sensitivity", "dma-pipeline-sensitivity",
                                            "arithmetic-sensitivity",
                                            "faults", "orphan-fault", "abort-states",

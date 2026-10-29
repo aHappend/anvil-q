@@ -745,8 +745,16 @@ def top_probe(evidence, mode, seed, upload_only=False, config=0,
               diagnostic_first_token=False, simulator="verilator",
               cxx_optimization="-O3", flatten=False, reusable_build=True,
               numerical_fault=None, command_validation=False, pending_upload_validation=False,
-              reset_validation=False):
+              reset_validation=False, late_read_fault=False):
     shape = MATRIX[config]
+    if late_read_fault:
+        if (config != 0 or not reusable_build or upload_only or fault_read >= 0 or
+                fault_write >= 0 or orphan_fault or abort_stage or diagnostic_first_token or
+                numerical_fault is not None or command_validation or pending_upload_validation or
+                reset_validation):
+            raise ValueError("late read fault requires a separate compact two-panel case")
+        from dataclasses import replace
+        shape = replace(shape, vocab=67)
     model = EngineeringModel(shape, seed, mode)
     if reset_validation and (
             config != 0 or not reusable_build or upload_only or fault_read >= 0 or
@@ -1117,6 +1125,9 @@ endmodule
     if reset_validation:
         from reset_integration import instrument_resets
         bench, inference = instrument_resets(bench, model)
+    if late_read_fault:
+        from late_faults import instrument_late_read
+        bench, inference = instrument_late_read(bench, model)
     if poisoned is not None:
         bench = bench.replace("integer response_writes=0;", r"""
 integer poison_address,poison_bits,original_bits,poison_seen=0,uploads_completed=0;
@@ -1413,7 +1424,7 @@ endtask
 """)
         if not (upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or abort_stage
                 or numerical_fault is not None or command_validation or pending_upload_validation
-                or reset_validation):
+                or reset_validation or late_read_fault):
             bench = bench.replace("AFTER_COMMIT", runtime_inference)
         else:
             bench = bench.replace("AFTER_COMMIT", inference)
@@ -1485,6 +1496,7 @@ endtask
         "command_validation": command_validation,
         "pending_upload_validation": pending_upload_validation,
         "reset_validation": reset_validation,
+        "late_read_fault": late_read_fault,
         "descriptors": model.descriptors,
     }
     runtime_case["engineering_fixture"] = evidence.record["engineering_fixture"]
@@ -3004,6 +3016,12 @@ def run_probe(evidence, name, seed, config=0):
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=(
             "scalar_issue_response", "scalar_response_error"))
+    elif name in ("late-read-faults", "late-read-sensitivity"):
+        from late_faults import late_read_faults
+        late_read_faults(evidence, seed)
+        if name == "late-read-sensitivity":
+            from sensitivity import run_sensitivity
+            run_sensitivity(evidence, seed, only=("late_read_error_ignored",))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1
@@ -3024,6 +3042,8 @@ def run_probe(evidence, name, seed, config=0):
                     "fault": kind, "beat": beat,
                     "receipt": evidence.relative(trial.folder / "receipt.json")})
                 evidence.flush()
+        from late_faults import late_read_faults
+        late_read_faults(evidence, seed)
     elif name == "orphan-fault":
         top_probe(evidence, "AWQ", seed, orphan_fault=True)
     elif name == "abort-states":

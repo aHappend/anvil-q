@@ -13,6 +13,7 @@ from descriptor_checks import descriptor_case
 from address_checks import address_case
 from scalar_checks import scalar_case
 from kv_faults import kv_fault_case
+from late_faults import late_read_case
 
 
 def stored_number_trial(evidence, seed, name):
@@ -164,6 +165,11 @@ def run_sensitivity(parent, seed, only=None):
         ("scalar_response_error", "anvil_q1_ht_ddr_scalar.sv",
          "failed <= avm_response != 0;", "failed <= 0;",
          lambda run: scalar_case(run, "verilator", seed), "SCALAR_RESULT_MISMATCH"),
+        ("late_read_error_ignored", "anvil_q1_ht_avalon_mux.sv",
+         "(client_readdatavalid[client] || client_writeresponsevalid[client]) ? avm_response : 2'b0;",
+         "(client_readdatavalid[client] || client_writeresponsevalid[client]) ? "
+         "(avm_readdatavalid ? 2'b0 : avm_response) : 2'b0;",
+         lambda run: late_read_case(run, "AWQ", seed), "LATE_READ_POSTFAULT_LOGIT"),
     )
     if only is not None:
         selected = set(only)
