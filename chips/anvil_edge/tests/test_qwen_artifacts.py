@@ -139,6 +139,9 @@ def run_complete_table_regression(evidence):
         assert len(compact) == 1
         # Five exact benchmark inputs plus the existing compact portability
         # witness; these are tokenizer comparisons, not weighted inference.
+        prompts = json.loads((official.ROOT / "tests/data/requirements.json").read_bytes())["prompts"]
+        assert [row["input_utf8_hex"] for row in vectors[:5]] == [
+            text.encode().hex() for text in prompts]
         selected = vectors[:5] + compact
         assert len({row["input_utf8_hex"] for row in selected}) == 6
         run_rtl(scope, info, selected, family, table_source=table_source)
@@ -150,10 +153,13 @@ def run_complete_table_regression(evidence):
                     table_source=table_source)),
             ], workers=1)
         scope.run_cases([("nested-table-consumer", nested)], workers=1)
+        mutations = []
         if bos:
+            def execute_mutants(mutant_scope):
+                bos_mutations(mutant_scope, info, compact, table_source=table_source)
+                mutations.extend(mutant_scope.record["bos_mutations"])
             scope.run_cases([
-                ("bos-mutation-scope", lambda mutant_scope: bos_mutations(
-                    mutant_scope, info, compact, table_source=table_source)),
+                ("bos-mutation-scope", execute_mutants),
             ], workers=1)
 
         rejected = []
@@ -194,6 +200,7 @@ def run_complete_table_regression(evidence):
         results.append({"family": family, "producer": scope.relative(scope.path),
                         "fixture_sha256": frozen["complete-table-fixture.json"],
                         "bindings": bindings, "invalid_sources_rejected": rejected,
+                        "bos_mutations": mutations,
                         "producer_artifacts_unchanged": frozen})
 
     evidence.run_cases([
@@ -206,12 +213,13 @@ def run_complete_table_regression(evidence):
     ], workers=1)
     rows = [row for row in evidence.record["coverage"] if "simulator" in row]
     assert len(rows) == 17 and sum(row["status"] == "passed" for row in rows) == 15
-    assert len(evidence.record["bos_mutations"]) == 2
+    mutations = [mutation for result in results for mutation in result["bos_mutations"]]
+    assert len(mutations) == 2
     write_json(evidence.path / "complete-table-artifact-regression.json", {
         "scope": "Bounded artifact-path repair; complete official tables, six selected "
                  "vectors per family/policy, not full profile matrix or product acceptance",
         "families": results, "passed_simulations": 15,
-        "bos_mutations": evidence.record["bos_mutations"],
+        "bos_mutations": mutations,
         "aggregate_root_has_no_tables": True,
     })
 
