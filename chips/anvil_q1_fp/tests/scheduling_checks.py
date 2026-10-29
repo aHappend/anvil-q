@@ -33,22 +33,28 @@ def check(root, ev):
                         verify.simulation_tier("verilator") == "verilator") and good
     jobs = verify.l1_jobs()
     names = [name for name, _, _, _ in jobs]
-    integrations = {name.removeprefix("integration-"): options
-                    for name, check, _, options in jobs
-                    if check is verify.integration_check and options.get("full")}
+    integrations = [
+        (name, mode, seed, options)
+        for _, check, _, options in jobs
+        if check is verify.integration_check and options.get("full")
+        for name in options["configurations"] for mode in options["modes"]
+        for seed in options["seeds"]]
+    required_integrations = [(name, mode, seed) for name in verify.CONFIGURATIONS
+                             for mode in (0, 1, 2) for seed in (17, 53, 89)]
     good = ev.assertion(
         "fresh_complete_integration_shards",
         len(names) == len(set(names)) and
-        set(integrations) == set(verify.CONFIGURATIONS) and all(
-            options["configurations"] == {name: verify.CONFIGURATIONS[name]}
-            for name, options in integrations.items()),
-        configurations=list(integrations), modes=[0, 1, 2], seeds=[17, 53, 89]) and good
+        sorted((name, mode, seed) for name, mode, seed, _ in integrations) ==
+        sorted(required_integrations) and all(
+            options["configurations"] == {name: verify.CONFIGURATIONS[name]} and
+            len(options["modes"]) == len(options["seeds"]) == 1
+            for name, _, _, options in integrations),
+        cases=[list(case) for case in required_integrations]) and good
     production = [
         (operator, selector, mode)
         for _, check, _, options in jobs
         if check is verify.operator_check and options.get("production")
-        for operator, selectors in options["operations"].items()
-        for selector in selectors for mode in (0, 1, 2)]
+        for operator, selector, mode in options["cases"]]
     required = [(operator, selector, mode)
                 for operator in verify.OPERATOR_IDS
                 for selector in (range(7) if operator == "gemv" else
@@ -56,12 +62,37 @@ def check(root, ev):
                 for mode in (0, 1, 2)]
     good = ev.assertion(
         "fresh_complete_production_shards",
-        sorted(production) == sorted(required),
+        sorted(production) == sorted(required) and all(
+            len(options["cases"]) == 1 for _, check, _, options in jobs
+            if check is verify.operator_check and options.get("production")),
         expected_cases=len(required), scheduled_cases=len(production)) and good
     good = ev.assertion(
         "missing_and_duplicate_shards_detected",
         sorted(production[1:]) != sorted(required) and
         sorted(production + production[:1]) != sorted(required)) and good
+
+    parent = verify.Evidence("scheduling-inventory")
+    parent.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(root))
+
+    def inventory_fixture(child, index):
+        rows = parent.receipt["shards"]
+        complete = (len(rows) == 7 and all(
+            [step["status"] for step in row["history"]][:2] == ["planned", "queued"]
+            for row in rows))
+        return child.assertion("complete_inventory_before_launch", complete, index=index)
+
+    scheduled = verify.parallel_components(parent, [
+        ("inventory" + str(index), inventory_fixture, (index,), {}) for index in range(7)])
+    parent.finish("passed" if all(scheduled.values()) else "failed")
+    ev.receipt.setdefault("children", []).append(str((parent.path / "receipt.json").relative_to(root)))
+    good = ev.assertion(
+        "complete_queue_running_completion_ledger",
+        len(scheduled) == 7 and all(scheduled.values()) and all(
+            [step["status"] for step in row["history"]] ==
+            ["planned", "queued", "running", "completed"] and
+            row["child_receipt"] and row["passed"] for row in parent.receipt["shards"])
+        and parent.receipt["shard_counts"] ==
+        {"planned": 0, "queued": 0, "running": 0, "completed": 7, "failed": 0}) and good
 
     fixture = ev.path / "cache-fixture.sv"
     original_source = (

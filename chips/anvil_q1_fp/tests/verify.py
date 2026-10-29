@@ -359,23 +359,66 @@ def component(ev, name, check, *args, **kwargs):
             report_failures(child)
 
 
-def parallel_components(ev, jobs):
+def parallel_components(ev, jobs, serial=()):
     """Run all obligations; each owns its receipt, traces and output names."""
-    def execute(job):
-        name, check, args, kwargs = job
-        try:
-            return component(ev, name, check, *args, **kwargs)
-        except (AssertionError, ValueError, KeyError, OSError, OverflowError):
-            # component retained and reported the original exception.
-            return False
-
+    jobs = list(jobs)
+    if len({job[0] for job in jobs}) != len(jobs):
+        raise ValueError("duplicate component shard")
+    if not set(serial).issubset({job[0] for job in jobs}):
+        raise ValueError("unknown serial component shard")
+    inventory = {name: {
+        "name": name, "check": check.__name__, "args": list(args), "options": kwargs,
+        "status": "planned", "history": [{"status": "planned", "at": now()}],
+    } for name, check, args, kwargs in jobs}
+    ev.receipt["shards"] = list(inventory.values())
     ev.receipt["scheduling"] = {"component_workers": 4, "compiler_slots": 2,
                                "compiler_jobs_per_slot": 2,
-                               "reuse_scope": "this invocation only"}
-    with ev.profile("parallel-components"), ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {name: pool.submit(execute, (name, check, args, kwargs))
-                   for name, check, args, kwargs in jobs}
-        return {name: future.result() for name, future in futures.items()}
+                               "reuse_scope": "this invocation only",
+                               "inventory_complete_before_launch": True}
+    ev.finish("running")
+
+    def transition(name, status, **detail):
+        with ev.lock:
+            row = inventory[name]
+            row.update(status=status, **detail)
+            row["history"].append({"status": status, "at": now()})
+            ev.receipt["shard_counts"] = {
+                state: sum(row["status"] == state for row in inventory.values())
+                for state in ("planned", "queued", "running", "completed", "failed")}
+            ev.finish("running")
+
+    launch = threading.Event()
+
+    def execute(job):
+        name, check, args, kwargs = job
+        launch.wait()
+        transition(name, "running")
+        passed = False
+        try:
+            passed = component(ev, name, check, *args, **kwargs)
+            return passed
+        except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
+            # component retained and reported the original exception.
+            with ev.lock:
+                inventory[name]["error"] = repr(error)
+            return False
+        finally:
+            with ev.lock:
+                receipts = [row["child_receipt"] for row in ev.receipt["assertions"]
+                            if row["name"] == "component_" + name]
+            transition(name, "completed" if passed else "failed",
+                       passed=passed, child_receipt=receipts[-1] if receipts else None)
+
+    with ev.profile("parallel-components"):
+        for name in inventory:
+            transition(name, "queued")
+        launch.set()
+        results = {job[0]: execute(job) for job in jobs if job[0] in serial}
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = {name: pool.submit(execute, (name, check, args, kwargs))
+                       for name, check, args, kwargs in jobs if name not in serial}
+            results.update((name, future.result()) for name, future in futures.items())
+        return results
 
 
 def report_failures(ev):
@@ -1121,11 +1164,13 @@ def production_recovery(ev, prior):
     dependencies = [p for p in sources()
                     if p.relative_to(ROOT).parts[0] in ("rtl", "anvil_q1_reference")]
     dependencies += [ROOT / "tests" / name for name in (
-        "operator_tb.sv", "architecture.py", "numerical.py")]
-    for path in dependencies:
-        name = str(path.relative_to(ROOT))
-        if retained["source_sha256"].get(name) != digest(path):
-            return ev.assertion("recovery_source_binding", False, changed=name)
+        "operator_tb.sv", "operator_input.cpp", "operators.py", "architecture.py",
+        "numerical.py", "verify.py")]
+    changed = [str(path.relative_to(ROOT)) for path in dependencies
+               if retained["source_sha256"].get(str(path.relative_to(ROOT))) != digest(path)]
+    if changed:
+        ev.assertion("stale_recovery_regenerates_all_cases", True, changed=changed)
+        return operator_check(ev, production=True)
     assertions = {item["name"]: item for item in retained["assertions"]}
     records = {item["label"]: item for item in retained["records"]}
     class HashWriter:
@@ -1399,33 +1444,36 @@ def scheduling_check(ev):
     return check(ROOT, ev)
 
 
+def benchmark_fixture_check(ev):
+    from benchmark_fixtures import check
+    return check(ROOT, ev)
+
+
 def l1_jobs():
-    # Split the expensive projections without changing any case, mode or seed.
-    # All projection shards share the identical parameter-bound operator build.
     jobs = [
-        ("synthesis-top", synthesis_check, (), {}),
-        ("production-gemv4", operator_check, (), {
-            "production": True, "operations": {"gemv": (4,)}}),
-        ("production-gemv6", operator_check, (), {
-            "production": True, "operations": {"gemv": (6,)}}),
-        ("integration-gqa7", integration_check, (), {
-            "full": True, "configurations": {"gqa7": CONFIGURATIONS["gqa7"]}}),
-        ("production-gemv5", operator_check, (), {
-            "production": True, "operations": {"gemv": (5,)}}),
+        ("benchmark-validator", benchmark_fixture_check, (), {}),
         ("integration-defects", integration_defect_check, (), {}),
+        ("synthesis-top", synthesis_check, (), {}),
     ]
-    for name in CONFIGURATIONS:
-        if name != "gqa7":
-            jobs.append(("integration-" + name, integration_check, (), {
-                "full": True, "configurations": {name: CONFIGURATIONS[name]}}))
-    for projection in (0, 1, 2, 3):
-        jobs.append(("production-gemv" + str(projection), operator_check, (), {
-            "production": True, "operations": {"gemv": (projection,)}}))
+    for mode in (1, 2, 0):
+        for projection in (4, 6, 5, 0, 3, 1, 2):
+            jobs.append((f"production-gemv{projection}-mode{mode}", operator_check, (), {
+                "production": True, "operations": {"gemv": (projection,)},
+                "cases": (("gemv", projection, mode),)}))
+    for name in ("gqa7", "layers24", "nonpower", "minimum"):
+        for mode in (0, 1, 2):
+            for seed in (17, 53, 89):
+                jobs.append((f"integration-{name}-mode{mode}-seed{seed}", integration_check, (), {
+                    "full": True, "configurations": {name: CONFIGURATIONS[name]},
+                    "modes": (mode,), "seeds": (seed,)}))
     for name in OPERATOR_IDS:
         if name != "gemv":
             selectors = (0, 1, 2) if name in ("norm", "elementwise") else (0,)
-            jobs.append(("production-" + name, operator_check, (), {
-                "production": True, "operations": {name: selectors}}))
+            for selector in selectors:
+                for mode in (0, 1, 2):
+                    jobs.append((f"production-{name}{selector}-mode{mode}", operator_check, (), {
+                        "production": True, "operations": {name: (selector,)},
+                        "cases": ((name, selector, mode),)}))
     jobs += [
         ("leaves-full", leaf_check, (), {"full": True}),
         ("protocol", protocol_check, (), {}),
@@ -1558,12 +1606,10 @@ def main():
         elif args.check == "l1":
             tools_ok = ev.versions()
             if tools_ok:
-                from benchmark_fixtures import check as check_fixtures
-                benchmark_validator_ok = component(
-                    ev, "l1-benchmark-validator", lambda child: check_fixtures(ROOT, child))
-                # Synthetic validator monkeypatches are deliberately completed
-                # before concurrent engineering components begin.
-                results = parallel_components(ev, l1_jobs())
+                jobs = l1_jobs()
+                # Its synthetic monkeypatches finish before concurrent work.
+                results = parallel_components(ev, jobs, serial=("benchmark-validator",))
+                benchmark_validator_ok = results["benchmark-validator"]
                 static_ok = results["static"]
                 parameters_ok = results["parameters"]
                 synthesis_ok = results["synthesis-top"]
@@ -1573,12 +1619,15 @@ def main():
                 integration_defects_ok = results["integration-defects"]
                 protocol_ok = results["protocol"]
                 icarus_ok = results["icarus-integration"]
-                integration_ok = all(results["integration-" + name]
-                                     for name in CONFIGURATIONS)
+                integration_ok = all(
+                    results[f"integration-{name}-mode{mode}-seed{seed}"]
+                    for name in CONFIGURATIONS for mode in (0, 1, 2) for seed in (17, 53, 89))
                 operators_ok = all(
-                    results["production-gemv" + str(projection)] for projection in range(7))
-                operators_ok = all(results["production-" + name]
-                                   for name in OPERATOR_IDS if name != "gemv") and operators_ok
+                    results[f"production-{name}{selector}-mode{mode}"]
+                    for name in OPERATOR_IDS
+                    for selector in (range(7) if name == "gemv" else
+                                     range(3) if name in ("norm", "elementwise") else (0,))
+                    for mode in (0, 1, 2))
                 maximum_position_ok = results["maximum-position"]
                 top_address_ok = results["production-top-addresses"]
                 preservation_ok = results["preservation"]
