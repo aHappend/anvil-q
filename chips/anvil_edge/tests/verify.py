@@ -8,6 +8,8 @@ Independent official stages own isolated artifact scopes. Complete-table produce
 are shared only within one invocation, validated by hashes and rebuilt if stale.
 Attempt records distinguish compilation, simulation and comparison failures;
 a failed compile never counts as a functional mutation kill.
+Settled case-result.json records survive an interrupted parent, but never
+replace its final receipt, rerun missing work or authorize evidence reuse.
 """
 
 import argparse
@@ -229,11 +231,40 @@ class Evidence:
                 raise
             finally:
                 result.update(end_utc=utc(), duration_s=time.monotonic() - start)
-                with self._lock:
-                    for key in ("children", "coverage", "case_batches"):
-                        self.record[key].extend(scope.record[key])
-                    batch["results"].append(result)
-                    self._root._case_scopes -= 1
+                try:
+                    case_path = scope.path / "case-result.json"
+                    result["result_record"] = self.relative(case_path)
+                    with self._tool_lock, self._lock:
+                        settled_record = copy.deepcopy(scope.record)
+                    write_json(case_path, {
+                        "schema": 1,
+                        "kind": "settled-verification-case",
+                        "acceptance_evidence": False,
+                        "case": dict(result),
+                        "source_manifest": {
+                            "path": self.relative(self._root.path / "launch.json"),
+                            "sha256": digest(self._root.path / "launch.json"),
+                        },
+                        "parent_receipt": self.relative(self._root.path / "receipt.json"),
+                        "child_settled": all(
+                            row["child_settled"] and row.get("process_group_settled", True)
+                            for row in settled_record["children"]),
+                        "record": settled_record,
+                        "limitation": "Settled case observations only. An absent parent "
+                                      "receipt means the enclosing invocation is incomplete; "
+                                      "this record neither certifies acceptance nor skips work.",
+                    })
+                    result["result_sha256"] = digest(case_path)
+                except Exception as error:
+                    result.update(status="failed",
+                                  persistence_error=f"{type(error).__name__}: {error}")
+                    raise
+                finally:
+                    with self._lock:
+                        for key in ("children", "coverage", "case_batches"):
+                            self.record[key].extend(scope.record[key])
+                        batch["results"].append(result)
+                        self._root._case_scopes -= 1
 
         failures = []
         with ThreadPoolExecutor(max_workers=workers) as executor:
@@ -1031,6 +1062,7 @@ def main():
     group.add_argument("--probe", choices=(
         "arithmetic", "fifo", "controller", "controller-build-repair",
         "retained-controller-audit", "retained-provenance-audit",
+        "settled-case-records",
         "compile-cache-recovery",
         "boot-performance", "official-stage-performance", "performance-controls",
         "uart", "detokenizer", "boot",
@@ -1186,6 +1218,10 @@ def main():
                 "retained-provenance-regression")
             audit_provenance(evidence, ROOT, digest, write_json, VerificationFailure)
             reason = "Retained receipt ancestry audited; no functional or acceptance claim"
+        elif args.probe == "settled-case-records":
+            from case_records import run_case_records
+            run_case_records(evidence, VerificationFailure, digest, write_json)
+            reason = "Settled-case persistence and compact simulator controls passed; not full L1"
         elif args.probe == "controller-build-repair":
             import importlib.util
             from protocol import controller_test
@@ -1574,6 +1610,9 @@ def main():
             evidence.child(["python3", "tests/test_qwen_artifacts.py",
                             evidence.relative(evidence.path)],
                            "qwen-artifact-integrity-regression")
+            evidence.child(["python3", "tests/test_case_records.py",
+                            evidence.relative(evidence.path)],
+                           "case-record-integrity-regression")
             run_stages(evidence, OFFICIAL_STAGES)
             raise VerificationFailure(
                 "L1 incomplete: tests/data/requirements.json lists remaining mandatory "
