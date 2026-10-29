@@ -8,6 +8,12 @@ from experiments import dequant, dma_probe, kv_probe, tensor, top_probe
 from arithmetic_benchmark import arithmetic_default
 from layer_benchmark import layer_default
 from attention_benchmark import attention_context
+from numerical_faults import fault_cases
+
+
+def stored_number_trial(evidence, seed, name):
+    fault = next(case for case in fault_cases() if case["name"] == name)
+    top_probe(evidence, fault["mode"], seed, numerical_fault=fault)
 
 
 def run_sensitivity(parent, seed, only=None):
@@ -59,6 +65,19 @@ def run_sensitivity(parent, seed, only=None):
          "math_b <= time_index < 32'd6 ? 128'b0 : "
          "{{63{math_value[64]}}, math_value[64:0]};",
          lambda run: attention_context(run, seed, 3, 9), "ATTENTION_CONTEXT_MISMATCH"),
+        ("stored_fp16_nonfinite", "anvil_q1_ht_00_numeric_pkg.sv",
+         "fp16_invalid = value[14:10] == 5'd31;", "fp16_invalid = 1'b0;",
+         lambda run: stored_number_trial(run, seed, "awq_embedding_inf"),
+         "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
+        ("stored_bf16_nonfinite", "anvil_q1_ht_00_numeric_pkg.sv",
+         "bf16_invalid = value[14:7] == 8'hff;", "bf16_invalid = 1'b0;",
+         lambda run: stored_number_trial(run, seed, "bf16_weight_0_nonfinite"),
+         "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
+        ("stored_negative_scale", "anvil_q1_ht_00_numeric_pkg.sv",
+         "scale_invalid = fp16_invalid(value) || (value[15] && value[14:0] != 0);",
+         "scale_invalid = fp16_invalid(value);",
+         lambda run: stored_number_trial(run, seed, "awq_scale_0_negative"),
+         "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
     )
     if only is not None:
         selected = set(only)

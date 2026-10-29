@@ -457,9 +457,14 @@ endmodule
 def top_probe(evidence, mode, seed, upload_only=False, config=0,
               fault_read=-1, fault_write=-1, orphan_fault=False, abort_stage=None,
               diagnostic_first_token=False, simulator="verilator",
-              cxx_optimization="-O3", flatten=False, reusable_build=True):
+              cxx_optimization="-O3", flatten=False, reusable_build=True,
+              numerical_fault=None):
     shape = MATRIX[config]
     model = EngineeringModel(shape, seed, mode)
+    if numerical_fault is not None and (
+            upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or
+            abort_stage or diagnostic_first_token or not reusable_build or config != 0):
+        raise ValueError("numerical faults require a separate compact public-interface case")
     tokens = []
     for position in range(min(shape.max_seq, shape.window + 2)):
         token_id = (seed + position * 3) % shape.vocab
@@ -467,6 +472,10 @@ def top_probe(evidence, mode, seed, upload_only=False, config=0,
         tokens.append((token_id, position, position == 0, expected))
     token_id = (seed + 1) % shape.vocab
     tokens.append((token_id, 0, True, model.token(token_id, 0, True)))
+    poisoned = None
+    if numerical_fault is not None:
+        from numerical_faults import poison_image
+        poisoned = poison_image(model, numerical_fault, tokens[0][0])
     if diagnostic_first_token:
         if upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or abort_stage:
             raise ValueError("first-token diagnostic cannot replace protocol/fault tests")
@@ -797,6 +806,72 @@ endmodule
           load_accepts,writes,csr_compares);
  $finish;
 """
+    if poisoned is not None:
+        bench = bench.replace("integer response_writes=0;", r"""
+integer poison_address,poison_bits,original_bits,poison_seen=0,uploads_completed=0;
+integer response_writes=0;
+always @(posedge ddr_clk) if(rst_n && avm_readdatavalid &&
+                            cursor-1 == (poison_address>>6)) begin
+ if(avm_readdata[(poison_address&63)*8+:16] === poison_bits[15:0])
+  poison_seen=poison_seen+1;
+end
+""")
+        bench = bench.replace(
+            "writes!==(WRITE_FAULT_VALUE<0 ? IMAGE_LAST+1 : WRITE_FAULT_VALUE+1)",
+            "writes!==(uploads_completed*(IMAGE_LAST+1) + "
+            "(WRITE_FAULT_VALUE<0 ? IMAGE_LAST+1 : WRITE_FAULT_VALUE+1))")
+        bench = bench.replace(
+            "  repeat (30) edge_tick();\n end\nendtask",
+            "  uploads_completed=uploads_completed+1;\n"
+            "  repeat (30) edge_tick();\n end\nendtask")
+        bench = bench.replace("load_accepts!==IMAGE_LAST+1",
+                              "load_accepts!==uploads_completed*(IMAGE_LAST+1)")
+        bench = bench.replace(' $readmemh("IMAGE_PATH",image);', r"""
+ if(!$value$plusargs("NUMERICAL_ADDRESS=%d",poison_address) ||
+    !$value$plusargs("NUMERICAL_BITS=%d",poison_bits) ||
+    !$value$plusargs("ORIGINAL_BITS=%d",original_bits))
+  $fatal(1,"NUMERICAL_MISSING_FAULT_INPUTS");
+ $readmemh("IMAGE_PATH",image);
+""")
+        inference = r"""
+ @(negedge clk);
+ token_id=token_words[0][31:0];token_pos=0;new_sequence=1;token_valid=1;logit_ready=1;
+ if(token_ready!==1) $fatal(1,"NUMERICAL_TOKEN_NOT_READY");
+ edge_tick();
+ if(token_ready!==0 || done!==0 || logit_valid!==0)
+  $fatal(1,"NUMERICAL_ACCEPT_EDGE");
+ @(negedge clk);token_valid=0;
+ timeout_cycles=0;
+ while(done!==1 && timeout_cycles<10000000) begin
+  edge_tick();
+  if(logit_valid!==0) $fatal(1,"NUMERICAL_FAULT_PUBLISHED_LOGIT");
+  if((^{done,error,logit_valid,token_ready})===1'bx)
+   $fatal(1,"NUMERICAL_ACTIVE_XZ");
+  timeout_cycles=timeout_cycles+1;
+ end
+ if(done!==1 || error!==1 || poison_seen<1 || outstanding!==0 ||
+    response_writes!==writes || avm_read!==0 || avm_write!==0)
+  $fatal(1,"NUMERICAL_NO_DRAINED_ERROR_COMPLETION seen=%0d done=%b error=%b pending=%0d",
+         poison_seen,done,error,outstanding);
+ repeat(30) begin
+  edge_tick();
+  if(done!==0 || error!==0 || logit_valid!==0 || token_ready!==0 ||
+     outstanding!==0 || avm_read!==0 || avm_write!==0)
+   $fatal(1,"NUMERICAL_FAULT_FALSE_SUCCESS_OR_UNSETTLED");
+ end
+ csr(0,16'h0004,0,0,32'h0000000c);
+ csr(1,16'h0008,1,0,0);
+ csr(1,16'h0008,4,0,0);
+ image[poison_address>>6][(poison_address&63)*8+:16]=original_bits[15:0];
+ upload();
+ csr(1,16'h0008,2,0,0);
+ repeat(30) edge_tick();
+ if(token_ready!==1) $fatal(1,"NUMERICAL_REPAIRED_IMAGE_NOT_READY");
+ run_token(token_words[0][31:0],0,1'b1,token_words[0][65+:VOCAB_VALUE*32]);
+ $display("CHECKS_PASSED numerical_fault poison_seen=%0d error_completion=1 drained=1 recovery_logits=%0d",
+          poison_seen,logits);
+ $finish;
+"""
     if fault_read >= 0:
         inference = r"""
  @(negedge clk);token_id=1;token_pos=0;new_sequence=1;token_valid=1;
@@ -1025,7 +1100,8 @@ endtask
  for(case_index=0;case_index<descriptor_count;case_index=case_index+1)
   csr(1,descriptor_words[case_index][47:32],descriptor_words[case_index][31:0],0,0);
 """)
-        if not (upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or abort_stage):
+        if not (upload_only or fault_read >= 0 or fault_write >= 0 or orphan_fault or abort_stage
+                or numerical_fault is not None):
             bench = bench.replace("AFTER_COMMIT", runtime_inference)
         else:
             bench = bench.replace("AFTER_COMMIT", inference)
@@ -1049,6 +1125,12 @@ endtask
         }.items():
             bench = bench.replace(old, new)
         runtime_args = ("+CASE_DIR=" + evidence.relative(case_folder),)
+        if poisoned is not None:
+            runtime_args += (
+                "+NUMERICAL_ADDRESS=" + str(poisoned["byte_address"]),
+                "+NUMERICAL_BITS=" + str(poisoned["invalid_bits"]),
+                "+ORIGINAL_BITS=" + str(poisoned["original_bits"]),
+            )
     replacements = {
         "AFTER_COMMIT": inference.replace("MODE", mode),
         "AFTER_UPLOAD": after_upload,
@@ -1087,6 +1169,7 @@ endtask
         "write_fault_beat": fault_write,
         "orphan_response_fault": orphan_fault,
         "abort_stage": abort_stage,
+        "numerical_fault": poisoned,
         "descriptors": model.descriptors,
     }
     runtime_case["engineering_fixture"] = evidence.record["engineering_fixture"]
@@ -2461,6 +2544,11 @@ def run_probe(evidence, name, seed, config=0):
         dequant(evidence, seed)
     elif name == "math":
         math_probe(evidence, seed)
+    elif name in ("numerical-faults", "numerical-fault-smoke"):
+        from numerical_faults import numerical_faults
+        numerical_faults(evidence, seed, selected=(
+            ("awq_embedding_inf", "bf16_weight_0_nonfinite")
+            if name == "numerical-fault-smoke" else None))
     elif name == "kernel-default":
         kernel_default(evidence, seed)
     elif name == "attention-context":
@@ -2524,6 +2612,10 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "attention-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("attention_cold_value", "attention_drop_cold_term"))
+    elif name == "numerical-fault-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=(
+            "stored_fp16_nonfinite", "stored_bf16_nonfinite", "stored_negative_scale"))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

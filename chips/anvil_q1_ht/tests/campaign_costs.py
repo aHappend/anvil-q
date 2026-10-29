@@ -21,7 +21,7 @@ from verify import Evidence, ROOT, file_sha256
 
 CAMPAIGN = (
     "fixture-integrity", "checkpoint-repack", "parameters", "dequant", "tensor", "math",
-    "dma", "kv", "csr-upload", "integration-matrix", "faults", "orphan-fault",
+    "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults", "orphan-fault",
     "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
     "synthesis", "kernel-default", "projection-default", "bf16-default",
     "vocabulary-default",
