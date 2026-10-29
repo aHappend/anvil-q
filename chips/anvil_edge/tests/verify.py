@@ -64,6 +64,11 @@ from unicode_tables import run_unicode_conversion, run_unicode_rtl
 from metadata import run_metadata
 from qwen_integration import run_qwen_integration, run_qwen_boot
 from qwen_shell import run_qwen_shell, run_shell_scoreboard
+from deepseek_assets import (
+    run_deepseek_discovery, run_deepseek_intake,
+    run_deepseek_assets, run_deepseek_reference,
+)
+from deepseek_dfa import run_deepseek_dfa
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -970,6 +975,11 @@ def main():
         "mapper-cache",
         "head-row-reuse",
         "head-row-shell",
+        "official-deepseek-discovery",
+        "official-deepseek-intake",
+        "official-deepseek-assets",
+        "official-deepseek-reference",
+        "official-deepseek-dfa",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
                         help="Project-relative prior preparation receipt; retained, never overwritten")
@@ -1128,6 +1138,21 @@ def main():
             run_drain_prompts(evidence)
         elif args.probe == "official-qwen-assets":
             run_official_assets(evidence)
+        elif args.probe == "official-deepseek-discovery":
+            run_deepseek_discovery(evidence)
+            reason = "Official DeepSeek revision metadata retained; no functional comparisons"
+        elif args.probe == "official-deepseek-intake":
+            run_deepseek_intake(evidence)
+            reason = "Immutable DeepSeek raw tokenizer/license intake retained; no functional comparisons"
+        elif args.probe == "official-deepseek-assets":
+            run_deepseek_assets(evidence)
+            reason = "Pinned local DeepSeek asset integrity checked; RTL comparisons remain pending"
+        elif args.probe == "official-deepseek-reference":
+            run_deepseek_reference(evidence)
+            reason = "Official DeepSeek software byte vectors compared; independent RTL coverage remains pending"
+        elif args.probe == "official-deepseek-dfa":
+            run_deepseek_dfa(evidence)
+            reason = "Independent DeepSeek pretokenization compilation compared; complete profile remains pending"
         elif args.probe == "official-qwen-reference":
             run_official_checkpoint(evidence)
         elif args.probe == "official-dependency-repair":
@@ -1202,6 +1227,8 @@ def main():
             run_qwen_regex(evidence)
             run_unicode_rtl(evidence)
             run_official_checkpoint(evidence)
+            run_deepseek_reference(evidence)
+            run_deepseek_dfa(evidence)
             run_qwen_integration(evidence)
             run_qwen_boot(evidence)
             run_qwen_shell(evidence)
