@@ -2296,7 +2296,8 @@ def measurement_records(transcript, prefix):
     return records
 
 
-def dma_probe(evidence, depth, seed=17, *, ddr_period_ns=3.75, ddr_phase_ns=0):
+def dma_probe(evidence, depth, seed=17, *, ddr_period_ns=3.75, ddr_phase_ns=0,
+              upload_validation=False):
     """Keep nominal D1 measurements separate from phase/rate CDC stress runs."""
     if ddr_period_ns <= 0 or not 0 <= ddr_phase_ns < ddr_period_ns:
         raise ValueError("DMA test clocks require a positive period and an in-period phase")
@@ -2777,6 +2778,9 @@ initial begin
 end
 endmodule
 """
+    if upload_validation:
+        from dma_upload import instrument_upload
+        bench = instrument_upload(bench, seed)
     clock_case = ("" if (ddr_period_ns, ddr_phase_ns) == (3.75, 0) else
                   f"-ddr-{ddr_period_ns:g}-phase-{ddr_phase_ns:g}")
     bench = bench.replace(
@@ -2786,13 +2790,19 @@ endmodule
         if ddr_phase_ns else
         f"always #{ddr_period_ns / 2:g} ddr_clk=!ddr_clk;")
     transcript = evidence.simulate(
-        f"dma-{depth}{clock_case}", bench.replace("DEPTH_VALUE", str(depth))
+        f"dma-{'upload-' if upload_validation else ''}{depth}{clock_case}-"
+        f"{getattr(evidence, 'default_simulator', 'iverilog')}",
+        bench.replace("DEPTH_VALUE", str(depth))
         .replace("SEED_VALUE", str(seed or 1))
         .replace("DDR_PERIOD_VALUE", f"{ddr_period_ns:g}")
         .replace("DDR_FIRST_EDGE_VALUE", f"{ddr_phase_ns + ddr_period_ns / 2:g}"),
         ["anvil_q1_ht_reset_sync.sv", "anvil_q1_ht_cdc_mailbox.sv",
          "anvil_q1_ht_tile_bank.sv", "anvil_q1_ht_weight_tiles.sv",
          "anvil_q1_ht_weight_dma.sv"])
+    if upload_validation:
+        from dma_upload import validate_upload
+        validate_upload(evidence, transcript, seed)
+        return measurement_records(transcript, "CHECKS_PASSED dma_upload")
     measured = measurement_records(transcript, "MEASURED_DMA")
     pipeline = measurement_records(transcript, "CHECKS_PASSED pipelined_dma")
     clocks = measurement_records(transcript, "CHECKS_PASSED dma_clocks")
@@ -3049,6 +3059,15 @@ def run_probe(evidence, name, seed, config=0):
             dma_probe(evidence, depth, seed)
         for period, phase in ((3.75, 1.25), (20, 2.5)):
             dma_probe(evidence, 3, seed, ddr_period_ns=period, ddr_phase_ns=phase)
+        from dma_upload import upload_checks
+        upload_checks(evidence, seed)
+    elif name in ("dma-upload", "dma-upload-sensitivity"):
+        from dma_upload import upload_checks
+        upload_checks(evidence, seed)
+        if name == "dma-upload-sensitivity":
+            from sensitivity import run_sensitivity
+            run_sensitivity(evidence, seed, only=(
+                "upload_byteenable_ignored", "upload_address_high_bit_lost"))
     elif name == "sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed)

@@ -452,7 +452,7 @@ def main():
                                            "numerical-faults", "numerical-fault-smoke",
                                            "numerical-fault-sensitivity",
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
-                                           "dma-compiled",
+                                           "dma-compiled", "dma-upload", "dma-upload-sensitivity",
                                            "kernel-default", "projection-default", "projection-k",
                                            "layer-awq", "layer-bf16", "layer-sensitivity",
                                            "attention-context", "attention-default", "attention-sensitivity",
