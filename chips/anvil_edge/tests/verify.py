@@ -108,7 +108,7 @@ def storage_snapshot(path):
 
 
 class Evidence:
-    def __init__(self, label, preparation=False):
+    def __init__(self, label, preparation=False, parent_budget_s=None):
         parent = ROOT / "evidence" / ("preparation" if preparation else "verification")
         self.path = parent / (label + "-" + uuid.uuid4().hex)
         self.path.mkdir(parents=True, exist_ok=False)
@@ -126,6 +126,7 @@ class Evidence:
         self._peak_children = 0
         self._case_scopes = 0
         self._started = time.monotonic()
+        self._parent_budget_s = parent_budget_s
         self._limits = resource_limits(ROOT)
         self._slots = threading.BoundedSemaphore(self._limits["workers"])
         self.record = {
@@ -137,7 +138,7 @@ class Evidence:
             "start_utc": utc(),
             "timeout_s": WALL_TIMEOUT,
             "timeout_scope": "Default per-child budget; child receipts record actual enforced limits",
-            "parent_timeout_s": None,
+            "parent_timeout_s": parent_budget_s,
             "parent_timeout_owner": "shared runtime",
             "children": [],
             "source_sha256": {},
@@ -234,6 +235,13 @@ class Evidence:
                                time.monotonic() - queued)
 
     def _child(self, argv, name, timeout, allow_failure, cwd, queue_seconds):
+        requested_timeout = timeout
+        if self._parent_budget_s is not None:
+            # Reserve settlement time inside the admitted aggregate patrol budget.
+            timeout = min(timeout, self._parent_budget_s - 10 -
+                          (time.monotonic() - self._started))
+            if timeout <= 0:
+                raise VerificationFailure("Shared-runtime diagnostic budget exhausted")
         with self._lock:
             index = self._root._child_index
             self._root._child_index += 1
@@ -244,6 +252,8 @@ class Evidence:
             "argv": [str(arg) for arg in argv],
             "cwd": "." if cwd is None else self.relative(cwd),
             "start_utc": utc(), "timeout_s": timeout,
+            "requested_timeout_s": requested_timeout,
+            "aggregate_budget_s": self._parent_budget_s,
             "stdout": self.relative(directory / "stdout.log"),
             "stderr": self.relative(directory / "stderr.log"),
             "timed_out": False, "child_settled": False,
@@ -945,6 +955,7 @@ def main():
         "official-qwen-boot",
         "official-qwen-shell",
         "official-qwen-shell-general",
+        "official-qwen-shell-general-bypass",
         "shell-scoreboard",
         "mapper-cache",
     ))
@@ -956,7 +967,10 @@ def main():
                         help="Measured preparation receipt for the read-only schedule probe")
     args = parser.parse_args()
     label = args.probe or args.check
-    evidence = Evidence(label, preparation=args.probe is not None)
+    evidence = Evidence(
+        label, preparation=args.probe is not None,
+        parent_budget_s=2700 if args.probe == "official-qwen-shell-general-bypass" else None,
+    )
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
     try:
         evidence.record["incomplete_predecessors"] = []
@@ -1127,6 +1141,8 @@ def main():
             run_qwen_shell(evidence)
         elif args.probe == "official-qwen-shell-general":
             run_qwen_shell(evidence, general_only=True)
+        elif args.probe == "official-qwen-shell-general-bypass":
+            run_qwen_shell(evidence, general_only=True, bypass_only=True)
         elif args.probe == "shell-scoreboard":
             run_shell_scoreboard(evidence)
         elif args.probe == "simulator-tiering":

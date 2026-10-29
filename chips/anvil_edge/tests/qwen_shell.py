@@ -635,20 +635,53 @@ def shell_case(evidence, info, seed, bypass, general_only):
                              None, simulator="verilator", optimize=True)
 
 
-def run_qwen_shell(evidence, general_only=False):
+def run_qwen_shell(evidence, general_only=False, *, bypass_only=False):
+    require(not bypass_only or general_only, "Bypass diagnostic requires one general prompt")
     evidence.tools(("python3", "verilator", "g++", "make"))
     evidence.child(["./.venv/bin/python", "tests/qwen_shell.py",
                     evidence.relative(evidence.path)], "qwen-shell-reference")
     info = json.loads((evidence.path / "shell-reference.json").read_bytes())
     # Initial bounded integration uses the general-knowledge prompt on both pins.
     # The complete L1 branch retains all prompts, reload and all admitted seeds.
-    evidence.run_cases([
+    cases = [
         (f"qwen-shell-b{bypass}-s{seed}",
          lambda scope, seed=seed, bypass=bypass:
          shell_case(scope, info, seed, bypass, general_only))
         for seed in ((17,) if general_only else (1, 17, 89))
-        for bypass in (0, 1)
-    ], workers=1)
+        for bypass in ((1,) if bypass_only else (0, 1))
+    ]
+    if bypass_only:
+        require([name for name, _ in cases] == ["qwen-shell-b1-s17"],
+                "Diagnostic batch must contain only bypass seed17")
+        evidence.record["diagnostic_selection"] = {
+            "prompt": "What is the capital of France?",
+            "seed": 17, "bypass": 1, "planned_cases": [name for name, _ in cases],
+            "scope": info["scope"], "mandatory_l1_matrix_changed": False,
+        }
+    try:
+        evidence.run_cases(cases, workers=1)
+    finally:
+        if bypass_only:
+            progress = []
+            for child in evidence.record["children"]:
+                if child["argv"][0].endswith("/simulation"):
+                    lines = (ROOT / child["stdout"]).read_text().splitlines()
+                    events = [line for line in lines if line.startswith("QWEN_SHELL_")]
+                    progress.append({
+                        "receipt": str(Path(child["stdout"]).parent / "receipt.json"),
+                        "duration_s": child["duration_s"],
+                        "timed_out": child["timed_out"], "exit_code": child["exit_code"],
+                        "child_settled": child["child_settled"],
+                        "process_group_settled": child["process_group_settled"],
+                        "events": events,
+                        "last_reported_cycle": max(
+                            (int(value) for line in events
+                             for value in re.findall(r"\bcycles=(\d+)", line)), default=0),
+                        "interpretation": ("Incomplete execution, not a numerical mismatch"
+                                           if child["timed_out"] else
+                                           "See original assertions and comparison totals"),
+                    })
+            evidence.record["diagnostic_progress"] = progress
 
 
 def run_shell_scoreboard(evidence):
