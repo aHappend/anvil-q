@@ -349,7 +349,8 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
             mutation_assertions=mutation_assertions, boundary=boundary,
             restart_at=restart_at, fault_scenario=fault_scenario, adversarial=adversarial,
             implementation=implementation, native_asset=native_asset, testbench=testbench,
-            stream_compare=stream_compare, sparse_scan=sparse_scan, compiled_host=compiled_host)
+            stream_compare=stream_compare, sparse_scan=sparse_scan, compiled_host=compiled_host,
+            host_cycle_limit=host_cycle_limit)
         complete["tier_dispatch"] = {
             "requested_simulator": "iverilog", "actual_full_simulator": "verilator",
             "compact_smoke": smoke,
@@ -420,12 +421,16 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     elif simulator == "verilator":
         obj = folder / "obj"
         if compiled_host:
+            if "g++" not in getattr(run, "tool_versions", {}):
+                run.versions([("g++", "--version")])
             constants = {"BANKS": g.BANKS, "QUEUE_DEPTH": g.QUEUE_DEPTH,
                          "LAYERS": g.NUM_LAYERS, "PROFILE": g.PROFILE,
                          "KV_DIM": g.NUM_KV_HEADS * g.HEAD_DIM,
                          "INTERMEDIATE": g.INTERMEDIATE_SIZE, "HIDDEN": g.HIDDEN_SIZE,
                          "VOCAB": g.VOCAB_SIZE}
-            flags = "-O3 -std=c++20 " + " ".join(f"-DHOST_{k}={v}" for k, v in constants.items())
+            # GCC's vectorized generated wide-register copies fault on an unaligned load.
+            flags = "-O3 -fno-tree-vectorize -std=c++20 " + " ".join(
+                f"-DHOST_{k}={v}" for k, v in constants.items())
             argv = ["verilator", "--cc", "--exe", "--build", "--assert", "-Wno-fatal",
                     *VERILATOR_UNROLL, "--top-module", "anvil_q3_top",
                     "--Mdir", run.rel(obj), "-o", "decoder", "-CFLAGS", flags]

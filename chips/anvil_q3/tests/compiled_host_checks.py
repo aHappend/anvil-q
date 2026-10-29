@@ -33,11 +33,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", choices=("equivalence", "C", "compact"), default="equivalence")
     parser.add_argument("--banks", type=int, choices=(1, 2, 4, 8), default=8)
+    parser.add_argument("--tokens", type=int, choices=(1, 4), default=4,
+                        help="C diagnostic prefix length; four tokens by default")
     args = parser.parse_args()
     run = Run("evidence/preparation/compiled-host-" + args.probe,
               "public-pin compiled decoder driver diagnostic",
-              repair_of="evidence/preparation/simulation-tiering-workload-pacing/"
-                        "20261029T165013Z-5b61884a4a7d/receipt.json")
+              repair_of="evidence/preparation/compiled-host-equivalence/"
+                        "20261029T192252Z-3b6ff5174f03/receipt.json")
     print(run.rel(run.path / "receipt.json"), flush=True)
     try:
         run.versions([("verilator", "--version"), ("iverilog", "-V"), ("vvp", "-V"),
@@ -47,7 +49,8 @@ def main():
         elif args.probe == "C":
             result = decoder_case(
                 run, replace(C, BANKS=args.banks, CACHE_MODE=2, INT4_ASYM=1),
-                simulator="verilator", tokens=[1, 4, 2, 6], prefill_tokens=2,
+                simulator="verilator", tokens=[1, 4, 2, 6][:args.tokens],
+                prefill_tokens=min(2, args.tokens),
                 label="compiled-C", compiled_host=True)
         else:
             result = decoder_case(

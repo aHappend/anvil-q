@@ -189,6 +189,8 @@ class Run:
         identity = {"argv": normalized, "tool": self.tool_versions[tool],
                     "cwd": str(work.relative_to(ROOT)),
                     "source_inventory": self.hashes}
+        if tool == "verilator" and "g++" in self.tool_versions:
+            identity["cpp_toolchain"] = self.tool_versions["g++"]
         key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
         with self.lock:
             gate = self.build_locks.setdefault(key, threading.Lock())
