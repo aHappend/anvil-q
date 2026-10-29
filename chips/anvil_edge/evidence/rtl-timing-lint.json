@@ -1,6 +1,6 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-10-29T03:27:37.625455+00:00",
+  "timestamp_utc": "2026-10-29T17:51:32.992162+00:00",
   "root": "/data/sufeng/anvil-edge-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
@@ -34,7 +34,7 @@
     "rtl/anvil_edge_spi_reader.sv": "69420da88751f59ac3c2c530ac656ff2b293624c47949fd58c6029f5791514be",
     "rtl/anvil_edge_table_record_reader.sv": "b0759d73aa5c382832ca9198e5c25684d859318c6be8c84eaa8407773f394cd7",
     "rtl/anvil_edge_tagged_dfa.sv": "99414533a2cb04c7db7fac91acde8b9874ae28355ec6d79a6a213332f5dad63a",
-    "rtl/anvil_edge_tensor_mapper.sv": "5a9f273d97a00524d6ce00043c367bb16e78613a79b343ec5d70f79d9d864558",
+    "rtl/anvil_edge_tensor_mapper.sv": "f2cc23a6955ee765dc157aecc325a239e7c096be474a00d95a1ed6a57a59c555",
     "rtl/anvil_edge_text_bpe_span.sv": "a3268bfbec1979dc0fa7d6cf4a2d034f6f638c375326472d5fd4f991bb862a9c",
     "rtl/anvil_edge_token_table_validator.sv": "0e3dab8523d6930a9a972fecd2f567249cfc5722f167be1f901159f3512c498d",
     "rtl/anvil_edge_top.sv": "72b8f572490a9173baedbc69ab7c890825d9b1cc7ca7ca85bbd30a1a636bcb87",
@@ -51,7 +51,7 @@
     "rtl/anvil_q1_rmsnorm.sv": "8e55914cbf80dfba3d54d996d6568a69720ff1244e37170cba78073ad7cf0e75",
     "rtl/anvil_q1_rope.sv": "5eb1d4a75b951df4d582122b6e71f7f429ec5a307bebe17724c8bda0aa13c7b0",
     "rtl/anvil_q1_swiglu_mlp.sv": "94a8bcc0a0089a7fc8d0112c93f11b41087f99851e62d8d90ecfd6a9df83c743",
-    "rtl/anvil_q1_top.sv": "f237d09c908e37fc46331d4c98b2eb7cf53237600fe5b65e644a613278338583",
+    "rtl/anvil_q1_top.sv": "9466f07b1ca65fb8b5fa37b2429df897287f1cc294bacab7d2c81607c71c6c8b",
     "rtl/anvil_q1_w4a16_gemv.sv": "fcc247a43a0620bdd974add4821c958798b0a9c075d7e45745737551113f5bb5"
   },
   "netlist_sha256": {},
