@@ -35,7 +35,7 @@ def build_inputs(directory, compact=False, physical_capacity=None):
     directory = ROOT / directory
     vocabulary, capacity = (257, 257) if compact else (VOCABULARY, CAPACITY)
     if physical_capacity is not None:
-        require(compact and 257 <= physical_capacity <= 32769,
+        require(compact and 257 <= physical_capacity <= 65537,
                 "Capacity sweep is a bounded synthetic-shell diagnostic only")
         capacity = physical_capacity
     if compact:
