@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 
 from experiments import dequant, dma_probe, kv_probe, tensor, top_probe
+from arithmetic_benchmark import arithmetic_default
 
 
 def run_sensitivity(parent, seed, only=None):
@@ -37,6 +38,11 @@ def run_sensitivity(parent, seed, only=None):
          "wire move_request = request_pending && output_space && !core_failed;",
          "wire move_request = request_pending && !core_failed;",
          lambda run: dma_probe(run, 3, seed), "PIPELINED_DMA_POSTEDGE_STALLED_PAYLOAD_CHANGED"),
+        ("matched_arithmetic_lane_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: arithmetic_default(run, seed), "ARITHMETIC_MISMATCH"),
     )
     if only is not None:
         selected = set(only)

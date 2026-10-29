@@ -2463,12 +2463,18 @@ def run_probe(evidence, name, seed, config=0):
         math_probe(evidence, seed)
     elif name == "kernel-default":
         kernel_default(evidence, seed)
+    elif name in ("layer-awq", "layer-bf16"):
+        from layer_benchmark import layer_default
+        layer_default(evidence, seed, name[6:].upper())
     elif name == "projection-default":
         from benchmarks import projection_default
         projection_default(evidence, seed)
     elif name == "projection-k":
         from benchmarks import projection_default
         projection_default(evidence, seed, (1,), simulator="verilator")
+    elif name == "arithmetic-default":
+        from arithmetic_benchmark import arithmetic_default
+        arithmetic_default(evidence, seed)
     elif name in ("bf16-default", "vocabulary-default"):
         from benchmarks import dense_default
         dense_default(evidence, seed, vocabulary=name == "vocabulary-default")
@@ -2501,6 +2507,9 @@ def run_probe(evidence, name, seed, config=0):
     elif name == "dma-pipeline-sensitivity":
         from sensitivity import run_sensitivity
         run_sensitivity(evidence, seed, only=("tile_read_backpressure",))
+    elif name == "arithmetic-sensitivity":
+        from sensitivity import run_sensitivity
+        run_sensitivity(evidence, seed, only=("matched_arithmetic_lane_sign",))
     elif name == "faults":
         model = EngineeringModel(MATRIX[0], seed, "AWQ")
         last_write = len(model.image) // 64 - 1

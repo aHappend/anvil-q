@@ -16,6 +16,9 @@ def projection_default(evidence, seed, projections=range(7), simulator="verilato
         raise AssertionError(
             "default AWQ service-inclusive speedup below required 8.0x: " +
             "; ".join(failures) + "; all numerical comparisons and cycle counts retained")
+    if tuple(projections) == tuple(range(7)):
+        from arithmetic_benchmark import arithmetic_default
+        arithmetic_default(evidence, seed)
 
 
 def projection_case(evidence, seed, projection, simulator, mode="AWQ"):

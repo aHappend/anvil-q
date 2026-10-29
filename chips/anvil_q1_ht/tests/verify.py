@@ -407,10 +407,13 @@ def main():
     parser.add_argument("--probe", choices=("tensor", "dequant", "math", "top-awq", "top-bf16",
                                            "csr-upload", "synthesis", "kv", "parameters", "dma",
                                            "sensitivity", "dma-pipeline-sensitivity",
+                                           "arithmetic-sensitivity",
                                            "faults", "orphan-fault", "abort-states",
                                            "synthesis-small", "synthesis-control", "fixture-integrity",
                                            "dma-compiled",
                                            "kernel-default", "projection-default", "projection-k",
+                                           "layer-awq", "layer-bf16",
+                                           "arithmetic-default",
                                            "integration-matrix", "matrix-config", "compatibility",
                                            "compatibility-matrix", "bf16-default", "vocabulary-default",
                                            "checkpoint-repack", "retention", "retention-audit",
@@ -474,7 +477,7 @@ def main():
             "dma", "kv", "csr-upload", "integration-matrix", "faults",
             "orphan-fault", "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
             "synthesis", "kernel-default", "projection-default", "bf16-default",
-            "vocabulary-default",
+            "vocabulary-default", "layer-awq", "layer-bf16",
         )
         ledger = [{"probe": name, "outcome": "not_run"} for name in campaign]
         evidence.record["mandatory_campaign"] = ledger
