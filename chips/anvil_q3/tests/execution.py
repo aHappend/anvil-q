@@ -43,11 +43,11 @@ def execution_resources():
     if limit.is_file():
         value = limit.read_text().strip()
         memory = None if value == "max" else int(value)
-    workers = min(2, cpus)
-    if memory is not None and memory < 4 * 1024**3:
-        workers = 1
-    build_jobs = min(2, max(1, cpus // workers))
-    if memory is not None and memory < 8 * 1024**3:
+    available = os.sysconf("SC_AVPHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
+    budget = min(available, memory) if memory is not None else available
+    workers = min(8, cpus, max(1, (budget - 2 * 1024**3) // (512 * 1024**2)))
+    build_jobs = min(2, max(1, cpus // min(workers, 2)))
+    if budget < 8 * 1024**3:
         build_jobs = 1
     return {"workers": workers, "build_jobs": build_jobs,
             "affinity_cpus": cpus, "memory_limit_bytes": memory}
@@ -101,6 +101,7 @@ class Run:
         self.records = []
         self.lock = threading.RLock()
         self.build_locks = {}
+        self.compiler_slots = threading.BoundedSemaphore(min(2, execution_resources()["workers"]))
         self.builds = {}
         self.build_reuses = []
         self.start = time.time()
@@ -143,7 +144,7 @@ class Run:
                               "removed": sorted(recorded - selected)}, sort_keys=True))
 
     def parallel(self, jobs):
-        """Bound both compiler memory use and simulation concurrency to two workers."""
+        """Bound simulations by CPU/memory availability and compilers separately."""
         workers = execution_resources()["workers"]
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(job) for job in jobs]
@@ -205,7 +206,8 @@ class Run:
                     self.build_reuses.append(reuse)
                     write_json(self.path / "build-reuse.json", self.build_reuses)
                 return text, record
-            text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+            with self.compiler_slots:
+                text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
             if record["exit_code"] != 0:
                 return text, record
             cache = self.path / "builds" / key

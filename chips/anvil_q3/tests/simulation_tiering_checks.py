@@ -260,7 +260,7 @@ def scalability(run):
     """Same elaboration, different stimulus: compare raw and streaming transports."""
     jobs = [
         lambda: decoder_case(run, A, seed=17, simulator="verilator", tokens=[1, 4],
-                             label="raw", stream_compare=False),
+                             label="raw", stream_compare=False, sparse_scan=False),
         lambda: decoder_case(run, A, seed=17, simulator="verilator", tokens=[1, 4],
                              label="stream"),
         lambda: decoder_case(run, A, seed=89, simulator="verilator", tokens=[1, 4, 2],
@@ -290,10 +290,25 @@ def scalability(run):
             "scope": "measured focused advisory regression; not full behavior gate"}
 
 
+def workload_pacing(run):
+    results = run.parallel([
+        lambda: decoder_case(run, replace(A, BANKS=1), simulator="iverilog",
+                             tokens=[1], prefill_tokens=1, label="A-compact"),
+        lambda: decoder_case(run, replace(B, BANKS=1), simulator="verilator",
+                             label="B-seven-token"),
+        lambda: decoder_case(run, replace(C, CACHE_MODE=2, INT4_ASYM=1),
+                             simulator="verilator", tokens=[1, 4, 2, 6],
+                             prefill_tokens=2, label="C-four-token"),
+    ])
+    return {"results": results, "elapsed_s": __import__("time").time() - run.start,
+            "scope": "measured representative A/B/C pacing, not the complete matrix"}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", choices=("dispatch", "coverage", "preflight", "guard",
-                                           "smoke", "portability", "legacy", "scalability"),
+                                           "smoke", "portability", "legacy", "scalability",
+                                           "workload-pacing"),
                         default="dispatch")
     parser.add_argument("--simulator", choices=("iverilog", "verilator"), default="verilator")
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
@@ -316,6 +331,8 @@ def main():
             result = json.loads(text)
         elif args.probe == "scalability":
             result = scalability(run)
+        elif args.probe == "workload-pacing":
+            result = workload_pacing(run)
         elif args.probe == "portability":
             from compatibility_checks import compact_portability
             result = compact_portability(run)
