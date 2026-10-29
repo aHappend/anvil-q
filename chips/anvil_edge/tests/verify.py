@@ -482,8 +482,15 @@ class Evidence:
                 "-Wno-fatal", "--x-initial", "unique", "--x-assign", "unique",
                 "-j", "2",
             ]
+            # GCC's synthetic .fast/.slow includes fail if their .gch disappears.
+            # Include the real generated header even when PCH artifacts are absent.
+            make_flags = [
+                'VK_PCH_I_FAST="-include Vbench__pch.h"',
+                'VK_PCH_I_SLOW="-include Vbench__pch.h"',
+            ]
             if optimize:
-                compile_options.extend(["-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3"])
+                make_flags.extend(["OPT_FAST=-O3", "OPT_SLOW=-O3"])
+            compile_options.extend(["-MAKEFLAGS", " ".join(make_flags)])
             if driver_source is not None:
                 compile_options[0:1] = ["--cc", "--exe", "--build"]
                 record["clock_driver_sha256"] = digest(driver_source)
@@ -943,7 +950,8 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", choices=("l1", "clean-reproduction"))
     group.add_argument("--probe", choices=(
-        "arithmetic", "fifo", "controller", "uart", "detokenizer", "boot",
+        "arithmetic", "fifo", "controller", "controller-build-repair",
+        "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
         "reproduction",
         "numerical",
@@ -1016,7 +1024,7 @@ def main():
         "official-llama-discovery",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
-                        help="Project-relative prior preparation receipt; retained, never overwritten")
+                        help="Project-relative prior evidence receipt; retained, never overwritten")
     parser.add_argument("--incomplete-predecessor", action="append", default=[],
                         help="Prior project preparation directory lacking a final receipt")
     parser.add_argument("--schedule-receipt", action="append", default=[],
@@ -1028,7 +1036,7 @@ def main():
         parent_budget_s=2700 if args.probe in (
             "official-qwen-shell-general-bypass", "deepseek-shell-compact",
             "shell-driver-comparison", "shell-driver-scaling",
-            "shell-driver-capacity") else None,
+            "shell-driver-capacity", "controller-build-repair") else None,
     )
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
     try:
@@ -1058,9 +1066,10 @@ def main():
         for name in args.repair_of:
             relative = Path(name)
             if relative.is_absolute() or ".." in relative.parts or (
-                relative.parts[:2] != ("evidence", "preparation")
+                relative.parts[:2] not in (
+                    ("evidence", "preparation"), ("evidence", "verification"))
             ) or relative.name != "receipt.json":
-                raise VerificationFailure("repair-of requires a project preparation receipt")
+                raise VerificationFailure("repair-of requires a project evidence receipt")
             prior = ROOT / relative
             evidence.record["repair_of"].append(
                 {"path": name, "sha256": digest(prior)}
@@ -1071,6 +1080,44 @@ def main():
             run_fifo(evidence)
         elif args.probe == "controller":
             run_controller(evidence)
+        elif args.probe == "controller-build-repair":
+            from protocol import controller_test
+
+            if len(args.repair_of) != 1:
+                raise VerificationFailure("Controller repair requires its original failed compile receipt")
+            prior = ROOT / args.repair_of[0]
+            failed = json.loads(prior.read_text())
+            original = prior.parents[2]
+            previous = json.loads((original / "receipt.json").read_text())
+            rows = [row for row in previous["coverage"]
+                    if row.get("name") == "controller-c4096-s1"]
+            if (failed["exit_code"] != 2 or failed["timed_out"] or
+                    not failed["child_settled"] or not failed["process_group_settled"] or
+                    len(rows) != 1):
+                raise VerificationFailure("Expected the retained, settled controller build failure")
+            for name in ("tests/protocol.py", "rtl/anvil_edge_autoregressive_fsm.sv"):
+                if (ROOT / name).read_bytes() != (original / "sources" / name).read_bytes():
+                    raise VerificationFailure(f"Original controller input changed: {name}")
+            controller_test(evidence, 4096, 1)
+            repaired = evidence.record["coverage"][-1]
+            old_bench = ROOT / failed["argv"][-1]
+            new_bench = evidence.path / repaired["name"] / "compiled-bench.sv"
+            if (new_bench.read_bytes() != old_bench.read_bytes() or
+                    repaired["actual_comparisons"] != rows[0]["required_comparisons"]):
+                raise VerificationFailure("Controller repair changed the original bench or comparison count")
+            evidence.record["controller_repair"] = {
+                "original_receipt": args.repair_of[0],
+                "original_summary": evidence.relative(original / "receipt.json"),
+                "compiled_bench_identical": True,
+                "original_required_comparisons": rows[0]["required_comparisons"],
+            }
+            for seed in (17, 89):
+                controller_test(evidence, 4096, seed)
+            for seed in (1, 17):
+                controller_test(evidence, 1, seed)
+                cached = evidence.record["coverage"][-1]
+                if cached["compile_cache_hit"] != (seed == 17):
+                    raise VerificationFailure("Compact controller compile cache did not behave as expected")
         elif args.probe == "uart":
             run_uart(evidence)
         elif args.probe == "detokenizer":
