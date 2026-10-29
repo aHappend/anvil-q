@@ -246,26 +246,23 @@ def prepare(directory):
 
 
 def run_qwen_integration(evidence):
+    from table_artifacts import complete_tables
+
     evidence.tools(("python3", "verilator", "g++", "make"))
-    evidence.child([
-        "./.venv/bin/python", "tests/qwen_integration.py", evidence.relative(evidence.path),
-    ], "official-qwen-complete-table-preparation")
-    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
-    vectors = json.loads((evidence.path / "official-vectors.json").read_bytes())
-    run_rtl(evidence, info, vectors, table_source=evidence.path / "tables.hex")
+    producer, info = complete_tables(evidence, "qwen")
+    vectors = json.loads((producer / "official-vectors.json").read_bytes())
+    run_rtl(evidence, info, vectors, table_source=producer / "tables.hex")
 
 
 def run_qwen_boot(evidence):
     from storage import boot_test, synthetic_image, words
+    from table_artifacts import complete_tables
 
     evidence.tools(("python3", "verilator", "g++", "make"))
-    evidence.child([
-        "./.venv/bin/python", "tests/qwen_integration.py", evidence.relative(evidence.path),
-    ], "official-qwen-complete-table-preparation")
-    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
+    producer, info = complete_tables(evidence, "qwen")
     payloads = {0x200: words(*info["metadata"])}
     for entry in info["tables"]:
-        data = (evidence.path / f"table-{entry['kind']:03x}.bin").read_bytes()
+        data = (producer / f"table-{entry['kind']:03x}.bin").read_bytes()
         require(hashlib.sha256(data).hexdigest() == entry["sha256"],
                 "Pinned complete tables changed before boot-image serialization")
         payloads[entry["kind"]] = data

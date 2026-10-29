@@ -109,10 +109,9 @@ def write_json(path, value):
         output.write("\n")
 
 
-def run_stages(evidence, stages):
-    """Keep sequential converters' exclusive artifacts in independent case scopes."""
-    for stage in stages:
-        evidence.run_cases([(stage.__name__, stage)], workers=1)
+def run_stages(evidence, stages, *, workers=None):
+    """Independent stages own separate scopes; shared producers serialize themselves."""
+    evidence.run_cases([(stage.__name__, stage) for stage in stages], workers=workers)
 
 
 def storage_snapshot(path):
@@ -136,6 +135,8 @@ class Evidence:
         self.simulator_override = None
         self.explicit_clock = None
         self.compiled_simulations = {}
+        self.complete_table_producers = {}
+        self._table_locks = {}
         self._root = self
         self._lock = threading.RLock()
         self._tool_lock = threading.RLock()
@@ -467,14 +468,21 @@ class Evidence:
                 )
             driver_source = None
             if explicit_clock:
-                clock = "  reg clk=0,rst_n;\n  always #5 clk=~clk;"
-                if compiled_bench.count(clock) != 1:
-                    raise VerificationFailure("Explicit clock requires the supported shell clock")
+                clocks = (
+                    ("shell", "  reg clk=0,rst_n;\n  always #5 clk=~clk;"),
+                    ("boot", "  reg clk=0;\n  reg rst_n;\n  always #5 clk=~clk;"),
+                )
+                supported = [(kind, clock) for kind, clock in clocks
+                             if compiled_bench.count(clock) == 1]
+                if len(supported) != 1:
+                    raise VerificationFailure("Explicit clock requires one supported clock template")
+                clock_kind, clock = supported[0]
                 compiled_bench = compiled_bench.replace(
                     "module bench;", "module bench(input wire clk);", 1
                 ).replace(clock, "  reg rst_n;", 1)
                 driver_source = directory / "clock-driver.cpp"
                 driver_source.write_text(EXPLICIT_CLOCK, encoding="ascii")
+                record["clock_template"] = clock_kind
             compiled_source.write_text(compiled_bench, encoding="ascii")
             record.update(
                 compiled_bench_sha256=digest(compiled_source),
@@ -978,6 +986,7 @@ def main():
         "arithmetic", "fifo", "controller", "controller-build-repair",
         "retained-controller-audit",
         "compile-cache-recovery",
+        "boot-performance", "official-stage-performance",
         "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
         "reproduction",
@@ -1111,6 +1120,12 @@ def main():
             run_controller(evidence)
         elif args.probe == "compile-cache-recovery":
             cache_recovery(evidence, VerificationFailure)
+        elif args.probe == "boot-performance":
+            from performance import boot_performance
+            boot_performance(evidence, args.repair_of)
+        elif args.probe == "official-stage-performance":
+            from performance import stage_performance
+            stage_performance(evidence)
         elif args.probe == "retained-controller-audit":
             evidence.tools(("python3",))
             audit_controller(evidence, ROOT, digest, write_json, VerificationFailure)

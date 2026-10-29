@@ -194,12 +194,11 @@ def prepare(directory, model_bos=False):
 
 
 def run_deepseek_integration(evidence):
+    from table_artifacts import complete_tables
+
     evidence.tools(("python3", "verilator", "g++", "make"))
-    evidence.child([
-        "./.venv/bin/python", "tests/deepseek_integration.py", evidence.relative(evidence.path),
-    ], "deepseek-complete-table-preparation")
-    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
-    record = json.loads((evidence.path / "official-vectors.json").read_bytes())
+    producer, info = complete_tables(evidence, "deepseek")
+    record = json.loads((producer / "official-vectors.json").read_bytes())
     vectors = [{"case": index, "input_utf8_hex": row["utf8_hex"],
                 "token_ids": row["token_ids"], "decoded_utf8_hex": row["decoded_utf8_hex"]}
                for index, row in enumerate(record["vectors"])]
@@ -218,7 +217,7 @@ def run_deepseek_integration(evidence):
                  "All individual AddedTokens and 32-token concatenations execute at 4096. "
                  "Existing default-capacity rejection tests remain mandatory",
     })
-    table_source = evidence.path / "tables.hex"
+    table_source = producer / "tables.hex"
     run_rtl(evidence, info, ordinary, "deepseek", table_source=table_source)
     evidence.run_cases([
         (f"deepseek-large-profile-{seed}",
@@ -230,13 +229,11 @@ def run_deepseek_integration(evidence):
 
 
 def run_deepseek_bos(evidence):
+    from table_artifacts import complete_tables
+
     evidence.tools(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
-    evidence.child([
-        "./.venv/bin/python", "tests/deepseek_integration.py",
-        evidence.relative(evidence.path), "--model-bos",
-    ], "deepseek-model-bos-preparation")
-    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
-    record = json.loads((evidence.path / "model-bos-vectors.json").read_bytes())
+    producer, info = complete_tables(evidence, "deepseek", model_bos=True)
+    record = json.loads((producer / "model-bos-vectors.json").read_bytes())
     vectors = [{"case": index, "input_utf8_hex": row["utf8_hex"],
                 "token_ids": row["token_ids"], "decoded_utf8_hex": row["decoded_utf8_hex"]}
                for index, row in enumerate(record["vectors"])]
@@ -246,7 +243,7 @@ def run_deepseek_bos(evidence):
             "Incomplete automatic-BOS matrix")
     largest = max(len(bytes.fromhex(row["input_utf8_hex"])) for row in large)
     capacity = 1 << (largest - 1).bit_length()
-    table_source = evidence.path / "tables.hex"
+    table_source = producer / "tables.hex"
     run_rtl(evidence, info, ordinary, "deepseek-bos", table_source=table_source)
     evidence.run_cases([
         (f"deepseek-bos-large-profile-{seed}",
@@ -313,15 +310,13 @@ def bos_mutations(evidence, info, vectors, *, table_source):
 
 def run_deepseek_boot(evidence):
     from storage import boot_test, synthetic_image, words
+    from table_artifacts import complete_tables
 
     evidence.tools(("python3", "verilator", "g++", "make"))
-    evidence.child([
-        "./.venv/bin/python", "tests/deepseek_integration.py", evidence.relative(evidence.path),
-    ], "deepseek-complete-table-preparation")
-    info = json.loads((evidence.path / "complete-table-fixture.json").read_bytes())
+    producer, info = complete_tables(evidence, "deepseek")
     payloads = {0x200: words(*info["metadata"])}
     for entry in info["tables"]:
-        data = (evidence.path / f"table-{entry['kind']:03x}.bin").read_bytes()
+        data = (producer / f"table-{entry['kind']:03x}.bin").read_bytes()
         require(hashlib.sha256(data).hexdigest() == entry["sha256"],
                 "DeepSeek table changed before boot serialization")
         payloads[entry["kind"]] = data

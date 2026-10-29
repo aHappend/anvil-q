@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from numerics import Geometry, Reference
 from official import ROOT, manifest
-from qwen_integration import prepare, save
+from qwen_integration import prepare, save, validate_table_source
 from qwen_tables import VOCABULARY, require
 from storage import BOOT, KINDS, synthetic_image, words
 
@@ -27,10 +27,15 @@ MAX_NEW = 8
 PERIOD = 16
 
 
-def build_inputs(directory, compact=False, physical_capacity=None):
+def build_inputs(directory, compact=False, physical_capacity=None, *, table_source=None):
     """Runs with the already installed, independently identified official oracle."""
     directory = Path(directory)
-    if not compact:
+    if table_source is not None:
+        require(not compact, "Complete table source is not a compact fixture")
+        table_source = ROOT / table_source
+        info = json.loads((table_source / "complete-table-fixture.json").read_bytes())
+        validate_table_source(info, table_source / "tables.hex")
+    elif not compact:
         prepare(directory)
     directory = ROOT / directory
     vocabulary, capacity = (257, 257) if compact else (VOCABULARY, CAPACITY)
@@ -45,11 +50,12 @@ def build_inputs(directory, compact=False, physical_capacity=None):
         ]
         payloads = None
     else:
-        info = json.loads((directory / "complete-table-fixture.json").read_bytes())
-        vectors = json.loads((directory / "official-vectors.json").read_bytes())[:5]
+        producer = table_source if table_source is not None else directory
+        info = json.loads((producer / "complete-table-fixture.json").read_bytes())
+        vectors = json.loads((producer / "official-vectors.json").read_bytes())[:5]
         payloads = {0x200: words(*info["metadata"])}
         for entry in info["tables"]:
-            data = (directory / f"table-{entry['kind']:03x}.bin").read_bytes()
+            data = (producer / f"table-{entry['kind']:03x}.bin").read_bytes()
             require(hashlib.sha256(data).hexdigest() == entry["sha256"],
                     "Qwen table changed before shell image construction")
             payloads[entry["kind"]] = data
@@ -660,10 +666,14 @@ def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen"):
 
 
 def run_qwen_shell(evidence, general_only=False, *, bypass_only=False):
+    from table_artifacts import complete_tables
+
     require(not bypass_only or general_only, "Bypass diagnostic requires one general prompt")
     evidence.tools(("python3", "verilator", "g++", "make"))
+    producer, _ = complete_tables(evidence, "qwen")
     evidence.child(["./.venv/bin/python", "tests/qwen_shell.py",
-                    evidence.relative(evidence.path)], "qwen-shell-reference")
+                    evidence.relative(evidence.path), "--table-source",
+                    evidence.relative(producer)], "qwen-shell-reference")
     info = json.loads((evidence.path / "shell-reference.json").read_bytes())
     # Initial bounded integration uses the general-knowledge prompt on both pins.
     # The complete L1 branch retains all prompts, reload and all admitted seeds.
@@ -756,14 +766,23 @@ def run_shell_scoreboard(evidence):
 
 
 if __name__ == "__main__":
-    require(len(sys.argv) in (2, 3, 4) and
-            (len(sys.argv) == 2 or sys.argv[2] == "--compact") and
-            (len(sys.argv) != 4 or sys.argv[3].isdigit()),
-            "Usage: ./.venv/bin/python tests/qwen_shell.py EVIDENCE_DIRECTORY [--compact [PHYSICAL_CAPACITY]]")
+    from_producer = len(sys.argv) == 4 and sys.argv[2] == "--table-source"
+    require(len(sys.argv) in (2, 3, 4) and (from_producer or
+            ((len(sys.argv) == 2 or sys.argv[2] == "--compact") and
+             (len(sys.argv) != 4 or sys.argv[3].isdigit()))),
+            "Usage: ./.venv/bin/python tests/qwen_shell.py EVIDENCE_DIRECTORY "
+            "[--compact [PHYSICAL_CAPACITY] | --table-source PRODUCER_DIRECTORY]")
     destination = Path(sys.argv[1])
     require(not destination.is_absolute() and ".." not in destination.parts
             and destination.is_dir() and destination.parts[:2] in (
                 ("evidence", "preparation"), ("evidence", "verification")),
             "Shell inputs require a fresh project evidence directory")
-    build_inputs(destination, compact=len(sys.argv) >= 3,
-                 physical_capacity=int(sys.argv[3]) if len(sys.argv) == 4 else None)
+    producer = Path(sys.argv[3]) if from_producer else None
+    if producer is not None:
+        require(not producer.is_absolute() and ".." not in producer.parts and
+                producer.is_dir() and producer.parts[:2] in (
+                    ("evidence", "preparation"), ("evidence", "verification")),
+                "Complete tables require an explicit project evidence producer")
+    build_inputs(destination, compact=not from_producer and len(sys.argv) >= 3,
+                 physical_capacity=int(sys.argv[3]) if len(sys.argv) == 4
+                 and not from_producer else None, table_source=producer)

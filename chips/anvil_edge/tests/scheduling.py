@@ -111,13 +111,12 @@ def source_contract():
                    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                    and node.func.id == "run_stages"]
     assert [node.id for node in stage_call.args] == ["evidence", "OFFICIAL_STAGES"]
-    loop, = definitions["run_stages"].body[1:]
-    assert isinstance(loop, ast.For) and isinstance(loop.iter, ast.Name)
-    assert loop.iter.id == "stages"
-    scoped, = [node for node in ast.walk(loop) if isinstance(node, ast.Call)
+    scoped, = [node for node in ast.walk(definitions["run_stages"]) if isinstance(node, ast.Call)
                and isinstance(node.func, ast.Attribute) and node.func.attr == "run_cases"]
-    assert any(item.arg == "workers" and isinstance(item.value, ast.Constant)
-               and item.value.value == 1 for item in scoped.keywords)
+    assert any(item.arg == "workers" and isinstance(item.value, ast.Name)
+               and item.value.id == "workers" for item in scoped.keywords)
+    assert any(isinstance(node, ast.comprehension) and isinstance(node.iter, ast.Name)
+               and node.iter.id == "stages" for node in ast.walk(scoped))
     incomplete = l1[0].body[-1]
     assert isinstance(incomplete, ast.Raise) and isinstance(incomplete.exc, ast.Call)
     assert isinstance(incomplete.exc.args[0], ast.Constant)

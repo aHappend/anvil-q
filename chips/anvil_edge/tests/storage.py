@@ -573,7 +573,8 @@ module bench;
 
 
 def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=257,
-              metadata_words=None, reload_metadata=None, label=None, fixture=None):
+              metadata_words=None, reload_metadata=None, label=None, fixture=None,
+              optimize=None, explicit_clock=None, trace=False):
     if fixture is None:
         fixture = synthetic_image(vocabulary, capacity=capacity, fault=fault,
                                   metadata_words=metadata_words)
@@ -735,14 +736,44 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
         bench = bench.replace("    $display(\"BOOT_TRANSACTIONS",
                               '    if (writes!=@TOTAL@ || reads==0) $fatal(1,"BOOT_SEMANTIC_COUNTS");\n'
                               '    $display("BOOT_TRANSACTIONS').replace("@TOTAL@", str(len(fixture["writes"])))
+    if trace:
+        bench = boot_observation(bench)
     # The validation scan count is implementation-independent, so its observed
     # total is checked separately instead of predicting an internal scan schedule.
     root = Path(__file__).resolve().parent.parent
-    evidence.simulate(name, bench, [
+    return evidence.simulate(name, bench, [
         "rtl/anvil_edge_numeric_pkg.sv",
         *[str(path.relative_to(root)) for path in sorted((root / "rtl").glob("*.sv"))
           if path.name != "anvil_edge_numeric_pkg.sv"],
-    ], None)
+    ], None, optimize=large if optimize is None else optimize,
+        explicit_clock=large if explicit_clock is None else explicit_clock)
+
+
+def boot_observation(bench):
+    """Supplement the exact tuple scoreboard with a public-edge equivalence digest."""
+    monitor = r"""
+  reg [63:0] pin_hash=64'hcbf29ce484222325;
+  reg [63:0] pin_samples=0,spi_edges=0;
+  always @(posedge clk or negedge clk) begin
+    pin_samples=pin_samples+1;
+    pin_hash=(pin_hash ^ {32'd0,ddr_rsp_rdata})*64'h100000001b3;
+    pin_hash=(pin_hash ^ ddr_req_addr)*64'h100000001b3;
+    pin_hash=(pin_hash ^ {32'd0,ddr_req_wdata})*64'h100000001b3;
+    pin_hash=(pin_hash ^ {40'd0,clk,rst_n,start,ddr_cal_done,
+        spi_miso,spi_mosi,spi_sck,spi_cs_n,ddr_req_valid,ddr_req_ready,
+        ddr_req_write,ddr_req_wstrb,ddr_rsp_valid,ddr_rsp_ready,
+        ddr_rsp_error,boot_done,busy,error})*64'h100000001b3;
+  end
+  always @(posedge spi_sck or negedge spi_sck or
+           posedge spi_cs_n or negedge spi_cs_n) spi_edges=spi_edges+1;
+"""
+    marker = '    $display("BOOT_TRANSACTIONS'
+    assert bench.count(marker) == 1 and bench.count("endmodule") == 1
+    return bench.replace("endmodule", monitor + "\nendmodule").replace(
+        marker, '    $display("BOOT_OBSERVATION cycles=%0d samples=%0d spi_edges=%0d '
+        'hash=%h request_stalls=%0d response_stalls=%0d",'
+        '\n             cycle,pin_samples,spi_edges,pin_hash,request_stalls,response_stalls);\n'
+        + marker)
 
 
 def run_boot(evidence):

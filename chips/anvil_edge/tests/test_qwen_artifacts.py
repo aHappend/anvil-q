@@ -92,7 +92,7 @@ def run_composition_regression(evidence):
 
     # Actual fragments, exhaustive/random regex, Unicode/Oniguruma and official
     # reference consumers run sequentially under the same Evidence parent as L1.
-    run_stages(evidence, [observe(stage) for stage in OFFICIAL_STAGES[:4]])
+    run_stages(evidence, [observe(stage) for stage in OFFICIAL_STAGES[:4]], workers=1)
     assert len(frozen) == 4 and len({directory for directory, _ in frozen}) == 4
     for directory, expected in frozen:
         assert hashes(directory) == expected, "Earlier evidence changed after composition"
