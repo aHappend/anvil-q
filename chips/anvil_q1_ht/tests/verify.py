@@ -404,8 +404,8 @@ def file_sha256(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", choices=("tensor", "dequant", "dequant-sensitivity",
-                                           "math", "top-awq", "top-bf16",
+    parser.add_argument("--probe", choices=("tensor", "tensor-sensitivity", "dequant", "dequant-sensitivity",
+                                           "math", "math-sensitivity", "top-awq", "top-bf16",
                                            "csr-upload", "synthesis", "kv", "parameters", "dma",
                                            "sensitivity", "dma-pipeline-sensitivity",
                                            "arithmetic-sensitivity",

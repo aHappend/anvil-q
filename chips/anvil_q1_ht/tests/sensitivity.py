@@ -4,7 +4,7 @@ import hashlib
 from pathlib import Path
 import shutil
 
-from experiments import dequant, dma_probe, kv_probe, tensor, top_probe
+from experiments import dequant, dma_probe, kv_probe, math_probe, tensor, top_probe
 from arithmetic_benchmark import arithmetic_default
 from layer_benchmark import layer_default
 from attention_benchmark import attention_context
@@ -21,6 +21,21 @@ def stored_number_trial(evidence, seed, name):
 
 def run_sensitivity(parent, seed, only=None):
     cases = (
+        ("tensor_bubble_accumulation", "anvil_q1_ht_mac_lane.sv",
+         "if (valid_pipe[3]) begin", "if (valid_pipe[3] || !in_valid) begin",
+         lambda run: tensor(run, seed), "TENSOR_MISMATCH"),
+        ("tensor_high_chunk_carry", "anvil_q1_ht_mac_lane.sv",
+         "{1'b0, accumulator_s[63:32]} + {1'b0, accumulator_c[63:32]} + {32'b0, carry};",
+         "{1'b0, accumulator_s[63:32]} + {1'b0, accumulator_c[63:32]};",
+         lambda run: tensor(run, seed), "TENSOR_MISMATCH"),
+        ("math_negative_tie", "anvil_q1_ht_math.sv",
+         "increment <= round_bit && lower_nonzero;",
+         "increment <= round_bit;",
+         lambda run: math_probe(run, seed), "MATH_MISMATCH"),
+        ("math_sqrt_boundary", "anvil_q1_ht_isqrt.sv",
+         "trial_divisor <= {30'b0, root, 2'b01};",
+         "trial_divisor <= {30'b0, root, 2'b10};",
+         lambda run: math_probe(run, seed), "MATH_MISMATCH"),
         ("awq_permutation", "anvil_q1_ht_00_numeric_pkg.sv",
          "awq_shift = {lane[0], lane[2:1], 2'b00};",
          "awq_shift = {lane, 2'b00};",

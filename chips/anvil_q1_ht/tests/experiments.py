@@ -91,6 +91,49 @@ def tensor(evidence, seed):
             calls.append(f"feed({int(index == 0)}, {int(index == len(beats)-1)}, "
                          f"{hx(activation,32)}, {hx(packed(weights,37),2368)}, {hx(mask,64)});")
         calls.append(f"result({hx(packed(expected,32),2048)}, {hx(mask,64)});")
+    extra_dots = []
+    full_mask = (1 << 64) - 1
+    for sign in (-1, 1):
+        extra_dots.append(([(sign * ((1 << 31) - 1), [(1 << 36) - 1] * 64)] * 16,
+                           full_mask, "wide_sum"))
+        for residual in (32767, 32768, 32769, 65535, 65536, 65537):
+            weights = [(1 << 36) - 1 - lane for lane in range(64)]
+            beats = [((1 << 31) - 1, weights)] * 17
+            beats += [(-((1 << 31) - 1), weights)] * 17
+            beats += [(sign, [residual + lane * 65536 for lane in range(64)])]
+            extra_dots.append((beats, full_mask, "wide_cancel"))
+    for bit in (15, 16, 17, 18, 19, 30, 31):
+        for sign in (-1, 1):
+            activation = sign * ((1 << bit) - 1)
+            for weight_bit in (17, 18, 19, 31, 32, 35, 36):
+                weights = [((1 << weight_bit) - 1 - lane) * (-1 if lane & 1 else 1)
+                           for lane in range(64)]
+                extra_dots.append(([(activation, weights), (-activation, weights),
+                                    (1, [32768 + lane * 65536 for lane in range(64)])],
+                                   full_mask, "limb_boundary"))
+    extra_dots.append(([(1, [65536] * 64)] * 4, 0, "zero_mask"))
+    extra_path = evidence.folder / "tensor-boundary-vectors.hex"
+    records = []
+    bins = {name: 0 for name in ("wide_sum", "wide_cancel", "limb_boundary", "zero_mask")}
+    for dot_index, (beats, mask, category) in enumerate(extra_dots):
+        sums = [sum(a * weights[lane] for a, weights in beats) for lane in range(64)]
+        expected = [sat32(round_shift(total, 16)) if mask >> lane & 1 else 0
+                    for lane, total in enumerate(sums)]
+        if category == "wide_sum" and not all(abs(total) >= 1 << 69 for total in sums):
+            raise AssertionError("tensor wide-sum stimulus did not exceed product width")
+        for index, (activation, weights) in enumerate(beats):
+            gap = (0, 1, 2, 5, 11)[(dot_index + index) % 5]
+            first, last = int(index == 0), int(index == len(beats) - 1)
+            value = packed(expected, 32) if last else 0
+            for field, width in ((mask, 64), (packed(weights, 37), 2368),
+                                 (activation & 0xffffffff, 32), (last, 1), (first, 1), (gap, 8)):
+                value = (value << width) | field
+            records.append(f"{value:01131x}\n")
+        bins[category] += 1
+    extra_path.write_text("".join(records))
+    evidence.record.setdefault("runtime_input_sha256", {})[evidence.relative(extra_path)] = (
+        hashlib.sha256(extra_path.read_bytes()).hexdigest())
+    evidence.flush()
     bench = CLOCK + r"""
 reg in_valid=0, in_first=0, in_last=0, out_ready=0;
 reg signed [31:0] in_activation=0;
@@ -101,6 +144,8 @@ wire [2047:0] out_data;
 wire [63:0] out_mask;
 integer compared=0, vectors=0, n, protocol_rejections=0, recovery_dots=0;
 integer reset_aborts=0;
+integer extra_index,extra_compared=0,bubble_edges=0,blocked_offers=0;
+reg [4521:0] boundary_vectors [0:BOUNDARY_VECTOR_COUNT-1];
 anvil_q1_ht_tensor_array product(
   .clk(clk),.rst_n(rst_n),.in_valid(in_valid),.in_ready(in_ready),
   .in_first(in_first),.in_last(in_last),.in_activation(in_activation),
@@ -139,15 +184,35 @@ task result(input [2047:0] expected, input [63:0] mask);
       $fatal(1,"TENSOR_MISMATCH dot=%0d actual=%h expected=%h mask=%h",
              compared,out_data,expected,out_mask);
     for (stall=0;stall<7;stall=stall+1) begin
+      @(negedge clk);
+      in_valid=1; in_first=1; in_last=1;
+      in_activation=32'h80000000; in_weight_q16={64{37'h1000000000}};
+      in_mask=~mask;
       edge_tick();
-      if (out_valid !== 1 || out_data !== expected || out_mask !== mask)
+      if (in_ready !== 0 || protocol_error !== 0 ||
+          out_valid !== 1 || out_data !== expected || out_mask !== mask)
         $fatal(1,"TENSOR_STALL_CHANGED");
+      blocked_offers=blocked_offers+1;
     end
-    @(negedge clk); out_ready=1;
+    @(negedge clk); in_valid=0; out_ready=1;
     edge_tick();
     if (out_valid !== 0) $fatal(1,"TENSOR_RESULT_NOT_RETIRED");
     @(negedge clk); out_ready=0;
     compared=compared+1;
+  end
+endtask
+task bubble(input integer count);
+  integer gap;
+  begin
+    for(gap=0;gap<count;gap=gap+1) begin
+      @(negedge clk); in_valid=0;
+      in_first=1; in_last=1; in_activation=32'h7fffffff;
+      in_weight_q16={64{37'h0fffffffff}}; in_mask=~in_mask;
+      edge_tick();
+      if(in_ready!==1 || out_valid!==0 || protocol_error!==0)
+        $fatal(1,"TENSOR_INPUT_BUBBLE_CHANGED_PROTOCOL");
+      bubble_edges=bubble_edges+1;
+    end
   end
 endtask
 task rejected_dot(input integer violation);
@@ -220,6 +285,20 @@ initial begin
   repeat (3) edge_tick();
   @(negedge clk); rst_n=1;
 """ + "\n".join(calls) + r"""
+  $readmemh("BOUNDARY_VECTOR_PATH",boundary_vectors);
+  for(extra_index=0;extra_index<BOUNDARY_VECTOR_COUNT;extra_index=extra_index+1) begin
+    bubble(boundary_vectors[extra_index][4521:4514]);
+    feed(boundary_vectors[extra_index][4513],boundary_vectors[extra_index][4512],
+         boundary_vectors[extra_index][4511:4480],boundary_vectors[extra_index][4479:2112],
+         boundary_vectors[extra_index][2111:2048]);
+    if(boundary_vectors[extra_index][4512]) begin
+      result(boundary_vectors[extra_index][2047:0],boundary_vectors[extra_index][2111:2048]);
+      extra_compared=extra_compared+1;
+    end
+  end
+  if(extra_compared!=BOUNDARY_DOT_COUNT || bubble_edges==0 ||
+     blocked_offers!=compared*7)
+    $fatal(1,"TENSOR_BOUNDARY_COVERAGE_MISSING");
   @(negedge clk);
   in_valid=1;in_first=0;in_last=1;in_activation=1;in_weight_q16=1;in_mask=64'hffffffffffffffff;
   if (in_ready !== 1) $fatal(1,"TENSOR_ORDERING_STIMULUS_NOT_ACCEPTED");
@@ -243,13 +322,28 @@ initial begin
   reset_abort(2);
   if(reset_aborts!=3 || recovery_dots!=6)
     $fatal(1,"TENSOR_RESET_ABORT_COVERAGE_MISSING");
-  $display("CHECKS_PASSED tensor dots=%0d lane_comparisons=%0d vectors=%0d latency=10 stall_edges=7 protocol_rejections=%0d recovery_dots=%0d reset_aborts=%0d",
-           compared,compared*64,vectors,protocol_rejections,recovery_dots,reset_aborts);
+  $display("CHECKS_PASSED tensor dots=%0d lane_comparisons=%0d vectors=%0d latency=10 stall_edges=7 protocol_rejections=%0d recovery_dots=%0d reset_aborts=%0d boundary_dots=%0d bubble_edges=%0d blocked_offers=%0d",
+           compared,compared*64,vectors,protocol_rejections,recovery_dots,reset_aborts,
+           extra_compared,bubble_edges,blocked_offers);
   $finish;
 end
 endmodule
 """
-    evidence.simulate("tensor", bench, ["anvil_q1_ht_mac_lane.sv", "anvil_q1_ht_tensor_array.sv"])
+    bench = (bench.replace("BOUNDARY_VECTOR_COUNT", str(len(records)))
+             .replace("BOUNDARY_DOT_COUNT", str(len(extra_dots)))
+             .replace("BOUNDARY_VECTOR_PATH", evidence.relative(extra_path)))
+    output = evidence.simulate("tensor", bench,
+                              ["anvil_q1_ht_mac_lane.sv", "anvil_q1_ht_tensor_array.sv"])
+    match = re.search(r"boundary_dots=(\d+) bubble_edges=(\d+) blocked_offers=(\d+)", output)
+    if not match or int(match[1]) != len(extra_dots) or min(map(int, match.groups()[1:])) <= 0:
+        raise AssertionError("tensor boundary comparisons or handshake observations missing")
+    evidence.record["observations"].append({
+        "scope": "public_tensor_primitive_not_decoder_bias_or_full_model_acceptance",
+        "seed": seed, "original_dots": len(dots), "compared_boundary_dots": int(match[1]),
+        "compared_boundary_categories": bins, "observed_input_bubble_edges": int(match[2]),
+        "observed_blocked_following_dot_offers": int(match[3]),
+    })
+    evidence.flush()
 
 
 def dequant(evidence, seed, rtl_root=None):
@@ -433,6 +527,12 @@ endmodule
 def math_probe(evidence, seed):
     rng = random.Random(seed)
     vectors = []
+    classes = ("random", "shift_boundary", "signed_division", "unsigned_division",
+               "carry_boundary", "square_boundary", "error")
+
+    def append(op, a, b, shift, result, error=0, category=0):
+        vectors.append((op, a, b, shift, result, error, category))
+
     for _ in range(50):
         a, b = rng.getrandbits(128), rng.getrandbits(128)
         for op in range(8):
@@ -453,17 +553,66 @@ def math_probe(evidence, seed):
                 result = a // b
             else:
                 result = math.isqrt(a)
-            vectors.append((op, a, b, shift, result, 0))
+            append(op, a, b, shift, result)
     for op in (4, 5, 6):
-        vectors.append((op, 123, 0, 0, 0, 1))
+        append(op, 123, 0, 0, 0, 1, 6)
     for op in range(8, 16):
-        vectors.append((op, 123, 456, 0, 0, 1))
+        append(op, 123, 456, 0, 0, 1, 6)
     for a in (0, 1, -1, 32767, -32767, 32768, -32768, 32769, -32769,
               -(1 << 127), (1 << 127) - 1):
         for shift in (0, 1, 16, 48, 127):
-            vectors.append((3, a, 1, shift, round_shift(a, shift), 0))
-    calls = "\n".join(f"check({hx(op,4)},{hx(a,128)},{hx(b,128)},{hx(shift,7)},"
-                      f"{hx(result,128)},1'b{err});" for op, a, b, shift, result, err in vectors)
+            append(3, a, 1, shift, round_shift(a, shift), category=1)
+    for shift in range(128):
+        half = 1 << (shift - 1) if shift else 0
+        values = {0, -(1 << 127), (1 << 127) - 1}
+        for delta in (-1, 0, 1):
+            values.update((half + delta, -half - delta))
+        for a in sorted(values):
+            append(3, a, 1, shift, round_shift(a, shift), category=1)
+    denominators = {1, 2, 3}
+    for bit in (16, 31, 32, 63, 64, 95, 96, 127, 128):
+        denominators.add((1 << bit) - 1)
+        if bit < 128:
+            denominators.add(1 << bit)
+    for b in sorted(denominators):
+        magnitudes = {0, 1, b - 1, b, b + 1,
+                      b // 2 - 1, b // 2, b // 2 + 1,
+                      3 * b + b // 2 - 1, 3 * b + b // 2, 3 * b + b // 2 + 1}
+        signed_values = {-(1 << 127), (1 << 127) - 1}
+        for a in magnitudes:
+            if 0 <= a < (1 << 127):
+                signed_values.update((a, -a))
+        for a in sorted(signed_values):
+            append(4, a, b, 0, round_div(a, b), category=2)
+            append(5, a, b, 0, trunc_div(a, b), category=2)
+        for a in sorted(magnitudes | {(1 << 128) - 1}):
+            if 0 <= a < (1 << 128):
+                append(6, a, b, 0, a // b, category=3)
+    mask = (1 << 128) - 1
+    for bit in (16, 32, 48, 64, 80, 96, 112, 127):
+        boundary = 1 << bit
+        for a, b in ((boundary - 1, 1), (boundary, 1),
+                     (mask, boundary - 1), (boundary - 1, boundary - 1)):
+            append(0, a, b, 0, a + b, category=4)
+            append(1, a, b, 0, a - b, category=4)
+            append(2, a, b, 0, a * b, category=4)
+    roots = {0, 1, 2, 3, (1 << 64) - 1}
+    for bit in (8, 16, 31, 32, 47, 48, 63):
+        roots.update(((1 << bit) - 1, 1 << bit, (1 << bit) + 1))
+    for root in sorted(roots):
+        for a in (root * root - 1, root * root, root * root + 1):
+            if 0 <= a <= mask:
+                append(7, a, 0, 0, math.isqrt(a), category=5)
+    append(7, mask, 0, 0, math.isqrt(mask), category=5)
+    vector_path = evidence.folder / "math-vectors.json"
+    vector_path.write_text(json.dumps({
+        "seed": seed, "classes": classes,
+        "fields": ["op", "a", "b", "shift", "expected", "error", "category"],
+        "vectors": vectors,
+    }, indent=2) + "\n")
+    evidence.record.setdefault("runtime_input_sha256", {})[
+        evidence.relative(vector_path)] = hashlib.sha256(vector_path.read_bytes()).hexdigest()
+    evidence.flush()
     bench = CLOCK + r"""
 reg in_valid=0,out_ready=0;
 reg [3:0] in_op=0;
@@ -471,7 +620,15 @@ reg [127:0] in_a=0,in_b=0;
 reg [6:0] in_shift=0;
 wire in_ready,out_valid,out_error;
 wire [127:0] out_data;
-integer comparisons=0;
+integer comparisons=0, cycles_total=0, i;
+integer class_counts[0:6];
+reg [127:0] compared_shifts=0;
+reg [398:0] vectors[0:VECTOR_COUNT-1];
+reg [3:0] vector_op;
+reg [127:0] vector_a,vector_b,vector_expected;
+reg [6:0] vector_shift;
+reg vector_error;
+reg [2:0] vector_category;
 anvil_q1_ht_math product(
  .clk(clk),.rst_n(rst_n),.in_valid(in_valid),.in_ready(in_ready),.in_op(in_op),
  .in_a(in_a),.in_b(in_b),.in_shift(in_shift),.out_valid(out_valid),
@@ -482,22 +639,29 @@ task reset_check;
  end
 endtask
 always @(posedge clk or negedge clk) if (!rst_n) reset_check();
+always @(posedge clk) cycles_total=cycles_total+1;
 task check(input [3:0] op,input [127:0] a,b,input [6:0] shift,
-           input [127:0] expected,input expected_error);
+           input [127:0] expected,input expected_error,input integer category);
  integer cycles,stall;
  begin
   @(negedge clk); in_op=op; in_a=a; in_b=b; in_shift=shift; in_valid=1;
   if (in_ready !== 1) $fatal(1,"MATH_NOT_READY");
   edge_tick();
+  if(in_ready !== 0) $fatal(1,"MATH_BUSY_ACCEPTS_ANOTHER_REQUEST");
   @(negedge clk); in_valid=0;
   cycles=0;
-  while (out_valid !== 1 && cycles<10000) begin edge_tick(); cycles=cycles+1; end
+  while (out_valid !== 1 && cycles<10000) begin
+    edge_tick(); cycles=cycles+1;
+    if(in_ready !== 0) $fatal(1,"MATH_BUSY_ACCEPTS_ANOTHER_REQUEST");
+    if(out_valid !== 0 && out_valid !== 1) $fatal(1,"MATH_ACTIVE_VALID_XZ");
+  end
   if (out_valid !== 1 || out_data !== expected || out_error !== expected_error)
     $fatal(1,"MATH_MISMATCH case=%0d op=%0d a=%h b=%h shift=%0d actual=%h expected=%h err=%b expected_err=%b",
            comparisons,op,a,b,shift,out_data,expected,out_error,expected_error);
   for (stall=0;stall<3;stall=stall+1) begin
     edge_tick();
-    if (out_valid !== 1 || out_data !== expected || out_error !== expected_error)
+    if (out_valid !== 1 || out_data !== expected || out_error !== expected_error ||
+        in_ready !== 0)
       $fatal(1,"MATH_STALL_CHANGED");
   end
   @(negedge clk); out_ready=1;
@@ -505,20 +669,74 @@ task check(input [3:0] op,input [127:0] a,b,input [6:0] shift,
   if (out_valid !== 0) $fatal(1,"MATH_RETIRE");
   @(negedge clk); out_ready=0;
   comparisons=comparisons+1;
+  class_counts[category]=class_counts[category]+1;
+  if(category==1) compared_shifts[shift]=1'b1;
  end
 endtask
 initial begin
+ $readmemh("VECTOR_PATH",vectors);
+ for(i=0;i<7;i=i+1) class_counts[i]=0;
  rst_n=0; `RESET_DELTA reset_check();
  repeat (3) edge_tick();
  @(negedge clk); rst_n=1;
-""" + calls + r"""
- $display("CHECKS_PASSED math comparisons=%0d",comparisons);
+ for(i=0;i<VECTOR_COUNT;i=i+1) begin
+  {vector_op,vector_a,vector_b,vector_shift,vector_expected,vector_error,vector_category}
+   = vectors[i];
+  if((^vectors[i]) === 1'bx) $fatal(1,"MATH_MALFORMED_VECTOR");
+  check(vector_op,vector_a,vector_b,vector_shift,vector_expected,vector_error,vector_category);
+ end
+ if(compared_shifts !== {128{1'b1}}) $fatal(1,"MATH_MISSING_SHIFT_BOUNDARY");
+ for(i=0;i<7;i=i+1)
+  if(class_counts[i]==0) $fatal(1,"MATH_MISSING_DIRECTED_CLASS");
+ $display("CHECKS_PASSED math comparisons=%0d cycles=%0d random=%0d shift_boundary=%0d signed_division=%0d unsigned_division=%0d carry_boundary=%0d square_boundary=%0d error=%0d shifts=128",
+ comparisons,cycles_total,class_counts[0],class_counts[1],class_counts[2],
+ class_counts[3],class_counts[4],class_counts[5],class_counts[6]);
  $finish;
 end
 endmodule
 """
-    evidence.simulate("math", bench, ["anvil_q1_ht_00_numeric_pkg.sv", "anvil_q1_ht_divide.sv",
-                                    "anvil_q1_ht_isqrt.sv", "anvil_q1_ht_math.sv"])
+    compact = [row for index, row in enumerate(vectors)
+               if index < 8 or row[6] in (1, 4, 5, 6) or
+               (row[6] in (2, 3) and row[2] <= 3)]
+    simulations = [("verilator", vectors)]
+    if getattr(evidence, "default_simulator", "iverilog") == "iverilog":
+        simulations.insert(0, ("iverilog", compact))
+    for simulator, cases in simulations:
+        path = evidence.folder / ("math-" + simulator + "-vectors.hex")
+        words = []
+        for row in cases:
+            word = 0
+            for value, bits in zip(row, (4, 128, 128, 7, 128, 1, 3)):
+                word = (word << bits) | (value & ((1 << bits) - 1))
+            words.append(f"{word:0100x}\n")
+        path.write_text("".join(words))
+        evidence.record["runtime_input_sha256"][evidence.relative(path)] = hashlib.sha256(
+            path.read_bytes()).hexdigest()
+        evidence.flush()
+        program = bench.replace("VECTOR_COUNT", str(len(cases))).replace(
+            "VECTOR_PATH", evidence.relative(path))
+        transcript = evidence.simulate(
+            "math-" + simulator, program,
+            ["anvil_q1_ht_00_numeric_pkg.sv", "anvil_q1_ht_divide.sv",
+             "anvil_q1_ht_isqrt.sv", "anvil_q1_ht_math.sv"], simulator=simulator)
+        counters = measurement_records(transcript, "CHECKS_PASSED math")
+        expected_counts = {name: sum(row[6] == index for row in cases)
+                           for index, name in enumerate(classes)}
+        if (len(counters) != 1 or counters[0].get("comparisons") != len(cases) or
+                counters[0].get("shifts") != 128 or
+                any(counters[0].get(name) != count for name, count in expected_counts.items())):
+            raise AssertionError("math directed public result comparisons lack required coverage")
+        if simulator == "iverilog" and counters[0]["cycles"] > 500000:
+            raise AssertionError("math Icarus smoke exceeds the 500000-cycle tier")
+        evidence.record.setdefault("math_coverage", []).append({
+            "seed": seed, "simulator": simulator, "observed": counters[0],
+            "bin_event": "accepted public input, exact result/error comparison, "
+                         "busy exclusion, stalled result stability and retirement",
+            "oracle": "Python arbitrary-precision integers and math.isqrt; "
+                      "results compared modulo 2**128, not saturated",
+            "scope": "scalar_math_primitive_not_complete_network_or_timing_acceptance",
+        })
+        evidence.flush()
 
 
 def top_probe(evidence, mode, seed, upload_only=False, config=0,
@@ -2631,6 +2849,12 @@ def run_probe(evidence, name, seed, config=0):
         compatibility(evidence, seed, config)
     elif name == "tensor":
         tensor(evidence, seed)
+    elif name == "tensor-sensitivity":
+        from sensitivity import run_sensitivity
+        evidence.default_simulator = "verilator"
+        tensor(evidence, seed)
+        run_sensitivity(evidence, seed, only=(
+            "tensor_bubble_accumulation", "tensor_high_chunk_carry"))
     elif name == "fixture-integrity":
         fixture_integrity(evidence)
     elif name == "checkpoint-repack":
@@ -2651,6 +2875,11 @@ def run_probe(evidence, name, seed, config=0):
         run_sensitivity(evidence, seed, only=("awq_permutation",))
     elif name == "math":
         math_probe(evidence, seed)
+    elif name == "math-sensitivity":
+        from sensitivity import run_sensitivity
+        evidence.default_simulator = "verilator"
+        math_probe(evidence, seed)
+        run_sensitivity(evidence, seed, only=("math_negative_tie", "math_sqrt_boundary"))
     elif name == "command-checks":
         from command_checks import command_checks
         command_checks(evidence, seed)
