@@ -3040,11 +3040,17 @@ def integration_matrix(evidence, configurations=range(3), seeds=(17, 89, 257),
                 lifecycle("after_child_failed_finalization", trial)
             evidence.flush()
             raise
+        try:
+            trial.finish("probe_passed", "Mandatory engineering parameter case; not full-model acceptance.")
+            evidence.bind_child(trial)
+        except (OSError, RuntimeError, AssertionError, ValueError) as exc:
+            row.update(outcome="failed", reason=str(exc))
+            evidence.flush()
+            raise
         row.update(outcome="compared", tokens=len(tokens),
                    ordered_logits=summaries[0]["logits"],
                    accepted_DDR_read_beats=summaries[0]["reads"],
                    initial_preload_beats=summaries[0]["preload_beats"])
-        trial.finish("probe_passed", "Mandatory engineering parameter case; not full-model acceptance.")
         if lifecycle is not None:
             lifecycle("after_child_finalization", trial)
         evidence.flush()

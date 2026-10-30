@@ -433,6 +433,9 @@ class IntegrationProgressChecks(unittest.TestCase):
             def finish(self, outcome, reason):
                 phases.append(outcome)
 
+            def bind_child(self, child):
+                phases.append("child_evidence_bound")
+
         def top(child, mode, seed, config):
             self.assertEqual((mode, seed, config), ("AWQ", 17, 0))
             phases.append("actual_top_probe_entry")
@@ -449,6 +452,7 @@ class IntegrationProgressChecks(unittest.TestCase):
         self.assertEqual(children, [("matrix-0-17-awq", parent.folder / "sources")])
         self.assertEqual(phases, ["before_child_creation", "after_child_creation",
                                   "actual_top_probe_entry", "probe_passed",
+                                  "child_evidence_bound",
                                   "after_child_finalization"])
         self.assertEqual(len(parent.record["integration_matrix"]), 1)
         self.assertEqual(parent.record["integration_matrix"][0]["ordered_logits"], 16)
@@ -1126,6 +1130,79 @@ class CommandEvidenceChecks(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.evidence.finish("probe_passed", "synthetic regression only")
         self.assertEqual(self.evidence.record["outcome"], "probe_passed")
+
+    def completed_child(self):
+        child = verify.Evidence.__new__(verify.Evidence)
+        child.folder = self.root / "child"
+        child.folder.mkdir()
+        child.record = {"commands": [], "source_sha256": {}}
+        child.create_receipt()
+        child.command(["python3", "-c", "print('synthetic child')"], "child")
+        with contextlib.redirect_stdout(io.StringIO()):
+            child.finish("probe_passed", "synthetic regression only")
+        return child
+
+    def test_completed_child_receipt_and_logs_are_bound(self):
+        child = self.completed_child()
+        self.evidence.bind_child(child)
+        bindings = self.evidence.record["runtime_input_sha256"]
+        self.assertEqual(bindings["child/receipt.json"],
+                         verify.file_sha256(child.folder / "receipt.json"))
+        for command in child.record["commands"]:
+            for key in ("stdout", "stderr"):
+                self.assertEqual(bindings[command[key]], command[key + "_sha256"])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.evidence.finish("probe_passed", "synthetic parent only")
+
+    def test_child_loss_after_binding_prevents_parent_success(self):
+        child = self.completed_child()
+        self.evidence.bind_child(child)
+        receipt = child.folder / "receipt.json"
+        receipt.unlink()
+        with self.assertRaisesRegex(RuntimeError, "Missing or changed retained"):
+            self.evidence.finish("probe_passed", "must not succeed")
+        self.assertFalse(receipt.exists())
+
+    def test_changed_child_log_after_binding_prevents_parent_success(self):
+        child = self.completed_child()
+        self.evidence.bind_child(child)
+        (self.root / child.record["commands"][0]["stdout"]).write_text("changed")
+        with self.assertRaisesRegex(RuntimeError, "Missing or changed retained"):
+            self.evidence.finish("probe_passed", "must not succeed")
+
+    def test_missing_child_before_binding_is_not_recreated(self):
+        child = self.completed_child()
+        receipt = child.folder / "receipt.json"
+        receipt.unlink()
+        with self.assertRaises(FileNotFoundError):
+            self.evidence.bind_child(child)
+        self.assertFalse(receipt.exists())
+        self.assertNotIn("runtime_input_sha256", self.evidence.record)
+
+    def test_changed_child_receipt_cannot_be_bound(self):
+        child = self.completed_child()
+        (child.folder / "receipt.json").write_text("{}")
+        with self.assertRaisesRegex(RuntimeError, "differs from observed"):
+            self.evidence.bind_child(child)
+
+    def test_json_normalized_child_build_metadata_can_be_bound(self):
+        child = self.completed_child()
+        child.record["tool_metadata"] = {"source_pairs": [("example.sv", "digest")]}
+        child.flush()
+        self.evidence.bind_child(child)
+        self.assertIn("child/receipt.json", self.evidence.record["runtime_input_sha256"])
+
+    def test_child_with_different_sources_cannot_be_bound(self):
+        child = self.completed_child()
+        child.record["source_sha256"] = {"rtl/changed.sv": "0" * 64}
+        with self.assertRaisesRegex(ValueError, "source bindings differ"):
+            self.evidence.bind_child(child)
+
+    def test_unfinished_child_cannot_be_bound(self):
+        child = self.completed_child()
+        child.record.pop("outcome")
+        with self.assertRaisesRegex(ValueError, "separately finalized"):
+            self.evidence.bind_child(child)
 
     def test_path_escape_label_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "plain filenames"):

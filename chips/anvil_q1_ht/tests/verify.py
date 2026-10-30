@@ -8,6 +8,8 @@ Receipt-write failures emit bounded in-memory progress to stderr for independent
 runtime retention; that diagnostic never replaces missing source/log evidence.
 Nested matrix cases retain their configuration and child receipt in that
 diagnostic, since the parent's last command can precede the active child case.
+Completed matrix cases bind their finalized child receipts and dependencies into
+the parent, so later child evidence loss cannot yield a successful parent.
 The mandatory campaign includes both parent-service projection measurements and
 the separate matched eight/64-active-lane arithmetic comparison. Cost diagnosis
 uses the same stage inventory; neither measurement replaces the other.
@@ -348,20 +350,46 @@ class Evidence:
         })
         self.flush()
 
+    def retained_artifacts(self):
+        artifacts = {
+            self.relative(self.folder / "sources" / name): digest
+            for name, digest in self.record["source_sha256"].items()
+        }
+        for command in self.record["commands"]:
+            for key in ("stdout", "stderr"):
+                artifacts[command[key]] = command.get(key + "_sha256")
+        artifacts.update(self.record.get("runtime_input_sha256", {}))
+        for build in self.record.get("simulation_builds", []):
+            artifacts.update(build_artifacts(build))
+        return artifacts
+
+    def bind_child(self, child):
+        """Bind existing finalized evidence; never recreate a missing artifact."""
+        if child is self or child.record.get("outcome") != "probe_passed":
+            raise ValueError("child evidence must be separately finalized successfully")
+        if child.record["source_sha256"] != self.record["source_sha256"]:
+            raise ValueError("child evidence source bindings differ from parent")
+        receipt = child.folder / "receipt.json"
+        payload = receipt.read_bytes()
+        if json.loads(payload) != json.loads(json.dumps(child.record)):
+            raise RuntimeError("finalized child receipt differs from observed record")
+        artifacts = child.retained_artifacts()
+        artifacts[self.relative(receipt)] = hashlib.sha256(payload).hexdigest()
+        for relative, expected in artifacts.items():
+            path = ROOT / relative
+            if expected is None or not path.is_file() or file_sha256(path) != expected:
+                raise RuntimeError("Missing or changed child evidence: " + relative)
+        bindings = self.record.setdefault("runtime_input_sha256", {})
+        for relative, digest in artifacts.items():
+            if relative in bindings and bindings[relative] != digest:
+                raise RuntimeError("Conflicting child evidence binding: " + relative)
+        bindings.update(artifacts)
+        self.flush()
+
     def finish(self, outcome, reason):
         if outcome in ("probe_passed", "packaging_subset_passed"):
             missing_or_changed = []
-            artifacts = {
-                self.relative(self.folder / "sources" / name): digest
-                for name, digest in self.record["source_sha256"].items()
-            }
-            for command in self.record["commands"]:
-                for key in ("stdout", "stderr"):
-                    artifacts[command[key]] = command.get(key + "_sha256")
-            artifacts.update(self.record.get("runtime_input_sha256", {}))
-            for build in self.record.get("simulation_builds", []):
-                artifacts.update(build_artifacts(build))
-            for relative, expected in artifacts.items():
+            for relative, expected in self.retained_artifacts().items():
                 path = ROOT / relative
                 if expected is None or not path.is_file() or file_sha256(path) != expected:
                     missing_or_changed.append(relative)
