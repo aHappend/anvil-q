@@ -101,6 +101,13 @@ def workload(run, group, name, action, *args, cost=1, **kwargs):
 
 def execution_resources():
     cpus = len(os.sched_getaffinity(0))
+    quota = Path("/sys/fs/cgroup/cpu.max")
+    quota_cpus = None
+    if quota.is_file():
+        maximum, period = quota.read_text().split()
+        if maximum != "max":
+            quota_cpus = max(1, int(maximum) // int(period))
+    capacity = min(cpus, quota_cpus) if quota_cpus is not None else cpus
     limit = Path("/sys/fs/cgroup/memory.max")
     memory = None
     if limit.is_file():
@@ -108,12 +115,12 @@ def execution_resources():
         memory = None if value == "max" else int(value)
     available = os.sysconf("SC_AVPHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
     budget = min(available, memory) if memory is not None else available
-    workers = min(8, cpus, max(1, (budget - 2 * 1024**3) // (512 * 1024**2)))
-    build_jobs = min(2, max(1, cpus // min(workers, 2)))
+    workers = min(8, capacity, max(1, (budget - 2 * 1024**3) // (512 * 1024**2)))
+    build_jobs = min(2, max(1, capacity // min(workers, 2)))
     if budget < 8 * 1024**3:
         build_jobs = 1
     return {"workers": workers, "build_jobs": build_jobs,
-            "affinity_cpus": cpus, "memory_limit_bytes": memory}
+            "affinity_cpus": cpus, "quota_cpus": quota_cpus, "memory_limit_bytes": memory}
 
 
 def sha256(path):
@@ -168,6 +175,7 @@ class Run:
         self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
         self.builds = {}
         self.build_reuses = []
+        self.transient_builds = {}
         self.workload_results = []
         self.start = time.time()
         self.purpose = purpose
@@ -450,17 +458,13 @@ class Run:
                 "key": key, "identity": identity, "executable_sha256": sha256(cached),
                 "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
                 "original_executable": self.rel(binary),
-                "intermediates": "removed after successful link; executable retained"})
+                "intermediates": "only .o/.a/.gch removed after settled simulation; "
+                                 "generated model sources and executable retained"})
             if tool == "verilator":
-                # Only this invocation's resolved build directory is eligible.
                 directory = (work / obj).resolve()
                 directory.relative_to(self.path.resolve())
-                for path in directory.iterdir():
-                    if path != binary.resolve():
-                        if path.is_dir():
-                            shutil.rmtree(path)
-                        else:
-                            path.unlink()
+                with self.lock:
+                    self.transient_builds[str(binary.resolve())] = directory
             with self.lock:
                 self.builds[key] = cached, text, record
                 cache_entries[key] = cached, text, record
@@ -471,7 +475,24 @@ class Run:
                 ("--binary" in argv or "--build" in argv) or
                 str(argv[0]) == "iverilog" and "-o" in argv):
             return self._build(argv, cwd, timeout, expected)
-        return self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+        work = ROOT if cwd is None else Path(cwd)
+        binary = str((work / str(argv[0])).resolve())
+        try:
+            return self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+        finally:
+            with self.lock:
+                directory = self.transient_builds.get(binary)
+                settled = any(
+                    record.get("argv", [None])[0] == str(argv[0]) and
+                    record.get("exit_code") is not None and
+                    record.get("finished_at") is not None and not record.get("timeout")
+                    for record in self.records)
+                if directory is not None and settled:
+                    directory.relative_to(self.path.resolve())
+                    for path in directory.iterdir():
+                        if path.is_file() and path.suffix in (".o", ".a", ".gch"):
+                            path.unlink()
+                    del self.transient_builds[binary]
 
     def _tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
         if timeout < 3600:

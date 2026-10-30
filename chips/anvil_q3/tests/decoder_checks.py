@@ -433,11 +433,14 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                          "INTERMEDIATE": g.INTERMEDIATE_SIZE, "HIDDEN": g.HIDDEN_SIZE,
                          "VOCAB": g.VOCAB_SIZE}
             # GCC's vectorized generated wide-register copies fault on an unaligned load.
-            flags = "-O3 -fno-tree-vectorize -std=c++20 " + " ".join(
+            # Measured O3/LTO/flattening did not improve this generated model.
+            # Keep the effective size optimization explicit, including in make.
+            flags = "-Os -fno-tree-vectorize -std=c++20 " + " ".join(
                 f"-DHOST_{k}={v}" for k, v in constants.items())
             argv = ["verilator", "--cc", "--exe", "--build", "--assert", "-Wno-fatal",
                     *VERILATOR_UNROLL, "--top-module", "anvil_q3_top",
-                    "--Mdir", run.rel(obj), "-o", "decoder", "-CFLAGS", flags]
+                    "--Mdir", run.rel(obj), "-o", "decoder", "-CFLAGS", flags,
+                    "-MAKEFLAGS", "OPT_FAST=-Os"]
             argv += [f"-G{k}={v}" for k, v in asdict(g).items()]
             # make resolves C++ paths from Mdir; keep the generated command project-relative.
             import os
