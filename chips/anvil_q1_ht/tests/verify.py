@@ -517,6 +517,8 @@ def main():
             evidence.command([tool, *version_args], tool + "-version")
         evidence.command(["python3", "-B", "tests/retention_checks.py"],
                          "retention-harness-regression")
+        evidence.command(["python3", "-B", "tests/software_discrepancy_checks.py"],
+                         "reference-preflight-regression")
         evidence.command(["python3", "-B", "tests/evidence_checks.py", "--scratch",
                           evidence.relative(evidence.folder / "command-harness-scratch")],
                          "command-evidence-regression")

@@ -61,11 +61,14 @@ def supervision_records(attempt=309):
         "failed_command": result["argv"],
         "failed_exit_code": result["exit_code"],
         "failed_duration_seconds": result["duration_s"],
-        "recorded_interception": patrol["interception"],
+        "recorded_interception": patrol.get("interception"),
+        "interception_record_present": "interception" in patrol,
+        "recorded_patrol": patrol,
         "process_scope_settled": settled["process_scope_settled"],
         "supervision_confirmation": "not_established",
         "scope": (
-            "These records describe the existing execution and cancellation. "
+            "These records describe the existing execution. A missing interception "
+            "field does not establish a cancellation, timeout or patrol exemption. "
             "Role limits are not an override of the observed patrol. No separately "
             "supervised-stage contract, effective patrol accommodation, original "
             "absolute-deadline reconciliation or durable-retention confirmation "
@@ -74,10 +77,10 @@ def supervision_records(attempt=309):
     }
 
 
-def audit_supervision(attempt=309):
+def audit_supervision(attempt=309, repair_of=None):
     evidence = Evidence(
         "supervision-record-audit",
-        repair_of=(
+        repair_of=repair_of or (
             "evidence/preparation/"
             "verifier-workflow-platform-diagnosis-20261029T032417Z-dd670a9d/receipt.json"
         ),
@@ -126,7 +129,7 @@ def main():
         print(json.dumps(supervision_records(args.attempt), indent=2))
         return 0
     if args.audit_supervision:
-        return audit_supervision(args.attempt)
+        return audit_supervision(args.attempt, args.repair_of)
     evidence = Evidence("workflow-platform-diagnosis",
                         repair_of=args.repair_of or PREDECESSOR)
     evidence.record["scope"] = "read_only_prerequisites_not_acceptance"
