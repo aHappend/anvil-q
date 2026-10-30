@@ -59,6 +59,8 @@ module anvil_q2_ht_tile_buffers #(
     assign m_tag = 0; assign fault = 0;
   end else begin: implementation
     localparam [2:0] FREE=0, FILLING=1, READY=2, EXECUTING=3, DRAINING=4;
+    localparam SLOT_AW=$clog2(TILE_SLOTS);
+    localparam ROW_AW=SLOT_AW+4;
     reg [2:0] state [0:TILE_SLOTS-1];
     reg [31:0] generation [0:TILE_SLOTS-1];
     reg generation_used [0:TILE_SLOTS-1];
@@ -111,10 +113,13 @@ module anvil_q2_ht_tile_buffers #(
     wire release_ok = release_transfer && release_in_range &&
       state[release_slot]==EXECUTING && generation[release_slot]==release_generation;
     wire read_advance = available && (!data_valid || m_ready);
-    wire [6:0] write_address = mode[fill_slot] ?
-      {fill_slot,fill_beat[5:2]} : {fill_slot,fill_beat[3:0]};
-    wire [6:0] meta_address = {meta_slot,meta_row};
-    wire [6:0] read_address = {issue_slot,issue_row};
+    wire [ROW_AW-1:0] write_address = mode[fill_slot] ?
+      {fill_slot[SLOT_AW-1:0],fill_beat[5:2]} :
+      {fill_slot[SLOT_AW-1:0],fill_beat[3:0]};
+    wire [ROW_AW-1:0] meta_address = {meta_slot[SLOT_AW-1:0],meta_row};
+    wire [ROW_AW-1:0] read_address = {issue_slot[SLOT_AW-1:0],issue_row};
+    wire [SLOT_AW-1:0] operand_address = operand_slot[SLOT_AW-1:0];
+    wire [SLOT_AW-1:0] activation_address = issue_slot[SLOT_AW-1:0];
 
     assign alloc_ready = available && (!alloc_in_range || state[alloc_slot]==FREE);
     assign operand_ready = available;
@@ -141,23 +146,29 @@ module anvil_q2_ht_tile_buffers #(
         reg [15:0] weight_read;
         reg [19:0] metadata_read;
         reg [31:0] activation_read;
+        wire weight_write = fill_ok &&
+          (!mode[fill_slot] || fill_beat[1:0]==QUARTER);
+        wire [15:0] weight_data = mode[fill_slot] ?
+          fill_data[WORD*16+:16] : {12'd0,fill_data[J*4+:4]};
 
         // RAM contents and read registers need no reset; validity gates all outputs.
         always @(posedge clk) begin
-          if (fill_ok) begin
-            if (!mode[fill_slot]) weight_ram[write_address] <= {12'd0,fill_data[J*4+:4]};
-            else if (fill_beat[1:0]==QUARTER)
-              weight_ram[write_address] <= fill_data[WORD*16+:16];
-          end
+          if (weight_write)
+            weight_ram[write_address] <= weight_data;
+          if (issue_ok)
+            weight_read <= weight_ram[read_address];
+        end
+        always @(posedge clk) begin
           if (metadata_ok)
             metadata_ram[meta_address] <= {meta_scale[J*16+:16],meta_zero[J*4+:4]};
-          if (operand_ok)
-            activation_ram[operand_slot] <= operand_activation[J*32+:32];
-          if (issue_ok) begin
-            weight_read <= weight_ram[read_address];
+          if (issue_ok)
             metadata_read <= metadata_ram[read_address];
-            activation_read <= activation_ram[issue_slot];
-          end
+        end
+        always @(posedge clk) begin
+          if (operand_ok)
+            activation_ram[operand_address] <= operand_activation[J*32+:32];
+          if (issue_ok)
+            activation_read <= activation_ram[activation_address];
         end
         assign m_act[J*32+:32] = m_valid ? activation_read : 32'd0;
         assign m_w4[J*4+:4] = m_valid && !data_mode ? weight_read[3:0] : 4'd0;

@@ -175,6 +175,9 @@ not consumable on the same edge that creates them.
 | Prefetch simultaneous ring push/pop | Count unchanged; old head response consumed once |
 | Tile final fill with final metadata | Completeness stored now; READY only at a later edge |
 | Tile issue with output consumption | One synchronous RAM read replaces the consumed vector |
+| Tile fill/metadata/operand write with another slot's issue | Independent RAM write/read ports operate on the same edge; issue data appears after that edge without an additional register |
+| Tile slots two through eight, including three | RAM address widths follow configured depth; full public slot range and ownership checks precede every enabled access |
+| Tile output blocked with future-slot fill | RAM read registers hold; independent writes may continue in FILLING slots |
 | Tile flush with issue/allocate | Flush wins; no new memory/ownership operation |
 | Tile release with same-slot issue | Release waits; no same-generation reuse race |
 | KV codec block one | Scan, exponent search and last-element paths remain reachable |

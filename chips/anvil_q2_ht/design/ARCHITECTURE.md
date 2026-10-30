@@ -116,8 +116,16 @@ Each of the 16 banks contains eight independent RAM slices. Logical lane
 W4 beat `r` writes row `r` in every slice. BF16 beat `{r,q}` writes row `r`
 in the two slices per bank belonging to logical quarter `q`. All 128 slice
 read ports operate together. No serialized 128-way weight selection supplies
-the array. The `ramstyle` attributes request M20K inference, but actual mapping,
-capacity and routing remain unproven until the native Quartus gate.
+the array. Each memory uses its own reset-free clocked process with one write
+enable/data/address and one enabled synchronous read. The W4/BF16 write-data
+selection occurs before the weight RAM's sole write port. Slot addresses have
+`ceil(log2(TILE_SLOTS))` bits; row addresses append four row bits. Full-width
+public slot checks still qualify every access, so narrowing the RAM ports
+does not alias invalid slots, including at non-power-of-two slot counts.
+These inference templates replace the oversized RAM addresses and conditional
+weight writes in the implementation whose retained mapping reported zero
+tile-buffer block-memory bits. The `ramstyle` attributes request M20K inference;
+corrected mapping, capacity and routing still require native Quartus evidence.
 
 Flush immediately suppresses operand output and enters DRAINING. Slots return
 to FREE only after `drain_complete` is observed with flush deasserted; generation
