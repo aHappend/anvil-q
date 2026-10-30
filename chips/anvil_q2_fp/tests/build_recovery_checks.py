@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from retained import ROOT, Run, audit_streams
-from simulation import (BUILD_RESERVE, STORAGE_HEADROOM, build_model, build_policy,
+from simulation import (BUILD_RESERVE, MAXIMUM_BUILDS, STORAGE_HEADROOM, build_model, build_policy,
                         cleanup_intermediates, generated_artifacts)
 
 
@@ -103,7 +103,7 @@ def fixtures(directory):
             (STORAGE_HEADROOM + BUILD_RESERVE - 1, 16, 1),
             (STORAGE_HEADROOM + BUILD_RESERVE, 16, 1),
             (STORAGE_HEADROOM + 2 * BUILD_RESERVE, 16, 2),
-            (STORAGE_HEADROOM + 10 * BUILD_RESERVE, 16, 4),
+            (STORAGE_HEADROOM + 10 * BUILD_RESERVE, 16, MAXIMUM_BUILDS),
             (STORAGE_HEADROOM + 10 * BUILD_RESERVE, 2, 1)):
         row = build_policy(available, cpus)
         assert row["maximum_concurrent_jobs"] == expected

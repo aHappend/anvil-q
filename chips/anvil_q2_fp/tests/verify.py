@@ -15,8 +15,10 @@ Large/token/mutation workloads use compiled Verilator with hash-bound,
 check-local model reuse; seeds and fixture paths are run-time testbench inputs,
 not changes to DUT parameters. Icarus retains full compact leaf tests and
 four-state time-zero/edge startup checks for each compiled configuration.
-Behavior and benchmark dispatch at most four independent child jobs, bounded
-by current storage and CPU capacity, with cross-process compiler admission
+Behavior dispatches same-configuration seeds/scenarios in one worker so cache
+lock waiters never consume the other workers. Native-row jobs start first.
+Behavior and benchmark dispatch at most eight jobs, bounded
+by current storage, memory and CPU capacity, with cross-process compiler admission
 and two compiler jobs per build. Native synthesis dispatches at most four jobs,
 bounded by available CPU/memory, and retains memory -nomap in every child.
 """
@@ -173,6 +175,31 @@ def execute_job(run, record):
         raise
 
 
+def configuration_groups(records):
+    """Keep same-model seeds/scenarios in one worker, without dropping runs."""
+    groups = {}
+    for record in records:
+        argv = record["argv"]
+        key = argv[:2]
+        i = 2
+        while i < len(argv):
+            if argv[i] == "--seed" or (
+                    argv[1] == "tests/top_lifecycle_checks.py" and argv[i] == "--case"):
+                i += 2
+            else:
+                key.append(argv[i])
+                i += 1
+        groups.setdefault(tuple(key), []).append(record)
+    priority = {"tests/projection_row_checks.py": 0, "tests/token_checks.py": 1,
+                "tests/top_lifecycle_checks.py": 2}
+    return sorted(groups.values(), key=lambda rows: priority.get(rows[0]["argv"][1], 3))
+
+
+def execute_group(run, records):
+    for record in records:
+        execute_job(run, record)
+
+
 def execute_record(run, record):
     label = record["id"]
     record["outcome"] = "running"
@@ -236,8 +263,10 @@ def execute(check):
             workers = dispatch["maximum_concurrent_jobs"]
             run.receipt["synthesis_dispatch"] = dispatch
         run.receipt["maximum_concurrent_jobs"] = workers
+        groups = configuration_groups(records) if check == "behavior" else [[r] for r in records]
+        run.receipt["dispatch_groups"] = [[r["id"] for r in group] for group in groups]
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = [executor.submit(execute_job, run, record) for record in records]
+            futures = [executor.submit(execute_group, run, group) for group in groups]
             try:
                 for future in as_completed(futures):
                     future.result()

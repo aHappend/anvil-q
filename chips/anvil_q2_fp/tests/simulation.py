@@ -1,10 +1,16 @@
 """Retained compiled simulation with four-state Icarus startup coverage.
 
 Generated testbench scheduling alone is adapted for Verilator's lack of #0
-inactive-region support. DUT sources are never rewritten. Builds use bounded,
-storage-aware admission and Verilator's aggregate make mode to avoid large
-precompiled headers. Generated sources are checked before C++ compilation.
+inactive-region support. DUT sources are never rewritten. Builds use bounded
+CPU/memory/storage-aware admission and two parallel C++ compiler jobs.
+Generated sources are checked before C++ compilation.
 Only settled, owned, unreferenced .o/.a/.gch files are disposable.
+
+Reserve 2 GiB memory and 512 MiB disk per build, plus shared headroom; these
+budgets are conservative admission bounds, not guarantees against external use.
+ANVIL_SIM_BUILD_LIMIT can reduce concurrency to reproduce bounded measurements.
+Preparation measurements must remain inspectable before this policy is admitted;
+missing receipts are not passing performance or retention evidence.
 """
 
 import fcntl
@@ -19,25 +25,36 @@ import stat
 import time
 
 from retained import ROOT, require_time_zero
+from synthesis_dispatch import resources
 
 
 MIB = 1024 ** 2
-BUILD_RESERVE = 128 * MIB
-STORAGE_HEADROOM = 64 * MIB
-MAXIMUM_BUILDS = 4
+BUILD_RESERVE = 512 * MIB
+STORAGE_HEADROOM = 1024 * MIB
+MAXIMUM_BUILDS = 8
+BUILD_MEMORY = 2 * 1024 ** 3
 
 
-def build_policy(available=None, cpus=None):
+def build_policy(available=None, cpus=None, memory=None):
     if available is None:
         fs = os.statvfs(ROOT)
         available = fs.f_bavail * fs.f_frsize
+    snapshot = resources() if cpus is None or memory is None else {}
     if cpus is None:
-        cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
+        cpus = snapshot["cpu_capacity"]
+    if memory is None:
+        memory = snapshot["available_bytes"]
     assert cpus and cpus > 0, "cannot determine compiler CPU capacity"
-    workers = min(MAXIMUM_BUILDS, max(1, cpus // 2),
-                  max(1, (available - STORAGE_HEADROOM) // BUILD_RESERVE))
+    limit = int(os.environ.get("ANVIL_SIM_BUILD_LIMIT", MAXIMUM_BUILDS))
+    assert 1 <= limit <= MAXIMUM_BUILDS, "compiler limit must be in 1..8"
+    memory_headroom = max(1024 ** 3, memory // 4)
+    workers = min(limit, max(1, cpus // 2),
+                  max(1, (available - STORAGE_HEADROOM) // BUILD_RESERVE),
+                  max(1, (memory - memory_headroom) // BUILD_MEMORY))
     return dict(available_bytes=available, cpu_capacity=cpus,
                 maximum_concurrent_jobs=workers, per_build_reserved_bytes=BUILD_RESERVE,
+                available_memory_bytes=memory, memory_headroom_bytes=memory_headroom,
+                per_build_reserved_memory_bytes=BUILD_MEMORY,
                 headroom_bytes=STORAGE_HEADROOM,
                 limitation="Admission budget, not a quota or guarantee against external disk use.")
 
@@ -65,8 +82,10 @@ def build_slot(run, timeout=3600):
                         handle.close()
                 snapshot = build_policy()
                 required = STORAGE_HEADROOM + (busy + 1) * BUILD_RESERVE
-                if (unlocked and busy < max(1, snapshot["cpu_capacity"] // 2)
-                        and snapshot["available_bytes"] >= required):
+                if (unlocked and busy < snapshot["maximum_concurrent_jobs"]
+                        and snapshot["available_bytes"] >= required
+                        and snapshot["available_memory_bytes"] >=
+                        snapshot["memory_headroom_bytes"] + (busy + 1) * BUILD_MEMORY):
                     acquired = unlocked.pop()
                     run.receipt.setdefault("compiler_storage_admission", []).append(
                         dict(snapshot, active_other_builds=busy, required_bytes=required,
@@ -231,6 +250,8 @@ def stream_model(run, argv, checker, transaction_prefixes, record_prefixes,
 
 def compile_model(run, bench, sources, parameters, label="compile"):
     sources = list(sources)
+    mode = os.environ.get("ANVIL_SIM_BUILD_MODE", "split")
+    assert mode in ("aggregate", "split"), "unknown compiler build mode"
     identity = {
         "sources": {run.relative(p): digest(p) for p in sources},
         "bench": digest(bench), "parameters": parameters,
@@ -239,7 +260,7 @@ def compile_model(run, bench, sources, parameters, label="compile"):
                     "-Wno-fatal", "-Wno-BLKANDNBLK",
                     "--unroll-count", "512", "--unroll-stmts", "1000000",
                     "-CFLAGS", "-O1", "-j", "2"],
-        "make_options": ["VM_PARALLEL_BUILDS=0"],
+        "make_options": [f"VM_PARALLEL_BUILDS={int(mode == 'split')}"],
     }
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
     cache = Path(os.environ.get("ANVIL_SIM_CACHE", run.relative(run.path / "sim-cache")))
@@ -306,8 +327,6 @@ def build_uncached_model(run, bench, sources, parameters, label, identity, index
         raise
     run.receipt.setdefault("generated_model_sha256", {}).update(generated)
     try:
-        # Aggregate mode is Verilator's standard small-design build rule. It
-        # avoids retaining fast/slow PCH copies under severe shared disk pressure.
         run.command(["make", "-C", run.relative(objects), "-f", "Vtb.mk", "-j", "2",
                      *identity["make_options"]], label, timeout=3600)
         assert generated_artifacts(objects) == generated, "generated sources changed during build"
