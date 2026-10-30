@@ -11,6 +11,7 @@ import copy
 import hashlib
 import json
 import re
+import time
 from pathlib import Path
 
 from deepseek_shell import measure
@@ -64,6 +65,131 @@ def observable_trace(child, prefix):
     log = (ROOT / child["stdout"]).read_text()
     return [line for line in log.splitlines()
             if line.startswith((prefix + "_", "COMPARED ", "SCOREBOARD_INJECT "))]
+
+
+def run_execution_cost(evidence):
+    """Fresh, bounded compact profiling, retaining the original public oracle."""
+    evidence.tools(("python3", "verilator", "g++", "make", "gprof"))
+    interrupted = ROOT / (
+        "evidence/verification/l1-da9a33ef8bca4a49b6b71c31de9288f0/"
+        "case-0221-run_qwen_shell/case-0225-qwen-shell-b0-s1/"
+        "1228-qwen-shell-b0-s1-simulate/stdout.log")
+    evidence.record["execution_cost_predecessor"] = {
+        "path": str(interrupted.relative_to(ROOT)),
+        "available": interrupted.is_file(),
+        "sha256": hashlib.sha256(interrupted.read_bytes()).hexdigest()
+                  if interrupted.is_file() else None,
+        "scope": "Interrupted complete-table simulation; no completed inference inferred",
+    }
+    directory = evidence.path / "compact-inputs"
+    directory.mkdir()
+    evidence.child(
+        ["python3", "tests/qwen_shell.py", evidence.relative(directory), "--compact"],
+        "execution-cost-inputs")
+    info = json.loads((directory / "shell-reference.json").read_bytes())
+    rows = []
+    for label, profile in (("baseline", False), ("profile", True)):
+        scope = copy.copy(evidence)
+        scope.name_prefix = label + "-"
+        scope.compiler_profile = profile
+        row = shell_case(scope, info, 17, 1, True)
+        rows.append(row)
+        if profile:
+            samples = sorted((scope.path / row["name"]).glob("gmon.*"))
+            require(len(samples) == 1, "Expected exactly one settled gprof sample")
+            executable = row["compile_receipt"]["argv"]
+            binary = ROOT / executable[executable.index("--Mdir") + 1] / "simulation"
+            evidence.child(
+                ["gprof", "-b", evidence.relative(binary), evidence.relative(samples[0])],
+                "execution-cost-profile")
+    require(rows[0]["actual_comparisons"] == rows[1]["actual_comparisons"] and
+            observable_trace(rows[0]["simulation_receipt"], "QWEN_SHELL") ==
+            observable_trace(rows[1]["simulation_receipt"], "QWEN_SHELL"),
+            "Profiling changed original public transaction/cycle/byte observations")
+    evidence.record["execution_cost"] = [{
+        "variant": label, "simulation_seconds": row["simulation_receipt"]["duration_s"],
+        "compile_seconds": row["compile_receipt"]["duration_s"],
+        "resources": row["simulation_receipt"]["resources"],
+        "actual_comparisons": row["actual_comparisons"],
+        "raw_stdout": row["simulation_receipt"]["stdout"],
+    } for label, row in zip(("baseline", "profile"), rows)]
+    save(evidence.path / "execution-cost.json", evidence.record["execution_cost"])
+
+
+def run_execution_acceleration(evidence):
+    """Measure compiler changes and concurrency, never extrapolate a passing L1."""
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.record["execution_acceleration_scope"] = (
+        "Paired synthetic capacities 257/4097 and compact six-cell schedules. "
+        "All original physical head rows, SPI bytes, DDR acknowledgements, "
+        "numerical writes, prompts, reload and drain assertions remain active. "
+        "No complete-table or aggregate execution is authorized by this diagnostic.")
+    pairs = []
+    compact = None
+    for capacity in (257, 4097):
+        directory = evidence.path / f"capacity-{capacity}"
+        directory.mkdir()
+        evidence.child(
+            ["python3", "tests/qwen_shell.py", evidence.relative(directory),
+             "--compact", str(capacity)], f"acceleration-inputs-{capacity}")
+        info = json.loads((directory / "shell-reference.json").read_bytes())
+        if capacity == 257:
+            compact = info
+        rows = []
+        for label, lto in (("baseline", False), ("lto", True)):
+            scope = copy.copy(evidence)
+            scope.name_prefix = f"{label}-{capacity}-"
+            scope.compiler_lto = lto
+            rows.append(shell_case(scope, info, 17, 1, True))
+        require(rows[0]["actual_comparisons"] == rows[1]["actual_comparisons"] and
+                rows[0]["source_sha256"] == rows[1]["source_sha256"] and
+                rows[0]["input_files"] == rows[1]["input_files"] and
+                observable_trace(rows[0]["simulation_receipt"], "QWEN_SHELL") ==
+                observable_trace(rows[1]["simulation_receipt"], "QWEN_SHELL"),
+                "Compiler acceleration changed public observations")
+        pairs.append({
+            "capacity": capacity, "identical_public_trace": True,
+            "comparisons": rows[0]["actual_comparisons"],
+            "variants": [{
+                "variant": label, "simulation_seconds": row["simulation_receipt"]["duration_s"],
+                "compile_seconds": row["compile_receipt"]["duration_s"],
+                "resources": row["simulation_receipt"]["resources"],
+                "simulation_receipt": str(Path(row["simulation_receipt"]["stdout"]).parent /
+                                          "receipt.json"),
+            } for label, row in zip(("baseline", "lto"), rows)],
+        })
+        save(evidence.path / f"acceleration-{capacity}.json", pairs[-1])
+    evidence.record["execution_acceleration_pairs"] = pairs
+    schedules = []
+    for workers in (1, min(3, evidence._limits["workers"])):
+        scope = copy.copy(evidence)
+        scope.name_prefix = f"schedule-w{workers}-"
+        scope.compiler_lto = True
+        before = len(evidence.record["coverage"])
+        start = time.monotonic()
+        scope.run_cases([
+            (f"compact-s{seed}-b{bypass}",
+             lambda case, seed=seed, bypass=bypass:
+             shell_case(case, compact, seed, bypass, False))
+            for seed in (1, 17, 89) for bypass in (0, 1)
+        ], workers=workers)
+        rows = evidence.record["coverage"][before:]
+        require(len(rows) == 6 and all(row["status"] == "passed" for row in rows),
+                "Every compact scheduling cell must complete")
+        schedules.append({
+            "workers": workers, "wall_seconds": time.monotonic() - start,
+            "actual_comparisons": sum(row["actual_comparisons"] for row in rows),
+            "simulation_seconds": [row["simulation_receipt"]["duration_s"] for row in rows],
+            "max_rss_kib": [row["simulation_receipt"]["resources"]["max_rss_kib"] for row in rows],
+            "traces": {re.sub(r"^schedule-w\d+-", "", row["name"]):
+                       observable_trace(row["simulation_receipt"], "QWEN_SHELL") for row in rows},
+            "source_sha256": rows[0]["source_sha256"],
+        })
+        save(evidence.path / f"schedule-{workers}.json", schedules[-1])
+    require(schedules[0]["traces"] == schedules[1]["traces"] and
+            schedules[0]["actual_comparisons"] == schedules[1]["actual_comparisons"],
+            "Concurrency changed public transaction/cycle/byte observations")
+    evidence.record["execution_schedules"] = schedules
 
 
 def controls(evidence, baseline, family):

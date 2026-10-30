@@ -206,6 +206,8 @@ class Evidence:
         self.simulator_override = None
         self.explicit_clock = None
         self.compiler_pch = False
+        self.compiler_profile = False
+        self.compiler_lto = False
         self.compiled_simulations = {}
         self.complete_table_producers = {}
         self._table_locks = {}
@@ -682,6 +684,14 @@ class Evidence:
             if optimize:
                 make_flags.extend(["OPT_FAST=-O3", "OPT_SLOW=-O3"])
             compile_options.extend(["-MAKEFLAGS", " ".join(make_flags)])
+            if self.compiler_profile:
+                compile_options.extend([
+                    "-CFLAGS", "-pg", "-LDFLAGS", "-pg",
+                ])
+            if self.compiler_lto:
+                compile_options.extend([
+                    "-O3", "-CFLAGS", "-flto", "-LDFLAGS", "-flto",
+                ])
             if driver_source is not None:
                 compile_options[0:1] = ["--cc", "--exe", "--build"]
                 record["clock_driver_sha256"] = digest(driver_source)
@@ -752,7 +762,11 @@ class Evidence:
                 compile_intermediates_removed=removed,
             )
             record["stage"] = "simulate"
-            result = self.child([self.relative(binary), *runtime_args], name + "-simulate",
+            command = [self.relative(binary), *runtime_args]
+            if self.compiler_profile:
+                command = ["env", "GMON_OUT_PREFIX=" +
+                           self.relative(directory / "gmon"), *command]
+            result = self.child(command, name + "-simulate",
                                 allow_failure=True)
         record.update(simulation_receipt=result, status="failed")
         if (result["exit_code"] != 0 or result["timed_out"] or
@@ -1255,6 +1269,8 @@ def main():
         "shell-driver-comparison",
         "shell-driver-scaling",
         "shell-driver-capacity",
+        "shell-execution-cost",
+        "shell-execution-acceleration",
         "official-llama-discovery",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
@@ -1323,6 +1339,14 @@ def main():
             from runtime_reuse import runtime_reuse
             runtime_reuse(evidence)
             reason = "Runtime-input equivalence, compiled reuse and bounded scheduling measured; not L1 acceptance"
+        elif args.probe == "shell-execution-cost":
+            from cycle_driver import run_execution_cost
+            run_execution_cost(evidence)
+            reason = "Compact compiled shell execution costs measured; not aggregate L1 or acceptance"
+        elif args.probe == "shell-execution-acceleration":
+            from cycle_driver import run_execution_acceleration
+            run_execution_acceleration(evidence)
+            reason = "Compiled shell acceleration and resource-safe scheduling measured; not aggregate L1 or acceptance"
         elif args.probe == "runtime-head-controls":
             from runtime_reuse import head_controls
             head_controls(evidence)
