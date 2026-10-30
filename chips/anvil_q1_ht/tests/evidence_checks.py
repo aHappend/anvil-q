@@ -1293,6 +1293,80 @@ class CommandEvidenceChecks(unittest.TestCase):
         self.assertTrue(entry["process_settled"])
         self.assertEqual(entry["exit_code"], 0)
 
+    def test_redirected_child_reports_liveness_without_changing_raw_logs(self):
+        wait = self.evidence.wait_with_progress
+        output = io.StringIO()
+        with patch.object(
+                self.evidence, "wait_with_progress",
+                side_effect=lambda *args: wait(*args, heartbeat_seconds=0.02)), \
+                contextlib.redirect_stdout(output):
+            text = self.evidence.command([
+                sys.executable, "-c",
+                "import time; print('TOKEN_COMPARED logits=67', flush=True); "
+                "time.sleep(0.2)",
+            ], "progress-child", timeout=3600)
+        self.assertEqual(text, "TOKEN_COMPARED logits=67\n")
+        rows = [json.loads(line.removeprefix("COMMAND_HEARTBEAT "))
+                for line in output.getvalue().splitlines()]
+        self.assertGreater(len(rows), 1)
+        self.assertTrue(any(row["output_changed"] for row in rows))
+        self.assertTrue(any(not row["output_changed"] for row in rows))
+        self.assertTrue(all(
+            row["scope"] == "child_wait_not_functional_progress_or_acceptance"
+            for row in rows))
+        self.assertNotIn(str(self.root), output.getvalue())
+        entry = self.evidence.record["commands"][0]
+        self.assertEqual(entry["heartbeat_count"], len(rows))
+        self.assertEqual(entry["last_heartbeat"], rows[-1])
+        self.assertEqual((self.root / entry["stdout"]).read_text(), text)
+        self.assertEqual((self.root / entry["stderr"]).read_bytes(), b"")
+        self.assertEqual(entry["exit_code"], 0)
+        self.assertFalse(entry["timed_out"])
+        self.assertTrue(entry["process_settled"])
+        self.assertEqual(entry["timeout_seconds"], 3600)
+
+    def wait_fixture(self):
+        stdout, stderr = self.root / "stdout", self.root / "stderr"
+        stdout.write_text("observed output\n")
+        stderr.write_text("")
+        process = Mock(pid=123)
+        process.wait.side_effect = verify.subprocess.TimeoutExpired("synthetic", 30)
+        entry = {"label": "wait-test", "timed_out": False}
+        return process, entry, stdout, stderr
+
+    def test_heartbeat_wait_preserves_absolute_child_deadline(self):
+        process, entry, stdout, stderr = self.wait_fixture()
+        with patch.object(verify.time, "monotonic",
+                          side_effect=[100, 130, 130, 160, 160, 175]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.evidence.wait_with_progress(process, entry, stdout, stderr, 100, 75)
+        self.assertEqual(process.wait.call_args_list,
+                         [call(timeout=30), call(timeout=30), call(timeout=15)])
+        self.assertTrue(entry["timed_out"])
+        self.assertEqual(entry["heartbeat_count"], 2)
+
+    def test_completed_child_does_not_emit_a_heartbeat(self):
+        process, entry, stdout, stderr = self.wait_fixture()
+        process.wait.side_effect = None
+        with patch.object(verify.time, "monotonic", return_value=100), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            self.evidence.wait_with_progress(process, entry, stdout, stderr, 100, 3600)
+        self.assertEqual(output.getvalue(), "")
+        self.assertFalse(entry["timed_out"])
+        self.assertNotIn("heartbeat_count", entry)
+
+    def test_missing_live_log_is_not_recreated_by_heartbeat(self):
+        process, entry, stdout, stderr = self.wait_fixture()
+        stdout.unlink()
+        with patch.object(verify.time, "monotonic", side_effect=[100, 130]), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            with self.assertRaises(FileNotFoundError):
+                self.evidence.wait_with_progress(
+                    process, entry, stdout, stderr, 100, 3600)
+        self.assertFalse(stdout.exists())
+        self.assertEqual(output.getvalue(), "")
+        self.assertNotIn("heartbeat_count", entry)
+
     def test_launch_failure_keeps_raw_files_and_diagnostic(self):
         with self.assertRaisesRegex(RuntimeError, "launch failed"):
             self.evidence.command(["./nonexistent-tool"], "missing-tool")
@@ -1485,6 +1559,8 @@ if __name__ == "__main__":
             evidence.record["observations"].append({
                 "scope": "command_harness_only_not_RTL_or_storage_repair",
                 "compared": "unique logs, raw hashes, launch failure, child settlement "
+                            "and parent-visible redirected-child liveness observations "
+                            "with unchanged absolute deadlines and raw transcripts; "
                             "on post-launch receipt failure, exclusive receipt creation, "
                             "missing/replaced receipt rejection, fail-closed finalization "
                             "and nested integration-case progress on receipt loss "

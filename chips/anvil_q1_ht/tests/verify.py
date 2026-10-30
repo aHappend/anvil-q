@@ -13,6 +13,9 @@ the parent, so later child evidence loss cannot yield a successful parent.
 Active-reset and parent-compatibility campaigns enforce the same binding before
 marking a child compared. This detects loss; it cannot repair shared storage or
 authorize another aggregate retry after patrol cancellation.
+Redirected children emit a bounded parent-visible liveness observation every
+30 seconds. Log byte counts distinguish output activity from a silent child;
+neither observation certifies functional progress or changes execution limits.
 The mandatory campaign includes both parent-service projection measurements and
 the separate matched eight/64-active-lane arithmetic comparison. Cost diagnosis
 uses the same stage inventory; neither measurement replaces the other.
@@ -186,10 +189,7 @@ class Evidence:
                 entry["pid"] = process.pid
                 try:
                     self.flush()
-                    try:
-                        process.wait(timeout=timeout)
-                    except subprocess.TimeoutExpired:
-                        entry["timed_out"] = True
+                    self.wait_with_progress(process, entry, stdout, stderr, started, timeout)
                 finally:
                     # Receipt failure must not leave a launched child running.
                     if process.poll() is None:
@@ -225,6 +225,38 @@ class Evidence:
         if code not in expected_codes or entry["timed_out"]:
             raise RuntimeError(f"{label} failed (exit={code}, timeout={entry['timed_out']}):\n{text[-8000:]}")
         return text
+
+    def wait_with_progress(self, process, entry, stdout, stderr, started, timeout,
+                           heartbeat_seconds=30):
+        deadline = started + timeout
+        previous_sizes = (0, 0)
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                entry["timed_out"] = True
+                return
+            try:
+                process.wait(timeout=min(heartbeat_seconds, remaining))
+                return
+            except subprocess.TimeoutExpired:
+                elapsed = time.monotonic() - started
+                if elapsed >= timeout:
+                    entry["timed_out"] = True
+                    return
+                sizes = (stdout.stat().st_size, stderr.stat().st_size)
+                observation = {
+                    "receipt": self.relative(self.folder / "receipt.json"),
+                    "label": entry["label"], "pid": process.pid,
+                    "elapsed_seconds": round(elapsed, 3),
+                    "stdout_bytes": sizes[0], "stderr_bytes": sizes[1],
+                    "output_changed": sizes != previous_sizes,
+                    "scope": "child_wait_not_functional_progress_or_acceptance",
+                }
+                entry["heartbeat_count"] = entry.get("heartbeat_count", 0) + 1
+                entry["last_heartbeat"] = observation
+                self.flush()
+                print("COMMAND_HEARTBEAT " + json.dumps(observation), flush=True)
+                previous_sizes = sizes
 
     def simulate(self, name, bench, sources=None, rtl_root=None, timeout=3600,
                  simulator=None, defines=(), cxx_optimization="-O3", flatten=False,
