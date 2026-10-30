@@ -2,9 +2,9 @@
   "chip": "Anvil-Q1-FP",
   "passed_checks": {
     "check:benchmark-validator-fail-closed-regressions": {
-      "attempt_id": 754,
-      "duration_s": 52.74626264208928,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-7626o41t/receipt.json\"}\n",
+      "attempt_id": 769,
+      "duration_s": 58.20079361507669,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-1fghnkit/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -23,16 +23,16 @@
       "receipts": []
     },
     "check:packed-storage-lossless-corruption-regressions": {
-      "attempt_id": 756,
-      "duration_s": 124.19592696405016,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-i4p7nvme/receipt.json\"}\n",
+      "attempt_id": 771,
+      "duration_s": 149.36258235108107,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-73q2l1gk/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:portable-clean-copy": {
-      "attempt_id": 753,
-      "duration_s": 835.6722029119264,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-h2hy6lln/receipt.json\"}\n",
+      "attempt_id": 768,
+      "duration_s": 929.6916374878492,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-6xdwq_jb/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -44,9 +44,9 @@
       "receipts": []
     },
     "check:receipt-publication-failure-regressions": {
-      "attempt_id": 755,
-      "duration_s": 116.3481080471538,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-cjh0wgpw/receipt.json\"}\n",
+      "attempt_id": 770,
+      "duration_s": 130.3125735821668,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-r17zctyh/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     }
