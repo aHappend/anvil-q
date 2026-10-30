@@ -3,9 +3,11 @@
 python3 tests/throughput_probe.py --cycles 1000000 --workers 1 2 4 8
 
 The complete C/BANKS8/INT4-symmetric/seed17 four-token fixture is unchanged.
-Only a fixed prefix executes, with every original public-edge assertion and
-online numerical write comparison. Exit 2 denotes the deliberately incomplete
-prefix. Timed runs and instrumented host/model attribution are kept separate.
+By default only a fixed prefix executes, with every original public-edge
+assertion and online numerical write comparison. Exit 2 denotes that incomplete
+prefix. --pgo --complete-pgo additionally runs all four tokens with complete
+independent comparisons. Neither diagnostic discharges admitted matrix gates.
+Timed runs and instrumented host/model attribution are kept separate.
 """
 
 import argparse
@@ -222,7 +224,7 @@ def main():
                 "receipt": str(Path(record["stdout"]).parent / "receipt.json"),
                 "executable_sha256": sha256(binaries["pgo"])})
             write_json(run.path / "complete-C.json", complete)
-        run.finish("passed", result={"scope": "prefix only; not matrix acceptance",
+        run.finish("passed", result={"scope": "compiler candidate diagnostic; not matrix acceptance",
                                      "measurements": run.rel(run.path / "measurements.json"),
                                      "prefix_equivalence": reference,
                                      "complete_C": complete})
