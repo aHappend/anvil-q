@@ -72,10 +72,20 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
                                 physical_inventory_sensitivity, fitted_summary_sensitivity)
     from public_asset_checks import public_asset_checks
     from compiler_admission_checks import admission_sensitivity
+    from startup_retention_checks import retention_sensitivity
 
+    cases = [(label, g, True) for label, g in positive_cases()]
+    if include_negative:
+        cases += [(label, g, False) for label, g in negative_cases()]
+    if selected_cases is not None:
+        cases = selected_cases
+    leaf_count = sum(include_negative or expected for _, _, expected in leaf_cases())
+    run.plan_startup_storage(
+        (len(cases) + leaf_count + len(list(baseline_geometries()))) * len(simulators))
     results = []
     lint = {"assignments": sequential_lint(), "hardware_metric_checker": hardware_metrics(),
             "compiler_admission_checker": admission_sensitivity(),
+            "startup_retention_checker": retention_sensitivity(run),
             "preparation_dispatch_checker": preparation_dispatch_sensitivity(),
             "public_asset_checker": public_asset_checks(run),
             "board_prerequisite_checker": board_prerequisite_sensitivity(run),
@@ -85,11 +95,6 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
             "inflight_tool_receipt": inflight_tool_receipt(run)}
     if include_timing_lint:
         lint["timing"] = timing_lint(run)
-    cases = [(label, g, True) for label, g in positive_cases()]
-    if include_negative:
-        cases += [(label, g, False) for label, g in negative_cases()]
-    if selected_cases is not None:
-        cases = selected_cases
     write_json(run.path / "parameter-manifest.json",
                [{"label": label, "parameters": asdict(g), "legal": expected}
                 for label, g, expected in cases])
@@ -120,7 +125,8 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
                           "--top-module", "parameter_startup", "--Mdir", run.rel(obj),
                           "-o", "startup", *rtl, run.rel(tb)],
                          build_class="verilator-startup")
-                argv = [run.rel(obj / "startup")]
+                binary = obj / "startup"
+                argv = [run.rel(binary)]
             text, record = run.tool(argv, expected=(0,) if expected else tuple(range(-128, 129)))
             if expected:
                 if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
@@ -132,6 +138,7 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
                             "expected_legal": expected, "observed_exit": record["exit_code"],
                             "stdout": record["stdout"]})
             write_json(run.path / "parameter-results.json", results)
+            run.compact_startup(binary)
     leaves = leaf_structure(run, simulators=simulators, include_negative=include_negative)
     parents = parent_structure(run, simulators=simulators)
     return {"parameters": results, "leaf_parameters": leaves, "supplied_parameters": parents, "lint": lint,
@@ -140,6 +147,8 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
 
 def parent_structure(run, *, simulators=("iverilog", "verilator")):
     cases = list(baseline_geometries())
+    if not hasattr(run, "startup_storage"):
+        run.plan_startup_storage(len(cases) * len(simulators))
     write_json(run.path / "supplied-parameter-manifest.json",
                [{"implementation": implementation, "parameters": asdict(g)}
                 for implementation, g in cases])
@@ -173,7 +182,8 @@ def parent_structure(run, *, simulators=("iverilog", "verilator")):
                           *VERILATOR_UNROLL, "--top-module", "parameter_startup",
                           "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)],
                          build_class="verilator-startup")
-                command = [run.rel(obj / "startup")]
+                binary = obj / "startup"
+                command = [run.rel(binary)]
             text, receipt = run.tool(command)
             if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
                 raise AssertionError("supplied-baseline positive startup failed")
@@ -181,12 +191,15 @@ def parent_structure(run, *, simulators=("iverilog", "verilator")):
                             "simulator": simulator, "stdout": receipt["stdout"],
                             "independent_q1": False})
             write_json(run.path / "supplied-parameter-results.json", results)
+            run.compact_startup(binary)
     return results
 
 
 def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negative=True):
     cases = [(module, parameters, expected) for module, parameters, expected in leaf_cases()
              if include_negative or expected]
+    if not hasattr(run, "startup_storage"):
+        run.plan_startup_storage(len(cases) * len(simulators))
     write_json(run.path / "leaf-parameter-manifest.json",
                [{"module": module, "parameters": p, "legal": expected}
                 for module, p, expected in cases])
@@ -215,7 +228,8 @@ def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negativ
                           *VERILATOR_UNROLL, "--top-module", "parameter_startup",
                           "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)],
                          build_class="verilator-startup")
-                command = [run.rel(obj / "startup")]
+                binary = obj / "startup"
+                command = [run.rel(binary)]
             text, receipt = run.tool(command, expected=(0,) if expected else tuple(range(-128, 129)))
             if expected:
                 if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
@@ -226,4 +240,5 @@ def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negativ
                             "simulator": simulator, "observed_exit": receipt["exit_code"],
                             "stdout": receipt["stdout"]})
             write_json(run.path / "leaf-parameter-results.json", results)
+            run.compact_startup(binary)
     return results

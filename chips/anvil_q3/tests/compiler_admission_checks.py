@@ -128,7 +128,8 @@ def admission_sensitivity():
         for delta in (-1, 0, 1):
             run = admission_fixture()
             free = DISK_FLOOR_BYTES + reserve + delta
-            with patch("execution.shutil.disk_usage", return_value=SimpleNamespace(free=free)):
+            with (patch("execution.shutil.disk_usage", return_value=SimpleNamespace(free=free)),
+                  patch("execution.CAPACITY_RECOVERY_SECONDS", 0)):
                 try:
                     with run.compiler_admission(build_class) as admission:
                         assert delta >= 0

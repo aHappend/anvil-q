@@ -29,6 +29,7 @@ identifiers, waive coverage gates or establish a cold-run time budget.
 from datetime import datetime, timezone
 from dataclasses import asdict, dataclass, is_dataclass
 import errno
+import gzip
 import hashlib
 import json
 import os
@@ -59,7 +60,10 @@ BUILD_CLASS_RESERVES = {
     "verilator-startup": 512 * 1024**2,
 }
 DISK_FLOOR_BYTES = 2 * 1024**3
+STARTUP_RETAIN_BYTES = 2 * 1024**2
 CANCEL_SETTLE_SECONDS = 15
+CAPACITY_RECOVERY_SECONDS = 120
+CAPACITY_POLL_SECONDS = 0.25
 
 
 class EvidenceRetentionError(RuntimeError):
@@ -196,7 +200,8 @@ class Run:
         self.resources["compiler_disk_policy"] = {
             "floor_bytes": DISK_FLOOR_BYTES,
             "per_build_reserve_bytes": BUILD_RESERVE_BYTES,
-            "build_class_reserves_bytes": dict(BUILD_CLASS_RESERVES)}
+            "build_class_reserves_bytes": dict(BUILD_CLASS_RESERVES),
+            "capacity_recovery_seconds": CAPACITY_RECOVERY_SECONDS}
         self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
         self.compiler_admissions = {}
         self.cancelled = threading.Event()
@@ -313,43 +318,191 @@ class Run:
         if self.cancelled.is_set():
             raise RuntimeError("work cancelled after another parallel job failed")
 
+    def plan_startup_storage(self, count):
+        """Budget the entire serial startup matrix before dispatch, not one build."""
+        if not isinstance(count, int) or count < 0:
+            raise ValueError("startup execution count must be a nonnegative integer")
+        if hasattr(self, "startup_storage"):
+            raise ValueError("startup storage inventory already frozen")
+        self.startup_storage = {
+            "executions": count, "remaining": count,
+            "retained_bytes_per_execution": STARTUP_RETAIN_BYTES,
+            "completed": [],
+        }
+        self.check_startup_storage()
+
+    def check_startup_storage(self):
+        """Record capacity; only compiler admission decides whether work may start."""
+        plan = self.startup_storage
+        free = shutil.disk_usage(self.path).free
+        required = (DISK_FLOOR_BYTES + max(BUILD_CLASS_RESERVES[c] for c in
+                    ("icarus-startup", "verilator-startup")) +
+                    plan["remaining"] * STARTUP_RETAIN_BYTES)
+        plan.update({"available_bytes": free, "required_bytes": required,
+                     "floor_bytes": DISK_FLOOR_BYTES,
+                      "largest_startup_build_reserve_bytes":
+                         BUILD_CLASS_RESERVES["verilator-startup"],
+                     "checked_at": time.time()})
+        write_json(self.path / "startup-storage.json", plan)
+        return free >= required
+
+    def reclaim_settled_compiler_intermediates(self):
+        """Revisit only this invocation's successful, settled compiler directories."""
+        removed = []
+        candidates, protected = set(), set()
+        for record in getattr(self, "records", ()):
+            argv = record.get("argv", ())
+            if not argv or argv[0] != "verilator" or "--Mdir" not in argv:
+                continue
+            directory = (ROOT / record["cwd"] / argv[argv.index("--Mdir") + 1]).resolve()
+            if (record.get("exit_code") != 0 or
+                    record.get("process_scope_settled") is not True or
+                    record.get("timeout") or record.get("cancelled") or
+                    any(key in record for key in
+                        ("launch_error", "cleanup_error", "retention_error"))):
+                protected.add(directory)
+            else:
+                candidates.add(directory)
+        protected.update(Path(path).resolve() for path in
+                         getattr(self, "transient_builds", {}).values())
+        for directory in sorted(candidates - protected):
+            removed.extend(self.release_intermediates(directory))
+        return removed
+
+    @staticmethod
+    def validate_cached_build(cached):
+        manifest = json.loads((cached.parent / "build.json").read_text())
+        digest = manifest.get("archive_sha256", manifest["executable_sha256"])
+        if sha256(cached) != digest:
+            raise AssertionError("cached executable identity changed")
+        if manifest.get("compression") == "gzip":
+            with gzip.open(cached, "rb") as source:
+                if hashlib.file_digest(source, "sha256").hexdigest() != manifest["executable_sha256"]:
+                    raise AssertionError("compressed executable identity changed")
+        return manifest
+
+    def compact_startup(self, binary):
+        """Called only after the caller has asserted the settled startup outcome."""
+        binary = Path(binary).resolve()
+        binary.relative_to(self.path.resolve())
+        cached, record = self.startup_executables[str(binary)]
+        simulation = getattr(self, "startup_simulations", {}).get(str(binary))
+        if simulation is None:
+            raise AssertionError("unexecuted startup cannot release its executable")
+        if (simulation.get("process_scope_settled") is not True or
+                simulation.get("exit_code") not in simulation["expected_exit_codes"] or
+                simulation.get("timeout") or simulation.get("cancelled")):
+            raise AssertionError("unsettled/failed startup cannot release its executable")
+        manifest = self.validate_cached_build(cached)
+        if manifest.get("compression") != "gzip" or sha256(binary) != manifest["executable_sha256"]:
+            raise AssertionError("startup executable differs from retained compressed build")
+        released = {"executable": self.rel(binary), "bytes": binary.stat().st_size,
+                    "executable_sha256": manifest["executable_sha256"],
+                    "archive": self.rel(cached),
+                    "archive_sha256": manifest["archive_sha256"],
+                    "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
+                    "simulation_receipt": str(Path(simulation["stdout"]).parent / "receipt.json")}
+        # Retain the identity and settled evidence before releasing this run's copy.
+        with self.lock:
+            releases = getattr(self, "startup_releases", [])
+            releases.append(released)
+            self.startup_releases = releases
+            write_json(self.path / "startup-releases.json", releases)
+            binary.unlink()
+            del self.startup_executables[str(binary)]
+            del self.startup_simulations[str(binary)]
+            if hasattr(self, "startup_storage"):
+                plan = self.startup_storage
+                if plan["remaining"] <= 0:
+                    raise AssertionError("startup exceeded frozen storage inventory")
+                plan["remaining"] -= 1
+                plan["completed"].append(released)
+                self.check_startup_storage()
+
     @contextmanager
     def compiler_admission(self, build_class="default"):
-        """Reserve disk for live compilers, rechecking actual filesystem headroom."""
+        """Bounded, cancellable recovery without launching below the full forecast."""
         reserve = BUILD_CLASS_RESERVES[build_class]
         acquired = False
         key = uuid.uuid4().hex
+        recovery = None
         try:
             while not acquired:
                 self.check_cancelled()
                 acquired = self.compiler_slots.acquire(timeout=0.1)
+            started = time.monotonic()
+            heartbeat = started + 30
+            reclaimed = False
             while True:
                 self.check_cancelled()
                 with self.lock:
                     free = shutil.disk_usage(self.path).free
                     reserved = sum(self.compiler_admissions.values())
-                    if free >= DISK_FLOOR_BYTES + reserved + reserve:
+                    retention = (self.startup_storage["remaining"] * STARTUP_RETAIN_BYTES
+                                 if hasattr(self, "startup_storage") else 0)
+                    required_reserve = (max(reserve, BUILD_CLASS_RESERVES["verilator-startup"])
+                                        if hasattr(self, "startup_storage") else reserve)
+                    required = DISK_FLOOR_BYTES + reserved + required_reserve + retention
+                    if free >= required:
                         self.compiler_admissions[key] = reserve
                         admission = {
                             "build_class": build_class,
                             "available_bytes": free, "other_build_reserves_bytes": reserved,
                             "floor_bytes": DISK_FLOOR_BYTES,
                             "build_reserve_bytes": reserve,
+                            "required_bytes": required,
+                            "future_startup_retention_bytes": retention,
+                            "capacity_wait_seconds": time.monotonic() - started,
                             "admitted_at": time.time()}
+                        if recovery is not None:
+                            recovery.update(status="admitted", admission=admission)
                         break
-                    if not self.compiler_admissions:
+                    if recovery is None:
+                        recovery = {"build_class": build_class, "started_at": time.time(),
+                                    "status": "waiting", "samples": 0}
+                    recovery.update(available_bytes=free, required_bytes=required,
+                                    remaining_startup_executions=(
+                                        self.startup_storage["remaining"]
+                                        if hasattr(self, "startup_storage") else 0))
+                    recovery["samples"] += 1
+                    if not reclaimed:
+                        recovery["released_intermediates"] = (
+                            self.reclaim_settled_compiler_intermediates())
+                        reclaimed = True
+                    if time.monotonic() - started >= CAPACITY_RECOVERY_SECONDS:
+                        recovery["status"] = "shortage"
                         raise OSError(
                             errno.ENOSPC,
-                            "compiler admission requires disk floor plus build reserve: "
-                            f"free={free}, floor={DISK_FLOOR_BYTES}, "
-                            f"reserve={reserve}, build_class={build_class}")
-                self.cancelled.wait(0.1)
+                            "compiler capacity recovery exhausted without admission: "
+                            f"free={free}, required={required}, floor={DISK_FLOOR_BYTES}, "
+                            f"reserve={reserve}, future_retention={retention}, "
+                            f"build_class={build_class}")
+                now = time.monotonic()
+                if now >= heartbeat:
+                    print(f"compiler capacity recovery: free={free}, required={required}",
+                          flush=True)
+                    heartbeat = now + 30
+                self.cancelled.wait(min(CAPACITY_POLL_SECONDS,
+                                        max(0, CAPACITY_RECOVERY_SECONDS - (now - started))))
             yield admission
         finally:
-            with self.lock:
-                self.compiler_admissions.pop(key, None)
-            if acquired:
-                self.compiler_slots.release()
+            try:
+                with self.lock:
+                    if recovery is not None:
+                        if recovery["status"] == "waiting":
+                            recovery["status"] = (
+                                "cancelled" if self.cancelled.is_set() else "failed")
+                        recovery["finished_at"] = time.time()
+                        events = getattr(self, "compiler_capacity_events", [])
+                        events.append(recovery)
+                        self.compiler_capacity_events = events
+                        if hasattr(self, "source_snapshot_complete"):
+                            write_json(self.path / "compiler-capacity.json", events)
+            finally:
+                with self.lock:
+                    self.compiler_admissions.pop(key, None)
+                if acquired:
+                    self.compiler_slots.release()
 
     def workload_toolchain(self):
         if hasattr(self, "workload_toolchain_identity"):
@@ -549,6 +702,7 @@ class Run:
             else:
                 normalized.append(arg)
         identity = {"argv": normalized, "tool": self.tool_versions[tool],
+                    "build_class": build_class,
                     "cwd": str(work.relative_to(ROOT)),
                     "source_inventory": self.hashes}
         if tool == "verilator" and "g++" in self.tool_versions:
@@ -561,11 +715,19 @@ class Run:
             cache_entries = getattr(self, "shared_builds", self.builds)
             if key in cache_entries:
                 cached, text, record = cache_entries[key]
-                manifest = json.loads((cached.parent / "build.json").read_text())
-                if sha256(cached) != manifest["executable_sha256"]:
-                    raise AssertionError("cached executable identity changed")
+                manifest = self.validate_cached_build(cached)
                 binary.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(cached, binary)
+                if manifest.get("compression") == "gzip":
+                    with gzip.open(cached, "rb") as source, binary.open("wb") as target:
+                        shutil.copyfileobj(source, target)
+                    if sha256(binary) != manifest["executable_sha256"]:
+                        raise AssertionError("restored startup executable identity changed")
+                    if not hasattr(self, "startup_executables"):
+                        self.startup_executables = {}
+                    self.startup_executables[str(binary.resolve())] = cached, record
+                    getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
+                else:
+                    shutil.copyfile(cached, binary)
                 binary.chmod(0o755)
                 with self.lock:
                     self.builds[key] = cached, text, record
@@ -582,15 +744,31 @@ class Run:
                 return text, record
             cache = self.path / "builds" / key
             cache.mkdir(parents=True)
-            cached = cache / "executable"
-            shutil.copyfile(binary, cached)
-            cached.chmod(0o755)
+            compact = build_class in ("icarus-startup", "verilator-startup")
+            cached = cache / ("executable.gz" if compact else "executable")
+            if compact:
+                with binary.open("rb") as source, cached.open("wb") as target:
+                    with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as archive:
+                        shutil.copyfileobj(source, archive)
+                if not hasattr(self, "startup_executables"):
+                    self.startup_executables = {}
+                self.startup_executables[str(binary.resolve())] = cached, record
+                getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
+            else:
+                shutil.copyfile(binary, cached)
+                cached.chmod(0o755)
             write_json(cache / "build.json", {
-                "key": key, "identity": identity, "executable_sha256": sha256(cached),
+                "key": key, "identity": identity, "executable_sha256": sha256(binary),
+                **({"compression": "gzip", "archive_sha256": sha256(cached)}
+                   if compact else {}),
                 "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
                 "original_executable": self.rel(binary),
-                "intermediates": "only .o/.a/.gch removed after settled compilation; "
-                                 "generated model sources and executable retained"})
+                "intermediates": ("only .o/.a/.gch removed after settled compilation; "
+                                  "generated model sources retained; startup executable "
+                                  "retained losslessly as gzip" if compact else
+                                  "only .o/.a/.gch removed after settled compilation; "
+                                  "generated model sources and executable retained")})
+            self.validate_cached_build(cached)
             with self.lock:
                 self.builds[key] = cached, text, record
                 cache_entries[key] = cached, text, record
@@ -608,6 +786,11 @@ class Run:
         binary = str((work / str(argv[0])).resolve())
         text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
         with self.lock:
+            executable = work / str(argv[1] if str(argv[0]) == "vvp" else argv[0])
+            if str(executable.resolve()) in getattr(self, "startup_executables", {}):
+                if not hasattr(self, "startup_simulations"):
+                    self.startup_simulations = {}
+                self.startup_simulations[str(executable.resolve())] = record
             directory = self.transient_builds.get(binary)
             if directory is not None and record.get("process_scope_settled") is True:
                 self.release_intermediates(directory)
@@ -797,9 +980,9 @@ class Run:
                     raise AssertionError("missing/stale workload at finalization: "
                                          + item["receipt"] + ": " + str(reason))
             for cached, _, _ in self.builds.values():
-                manifest = json.loads((cached.parent / "build.json").read_text())
-                if sha256(cached) != manifest["executable_sha256"]:
-                    raise AssertionError("retained cached executable identity changed")
+                self.validate_cached_build(cached)
+            if hasattr(self, "startup_storage") and self.startup_storage["remaining"]:
+                raise AssertionError("incomplete startup storage inventory")
             for name, digest in self.hashes.items():
                 snapshot = self.path / "sources" / name
                 if not snapshot.is_file() or sha256(snapshot) != digest:
