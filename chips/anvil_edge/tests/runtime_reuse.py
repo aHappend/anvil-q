@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
+import threading
 import time
 from unittest.mock import patch
 
@@ -43,20 +43,52 @@ def cleanup_settled_intermediates(evidence):
     if (result["exit_code"] != -9 or not result["process_scope_settled"] or
             result["process_scope"]["scope"]["remaining"]):
         raise RuntimeError("Historical compiler cleanup requires settled attempt-0131")
-    directories = [
+    directories = {
         ROOT / FAILED / "case-0084-suite-11-run_tokenizer" /
         "tokenizer-bos-tokens-over-4096-s1/obj",
         ROOT / FAILED / "case-0094-suite-12-run_numerical" /
         "numerical-h8-l1-s17-embedding-negative-inf/obj",
-    ]
+    }
+    for path in (ROOT / FAILED).rglob("receipt.json"):
+        row = json.loads(path.read_bytes())
+        argv = row.get("argv", [])
+        if argv and argv[0] == "verilator" and "--Mdir" in argv:
+            relative = Path(argv[argv.index("--Mdir") + 1])
+            if (relative.is_absolute() or ".." in relative.parts or
+                    relative.parts[:3] != Path(FAILED).parts or relative.name != "obj"):
+                raise RuntimeError("Unexpected historical compiler directory")
+            directories.add(ROOT / relative)
+    settlement_records = []
+    finals = sorted((ROOT / "evidence/preparation").glob("*/receipt.json"))
+    finals += sorted((ROOT / "evidence/verification").glob("*/receipt.json"))
+    for final in finals:
+        row = json.loads(final.read_bytes())
+        if not row.get("child_settled"):
+            continue
+        used = False
+        for child in row.get("children", []):
+            argv = child.get("argv", [])
+            if (argv and argv[0] == "verilator" and "--Mdir" in argv and
+                    child.get("child_settled") and child.get("process_group_settled", True)):
+                relative = Path(argv[argv.index("--Mdir") + 1])
+                if relative.is_absolute() or ".." in relative.parts:
+                    raise RuntimeError("Unexpected settled preparation compiler directory")
+                directory = ROOT / relative
+                if directory.is_relative_to(final.parent) and directory.name == "obj":
+                    directories.add(directory)
+                    used = True
+        if used:
+            settlement_records.append({"path": str(final.relative_to(ROOT)), "sha256": sha(final)})
     inventory = []
-    for directory in directories:
+    suffixes = (".o", ".a", ".gch", ".cpp", ".h", ".d", ".mk", ".dat")
+    for directory in sorted(directories):
         for path in sorted(directory.iterdir()) if directory.exists() else []:
-            if path.is_file() and not path.is_symlink() and path.suffix in (".o", ".a", ".gch"):
+            if path.is_file() and not path.is_symlink() and path.suffix in suffixes:
                 inventory.append({"path": str(path.relative_to(ROOT)),
                                   "sha256": sha(path), "bytes": path.stat().st_size})
     # Persist the exact inventory before unlinking, retaining all input/source,
-    # generated C++/headers, binaries, failed logs and existing receipts.
+    # binaries, failed logs and existing receipts. Generated C++/headers are
+    # compiler intermediates, not SV sources or input snapshots.
     save(evidence.path / "compiler-cleanup-inventory.json", inventory)
     for row in inventory:
         path = ROOT / row["path"]
@@ -69,6 +101,7 @@ def cleanup_settled_intermediates(evidence):
         "inventory": evidence.relative(evidence.path / "compiler-cleanup-inventory.json"),
         "removed_files": len(inventory),
         "removed_bytes": sum(row["bytes"] for row in inventory),
+        "additional_settlement_receipts": settlement_records,
     }
 
 
@@ -108,6 +141,14 @@ def assignments(bench, name):
     return [values[index] for index in range(len(values))]
 
 
+def expanded_key(bench, sources):
+    canonical = re.sub(r"reg\s+\[31:0\]\s+rng=\d+;",
+                       "reg [31:0] rng=RUNTIME_SEED;", bench)
+    if "$readmemh" in canonical:
+        raise AssertionError("Extend baseline file canonicalization before use")
+    return hashlib.sha256((canonical + json.dumps(sources)).encode("ascii")).hexdigest()
+
+
 def representation_equivalence(evidence):
     """Compare every original seeded vector, not just the executed submatrix."""
     original = Capture(evidence.path / "expanded-inputs")
@@ -122,11 +163,13 @@ def representation_equivalence(evidence):
     run_tokenizer(candidate)
     assert original.rows.keys() == candidate.rows.keys()
     results = []
+    baseline_keys = {}
     for name in original.rows:
         before, sources, comparisons = original.rows[name]
         after, next_sources, next_comparisons = candidate.rows[name]
         assert sources == next_sources and comparisons == next_comparisons
         data = loaded(after)
+        baseline_keys[name] = expanded_key(before, sources)
         if name.startswith("numerical-"):
             records = data["initial_records"]
             for field, shift, mask in (
@@ -192,6 +235,7 @@ def representation_equivalence(evidence):
         "all_seeds_capacities_and_rejections_preserved": True,
         "results": evidence.relative(evidence.path / "representation-equivalence.json"),
     }
+    return baseline_keys
 
 
 def summary(row):
@@ -199,9 +243,53 @@ def summary(row):
             if line.startswith(("CORE_NUMERIC ", "TEXT_COUNTS ", "COMPARED "))]
 
 
+def head_controls(evidence):
+    from head_row_reuse import head_bench
+    cleanup_settled_intermediates(evidence)
+    failures = []
+    for label, runtime in (("expanded", False), ("runtime", True)):
+        scope = copy.copy(evidence)
+        scope.name_prefix = label + "-head-control-"
+        try:
+            core_test(scope, Geometry(vocabulary=17), 17, runtime_inputs=runtime,
+                      bench_transform=lambda bench: head_bench(bench, 8, True, True))
+        except Exception as error:
+            failures.append(f"{label}: {error}")
+    if failures:
+        raise RuntimeError("; ".join(failures))
+
+
+def shell_logging_control(evidence):
+    from qwen_shell import shell_case
+    directory = evidence.path / "compact-shell-inputs"
+    directory.mkdir()
+    evidence.child(["python3", "tests/qwen_shell.py", evidence.relative(directory), "--compact"],
+                   "compact-shell-inputs")
+    info = json.loads((directory / "shell-reference.json").read_bytes())
+    row = shell_case(evidence, info, 17, 1, True)
+    text = (ROOT / row["simulation_receipt"]["stdout"]).read_text()
+    operations = [(int(position), int(token), int(cycle)) for position, token, cycle in re.findall(
+        r"QWEN_SHELL_OPERATION frame=0 position=(\d+) token=(\d+) cycles=(\d+)", text)]
+    expected = info["cases"][0]["core_operation_ids"]
+    assert [(position, token) for position, token, _ in operations] == list(enumerate(expected))
+    assert len(operations) == 9
+    assert all(operations[i][2] < operations[i + 1][2] for i in range(len(operations) - 1))
+    assert text.index("QWEN_SHELL_COMPLETION") < text.index("QWEN_SHELL_OPERATION")
+    evidence.record["bounded_shell_logging"] = {
+        "operation_measurements": operations, "emitted_only_after_completion": True,
+        "actual_comparisons": row["actual_comparisons"],
+        "simulation_receipt": row["simulation_receipt"],
+        "scope": "Synthetic compact real-core shell; not a pretrained/official-table benchmark",
+    }
+
+
 def runtime_reuse(evidence):
     started = time.monotonic()
     cleanup_settled_intermediates(evidence)
+    evidence.record["scheduling_before_cleanup"] = evidence._limits
+    evidence._limits = resource_limits(ROOT)
+    evidence._slots = threading.BoundedSemaphore(evidence._limits["workers"])
+    evidence.record["scheduling"] = evidence._limits
     evidence.record["runtime_repair_scope"] = (
         "attempt-0131 compilation/scheduling repair; advisory equivalence submatrix, not L1 acceptance")
     # Historical linkage is read-only and optional; current controls generate
@@ -224,6 +312,19 @@ def runtime_reuse(evidence):
                                     for target in node.targets))
             assert ast.literal_eval(assigned) == value, "Original public scoreboard changed"
         evidence.record["historical_scoreboards_byte_identical"] = True
+        for path, names in (
+                (source, ("signed", "saturate", "round_ratio", "toward_zero", "half",
+                          "exponential", "silu", "Geometry", "Reference",
+                          "run_numerical", "run_numerical_errors")),
+                (text_source, ("tokenizer_fixture", "tokenizer_reference",
+                               "run_tokenizer", "run_tokenizer_capacity"))):
+            old = {node.name: ast.dump(node, include_attributes=False)
+                   for node in ast.parse(path.read_text()).body if hasattr(node, "name")}
+            current = {node.name: ast.dump(node, include_attributes=False)
+                       for node in ast.parse((ROOT / "tests" / path.name).read_text()).body
+                       if hasattr(node, "name")}
+            assert all(old[name] == current[name] for name in names)
+        evidence.record["historical_references_and_case_matrices_ast_identical"] = True
     evidence.tools(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
     representation_equivalence(evidence)
     faults = (
@@ -258,6 +359,16 @@ def runtime_reuse(evidence):
                           lambda scope, seed=seed, name=name, text=text, options=options:
                           tokenizer_test(scope, seed, name, text, byte_capacity=4096,
                                          **dict({"token_capacity": 4096}, **options))))
+    measured_baseline = Capture(evidence.path / "measured-expanded-inputs")
+    core_test_original, tokenizer_original = core_test, tokenizer_test
+    with patch(__name__ + ".core_test",
+               lambda *a, **k: core_test_original(*a, **k, runtime_inputs=False)), patch(
+                   __name__ + ".tokenizer_test",
+                   lambda *a, **k: tokenizer_original(*a, **k, runtime_inputs=False)):
+        for _, execute in cases:
+            execute(measured_baseline)
+    baseline_keys = {name: expanded_key(bench, sources)
+                     for name, (bench, sources, _) in measured_baseline.rows.items()}
     measured_start = time.monotonic()
     evidence.run_cases(cases)
     rows = list(evidence.record["coverage"])
@@ -267,7 +378,8 @@ def runtime_reuse(evidence):
     assert builds == len(keys) and builds < len(rows)
     evidence.record["runtime_scheduling_measurement"] = {
         "cases": len(rows), "compilations": builds,
-        "without_runtime_reuse_compilations": len(rows),
+        "expanded_representation_unique_compilations": len({
+            baseline_keys[row["name"]] for row in rows}),
         "cache_hits": sum(row["compile_cache_hit"] for row in rows),
         "actual_comparisons": sum(row["actual_comparisons"] for row in rows),
         "duration_s": time.monotonic() - measured_start,
@@ -276,6 +388,8 @@ def runtime_reuse(evidence):
                                 for row in rows if not row["compile_cache_hit"]),
         "simulate_summed_s": sum(row["simulation_receipt"]["duration_s"] for row in rows),
     }
+    assert builds < evidence.record["runtime_scheduling_measurement"][
+        "expanded_representation_unique_compilations"]
     # Execute the old expanded representation as a live paired control, retaining
     # exact independent expectations and public transaction/comparison summaries.
     for kind, fault in (("text", None), ("core", None), ("fault", faults[-1])):
@@ -297,5 +411,16 @@ def runtime_reuse(evidence):
     tokenizer_test(compact, 17, "singleton", "x", byte_capacity=1, token_capacity=1)
     compact.simulate("uart", UART.replace("DIVISOR", "4").replace("@DEPTH@", "1").replace(
         "SEED", "17"), ["rtl/anvil_edge_fifo.sv", "rtl/anvil_edge_uart_io.sv"], 78)
+    from head_row_reuse import head_bench, error_bench
+    for label, transform, marker in (
+            ("warm-reset", lambda bench: head_bench(bench, 8, True, True),
+             "HEAD_RESET_RECOVERY warm_abort=1"),
+            ("head-error", lambda bench: error_bench(bench, "weight-read"),
+             "HEAD_ERROR_RECOVERY weight-read injected=1")):
+        scope = copy.copy(evidence)
+        scope.name_prefix = label + "-"
+        row = core_test(scope, Geometry(vocabulary=17), 17, bench_transform=transform)
+        assert marker in (ROOT / row["simulation_receipt"]["stdout"]).read_text()
     cache_recovery(evidence)
+    shell_logging_control(evidence)
     evidence.record["runtime_repair_duration_s"] = time.monotonic() - started

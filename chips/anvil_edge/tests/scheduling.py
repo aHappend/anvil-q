@@ -13,8 +13,8 @@ from contextlib import contextmanager
 
 # attempt-0131's retained case records measured 150,423,571 transient bytes
 # (largest mapper build) and 24,079,911 retained bytes (4096-byte tokenizer).
-# 256 MiB covers both plus >50% transient headroom; 64 MiB stays unreserved.
-COMPILER_DISK_BYTES = 256 << 20
+# 192 MiB covers their sum plus 26,823,110 bytes; 64 MiB stays unreserved.
+COMPILER_DISK_BYTES = 192 << 20
 DISK_RESERVE_BYTES = 64 << 20
 
 

@@ -262,6 +262,7 @@ module bench;
   integer total_activation_writes=0,prompt_count=0,matched_write=-1,active_operation=-1;
   integer operation_index=0,embedding_index=0,inference_reads=0;
   reg [31:0] input_bytes[0:4095],expected_tokens[0:63],output_bytes[0:4095];
+  reg [63:0] operation_cycles[0:63];
   reg [63:0] expected_write_address[0:65535];
   reg [31:0] expected_write_data[0:65535];
   reg [31:0] expected_write_operation[0:65535];
@@ -409,6 +410,7 @@ module bench;
                     64'd32*expected_tokens[operation_index]+4*embedding_index)
                   $fatal(1,"QWEN_SHELL_PREFILL_FEEDBACK frame=%0d op=%0d token=%0d address=%h",
                          frame,operation_index,expected_tokens[operation_index],ddr_req_addr);
+                if (embedding_index==0) operation_cycles[operation_index]=cycles;
               end else if (ddr_req_addr!==segment_base[2]+4*(embedding_index-8))
                 $fatal(1,"QWEN_SHELL_HEAD_FRAME_ORDER");
               embedding_reads=embedding_reads+1;
@@ -584,6 +586,9 @@ module bench;
       if (frame_done!=1 || busy || pending || ddr_req_valid || m_axis_tvalid ||
           outputs!=output_length || input_count!=input_length || inference_reads==0)
         $fatal(1,"QWEN_SHELL_FINAL_COUNTS");
+      for (integer operation=0;operation<operation_count;operation=operation+1)
+        $display("QWEN_SHELL_OPERATION frame=%0d position=%0d token=%0d cycles=%0d",
+                 frame,operation,expected_tokens[operation],operation_cycles[operation]);
       $display("QWEN_SHELL_FRAME frame=%0d transport=%0d prompt_bytes=%0d operations=%0d output_bytes=%0d embedding_reads=%0d activation_writes=%0d cycles=%0d",
                frame,BYPASS,input_count,operation_count,outputs,embedding_reads,
                activation_writes,cycles);

@@ -399,6 +399,22 @@ class Evidence:
                     else:
                         os.killpg(process.pid, signal.SIGKILL)
                         record["process_group_settled"] = False
+        if (record.get("exit_code") == 0 and record["child_settled"] and
+                record.get("process_group_settled", True) and
+                str(argv[0]) == "verilator" and "--Mdir" in argv):
+            object_dir = ROOT / argv[argv.index("--Mdir") + 1]
+            if not object_dir.is_relative_to(self._root.path) or object_dir.name != "obj":
+                raise VerificationFailure("Unexpected compiler intermediate directory")
+            removed = []
+            for artifact in sorted(object_dir.iterdir()):
+                if (artifact.is_file() and not artifact.is_symlink() and
+                        artifact.suffix in (
+                            ".o", ".a", ".gch", ".cpp", ".h", ".d", ".mk", ".dat")):
+                    removed.append({"path": self.relative(artifact),
+                                    "sha256": digest(artifact),
+                                    "bytes": artifact.stat().st_size})
+                    artifact.unlink()
+            record["compiler_intermediates_removed"] = removed
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
         record["storage_after"] = storage_snapshot(directory)
@@ -620,13 +636,7 @@ class Evidence:
                         name + "-compile",
                     )
                     binary = object_dir / "simulation"
-                    removed = []
-                    for artifact in sorted(object_dir.rglob("*")):
-                        if artifact.is_file() and artifact.suffix in (".o", ".a", ".gch"):
-                            removed.append({"path": self.relative(artifact),
-                                            "sha256": digest(artifact),
-                                            "bytes": artifact.stat().st_size})
-                            artifact.unlink()
+                    removed = compile_record["compiler_intermediates_removed"]
                     cached = (binary, compile_record, digest(binary), removed)
                     self.compiled_simulations[cache_key] = cached
             binary, compile_record, binary_hash, removed = cached
@@ -1070,6 +1080,7 @@ def main():
         "settled-case-records",
         "compile-cache-recovery",
         "runtime-input-reuse",
+        "runtime-head-controls",
         "boot-performance", "official-stage-performance", "performance-controls",
         "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
@@ -1208,6 +1219,9 @@ def main():
             from runtime_reuse import runtime_reuse
             runtime_reuse(evidence)
             reason = "Runtime-input equivalence, compiled reuse and bounded scheduling measured; not L1 acceptance"
+        elif args.probe == "runtime-head-controls":
+            from runtime_reuse import head_controls
+            head_controls(evidence)
         elif args.probe == "boot-performance":
             from performance import boot_performance
             boot_performance(evidence, args.repair_of)

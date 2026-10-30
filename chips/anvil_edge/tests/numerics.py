@@ -539,6 +539,10 @@ end
                 "    end")
         for name, value in runtime_values.items():
             bench = bench.replace(f"@{name}@", str(value))
+        # Whole-vector accumulation keeps the mask shared with reset coroutines
+        # in compiled simulation; it is the same accepted-kind bit union.
+        bench = bench.replace("kinds_seen[mem_req_kind]=1;",
+                              "kinds_seen=kinds_seen | (12'b1<<mem_req_kind);")
         bench = bench.replace("  reg [11:0] kinds_seen=0;", """  reg [11:0] kinds_seen=0;
   reg [96:0] initial_records[0:RECORDS-1];
   reg [31:0] token_words[0:OPERATIONS-1],fault_config[0:2];
