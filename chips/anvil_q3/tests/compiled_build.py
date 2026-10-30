@@ -47,7 +47,8 @@ def build(run, g, name, optimize, gating, profile=False, flatten=False,
             "-j", str(run.resources["build_jobs"])]
     if optimize:
         make += ["OPT_FAST=-O3", "OPT_SLOW=-O3", "OPT_GLOBAL=-O3"]
-    run.tool(make)
+    with run.compiler_admission():
+        run.tool(make)
     return obj / "decoder"
 
 
@@ -61,9 +62,9 @@ def profiled_host(run, g, folder, sources, command):
     profiles = folder / "training-profiles"
     train_name, use_name = "pgo-train", "pgo"
     binary = build(
-        run, g, relative + "/" + train_name, True, True, edge_digest=False,
+        run, g, relative + "/" + train_name, True, True,
         sources=sources,
-        compiler_flags=("-fprofile-generate=" + run.rel(profiles),))
+        compiler_flags=("-march=native", "-fprofile-generate=" + run.rel(profiles)))
     training_command = [
         "+directory=" + run.rel(training) if arg.startswith("+directory=") else arg
         for arg in command]
@@ -85,8 +86,9 @@ def profiled_host(run, g, folder, sources, command):
                          "sha256": sha256(source)})
     write_json(folder / "profile-bindings.json", bindings)
     binary = build(
-        run, g, relative + "/" + use_name, True, True, edge_digest=False,
+        run, g, relative + "/" + use_name, True, True,
         sources=sources, compiler_flags=(
+            "-march=native",
             "-fprofile-use=" + os.path.relpath(use_profiles, folder / use_name),
             "-Werror=missing-profile", "-Werror=coverage-mismatch"))
     return binary
