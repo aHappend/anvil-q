@@ -1898,7 +1898,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/execution-contract.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/execution-contract.json",
           "data": {
             "obligations": [
               {
@@ -7228,7 +7228,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/receipt.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/receipt.json",
           "data": {
             "build_manifests": [],
             "build_reuses": [],
@@ -7236,6 +7236,12 @@
               "affinity_cpus": 256,
               "build_jobs": 2,
               "compiler_disk_policy": {
+                "build_class_reserves_bytes": {
+                  "default": 4294967296,
+                  "icarus-startup": 67108864,
+                  "verilator-startup": 536870912
+                },
+                "capacity_recovery_seconds": 120,
                 "floor_bytes": 2147483648,
                 "per_build_reserve_bytes": 4294967296
               },
@@ -7255,12 +7261,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.1507585,
-                "process_group": 2594763,
+                "finished_at": 1793373890.0638044,
+                "process_group": 2610493,
                 "process_scope_settled": true,
-                "started_at": 1793349864.0454264,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0000/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0000/stdout.txt",
+                "started_at": 1793373889.959688,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0000/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0000/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7275,12 +7281,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.29673,
-                "process_group": 2594769,
+                "finished_at": 1793373890.1917996,
+                "process_group": 2610509,
                 "process_scope_settled": true,
-                "started_at": 1793349864.1920252,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0001/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0001/stdout.txt",
+                "started_at": 1793373890.0882673,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0001/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0001/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7295,12 +7301,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.543514,
-                "process_group": 2594770,
+                "finished_at": 1793373890.4419384,
+                "process_group": 2610531,
                 "process_scope_settled": true,
-                "started_at": 1793349864.338214,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0002/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0002/stdout.txt",
+                "started_at": 1793373890.2362278,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0002/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0002/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7315,12 +7321,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.7673876,
-                "process_group": 2594780,
+                "finished_at": 1793373890.6820667,
+                "process_group": 2610569,
                 "process_scope_settled": true,
-                "started_at": 1793349864.6624403,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0003/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0003/stdout.txt",
+                "started_at": 1793373890.5766044,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0003/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0003/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7335,12 +7341,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.9224372,
-                "process_group": 2594789,
+                "finished_at": 1793373890.8361607,
+                "process_group": 2610581,
                 "process_scope_settled": true,
-                "started_at": 1793349864.8179636,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0004/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0004/stdout.txt",
+                "started_at": 1793373890.7308016,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0004/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0004/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7355,12 +7361,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.0692327,
-                "process_group": 2594794,
+                "finished_at": 1793373890.9897552,
+                "process_group": 2610588,
                 "process_scope_settled": true,
-                "started_at": 1793349864.9646466,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0005/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0005/stdout.txt",
+                "started_at": 1793373890.8839657,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0005/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0005/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7375,12 +7381,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.3160222,
-                "process_group": 2594796,
+                "finished_at": 1793373891.2429569,
+                "process_group": 2610600,
                 "process_scope_settled": true,
-                "started_at": 1793349865.111327,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0006/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0006/stdout.txt",
+                "started_at": 1793373891.0364764,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0006/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0006/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7395,12 +7401,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.4629283,
-                "process_group": 2594800,
+                "finished_at": 1793373891.3966424,
+                "process_group": 2610615,
                 "process_scope_settled": true,
-                "started_at": 1793349865.3580377,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0007/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0007/stdout.txt",
+                "started_at": 1793373891.2906427,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0007/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0007/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -7415,17 +7421,17 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.610674,
-                "process_group": 2594803,
+                "finished_at": 1793373891.5572567,
+                "process_group": 2610619,
                 "process_scope_settled": true,
-                "started_at": 1793349865.5058324,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0008/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0008/stdout.txt",
+                "started_at": 1793373891.451094,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0008/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0008/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               }
             ],
-            "finished_at": 1793349865.613048,
+            "finished_at": 1793373891.5605445,
             "invocation": {
               "argv": [
                 "python3",
@@ -7511,7 +7517,7 @@
               "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
               "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "rtl/anvil_q3_weight_prefetcher.sv": "8558f9685b68d99d9b812845789b37815373c5d70c5f362f53d10c7684a83d6d",
-              "tests/README.md": "c30ec9c03f29fc6af65ffff92c756fa1115f85a4098dac880f4c48cf74400abb",
+              "tests/README.md": "ed24700b85d7a558ce70e7f38b0a2ffc1d384fb61025e82955a8631e05578781",
               "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
               "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
               "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
@@ -7523,12 +7529,14 @@
               "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
               "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
               "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
-              "tests/compiled_host_checks.py": "017b67ecd61e1a6824254c42041b8d12fa3173814078bfecaa9f570b4b4c3263",
-              "tests/decoder_checks.py": "a29446e67550cb9e56a0d9b8e0e225b6f911de177864be5d60b3c0994c379cfb",
-              "tests/decoder_host.cpp": "455ae97f172812058e007acb5438491b701c562458405f6d1da0e3992ef3548f",
+              "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+              "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+              "tests/compiler_admission_checks.py": "bdca0132ca8726f6ab361761325943e7191593fd98ec56f8c937e8f49d1dd42f",
+              "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+              "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
               "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
               "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
-              "tests/execution.py": "b4306947024680a6baaac224a756f47e0b535a36a9f8891073bb7e5e026c5b57",
+              "tests/execution.py": "4e316ceeb8a2623dcb2aa50ff6d2495bbe54604a435ea13c6e57e037118d90bf",
               "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
               "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
               "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
@@ -7545,7 +7553,7 @@
               "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
               "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
               "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
-              "tests/preparation_checks.py": "d1da4ce302a74e75ce6fa0c6a34e2db11dd6c83bec947cf63a7dfaf8bf762ea5",
+              "tests/preparation_checks.py": "cc58392eafd852156d798945ea969d612c969d3778f7378a919a79c9fff9f48e",
               "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
               "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
               "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
@@ -7563,50 +7571,52 @@
               "tests/scheduler_tb.sv": "6403c85c0681e9f35bc663f4907f7ecbccf2657726be25877815809c0c36ec47",
               "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
               "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
-              "tests/structure_checks.py": "040290fc4a0bfba88d8ef938cdc4df8ac48b9c34adc8a2805aa932d80d6013d3",
+              "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+              "tests/startup_retention_checks.py": "ee4094852498e482dfaf533aad5d4e37e5601a7c83eb8618a1778901e679a7d2",
+              "tests/structure_checks.py": "7ff3684aa730cff87a3f960228641dbee99dbcc3c9aa5db6778a43bc8cde877c",
               "tests/synthesis_checks.py": "a6bb2faf08a5285b662dbafbb85cec6abdfec7c15c79a6610d5db274543d4526",
               "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
               "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
               "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
               "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
-              "tests/throughput_probe.py": "2f52500d8e1ec0df4f7e36f5db97770b9cb68491c690d59832e9f0ea50a0a32f",
+              "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
               "tests/top_tb.sv": "dc7712416753b8b5299148745f8b0177115eba2c7557e84cc7fc3ee0704a9722",
               "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
               "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
               "tests/verify.py": "a92c7a275f3f4f6e298dd2233776d32535118a1b5afcc92a41869213760660c1"
             },
             "source_snapshot_complete": true,
-            "started_at": 1793349863.9248936,
+            "started_at": 1793373889.8893042,
             "status": "running",
             "tool_versions": {
               "g++": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0007/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0007/stdout.txt",
                 "version_text": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
               },
               "iverilog": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0004/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0004/stdout.txt",
                 "version_text": "Icarus Verilog version 12.0 (stable) ()\n\nCopyright (c) 2000-2021 Stephen Williams (steve@icarus.com)\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This program is distributed in the hope that it will be useful,\n  but WITHOUT ANY WARRANTY; without even the implied warranty of\n  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n  GNU General Public License for more details.\n\n  You should have received a copy of the GNU General Public License along\n  with this program; if not, write to the Free Software Foundation, Inc.,\n  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.\n\nIcarus Verilog Preprocessor version 12.0 (stable) ()\n\nCopyright (c) 1999-2021 Stephen Williams (steve@icarus.com)\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This program is distributed in the hope that it will be useful,\n  but WITHOUT ANY WARRANTY; without even the implied warranty of\n  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n  GNU General Public License for more details.\n\n  You should have received a copy of the GNU General Public License along\n  with this program; if not, write to the Free Software Foundation, Inc.,\n  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.\n\nIcarus Verilog Parser/Elaborator version 12.0 (stable) ()\n\nCopyright (c) 1998-2021 Stephen Williams (steve@icarus.com)\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This"
               },
               "make": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0008/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0008/stdout.txt",
                 "version_text": "GNU Make 4.3\nBuilt for x86_64-pc-linux-gnu\nCopyright (C) 1988-2020 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n"
               },
               "python3": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0003/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0003/stdout.txt",
                 "version_text": "Python 3.12.3\n"
               },
               "verilator": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0006/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0006/stdout.txt",
                 "version_text": "Verilator 5.020 2024-01-01 rev (Debian 5.020-1)\n"
               },
               "vvp": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0005/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0005/stdout.txt",
                 "version_text": ""
               }
             },
@@ -7614,7 +7624,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/design/model_provenance.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -7633,7 +7643,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -7671,7 +7681,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/fpga/board_manifest.example.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/fpga/board_manifest.example.json",
           "data": {
             "schema": 1,
             "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
@@ -7707,7 +7717,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/fpga/board_manifest.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/fpga/board_manifest.json",
           "data": {
             "schema": 1,
             "device": "10AX115N2F45E1SG",
@@ -7746,9 +7756,9 @@
       ]
     },
     "check:rtl-timing-structure-and-parameters": {
-      "attempt_id": 440,
-      "duration_s": 1730.6055919078644,
-      "stdout_preview": "evidence/check-structure/20261030T081506Z-3a1f9dca4b15/receipt.json\n",
+      "attempt_id": 470,
+      "duration_s": 2782.2101442730054,
+      "stdout_preview": "evidence/check-structure/20261030T143808Z-6bbd75f7eeee/receipt.json\n",
       "receipt_count": 16,
       "receipts": [
         {
@@ -9642,7 +9652,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/execution-contract.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/execution-contract.json",
           "data": {
             "obligations": [
               {
@@ -14972,7 +14982,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/receipt.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/receipt.json",
           "data": {
             "build_manifests": [],
             "build_reuses": [],
@@ -14980,6 +14990,12 @@
               "affinity_cpus": 256,
               "build_jobs": 2,
               "compiler_disk_policy": {
+                "build_class_reserves_bytes": {
+                  "default": 4294967296,
+                  "icarus-startup": 67108864,
+                  "verilator-startup": 536870912
+                },
+                "capacity_recovery_seconds": 120,
                 "floor_bytes": 2147483648,
                 "per_build_reserve_bytes": 4294967296
               },
@@ -14999,12 +15015,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.1507585,
-                "process_group": 2594763,
+                "finished_at": 1793373890.0638044,
+                "process_group": 2610493,
                 "process_scope_settled": true,
-                "started_at": 1793349864.0454264,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0000/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0000/stdout.txt",
+                "started_at": 1793373889.959688,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0000/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0000/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15019,12 +15035,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.29673,
-                "process_group": 2594769,
+                "finished_at": 1793373890.1917996,
+                "process_group": 2610509,
                 "process_scope_settled": true,
-                "started_at": 1793349864.1920252,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0001/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0001/stdout.txt",
+                "started_at": 1793373890.0882673,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0001/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0001/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15039,12 +15055,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.543514,
-                "process_group": 2594770,
+                "finished_at": 1793373890.4419384,
+                "process_group": 2610531,
                 "process_scope_settled": true,
-                "started_at": 1793349864.338214,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0002/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0002/stdout.txt",
+                "started_at": 1793373890.2362278,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0002/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0002/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15059,12 +15075,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.7673876,
-                "process_group": 2594780,
+                "finished_at": 1793373890.6820667,
+                "process_group": 2610569,
                 "process_scope_settled": true,
-                "started_at": 1793349864.6624403,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0003/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0003/stdout.txt",
+                "started_at": 1793373890.5766044,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0003/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0003/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15079,12 +15095,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349864.9224372,
-                "process_group": 2594789,
+                "finished_at": 1793373890.8361607,
+                "process_group": 2610581,
                 "process_scope_settled": true,
-                "started_at": 1793349864.8179636,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0004/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0004/stdout.txt",
+                "started_at": 1793373890.7308016,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0004/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0004/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15099,12 +15115,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.0692327,
-                "process_group": 2594794,
+                "finished_at": 1793373890.9897552,
+                "process_group": 2610588,
                 "process_scope_settled": true,
-                "started_at": 1793349864.9646466,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0005/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0005/stdout.txt",
+                "started_at": 1793373890.8839657,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0005/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0005/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15119,12 +15135,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.3160222,
-                "process_group": 2594796,
+                "finished_at": 1793373891.2429569,
+                "process_group": 2610600,
                 "process_scope_settled": true,
-                "started_at": 1793349865.111327,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0006/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0006/stdout.txt",
+                "started_at": 1793373891.0364764,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0006/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0006/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15139,12 +15155,12 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.4629283,
-                "process_group": 2594800,
+                "finished_at": 1793373891.3966424,
+                "process_group": 2610615,
                 "process_scope_settled": true,
-                "started_at": 1793349865.3580377,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0007/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0007/stdout.txt",
+                "started_at": 1793373891.2906427,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0007/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0007/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               },
@@ -15159,17 +15175,17 @@
                 "expected_exit_codes": [
                   0
                 ],
-                "finished_at": 1793349865.610674,
-                "process_group": 2594803,
+                "finished_at": 1793373891.5572567,
+                "process_group": 2610619,
                 "process_scope_settled": true,
-                "started_at": 1793349865.5058324,
-                "stderr": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0008/stderr.txt",
-                "stdout": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0008/stdout.txt",
+                "started_at": 1793373891.451094,
+                "stderr": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0008/stderr.txt",
+                "stdout": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0008/stdout.txt",
                 "timeout": false,
                 "timeout_s": 3600
               }
             ],
-            "finished_at": 1793349865.613048,
+            "finished_at": 1793373891.5605445,
             "invocation": {
               "argv": [
                 "python3",
@@ -15255,7 +15271,7 @@
               "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
               "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "rtl/anvil_q3_weight_prefetcher.sv": "8558f9685b68d99d9b812845789b37815373c5d70c5f362f53d10c7684a83d6d",
-              "tests/README.md": "c30ec9c03f29fc6af65ffff92c756fa1115f85a4098dac880f4c48cf74400abb",
+              "tests/README.md": "ed24700b85d7a558ce70e7f38b0a2ffc1d384fb61025e82955a8631e05578781",
               "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
               "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
               "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
@@ -15267,12 +15283,14 @@
               "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
               "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
               "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
-              "tests/compiled_host_checks.py": "017b67ecd61e1a6824254c42041b8d12fa3173814078bfecaa9f570b4b4c3263",
-              "tests/decoder_checks.py": "a29446e67550cb9e56a0d9b8e0e225b6f911de177864be5d60b3c0994c379cfb",
-              "tests/decoder_host.cpp": "455ae97f172812058e007acb5438491b701c562458405f6d1da0e3992ef3548f",
+              "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+              "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+              "tests/compiler_admission_checks.py": "bdca0132ca8726f6ab361761325943e7191593fd98ec56f8c937e8f49d1dd42f",
+              "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+              "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
               "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
               "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
-              "tests/execution.py": "b4306947024680a6baaac224a756f47e0b535a36a9f8891073bb7e5e026c5b57",
+              "tests/execution.py": "4e316ceeb8a2623dcb2aa50ff6d2495bbe54604a435ea13c6e57e037118d90bf",
               "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
               "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
               "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
@@ -15289,7 +15307,7 @@
               "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
               "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
               "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
-              "tests/preparation_checks.py": "d1da4ce302a74e75ce6fa0c6a34e2db11dd6c83bec947cf63a7dfaf8bf762ea5",
+              "tests/preparation_checks.py": "cc58392eafd852156d798945ea969d612c969d3778f7378a919a79c9fff9f48e",
               "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
               "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
               "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
@@ -15307,50 +15325,52 @@
               "tests/scheduler_tb.sv": "6403c85c0681e9f35bc663f4907f7ecbccf2657726be25877815809c0c36ec47",
               "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
               "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
-              "tests/structure_checks.py": "040290fc4a0bfba88d8ef938cdc4df8ac48b9c34adc8a2805aa932d80d6013d3",
+              "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+              "tests/startup_retention_checks.py": "ee4094852498e482dfaf533aad5d4e37e5601a7c83eb8618a1778901e679a7d2",
+              "tests/structure_checks.py": "7ff3684aa730cff87a3f960228641dbee99dbcc3c9aa5db6778a43bc8cde877c",
               "tests/synthesis_checks.py": "a6bb2faf08a5285b662dbafbb85cec6abdfec7c15c79a6610d5db274543d4526",
               "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
               "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
               "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
               "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
-              "tests/throughput_probe.py": "2f52500d8e1ec0df4f7e36f5db97770b9cb68491c690d59832e9f0ea50a0a32f",
+              "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
               "tests/top_tb.sv": "dc7712416753b8b5299148745f8b0177115eba2c7557e84cc7fc3ee0704a9722",
               "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
               "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
               "tests/verify.py": "a92c7a275f3f4f6e298dd2233776d32535118a1b5afcc92a41869213760660c1"
             },
             "source_snapshot_complete": true,
-            "started_at": 1793349863.9248936,
+            "started_at": 1793373889.8893042,
             "status": "running",
             "tool_versions": {
               "g++": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0007/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0007/stdout.txt",
                 "version_text": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
               },
               "iverilog": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0004/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0004/stdout.txt",
                 "version_text": "Icarus Verilog version 12.0 (stable) ()\n\nCopyright (c) 2000-2021 Stephen Williams (steve@icarus.com)\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This program is distributed in the hope that it will be useful,\n  but WITHOUT ANY WARRANTY; without even the implied warranty of\n  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n  GNU General Public License for more details.\n\n  You should have received a copy of the GNU General Public License along\n  with this program; if not, write to the Free Software Foundation, Inc.,\n  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.\n\nIcarus Verilog Preprocessor version 12.0 (stable) ()\n\nCopyright (c) 1999-2021 Stephen Williams (steve@icarus.com)\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This program is distributed in the hope that it will be useful,\n  but WITHOUT ANY WARRANTY; without even the implied warranty of\n  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n  GNU General Public License for more details.\n\n  You should have received a copy of the GNU General Public License along\n  with this program; if not, write to the Free Software Foundation, Inc.,\n  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.\n\nIcarus Verilog Parser/Elaborator version 12.0 (stable) ()\n\nCopyright (c) 1998-2021 Stephen Williams (steve@icarus.com)\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This"
               },
               "make": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0008/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0008/stdout.txt",
                 "version_text": "GNU Make 4.3\nBuilt for x86_64-pc-linux-gnu\nCopyright (C) 1988-2020 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n"
               },
               "python3": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0003/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0003/stdout.txt",
                 "version_text": "Python 3.12.3\n"
               },
               "verilator": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0006/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0006/stdout.txt",
                 "version_text": "Verilator 5.020 2024-01-01 rev (Debian 5.020-1)\n"
               },
               "vvp": {
                 "available": true,
-                "version_output": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/tool-0005/stdout.txt",
+                "version_output": "evidence/check-behavior/20261030T152449Z-cdef781fed49/tool-0005/stdout.txt",
                 "version_text": ""
               }
             },
@@ -15358,7 +15378,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/design/model_provenance.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -15377,7 +15397,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -15415,7 +15435,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/fpga/board_manifest.example.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/fpga/board_manifest.example.json",
           "data": {
             "schema": 1,
             "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
@@ -15451,7 +15471,7 @@
           }
         },
         {
-          "path": "evidence/check-behavior/20261030T084423Z-f7f2a3c65cde/sources/fpga/board_manifest.json",
+          "path": "evidence/check-behavior/20261030T152449Z-cdef781fed49/sources/fpga/board_manifest.json",
           "data": {
             "schema": 1,
             "device": "10AX115N2F45E1SG",
