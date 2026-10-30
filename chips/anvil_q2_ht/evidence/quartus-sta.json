@@ -1,12 +1,12 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-10-28T23:07:21.334857+00:00",
+  "timestamp_utc": "2026-10-30T11:36:50.629179+00:00",
   "project_dir": "/data/sufeng/anvil-q2-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
   "min_setup_slack_ns": 0.0,
   "min_hold_slack_ns": 0.0,
-  "status": "failed",
+  "status": "passed",
   "map_summary": {
     "exists": true,
     "path": "/data/sufeng/anvil-q2-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
@@ -20,34 +20,326 @@
     "uninferred_rams": []
   },
   "sta_summary": {
-    "exit_code": 3,
-    "netlist_mode": null,
-    "clocks": [],
-    "wns_setup_ns": null,
-    "wns_hold_ns": null,
+    "exit_code": 0,
+    "netlist_mode": "post_map",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 4.895,
+    "wns_hold_ns": -0.204,
     "unconstrained_setup_paths": 0,
     "unconstrained_functional_endpoints": 0,
     "unapproved_timing_exceptions": 0,
     "failing_setup_count": 0,
-    "failing_hold_count": 0,
-    "setup_paths": [],
-    "hold_paths": [],
-    "stderr_tail": [
-      "------------------------------------------------",
-      "ERROR: Can't run TimeQuest Timing Analyzer (quartus_sta) -- Periphery placement (quartus_fit --plan) failed or was not run. Run I/O Assignment Analysis (quartus_fit --plan) successfully before running the TimeQuest analyzer (create_timing_netlist -post_map).",
-      "",
-      "    while executing",
-      "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_aqcoqd7o.tcl\" line 2)",
-      "------------------------------------------------"
-    ]
+    "failing_hold_count": 20,
+    "setup_paths": [
+      {
+        "slack_ns": 4.895,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.895,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      },
+      {
+        "slack_ns": 4.898,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.898,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      },
+      {
+        "slack_ns": 4.91,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.execution_row[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.91,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.execution_row[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      },
+      {
+        "slack_ns": 4.913,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.execution_row[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.913,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.execution_row[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      },
+      {
+        "slack_ns": 4.914,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.914,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      },
+      {
+        "slack_ns": 4.916,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.916,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      },
+      {
+        "slack_ns": 4.921,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_RELEASE"
+      },
+      {
+        "slack_ns": 4.921,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_ISSUE"
+      },
+      {
+        "slack_ns": 4.921,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EMIT"
+      },
+      {
+        "slack_ns": 4.924,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_RELEASE"
+      },
+      {
+        "slack_ns": 4.924,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_ISSUE"
+      },
+      {
+        "slack_ns": 4.924,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EMIT"
+      },
+      {
+        "slack_ns": 4.928,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_GROUP_WAIT"
+      },
+      {
+        "slack_ns": 4.928,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_sequencer:implementation.sequencer",
+        "to_node": "anvil_q2_ht_projection:projections|implementation.rows[9]|anvil_q2_ht_sequencer:implementation.sequencer|anvil_q2_ht_projection:projections|implementation.execution_state.E_EXECUTE"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a23~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a18~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a17~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a12~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a9~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a6~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a5~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a0~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a3~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a2~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a4~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a7~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a11~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a10~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a8~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a13~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a15~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a14~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a16~reg0"
+      },
+      {
+        "slack_ns": -0.204,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_ht_tensor_array:implementation.tensor_array",
+        "to_node": "altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|dffe3a[4]|anvil_q2_ht_tensor_array:implementation.tensor_array|altshift_taps:valid_pipeline_rtl_0|shift_taps_jov:auto_generated|altera_syncram_7cb1:altera_syncram4|altsyncram_0494:altsyncram7|ram_block8a19~reg0"
+      }
+    ],
+    "stderr_tail": []
   },
-  "detail": "quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
-  "fit_timed_out": true,
+  "detail": "Timing closed: Setup WNS = 4.895 ns",
+  "fit_mode": "plan_plus_post_map_sta",
   "top_module": "anvil_q2_ht_top",
   "clock_port": "clk",
   "clock_period_ns": 10.0,
   "target_frequency_mhz": 100.0,
+  "fmax_mhz": 195.89,
+  "critical_path_delay_ns": 5.105,
+  "fitter_resource_summary": {
+    "alms_used": 234371,
+    "alms_total": 427200,
+    "alms_pct": "55 %",
+    "total_registers": 270301,
+    "block_memory_bits": 440796,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 920,
+    "virtual_pins": 2488
+  },
   "parameters": {
     "VOCAB_SIZE": 16,
     "HIDDEN_SIZE": 16,
@@ -60,6 +352,6 @@
     "CACHE_BLOCK": 8,
     "MAX_SEQ_LEN": 8
   },
-  "source_sha256": "72215d4b8ab19f3ff7e301c27ae8fedc81da544ae7813b0ea07196ff2d55e027",
+  "source_sha256": "9d818de778a5b9504559a533480e7deada3a4f990260d922d38260d4051ed2ad",
   "applicable": true
 }
