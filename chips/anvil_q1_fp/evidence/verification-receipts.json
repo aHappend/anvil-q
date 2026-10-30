@@ -1,0 +1,54 @@
+{
+  "chip": "Anvil-Q1-FP",
+  "passed_checks": {
+    "check:benchmark-validator-fail-closed-regressions": {
+      "attempt_id": 706,
+      "duration_s": 25.878888624953106,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-nci2m74m/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:l1-functional-numerical-defects-synthesis": {
+      "attempt_id": 734,
+      "duration_s": 2400.312997000059,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-lacya8by/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:maximum-frame-memory-capacity-diagnostics": {
+      "attempt_id": 709,
+      "duration_s": 106.8517459819559,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-kbo2fh8q/receipt.json\", \"production_collection_authorized\": false}\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:packed-storage-lossless-corruption-regressions": {
+      "attempt_id": 708,
+      "duration_s": 128.996454681037,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-d456u51q/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:portable-clean-copy": {
+      "attempt_id": 705,
+      "duration_s": 814.36601271783,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-f38goobx/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:prerequisites": {
+      "attempt_id": 737,
+      "duration_s": 11.54838839895092,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-prerequisites-icn17gub/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:receipt-publication-failure-regressions": {
+      "attempt_id": 707,
+      "duration_s": 10.18468738393858,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-89dzi2e1/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    }
+  }
+}
