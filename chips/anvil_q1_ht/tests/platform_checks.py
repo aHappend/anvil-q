@@ -6,19 +6,106 @@ not authorize longer stages, alter patrol limits, or certify engineering gates.
 """
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify import Evidence, ROOT, file_sha256
+from verify import Evidence, ROOT, build_artifacts, file_sha256
 
 
 PREDECESSOR = (
     "evidence/preparation/"
     "verifier-platform-recheck-20261029T010903Z-55e459ad/receipt.json"
 )
+
+
+def preparation_inventory(receipt):
+    """Inspect an existing receipt and its bindings without restoring anything."""
+    def checked_path(relative):
+        path = Path(relative)
+        if (path.is_absolute() or ".." in path.parts or
+                path.parts[:2] != ("evidence", "preparation") or
+                not (ROOT / path).resolve().is_relative_to(
+                    (ROOT / "evidence/preparation").resolve())):
+            raise ValueError("inventory input must stay within preparation evidence")
+        return ROOT / path
+
+    receipt_path = checked_path(receipt)
+    if receipt_path.name != "receipt.json":
+        raise ValueError("inventory requires a receipt.json input")
+    observation = {
+        "receipt": receipt, "artifacts": [], "discrepancies": [],
+        "scope": "read_only_inventory_not_retention_repair_or_execution_acceptance",
+        "evidence_recreated": False,
+    }
+
+    def inspect(relative, expected=None, size=None):
+        path = checked_path(relative)
+        row = {"path": relative, "expected_sha256": expected}
+        try:
+            row.update(sha256=file_sha256(path), bytes=path.stat().st_size)
+            row["outcome"] = (
+                "changed" if ((expected is not None and row["sha256"] != expected)
+                              or (size is not None and row["bytes"] != size))
+                else "present")
+        except OSError as exc:
+            row.update(outcome="unavailable", error_type=type(exc).__name__,
+                       errno=exc.errno, os_error=exc.strerror)
+        observation["artifacts"].append(row)
+        if row["outcome"] != "present":
+            observation["discrepancies"].append(row)
+        return row
+
+    receipt_row = inspect(receipt)
+    if receipt_row["outcome"] != "present":
+        return observation
+    raw = receipt_path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != receipt_row["sha256"]:
+        raise RuntimeError("receipt changed during inventory")
+    previous = json.loads(raw)
+    observation["recorded_outcome"] = previous.get("outcome", "unfinished")
+    bindings = {}
+
+    def bind(relative, digest, size=None):
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise ValueError("inventory artifact lacks a SHA-256 binding: " + relative)
+        checked_path(relative)
+        if relative in bindings and bindings[relative] != (digest, size):
+            old_digest, old_size = bindings[relative]
+            if old_digest != digest or (old_size is not None and size is not None
+                                        and old_size != size):
+                raise ValueError("conflicting inventory artifact binding: " + relative)
+            size = old_size if size is None else size
+        bindings[relative] = (digest, size)
+
+    for relative, digest in previous["source_sha256"].items():
+        source = Path(relative)
+        if source.is_absolute() or ".." in source.parts:
+            raise ValueError("invalid source snapshot path")
+        bind(str(receipt_path.parent.relative_to(ROOT) / "sources" / source), digest)
+    for command in previous["commands"]:
+        for key in ("stdout", "stderr"):
+            digest = command.get(key + "_sha256")
+            if digest is not None:
+                bind(command[key], digest, command.get(key + "_bytes"))
+            else:
+                # Canceled commands have no finalized hash, not successful logs.
+                row = inspect(command[key])
+                row["binding_status"] = "unfinalized_command"
+    for relative, digest in previous.get("runtime_input_sha256", {}).items():
+        bind(relative, digest)
+    for build in previous.get("simulation_builds", []):
+        for relative, digest in build_artifacts(build).items():
+            bind(relative, digest)
+    for relative, (digest, size) in sorted(bindings.items()):
+        inspect(relative, digest, size)
+    # A live or replaced receipt is not a stable historical inventory.
+    inspect(receipt, receipt_row["sha256"])
+    observation["bound_artifact_count"] = len(bindings)
+    return observation
 
 
 def receipt_loss_events(text):
@@ -117,7 +204,7 @@ def supervision_records(attempt=309):
     }
 
 
-def audit_supervision(attempt=309, repair_of=None):
+def audit_supervision(attempt=309, repair_of=None, receipts=()):
     evidence = Evidence(
         "supervision-record-audit",
         repair_of=repair_of or (
@@ -148,11 +235,22 @@ def audit_supervision(attempt=309, repair_of=None):
                if "sha256" in row},
         }
         evidence.record["observations"].append(observation)
+        inventories = [preparation_inventory(receipt) for receipt in receipts]
+        evidence.record["preparation_inventories"] = inventories
+        for inventory in inventories:
+            evidence.record["diagnostic_input_sha256"].update({
+                row["path"]: row["sha256"] for row in inventory["artifacts"]
+                if row["outcome"] == "present"
+            })
         evidence.flush()
         if observation["unavailable_inputs"]:
             raise RuntimeError(
                 "Supervision audit is incomplete; unavailable raw inputs: " +
                 ", ".join(row["path"] for row in observation["unavailable_inputs"]))
+        if any(row["discrepancies"] for row in inventories):
+            raise RuntimeError(
+                "Preparation evidence is missing or changed; retained inventory "
+                "identifies exact paths. No evidence was reconstructed.")
         evidence.finish(
             "diagnostic_completed",
             "Audited actual retained enforcement records without CLI discovery, "
@@ -175,9 +273,13 @@ def main():
     parser.add_argument("--attempt", type=int, default=309,
                         help="retained attempt to inspect with --audit-supervision")
     parser.add_argument("--repair-of", help="retained predecessor diagnostic receipt")
+    parser.add_argument("--evidence-receipt", action="append", default=[],
+                        help="inventory existing preparation dependencies during supervision audit")
     args = parser.parse_args()
     if args.attempt < 1:
         parser.error("--attempt must be positive")
+    if args.evidence_receipt and not args.audit_supervision:
+        parser.error("--evidence-receipt requires --audit-supervision")
     if args.attempt != 309 and not (
             args.audit_supervision or args.inspect_supervision_records):
         parser.error("--attempt requires --audit-supervision")
@@ -185,7 +287,7 @@ def main():
         print(json.dumps(supervision_records(args.attempt), indent=2))
         return 0
     if args.audit_supervision:
-        return audit_supervision(args.attempt, args.repair_of)
+        return audit_supervision(args.attempt, args.repair_of, args.evidence_receipt)
     evidence = Evidence("workflow-platform-diagnosis",
                         repair_of=args.repair_of or PREDECESSOR)
     evidence.record["scope"] = "read_only_prerequisites_not_acceptance"

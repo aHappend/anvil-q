@@ -303,6 +303,62 @@ class HistoricalComparisonChecks(unittest.TestCase):
 
 
 class SupervisionPrerequisiteChecks(unittest.TestCase):
+    def inventory_fixture(self):
+        root = SCRATCH / self._testMethodName
+        folder = root / "evidence/preparation/case-01234567"
+        folder.mkdir(parents=True)
+        dependency = folder / "dependency.log"
+        dependency.write_text("original")
+        relative = str(dependency.relative_to(root))
+        record = {"source_sha256": {}, "commands": [],
+                  "runtime_input_sha256": {relative: verify.file_sha256(dependency)}}
+        receipt = folder / "receipt.json"
+        receipt.write_text(json.dumps(record))
+        return root, receipt, dependency
+
+    def test_inventory_preserves_missing_parent_without_reconstruction(self):
+        root = SCRATCH / self._testMethodName
+        relative = "evidence/preparation/missing-01234567/receipt.json"
+        with patch.object(platform_checks, "ROOT", root):
+            row = platform_checks.preparation_inventory(relative)
+        self.assertEqual(row["discrepancies"][0]["path"], relative)
+        self.assertEqual(row["discrepancies"][0]["errno"], errno.ENOENT)
+        self.assertFalse((root / relative).exists())
+        self.assertFalse(row["evidence_recreated"])
+
+    def test_inventory_checks_dependencies_even_for_unfinished_child(self):
+        root, receipt, dependency = self.inventory_fixture()
+        original = receipt.read_bytes()
+        with patch.object(platform_checks, "ROOT", root):
+            row = platform_checks.preparation_inventory(str(receipt.relative_to(root)))
+        self.assertEqual(row["recorded_outcome"], "unfinished")
+        self.assertEqual(row["bound_artifact_count"], 1)
+        self.assertEqual(row["discrepancies"], [])
+        self.assertEqual(receipt.read_bytes(), original)
+        self.assertEqual(dependency.read_text(), "original")
+
+    def test_inventory_detects_dependency_loss_and_changed_bytes(self):
+        root, receipt, dependency = self.inventory_fixture()
+        for change in ("modified", None):
+            with self.subTest(change=change):
+                if change is None:
+                    dependency.unlink()
+                else:
+                    dependency.write_text(change)
+                with patch.object(platform_checks, "ROOT", root):
+                    row = platform_checks.preparation_inventory(str(receipt.relative_to(root)))
+                discrepancy, = row["discrepancies"]
+                self.assertEqual(discrepancy["path"], str(dependency.relative_to(root)))
+                self.assertEqual(discrepancy["outcome"],
+                                 "unavailable" if change is None else "changed")
+        self.assertFalse(dependency.exists())
+
+    def test_inventory_rejects_runtime_or_escaping_paths(self):
+        for relative in ("/private/receipt.json", "../receipt.json",
+                         ".vulcan/receipt.json", "evidence/preparation/run/log.txt"):
+            with self.subTest(relative=relative), self.assertRaises(ValueError):
+                platform_checks.preparation_inventory(relative)
+
     def test_receipt_loss_preserves_exact_progress_without_reconstruction(self):
         event = {
             "event": "receipt_update_failed",
