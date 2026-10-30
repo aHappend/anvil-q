@@ -12,6 +12,8 @@ Planning only (prints exact, self-contained argv for every shard):
 Shard collection requires independent append-only admission first. The unchanged
 behavior command collects missing/stale cases automatically, then retains its
 original full-Icarus coverage gate. A shard success is not a behavior-matrix pass.
+Each listed shard writes only beneath its advertised --output root, including
+fresh invocation snapshots, tool logs and missing/stale workload collection.
 """
 
 import argparse
@@ -322,12 +324,12 @@ def shard_inventory(output=WORKLOAD_ROOT):
             {"id": job.id, "workload": job.descriptor, "scheduling_cost": job.cost,
              "argv": ["python3", "tests/verify.py", "--check", "behavior",
                       "--behavior-shard", job.id, "--output", str(Path(output) / job.id)],
-             "outputs": sorted({str(Path(output) / job.id), WORKLOAD_ROOT + "/" + job.id}),
+             "outputs": [str(Path(output) / job.id)],
              "requires": ["python3", "iverilog", "vvp", "verilator", "g++", "make"],
              "evidence_requirements": [
                  "settled source/toolchain/workload-bound receipt and raw logs",
                  "unchanged independent comparison and generated fixture artifacts"],
-             "retained_root": WORKLOAD_ROOT + "/" + job.id}
+             "retained_root": str(Path(output) / job.id)}
             for job in ordered]}
 
 
@@ -403,7 +405,8 @@ def main():
                 result = numerical_matrix(run)
             else:
                 result = {"scope": "single shard only; original coverage remains unresolved",
-                          "id": selected.id, "result": run.parallel([selected])[0]}
+                          "id": selected.id,
+                          "result": run.collect_workload(selected, output=run.output_root)}
         elif args.check == "synthesis":
             result = synthesis(run)
         elif args.check == "reproduce":

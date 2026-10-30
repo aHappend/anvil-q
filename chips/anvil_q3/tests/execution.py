@@ -14,7 +14,7 @@ Successful finalization requires a complete snapshot and settled child records;
 completed expected-negative tests may retain nonzero exit codes.
 Snapshot content, raw logs and child receipts must still exist at finalization.
 
-Workload shards retain independent invocation receipts under WORKLOAD_ROOT.
+Workload shards retain independent invocation receipts under the requested output.
 Reuse requires matching public sources, tool executables/version outputs,
 deterministic fixture inputs and complete workload arguments, plus intact
 snapshots, generated fixtures, comparisons and raw tool evidence. The aggregate
@@ -29,6 +29,7 @@ import errno
 import hashlib
 import json
 import os
+import signal
 from pathlib import Path
 import shutil
 import subprocess
@@ -37,13 +38,17 @@ import tempfile
 import time
 import uuid
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextlib import contextmanager
 
 ROOT = Path(__file__).resolve().parent.parent
 SELECTORS = ("rtl/*.sv", "design/*.md", "design/*.json", "fpga/*",
              "tests/**", "anvil_q2_reference/rtl/*.sv")
 VERILATOR_UNROLL = ("--unroll-count", "1024", "--unroll-stmts", "1000000")
 WORKLOAD_ROOT = "evidence/check-behavior/shards"
+BUILD_RESERVE_BYTES = 4 * 1024**3
+DISK_FLOOR_BYTES = 2 * 1024**3
+CANCEL_SETTLE_SECONDS = 15
 
 
 def canonical(value):
@@ -165,6 +170,7 @@ class Run:
             root = ROOT / root
         root.relative_to(ROOT)
         root.mkdir(parents=True, exist_ok=True)
+        self.output_root = root
         self.path = root / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") +
                             "-" + uuid.uuid4().hex[:12])
         self.path.mkdir()
@@ -172,7 +178,12 @@ class Run:
         self.lock = threading.RLock()
         self.build_locks = {}
         self.resources = execution_resources()
+        self.resources["compiler_disk_policy"] = {
+            "floor_bytes": DISK_FLOOR_BYTES, "per_build_reserve_bytes": BUILD_RESERVE_BYTES}
         self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
+        self.compiler_admissions = {}
+        self.cancelled = threading.Event()
+        self.active_processes = {}
         self.builds = {}
         self.build_reuses = []
         self.transient_builds = {}
@@ -217,7 +228,7 @@ class Run:
                               "removed": sorted(recorded - selected)}, sort_keys=True))
 
     def parallel(self, jobs):
-        """Submit the complete inventory longest-first, retaining inventory order."""
+        """Observe completion order; return results in the unchanged inventory order."""
         jobs = list(jobs)
         order = list(range(len(jobs)))
         if any(isinstance(job, Workload) for job in jobs):
@@ -228,18 +239,89 @@ class Run:
                 {"id": job.id, "workload": job.descriptor, "scheduling_cost": job.cost}
                 for job in jobs if isinstance(job, Workload)])
         workers = self.resources["workers"]
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {}
-            for index in order:
-                job = jobs[index]
-                futures[index] = (pool.submit(self.collect_workload, job)
-                                  if isinstance(job, Workload) else pool.submit(job))
-            try:
-                return [futures[index].result() for index in range(len(jobs))]
-            except BaseException:
-                for future in futures.values():
-                    future.cancel()
-                raise
+        pool = ThreadPoolExecutor(max_workers=workers)
+        pending = {}
+        remaining = iter(order)
+        results = [None] * len(jobs)
+
+        def submit():
+            index = next(remaining, None)
+            if index is None:
+                return
+            self.check_cancelled()
+            job = jobs[index]
+            future = (pool.submit(self.collect_workload, job)
+                      if isinstance(job, Workload) else pool.submit(job))
+            pending[future] = index
+
+        try:
+            for _ in range(min(workers, len(jobs))):
+                submit()
+            while pending:
+                completed, _ = wait(pending, return_when=FIRST_COMPLETED)
+                # Check the whole completed batch before admitting replacements.
+                for future in completed:
+                    results[pending[future]] = future.result()
+                for future in completed:
+                    del pending[future]
+                for _ in completed:
+                    submit()
+            return results
+        except BaseException as exc:
+            with self.lock:
+                self.cancelled.set()
+            for future in pending:
+                future.cancel()
+            _, unfinished = wait(pending, timeout=CANCEL_SETTLE_SECONDS) if pending else (set(), set())
+            with self.lock:
+                unsettled = list(self.active_processes)
+            if unfinished or unsettled:
+                raise RuntimeError(
+                    "bounded cancellation did not settle all owned work: "
+                    f"{len(unfinished)} jobs, process IDs {unsettled}") from exc
+            raise
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+
+    def check_cancelled(self):
+        if self.cancelled.is_set():
+            raise RuntimeError("work cancelled after another parallel job failed")
+
+    @contextmanager
+    def compiler_admission(self):
+        """Reserve disk for live compilers, rechecking actual filesystem headroom."""
+        acquired = False
+        key = uuid.uuid4().hex
+        try:
+            while not acquired:
+                self.check_cancelled()
+                acquired = self.compiler_slots.acquire(timeout=0.1)
+            while True:
+                self.check_cancelled()
+                with self.lock:
+                    free = shutil.disk_usage(self.path).free
+                    reserved = sum(self.compiler_admissions.values())
+                    if free >= DISK_FLOOR_BYTES + reserved + BUILD_RESERVE_BYTES:
+                        self.compiler_admissions[key] = BUILD_RESERVE_BYTES
+                        admission = {
+                            "available_bytes": free, "other_build_reserves_bytes": reserved,
+                            "floor_bytes": DISK_FLOOR_BYTES,
+                            "build_reserve_bytes": BUILD_RESERVE_BYTES,
+                            "admitted_at": time.time()}
+                        break
+                    if not self.compiler_admissions:
+                        raise OSError(
+                            errno.ENOSPC,
+                            "compiler admission requires disk floor plus build reserve: "
+                            f"free={free}, floor={DISK_FLOOR_BYTES}, "
+                            f"reserve={BUILD_RESERVE_BYTES}")
+                self.cancelled.wait(0.1)
+            yield admission
+        finally:
+            with self.lock:
+                self.compiler_admissions.pop(key, None)
+            if acquired:
+                self.compiler_slots.release()
 
     def workload_toolchain(self):
         if hasattr(self, "workload_toolchain_identity"):
@@ -285,8 +367,10 @@ class Run:
             for index, record in enumerate(saved["executions"]):
                 if (not isinstance(record, dict) or
                         record.get("exit_code") is None or record.get("timeout") or
+                        record.get("cancelled") or record.get("process_scope_settled") is False or
                         record["exit_code"] not in record.get("expected_exit_codes", ()) or
-                        "launch_error" in record or "finished_at" not in record):
+                        "launch_error" in record or "cleanup_error" in record or
+                        "finished_at" not in record):
                     return None, "unsettled tool execution"
                 folder = receipt.parent / ("tool-%04d" % index)
                 child = folder / "receipt.json"
@@ -318,12 +402,14 @@ class Run:
                 UnicodeDecodeError, KeyError, TypeError, ValueError):
             return None, "missing or malformed retained evidence"
 
-    def collect_workload(self, job):
+    def collect_workload(self, job, output=None):
+        self.check_cancelled()
         self.validate_live_sources()
         binding = {"workload": job.descriptor, "source_hashes": self.hashes,
                    "toolchain": self.workload_toolchain(),
                    "fixture_inputs": "source-bound deterministic generators, seeds and assets"}
-        root = ROOT / WORKLOAD_ROOT / job.id
+        root = self.output_root / "shards" / job.id if output is None else Path(output)
+        root.relative_to(self.output_root)
         decisions = []
         for receipt in sorted(root.glob("*/receipt.json"), reverse=True):
             result, reason = self.reusable_workload(receipt, binding)
@@ -344,6 +430,9 @@ class Run:
         child.tool_versions = self.tool_versions
         child.resources = self.resources
         child.compiler_slots = self.compiler_slots
+        child.compiler_admissions = self.compiler_admissions
+        child.cancelled = self.cancelled
+        child.active_processes = self.active_processes
         child.lock = self.lock
         child.build_locks = self.build_locks
         child.shared_builds = self.builds
@@ -353,7 +442,9 @@ class Run:
             if child.hashes != self.hashes:
                 raise AssertionError("shard source snapshot differs from inventory snapshot")
             self.validate_live_sources()
+            child.check_cancelled()
             result = job.execute(child)
+            child.check_cancelled()
             if job.group == "portability" and result["cycles"] > 500000:
                 raise AssertionError("portability smoke exceeds compact cycle tier")
             if isinstance(result, dict):
@@ -400,6 +491,8 @@ class Run:
             binary = obj / binary
         work = ROOT if cwd is None else Path(cwd)
         binary = work / binary
+        if tool == "verilator":
+            (work / obj).resolve().relative_to(self.path.resolve())
         if tool not in getattr(self, "tool_versions", {}):
             self.versions([(tool, "--version" if tool == "verilator" else "-V")])
         normalized = []
@@ -445,8 +538,9 @@ class Run:
                     self.build_reuses.append(reuse)
                     write_json(self.path / "build-reuse.json", self.build_reuses)
                 return text, record
-            with self.compiler_slots:
-                text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+            with self.compiler_admission() as admission:
+                text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected,
+                                          compiler_admission=admission)
             if record["exit_code"] != 0:
                 return text, record
             cache = self.path / "builds" / key
@@ -458,47 +552,83 @@ class Run:
                 "key": key, "identity": identity, "executable_sha256": sha256(cached),
                 "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
                 "original_executable": self.rel(binary),
-                "intermediates": "only .o/.a/.gch removed after settled simulation; "
+                "intermediates": "only .o/.a/.gch removed after settled compilation; "
                                  "generated model sources and executable retained"})
-            if tool == "verilator":
-                directory = (work / obj).resolve()
-                directory.relative_to(self.path.resolve())
-                with self.lock:
-                    self.transient_builds[str(binary.resolve())] = directory
             with self.lock:
                 self.builds[key] = cached, text, record
                 cache_entries[key] = cached, text, record
             return text, record
 
     def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
+        self.check_cancelled()
         if (str(argv[0]) == "verilator" and
                 ("--binary" in argv or "--build" in argv) or
                 str(argv[0]) == "iverilog" and "-o" in argv):
             return self._build(argv, cwd, timeout, expected)
         work = ROOT if cwd is None else Path(cwd)
         binary = str((work / str(argv[0])).resolve())
-        try:
-            return self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
-        finally:
-            with self.lock:
-                directory = self.transient_builds.get(binary)
-                settled = any(
-                    record.get("argv", [None])[0] == str(argv[0]) and
-                    record.get("exit_code") is not None and
-                    record.get("finished_at") is not None and not record.get("timeout")
-                    for record in self.records)
-                if directory is not None and settled:
-                    directory.relative_to(self.path.resolve())
-                    for path in directory.iterdir():
-                        if path.is_file() and path.suffix in (".o", ".a", ".gch"):
-                            path.unlink()
-                    del self.transient_builds[binary]
+        text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+        with self.lock:
+            directory = self.transient_builds.get(binary)
+            if directory is not None and record.get("process_scope_settled") is True:
+                self.release_intermediates(directory)
+                del self.transient_builds[binary]
+        return text, record
 
-    def _tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
+    def release_intermediates(self, directory):
+        directory = Path(directory).resolve()
+        directory.relative_to(self.path.resolve())
+        removed = []
+        if directory.is_dir():
+            for path in sorted(directory.iterdir()):
+                if (not path.is_symlink() and path.is_file() and
+                        path.suffix in (".o", ".a", ".gch")):
+                    size = path.stat().st_size
+                    path.unlink()
+                    removed.append({"path": self.rel(path), "bytes": size})
+        return removed
+
+    @staticmethod
+    def process_group_live(pgid):
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        # Ignore already-dead children awaiting their system reaper.
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+            if int(fields[2]) == pgid and fields[0] != "Z":
+                return True
+        return False
+
+    @classmethod
+    def settle_process(cls, child):
+        """Terminate only this tool's new process group, including compiler children."""
+        for sig, duration in ((signal.SIGTERM, 2), (signal.SIGKILL, 5)):
+            try:
+                os.killpg(child.pid, sig)
+            except ProcessLookupError:
+                pass
+            deadline = time.monotonic() + duration
+            while time.monotonic() < deadline:
+                child.poll()
+                if child.returncode is not None and not cls.process_group_live(child.pid):
+                    return True
+                time.sleep(0.05)
+        return child.poll() is not None and not cls.process_group_live(child.pid)
+
+    def _tool(self, argv, *, cwd=None, timeout=3600, expected=(0,),
+              compiler_admission=None):
         if timeout < 3600:
             raise ValueError("functional subprocess deadlines must be >=3600 seconds")
         work = ROOT if cwd is None else Path(cwd)
         work.relative_to(ROOT)
+        self.check_cancelled()
         self.validate_live_sources()
         start = time.time()
         with self.lock:
@@ -511,22 +641,59 @@ class Run:
                   "expected_exit_codes": list(expected),
                   "stdout": self.rel(folder / "stdout.txt"), "stderr": self.rel(folder / "stderr.txt"),
                   "timeout": False, "exit_code": None}
+        if compiler_admission is not None:
+            record["compiler_admission"] = compiler_admission
         caught = None
+        child = None
+        settled = False
         with (folder / "stdout.txt").open("wb") as out, (folder / "stderr.txt").open("wb") as err:
             with self.lock:
                 self.records[int(folder.name.split("-")[1])] = record
                 write_json(folder / "receipt.json", record)
                 self.finish("running")
             try:
-                child = subprocess.run(record["argv"], cwd=work, stdout=out, stderr=err,
-                                       timeout=timeout, check=False)
+                with self.lock:
+                    self.check_cancelled()
+                    child = subprocess.Popen(
+                        record["argv"], cwd=work, stdout=out, stderr=err,
+                        start_new_session=True)
+                    self.active_processes[child.pid] = child
+                    record["process_group"] = child.pid
+                deadline = time.monotonic() + timeout
+                while child.poll() is None:
+                    self.check_cancelled()
+                    if time.monotonic() >= deadline:
+                        record["timeout"] = True
+                        raise subprocess.TimeoutExpired(record["argv"], timeout)
+                    self.cancelled.wait(0.1)
                 record["exit_code"] = child.returncode
-            except subprocess.TimeoutExpired as exc:
-                record["timeout"] = True
-                caught = exc
             except OSError as exc:
                 record["launch_error"] = str(exc)
                 caught = exc
+            except BaseException as exc:
+                record["cancelled"] = self.cancelled.is_set()
+                caught = exc
+            finally:
+                if child is not None:
+                    if child.poll() is None or self.process_group_live(child.pid):
+                        settled = self.settle_process(child)
+                    else:
+                        settled = True
+                    record["exit_code"] = child.poll()
+                    record["process_scope_settled"] = settled
+                    if settled:
+                        with self.lock:
+                            self.active_processes.pop(child.pid, None)
+                    else:
+                        caught = RuntimeError("owned process group did not settle: "
+                                              + str(child.pid))
+                if settled and str(argv[0]) == "verilator" and "--Mdir" in argv:
+                    directory = work / argv[argv.index("--Mdir") + 1]
+                    try:
+                        record["released_intermediates"] = self.release_intermediates(directory)
+                    except (OSError, ValueError) as exc:
+                        record["cleanup_error"] = str(exc)
+                        caught = exc
         with self.lock:
             record["finished_at"] = time.time()
             write_json(folder / "receipt.json", record)
@@ -558,8 +725,11 @@ class Run:
     def _finish(self, status, **details):
         if status == "passed" and (
                 not self.source_snapshot_complete or
+                self.cancelled.is_set() or
                 any(record.get("exit_code") is None or record.get("timeout") or
-                    "launch_error" in record for record in self.records)):
+                    record.get("cancelled") or record.get("process_scope_settled") is False or
+                    "launch_error" in record or "cleanup_error" in record
+                    for record in self.records)):
             raise AssertionError("incomplete verification execution cannot be finalized as passed")
         if status == "passed":
             self.validate_live_sources()
