@@ -5,8 +5,204 @@
       "attempt_id": 247,
       "duration_s": 2117.5985601919238,
       "stdout_preview": "evidence/preparation/verifier-critical-path-001/invocation-f57fda2e6f0342d5848e8753b10b2312/receipt.json\n",
-      "receipt_count": 0,
-      "receipts": []
+      "receipt_count": 6,
+      "receipts": [
+        {
+          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827/cases/added/data/model/added.json",
+          "data": {}
+        },
+        {
+          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827/cases/added/data/model/second.json",
+          "data": {}
+        },
+        {
+          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827/cases/added/run/declared-inputs-after.json",
+          "data": {
+            "anvil_q2_reference/rtl/fixture.sv": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "data/model/added.json": {
+              "bytes": 3,
+              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+            },
+            "data/model/fixture.md": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "data/model/second.json": {
+              "bytes": 3,
+              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+            },
+            "design/fixture.md": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "design/fixture.sdc": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "rtl/fixture.sv": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "tests/fixture.md": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            }
+          }
+        },
+        {
+          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827/cases/added/run/declared-inputs-before.json",
+          "data": {
+            "anvil_q2_reference/rtl/fixture.sv": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "data/model/fixture.md": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "data/model/second.json": {
+              "bytes": 3,
+              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+            },
+            "design/fixture.md": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "design/fixture.sdc": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "rtl/fixture.sv": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "tests/fixture.md": {
+              "bytes": 19,
+              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            }
+          }
+        },
+        {
+          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827/cases/added/run/receipt.json",
+          "data": {
+            "schema": 1,
+            "advisory": true,
+            "argv": [
+              "/usr/bin/python3",
+              "-B",
+              "tests/input_binding_check.py",
+              "--worker",
+              "--output",
+              "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827"
+            ],
+            "cwd": ".",
+            "start": "2026-10-30T07:45:39.413613+00:00",
+            "timeout_s": 3600,
+            "source_hashes": {
+              "anvil_q2_reference/rtl/fixture.sv": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
+              "design/fixture.md": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
+              "design/fixture.sdc": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
+              "rtl/fixture.sv": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
+              "tests/fixture.md": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+            },
+            "commands": [],
+            "exit": 1,
+            "declared_input_selectors": [
+              "rtl/*.sv",
+              "anvil_q2_reference/rtl/*.sv",
+              "design/*.md",
+              "design/*.sdc",
+              "tests/*",
+              "data/model/*"
+            ],
+            "declared_inputs_before": {
+              "rtl/fixture.sv": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "anvil_q2_reference/rtl/fixture.sv": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "design/fixture.md": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "design/fixture.sdc": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "tests/fixture.md": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "data/model/fixture.md": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "data/model/second.json": {
+                "bytes": 3,
+                "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+              }
+            },
+            "declared_inputs_before_path": "run/declared-inputs-before.json",
+            "declared_inputs_after": {
+              "rtl/fixture.sv": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "anvil_q2_reference/rtl/fixture.sv": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "design/fixture.md": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "design/fixture.sdc": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "tests/fixture.md": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "data/model/added.json": {
+                "bytes": 3,
+                "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+              },
+              "data/model/fixture.md": {
+                "bytes": 19,
+                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              },
+              "data/model/second.json": {
+                "bytes": 3,
+                "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+              }
+            },
+            "declared_inputs_after_path": "run/declared-inputs-after.json",
+            "declared_input_changes": {
+              "added": [
+                "data/model/added.json"
+              ],
+              "removed": [],
+              "changed": []
+            },
+            "input_binding_failure": "declared verification inputs changed during execution: {\"added\": [\"data/model/added.json\"], \"changed\": [], \"removed\": []}",
+            "end": "2026-10-30T07:45:39.418821+00:00",
+            "failure": "declared verification inputs changed during execution: {\"added\": [\"data/model/added.json\"], \"changed\": [], \"removed\": []}"
+          }
+        },
+        {
+          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-82951639fff04a2985d3b26b88a15827/cases/changed/data/model/second.json",
+          "data": {
+            "changed": true
+          }
+        }
+      ]
     },
     "check:input-binding-child-observation-retention": {
       "attempt_id": 1215,
