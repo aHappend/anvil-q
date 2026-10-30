@@ -353,6 +353,77 @@ class SupervisionPrerequisiteChecks(unittest.TestCase):
                                  "unavailable" if change is None else "changed")
         self.assertFalse(dependency.exists())
 
+    def test_inventory_compares_bound_fixture_without_modifying_receipt(self):
+        root, receipt, dependency = self.inventory_fixture()
+        fixture = root / "fixtures/qwen2.5-0.5b/manifest.json"
+        fixture.parent.mkdir(parents=True)
+        fixture.write_text("pinned fixture")
+        record = json.loads(receipt.read_text())
+        relative = str(fixture.relative_to(root))
+        record["runtime_input_sha256"][relative] = verify.file_sha256(fixture)
+        receipt.write_text(json.dumps(record))
+        original = receipt.read_bytes()
+        for contents, expected in (("pinned fixture", None), ("changed", "changed"),
+                                   (None, "unavailable")):
+            with self.subTest(contents=contents):
+                if contents is None:
+                    fixture.unlink()
+                else:
+                    fixture.write_text(contents)
+                with patch.object(platform_checks, "ROOT", root):
+                    row = platform_checks.preparation_inventory(str(receipt.relative_to(root)))
+                self.assertEqual(row["bound_artifact_count"], 2)
+                self.assertEqual(receipt.read_bytes(), original)
+                self.assertEqual(dependency.read_text(), "original")
+                if expected is None:
+                    self.assertEqual(row["discrepancies"], [])
+                else:
+                    discrepancy, = row["discrepancies"]
+                    self.assertEqual(discrepancy["path"], relative)
+                    self.assertEqual(discrepancy["outcome"], expected)
+        self.assertFalse(fixture.exists())
+
+    def test_inventory_fixture_allowance_does_not_admit_other_namespaces(self):
+        root, receipt, _ = self.inventory_fixture()
+        original = json.loads(receipt.read_text())
+        for relative in (".vulcan/state.json", ".git/config", ".tooling/config",
+                         "VULCAN/state.json", "rtl/design.sv", "tests/check.py",
+                         "fixtures/../outside", "/fixtures/manifest.json"):
+            with self.subTest(relative=relative):
+                record = {**original, "runtime_input_sha256": {relative: "0" * 64}}
+                receipt.write_text(json.dumps(record))
+                with patch.object(platform_checks, "ROOT", root), \
+                        self.assertRaises(ValueError):
+                    platform_checks.preparation_inventory(str(receipt.relative_to(root)))
+
+    def test_inventory_fixture_cannot_escape_through_symlink(self):
+        root, receipt, _ = self.inventory_fixture()
+        fixtures = root / "fixtures"
+        fixtures.mkdir()
+        outside = root / "outside.json"
+        outside.write_text("not a fixture")
+        (fixtures / "manifest.json").symlink_to(outside)
+        record = json.loads(receipt.read_text())
+        record["runtime_input_sha256"]["fixtures/manifest.json"] = verify.file_sha256(outside)
+        receipt.write_text(json.dumps(record))
+        with patch.object(platform_checks, "ROOT", root), self.assertRaises(ValueError):
+            platform_checks.preparation_inventory(str(receipt.relative_to(root)))
+
+    def test_inventory_fixture_allowance_does_not_apply_to_logs_or_receipts(self):
+        root, receipt, _ = self.inventory_fixture()
+        fixture = root / "fixtures/receipt.json"
+        fixture.parent.mkdir()
+        fixture.write_text("{}")
+        record = json.loads(receipt.read_text())
+        record["commands"] = [{"stdout": "fixtures/receipt.json",
+                               "stdout_sha256": verify.file_sha256(fixture)}]
+        receipt.write_text(json.dumps(record))
+        with patch.object(platform_checks, "ROOT", root):
+            with self.assertRaises(ValueError):
+                platform_checks.preparation_inventory(str(receipt.relative_to(root)))
+            with self.assertRaises(ValueError):
+                platform_checks.preparation_inventory("fixtures/receipt.json")
+
     def test_inventory_rejects_runtime_or_escaping_paths(self):
         for relative in ("/private/receipt.json", "../receipt.json",
                          ".vulcan/receipt.json", "evidence/preparation/run/log.txt"):

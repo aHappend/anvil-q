@@ -23,14 +23,23 @@ PREDECESSOR = (
 
 
 def preparation_inventory(receipt):
-    """Inspect an existing receipt and its bindings without restoring anything."""
-    def checked_path(relative):
+    """Inspect retained preparation artifacts and bound project fixture inputs.
+
+    Only runtime-input bindings may reference fixtures. Receipts, snapshots,
+    command logs and build artifacts must remain in preparation evidence.
+    """
+    def checked_path(relative, fixture=False):
         path = Path(relative)
-        if (path.is_absolute() or ".." in path.parts or
-                path.parts[:2] != ("evidence", "preparation") or
-                not (ROOT / path).resolve().is_relative_to(
-                    (ROOT / "evidence/preparation").resolve())):
-            raise ValueError("inventory input must stay within preparation evidence")
+        allowed = ROOT / "evidence/preparation"
+        if fixture and path.parts[:1] == ("fixtures",):
+            allowed = ROOT / "fixtures"
+        if (path.is_absolute() or ".." in path.parts or not path.parts or
+                not (ROOT / path).is_relative_to(allowed) or
+                not allowed.resolve().is_relative_to(ROOT.resolve()) or
+                not (ROOT / path).resolve().is_relative_to(allowed.resolve())):
+            raise ValueError(
+                "inventory input must stay within preparation evidence" +
+                (" or bound project fixtures" if fixture else "") + ": " + relative)
         return ROOT / path
 
     receipt_path = checked_path(receipt)
@@ -42,8 +51,8 @@ def preparation_inventory(receipt):
         "evidence_recreated": False,
     }
 
-    def inspect(relative, expected=None, size=None):
-        path = checked_path(relative)
+    def inspect(relative, expected=None, size=None, fixture=False):
+        path = checked_path(relative, fixture=fixture)
         row = {"path": relative, "expected_sha256": expected}
         try:
             row.update(sha256=file_sha256(path), bytes=path.stat().st_size)
@@ -69,10 +78,10 @@ def preparation_inventory(receipt):
     observation["recorded_outcome"] = previous.get("outcome", "unfinished")
     bindings = {}
 
-    def bind(relative, digest, size=None):
+    def bind(relative, digest, size=None, fixture=False):
         if not isinstance(digest, str) or len(digest) != 64:
             raise ValueError("inventory artifact lacks a SHA-256 binding: " + relative)
-        checked_path(relative)
+        checked_path(relative, fixture=fixture)
         if relative in bindings and bindings[relative] != (digest, size):
             old_digest, old_size = bindings[relative]
             if old_digest != digest or (old_size is not None and size is not None
@@ -96,12 +105,12 @@ def preparation_inventory(receipt):
                 row = inspect(command[key])
                 row["binding_status"] = "unfinalized_command"
     for relative, digest in previous.get("runtime_input_sha256", {}).items():
-        bind(relative, digest)
+        bind(relative, digest, fixture=True)
     for build in previous.get("simulation_builds", []):
         for relative, digest in build_artifacts(build).items():
             bind(relative, digest)
     for relative, (digest, size) in sorted(bindings.items()):
-        inspect(relative, digest, size)
+        inspect(relative, digest, size, fixture=True)
     # A live or replaced receipt is not a stable historical inventory.
     inspect(receipt, receipt_row["sha256"])
     observation["bound_artifact_count"] = len(bindings)
