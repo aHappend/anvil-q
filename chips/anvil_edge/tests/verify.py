@@ -10,6 +10,8 @@ Attempt records distinguish compilation, simulation and comparison failures;
 a failed compile never counts as a functional mutation kill.
 Settled case-result.json records survive an interrupted parent, but never
 replace its final receipt, rerun missing work or authorize evidence reuse.
+--probe runtime-input-reuse measures the complete numerical/tokenizer runtime
+input repair and compact controls before independent admission, not aggregate L1.
 """
 
 import argparse

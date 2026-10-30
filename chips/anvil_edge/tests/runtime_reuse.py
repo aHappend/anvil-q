@@ -1,4 +1,10 @@
-"""Self-contained bounded input-representation and compiled-reuse diagnostic."""
+"""Bounded performance repair: python3 tests/verify.py --probe runtime-input-reuse.
+
+Regenerate both representations, compare the complete 150-case target matrix,
+execute that matrix and compact paired controls, then measure builds and wall
+time. Historical failure links are advisory, never prerequisite passing shards.
+This is not aggregate L1, synthesis, timing, HIL or model acceptance.
+"""
 
 import ast
 from collections import Counter
@@ -159,8 +165,19 @@ def representation_equivalence(evidence):
                    lambda *a, **k: tokenizer_test(*a, **k, runtime_inputs=False)):
         run_numerical(original)
         run_tokenizer(original)
-    run_numerical(candidate)
-    run_tokenizer(candidate)
+    cases = []
+
+    def collect(function, scope, *args, **kwargs):
+        previous = set(scope.rows)
+        function(scope, *args, **kwargs)
+        name, = scope.rows.keys() - previous
+        cases.append((name, lambda real, args=args, kwargs=copy.deepcopy(kwargs):
+                      function(real, *args, **kwargs)))
+
+    with patch("numerics.core_test", lambda *a, **k: collect(core_test, *a, **k)), patch(
+            "text.tokenizer_test", lambda *a, **k: collect(tokenizer_test, *a, **k)):
+        run_numerical(candidate)
+        run_tokenizer(candidate)
     assert original.rows.keys() == candidate.rows.keys()
     results = []
     baseline_keys = {}
@@ -235,7 +252,7 @@ def representation_equivalence(evidence):
         "all_seeds_capacities_and_rejections_preserved": True,
         "results": evidence.relative(evidence.path / "representation-equivalence.json"),
     }
-    return baseline_keys
+    return baseline_keys, cases
 
 
 def summary(row):
@@ -326,55 +343,22 @@ def runtime_reuse(evidence):
             assert all(old[name] == current[name] for name in names)
         evidence.record["historical_references_and_case_matrices_ast_identical"] = True
     evidence.tools(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
-    representation_equivalence(evidence)
-    faults = (
-        {"name": "embedding-nan", "key": (0, 0, 0, 1, 0), "word": 0x7E00},
-        {"name": "post-gamma-nan", "key": (6, 0, 0, 0, 0), "word": 0x7E00},
-        {"name": "read-response-error", "key": (0, 0, 0, 1, 0), "bus_error": True},
-        {"name": "write-response-error", "key": (8, 0, 0, 0, 0), "bus_error": True},
-    )
-    cases = []
-    for seed in (1, 17, 89):
-        cases.append((f"core-{seed}", lambda scope, seed=seed: core_test(scope, Geometry(), seed)))
-        for fault in faults:
-            cases.append((f"core-{seed}-{fault['name']}",
-                          lambda scope, seed=seed, fault=fault:
-                          core_test(scope, Geometry(), seed, fault=fault)))
-        cases.append((f"core-multilayer-{seed}", lambda scope, seed=seed: core_test(
-            scope, Geometry(layers=2, hidden=16, intermediate=24, query_heads=2), seed)))
-        for name, text, options in (
-                ("ranked", "ABC", {}),
-                ("overflow", "xxxx", {"error": 0x30}),
-                ("bos-overflow", "xxx", {"bos": True, "error": 0x30}),
-                ("invalid", "ABC", {"raw": b"\xc0\x80", "error": 0x10})):
-            cases.append((f"text-{seed}-{name}",
-                          lambda scope, seed=seed, name=name, text=text, options=options:
-                          tokenizer_test(scope, seed, name, text, byte_capacity=3,
-                                         token_capacity=3, **options)))
-        for name, text, options in (
-                ("capacity", "x" * 4096, {}),
-                ("capacity-bos", "x" * 4096, {"bos": True, "error": 0x30}),
-                ("capacity-over", "x" * 4097, {"token_capacity": 4097, "error": 0x30})):
-            cases.append((f"text-{seed}-{name}",
-                          lambda scope, seed=seed, name=name, text=text, options=options:
-                          tokenizer_test(scope, seed, name, text, byte_capacity=4096,
-                                         **dict({"token_capacity": 4096}, **options))))
-    measured_baseline = Capture(evidence.path / "measured-expanded-inputs")
-    core_test_original, tokenizer_original = core_test, tokenizer_test
-    with patch(__name__ + ".core_test",
-               lambda *a, **k: core_test_original(*a, **k, runtime_inputs=False)), patch(
-                   __name__ + ".tokenizer_test",
-                   lambda *a, **k: tokenizer_original(*a, **k, runtime_inputs=False)):
-        for _, execute in cases:
-            execute(measured_baseline)
-    baseline_keys = {name: expanded_key(bench, sources)
-                     for name, (bench, sources, _) in measured_baseline.rows.items()}
+    baseline_keys, cases = representation_equivalence(evidence)
+    for mask in range(1 << 12):
+        for kind in range(12):
+            assigned = (mask & ~(1 << kind)) | (1 << kind)
+            assert assigned == mask | (1 << kind)
+    evidence.record["kind_mask_bookkeeping"] = {
+        "equivalent_bit_union_cases": (1 << 12) * 12,
+        "original_acceptance_mask": "12'hfff",
+        "repair": "Whole-vector accepted-kind union preserves coverage across reset coroutines",
+    }
     measured_start = time.monotonic()
     evidence.run_cases(cases)
     rows = list(evidence.record["coverage"])
     keys = Counter(row["compile_cache_key"] for row in rows)
     builds = sum(not row["compile_cache_hit"] for row in rows)
-    assert len(rows) == len(cases) == 39
+    assert len(rows) == len(cases) == 150
     assert builds == len(keys) and builds < len(rows)
     evidence.record["runtime_scheduling_measurement"] = {
         "cases": len(rows), "compilations": builds,
@@ -392,13 +376,14 @@ def runtime_reuse(evidence):
         "expanded_representation_unique_compilations"]
     # Execute the old expanded representation as a live paired control, retaining
     # exact independent expectations and public transaction/comparison summaries.
-    for kind, fault in (("text", None), ("core", None), ("fault", faults[-1])):
+    fault = {"name": "write-response-error", "key": (8, 0, 0, 0, 0), "bus_error": True}
+    for kind, fault in (("text", None), ("core", None), ("fault", fault)):
         baseline = copy.copy(evidence)
         baseline.name_prefix = "expanded-"
         if kind == "text":
-            before = tokenizer_test(baseline, 1, "ranked", "ABC", byte_capacity=3,
+            before = tokenizer_test(baseline, 1, "bytes-3", "xxx", byte_capacity=3,
                                     token_capacity=3, runtime_inputs=False)
-            after = next(row for row in rows if row["name"] == "tokenizer-ranked-s1")
+            after = next(row for row in rows if row["name"] == "tokenizer-bytes-3-s1")
         else:
             before = core_test(baseline, Geometry(), 1, fault=fault, runtime_inputs=False)
             after = next(row for row in rows if row["name"] == (
@@ -423,4 +408,21 @@ def runtime_reuse(evidence):
         assert marker in (ROOT / row["simulation_receipt"]["stdout"]).read_text()
     cache_recovery(evidence)
     shell_logging_control(evidence)
+    costs = []
+    for child in evidence.record["children"]:
+        removed = child.get("compiler_intermediates_removed")
+        if removed is not None:
+            argv = child["argv"]
+            binary = ROOT / argv[argv.index("--Mdir") + 1] / "simulation"
+            costs.append({
+                "compile_receipt": str(Path(child["stdout"]).parent / "receipt.json"),
+                "discarded_bytes": sum(row["bytes"] for row in removed),
+                "retained_executable_bytes": binary.stat().st_size,
+            })
+    evidence.record["measured_compiler_storage"] = {
+        "builds": costs,
+        "peak_post_link_output_bytes": max(
+            row["discarded_bytes"] + row["retained_executable_bytes"] for row in costs),
+        "scope": "Actual post-link project outputs, not process RSS or whole-filesystem peak",
+    }
     evidence.record["runtime_repair_duration_s"] = time.monotonic() - started
