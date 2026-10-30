@@ -6,6 +6,8 @@ All mandatory prompts, logits and decode lengths remain in the L1 entrypoint.
 --complete-prompt compares every prefill step and sixteen greedy decode steps
 of the first frozen prompt in both modes against bound original evaluators.
 Complete-prompt and prefix diagnostics use distinct retained output namespaces.
+Original evaluators are rebuilt and qualified from hash-bound source snapshots
+on every comparison; historical compiled libraries are not prerequisites.
 """
 
 import argparse
@@ -114,14 +116,41 @@ def baseline_engine(engine, receipt, library_name, symbol):
     return result
 
 
-def original_module(receipt, filename):
+def original_snapshot(receipt, filename, visited=()):
+    receipt = Path(receipt)
+    if receipt.is_absolute():
+        receipt = receipt.resolve().relative_to(Path.cwd().resolve())
+    receipt = project_path(str(receipt))
+    if receipt in visited:
+        raise ValueError("original evaluator provenance cycle")
     record = json.loads(receipt.read_text())
-    snapshot = (project_path(record["original_evaluator_snapshots"][filename])
-                if "original_evaluator_snapshots" in record else
-                receipt.parent / "sources" / "tests" / filename)
-    if sha(snapshot) != record.get("original_source_sha256", record["source_sha256"])[
-            "tests/" + filename]:
-        raise ValueError("original evaluator snapshot has changed")
+    expected = record.get("original_source_sha256", record["source_sha256"])[
+        "tests/" + filename]
+    candidates = []
+    if filename in record.get("original_evaluator_snapshots", {}):
+        candidates.append(project_path(record["original_evaluator_snapshots"][filename]))
+    candidates.append(receipt.parent / "sources" / "tests" / filename)
+    failures = []
+    for snapshot in candidates:
+        try:
+            if sha(snapshot) == expected:
+                return snapshot
+            failures.append(f"{snapshot}: hash mismatch")
+        except FileNotFoundError:
+            failures.append(f"{snapshot}: missing")
+    if record.get("original_source_receipt_sha256") and record.get("repair_of"):
+        parent = project_path(record["repair_of"])
+        if sha(parent) != record["original_source_receipt_sha256"]:
+            raise ValueError("original source receipt has changed")
+        snapshot = original_snapshot(parent, filename, (*visited, receipt))
+        if sha(snapshot) != expected:
+            raise ValueError("original evaluator provenance changed source identity")
+        return snapshot
+    raise ValueError("original evaluator source unavailable: " + "; ".join(failures))
+
+
+def original_module(receipt, filename):
+    snapshot = original_snapshot(receipt, filename)
     spec = importlib.util.spec_from_file_location("cost_original_" + filename[:-3], snapshot)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -137,20 +166,21 @@ def generate_original(evidence, source_receipt, metadata, root):
     evidence.record["original_baseline_child"] = baseline.relative(baseline.folder / "receipt.json")
     evidence.flush()
     try:
-        baseline.record["original_source_sha256"] = record["source_sha256"]
+        original_sources = record.get("original_source_sha256", record["source_sha256"])
+        baseline.record["original_source_sha256"] = original_sources
         baseline.record["original_source_receipt_sha256"] = sha(source_path)
         baseline.record["original_evaluator_snapshots"] = {}
         for name in ("checkpoint_reference.py", "software_discrepancy.py"):
-            path = source_path.parent / "sources/tests" / name
+            path = original_snapshot(source_path, name)
             payload = path.read_bytes()
-            if hashlib.sha256(payload).hexdigest() != record["source_sha256"]["tests/" + name]:
+            if hashlib.sha256(payload).hexdigest() != original_sources["tests/" + name]:
                 raise ValueError("original evaluator source snapshot changed")
             output = baseline.folder / ("original-" + name)
             with output.open("xb") as stream:
                 stream.write(payload)
             baseline.record["original_evaluator_snapshots"][name] = baseline.relative(output)
         for name in ("reference.py", "fixtures.py", "repack.py", "prompts.py"):
-            if record["source_sha256"]["tests/" + name] != sha(Path("tests") / name):
+            if original_sources["tests/" + name] != sha(Path("tests") / name):
                 raise ValueError("original evaluator dependency changed")
         for mode, model in metadata["models"].items():
             baseline.record.setdefault("runtime_input_sha256", {}).update({
@@ -177,6 +207,19 @@ def generate_original(evidence, source_receipt, metadata, root):
     except Exception as exc:
         baseline.finish("probe_failed", f"{type(exc).__name__}: {exc}")
         raise
+
+
+def prepare_original(evidence, source_receipt, metadata, root):
+    path = project_path(source_receipt)
+    record = json.loads(path.read_text())
+    if record.get("child_receipt"):
+        path = project_path(record["child_receipt"])
+    evidence.record["original_comparison_input"] = {
+        "receipt": str(path), "sha256": sha(path),
+        "policy": "rebuild_and_qualify_from_original_sources_not_historical_libraries",
+    }
+    evidence.flush()
+    return generate_original(evidence, str(path), metadata, root)
 
 
 def audit_reference(evidence, receipt_path, baseline, metadata, root):
@@ -289,8 +332,9 @@ def worker(evidence, compare_to=None, measure_smoke=False, reference_diagnosis=N
     dispatch_audit(evidence)
     root = project_path("fixtures/qwen2.5-0.5b")
     metadata, _ = profiled(evidence, "fixture-validation", lambda: validate(root))
-    if original_source_receipt:
-        compare_to = generate_original(evidence, original_source_receipt, metadata, root)
+    if original_source_receipt or compare_to:
+        compare_to = prepare_original(
+            evidence, original_source_receipt or compare_to, metadata, root)
     workload = []
     for mode in ("AWQ", "BF16"):
         folder = root / mode.lower()

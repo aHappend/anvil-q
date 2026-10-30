@@ -24,6 +24,79 @@ import experiments
 import nested_retention
 import serialization_events
 import campaign_costs
+import reference_costs
+
+
+class OriginalReferencePrerequisiteChecks(unittest.TestCase):
+    def setUp(self):
+        self.root = SCRATCH / self._testMethodName
+        self.root.mkdir(parents=True, exist_ok=False)
+        self.receipt = self.root / "receipt.json"
+        self.name = "checkpoint_reference.py"
+        self.snapshot = self.root / "sources/tests" / self.name
+        self.snapshot.parent.mkdir(parents=True)
+        self.snapshot.write_text("original evaluator input")
+        self.digest = verify.file_sha256(self.snapshot)
+        self.record = {"source_sha256": {"tests/" + self.name: self.digest}}
+        self.save()
+
+    def save(self):
+        self.receipt.write_text(json.dumps(self.record))
+
+    def test_hash_bound_source_is_resolved_without_libraries(self):
+        self.assertEqual(reference_costs.original_snapshot(self.receipt, self.name),
+                         self.snapshot.relative_to(verify.ROOT))
+
+    def test_changed_original_source_is_not_silently_substituted(self):
+        self.snapshot.write_text("different evaluator")
+        with self.assertRaisesRegex(ValueError, "source unavailable.*hash mismatch"):
+            reference_costs.original_snapshot(self.receipt, self.name)
+
+    def test_missing_original_source_is_not_manufactured(self):
+        self.snapshot.unlink()
+        with self.assertRaisesRegex(ValueError, "source unavailable.*missing"):
+            reference_costs.original_snapshot(self.receipt, self.name)
+        self.assertFalse(self.snapshot.exists())
+
+    def test_missing_derived_snapshot_uses_hash_bound_original_parent(self):
+        parent = self.root / "parent.json"
+        parent.write_text(json.dumps(self.record))
+        self.receipt = self.root / "derived/receipt.json"
+        self.receipt.parent.mkdir()
+        self.record.update(
+            original_source_sha256=self.record["source_sha256"],
+            source_sha256={"tests/" + self.name: "different-current-source"},
+            original_evaluator_snapshots={self.name: str(
+                (self.root / "missing-original.py").relative_to(verify.ROOT))},
+            repair_of=str(parent.relative_to(verify.ROOT)),
+            original_source_receipt_sha256=verify.file_sha256(parent))
+        self.save()
+        self.assertEqual(reference_costs.original_snapshot(self.receipt, self.name),
+                         self.snapshot.relative_to(verify.ROOT))
+        parent.write_text("{}")
+        with self.assertRaisesRegex(ValueError, "source receipt has changed"):
+            reference_costs.original_snapshot(self.receipt, self.name)
+
+    def test_provenance_cycle_is_rejected(self):
+        self.snapshot.unlink()
+        # A cycle cannot have mutually matching cryptographic hashes. Exercise
+        # the traversal guard separately from the independently checked hashes.
+        with self.assertRaisesRegex(ValueError, "provenance cycle"):
+            reference_costs.original_snapshot(
+                self.receipt, self.name, (self.receipt.relative_to(verify.ROOT),))
+
+    def test_comparison_always_regenerates_original_prerequisites(self):
+        evidence = SimpleNamespace(record={}, flush=Mock())
+        with patch.object(reference_costs, "generate_original",
+                          return_value="fresh/receipt.json") as generate:
+            result = reference_costs.prepare_original(
+                evidence, str(self.receipt.relative_to(verify.ROOT)), {}, Path("fixtures"))
+        self.assertEqual(result, "fresh/receipt.json")
+        generate.assert_called_once_with(
+            evidence, str(self.receipt.relative_to(verify.ROOT)), {}, Path("fixtures"))
+        self.assertEqual(evidence.record["original_comparison_input"]["sha256"],
+                         verify.file_sha256(self.receipt))
+        self.assertFalse((self.root / "integer-gemv.so").exists())
 
 
 class HistoricalComparisonChecks(unittest.TestCase):
