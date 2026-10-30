@@ -71,9 +71,11 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
                                 hardware_metrics, inflight_tool_receipt,
                                 physical_inventory_sensitivity, fitted_summary_sensitivity)
     from public_asset_checks import public_asset_checks
+    from compiler_admission_checks import admission_sensitivity
 
     results = []
     lint = {"assignments": sequential_lint(), "hardware_metric_checker": hardware_metrics(),
+            "compiler_admission_checker": admission_sensitivity(),
             "preparation_dispatch_checker": preparation_dispatch_sensitivity(),
             "public_asset_checker": public_asset_checks(run),
             "board_prerequisite_checker": board_prerequisite_sensitivity(run),
@@ -108,14 +110,16 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
             if simulator == "iverilog":
                 binary = folder / "startup.vvp"
                 run.tool(["iverilog", "-g2012", "-Wall", "-s", "parameter_startup",
-                          "-o", run.rel(binary), *rtl, run.rel(tb)])
+                          "-o", run.rel(binary), *rtl, run.rel(tb)],
+                         build_class="icarus-startup")
                 argv = ["vvp", run.rel(binary)]
             else:
                 obj = folder / "obj"
                 run.tool(["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
                           *VERILATOR_UNROLL,
                           "--top-module", "parameter_startup", "--Mdir", run.rel(obj),
-                          "-o", "startup", *rtl, run.rel(tb)])
+                          "-o", "startup", *rtl, run.rel(tb)],
+                         build_class="verilator-startup")
                 argv = [run.rel(obj / "startup")]
             text, record = run.tool(argv, expected=(0,) if expected else tuple(range(-128, 129)))
             if expected:
@@ -160,13 +164,15 @@ def parent_structure(run, *, simulators=("iverilog", "verilator")):
             if simulator == "iverilog":
                 binary = folder / "startup.vvp"
                 run.tool(["iverilog", "-g2012", "-Wall", "-s", "parameter_startup",
-                          "-o", run.rel(binary), *sources, run.rel(tb)])
+                          "-o", run.rel(binary), *sources, run.rel(tb)],
+                         build_class="icarus-startup")
                 command = ["vvp", run.rel(binary)]
             else:
                 obj = folder / "obj"
                 run.tool(["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
                           *VERILATOR_UNROLL, "--top-module", "parameter_startup",
-                          "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)])
+                          "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)],
+                         build_class="verilator-startup")
                 command = [run.rel(obj / "startup")]
             text, receipt = run.tool(command)
             if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
@@ -200,13 +206,15 @@ def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negativ
             if simulator == "iverilog":
                 binary = folder / "startup.vvp"
                 run.tool(["iverilog", "-g2012", "-Wall", "-s", "parameter_startup",
-                          "-o", run.rel(binary), *sources, run.rel(tb)])
+                          "-o", run.rel(binary), *sources, run.rel(tb)],
+                         build_class="icarus-startup")
                 command = ["vvp", run.rel(binary)]
             else:
                 obj = folder / "obj"
                 run.tool(["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
                           *VERILATOR_UNROLL, "--top-module", "parameter_startup",
-                          "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)])
+                          "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)],
+                         build_class="verilator-startup")
                 command = [run.rel(obj / "startup")]
             text, receipt = run.tool(command, expected=(0,) if expected else tuple(range(-128, 129)))
             if expected:

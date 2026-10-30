@@ -50,6 +50,13 @@ SELECTORS = ("rtl/*.sv", "design/*.md", "design/*.json", "fpga/*",
 VERILATOR_UNROLL = ("--unroll-count", "1024", "--unroll-stmts", "1000000")
 WORKLOAD_ROOT = "evidence/check-behavior/shards"
 BUILD_RESERVE_BYTES = 4 * 1024**3
+BUILD_CLASS_RESERVES = {
+    "default": BUILD_RESERVE_BYTES,
+    # Startup-only Icarus builds: >26x sampled storage, including temporary files.
+    # Measurement scope and receipts are documented in tests/README.md.
+    "icarus-startup": 64 * 1024**2,
+    "verilator-startup": 512 * 1024**2,
+}
 DISK_FLOOR_BYTES = 2 * 1024**3
 CANCEL_SETTLE_SECONDS = 15
 
@@ -186,7 +193,9 @@ class Run:
         self.build_locks = {}
         self.resources = execution_resources()
         self.resources["compiler_disk_policy"] = {
-            "floor_bytes": DISK_FLOOR_BYTES, "per_build_reserve_bytes": BUILD_RESERVE_BYTES}
+            "floor_bytes": DISK_FLOOR_BYTES,
+            "per_build_reserve_bytes": BUILD_RESERVE_BYTES,
+            "build_class_reserves_bytes": dict(BUILD_CLASS_RESERVES)}
         self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
         self.compiler_admissions = {}
         self.cancelled = threading.Event()
@@ -304,8 +313,9 @@ class Run:
             raise RuntimeError("work cancelled after another parallel job failed")
 
     @contextmanager
-    def compiler_admission(self):
+    def compiler_admission(self, build_class="default"):
         """Reserve disk for live compilers, rechecking actual filesystem headroom."""
+        reserve = BUILD_CLASS_RESERVES[build_class]
         acquired = False
         key = uuid.uuid4().hex
         try:
@@ -317,12 +327,13 @@ class Run:
                 with self.lock:
                     free = shutil.disk_usage(self.path).free
                     reserved = sum(self.compiler_admissions.values())
-                    if free >= DISK_FLOOR_BYTES + reserved + BUILD_RESERVE_BYTES:
-                        self.compiler_admissions[key] = BUILD_RESERVE_BYTES
+                    if free >= DISK_FLOOR_BYTES + reserved + reserve:
+                        self.compiler_admissions[key] = reserve
                         admission = {
+                            "build_class": build_class,
                             "available_bytes": free, "other_build_reserves_bytes": reserved,
                             "floor_bytes": DISK_FLOOR_BYTES,
-                            "build_reserve_bytes": BUILD_RESERVE_BYTES,
+                            "build_reserve_bytes": reserve,
                             "admitted_at": time.time()}
                         break
                     if not self.compiler_admissions:
@@ -330,7 +341,7 @@ class Run:
                             errno.ENOSPC,
                             "compiler admission requires disk floor plus build reserve: "
                             f"free={free}, floor={DISK_FLOOR_BYTES}, "
-                            f"reserve={BUILD_RESERVE_BYTES}")
+                            f"reserve={reserve}, build_class={build_class}")
                 self.cancelled.wait(0.1)
             yield admission
         finally:
@@ -495,9 +506,14 @@ class Run:
                 "result_sha256": content_hash(result)})
         return result
 
-    def _build(self, argv, cwd, timeout, expected):
+    def _build(self, argv, cwd, timeout, expected, build_class="default"):
         argv = list(argv)
         tool = str(argv[0])
+        if build_class not in BUILD_CLASS_RESERVES:
+            raise ValueError("unknown compiler build class: " + build_class)
+        required_tool = {"icarus-startup": "iverilog", "verilator-startup": "verilator"}
+        if build_class in required_tool and tool != required_tool[build_class]:
+            raise ValueError(build_class + " reservation requires " + required_tool[build_class])
         if tool == "verilator" and "-j" not in argv:
             argv[1:1] = ["-j", str(self.resources["build_jobs"])]
         output_flag = "-o"
@@ -554,7 +570,7 @@ class Run:
                     self.build_reuses.append(reuse)
                     write_json(self.path / "build-reuse.json", self.build_reuses)
                 return text, record
-            with self.compiler_admission() as admission:
+            with self.compiler_admission(build_class) as admission:
                 text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected,
                                           compiler_admission=admission)
             if record["exit_code"] != 0:
@@ -575,12 +591,14 @@ class Run:
                 cache_entries[key] = cached, text, record
             return text, record
 
-    def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,)):
+    def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,), build_class="default"):
         self.check_cancelled()
         if (str(argv[0]) == "verilator" and
                 ("--binary" in argv or "--build" in argv) or
                 str(argv[0]) == "iverilog" and "-o" in argv):
-            return self._build(argv, cwd, timeout, expected)
+            return self._build(argv, cwd, timeout, expected, build_class)
+        if build_class != "default":
+            raise ValueError("build class is only valid for a compiler invocation")
         work = ROOT if cwd is None else Path(cwd)
         binary = str((work / str(argv[0])).resolve())
         text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)

@@ -10,6 +10,8 @@ from execution import ROOT, VERILATOR_UNROLL, sha256, write_json
 
 def build(run, g, name, optimize, gating, profile=False, flatten=False,
           compiler_flags=(), *, edge_digest=True, sources=None):
+    if "make" not in getattr(run, "tool_versions", {}):
+        run.versions([("make", "--version")])
     obj = run.path / name
     constants = {"BANKS": g.BANKS, "QUEUE_DEPTH": g.QUEUE_DEPTH,
                  "LAYERS": g.NUM_LAYERS, "PROFILE": g.PROFILE,

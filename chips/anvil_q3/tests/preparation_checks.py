@@ -14,6 +14,87 @@ from parameters import defaults
 from reference import Geometry
 
 
+def compiler_candidate_dispatch_sensitivity():
+    from contextlib import contextmanager
+    import inspect
+    import compiled_host_checks
+    from compiled_build import build
+    from decoder_checks import decoder_case
+    from execution import ROOT
+    from parameters import C
+    from verify import behavior_inventory, shard_inventory
+
+    assert inspect.signature(decoder_case).parameters["profile_compile"].default is False
+    jobs = behavior_inventory()
+    assert all(not job.kwargs.get("profile_compile", False) for job in jobs)
+    selected = next(row for row in shard_inventory("evidence/check-c-four-token")["shards"]
+                    if row["id"] == "decoder-36c0bbcad86b21431b7d")
+    assert selected["argv"] == [
+        "python3", "tests/verify.py", "--check", "behavior", "--behavior-shard",
+        "decoder-36c0bbcad86b21431b7d", "--output",
+        "evidence/check-c-four-token/decoder-36c0bbcad86b21431b7d"]
+    for probe, profiled in (("C", False), ("C-symmetric", True)):
+        fake_run = MagicMock()
+        fake_run.rel.return_value = "offline-mocked-receipt"
+        with (patch.object(sys, "argv", [
+                  "tests/compiled_host_checks.py", "--probe", probe,
+                  "--banks", "8", "--tokens", "4"]),
+              patch.object(compiled_host_checks, "Run", return_value=fake_run),
+              patch.object(compiled_host_checks, "decoder_case",
+                           return_value={"scope": "offline mock only"}) as decoder,
+              redirect_stdout(io.StringIO())):
+            compiled_host_checks.main()
+        assert decoder.call_args.kwargs["profile_compile"] is profiled
+        assert decoder.call_args.kwargs["tokens"] == [1, 4, 2, 6]
+        assert decoder.call_args.kwargs["prefill_tokens"] == 2
+        assert decoder.call_args.args[1].INT4_ASYM == int(probe == "C")
+
+    class OfflineBuild:
+        path = ROOT / "evidence/preparation/offline-profile-0000"
+        resources = {"build_jobs": 2}
+        tool_versions = {}
+        admitted = False
+
+        def __init__(self):
+            self.commands = []
+            self.version_queries = []
+
+        def rel(self, path):
+            return str(path.relative_to(ROOT))
+
+        def versions(self, argv):
+            self.version_queries.extend(argv)
+
+        def tool(self, argv):
+            if argv[0] == "make":
+                assert self.admitted, "compiler launched outside resource admission"
+            self.commands.append(argv)
+
+        @contextmanager
+        def compiler_admission(self):
+            self.admitted = True
+            try:
+                yield
+            finally:
+                self.admitted = False
+
+    offline = OfflineBuild()
+    build(offline, C, "pgo", True, True,
+          compiler_flags=("-fprofile-use=../profiles", "-Werror=missing-profile",
+                          "-Werror=coverage-mismatch"),
+          sources=["rtl/anvil_q3_top.sv"])
+    flags = offline.commands[0][offline.commands[0].index("-CFLAGS") + 1]
+    assert "-fprofile-prefix-path=" + str(offline.path) in flags
+    assert "-Werror=missing-profile" in flags and "-Werror=coverage-mismatch" in flags
+    assert offline.version_queries == [("make", "--version")]
+    assert len(offline.commands) == 2 and not offline.admitted
+    return {"scope": "offline compiler dispatch only; no tool/DUT result",
+            "admitted_workloads_unchanged": len(jobs),
+            "candidate_default_disabled": True, "diagnostic_routes": 2,
+            "isolated_command_preserved": True,
+            "compiler_admission_and_profile_diagnostics_preserved": True}
+
+
 def preparation_dispatch_sensitivity():
     import prepare
     import boundary_checks
@@ -155,6 +236,7 @@ def preparation_dispatch_sensitivity():
     return {"dispatch_cases": results, "activation_dispatch_cases": activation_cases,
             "decoder_dispatch_cases": decoder_cases,
             "boundary_extrema_dispatch_cases": observed_extrema,
+            "compiler_candidate": compiler_candidate_dispatch_sensitivity(),
             "unsupported_probes_rejected": 3,
             "scope": "offline mocked dispatch only; no synthesis or physical acceptance"}
 

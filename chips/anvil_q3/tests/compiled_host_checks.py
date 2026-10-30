@@ -84,7 +84,8 @@ def main():
                              INT4_ASYM=int(args.probe == "C")),
                 simulator="verilator", tokens=[1, 4, 2, 6][:args.tokens],
                 prefill_tokens=min(2, args.tokens),
-                label="compiled-C", compiled_host=True)
+                label="compiled-C", compiled_host=True,
+                profile_compile=args.probe == "C-symmetric")
         else:
             result = decoder_case(
                 run, replace(A_PORTABILITY, BANKS=args.banks, TILE_K=8, TILE_ROWS=1,

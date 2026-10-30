@@ -331,7 +331,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                  boundary=0, restart_at=None, fault_scenario=0, adversarial=False,
                  implementation="q3", native_asset=None, testbench="tests/top_tb.sv",
                  stream_compare=True, sparse_scan=True, compiled_host=False,
-                 host_cycle_limit=2000000000):
+                 host_cycle_limit=2000000000, profile_compile=False):
     tokens = tokens if tokens is not None else [1, 4, 2, 6, 3, 5, 7]
     if validate_simulation_tier(g, simulator, tokens):
         from dataclasses import replace
@@ -353,7 +353,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
             restart_at=restart_at, fault_scenario=fault_scenario, adversarial=adversarial,
             implementation=implementation, native_asset=native_asset, testbench=testbench,
             stream_compare=stream_compare, sparse_scan=sparse_scan, compiled_host=compiled_host,
-            host_cycle_limit=host_cycle_limit)
+            host_cycle_limit=host_cycle_limit, profile_compile=profile_compile)
         complete["tier_dispatch"] = {
             "requested_simulator": "iverilog", "actual_full_simulator": "verilator",
             "requested_geometry": asdict(g),
@@ -369,6 +369,8 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                           fault_scenario or not sparse_scan or
                           testbench != "tests/top_tb.sv"):
         raise ValueError("compiled host supports normal Q3 public-pin workloads only")
+    if profile_compile and (not compiled_host or g.HIDDEN_SIZE < 1024 or mutation_assertions):
+        raise ValueError("compiler training requires a normal large compiled-host workload")
     if implementation == "q1-native" and (
             native_asset is None or rtl is not None or g.PROFILE != 1 or
             g.BANKS != 1 or g.CACHE_MODE != 0 or prelude or boundary or fault_scenario):
@@ -414,7 +416,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     sources = rtl if rtl is not None else [
         str(p.relative_to(ROOT)) for p in sorted(source_root.glob("*.sv"))]
     source_binding = None
-    profiled = compiled_host and g.HIDDEN_SIZE >= 1024 and not mutation_assertions
+    profiled = profile_compile
     if implementation == "q1-native":
         sources, source_binding = native_q1_sources(run, native_asset)
     if simulator == "iverilog":
