@@ -11,15 +11,17 @@ import threading
 from contextlib import contextmanager
 
 
-# attempt-0131's retained case records measured 150,423,571 transient bytes
-# (largest mapper build) and 24,079,911 retained bytes (4096-byte tokenizer).
-# 192 MiB covers their sum plus 26,823,110 bytes; 64 MiB stays unreserved.
-COMPILER_DISK_BYTES = 192 << 20
-DISK_RESERVE_BYTES = 64 << 20
+# Attempt-0133 exhausted storage in two concurrent PCH compilations. The
+# earlier 150,423,571-byte observation was not a bound for that boot build.
+# These are conservative admission budgets, NOT measured peak requirements.
+# --probe compiler-storage measures the original and non-PCH boot builds.
+COMPILER_DISK_BYTES = 1024 << 20
+COMPILER_RETAINED_BYTES = 64 << 20
+DISK_RESERVE_BYTES = 256 << 20
 
 
 class CompilerStorage:
-    """Reserve measured build space, rechecking free storage at each launch."""
+    """Reserve transient AND retained growth, rechecking at every launch."""
 
     def __init__(self, root):
         self.root = root
@@ -37,24 +39,29 @@ class CompilerStorage:
         with self.condition:
             while True:
                 free = shutil.disk_usage(self.root).free
-                needed = self.reserved + COMPILER_DISK_BYTES + DISK_RESERVE_BYTES
+                budget = COMPILER_DISK_BYTES + COMPILER_RETAINED_BYTES
+                needed = self.reserved + budget + DISK_RESERVE_BYTES
                 if free >= needed:
-                    self.reserved += COMPILER_DISK_BYTES
-                    lease = {"available_bytes": free, "reserved_bytes": COMPILER_DISK_BYTES,
+                    self.reserved += budget
+                    lease = {"available_bytes": free, "reserved_bytes": budget,
+                             "transient_budget_bytes": COMPILER_DISK_BYTES,
+                             "retained_growth_budget_bytes": COMPILER_RETAINED_BYTES,
                              "total_reserved_bytes": self.reserved,
-                             "reserve_bytes": DISK_RESERVE_BYTES}
+                             "reserve_bytes": DISK_RESERVE_BYTES,
+                             "required_bytes": needed,
+                             "basis": "Provisional conservative budget; not a measured peak"}
                     break
                 if not self.reserved:
                     raise OSError(
                         f"Compiler storage: {free} free bytes, "
-                        f"{COMPILER_DISK_BYTES + DISK_RESERVE_BYTES} required; "
+                        f"{needed} required; "
                         "no active build can release space")
                 self.condition.wait(timeout=1)
         try:
             yield lease
         finally:
             with self.condition:
-                self.reserved -= COMPILER_DISK_BYTES
+                self.reserved -= budget
                 self.condition.notify_all()
 
 
@@ -87,17 +94,22 @@ def resource_limits(root):
         current = current.parent
     disk = shutil.disk_usage(root).free
     workers = max(1, min(8, cpu // 3, available // (2 << 30),
-                         max(0, disk - DISK_RESERVE_BYTES) // COMPILER_DISK_BYTES))
+                         max(0, disk - DISK_RESERVE_BYTES) //
+                         (COMPILER_DISK_BYTES + COMPILER_RETAINED_BYTES)))
     return {
         "workers": workers, "cpu_capacity": cpu, "available_memory_bytes": available,
         "available_disk_bytes": disk, "cgroup_constraints": constraints,
         "compiler_disk_bytes": COMPILER_DISK_BYTES,
+        "compiler_retained_growth_bytes": COMPILER_RETAINED_BYTES,
         "disk_reserve_bytes": DISK_RESERVE_BYTES,
-        "measured_transient_peak_bytes": 150423571,
-        "measured_retained_peak_bytes": 24079911,
+        "historical_observed_transient_bytes": 150423571,
+        "historical_observed_retained_bytes": 24079911,
+        "boot_compiler_peak_measurement": "Pending compiler-storage probe; "
+                                          "historical observations were insufficient",
         "policy": "At most eight tool children; three CPU slots and 2 GiB memory "
-                  "per child. Measured compiler disk reservations are rechecked "
-                  "at launch and shared by nested batches; not a fixed 2 GiB disk guess. "
+                  "per child. Provisional compiler transient and retained-growth "
+                  "reservations are rechecked at launch and shared by nested batches. "
+                  "Retained bytes remain on disk and affect every later launch. "
                   "Verilator compilation uses -j 2.",
     }
 

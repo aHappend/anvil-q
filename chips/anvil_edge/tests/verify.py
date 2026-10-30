@@ -12,6 +12,8 @@ Settled case-result.json records survive an interrupted parent, but never
 replace its final receipt, rerun missing work or authorize evidence reuse.
 --probe runtime-input-reuse measures the complete numerical/tokenizer runtime
 input repair and compact controls before independent admission, not aggregate L1.
+--probe compiler-storage runs retention controls and measures the affected boot
+build with/without PCH, only after an explicit filesystem-headroom preflight.
 """
 
 import argparse
@@ -58,7 +60,8 @@ from mapper_cache import run_mapper_cache
 from head_row_reuse import run_head_row_reuse, run_head_row_shell
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
 from scheduling import (
-    CompilerStorage, resource_limits, scheduling_probe, scheduling_controls, cache_recovery,
+    CompilerStorage, DISK_RESERVE_BYTES, resource_limits, scheduling_probe,
+    scheduling_controls, cache_recovery,
 )
 from interactions import run_top_interactions, run_top_token_capacity, run_drain_prompts
 from official import (
@@ -135,6 +138,64 @@ def storage_snapshot(path):
     }
 
 
+def compiler_object_dir(argv, root, evidence_path):
+    if Path(str(argv[0])).name != "verilator" or "--Mdir" not in argv:
+        return None
+    directory = root / argv[argv.index("--Mdir") + 1]
+    if (directory.is_symlink() or
+            not directory.resolve().is_relative_to(evidence_path.resolve()) or
+            directory.name != "obj"):
+        raise VerificationFailure("Unexpected compiler intermediate directory")
+    return directory
+
+
+def allocated_tree_bytes(directory):
+    if directory is None or not directory.exists():
+        return 0
+    total = 0
+    for path in directory.rglob("*"):
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            continue
+        if not path.is_symlink():
+            total += info.st_blocks * 512
+    return total
+
+
+def cleanup_compiler_intermediates(object_dir, receipt_dir, *, success):
+    """Persist the complete deletion inventory BEFORE touching disposable files."""
+    if object_dir is None or not object_dir.exists():
+        return []
+    suffixes = {".o", ".a", ".gch", ".d"}
+    if success:
+        suffixes.update((".cpp", ".h", ".mk", ".dat"))
+    removed = []
+    for artifact in sorted(object_dir.iterdir()):
+        if artifact.is_file() and not artifact.is_symlink() and artifact.suffix in suffixes:
+            info = artifact.stat()
+            removed.append({"path": str(artifact.relative_to(ROOT)),
+                            "sha256": digest(artifact), "bytes": info.st_size,
+                            "allocated_bytes": info.st_blocks * 512})
+    write_json(receipt_dir / "cleanup-inventory.json", {
+        "schema": 1, "created_utc": utc(), "successful_compile": success,
+        "policy": "Only settled compiler intermediates. Failed generated C++/headers, "
+                  "benches, source snapshots, binaries and raw logs are preserved.",
+        "artifacts": removed,
+    })
+    for artifact in removed:
+        path = ROOT / artifact["path"]
+        if path.is_symlink() or digest(path) != artifact["sha256"]:
+            raise VerificationFailure("Compiler intermediate changed after inventory")
+        path.unlink()
+    write_json(receipt_dir / "cleanup-result.json", {
+        "end_utc": utc(), "removed_files": len(removed),
+        "removed_allocated_bytes": sum(row["allocated_bytes"] for row in removed),
+        "inventory_sha256": digest(receipt_dir / "cleanup-inventory.json"),
+    })
+    return removed
+
+
 class Evidence:
     def __init__(self, label, preparation=False, parent_budget_s=None):
         parent = ROOT / "evidence" / ("preparation" if preparation else "verification")
@@ -144,6 +205,7 @@ class Evidence:
         self.name_prefix = ""
         self.simulator_override = None
         self.explicit_clock = None
+        self.compiler_pch = False
         self.compiled_simulations = {}
         self.complete_table_producers = {}
         self._table_locks = {}
@@ -297,6 +359,7 @@ class Evidence:
                                    time.monotonic() - queued, lease)
 
     def _child(self, argv, name, timeout, allow_failure, cwd, queue_seconds, storage_lease=None):
+        object_dir = compiler_object_dir(argv, ROOT, self._root.path)
         requested_timeout = timeout
         if self._parent_budget_s is not None:
             # Reserve settlement time inside the admitted aggregate patrol budget.
@@ -323,6 +386,34 @@ class Evidence:
             "compiler_storage_reservation": storage_lease,
         }
         record["storage_before"] = storage_snapshot(directory)
+        if object_dir is not None:
+            record["compiler_storage_observation"] = {
+                "sample_interval_s": .25, "samples": 0,
+                "peak_object_allocated_bytes": 0,
+                "minimum_filesystem_available_bytes": record["storage_before"]["available_bytes"],
+                "limitation": "Sampled allocated-file high-water mark, not an exact "
+                              "continuous peak. Filesystem availability includes other users.",
+            }
+
+        def sample_compiler_storage():
+            if object_dir is None:
+                return
+            observation = record["compiler_storage_observation"]
+            observation["samples"] += 1
+            observation["peak_object_allocated_bytes"] = max(
+                observation["peak_object_allocated_bytes"], allocated_tree_bytes(object_dir))
+            free = shutil.disk_usage(directory).free
+            observation["minimum_filesystem_available_bytes"] = min(
+                observation["minimum_filesystem_available_bytes"], free)
+            if storage_lease is not None and free < DISK_RESERVE_BYTES:
+                record["storage_guard_error"] = (
+                    f"Filesystem headroom fell to {free} bytes below "
+                    f"{DISK_RESERVE_BYTES}-byte reserve during compilation")
+            if (storage_lease is not None and
+                    observation["peak_object_allocated_bytes"] > storage_lease["reserved_bytes"]):
+                record["storage_guard_error"] = (
+                    "Compiler allocation exceeded its provisional reservation; "
+                    "retain measurements and revise admission before retry")
         write_json(directory / "initial.json", {
             **record, "status": "launch pending; not an execution result",
             "source_manifest": self.relative(self._root.path / "launch.json"),
@@ -357,13 +448,17 @@ class Evidence:
                             "status": "launched; final outcome requires receipt.json",
                         })
                         deadline = start + timeout
+                        next_storage_sample = start
                         while True:
+                            if time.monotonic() >= next_storage_sample:
+                                sample_compiler_storage()
+                                next_storage_sample = time.monotonic() + .25
                             pid, status, usage = os.wait4(process.pid, os.WNOHANG)
                             if pid:
                                 process.returncode = os.waitstatus_to_exitcode(status)
                                 break
-                            if time.monotonic() >= deadline:
-                                record["timed_out"] = True
+                            if time.monotonic() >= deadline or record.get("storage_guard_error"):
+                                record["timed_out"] = time.monotonic() >= deadline
                                 os.killpg(process.pid, signal.SIGTERM)
                                 deadline = time.monotonic() + 10
                                 while time.monotonic() < deadline:
@@ -401,22 +496,16 @@ class Evidence:
                     else:
                         os.killpg(process.pid, signal.SIGKILL)
                         record["process_group_settled"] = False
-        if (record.get("exit_code") == 0 and record["child_settled"] and
-                record.get("process_group_settled", True) and
-                str(argv[0]) == "verilator" and "--Mdir" in argv):
-            object_dir = ROOT / argv[argv.index("--Mdir") + 1]
-            if not object_dir.is_relative_to(self._root.path) or object_dir.name != "obj":
-                raise VerificationFailure("Unexpected compiler intermediate directory")
-            removed = []
-            for artifact in sorted(object_dir.iterdir()):
-                if (artifact.is_file() and not artifact.is_symlink() and
-                        artifact.suffix in (
-                            ".o", ".a", ".gch", ".cpp", ".h", ".d", ".mk", ".dat")):
-                    removed.append({"path": self.relative(artifact),
-                                    "sha256": digest(artifact),
-                                    "bytes": artifact.stat().st_size})
-                    artifact.unlink()
-            record["compiler_intermediates_removed"] = removed
+        if object_dir is not None:
+            sample_compiler_storage()
+            if record["child_settled"] and record.get("process_group_settled", True):
+                try:
+                    record["compiler_intermediates_removed"] = cleanup_compiler_intermediates(
+                        object_dir, directory, success=record.get("exit_code") == 0)
+                except (OSError, VerificationFailure) as error:
+                    record["compiler_cleanup_error"] = f"{type(error).__name__}: {error}"
+                record["compiler_storage_observation"]["retained_object_allocated_bytes"] = (
+                    allocated_tree_bytes(object_dir))
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
         record["storage_after"] = storage_snapshot(directory)
@@ -424,8 +513,12 @@ class Evidence:
         self.record["children"].append(record)
         if interrupted is not None:
             raise interrupted
+        if record.get("compiler_cleanup_error"):
+            raise VerificationFailure(
+                f"{name} compiler cleanup failed; see {self.relative(directory / 'receipt.json')}")
         if not allow_failure and (
             record["exit_code"] != 0 or record["timed_out"]
+            or record.get("storage_guard_error")
             or not record["child_settled"] or not record.get("process_group_settled", True)
         ):
             raise VerificationFailure(
@@ -575,12 +668,17 @@ class Evidence:
                 "-Wno-fatal", "--x-initial", "unique", "--x-assign", "unique",
                 "-j", "2",
             ]
-            # GCC's synthetic .fast/.slow includes fail if their .gch disappears.
-            # Include the real generated header even when PCH artifacts are absent.
+            # GNU make --old-file suppresses only the two unused PCH targets;
+            # every C++ object still compiles against the real generated header.
             make_flags = [
                 'VK_PCH_I_FAST="-include Vbench__pch.h"',
                 'VK_PCH_I_SLOW="-include Vbench__pch.h"',
             ]
+            if not self.compiler_pch:
+                make_flags.extend((
+                    "--old-file=Vbench__pch.h.fast.gch",
+                    "--old-file=Vbench__pch.h.slow.gch",
+                ))
             if optimize:
                 make_flags.extend(["OPT_FAST=-O3", "OPT_SLOW=-O3"])
             compile_options.extend(["-MAKEFLAGS", " ".join(make_flags)])
@@ -1081,6 +1179,7 @@ def main():
         "retained-controller-audit", "retained-provenance-audit",
         "settled-case-records",
         "compile-cache-recovery",
+        "compiler-storage", "compiler-storage-controls",
         "runtime-input-reuse",
         "runtime-head-controls",
         "boot-performance", "official-stage-performance", "performance-controls",
@@ -1217,6 +1316,9 @@ def main():
             run_controller(evidence)
         elif args.probe == "compile-cache-recovery":
             cache_recovery(evidence)
+        elif args.probe in ("compiler-storage", "compiler-storage-controls"):
+            from compiler_storage import storage_probe
+            storage_probe(evidence, boot=args.probe == "compiler-storage")
         elif args.probe == "runtime-input-reuse":
             from runtime_reuse import runtime_reuse
             runtime_reuse(evidence)
