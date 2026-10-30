@@ -34,12 +34,24 @@ def clean_copy_fixture(ev):
         "NO RTL OR SYNTHESIS EXECUTION','assertions':[{'name':n,'passed':True} for n in names]}))\n"
         "print(json.dumps({'status':'passed','receipt':str(p),'executable':sys.executable}))\n")
     selected = lambda root=None: [((root or project) / "tests/verify.py")]
-    with patch.object(verify, "ROOT", project), patch.object(verify, "sources", selected):
+    capacity = verify.portable_capacity
+    with patch.object(verify, "ROOT", project), patch.object(verify, "sources", selected), \
+            patch.object(verify, "portable_capacity", side_effect=lambda child, inputs: capacity(
+                child, inputs, headroom={
+                    "bytes": 1024**2, "inodes": 32,
+                    "basis": "bounded synthetic Python launcher only; no RTL build"})):
         child = verify.Evidence("synthetic-clean-launch")
         passed = verify.portable_check(child)
+        passed = passed and verify.audit_evidence(child)
         child.finish("passed" if passed else "failed")
-    ev.receipt.setdefault("children", []).append(
-        str((child.path / "receipt.json").relative_to(verify.ROOT)))
+        if passed:
+            verify.portable_dispose_inputs(child)
+            passed = verify.audit_evidence(child)
+            child.finish("passed" if passed else "failed")
+    reference = str((child.path / "receipt.json").relative_to(verify.ROOT))
+    ev.receipt.setdefault("children", []).append(reference)
+    ev.receipt.setdefault("child_project_roots", {})[reference] = str(
+        project.relative_to(verify.ROOT))
     record = child.receipt["records"][0]
     return ev.assertion(
         "actual_clean_copy_launcher_uses_parent_interpreter",

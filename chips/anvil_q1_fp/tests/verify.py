@@ -1158,19 +1158,155 @@ def protocol_check(ev, simulator="verilator", modes=(0, 1, 2)):
     return result
 
 
-def portable_check(ev):
-    destination = ev.path / "clean-project"
-    destination.mkdir()
-    selected = sources()
+def portable_capacity(ev, selected, headroom=None):
+    """Plan a physically independent copy; availability is not a reservation."""
+    snapshot = os.statvfs(ev.path)
+    block = snapshot.f_frsize or snapshot.f_bsize
+    rounded = lambda size: ((size + block - 1) // block) * block
+    directories = {Path(".")}
+    files = {}
     for source in selected:
-        target = destination / source.relative_to(ROOT)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
-    copied = {str(p.relative_to(destination)): digest(p) for p in sources(destination)}
+        relative = source.relative_to(ROOT)
+        if source.is_symlink():
+            raise ValueError("portable input must be a regular independent file: " + str(relative))
+        info = source.stat()
+        files[str(relative)] = {"size_bytes": info.st_size,
+                                "allocated_copy_bytes": rounded(info.st_size)}
+        directories.update(relative.parents)
+    # Historical outputs inform planning only; they never supply copied inputs or passes.
+    measurements = []
+    if headroom is None:
+        for path in sorted((ROOT / "evidence/preparation").glob("verifier-portable-*/receipt.json")):
+            retained = json.loads(path.read_text())
+            copied_root = path.parent / "clean-project"
+            if retained.get("status") != "passed" or not copied_root.is_dir():
+                continue
+            output = copied_root / "evidence"
+            if not output.is_dir():
+                continue
+            paths = [output, *output.rglob("*")]
+            measurements.append({
+                "receipt": str(path.relative_to(ROOT)), "receipt_sha256": digest(path),
+                "retained_output_allocated_bytes": sum(p.lstat().st_blocks * 512 for p in paths),
+                "retained_output_inodes": len(paths),
+            })
+        measured_bytes = max((m["retained_output_allocated_bytes"] for m in measurements), default=0)
+        measured_inodes = max((m["retained_output_inodes"] for m in measurements), default=0)
+        headroom = {
+            "bytes": max(1024**3, 2 * measured_bytes),
+            "inodes": max(8192, 2 * measured_inodes),
+            "basis": "max(1 GiB/8192 inodes, twice measured retained clean-smoke outputs)",
+        }
+    copy_bytes = sum(row["allocated_copy_bytes"] for row in files.values())
+    directory_bytes = len(directories) * block
+    report = {
+        "snapshot_at": now(), "allocation_block_bytes": block,
+        "declared_files": files, "declared_file_count": len(files),
+        "copy_logical_bytes": sum(row["size_bytes"] for row in files.values()),
+        "copy_allocated_file_bytes": copy_bytes,
+        "copy_directory_allowance_bytes": directory_bytes,
+        "copy_required_inodes": len(files) + len(directories),
+        "headroom": headroom, "historical_output_measurements": measurements,
+        "required_available_bytes": copy_bytes + directory_bytes + headroom["bytes"],
+        "required_available_inodes": len(files) + len(directories) + headroom["inodes"],
+        "available_bytes": snapshot.f_bavail * block,
+        "available_inodes": snapshot.f_favail,
+        "limitations": (
+            "Retained-output measurements are not compiler-scratch peak measurements. "
+            "Headroom is a planning allowance, not a proven upper bound or quota reservation; "
+            "shared-runtime provisioning must cover build peaks and concurrent use."),
+    }
+    report["sufficient"] = (
+        report["available_bytes"] >= report["required_available_bytes"] and
+        report["available_inodes"] >= report["required_available_inodes"])
+    ev.receipt["portable_capacity"] = report
+    ev.finish("running")
+    return report
+
+
+def portable_dispose_inputs(ev):
+    """Only the current invocation's committed, successful independent input copy."""
+    lifecycle = ev.receipt.get("portable_copy")
+    if lifecycle is None or lifecycle.get("state") != "verified":
+        return
+    if (ev.receipt["status"] != "passed" or
+            not all(a["passed"] for a in ev.receipt["assertions"])):
+        raise ValueError("cannot dispose copied inputs before successful evidence publication")
+    destination = ev.path / "clean-project"
+    if lifecycle["destination"] != str(destination.relative_to(ROOT)):
+        raise ValueError("disposal target is not the current clean project")
+    manifest = lifecycle["copied_inputs"]
+    # Validate the complete payload before removing any file. Evidence is not in this manifest.
+    for name, row in manifest.items():
+        target = artifact_path(destination, name)
+        info = target.lstat()
+        if (target.is_symlink() or not target.is_file() or
+                (info.st_dev, info.st_ino) != (row["device"], row["inode"]) or
+                digest(target) != row["sha256"]):
+            raise ValueError("copied input changed before disposal: " + name)
+    lifecycle["state"] = "disposing"
+    lifecycle["disposal_started_at"] = now()
+    lifecycle["disposed_inputs"] = []
+    ev.finish("passed")
+    try:
+        for name in manifest:
+            (destination / name).unlink()
+            lifecycle["disposed_inputs"].append(name)
+    except Exception as error:
+        lifecycle["state"] = "disposal-failed"
+        lifecycle["diagnostic"] = retain_exception(error, "portable-input-disposal", ev.path)
+        raise
+    lifecycle["state"] = "disposed"
+    lifecycle["disposal_ended_at"] = now()
+    ev.finish("passed")
+
+
+def portable_check(ev):
+    selected = sources()
+    capacity = portable_capacity(ev, selected)
+    if not ev.assertion("clean_copy_capacity", capacity["sufficient"],
+                        required_bytes=capacity["required_available_bytes"],
+                        required_inodes=capacity["required_available_inodes"],
+                        available_bytes=capacity["available_bytes"],
+                        available_inodes=capacity["available_inodes"]):
+        return False
+    destination = ev.path / "clean-project"
+    lifecycle = {"state": "copying", "destination": str(destination.relative_to(ROOT)),
+                 "started_at": now(), "copied_inputs": {}}
+    ev.receipt["portable_copy"] = lifecycle
     expected = {str(p.relative_to(ROOT)): digest(p) for p in selected}
-    if not ev.assertion("clean_copy_exact_declared_inputs", copied == expected,
+    ev.finish("running")
+    try:
+        destination.mkdir()
+        for source in selected:
+            name = str(source.relative_to(ROOT))
+            target = destination / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            info, original = target.stat(), source.stat()
+            if info.st_nlink != 1 or (info.st_dev, info.st_ino) == (
+                    original.st_dev, original.st_ino):
+                raise ValueError("clean copy shares an input inode: " + name)
+            lifecycle["copied_inputs"][name] = {
+                "size_bytes": info.st_size, "sha256": digest(target),
+                "device": info.st_dev, "inode": info.st_ino,
+            }
+    except Exception as error:
+        lifecycle["state"] = "copy-failed"
+        lifecycle["diagnostic"] = retain_exception(error, "portable-input-copy", ev.path)
+        # Preserve the original exception even if receipt publication also fails.
+        try:
+            ev.finish("running")
+        except Exception as publication:
+            error.verification_diagnostics.append(
+                exception_diagnostic(publication, "portable-copy-publication", ev.path))
+        raise
+    copied = {str(p.relative_to(destination)): digest(p) for p in sources(destination)}
+    current = {str(p.relative_to(ROOT)): digest(p) for p in sources()}
+    if not ev.assertion("clean_copy_exact_declared_inputs", copied == expected == current,
                         copied_sha256=copied):
         return False
+    lifecycle["state"] = "copied"
     executed = ev.run("clean-copy-smoke", [
         sys.executable, "tests/verify.py", "--probe", "clean-smoke",
     ], timeout=86400, cwd=destination)
@@ -1190,11 +1326,17 @@ def portable_check(ev):
     mandatory = ["synthesis_anvil_q1_fp_top", "leaf_independent_numerical"] + [
         f"minimum-mode{mode}-seed17_independent_architecture_numerical"
         for mode in (0, 1, 2)]
-    return ev.assertion("clean_copy_all_modes_behavior_synthesis",
+    passed = ev.assertion("clean_copy_all_modes_behavior_synthesis",
                         executed and child["status"] == "passed" and
+                        retained["status"] == "passed" and
+                        all(a["passed"] for a in retained["assertions"]) and
                         all(assertions.get(name, False) for name in mandatory),
                         required_assertions=mandatory,
                         scope="Smallest legal configuration; not full-model reproduction")
+    if passed:
+        lifecycle["state"] = "verified"
+        ev.finish("running")
+    return passed
 
 
 def parameter_check(ev):
@@ -1972,12 +2114,24 @@ def main():
             if ok:
                 ok = audit_evidence(ev)
             ev.finish("passed" if ok else "failed")
+            if ok and "portable_copy" in ev.receipt:
+                portable_dispose_inputs(ev)
+                ok = audit_evidence(ev)
+                ev.finish("passed" if ok else "failed")
         except Exception as error:
             ok = False
             ev.receipt["status"] = "failed"
             ev.receipt["assertions"].append({
                 "name": "final_publication", "passed": False,
-                "diagnostics": [exception_diagnostic(error, "final-publication", ev.path)]})
+                "diagnostics": getattr(error, "verification_diagnostics", [
+                    exception_diagnostic(error, "final-publication", ev.path)])})
+            try:
+                ev.finish("failed")
+            except Exception as publication:
+                print(json.dumps({"status": "failed", "diagnostics": [
+                    exception_diagnostic(error, "final-publication", ev.path),
+                    exception_diagnostic(publication, "failure-publication", ev.path)]}),
+                    file=sys.stderr, flush=True)
     if not ok:
         report_failures(ev)
     print(json.dumps({"status": ev.receipt["status"],
