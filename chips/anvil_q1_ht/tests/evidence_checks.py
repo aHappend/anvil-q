@@ -204,6 +204,41 @@ class HistoricalComparisonChecks(unittest.TestCase):
 
 
 class SupervisionPrerequisiteChecks(unittest.TestCase):
+    def test_receipt_loss_preserves_exact_progress_without_reconstruction(self):
+        event = {
+            "event": "receipt_update_failed",
+            "receipt": "evidence/preparation/parent-01234567/receipt.json",
+            "error_type": "FileNotFoundError", "errno": 2,
+            "expected_receipt_identity": {"device": 1, "inode": 2},
+            "progress_at_failure": {
+                "campaign": [{"probe": "checkpoint-reference", "outcome": "running"}],
+                "source_binding_count": 84,
+            },
+            "evidence_recreated": False,
+        }
+        text = "Traceback\n{not json}\n" + json.dumps(event) + "\n"
+        row, = platform_checks.receipt_loss_events(text)
+        for key in ("receipt", "errno", "progress_at_failure", "expected_receipt_identity"):
+            self.assertEqual(row[key], event[key])
+        self.assertFalse(row["evidence_recreated"])
+
+    def test_receipt_loss_absent_is_not_inferred_from_traceback(self):
+        self.assertEqual(platform_checks.receipt_loss_events(
+            "FileNotFoundError: receipt.json\n{}\n[]\n"), [])
+
+    def test_receipt_loss_rejects_nonproject_paths_and_reconstruction(self):
+        for path in ("/private/receipt.json", "../receipt.json",
+                     ".vulcan/receipt.json", "evidence/preparation/run/log.txt"):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                platform_checks.receipt_loss_events(json.dumps({
+                    "event": "receipt_update_failed", "receipt": path,
+                    "evidence_recreated": False}))
+        with self.assertRaisesRegex(ValueError, "non-reconstruction"):
+            platform_checks.receipt_loss_events(json.dumps({
+                "event": "receipt_update_failed",
+                "receipt": "evidence/preparation/run-01234567/receipt.json",
+                "evidence_recreated": True}))
+
     def test_missing_log_preserves_enforcement_observation_without_recreating_it(self):
         state = {"config": {"role_limits": {"timeout_s": 86400}}}
         result = {"argv": ["python3", "tests/verify.py"],

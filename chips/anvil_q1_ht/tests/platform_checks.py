@@ -21,6 +21,37 @@ PREDECESSOR = (
 )
 
 
+def receipt_loss_events(text):
+    """Extract recorded failures, never reconstruct the unavailable receipts."""
+    events = []
+    for line in text.splitlines():
+        if not line.startswith("{"):
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict) or row.get("event") != "receipt_update_failed":
+            continue
+        relative = row.get("receipt")
+        if not isinstance(relative, str):
+            raise ValueError("receipt-loss event has no receipt path")
+        path = Path(relative)
+        if (path.is_absolute() or ".." in path.parts or
+                path.parts[:2] != ("evidence", "preparation") or
+                path.name != "receipt.json"):
+            raise ValueError("receipt-loss event path is not project preparation evidence")
+        if row.get("evidence_recreated") is not False:
+            raise ValueError("receipt-loss event does not establish non-reconstruction")
+        events.append({
+            key: row[key] for key in (
+                "receipt", "error_type", "errno", "os_error",
+                "expected_receipt_identity", "progress_at_failure",
+                "evidence_recreated", "scope") if key in row
+        })
+    return events
+
+
 def latest_l1_attempt(status):
     attempts = status["execution"]["attempts"]
     matches = [
@@ -101,6 +132,16 @@ def audit_supervision(attempt=309, repair_of=None):
              "--inspect-supervision-records", "--attempt", str(attempt)],
             "retained-supervision-records")
         observation = json.loads(text)
+        stderr_relative = (
+            f".vulcan/engineering/run-0001/attempt-{attempt:04d}/stderr.log")
+        if "sha256" in observation["raw_logs"][stderr_relative]:
+            stderr_path = ROOT / stderr_relative
+            stderr_text = stderr_path.read_text()
+            if file_sha256(stderr_path) != observation["raw_logs"][stderr_relative]["sha256"]:
+                raise RuntimeError("retained stderr changed during supervision audit")
+            observation["recorded_receipt_loss_events"] = receipt_loss_events(stderr_text)
+        else:
+            observation["recorded_receipt_loss_events"] = None
         evidence.record["diagnostic_input_sha256"] = {
             **observation["record_sha256"],
             **{name: row["sha256"] for name, row in observation["raw_logs"].items()
