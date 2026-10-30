@@ -30,6 +30,33 @@ import compatibility
 import reset_integration
 
 
+class DiagnosticPredecessorChecks(unittest.TestCase):
+    def test_explicit_repair_selects_the_compared_predecessor(self):
+        relative = "evidence/preparation/diagnostic-01234567/receipt.json"
+        self.assertEqual(platform_checks.diagnostic_predecessor(relative),
+                         platform_checks.ROOT / relative)
+
+    def test_default_predecessor_is_unchanged(self):
+        self.assertEqual(platform_checks.diagnostic_predecessor(None),
+                         platform_checks.ROOT / platform_checks.PREDECESSOR)
+
+    def test_missing_predecessor_is_not_recreated_or_substituted(self):
+        root = SCRATCH / self._testMethodName
+        root.mkdir(parents=True, exist_ok=False)
+        relative = "evidence/preparation/absent-01234567/receipt.json"
+        with patch.object(platform_checks, "ROOT", root):
+            path = platform_checks.diagnostic_predecessor(relative)
+            with self.assertRaises(FileNotFoundError):
+                path.read_bytes()
+        self.assertFalse(path.exists())
+
+    def test_out_of_scope_predecessors_are_rejected(self):
+        for relative in ("/tmp/receipt.json", "../receipt.json",
+                         "fixtures/receipt.json", "evidence/preparation/run/log.txt"):
+            with self.subTest(relative=relative), self.assertRaises(ValueError):
+                platform_checks.diagnostic_predecessor(relative)
+
+
 class NestedCampaignBindingChecks(unittest.TestCase):
     def setUp(self):
         self.root = SCRATCH / self._testMethodName

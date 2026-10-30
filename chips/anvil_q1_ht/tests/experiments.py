@@ -1554,7 +1554,8 @@ endtask
     evidence.simulate(name, bench, simulator=simulator, timeout=43200,
                       cxx_optimization=cxx_optimization, flatten=flatten,
                       runtime_args=runtime_args,
-                      build_pool=getattr(evidence, "simulation_build_pool", None))
+                      build_pool=getattr(evidence, "simulation_build_pool", None),
+                      unified_build=True)
 
 
 def kernel_default(evidence, seed):

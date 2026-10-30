@@ -254,6 +254,8 @@ class Evidence:
             version = self.command(["verilator", "--version"], name + "-tool-version")
             compiler = self.command(["g++", "--version"], name + "-compiler-version")
             build = folder / "compiled"
+            # Unified compilation avoids Verilator's optional fast/slow PCH pair.
+            # Keep this policy in the build identity, including for pooled reuse.
             options = ["--binary", "--timing", "--assert", "-Wno-fatal",
                        "-j", "2", "-CFLAGS", cxx_optimization,
                        *(["-MAKEFLAGS", "VM_PARALLEL_BUILDS=0"] if unified_build else []),
@@ -263,6 +265,7 @@ class Evidence:
                        "--top-module", "tb", *["-D" + value for value in defines]]
             identity = {
                 "schema": 1, "verilator": version, "compiler": compiler,
+                "unified_build": unified_build,
                 "options": options, "bench_sha256": file_sha256(tb),
                 "geometry": self.record.get("engineering_fixture", {}).get(
                     "shape", self.record.get("simulation_geometry")),

@@ -4,6 +4,8 @@
 python3 -B tests/simulation_checks.py --compact compares one AWQ and one BF16
 first token with Icarus and Verilator. --performance separately compares the
 same configuration-2, seed-89 AWQ first token using -Os and -O3 C++ builds.
+Compact compiled runs also verify PCH-free unified integration compilation and
+retain measured compile time and settled build-storage counts.
 --flatten-performance compares -O3 builds with and without module inlining.
 --redirect checks that an explicit multi-token Icarus request executes a separate
 compact portability smoke and the complete original workload with Verilator.
@@ -61,9 +63,9 @@ class SimulationTierChecks(unittest.TestCase):
                             argument_parser().parse_args([first, second])
                     self.assertEqual(rejection.exception.code, 2)
 
-    def evidence(self):
+    def evidence(self, suffix=""):
         trial = Evidence.__new__(Evidence)
-        trial.folder = SCRATCH / self._testMethodName
+        trial.folder = SCRATCH / (self._testMethodName + suffix)
         trial.folder.mkdir(parents=True, exist_ok=False)
         trial.record = {"observations": [], "commands": []}
         trial.flush = lambda: None
@@ -142,6 +144,37 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertGreaterEqual(simulation["timeout"], 3600)
         build, = trial.record["simulation_builds"]
         self.assertIn("VM_PARALLEL_BUILDS=0", build["identity"]["options"])
+        self.assertTrue(build["identity"]["unified_build"])
+
+    def test_build_policy_change_cannot_reuse_parallel_build(self):
+        trial = self.evidence()
+        pool = {}
+        with patch("verify.shutil.which", return_value="verilator"):
+            for name, unified in (("parallel", False), ("unified", True)):
+                trial.simulate(name, "module tb; endmodule", sources=[],
+                               simulator="verilator", build_pool=pool,
+                               unified_build=unified)
+        self.assertEqual(len(pool), 2)
+        self.assertEqual([row["reused"] for row in trial.record["simulation_builds"]],
+                         [False, False])
+
+    def test_all_integration_geometries_select_pch_free_builds(self):
+        for config in range(len(experiments.MATRIX)):
+            for mode in ("AWQ", "BF16"):
+                with self.subTest(config=config, mode=mode):
+                    trial = self.evidence(f"-{config}-{mode.lower()}")
+                    calls = []
+                    trial.simulate = lambda name, bench, **kwargs: calls.append(kwargs)
+                    experiments.top_probe(trial, mode, 17, config=config)
+                    reset, functional = calls
+                    self.assertEqual(reset["simulator"], "iverilog")
+                    self.assertEqual(reset["defines"], ("RESET_ONLY",))
+                    self.assertEqual(functional["simulator"], "verilator")
+                    self.assertTrue(functional["unified_build"])
+                    self.assertEqual(functional["cxx_optimization"], "-O3")
+                    self.assertGreaterEqual(functional["timeout"], 3600)
+                    self.assertNotIn("diagnostic_scope", trial.record)
+                    self.assertGreater(len(trial.record["engineering_fixture"]["tokens"]), 1)
 
     def test_native_profile_keeps_assertions_and_requires_completed_samples(self):
         trial = self.evidence()
@@ -369,6 +402,26 @@ def compared_case(parent, label, mode, simulator, config=0, optimization="-O3",
             "compared_counters": rows, "simulation_seconds": command["elapsed_seconds"],
             "coverage_limit": "first token only; no matrix or hardware acceptance",
         }
+        if simulator == "verilator":
+            build, = trial.record["simulation_builds"]
+            compile_command = build["compile_command"]
+            compile_stdout = (ROOT / compile_command["stdout"]).read_text()
+            cleanup, = trial.record["compile_intermediate_cleanup"]
+            if (not build["identity"]["unified_build"] or
+                    "VM_PARALLEL_BUILDS=0" not in build["identity"]["options"] or
+                    "-x c++-header" in compile_stdout or
+                    any(row["path"].endswith(".gch") for row in cleanup["removed"])):
+                raise AssertionError("integration compilation expanded optional PCH storage")
+            directory = (ROOT / build["executable"]).parent
+            result["compiled_storage"] = {
+                "unified_build": True,
+                "compile_seconds": compile_command["elapsed_seconds"],
+                "settled_retained_build_bytes": sum(
+                    path.stat().st_size for path in directory.rglob("*") if path.is_file()),
+                "removed_compiler_scratch_bytes": cleanup["removed_bytes"],
+                "pch_compile_commands": 0,
+                "scope": "settled storage counts, not peak filesystem usage",
+            }
         trial.finish("probe_passed", result["coverage_limit"])
     except (OSError, RuntimeError, AssertionError, ValueError) as exc:
         trial.finish("failed", str(exc))

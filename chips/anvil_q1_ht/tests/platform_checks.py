@@ -22,6 +22,18 @@ PREDECESSOR = (
 )
 
 
+def diagnostic_predecessor(repair_of):
+    relative = Path(repair_of or PREDECESSOR)
+    if (relative.is_absolute() or ".." in relative.parts or
+            relative.parts[:2] != ("evidence", "preparation") or
+            relative.name != "receipt.json"):
+        raise ValueError("diagnostic predecessor must be a project preparation receipt")
+    path = ROOT / relative
+    if not path.resolve().is_relative_to((ROOT / "evidence/preparation").resolve()):
+        raise ValueError("diagnostic predecessor escapes preparation evidence")
+    return path
+
+
 def preparation_inventory(receipt):
     """Inspect retained preparation artifacts and bound project fixture inputs.
 
@@ -317,7 +329,7 @@ def main():
         evidence.command(
             ["vulcan", "hardware", "doctor", "--project", "."],
             "project-doctor", expected_codes=(0, 1, 2))
-        predecessor_path = ROOT / PREDECESSOR
+        predecessor_path = diagnostic_predecessor(args.repair_of)
         previous = json.loads(predecessor_path.read_text())
         differences = [
             {"path": relative, "previous": expected,
