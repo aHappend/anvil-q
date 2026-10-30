@@ -13,6 +13,9 @@ The complete public-source inventory must match too, including added files.
 Successful finalization requires a complete snapshot and settled child records;
 completed expected-negative tests may retain nonzero exit codes.
 Snapshot content, raw logs and child receipts must still exist at finalization.
+Missing in-flight receipts or logs stop only the invocation's owned child group.
+Lost artifacts are never recreated, and the enclosing stderr reports the loss
+even when the invocation directory itself can no longer retain a diagnosis.
 
 Workload shards retain independent invocation receipts under the requested output.
 Reuse requires matching public sources, tool executables/version outputs,
@@ -49,6 +52,10 @@ WORKLOAD_ROOT = "evidence/check-behavior/shards"
 BUILD_RESERVE_BYTES = 4 * 1024**3
 DISK_FLOOR_BYTES = 2 * 1024**3
 CANCEL_SETTLE_SECONDS = 15
+
+
+class EvidenceRetentionError(RuntimeError):
+    """Observed artifact loss, not an RTL failure or storage-recovery result."""
 
 
 def canonical(value):
@@ -226,6 +233,15 @@ class Run:
                 "live verification source selection changed during execution: "
                 + json.dumps({"added": sorted(selected - recorded),
                               "removed": sorted(recorded - selected)}, sort_keys=True))
+
+    def validate_tool_retention(self, folder):
+        paths = (self.path / "receipt.json", folder / "receipt.json",
+                 folder / "stdout.txt", folder / "stderr.txt")
+        missing = [self.rel(path) for path in paths if not path.is_file()]
+        if missing:
+            raise EvidenceRetentionError(
+                "in-flight verification evidence lost; refusing to recreate: "
+                + ", ".join(missing))
 
     def parallel(self, jobs):
         """Observe completion order; return results in the unchanged inventory order."""
@@ -660,13 +676,22 @@ class Run:
                     self.active_processes[child.pid] = child
                     record["process_group"] = child.pid
                 deadline = time.monotonic() + timeout
+                retention_check = 0
                 while child.poll() is None:
                     self.check_cancelled()
-                    if time.monotonic() >= deadline:
+                    now = time.monotonic()
+                    if now >= retention_check:
+                        self.validate_tool_retention(folder)
+                        retention_check = now + 1
+                    if now >= deadline:
                         record["timeout"] = True
                         raise subprocess.TimeoutExpired(record["argv"], timeout)
                     self.cancelled.wait(0.1)
+                self.validate_tool_retention(folder)
                 record["exit_code"] = child.returncode
+            except EvidenceRetentionError as exc:
+                record["retention_error"] = str(exc)
+                caught = exc
             except OSError as exc:
                 record["launch_error"] = str(exc)
                 caught = exc
@@ -694,6 +719,11 @@ class Run:
                     except (OSError, ValueError) as exc:
                         record["cleanup_error"] = str(exc)
                         caught = exc
+        if "retention_error" in record:
+            message = (record["retention_error"] + "; owned child exit="
+                       + str(record["exit_code"]) + ", process_scope_settled=" + str(settled))
+            print(message, file=sys.stderr, flush=True)
+            raise EvidenceRetentionError(message) from caught
         with self.lock:
             record["finished_at"] = time.time()
             write_json(folder / "receipt.json", record)
@@ -723,12 +753,17 @@ class Run:
             return self._finish(status, **details)
 
     def _finish(self, status, **details):
+        if self.source_snapshot_complete and not (self.path / "receipt.json").is_file():
+            raise EvidenceRetentionError(
+                "verification invocation receipt lost; refusing to recreate: "
+                + self.rel(self.path / "receipt.json"))
         if status == "passed" and (
                 not self.source_snapshot_complete or
                 self.cancelled.is_set() or
                 any(record.get("exit_code") is None or record.get("timeout") or
                     record.get("cancelled") or record.get("process_scope_settled") is False or
-                    "launch_error" in record or "cleanup_error" in record
+                    "launch_error" in record or "cleanup_error" in record or
+                    "retention_error" in record
                     for record in self.records)):
             raise AssertionError("incomplete verification execution cannot be finalized as passed")
         if status == "passed":

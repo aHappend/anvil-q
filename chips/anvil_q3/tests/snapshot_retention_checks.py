@@ -10,6 +10,8 @@ Added public sources must reject both launch and successful finalization.
 Handoff fixtures use an isolated project root so both mandatory-check and
 preparation output locations exercise the unchanged preparation-only path guard.
 These fixtures do not repair missing retained evidence or runtime storage.
+Mocked in-flight artifact loss must stop a real sleeping child, preserve the
+previous receipt and report the exact path without recreating lost artifacts.
 Optional --comparison-receipt audits a retained public-source snapshot against
 the current handoff, retaining hashes and readable diffs without restoring files.
 """
@@ -21,10 +23,11 @@ import json
 from pathlib import Path
 import shutil
 import sys
+import time
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, Run, sha256, sources, write_json
+from execution import EvidenceRetentionError, ROOT, Run, sha256, sources, write_json
 
 
 def handoff_source_comparison(receipt):
@@ -387,6 +390,7 @@ def snapshot_retention_checks(folder):
                 receipt_path.read_bytes() != before):
             raise AssertionError("prelaunch rejection changed retained execution evidence")
         candidate.finish("failed", diagnosis="deliberate offline prelaunch defect: " + defect)
+    inflight = inflight_retention_checks(folder, source)
     return {"snapshot_failure_propagated": True, "failed_receipt_retained": True,
             "fresh_control_preserved_failure": True,
             "initial_incomplete_receipt_survives_failed_update": True,
@@ -397,8 +401,73 @@ def snapshot_retention_checks(folder):
             "retention_defects_rejected": list(retention_defects),
             "live_source_defects_rejected": list(live_source_defects),
             "prelaunch_defects_rejected": list(launch_defects),
+            "inflight_retention": inflight,
             "handoff_comparison": handoff_comparison_sensitivity(folder),
             "scope": "offline project fixtures only; not shared-runtime persistence recovery"}
+
+
+def inflight_retention_checks(folder, source):
+    cases = []
+    is_file = Path.is_file
+    for artifact in ("receipt.json", "tool-0000/receipt.json",
+                     "tool-0000/stdout.txt", "tool-0000/stderr.txt"):
+        with patch("execution.sources", return_value=[source]):
+            candidate = Run(folder / "inflight-invocations", "offline-inflight-" + artifact)
+        invocation_receipt = candidate.path / "receipt.json"
+        lost = candidate.path / artifact
+        stdout = candidate.path / "tool-0000/stdout.txt"
+        before = None
+
+        def pretend_missing(path):
+            nonlocal before
+            if path == lost and is_file(stdout) and stdout.read_text() == "READY\n":
+                if before is None:
+                    before = invocation_receipt.read_bytes()
+                return False
+            return is_file(path)
+
+        start = time.monotonic()
+        with (patch("execution.sources", return_value=[source]),
+              patch.object(Path, "is_file", pretend_missing)):
+            try:
+                candidate.tool(["python3", "-c",
+                                "import time; print('READY',flush=True); time.sleep(3600)"])
+            except EvidenceRetentionError as exc:
+                if str(lost.relative_to(ROOT)) not in str(exc):
+                    raise AssertionError("in-flight rejection omitted lost path") from exc
+            else:
+                raise AssertionError("in-flight artifact loss did not fail")
+        record, = candidate.records
+        if (time.monotonic() - start >= 30 or before is None or
+                invocation_receipt.read_bytes() != before or
+                record.get("exit_code") is None or
+                record.get("process_scope_settled") is not True or
+                candidate.active_processes or candidate.process_group_live(record["process_group"]) or
+                "retention_error" not in record):
+            raise AssertionError("in-flight loss did not preserve evidence and settle child")
+        for status in ("passed", "failed", "running"):
+            with patch.object(Path, "is_file",
+                              lambda path: False if path == invocation_receipt else is_file(path)):
+                try:
+                    candidate.finish(status)
+                except EvidenceRetentionError:
+                    pass
+                else:
+                    raise AssertionError("missing invocation receipt was recreated")
+        try:
+            candidate.finish("passed")
+        except AssertionError as exc:
+            if "incomplete verification execution" not in str(exc):
+                raise
+        else:
+            raise AssertionError("in-flight retention error was finalized as passed")
+        candidate.finish("failed", diagnosis=record["retention_error"])
+        cases.append({"mock_missing": artifact, "exit_code": record["exit_code"],
+                      "process_scope_settled": record["process_scope_settled"],
+                      "previous_receipt_preserved": True,
+                      "missing_receipt_recreation_rejected": True})
+    return {"cases": cases, "scope": "mocked path absence; real owned Python children, "
+            "not RTL execution or shared-runtime retention recovery"}
 
 
 if __name__ == "__main__":

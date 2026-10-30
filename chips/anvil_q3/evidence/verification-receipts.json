@@ -1,0 +1,19 @@
+{
+  "chip": "Anvil-Q3",
+  "passed_checks": {
+    "check:provenance-and-prerequisites": {
+      "attempt_id": 439,
+      "duration_s": 15.64149254700169,
+      "stdout_preview": "evidence/check-prerequisites/20261030T081440Z-9d9795711590/receipt.json\n",
+      "receipt_count": 0,
+      "receipts": []
+    },
+    "check:rtl-timing-structure-and-parameters": {
+      "attempt_id": 436,
+      "duration_s": 1722.6899537839927,
+      "stdout_preview": "evidence/check-structure/20261030T063507Z-ac8072cc6e55/receipt.json\n",
+      "receipt_count": 0,
+      "receipts": []
+    }
+  }
+}
