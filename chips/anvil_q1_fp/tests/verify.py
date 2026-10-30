@@ -45,6 +45,8 @@ from numerical import (binary32, check_scalar, dot_reference, dot_vectors,
                        bits32, float32, power_two, scalar_vectors)
 from architecture import Architecture, CONFIGURATIONS, PARAMETERS, compare_trace, metrics
 from operators import OPERATOR_IDS, PRODUCTION, OperatorReference, compare_operator
+from operator_storage import (RequestWriter, REQUEST_MAGIC, REQUEST_RECORD, publication,
+                              request_count, storage_limit)
 from preservation import audit as audit_preservation, parser_selftest
 from rtl_rules import inspect as inspect_rtl, matched, tokens
 from benchmark import FORBIDDEN, artifact_path, check as check_benchmark, validate_input_manifests
@@ -1129,6 +1131,7 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
             argv.append("tests/operator_tb.sv")
             if simulator == "verilator":
                 argv.append(str((ROOT / "tests/operator_input.cpp").resolve()))
+                argv += ["-LDFLAGS", "-lz"]
             compiled = compile_simulation(ev, label+"-compile", argv, executable)
             result = ev.assertion(label+"_compile", compiled) and result
             if compiled:
@@ -1142,16 +1145,22 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                 if cases is not None and (name, selector, mode) not in cases:
                     continue
                 label = f"{name}-selector{selector}-mode{mode}"
-                oracle = ev.path / (label + ".requests")
-                binary_oracle = ev.path / (label + ".requests.bin")
+                binary_oracle = ev.path / (label + ".requests.bin.gz")
                 position = config[-1]-1 if name == "rope" else (
                     min(2, config[-1]-1) if name == "attention" else 0)
-                with ev.profile(label+"-reference-generation"), oracle.open("w") as stream, \
-                        binary_oracle.open("wb") as binary_stream:
-                    reference = OperatorReference(config, mode, 17, stream, binary_stream)
+                budget = request_count(config, name, selector, mode, position)
+                with ev.profile(label+"-reference-generation"), RequestWriter(
+                        binary_oracle, limit=storage_limit(budget)) as stream:
+                    reference = OperatorReference(config, mode, 17, stream)
                     reference.execute_operator(name, selector, position, config[0]-1)
-                ev.receipt.setdefault("data_sha256", {})[str(oracle.relative_to(ROOT))] = digest(oracle)
-                ev.receipt["data_sha256"][str(binary_oracle.relative_to(ROOT))] = digest(binary_oracle)
+                result = ev.assertion(label+"_independent_request_count",
+                                      reference.count == budget,
+                                      expected=budget, observed=reference.count) and result
+                ev.receipt.setdefault("operator_inputs", {})[label] = stream.metadata
+                ev.receipt.setdefault("data_sha256", {})[
+                    str(binary_oracle.relative_to(ROOT))] = digest(binary_oracle)
+                manifest = binary_oracle.with_suffix(".gz.json")
+                ev.receipt["data_sha256"][str(manifest.relative_to(ROOT))] = digest(manifest)
                 traces = {}
                 for parent in ((False, True) if mode == 0 else (False,)):
                     if parent not in binaries:
@@ -1162,7 +1171,7 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                     command = (["vvp", str(binaries[parent].relative_to(ROOT))]
                                if simulator == "iverilog" else [str(binaries[parent])])
                     executed = ev.run(label+suffix, [
-                        *command, "+oracle="+str(oracle.relative_to(ROOT)),
+                        *command, "+oracle="+str(binary_oracle.relative_to(ROOT)),
                         "+oracle_binary="+str(binary_oracle.relative_to(ROOT)),
                         "+trace="+str(trace.relative_to(ROOT)),
                         f"+mode={mode}", "+seed=17", f"+selector={selector}",
@@ -1170,6 +1179,11 @@ def operator_check(ev, production=False, config=None, operations=None, cases=Non
                     ], timeout=86400)
                     result = ev.assertion(label+suffix+"_architecture_protocol", executed) and result
                     if executed:
+                        unchanged_input = digest(binary_oracle) == stream.metadata["compressed_sha256"]
+                        result = ev.assertion(label+suffix+"_input_bytes_retained",
+                                              unchanged_input) and result
+                        published = publication(trace, ev.path / (label+suffix+".stdout"))
+                        ev.receipt.setdefault("operator_traces", {})[label+suffix] = published
                         report = ev.path / (label+suffix+"-reference.json")
                         with ev.profile(label+suffix+"-reference-comparison"):
                             passed = compare_operator(reference, trace, report)
@@ -1198,7 +1212,7 @@ def production_recovery(ev, prior):
                     if p.relative_to(ROOT).parts[0] in ("rtl", "anvil_q1_reference")]
     dependencies += [ROOT / "tests" / name for name in (
         "operator_tb.sv", "operator_input.cpp", "operators.py", "architecture.py",
-        "numerical.py", "verify.py")]
+        "numerical.py", "verify.py", "operator_storage.py")]
     changed = [str(path.relative_to(ROOT)) for path in dependencies
                if retained["source_sha256"].get(str(path.relative_to(ROOT))) != digest(path)]
     if changed:
@@ -1208,10 +1222,10 @@ def production_recovery(ev, prior):
     records = {item["label"]: item for item in retained["records"]}
     class HashWriter:
         def __init__(self):
-            self.hash = hashlib.sha256()
+            self.hash = hashlib.sha256(REQUEST_MAGIC)
 
-        def write(self, text):
-            self.hash.update(text.encode())
+        def emit(self, write, key, raw):
+            self.hash.update(REQUEST_RECORD.pack(write, *key, raw))
 
     unresolved, reused = [], []
     for name in OPERATOR_IDS:
@@ -1243,18 +1257,29 @@ def production_recovery(ev, prior):
                         min(2, PRODUCTION[-1]-1) if name == "attention" else 0)
                     reference = OperatorReference(PRODUCTION, mode, 17, stream)
                     reference.execute_operator(name, selector, position, PRODUCTION[0]-1)
-                    oracle = prior.parent / (label + ".requests")
-                    completed = (oracle.is_file() and
-                                 digest(oracle) == stream.hash.hexdigest() and
-                                 retained["data_sha256"].get(
-                                     str(oracle.relative_to(ROOT))) == digest(oracle))
-                    for suffix in (("-revised", "-parent") if mode == 0 else ("-revised",)):
-                        trace = prior.parent / (label + suffix + ".trace")
-                        report = ev.path / (label + suffix + "-rechecked.json")
-                        compared = compare_operator(reference, trace, report)
-                        ev.receipt.setdefault("reused_raw_sha256", {})[
-                            str(trace.relative_to(ROOT))] = digest(trace)
-                        completed = compared and completed
+                    oracle = prior.parent / (label + ".requests.bin.gz")
+                    from operator_storage import inspect_requests
+                    try:
+                        completed = (oracle.is_file() and
+                                     inspect_requests(oracle) == (reference.count, stream.hash.hexdigest()) and
+                                     retained["data_sha256"].get(
+                                         str(oracle.relative_to(ROOT))) == digest(oracle))
+                        for suffix in (("-revised", "-parent") if mode == 0 else ("-revised",)):
+                            trace = prior.parent / (label + suffix + ".trace")
+                            published = publication(
+                                trace, ROOT / records[label+suffix]["stdout"])
+                            completed = (completed and published == retained.get(
+                                "operator_traces", {}).get(label+suffix))
+                            report = ev.path / (label + suffix + "-rechecked.json")
+                            compared = compare_operator(reference, trace, report)
+                            ev.receipt.setdefault("reused_raw_sha256", {})[
+                                str(trace.relative_to(ROOT))] = digest(trace)
+                            completed = compared and completed
+                    except (OSError, ValueError) as error:
+                        completed = False
+                        ev.receipt.setdefault("recovery_rejected_raw", []).append(
+                            {"case": label, "diagnostic": repr(error),
+                             "action": "regenerate with unchanged assertions"})
                 (reused if completed else unresolved).append((name, selector, mode))
     ev.assertion("completed_children_not_reclassified", True, reused=reused,
                  unresolved=unresolved, prior_status=retained["status"])
@@ -1482,6 +1507,11 @@ def benchmark_fixture_check(ev):
     return check(ROOT, ev)
 
 
+def operator_storage_check(ev):
+    from operator_storage_checks import check
+    return check(ev)
+
+
 def critical_path_check(ev):
     results = parallel_components(ev, [
         ("production-gemv6-mode2", operator_check, (), {
@@ -1514,6 +1544,7 @@ def protocol_shard_check(ev):
 def l1_jobs():
     jobs = [
         ("benchmark-validator", benchmark_fixture_check, (), {}),
+        ("operator-storage", operator_storage_check, (), {}),
         ("integration-defects", integration_defect_check, (), {}),
         ("synthesis-top", synthesis_check, (), {}),
     ]
@@ -1699,7 +1730,7 @@ def main():
                 maximum_position_ok = results["maximum-position"]
                 top_address_ok = results["production-top-addresses"]
                 preservation_ok = results["preservation"]
-                ok = (benchmark_validator_ok and static_ok and parameters_ok and synthesis_ok and
+                ok = (results["operator-storage"] and benchmark_validator_ok and static_ok and parameters_ok and synthesis_ok and
                       dot_synthesis_ok and leaves_ok and defects_ok and
                       integration_defects_ok and protocol_ok and icarus_ok and
                       integration_ok and operators_ok and maximum_position_ok and

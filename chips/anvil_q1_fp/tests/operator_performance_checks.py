@@ -4,6 +4,7 @@
 import argparse
 from contextlib import contextmanager
 import io
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -14,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import architecture
 import operators
 import verify
+from operator_storage import export_text, inspect_requests
 from numerical import decode
 
 
@@ -98,8 +100,23 @@ def input_check(ev, production=False):
                                  cases=(("gemv", 4, mode),))
     binary_run = next(r for r in ev.receipt["records"]
                       if r["label"] == "gemv-selector4-mode1-revised")
+    binary = ev.path / "gemv-selector4-mode1.requests.bin.gz"
+    count, decoded_hash = inspect_requests(binary)
+    metadata = ev.receipt["operator_inputs"]["gemv-selector4-mode1"]
+    good = ev.assertion(
+        "all_input_records_identical",
+        count == metadata["records"] and decoded_hash == metadata["decoded_sha256"],
+        records=count, decoded_sha256=decoded_hash,
+        compressed_sha256=verify.digest(binary)) and good
+    if production:
+        # Formatted-input portability is exercised on the compact case only.
+        return good
+    text = ev.path / "gemv-selector4-mode1.requests"
+    export_text(binary, text)
     text_argv = [arg.replace("-revised.trace", "-text.trace")
                  for arg in binary_run["argv"] if not arg.startswith("+oracle_binary=")]
+    text_argv = ["+oracle="+str(text.relative_to(verify.ROOT))
+                 if arg.startswith("+oracle=") else arg for arg in text_argv]
     executed = ev.run("formatted-input-baseline", text_argv, timeout=86400)
     binary_trace = ev.path / "gemv-selector4-mode1-revised.trace"
     text_trace = ev.path / "gemv-selector4-mode1-text.trace"
@@ -108,9 +125,8 @@ def input_check(ev, production=False):
                         trace_sha256=verify.digest(binary_trace),
                         binary_elapsed_s=binary_run["elapsed_s"],
                         formatted_elapsed_s=ev.receipt["records"][-1]["elapsed_s"]) and good
-    binary = ev.path / "gemv-selector4-mode1.requests.bin"
-    text = ev.path / "gemv-selector4-mode1.requests"
-    data = binary.read_bytes()
+    with gzip.open(binary, "rb") as stream:
+        data = stream.read()
     with text.open() as stream:
         require_magic = data[:8] == operators.REQUEST_MAGIC
         index = 8
@@ -157,7 +173,7 @@ def input_check(ev, production=False):
              "OPERATOR_ARCHITECTURAL_ADDRESS"),
         ):
             mutant = ev.path / (name + ".bin")
-            mutant.write_bytes(contents)
+            mutant.write_bytes(gzip.compress(contents, mtime=0))
             argv = [arg if not arg.startswith("+oracle_binary=") else
                     "+oracle_binary=" + str(mutant.relative_to(verify.ROOT))
                     for arg in binary_run["argv"]]
@@ -225,7 +241,7 @@ def compare_runs(ev, paths):
     bound = all(receipts[0]["source_sha256"][name] ==
                 receipts[1]["source_sha256"][name] == verify.digest(verify.ROOT / name)
                 for name in dependencies)
-    names = ("gemv-selector4-mode1.requests", "gemv-selector4-mode1.requests.bin",
+    names = ("gemv-selector4-mode1.requests.bin.gz",
              "gemv-selector4-mode1-revised.trace",
              "gemv-selector4-mode1-revised-reference.json")
     identical = all(verify.digest(prior.parent / name) ==

@@ -8,17 +8,15 @@ production-sized dense memory or complete transformer checkpoint is allocated.
 from collections import defaultdict
 import json
 import math
-import struct
 from functools import lru_cache
 
 from architecture import Architecture, PARAMETERS, encode16, metrics
 from numerical import bits32, decode, float32
+from operator_storage import REQUEST_MAGIC, REQUEST_RECORD
 
 
 PRODUCTION = (24, 896, 4864, 14, 2, 64, 128, 151936, 32768)
 OPERATOR_IDS = {"norm": 0, "rope": 1, "attention": 2, "gemv": 3, "elementwise": 4}
-REQUEST_MAGIC = b"ANVQ1OP1"
-REQUEST_RECORD = struct.Struct("<7I")
 
 
 @lru_cache(maxsize=4096, typed=True)
@@ -77,7 +75,10 @@ class OperatorReference(Architecture):
         return round(value*2**(30 if kind == 11 else 16)) & 0xffffffff
 
     def emit(self, write, key, raw):
-        self.requests.write(f"{write} {' '.join(map(str, key))} {raw:08x}\n")
+        if hasattr(self.requests, "emit"):
+            self.requests.emit(write, key, raw)
+        else:
+            self.requests.write(f"{write} {' '.join(map(str, key))} {raw:08x}\n")
         if self.binary_requests is not None:
             self.binary_requests.write(REQUEST_RECORD.pack(write, *key, raw))
         self.count += 1
@@ -117,6 +118,8 @@ def compare_operator(reference, trace, report, prefix_only=False):
     coverage = None
     with trace.open() as stream:
         for line in stream:
+            if not line.endswith("\n"):
+                raise ValueError("truncated operator trace")
             fields = line.split()
             if fields and fields[0] == "C":
                 if coverage is not None:
@@ -130,6 +133,10 @@ def compare_operator(reference, trace, report, prefix_only=False):
             key, value, group = reference.expected_writes[count]
             if tuple(map(int, fields[1:6])) != key:
                 raise ValueError("operator write address mismatch")
+            if (len(fields[6]) != 8 or any(c not in "0123456789abcdefABCDEF"
+                                          for c in fields[6]) or
+                    not fields[7].isdigit() or int(fields[7]) <= 0):
+                raise ValueError("malformed operator trace data/cycle")
             if reference.mode:
                 observed = float32(int(fields[6], 16))
                 if not math.isfinite(observed):
