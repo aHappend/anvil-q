@@ -26,6 +26,105 @@ import serialization_events
 import campaign_costs
 import reference_costs
 import platform_checks
+import compatibility
+import reset_integration
+
+
+class NestedCampaignBindingChecks(unittest.TestCase):
+    def setUp(self):
+        self.root = SCRATCH / self._testMethodName
+        self.root.mkdir(parents=True, exist_ok=False)
+        owner = self
+
+        class CaseEvidence:
+            def __init__(self, name, source_root=None):
+                self.folder = owner.root / "evidence/preparation" / name
+                self.folder.mkdir(parents=True)
+                self.record = {"commands": []}
+                self.simulation_build_pool = {}
+                self.bound = []
+
+            def relative(self, path):
+                return str(path.relative_to(owner.root))
+
+            def flush(self):
+                pass
+
+            def finish(self, outcome, reason):
+                self.record.update(outcome=outcome, reason=reason)
+
+            def bind_child(self, child):
+                owner.assertEqual(child.record.get("outcome"), "probe_passed")
+                owner.assertTrue(all(
+                    row["outcome"] != "compared"
+                    for row in self.record[owner.ledger] if
+                    row.get("receipt") == self.relative(child.folder / "receipt.json")))
+                if owner.binding_failure:
+                    raise FileNotFoundError("synthetic child evidence disappeared")
+                self.bound.append(child)
+
+        self.parent = CaseEvidence("parent-01234567")
+        self.binding_failure = False
+        self.children = []
+
+    def reset_case(self, trial, mode, seed, **kwargs):
+        self.children.append(trial)
+        self.assertTrue(kwargs["reset_validation"])
+        transcript = trial.folder / "simulation.log"
+        transcript.write_text(
+            "CHECKS_PASSED active_reset epochs=5 bins=31 wait_edges=7 "
+            "aborted_tokens=3 cancelled_write_responses=1 recovery_logits=40\n")
+        trial.record["commands"].append({
+            "argv": ["compiled/Vtb"], "stdout": self.parent.relative(transcript)})
+
+    def compatibility_case(self, trial, seed, config):
+        self.children.append(trial)
+        trial.record["compatibility"] = [{
+            "implementations": [{"name": "parent"}, {"name": "compatibility"}]}]
+
+    def test_reset_cases_bind_finalized_children_before_comparison(self):
+        self.ledger = "active_reset_cases"
+        with patch.object(reset_integration, "top_probe", side_effect=self.reset_case):
+            reset_integration.reset_integration(self.parent, 17)
+        self.assertEqual(self.parent.bound, self.children)
+        self.assertEqual(len(self.children), 2)
+        self.assertEqual([row["outcome"] for row in self.parent.record[self.ledger]],
+                         ["compared"] * 2)
+
+    def test_reset_binding_failure_retains_successful_child_but_fails_parent_case(self):
+        self.ledger = "active_reset_cases"
+        self.binding_failure = True
+        with patch.object(reset_integration, "top_probe", side_effect=self.reset_case):
+            with self.assertRaisesRegex(FileNotFoundError, "evidence disappeared"):
+                reset_integration.reset_integration(self.parent, 17)
+        self.assert_failed_binding()
+
+    def test_compatibility_cases_bind_all_nine_finalized_children(self):
+        self.ledger = "compatibility_matrix"
+        with patch.object(compatibility, "compatibility", side_effect=self.compatibility_case):
+            compatibility.compatibility_matrix(self.parent)
+        self.assertEqual(self.parent.bound, self.children)
+        self.assertEqual(len(self.children), 9)
+        self.assertTrue(all(row["outcome"] == "compared"
+                            for row in self.parent.record[self.ledger]))
+
+    def test_compatibility_binding_failure_does_not_certify_later_cases(self):
+        self.ledger = "compatibility_matrix"
+        self.binding_failure = True
+        with patch.object(compatibility, "compatibility", side_effect=self.compatibility_case):
+            with self.assertRaisesRegex(FileNotFoundError, "evidence disappeared"):
+                compatibility.compatibility_matrix(self.parent)
+        self.assert_failed_binding()
+        self.assertTrue(all(row["outcome"] == "not_run"
+                            for row in self.parent.record[self.ledger][1:]))
+
+    def assert_failed_binding(self):
+        self.assertEqual(len(self.children), 1)
+        self.assertEqual(self.children[0].record["outcome"], "probe_passed")
+        self.assertEqual(self.parent.bound, [])
+        row = self.parent.record[self.ledger][0]
+        self.assertEqual(row["outcome"], "failed")
+        self.assertIn("evidence disappeared", row["reason"])
 
 
 class MandatoryCampaignChecks(unittest.TestCase):

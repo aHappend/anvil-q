@@ -220,7 +220,6 @@ def reset_integration(evidence, seed):
                         "cancelled_write_responses": 1, "recovery_logits": 40}
             if len(records) != 1 or any(records[0].get(k) != v for k, v in expected.items()):
                 raise AssertionError("active-reset public comparisons or recovery coverage missing")
-            row.update(outcome="compared", observed=records[0])
             trial.finish("probe_passed", "Observed five reset phases and complete independent "
                          "ordered recovery logits; external EMIF source quiesced on reset.")
         except (OSError, RuntimeError, AssertionError, ValueError) as exc:
@@ -229,3 +228,11 @@ def reset_integration(evidence, seed):
             raise
         finally:
             evidence.flush()
+        try:
+            evidence.bind_child(trial)
+        except (OSError, RuntimeError, AssertionError, ValueError) as exc:
+            row.update(outcome="failed", reason=str(exc))
+            evidence.flush()
+            raise
+        row.update(outcome="compared", observed=records[0])
+        evidence.flush()

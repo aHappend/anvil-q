@@ -406,7 +406,13 @@ def compatibility_matrix(evidence):
             trial.finish("failed", str(exc))
             evidence.flush()
             raise
+        try:
+            trial.finish("probe_passed", "Parent compatibility parameter case only.")
+            evidence.bind_child(trial)
+        except (OSError, RuntimeError, AssertionError, ValueError) as exc:
+            row.update(outcome="failed", reason=str(exc))
+            evidence.flush()
+            raise
         row.update(outcome="compared",
                    implementations=trial.record["compatibility"][0]["implementations"])
-        trial.finish("probe_passed", "Parent compatibility parameter case only.")
         evidence.flush()

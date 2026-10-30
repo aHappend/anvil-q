@@ -10,6 +10,9 @@ Nested matrix cases retain their configuration and child receipt in that
 diagnostic, since the parent's last command can precede the active child case.
 Completed matrix cases bind their finalized child receipts and dependencies into
 the parent, so later child evidence loss cannot yield a successful parent.
+Active-reset and parent-compatibility campaigns enforce the same binding before
+marking a child compared. This detects loss; it cannot repair shared storage or
+authorize another aggregate retry after patrol cancellation.
 The mandatory campaign includes both parent-service projection measurements and
 the separate matched eight/64-active-lane arithmetic comparison. Cost diagnosis
 uses the same stage inventory; neither measurement replaces the other.
