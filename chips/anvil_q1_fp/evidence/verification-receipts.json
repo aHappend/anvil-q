@@ -16,16 +16,16 @@
       "receipts": []
     },
     "check:maximum-frame-memory-capacity-diagnostics": {
-      "attempt_id": 747,
-      "duration_s": 106.19309024885297,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-oeh3wyk5/receipt.json\", \"production_collection_authorized\": false}\n",
+      "attempt_id": 757,
+      "duration_s": 105.45530527411029,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-5dj_73ru/receipt.json\", \"production_collection_authorized\": false}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:packed-storage-lossless-corruption-regressions": {
-      "attempt_id": 746,
-      "duration_s": 127.45389659702778,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-y8fi60lp/receipt.json\"}\n",
+      "attempt_id": 756,
+      "duration_s": 124.19592696405016,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-i4p7nvme/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -44,9 +44,9 @@
       "receipts": []
     },
     "check:receipt-publication-failure-regressions": {
-      "attempt_id": 745,
-      "duration_s": 118.17560377903283,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-4m7zistv/receipt.json\"}\n",
+      "attempt_id": 755,
+      "duration_s": 116.3481080471538,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-cjh0wgpw/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     }
