@@ -2,19 +2,19 @@
   "chip": "Anvil-Q2-FP",
   "passed_checks": {
     "check:attention-capture-retention-s17": {
-      "attempt_id": 1066,
-      "duration_s": 42.077697509899735,
-      "stdout_preview": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/receipt.json\n",
+      "attempt_id": 1074,
+      "duration_s": 43.49275377183221,
+      "stdout_preview": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/receipt.json",
+          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/receipt.json",
           "data": {
             "schema": 1,
             "purpose": "attention-capture-recovery",
             "acceptance_evidence": false,
             "cwd": ".",
-            "started_at": "2026-10-30T17:30:26.454208+00:00",
+            "started_at": "2026-10-30T18:58:13.906936+00:00",
             "commands": [
               {
                 "argv": [
@@ -22,34 +22,34 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:26.469949+00:00",
+                "started_at": "2026-10-30T18:58:13.923020+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:26.478389+00:00",
+                  "started_at": "2026-10-30T18:58:13.931583+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:26.593495+00:00"
+                  "ended_at": "2026-10-30T18:58:14.047250+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:26.593510+00:00",
-                "duration_s": 0.12328951386734843
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:14.047266+00:00",
+                "duration_s": 0.12397111300379038
               },
               {
                 "argv": [
@@ -57,37 +57,37 @@
                   "tests/attention_stream_checks.py"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:26.593903+00:00",
+                "started_at": "2026-10-30T18:58:14.047661+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/children"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/children"
                 },
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:28.316709+00:00",
+                  "started_at": "2026-10-30T18:58:15.771000+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:28.432936+00:00"
+                  "ended_at": "2026-10-30T18:58:15.887221+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:28.432974+00:00",
-                "duration_s": 1.8388166879303753
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:15.887243+00:00",
+                "duration_s": 1.8393220731522888
               },
               {
                 "argv": [
@@ -96,37 +96,37 @@
                   "import sys; sys.path.insert(0, 'tests'); from retained import Run; run = Run('same-name'); output = run.command(['python3', '-c', \"print('root-reuse-0')\"], 'payload'); assert output.read_text() == 'root-reuse-0\\n'; run.finish('passed-focused-only', fixture='existing-root', invocation=0)"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:28.433409+00:00",
+                "started_at": "2026-10-30T18:58:15.887690+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse"
                 },
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:28.753815+00:00",
+                  "started_at": "2026-10-30T18:58:16.207626+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:28.870068+00:00"
+                  "ended_at": "2026-10-30T18:58:16.323449+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:28.870117+00:00",
-                "duration_s": 0.43633712106384337
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:16.323469+00:00",
+                "duration_s": 0.4354617309290916
               },
               {
                 "argv": [
@@ -135,76 +135,37 @@
                   "import sys; sys.path.insert(0, 'tests'); from retained import Run; run = Run('same-name'); output = run.command(['python3', '-c', \"print('root-reuse-1')\"], 'payload'); assert output.read_text() == 'root-reuse-1\\n'; run.finish('passed-focused-only', fixture='existing-root', invocation=1)"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:28.873180+00:00",
+                "started_at": "2026-10-30T18:58:16.326263+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse"
                 },
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:29.193259+00:00",
+                  "started_at": "2026-10-30T18:58:16.646507+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:29.309542+00:00"
+                  "ended_at": "2026-10-30T18:58:16.762479+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:29.309721+00:00",
-                "duration_s": 0.4362356420606375
-              },
-              {
-                "argv": [
-                  "python3",
-                  "-c",
-                  "import sys; sys.path.insert(0, 'tests'); from retained import Run; run = Run('same-name'); output = run.command(['python3', '-c', \"print('root-reuse-3')\"], 'payload'); assert output.read_text() == 'root-reuse-3\\n'; run.finish('passed-focused-only', fixture='existing-root', invocation=3)"
-                ],
-                "cwd": ".",
-                "started_at": "2026-10-30T17:30:29.314362+00:00",
-                "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stderr.txt",
-                "timed_out": false,
-                "expected_exit_codes": [
-                  0
-                ],
-                "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse"
-                },
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.capture.jsonl",
-                "exit_code": 0,
-                "capture_reopen": {
-                  "argv": [
-                    "python3",
-                    "tests/retained.py",
-                    "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.capture.jsonl"
-                  ],
-                  "cwd": ".",
-                  "started_at": "2026-10-30T17:30:29.637673+00:00",
-                  "timeout_s": 3600,
-                  "exit_code": 0,
-                  "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:29.754205+00:00"
-                },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:29.754249+00:00",
-                "duration_s": 0.4394849678501487
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:16.762506+00:00",
+                "duration_s": 0.43591792206279933
               },
               {
                 "argv": [
@@ -213,37 +174,76 @@
                   "import sys; sys.path.insert(0, 'tests'); from retained import Run; run = Run('same-name'); output = run.command(['python3', '-c', \"print('root-reuse-2')\"], 'payload'); assert output.read_text() == 'root-reuse-2\\n'; run.finish('passed-focused-only', fixture='existing-root', invocation=2)"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:29.315274+00:00",
+                "started_at": "2026-10-30T18:58:16.766778+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse"
                 },
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:29.637302+00:00",
+                  "started_at": "2026-10-30T18:58:17.089113+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:29.754382+00:00"
+                  "ended_at": "2026-10-30T18:58:17.205564+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:29.754437+00:00",
-                "duration_s": 0.4387466888874769
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:17.205585+00:00",
+                "duration_s": 0.43841713294386864
+              },
+              {
+                "argv": [
+                  "python3",
+                  "-c",
+                  "import sys; sys.path.insert(0, 'tests'); from retained import Run; run = Run('same-name'); output = run.command(['python3', '-c', \"print('root-reuse-3')\"], 'payload'); assert output.read_text() == 'root-reuse-3\\n'; run.finish('passed-focused-only', fixture='existing-root', invocation=3)"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-30T18:58:16.767919+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "environment_overrides": {
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse"
+                },
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-30T18:58:17.089485+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-30T18:58:17.205686+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:17.205710+00:00",
+                "duration_s": 0.4374409820884466
               },
               {
                 "argv": [
@@ -252,37 +252,37 @@
                   "--action",
                   "reopen",
                   "--path",
-                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/receipt.json"
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/receipt.json"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:29.761844+00:00",
+                "started_at": "2026-10-30T18:58:17.211740+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:29.881523+00:00",
+                  "started_at": "2026-10-30T18:58:17.331121+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:29.999304+00:00"
+                  "ended_at": "2026-10-30T18:58:17.447846+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:29.999352+00:00",
-                "duration_s": 0.23719832696951926
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:17.447863+00:00",
+                "duration_s": 0.23586154379881918
               },
               {
                 "argv": [
@@ -291,37 +291,37 @@
                   "--action",
                   "reopen",
                   "--path",
-                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/receipt.json"
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/receipt.json"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:30.000075+00:00",
+                "started_at": "2026-10-30T18:58:17.448269+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:30.119071+00:00",
+                  "started_at": "2026-10-30T18:58:17.566396+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:30.235402+00:00"
+                  "ended_at": "2026-10-30T18:58:17.682347+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:30.235453+00:00",
-                "duration_s": 0.23506475402973592
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:17.682364+00:00",
+                "duration_s": 0.23383619799278677
               },
               {
                 "argv": [
@@ -330,37 +330,37 @@
                   "--action",
                   "reopen",
                   "--path",
-                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/receipt.json"
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/receipt.json"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:30.236199+00:00",
+                "started_at": "2026-10-30T18:58:17.682871+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:30.355202+00:00",
+                  "started_at": "2026-10-30T18:58:17.801071+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:30.471032+00:00"
+                  "ended_at": "2026-10-30T18:58:17.916774+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:30.471082+00:00",
-                "duration_s": 0.23457222408615053
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:17.916791+00:00",
+                "duration_s": 0.23365882807411253
               },
               {
                 "argv": [
@@ -369,37 +369,37 @@
                   "--action",
                   "reopen",
                   "--path",
-                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/receipt.json"
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/receipt.json"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:30.471834+00:00",
+                "started_at": "2026-10-30T18:58:17.917184+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:30.591878+00:00",
+                  "started_at": "2026-10-30T18:58:18.035693+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:30.708664+00:00"
+                  "ended_at": "2026-10-30T18:58:18.151679+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:30.708715+00:00",
-                "duration_s": 0.23657360090874135
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:18.151695+00:00",
+                "duration_s": 0.23425620119087398
               },
               {
                 "argv": [
@@ -410,38 +410,38 @@
                   "--reduced"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:30:30.711734+00:00",
+                "started_at": "2026-10-30T18:58:18.154008+00:00",
                 "timeout_s": 21600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/children",
-                  "ANVIL_SIM_CACHE": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/children",
+                  "ANVIL_SIM_CACHE": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/compiled-models"
                 },
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:31:07.867242+00:00",
+                  "started_at": "2026-10-30T18:58:56.722898+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:31:07.983671+00:00"
+                  "ended_at": "2026-10-30T18:58:56.838807+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:31:07.983695+00:00",
-                "duration_s": 37.27165641100146
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:56.838827+00:00",
+                "duration_s": 38.6845629690215
               },
               {
                 "argv": [
@@ -450,37 +450,37 @@
                   "--action",
                   "reopen",
                   "--path",
-                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/children/verifier-attention-drift-reduced-s17-bounded-20261030T173030Z-cd768856/receipt.json"
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/children/verifier-attention-drift-reduced-s17-bounded-20261030T185818Z-a8c6614c/receipt.json"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:31:07.987683+00:00",
+                "started_at": "2026-10-30T18:58:56.842934+00:00",
                 "timeout_s": 3600,
-                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.txt",
-                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stderr.txt",
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0
                 ],
-                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.capture.jsonl",
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.capture.jsonl"
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:31:08.156425+00:00",
+                  "started_at": "2026-10-30T18:58:57.011689+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:31:08.272838+00:00"
+                  "ended_at": "2026-10-30T18:58:57.127385+00:00"
                 },
-                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:31:08.272868+00:00",
-                "duration_s": 0.2848347870167345
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:57.127404+00:00",
+                "duration_s": 0.2841286619659513
               }
             ],
             "source_sha256": {
@@ -632,150 +632,150 @@
             },
             "source_binding_policy": "Available historical receipts are integrity checked, not functional prerequisites or a passing baseline. Missing history remains explicitly unverified. The pinned parent source manifest is enforced independently of historical files. The current source_sha256 binds this invocation; child execution must match it exactly. Accepted parent RTL remains unchanged.",
             "root_reuse": {
-              "root": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse",
+              "root": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse",
               "receipts": [
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/receipt.json",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/receipt.json",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/receipt.json",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/receipt.json"
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/receipt.json",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/receipt.json",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/receipt.json",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/receipt.json"
               ],
               "invocations_compared": 4,
               "preserved_files_compared": 36,
               "concurrent_invocations": 2,
-              "concurrent_overlap_s": 0.199626,
+              "concurrent_overlap_s": 0.199565,
               "invocation_intervals": [
                 {
-                  "started_at": "2026-10-30T17:30:28.501240+00:00",
-                  "ended_at": "2026-10-30T17:30:28.704787+00:00"
+                  "started_at": "2026-10-30T18:58:15.960611+00:00",
+                  "ended_at": "2026-10-30T18:58:16.163588+00:00"
                 },
                 {
-                  "started_at": "2026-10-30T17:30:28.946195+00:00",
-                  "ended_at": "2026-10-30T17:30:29.149029+00:00"
+                  "started_at": "2026-10-30T18:58:16.396911+00:00",
+                  "ended_at": "2026-10-30T18:58:16.600318+00:00"
                 },
                 {
-                  "started_at": "2026-10-30T17:30:29.390118+00:00",
-                  "ended_at": "2026-10-30T17:30:29.592388+00:00"
+                  "started_at": "2026-10-30T18:58:16.841942+00:00",
+                  "ended_at": "2026-10-30T18:58:17.044530+00:00"
                 },
                 {
-                  "started_at": "2026-10-30T17:30:29.387057+00:00",
-                  "ended_at": "2026-10-30T17:30:29.589744+00:00"
+                  "started_at": "2026-10-30T18:58:16.844965+00:00",
+                  "ended_at": "2026-10-30T18:58:17.047167+00:00"
                 }
               ],
               "allocation": "fresh Python processes with ANVIL_EVIDENCE_ROOT",
               "independent_reopens": [
                 {
-                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/receipt.json",
+                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/receipt.json",
                   "outcome": "passed-focused-only",
                   "raw_streams_compared": 5
                 },
                 {
-                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/receipt.json",
+                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/receipt.json",
                   "outcome": "passed-focused-only",
                   "raw_streams_compared": 5
                 },
                 {
-                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/receipt.json",
+                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/receipt.json",
                   "outcome": "passed-focused-only",
                   "raw_streams_compared": 5
                 },
                 {
-                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/receipt.json",
+                  "receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/receipt.json",
                   "outcome": "passed-focused-only",
                   "raw_streams_compared": 5
                 }
               ],
               "preserved_sha256": {
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/receipt.json": "f9dc73ba5bf7e96dd3d2257a13e3968d1daec1572a71711cc0bb61c705ec88e7",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/payload.stdout.reopen.stdout.txt": "f7b0391e22eeacf2a9d344108f8c759c53615151140b6d3c23cdcd111c189121",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/payload.stdout.txt": "72c3858e596d6782335248bfdc1675d793b972fd729e97dbf4a2d690922760da",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/payload.stdout.capture.jsonl": "ae36834f037ab985a7394b5fb84fc840a18d0c6c442a0728deccce25b246a0b5",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-1daa49ef/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/receipt.json": "906efa0c114a97a9fcab44a6e1925c13ff9a10a93c22a0782d030f23ede904a7",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/payload.stdout.reopen.stdout.txt": "aff0ddc40b679f26ddc80013afcbd3b52dae6e85c7514c667d33eee935691a79",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/payload.stdout.txt": "c39d78e0a4fc7e6c62fe023d077cb10903cbfd82d7280ddc144da8d28fd31c07",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/payload.stdout.capture.jsonl": "6d26044cc497aa814fac5667ae28d24c2d773ea6bf8476d2e70277c43342ec3a",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173028Z-0c6c081c/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/receipt.json": "085ae0535d0dc84b2f30ff0996f2ac4c7b1496e9e83325e311e3e3bba3e79dc6",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/payload.stdout.reopen.stdout.txt": "14cc050427992a0d3d4ca8a880a6552a8d86d497a6a48fc3f4715c951bb1d708",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/payload.stdout.txt": "eeb52493fd82b8870b00bea5269985c2faaeb2491900ff74b5a89532f30779f5",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/payload.stdout.capture.jsonl": "8b6226c9a137972b76a4da50e88b66b4eca3c566ac64066a0c96129e21b678ad",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-aa57a278/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/receipt.json": "02571d7a7ad333bad0ba28b5b86e66fac3e9a9c7f41f404931cc3437621ee936",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/payload.stdout.reopen.stdout.txt": "ef04775a74981e55be5b9703e37ae34b8d0f8bf682d39efe0f18fa72520f1dca",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/payload.stdout.txt": "47b5a626cfbb8e59c6094b774df021b6a0e7b882d9fe6fca98a8015c4a2d189b",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/payload.stdout.capture.jsonl": "43c5cfb8fd65d695c2077349b09b7a205360768c7cd7e6cdf624e43a41169c80",
-                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse/same-name-20261030T173029Z-3615d633/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/receipt.json": "7c433498a8178edf04c671d11be7f8977e60bf7f8e82204f76eede1b299901ad",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/payload.stdout.reopen.stdout.txt": "e7535d776019104457fc90b6409748f9098101152f41b4a9bb95c6437b992745",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/payload.stdout.txt": "72c3858e596d6782335248bfdc1675d793b972fd729e97dbf4a2d690922760da",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/payload.stdout.capture.jsonl": "3dbb43a5213afeba48f631944a2762cad7121e56a89abc98b30e762aaf459b9b",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185815Z-2a441129/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/receipt.json": "c6e91784e12b9f9c6345b944119b1b8e7766b2758a6bcf9d6ad2abe9cfe24dd0",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/payload.stdout.reopen.stdout.txt": "d9280d3d0570d254ac44324cc14c6282572cea4f89688b7773725a06a846dc49",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/payload.stdout.txt": "c39d78e0a4fc7e6c62fe023d077cb10903cbfd82d7280ddc144da8d28fd31c07",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/payload.stdout.capture.jsonl": "2ec97ee87d7a50439580dbe47fa0e5e4083740a18911b4ec2069aa255df5563d",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-8fede2de/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/receipt.json": "5c4286fe773d6702200d505eaaf7df3c64f91b5450af5b081c7d110f140d7002",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/payload.stdout.reopen.stdout.txt": "7d57dd4737180f202698893479da945d249b1b9d8461cd62097ba14b679ca6c2",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/payload.stdout.txt": "eeb52493fd82b8870b00bea5269985c2faaeb2491900ff74b5a89532f30779f5",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/payload.stdout.capture.jsonl": "3ae1998380999d16236f7b6db187f66248283e65d24b157ce62e05237dc6a44b",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-7d38ff82/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/receipt.json": "47d606df2010674433a33b60b49924e7af49d1ac5a6fd033e5fd352303e97846",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/payload.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/payload.stdout.reopen.stdout.txt": "ad3af142f85f902a9a6ecbb4b251515328150415fff6fea237250f8a3998ac40",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/payload.stdout.txt": "47b5a626cfbb8e59c6094b774df021b6a0e7b882d9fe6fca98a8015c4a2d189b",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/payload.stdout.capture.jsonl": "0014c0eeebc1285ef3dc680e37613b1f6c223cb6d29b60a1cee72b9ef425c2b5",
+                "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse/same-name-20261030T185816Z-4c4ec1b3/payload.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
               }
             },
             "raw_stream_sha256": {
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.txt": "5b3e43dc38ca01e3f5a7854ba50d4330864b0c1e0f646650b2c78cf072acc366",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.capture.jsonl": "d57872badacca504b90a7af419ae008ffe7128eacd5ca82383c9318f5ba215c8",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.reopen.stdout.txt": "66c8ee87da5c15c1615aac6a0d4ac45f9def5fece77e09dff73bfee0520e57e6",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/python-version.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.txt": "988bb7b68a896a90a60713f4fab0c25feccd01ae497ba9a72f916dcbc789eed6",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.capture.jsonl": "21bc7169a9457f4c414fc4779514edb50cf8360b2d3873ed4886e9af2f514f43",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.reopen.stdout.txt": "f84e57d5f90debfbdd11b595aa383731b2a813f05c2ebe1c6f813bdc907f845e",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/bounded-stream-fixtures.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.txt": "0810bd1dc67bfa5d089cecf0ad4b3af025417db294dd7de51a0e1e17994d198f",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.capture.jsonl": "58b42f04aad17e74b0782b22ac3a4193bff2ee460ed773eaf951e294b65156ae",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.reopen.stdout.txt": "b7d32641521184ffef5f5de31edd8738a7adb86b0c571b86e4f3191cea2c1f43",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.txt": "546876a51ad417c107299e7e22e9de361a3168a3ee30a8bffd57cc2bc9217cc4",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.capture.jsonl": "2272ed9783b876f9c0a7b79dc8885e37afb72d50db2d7f401addbde124c82e26",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.reopen.stdout.txt": "ac75112a9db78d44d245ce215f83565f88c0d022dbff4bdd54a8e43a8f9646d2",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.txt": "f87db12c09021da9f74ab4bf87e67233c004085adad8634c75df5498054f8538",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.capture.jsonl": "d4d8b65960c7f60bc2dadfbebbc96442c5d348ac76dd7c7f6e88a451f41d3e2e",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.reopen.stdout.txt": "ebc452c97b850aed4197a56b5238574fead6187665141165d80406d851f3365a",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-3.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.txt": "02cee5f6b7ada76acc50cc9bcdc2f0b8309c1bd7f79b6204b39afe9c5c9be614",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.capture.jsonl": "b778053814a6f0be0538838303a8bce2b86ef32a0aac0a4de32f08c97b539820",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.reopen.stdout.txt": "67719b7a8153d9244a927f7823db7adfd92237e4ace3251e6a2d5338166ec619",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-fresh-process-2.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.txt": "932ca39097a853c4a90d08b49bdab34792448296c74700619657b077b658a2e5",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.capture.jsonl": "09bb25754b8cce6544f1b526b4ddbea123f05f8b913007c6277c517c1df16263",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.reopen.stdout.txt": "2aa56126dc0e35622fc78e07b41c3f7c7aafc6e82594f58618d819dbedf4dac8",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.txt": "11d7c3d861e5efacb53843eaa79dcba8eceb3c18896b86b2fb3a4bb9e1b379be",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.capture.jsonl": "b00e6cbc7029d8c0b63c1680527327d41aac1552c1aa3750439e1bd7600e1271",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.reopen.stdout.txt": "f6930f4b1b97aef1303c4363bf46c10a9119c0e7d427da20263d2477d4f662a1",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.txt": "cda557d91b21b2d0405d903519cbeb2b37ff60d6576c2a68a820543bcacd7d1a",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.capture.jsonl": "aff5956dd7f97e4d009173ba9b735eebc655524d120417e67b5186a9014fbd65",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.reopen.stdout.txt": "bb83425b8d88f2d26c939a8222d96d7e1c74f8a306a5048895c01ac44a00af80",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-2.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.txt": "64a373cad3a1ec02a70d21203acc91cbf7ac0d784275713dd78996cbafc946a2",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.capture.jsonl": "b9585c61159354ad006cc92b0b4edb10cefd10d192770a46ee0712bed72e3de1",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.reopen.stdout.txt": "19ba3ecd89c3760b52c22afca438fe93beb48baf525967ef2f985468a23794c4",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/root-reuse-independent-reopen-3.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.txt": "7fda9d6120c43baddd89c63015f7963e3c520c9e8ff79e9b9d93bb7d10e18515",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.capture.jsonl": "7db6caef8f097f63bd1e6e72ddcbb858a2d724899856c513797b0f8ef5c40db0",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.reopen.stdout.txt": "9a8470c40e7a5e4f394def30d53c69338a071ed72e38a2f154fc9aa69d732caa",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/reduced-attention.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.txt": "4e3dddfd9166fa148e8ae719304c52ed8a989ddb9db2596acbe5b53df207cecf",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.capture.jsonl": "fe71bb325df981b59fc7139868e03a6c057552f08ae157b6d1d41146161ac108",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.reopen.stdout.txt": "3237ecef7212a8a6a69b57530f5fd0642cf06d5b54619b486b17ae0f729aa1d7",
-              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/independent-child-reopen.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.txt": "5b3e43dc38ca01e3f5a7854ba50d4330864b0c1e0f646650b2c78cf072acc366",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.capture.jsonl": "c7a403893e115f66f7faf7577ca614bacce8a51540b82e4fb2ceec793f36196c",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.reopen.stdout.txt": "f4ff6a84ac64f7cec1252261ced2db1accd8d378f30171a74b679fa2c98a9321",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/python-version.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.txt": "c44750f2442c68fc49e4f46ed7a9fd35528a1d392af6497fd42a0da2f59e3d92",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.capture.jsonl": "e398bb9e2ec3f3bf005bf5c1b8f049d431abe39a7e033d6895536d98767cdd4b",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.reopen.stdout.txt": "fc92f11b6c9e1dfc9e3cf9b4acc6d51136ac3c15742dfe016da5ff52b5a082ec",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/bounded-stream-fixtures.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.txt": "0ad0edd0bf3181396cd108f6820d41fc1bb30af4f04a9515a1c2ce8719263a5c",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.capture.jsonl": "b986f197a364ab63ffa1c44db87c298cefd71022c5a02b43dc70f9fd5080e7d5",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.reopen.stdout.txt": "836dc4f31413ee12fef6ef708796fc85695d23930e3c5ab3d4e8ec0739abc732",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.txt": "4d3c79a79e93cda99064c67c74c4ef6526b65cfbedf81958cb11eda6e954e654",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.capture.jsonl": "00651963c52aba8701370ea18659c41369a9d95bd499e3fe4252a98172efb15b",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.reopen.stdout.txt": "27740db39d288a33cf3e7322a0efff2e5e51533ebe4fa1ce89460d6e98886af6",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.txt": "42bb8890b69db784ce595d26bbfbc96bba1f078062c562d1972fb5ee680e8731",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.capture.jsonl": "f15b984a73d72cb87530c4a3054efab14133ec8481a1db3c5bd8c2f598a5f98c",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.reopen.stdout.txt": "6e8473cc6c9f6b19f39a67276daa838b14d01a82b09ebac404b4416b5b97c5af",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-2.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.txt": "cec35346ce3c6c7523cd6ae0388cea9f80ea38f2d362e2a6cd8d449579e581b3",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.capture.jsonl": "d4f3ee75cd927882cec7b54ef48dea4d4e10ed4a5d55d7b0cd67c32a1dba876d",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.reopen.stdout.txt": "88d8c5ea6b8aa3679687655edd0e430b47540db27587c34f104d588eff83c8d5",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-fresh-process-3.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.txt": "4a5945d373e704a3c97509faedf9880d0b3d1b73b3157951b377d3b262a7a9da",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.capture.jsonl": "7e759e7b48f27d3017b3d33a1451ef7ee014d51b2d92ea82a2cfc72fc317f3f9",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.reopen.stdout.txt": "d28fe4b859e98e3b726534954808aa4358992a8a8a50a138a6fcae1c07df2594",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.txt": "0d206c29525eaf9f101400b3646af9a213fdcbba77364a3e09c41fb5346ca732",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.capture.jsonl": "930314ea8ee396b41d85c98bdfd87ebb792199c9df29323c068f4a937e117854",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.reopen.stdout.txt": "18ccca2b86151f422924b71d1b1e7c5d2ccdf0811ebb46df05f4084b5f66b52b",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.txt": "11b0311aa93cad4948089286fdc56f65a0914d15ec011c7fc856fb70926e49ac",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.capture.jsonl": "1f307d7d4e3b50c0b1230f5bdee0c11730d62c1a72def276a38e6da4d0a40ab2",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.reopen.stdout.txt": "25823a90766bf84f3734ccf30e1f46960712630063866865ea79deb60c601998",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-2.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.txt": "794924564f521332900828de8ed8389285088720a44abdf56f6613ca9f6db4c5",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.capture.jsonl": "25d0cbe108bdee5eadbf0ee8bf402221b3f89af1313e8e414feb40dcdd836ffd",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.reopen.stdout.txt": "a06927254add6a9af39aab7154c578a6476dccf2b17f3f55de7a4d787695a358",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/root-reuse-independent-reopen-3.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.txt": "91d69aeefcdc5dc436481c0cdc4df9e695c8ad674200974f22b9d091bd2d0cc7",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.capture.jsonl": "b378ad7a43238a8aea8eb95766f842438ae0c5d259d8cd22809a0a94fa815f2d",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.reopen.stdout.txt": "cbc9c3d8fb0332456994a4accf28b5c6dc2a057104b8019bc7d3809b1eac1ccd",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/reduced-attention.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.txt": "09b574d3096f3c69f0c93e4b738dc3bd18b8f68f66cb67395692fa0098281527",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.capture.jsonl": "a9b1cbc4978a046772738cd7404d725ae0dd79795581638fd4feb420ef79b875",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.reopen.stdout.txt": "76f7035e51a15407f189bbb5d6d1dcec758569bdd839d4da2b1d23a6f8a23f6d",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/independent-child-reopen.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             },
             "outcome": "passed-focused-only",
-            "ended_at": "2026-10-30T17:31:08.333628+00:00",
-            "child_receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T173026Z-fc01e03b/children/verifier-attention-drift-reduced-s17-bounded-20261030T173030Z-cd768856/receipt.json",
+            "ended_at": "2026-10-30T18:58:57.192876+00:00",
+            "child_receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261030T185813Z-5ee22568/children/verifier-attention-drift-reduced-s17-bounded-20261030T185818Z-a8c6614c/receipt.json",
             "metrics": {
               "layer_attention": [
                 {
@@ -4861,19 +4861,19 @@
       ]
     },
     "check:clean-directory-reproduction": {
-      "attempt_id": 1065,
-      "duration_s": 46.81594345904887,
-      "stdout_preview": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/receipt.json\n",
+      "attempt_id": 1073,
+      "duration_s": 46.15496386610903,
+      "stdout_preview": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/receipt.json",
+          "path": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/receipt.json",
           "data": {
             "schema": 1,
             "purpose": "l1-portability",
             "acceptance_evidence": false,
             "cwd": ".",
-            "started_at": "2026-10-30T17:29:31.041961+00:00",
+            "started_at": "2026-10-30T18:57:17.041891+00:00",
             "commands": [
               {
                 "argv": [
@@ -4881,39 +4881,39 @@
                   "tests/portability_checks.py"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T17:29:31.053510+00:00",
+                "started_at": "2026-10-30T18:57:17.061686+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.txt",
-                "stderr": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stderr.txt",
+                "stdout": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.txt",
+                "stderr": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.capture.jsonl"
+                    "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:30:17.548488+00:00",
+                  "started_at": "2026-10-30T18:58:02.836182+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:30:17.664768+00:00"
+                  "ended_at": "2026-10-30T18:58:02.952658+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:30:17.664817+00:00",
-                "duration_s": 46.61103097908199
+                "capture_reopen_stdout": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:58:02.952697+00:00",
+                "duration_s": 45.890702079981565
               }
             ],
             "source_sha256": {
@@ -5015,7 +5015,7 @@
             ],
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "generated_sha256": {
-              "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/check-manifest.json": "be6a4046b836a85c75e731717ce9be1021ae982a34ab9e9cfa6016e12cccdf6f"
+              "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/check-manifest.json": "be6a4046b836a85c75e731717ce9be1021ae982a34ab9e9cfa6016e12cccdf6f"
             },
             "maximum_concurrent_jobs": 1,
             "dispatch_groups": [
@@ -5024,19 +5024,19 @@
               ]
             ],
             "raw_stream_sha256": {
-              "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.txt": "909d3e42d0061048fb8d69da6bf8d3387c8343f46ff59db5dabd8ce9947a9c17",
-              "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.capture.jsonl": "b16ce6db26223076f8a7c9bf5511ba9bd56a08e4eab9f3a8a4f92a1b5b8a608c",
-              "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.reopen.stdout.txt": "e699fd6b6594d575c6ea1167a51f8ae8da61a4068de7a5ed9e09ef8dbda279eb",
-              "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/fresh-declared-sources.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.txt": "e854ff09cc87393f6176d24d687b1ad18d5c208d116d01805924c30f1a89660a",
+              "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.capture.jsonl": "f3e461789998b8667b33819015f1af00a4dc9ca11505f0722813cfa8c8ff8445",
+              "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.reopen.stdout.txt": "2cb89c5d68fea0ebcb4021210ca5afee6333c82fe3d348a639eea534cb3a2041",
+              "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/fresh-declared-sources.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             },
             "outcome": "passed",
-            "ended_at": "2026-10-30T17:30:17.669389+00:00",
+            "ended_at": "2026-10-30T18:58:02.957262+00:00",
             "check": "portability",
             "metrics": {
               "required_runs": 1,
               "compared_runs": 1,
-              "ledger": "evidence/l1/l1-portability-20261030T172931Z-e4df2fe0/ledger.json"
+              "ledger": "evidence/l1/l1-portability-20261030T185717Z-4d19edd8/ledger.json"
             },
             "native_hardware_acceptance": false
           }
@@ -5379,60 +5379,20 @@
       ]
     },
     "check:five-domain-l1-benchmark": {
-      "attempt_id": 1064,
-      "duration_s": 2619.1855310490355,
-      "stdout_preview": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/receipt.json\n",
+      "attempt_id": 1072,
+      "duration_s": 2591.2776053950656,
+      "stdout_preview": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/receipt.json",
+          "path": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/receipt.json",
           "data": {
             "schema": 1,
             "purpose": "l1-benchmark",
             "acceptance_evidence": false,
             "cwd": ".",
-            "started_at": "2026-10-30T16:45:43.955597+00:00",
+            "started_at": "2026-10-30T18:13:54.808395+00:00",
             "commands": [
-              {
-                "argv": [
-                  "python3",
-                  "tests/benchmark_checks.py"
-                ],
-                "cwd": ".",
-                "started_at": "2026-10-30T16:45:43.977891+00:00",
-                "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.txt",
-                "stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stderr.txt",
-                "timed_out": false,
-                "expected_exit_codes": [
-                  0,
-                  1
-                ],
-                "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/compiled-models"
-                },
-                "capture_observations": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.capture.jsonl",
-                "exit_code": 0,
-                "capture_reopen": {
-                  "argv": [
-                    "python3",
-                    "tests/retained.py",
-                    "--reopen-capture",
-                    "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.capture.jsonl"
-                  ],
-                  "cwd": ".",
-                  "started_at": "2026-10-30T17:29:22.423914+00:00",
-                  "timeout_s": 3600,
-                  "exit_code": 0,
-                  "timed_out": false,
-                  "ended_at": "2026-10-30T17:29:22.842281+00:00"
-                },
-                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:29:22.842326+00:00",
-                "duration_s": 2618.8639583629556
-              },
               {
                 "argv": [
                   "python3",
@@ -5441,81 +5401,79 @@
                   "17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T16:45:43.980431+00:00",
+                "started_at": "2026-10-30T18:13:54.830291+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.txt",
-                "stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stderr.txt",
+                "stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.txt",
+                "stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.capture.jsonl"
+                    "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:08:31.907417+00:00",
+                  "started_at": "2026-10-30T18:38:29.420582+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:08:32.073882+00:00"
+                  "ended_at": "2026-10-30T18:38:29.687278+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:08:32.073919+00:00",
-                "duration_s": 1368.093166083796
+                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:38:29.687321+00:00",
+                "duration_s": 1474.856675984105
               },
               {
                 "argv": [
                   "python3",
-                  "tests/attention_checks.py",
-                  "--seed",
-                  "89"
+                  "tests/benchmark_checks.py"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T16:45:43.983352+00:00",
+                "started_at": "2026-10-30T18:13:54.832104+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.txt",
-                "stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stderr.txt",
+                "stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.txt",
+                "stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.capture.jsonl"
+                    "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:08:22.319088+00:00",
+                  "started_at": "2026-10-30T18:57:05.373405+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:08:22.585429+00:00"
+                  "ended_at": "2026-10-30T18:57:05.790333+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:08:22.585470+00:00",
-                "duration_s": 1358.6017896048725
+                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:57:05.790354+00:00",
+                "duration_s": 2590.957914331928
               },
               {
                 "argv": [
@@ -5525,39 +5483,39 @@
                   "43"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T16:45:43.984335+00:00",
+                "started_at": "2026-10-30T18:13:54.833532+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.txt",
-                "stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stderr.txt",
+                "stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.txt",
+                "stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.capture.jsonl"
+                    "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T17:07:53.908424+00:00",
+                  "started_at": "2026-10-30T18:37:12.291534+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T17:07:54.175888+00:00"
+                  "ended_at": "2026-10-30T18:37:12.557567+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T17:07:54.175918+00:00",
-                "duration_s": 1330.191244122805
+                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:37:12.557606+00:00",
+                "duration_s": 1397.7237598339561
               },
               {
                 "argv": [
@@ -5566,39 +5524,81 @@
                   "--self-check"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-30T16:45:43.984951+00:00",
+                "started_at": "2026-10-30T18:13:54.834298+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.txt",
-                "stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stderr.txt",
+                "stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.txt",
+                "stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.capture.jsonl"
+                    "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-30T16:47:01.680362+00:00",
+                  "started_at": "2026-10-30T18:15:06.554641+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-30T16:47:01.746190+00:00"
+                  "ended_at": "2026-10-30T18:15:06.671574+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-30T16:47:01.746211+00:00",
-                "duration_s": 77.76093943603337
+                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:15:06.671627+00:00",
+                "duration_s": 71.83709591603838
+              },
+              {
+                "argv": [
+                  "python3",
+                  "tests/attention_checks.py",
+                  "--seed",
+                  "89"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-30T18:13:54.834930+00:00",
+                "timeout_s": 86400,
+                "stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.txt",
+                "stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0,
+                  1
+                ],
+                "environment_overrides": {
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/compiled-models"
+                },
+                "capture_observations": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-30T18:36:53.533836+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-30T18:36:53.801141+00:00"
+                },
+                "capture_reopen_stdout": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-30T18:36:53.801206+00:00",
+                "duration_s": 1378.9659412680194
               }
             ],
             "source_sha256": {
@@ -5700,15 +5700,15 @@
             ],
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "generated_sha256": {
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/check-manifest.json": "fb205df96fbce77b1cc1149399ff53e8eaa6e6802250626d5dc8fd79c3c2c95e"
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/check-manifest.json": "fb205df96fbce77b1cc1149399ff53e8eaa6e6802250626d5dc8fd79c3c2c95e"
             },
             "simulation_dispatch": {
-              "available_bytes": 57167572992,
+              "available_bytes": 51406995456,
               "cpu_capacity": 256,
               "maximum_concurrent_jobs": 8,
               "per_build_reserved_bytes": 536870912,
-              "available_memory_bytes": 456467025920,
-              "memory_headroom_bytes": 114116756480,
+              "available_memory_bytes": 489195552768,
+              "memory_headroom_bytes": 122298888192,
               "per_build_reserved_memory_bytes": 2147483648,
               "headroom_bytes": 1073741824,
               "limitation": "Admission budget, not a quota or guarantee against external disk use."
@@ -5732,39 +5732,39 @@
               ]
             ],
             "raw_stream_sha256": {
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.txt": "c59356edc3838bd13e348d8754b0e31bb42457706dfa547bd631538ea0af86ce",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.capture.jsonl": "a59230e60b87f55683346f1e71c3f670876ab95970c7d9a1c5370748989a2b5c",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.reopen.stdout.txt": "30290ad246c1e56fdcf576c9b6804f0cdff85a811974335f494ef489887e8cbb",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/five-domain-matrix.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.txt": "15a9692ba97e1b813df06fe15808be7a258b795bdb104929fbbf6e85d0f56155",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.capture.jsonl": "64dbb8af7904c337f0b2d12cf1e5f35c3e3aa3aa18d91e9eded62eee3472bd82",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.reopen.stdout.txt": "0d3be63899896b5f9613ad2c2f937184b66edae09483cf78b7acf1c01dbc2f44",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s17.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.txt": "f422fe31cbcc855f151c8a8558286e7d3b28514f10aa61e89b4920f6cd8ad930",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.capture.jsonl": "6acd184439710f2910811026858debb507e63d9b5f9deb518b775e0417f7b4fa",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.reopen.stdout.txt": "b86c0ec25a739844539bf457594f0f535a189e3b43148856340f9f02c8398a6d",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s89.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.txt": "66b8ba4f8bf3e20e13544fb9370aecae08e4bf57c6f7ae891350685334c78d51",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.capture.jsonl": "327e7ff5e5eb58b9ec18fc52aae6ec50bf89ddcf6b00551e015a313d8fb68faa",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.reopen.stdout.txt": "cae2ae46ff7995d84831697493349b274f93f2ecfad3755d46585e1914f710d2",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/full-head-drift-s43.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.txt": "e673e82765082dd2164b48a092f308b9126ce9dc9647868c4e24a0bd4f22999a",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.capture.jsonl": "addabfe8d40fb8a3db6bd78bdd840db7d8144aee4b8f1baeab6eae51baf36be8",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.reopen.stdout.txt": "548e8c8096123c4831c01d87200997103eacbfbacd3def5365ac9dcad2cdf35b",
-              "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/native-vector-interface.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.txt": "cf71e00719980f14ee29c1087679f9c702704aa4078656a8150aed3954725dd5",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.capture.jsonl": "e962d1578035e841b1b30ac37e31aecaf874ec412cbbbf70c6d89380acdf8bd5",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.reopen.stdout.txt": "4bb861ab033f587b8b7d8f5db63e663ce81284f0d95d0db56c8e31e7f0c7ff70",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s17.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.txt": "7b7489577d4acaf47a17ceceecff1603c59630dbed22e891e43893f5c3ea4ecf",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.capture.jsonl": "8f6a0529c19bfd2680c8594c5b461c39a83f2c0db1260a82c162b32515793564",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.reopen.stdout.txt": "aa43d4a9b5992acbfe85c23e95b87eae5c9505b6b2fcbbe97304a64a7552667c",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/five-domain-matrix.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.txt": "1549d84c8592b645573b37136acd0f012e8ee9b4fd3d1c5b08f95d98aa308cad",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.capture.jsonl": "4e7e073092b402c3d6702840ff6b346d39b0f67716e898ae36d2db7a0224e6fc",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.reopen.stdout.txt": "f7ee56be05d5f5cdf2864518b380f5ba61cb846caefa1dafa4888846ffae6581",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s43.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.txt": "91795353e665f0c78d472edada73632743400245c9c965d2f51c5fc58823339a",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.capture.jsonl": "3cdccdb6d7664a318866571e4c5862a46cc0af37c29939a3a999f70fac6b5a8d",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.reopen.stdout.txt": "ac39d80aeb735331bbb7da0ebeb9004477cfed47ebb6000c69a8dda88808bcd0",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/native-vector-interface.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.txt": "4bdc8bb9f8cbf7ddaed46fea03551e975718a1f87f8bb878d052e65c579bb0f5",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.capture.jsonl": "9468aec0213f37933ffd43adb1ae485d04f8c6ee64e4be7ee495751de899c810",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.reopen.stdout.txt": "ec6cfffb92da5e08bc4be47cfe0d6b2088a6d94e8c3881ff058a67bd516aa878",
+              "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/full-head-drift-s89.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             },
             "outcome": "passed",
-            "ended_at": "2026-10-30T17:29:22.905048+00:00",
+            "ended_at": "2026-10-30T18:57:05.853395+00:00",
             "check": "benchmark",
             "metrics": {
               "required_runs": 5,
               "compared_runs": 5,
-              "ledger": "evidence/l1/l1-benchmark-20261030T164543Z-e1194d06/ledger.json"
+              "ledger": "evidence/l1/l1-benchmark-20261030T181354Z-e199cad5/ledger.json"
             },
             "native_hardware_acceptance": false
           }
