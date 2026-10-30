@@ -47,14 +47,23 @@ def supervision_records(attempt=309):
     state, result, patrol, settled = (records[name] for name in paths)
     config = state["config"]
     logs = {}
+    unavailable = []
     for name in ("stdout.log", "stderr.log"):
         relative = folder + "/" + name
         path = ROOT / relative
-        logs[relative] = {"sha256": file_sha256(path), "bytes": path.stat().st_size}
+        try:
+            logs[relative] = {"sha256": file_sha256(path), "bytes": path.stat().st_size}
+        except OSError as exc:
+            row = {"path": relative, "error_type": type(exc).__name__,
+                   "errno": exc.errno, "os_error": exc.strerror,
+                   "evidence_recreated": False}
+            logs[relative] = {"outcome": "unavailable", **row}
+            unavailable.append(row)
     return {
         "attempt": attempt,
         "record_sha256": {name: file_sha256(ROOT / name) for name in paths},
         "raw_logs": logs,
+        "unavailable_inputs": unavailable,
         "runtime_state_keys": sorted(state),
         "runtime_config_keys": sorted(config),
         "recorded_role_limits": config.get("role_limits"),
@@ -94,9 +103,15 @@ def audit_supervision(attempt=309, repair_of=None):
         observation = json.loads(text)
         evidence.record["diagnostic_input_sha256"] = {
             **observation["record_sha256"],
-            **{name: row["sha256"] for name, row in observation["raw_logs"].items()},
+            **{name: row["sha256"] for name, row in observation["raw_logs"].items()
+               if "sha256" in row},
         }
         evidence.record["observations"].append(observation)
+        evidence.flush()
+        if observation["unavailable_inputs"]:
+            raise RuntimeError(
+                "Supervision audit is incomplete; unavailable raw inputs: " +
+                ", ".join(row["path"] for row in observation["unavailable_inputs"]))
         evidence.finish(
             "diagnostic_completed",
             "Audited actual retained enforcement records without CLI discovery, "

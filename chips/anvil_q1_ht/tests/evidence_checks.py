@@ -25,6 +25,7 @@ import nested_retention
 import serialization_events
 import campaign_costs
 import reference_costs
+import platform_checks
 
 
 class MandatoryCampaignChecks(unittest.TestCase):
@@ -203,6 +204,40 @@ class HistoricalComparisonChecks(unittest.TestCase):
 
 
 class SupervisionPrerequisiteChecks(unittest.TestCase):
+    def test_missing_log_preserves_enforcement_observation_without_recreating_it(self):
+        state = {"config": {"role_limits": {"timeout_s": 86400}}}
+        result = {"argv": ["python3", "tests/verify.py"],
+                  "exit_code": -15, "duration_s": 2700.763}
+        patrol = {"interception": "coordinator_patrol_slow_check"}
+        settled = {"process_scope_settled": True}
+        root = Mock()
+        paths = {}
+        for name, value in (("state.json", state), ("result.json", result),
+                            ("patrol.json", patrol), ("settled.json", settled)):
+            path = Mock()
+            path.read_text.return_value = json.dumps(value)
+            paths[name] = path
+        missing = Mock()
+        paths["stdout.log"] = missing
+        paths["stderr.log"] = Mock()
+        root.__truediv__ = Mock(side_effect=lambda relative: paths[Path(relative).name])
+
+        def digest(path):
+            if path is missing:
+                raise FileNotFoundError(errno.ENOENT, "No such file or directory")
+            return "retained-hash"
+
+        with patch.object(platform_checks, "ROOT", root), \
+                patch.object(platform_checks, "file_sha256", side_effect=digest):
+            row = platform_checks.supervision_records(479)
+        self.assertEqual(row["recorded_interception"], patrol["interception"])
+        self.assertTrue(row["process_scope_settled"])
+        self.assertEqual(len(row["unavailable_inputs"]), 1)
+        self.assertEqual(row["unavailable_inputs"][0]["errno"], errno.ENOENT)
+        self.assertFalse(row["unavailable_inputs"][0]["evidence_recreated"])
+        missing.open.assert_not_called()
+        missing.write_text.assert_not_called()
+
     def test_larger_comparisons_stop_before_evidence_build_or_simulation(self):
         for config in (1, 2):
             for mode in ("AWQ", "BF16"):
