@@ -2,16 +2,16 @@
   "chip": "Anvil-Q1-FP",
   "passed_checks": {
     "check:benchmark-validator-fail-closed-regressions": {
-      "attempt_id": 744,
-      "duration_s": 51.27684307587333,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-10irbr2x/receipt.json\"}\n",
+      "attempt_id": 754,
+      "duration_s": 52.74626264208928,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-7626o41t/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:l1-functional-numerical-defects-synthesis": {
-      "attempt_id": 742,
-      "duration_s": 2304.2122429120354,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-n_76h1z9/receipt.json\"}\n",
+      "attempt_id": 752,
+      "duration_s": 2371.3510784921236,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-k6wliix0/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -30,9 +30,9 @@
       "receipts": []
     },
     "check:portable-clean-copy": {
-      "attempt_id": 743,
-      "duration_s": 827.3753687439021,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-_dsvpyj8/receipt.json\"}\n",
+      "attempt_id": 753,
+      "duration_s": 835.6722029119264,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-h2hy6lln/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
