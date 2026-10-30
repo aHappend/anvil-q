@@ -67,6 +67,211 @@ def observable_trace(child, prefix):
             if line.startswith((prefix + "_", "COMPARED ", "SCOREBOARD_INJECT "))]
 
 
+def full_capacity_measurement(evidence, info, started):
+    """Keep actual incomplete work distinct from a completed functional case."""
+    rows = []
+    for seed in (1, 17, 89):
+        for bypass in (0, 1):
+            name = f"qwen-shell-b{bypass}-s{seed}"
+            matches = [row for row in evidence.record["coverage"] if row["name"] == name]
+            require(len(matches) <= 1, "Duplicate full-capacity cell")
+            row = matches[0] if matches else {}
+            child = row.get("simulation_receipt")
+            phases, observations, boots, completions = [], [], [], []
+            if child is not None:
+                observations = child.get("stdout_observations", [])
+                for event in observations:
+                    line = event["line"]
+                    if line.startswith("QWEN_SHELL_PHASE "):
+                        fields = dict(re.findall(r"(\w+)=([a-z_]+|\d+)", line))
+                        phases.append({
+                            **{key: int(value) if value.isdigit() else value
+                               for key, value in fields.items()},
+                            "observed_elapsed_s": event["observed_elapsed_s"],
+                        })
+                    elif line.startswith(("QWEN_SHELL_BOOT ", "QWEN_SHELL_COMPLETION ")):
+                        fields = {key: int(value) for key, value in
+                                  re.findall(r"(\w+)=(\d+)", line)}
+                        fields["observed_elapsed_s"] = event["observed_elapsed_s"]
+                        if line.startswith("QWEN_SHELL_BOOT "):
+                            boots.append(fields)
+                        else:
+                            completions.append(fields)
+                            phases.append({**fields, "phase": "response_done"})
+            frames = []
+            for index in range(len(info["cases"])):
+                events = [event for event in phases if event["frame"] == index]
+                frame = {"frame": index, "events": events, "intervals": []}
+                # These are public-observation intervals, not hidden FSM timings.
+                for label, left, right in (
+                    ("input_transport", "input_begin", "input_sent"),
+                    ("post_input_to_first_core_request", "input_sent", "core_begin"),
+                    ("first_to_last_output_observation", "output_progress", "output_progress"),
+                    ("last_output_to_done", "output_progress", "response_done"),
+                    ("last_head_ack_to_done", "head_ack", "response_done"),
+                ):
+                    a = [event for event in events if event["phase"] == left]
+                    b = [event for event in events if event["phase"] == right]
+                    if a and b and (left != right or len(a) > 1):
+                        first = a[-1] if label.startswith("last_") else a[0]
+                        last = b[-1] if left == right else b[0]
+                        frame["intervals"].append({
+                            "name": label, "cycles": last["cycles"] - first["cycles"],
+                            "observed_wall_s": (last["observed_elapsed_s"] -
+                                                first["observed_elapsed_s"]),
+                        })
+                for operation in range(len(info["cases"][index]["core_operation_ids"])):
+                    op_events = [event for event in events
+                                 if event.get("operation") == operation]
+                    for label, left, right in (
+                        ("core_request_to_head_request", "core_begin", "head_begin"),
+                        ("physical_head_traversal", "head_begin", "head_ack"),
+                    ):
+                        a = [event for event in op_events if event["phase"] == left]
+                        b = [event for event in op_events if event["phase"] == right]
+                        if a and b:
+                            frame["intervals"].append({
+                                "name": label, "operation": operation,
+                                "cycles": b[0]["cycles"] - a[0]["cycles"],
+                                "observed_wall_s": (b[0]["observed_elapsed_s"] -
+                                                    a[0]["observed_elapsed_s"]),
+                            })
+                frames.append(frame)
+            rows.append({
+                "name": name, "seed": seed, "bypass": bypass,
+                "status": row.get("status", "not-run"),
+                "failure_stage": row.get("failure_stage"),
+                "failure": row.get("diagnostic"),
+                "compile_cache_hit": row.get("compile_cache_hit"),
+                "compile_seconds": row.get("compile_receipt", {}).get("duration_s"),
+                "simulation_seconds": child["duration_s"] if child else None,
+                "timed_out": child.get("timed_out") if child else None,
+                "evidence_error": child.get("evidence_error") if child else None,
+                "simulation_receipt": (str(Path(child["stdout"]).parent / "receipt.json")
+                                       if child else None),
+                "actual_comparisons": row.get("actual_comparisons"),
+                "boots": boots, "completed_frames": len(completions),
+                "frames": frames,
+                "last_public_observation": observations[-1] if observations else None,
+            })
+    complete = all(row["status"] == "passed" for row in rows)
+    elapsed = time.monotonic() - started
+    result = {
+        "scope": "Necessary complete-Qwen six-cell subset of L1, not aggregate L1 "
+                 "or pretrained/default-geometry inference.",
+        "cold_wall_seconds": elapsed, "budget_seconds": 2700,
+        "cold_compile_policy": "Fresh Evidence instance and empty executable/table "
+                               "caches; all generation/builds are timed. Within-run "
+                               "sharing is the unchanged production execution policy.",
+        "physical_capacity": info["physical_capacity"],
+        "active_vocabulary": info["active_vocabulary"],
+        "prompt_count_per_cell": len(info["cases"]),
+        "max_new_tokens": info["max_new_tokens"],
+        "expected_boots_per_cell": 2, "cells": rows,
+        "completed_cells": sum(row["status"] == "passed" for row in rows),
+        "subset_completed_within_budget": complete and elapsed <= 2700,
+        "aggregate_cold_feasibility_demonstrated": False,
+        "aggregate_retry_authorized": False,
+        "phase_limits": "Input_sent is the end of driven serial framing or accepted "
+                        "AXI input; core_begin/head_begin/head_ack are public DDR "
+                        "transactions, not internal core_done. Tokenization can overlap "
+                        "input and output drain can overlap core work. Wall observations "
+                        "are parent polling times, not precise profiler samples. Missing "
+                        "phase endpoints are incomplete measurements, never zero cost.",
+        "conclusion": (
+            "Necessary subset completed; other L1 stages and outstanding mandatory "
+            "coverage still prevent aggregate feasibility/acceptance."
+            if complete else
+            "Necessary full-capacity subset is incomplete. Inspect actual failure "
+            "stages and child receipts; an early tool/input/evidence failure is not "
+            "proof of budget infeasibility. No aggregate retry is authorized."),
+    }
+    return result
+
+
+def run_feasibility_controls(evidence):
+    """Validate phase collection and its fail-closed paths, not acceleration."""
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    directory = evidence.path / "control-inputs"
+    directory.mkdir()
+    evidence.child(
+        ["./.venv/bin/python", "tests/qwen_shell.py", evidence.relative(directory),
+         "--compact"], "phase-control-inputs")
+    evidence.child(
+        ["python3", "tests/test_shell_execution.py", evidence.relative(evidence.path),
+         evidence.relative(directory)], "phase-measurement-unit-controls")
+    info = json.loads((directory / "shell-reference.json").read_bytes())
+    evidence.observe_stdout_prefixes = ("QWEN_SHELL_",)
+    evidence.run_cases([
+        (f"phase-control-b{bypass}",
+         lambda scope, bypass=bypass: shell_case(scope, info, 17, bypass, False))
+        for bypass in (0, 1)
+    ], workers=1)
+    result = full_capacity_measurement(evidence, info, evidence._started)
+    result["scope"] = "Two compact UART/bypass phase-collection controls at seed17; "
+    result["scope"] += "not complete tables, full-capacity feasibility or aggregate L1."
+    result["conclusion"] = "Compact telemetry controls only; no full-capacity result."
+    for cell in result["cells"]:
+        if cell["seed"] != 17:
+            continue
+        require(cell["status"] == "passed" and len(cell["boots"]) == 2 and
+                cell["completed_frames"] == len(info["cases"]),
+                "Phase controls require actual initial boot, reload and drained responses")
+        for frame, expected in zip(cell["frames"], info["cases"]):
+            events = frame["events"]
+            for phase in ("input_begin", "input_sent", "response_done"):
+                require(sum(event["phase"] == phase for event in events) == 1,
+                        "Missing or duplicate public phase boundary: " + phase)
+            for phase in ("core_begin", "head_begin", "head_ack"):
+                require([event["operation"] for event in events
+                         if event["phase"] == phase] ==
+                        list(range(len(expected["core_operation_ids"]))),
+                        "Phase collection lost a complete physical core/head operation")
+    evidence.record["phase_observation_controls"] = result
+    save(evidence.path / "phase-observation-controls.json", result)
+
+
+def run_full_capacity_feasibility(evidence):
+    """Cold full-capacity workload, never a compact extrapolation or L1 retry."""
+    from table_artifacts import complete_tables
+
+    require(evidence._parent_budget_s == 2700 and
+            not evidence.compiled_simulations and not evidence.complete_table_producers,
+            "Full-capacity measurement requires a cold invocation and unchanged budget")
+    started = evidence._started
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.observe_stdout_prefixes = ("QWEN_SHELL_",)
+    evidence.record["full_capacity_predecessor"] = {
+        "runtime_attempt": 145,
+        "scope": "Settled runtime budget failure; this new experiment neither repairs "
+                 "the runtime ledger nor reconstructs missing historical receipts.",
+    }
+    producer, _ = complete_tables(evidence, "qwen")
+    evidence.child(
+        ["./.venv/bin/python", "tests/qwen_shell.py", evidence.relative(evidence.path),
+         "--table-source", evidence.relative(producer)], "full-capacity-shell-inputs")
+    info = json.loads((evidence.path / "shell-reference.json").read_bytes())
+    prompts = json.loads((ROOT / "tests/data/requirements.json").read_bytes())["prompts"]
+    require(info["physical_capacity"] == 151936 and info["max_new_tokens"] == 8 and
+            [bytes.fromhex(case["prompt_utf8_hex"]).decode() for case in info["cases"]] ==
+            prompts and all(len(case["expected_prompt_ids"]) > 1 for case in info["cases"]),
+            "Full-capacity feasibility must retain all original benchmark prompts")
+    evidence.child(
+        ["python3", "tests/test_shell_execution.py", evidence.relative(evidence.path),
+         evidence.relative(evidence.path)], "full-capacity-measurement-controls")
+    try:
+        evidence.run_cases([
+            (f"qwen-shell-b{bypass}-s{seed}",
+             lambda scope, seed=seed, bypass=bypass:
+             shell_case(scope, info, seed, bypass, False))
+            for seed in (1, 17, 89) for bypass in (0, 1)
+        ], workers=shell_workers(evidence))
+    finally:
+        result = full_capacity_measurement(evidence, info, started)
+        evidence.record["full_capacity_feasibility"] = result
+        save(evidence.path / "full-capacity-feasibility.json", result)
+
+
 def run_execution_cost(evidence):
     """Fresh, bounded compact profiling, retaining the original public oracle."""
     evidence.tools(("python3", "verilator", "g++", "make", "gprof"))

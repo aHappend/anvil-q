@@ -273,6 +273,9 @@ module bench;
   reg fault_injected=0;
   integer input_length=0,output_length=0,operation_count=0,write_count=0;
   reg [63:0] cycles=0;
+  reg [63:0] next_progress=64'd16777216;
+  integer observed_input=0,observed_output=0;
+  reg final_head_pending=0,input_finished=0;
   function automatic bit within_segment(input [63:0] address);
     begin
       within_segment=0;
@@ -345,6 +348,12 @@ module bench;
       if (held) request_stalls=request_stalls+1;
       if (ddr_rsp_valid && ddr_rsp_ready) begin
         if (!pending) $fatal(1,"QWEN_SHELL_ORPHAN_RESPONSE");
+        if (final_head_pending) begin
+          $display("QWEN_SHELL_PHASE phase=head_ack frame=%0d operation=%0d cycles=%0d",
+                   frame,operation_index,cycles);
+          $fflush();
+          final_head_pending=0;
+        end
         pending=0; ddr_rsp_valid<=0; acknowledgements=acknowledgements+1;
       end
       if (ddr_req_valid && ddr_req_ready) begin
@@ -410,9 +419,21 @@ module bench;
                     64'd32*expected_tokens[operation_index]+4*embedding_index)
                   $fatal(1,"QWEN_SHELL_PREFILL_FEEDBACK frame=%0d op=%0d token=%0d address=%h",
                          frame,operation_index,expected_tokens[operation_index],ddr_req_addr);
-                if (embedding_index==0) operation_cycles[operation_index]=cycles;
+                if (embedding_index==0) begin
+                  operation_cycles[operation_index]=cycles;
+                  $display("QWEN_SHELL_PHASE phase=core_begin frame=%0d operation=%0d cycles=%0d",
+                           frame,operation_index,cycles);
+                  $fflush();
+                end
               end else if (ddr_req_addr!==segment_base[2]+4*(embedding_index-8))
                 $fatal(1,"QWEN_SHELL_HEAD_FRAME_ORDER");
+              if (embedding_index==8) begin
+                $display("QWEN_SHELL_PHASE phase=head_begin frame=%0d operation=%0d cycles=%0d",
+                         frame,operation_index,cycles);
+                $fflush();
+              end
+              if (embedding_index==@EMBEDDING_READS_PER_OPERATION@-1)
+                final_head_pending=1;
               embedding_reads=embedding_reads+1;
             end
           end
@@ -421,6 +442,20 @@ module bench;
         comparisons=comparisons+1;
       end
       if (running) begin
+        if (input_finished && observed_input==0) begin
+          observed_input=1;
+          $display("QWEN_SHELL_PHASE phase=input_sent frame=%0d cycles=%0d",
+                   frame,cycles);
+          $fflush();
+        end
+        if (outputs!=observed_output) begin
+          if (observed_output==0 || outputs==output_length) begin
+            $display("QWEN_SHELL_PHASE phase=output_progress frame=%0d bytes=%0d cycles=%0d",
+                     frame,outputs,cycles);
+            $fflush();
+          end
+          observed_output=outputs;
+        end
         if (cfg_valid || cfg_write || !boot_done || !spi_cs_n)
           $fatal(1,"QWEN_SHELL_HOST_INTERVENTION_OR_BOOT_REENTRY");
         if (out_held && (!m_axis_tvalid || {m_axis_tlast,m_axis_tdata}!==held_output))
@@ -458,6 +493,13 @@ module bench;
           $display("QWEN_SHELL_COMPLETION frame=%0d cycles=%0d",frame,cycles);
           $fflush();
         end
+      end
+      if (cycles>=next_progress) begin
+        $display("QWEN_SHELL_PROGRESS frame=%0d running=%0d input=%0d embedding=%0d activation=%0d output=%0d reads=%0d acknowledgements=%0d cycles=%0d",
+                 frame,running,input_count,embedding_reads,activation_writes,outputs,
+                 reads,acknowledgements,cycles);
+        $fflush();
+        next_progress=next_progress+64'd16777216;
       end
     end
   end
@@ -557,6 +599,7 @@ module bench;
       @LOAD_CASE@
       outputs=0; frame_done=0; input_count=0; embedding_reads=0;
       activation_writes=0; inference_reads=0; out_held=0;
+      observed_input=0; observed_output=0; final_head_pending=0; input_finished=0;
       write_head.delete();
       for (integer item=write_count-1;item>=0;item=item-1) begin
         write_seen[item]=0;
@@ -566,9 +609,13 @@ module bench;
         write_head[{expected_write_operation[item],expected_write_address[item]}]=item;
       end
       running=1;
+      $display("QWEN_SHELL_PHASE phase=input_begin frame=%0d cycles=%0d",
+               frame,cycles);
+      $fflush();
       if (BYPASS) begin
         for (integer item=0;item<input_length;item=item+1)
           send_axis(input_bytes[item][7:0],item==input_length-1);
+        input_finished=1;
       end else begin
         fork
           begin
@@ -577,6 +624,7 @@ module bench;
               send_serial(input_bytes[item][7:0]);
             input_count=input_length;
             send_serial(10);
+            input_finished=1;
           end
           decode_serial();
         join

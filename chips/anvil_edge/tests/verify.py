@@ -17,6 +17,9 @@ build with/without PCH, only after an explicit filesystem-headroom preflight.
 --probe shell-execution-acceleration profiles compact execution and compares
 source-bound runtime transport sharing, scaling and equally warmed schedules.
 It does not authorize an aggregate or complete-table retry.
+--probe shell-full-capacity-feasibility measures the cold complete Qwen shell
+matrix within the existing patrol budget, retaining incomplete phase observations.
+It is a necessary subset, not an aggregate L1 feasibility certificate.
 """
 
 import argparse
@@ -141,6 +144,32 @@ def storage_snapshot(path):
     }
 
 
+def observe_phase_stdout(path, record, state, prefixes, elapsed):
+    """A missing live artifact is evidence loss, never a successful observation."""
+    try:
+        with path.open("rb") as stream:
+            stream.seek(state["offset"])
+            data = stream.read(1024 * 1024)
+            state["offset"] = stream.tell()
+    except (FileNotFoundError, PermissionError) as error:
+        record["evidence_error"] = {
+            "path": str(path.relative_to(ROOT)), "error": type(error).__name__,
+            "errno": error.errno,
+            "detail": "Live simulation stdout became unavailable; stop and settle "
+                      "without reconstructing the missing artifact.",
+        }
+        return
+    lines = (state["partial"] + data).split(b"\n")
+    state["partial"] = lines.pop()
+    for line in lines:
+        text = line.decode("utf-8", errors="strict")
+        if text.startswith(prefixes):
+            if len(record["stdout_observations"]) >= 10000:
+                raise VerificationFailure("Bounded phase observation limit exceeded")
+            record["stdout_observations"].append({
+                "observed_elapsed_s": elapsed, "line": text})
+
+
 def compiler_object_dir(argv, root, evidence_path):
     if Path(str(argv[0])).name != "verilator" or "--Mdir" not in argv:
         return None
@@ -211,6 +240,7 @@ class Evidence:
         self.compiler_pch = False
         self.compiler_profile = False
         self.compiler_lto = False
+        self.observe_stdout_prefixes = ()
         self.compiled_simulations = {}
         self.complete_table_producers = {}
         self._table_locks = {}
@@ -425,6 +455,21 @@ class Evidence:
             "tool_versions": self.record["tool_versions"],
         })
         start = time.monotonic()
+        observation_state = {"offset": 0, "partial": b""}
+        prefixes = self.observe_stdout_prefixes if (
+            str(argv[0]).endswith("/simulation")) else ()
+        if prefixes:
+            record["stdout_observations"] = []
+            record["stdout_observation_policy"] = (
+                "Parent monotonic elapsed time when a flushed phase line was read; "
+                "not exact event wall time. Nominal polling interval 0.25 seconds.")
+
+        def observe_stdout():
+            if not prefixes:
+                return
+            observe_phase_stdout(directory / "stdout.log", record, observation_state,
+                                 prefixes, time.monotonic() - start)
+
         interrupted = None
         with (directory / "stdout.log").open("xb") as stdout:
             with (directory / "stderr.log").open("xb") as stderr:
@@ -457,12 +502,15 @@ class Evidence:
                         while True:
                             if time.monotonic() >= next_storage_sample:
                                 sample_compiler_storage()
+                                observe_stdout()
                                 next_storage_sample = time.monotonic() + .25
                             pid, status, usage = os.wait4(process.pid, os.WNOHANG)
                             if pid:
                                 process.returncode = os.waitstatus_to_exitcode(status)
                                 break
-                            if time.monotonic() >= deadline or record.get("storage_guard_error"):
+                            if (time.monotonic() >= deadline or
+                                    record.get("storage_guard_error") or
+                                    record.get("evidence_error")):
                                 record["timed_out"] = time.monotonic() >= deadline
                                 os.killpg(process.pid, signal.SIGTERM)
                                 deadline = time.monotonic() + 10
@@ -511,10 +559,20 @@ class Evidence:
                     record["compiler_cleanup_error"] = f"{type(error).__name__}: {error}"
                 record["compiler_storage_observation"]["retained_object_allocated_bytes"] = (
                     allocated_tree_bytes(object_dir))
+        observe_stdout()
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
         record["storage_after"] = storage_snapshot(directory)
-        write_json(directory / "receipt.json", record)
+        try:
+            write_json(directory / "receipt.json", record)
+        except (FileNotFoundError, PermissionError) as error:
+            record["receipt_persistence_error"] = {
+                "path": self.relative(directory / "receipt.json"),
+                "error": type(error).__name__, "errno": error.errno,
+                "detail": "Child settled but its original evidence directory is "
+                          "unavailable. Preserve this failure in the parent record; "
+                          "do not recreate missing historical artifacts.",
+            }
         self.record["children"].append(record)
         if interrupted is not None:
             raise interrupted
@@ -524,6 +582,7 @@ class Evidence:
         if not allow_failure and (
             record["exit_code"] != 0 or record["timed_out"]
             or record.get("storage_guard_error")
+            or record.get("evidence_error") or record.get("receipt_persistence_error")
             or not record["child_settled"] or not record.get("process_group_settled", True)
         ):
             raise VerificationFailure(
@@ -782,6 +841,7 @@ class Evidence:
                                 allow_failure=True)
         record.update(simulation_receipt=result, status="failed")
         if (result["exit_code"] != 0 or result["timed_out"] or
+                result.get("evidence_error") or result.get("receipt_persistence_error") or
                 not result["child_settled"] or not result.get("process_group_settled", True)):
             receipt = str(Path(result["stdout"]).parent / "receipt.json")
             raise VerificationFailure(f"{name} failed; see {receipt}")
@@ -1283,6 +1343,8 @@ def main():
         "shell-driver-capacity",
         "shell-execution-cost",
         "shell-execution-acceleration",
+        "shell-full-capacity-feasibility",
+        "shell-feasibility-controls",
         "official-llama-discovery",
     ))
     parser.add_argument("--repair-of", action="append", default=[],
@@ -1298,7 +1360,8 @@ def main():
         parent_budget_s=2700 if args.probe in (
             "official-qwen-shell-general-bypass", "deepseek-shell-compact",
             "shell-driver-comparison", "shell-driver-scaling",
-            "shell-driver-capacity", "controller-build-repair") else None,
+            "shell-driver-capacity", "controller-build-repair",
+            "shell-full-capacity-feasibility", "shell-feasibility-controls") else None,
     )
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
     try:
@@ -1359,6 +1422,14 @@ def main():
             from cycle_driver import run_execution_acceleration
             run_execution_acceleration(evidence)
             reason = "Compiled shell acceleration and resource-safe scheduling measured; not aggregate L1 or acceptance"
+        elif args.probe == "shell-full-capacity-feasibility":
+            from cycle_driver import run_full_capacity_feasibility
+            run_full_capacity_feasibility(evidence)
+            reason = "Cold complete Qwen shell subset measured; aggregate L1 remains unmeasured and fail-closed"
+        elif args.probe == "shell-feasibility-controls":
+            from cycle_driver import run_feasibility_controls
+            run_feasibility_controls(evidence)
+            reason = "Public phase collection and evidence-loss controls passed; not full-capacity feasibility"
         elif args.probe == "runtime-head-controls":
             from runtime_reuse import head_controls
             head_controls(evidence)
