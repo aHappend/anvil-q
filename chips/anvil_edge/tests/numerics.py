@@ -13,6 +13,8 @@ from pathlib import Path
 import random
 import struct
 
+from runtime_inputs import hex_input
+
 
 def signed(value, width):
     value &= (1 << width) - 1
@@ -410,7 +412,8 @@ endmodule
 """
 
 
-def core_test(evidence, geometry, seed, *, fault=None, bench_transform=None):
+def core_test(evidence, geometry, seed, *, fault=None, bench_transform=None,
+              runtime_inputs=True):
     reference = Reference(geometry, seed)
     tokens = [1, 2, 0]
     for position, token in enumerate(tokens):
@@ -430,6 +433,7 @@ def core_test(evidence, geometry, seed, *, fault=None, bench_transform=None):
         "scope": "Independent synthetic integer reference; not official-model acceptance",
     }, indent=2) + "\n", encoding="ascii")
     vectors, lookup = [], []
+    memory_records, expected_words = [], []
     total_writes = 0
     fault_slot = None
     for index, (key, value) in enumerate(sorted(reference.initial.items())):
@@ -445,6 +449,9 @@ def core_test(evidence, geometry, seed, *, fault=None, bench_transform=None):
                        f"writable[{index}]={int(kind in (8, 9, 10))};")
         vectors.extend(f"expected[{total_writes+n}]=32'h{word:x};"
                        for n, word in enumerate(expected))
+        memory_records.append(value | (total_writes << 32) | (len(expected) << 64)
+                              | (int(kind in (8, 9, 10)) << 96))
+        expected_words.extend(expected)
         total_writes += len(expected)
     vectors.extend(f"expected_logits[{i*geometry.vocabulary+j}]=32'h{value & 0xFFFFFFFF:x};"
                    for i, frame in enumerate(reference.logits) for j, value in enumerate(frame))
@@ -490,8 +497,7 @@ end
                  error,logits,injected_responses);
         comparisons=comparisons+1;
 """ + bench[end:]
-        # Replace only the generated stimulus and terminal accounting, retaining
-        # the original per-write independent numeric and public protocol checks.
+        # Retain the successful prefix comparisons before the injected error.
         original_stimulus = values["STIMULUS"]
         assert original_stimulus in bench
         bench = bench.replace(original_stimulus, "token(1,0,1);")
@@ -504,6 +510,75 @@ end
              completions,requests,responses);
     comparisons=comparisons+1;
 """ + bench[end:]
+    if runtime_inputs:
+        # Array dimensions and typed-address lookup depend only on geometry.
+        # Tensor contents, fault selection and traffic are case-local inputs.
+        initialization = "\n".join((
+            hex_input(evidence, directory, "initial_records", memory_records, 97),
+            hex_input(evidence, directory, "expected", expected_words, 32),
+            hex_input(evidence, directory, "expected_logits",
+                      [value & 0xFFFFFFFF for frame in reference.logits for value in frame], 32),
+            hex_input(evidence, directory, "token_words", tokens, 32),
+            hex_input(evidence, directory, "fault_config",
+                      [int(bool(fault)), fault_slot or 0,
+                       int(bool(fault and fault.get("bus_error")))], 32),
+            """for (i=0;i<RECORDS;i=i+1) begin
+      memory[i]=initial_records[i][31:0]; first[i]=initial_records[i][63:32];
+      limit[i]=initial_records[i][95:64]; writable[i]=initial_records[i][96]; count[i]=0;
+    end""",
+        ))
+        # Start from the unmodified public scoreboard, making the error path a
+        # runtime choice rather than a different compiled program for each fault.
+        bench = CORE_BENCH
+        runtime_values = dict(values, VECTORS=initialization)
+        if bench_transform is None:
+            runtime_values["STIMULUS"] = (
+                "for (integer operation=0;operation<OPERATIONS;operation=operation+1) begin\n"
+                "      if (!fault_config[0] || operation==0)\n"
+                "        token(token_words[operation],operation,operation==0);\n"
+                "    end")
+        for name, value in runtime_values.items():
+            bench = bench.replace(f"@{name}@", str(value))
+        bench = bench.replace("  reg [11:0] kinds_seen=0;", """  reg [11:0] kinds_seen=0;
+  reg [96:0] initial_records[0:RECORDS-1];
+  reg [31:0] token_words[0:OPERATIONS-1],fault_config[0:2];
+  integer injected_responses=0;
+""")
+        response = "begin mem_rsp_valid<=1; mem_rsp_rdata=memory[pending_slot]; end"
+        # Preserve the response anchor used by independent head-reuse controls.
+        if bench_transform is None:
+            bench = bench.replace(response, """
+begin
+  mem_rsp_valid<=1; mem_rsp_rdata=memory[pending_slot];
+  mem_rsp_error=fault_config[0] && fault_config[2] && pending_slot==fault_config[1];
+  if (fault_config[0] && pending_slot==fault_config[1])
+    injected_responses=injected_responses+1;
+end
+""")
+        begin = bench.index("        if (error || logits!=(completions+1)*VOCAB")
+        end = bench.index("        completions=completions+1;", begin)
+        success = bench[begin:end]
+        bench = bench[:begin] + """
+        if (fault_config[0]) begin
+          if (error!==1 || logits!=0 || pending || completions!=0 ||
+              injected_responses!=1 || active_operation!=0)
+            $fatal(1,"CORE_EXPECTED_ERROR error=%b logits=%0d injected=%0d",
+                   error,logits,injected_responses);
+          comparisons=comparisons+1;
+        end else begin
+""" + success + "        end\n" + bench[end:]
+        begin = bench.index("    if (completions!=OPERATIONS")
+        end = bench.index('    $display("CORE_NUMERIC requests=', begin)
+        success = bench[begin:end]
+        bench = bench[:begin] + """
+    if (fault_config[0]) begin
+      if (completions!=1 || logits!=0 || requests!=responses || pending ||
+          error || done || token_ready!==1 || mem_req_valid)
+        $fatal(1,"CORE_ERROR_SETTLEMENT done=%0d requests=%0d responses=%0d",
+               completions,requests,responses);
+      comparisons=comparisons+1;
+    end else begin
+""" + success + "    end\n" + bench[end:]
     root = Path(__file__).resolve().parent.parent
     if bench_transform is not None:
         bench = bench_transform(bench)

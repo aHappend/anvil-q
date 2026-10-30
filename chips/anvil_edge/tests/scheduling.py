@@ -8,6 +8,54 @@ from pathlib import Path
 import shutil
 import sys
 import threading
+from contextlib import contextmanager
+
+
+# attempt-0131's retained case records measured 150,423,571 transient bytes
+# (largest mapper build) and 24,079,911 retained bytes (4096-byte tokenizer).
+# 256 MiB covers both plus >50% transient headroom; 64 MiB stays unreserved.
+COMPILER_DISK_BYTES = 256 << 20
+DISK_RESERVE_BYTES = 64 << 20
+
+
+class CompilerStorage:
+    """Reserve measured build space, rechecking free storage at each launch."""
+
+    def __init__(self, root):
+        self.root = root
+        self.condition = threading.Condition()
+        self.reserved = 0
+
+    @contextmanager
+    def claim(self, argv):
+        compiler = Path(str(argv[0])).name in ("verilator", "iverilog", "yosys")
+        # Version queries do not build anything.
+        compiler = compiler and not any(arg in ("--version", "-V") for arg in argv[1:])
+        if not compiler:
+            yield None
+            return
+        with self.condition:
+            while True:
+                free = shutil.disk_usage(self.root).free
+                needed = self.reserved + COMPILER_DISK_BYTES + DISK_RESERVE_BYTES
+                if free >= needed:
+                    self.reserved += COMPILER_DISK_BYTES
+                    lease = {"available_bytes": free, "reserved_bytes": COMPILER_DISK_BYTES,
+                             "total_reserved_bytes": self.reserved,
+                             "reserve_bytes": DISK_RESERVE_BYTES}
+                    break
+                if not self.reserved:
+                    raise OSError(
+                        f"Compiler storage: {free} free bytes, "
+                        f"{COMPILER_DISK_BYTES + DISK_RESERVE_BYTES} required; "
+                        "no active build can release space")
+                self.condition.wait(timeout=1)
+        try:
+            yield lease
+        finally:
+            with self.condition:
+                self.reserved -= COMPILER_DISK_BYTES
+                self.condition.notify_all()
 
 
 def resource_limits(root):
@@ -38,13 +86,19 @@ def resource_limits(root):
             break
         current = current.parent
     disk = shutil.disk_usage(root).free
-    workers = max(1, min(8, cpu // 3, available // (2 << 30), disk // (2 << 30)))
+    workers = max(1, min(8, cpu // 3, available // (2 << 30),
+                         max(0, disk - DISK_RESERVE_BYTES) // COMPILER_DISK_BYTES))
     return {
         "workers": workers, "cpu_capacity": cpu, "available_memory_bytes": available,
         "available_disk_bytes": disk, "cgroup_constraints": constraints,
-        "policy": "At most eight tool children; reserve three CPU slots and 2 GiB "
-                  "memory/disk per child. Verilator compilation uses -j 2. "
-                  "Nested case batches share the same child semaphore.",
+        "compiler_disk_bytes": COMPILER_DISK_BYTES,
+        "disk_reserve_bytes": DISK_RESERVE_BYTES,
+        "measured_transient_peak_bytes": 150423571,
+        "measured_retained_peak_bytes": 24079911,
+        "policy": "At most eight tool children; three CPU slots and 2 GiB memory "
+                  "per child. Measured compiler disk reservations are rechecked "
+                  "at launch and shared by nested batches; not a fixed 2 GiB disk guess. "
+                  "Verilator compilation uses -j 2.",
     }
 
 

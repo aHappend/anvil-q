@@ -6,6 +6,7 @@ import struct
 import unicodedata
 
 from protocol import bpe_reference
+from runtime_inputs import hex_input
 
 
 BENCH = r"""
@@ -174,7 +175,8 @@ def ranges_for(properties, classes=None):
 
 
 def run_text_case(evidence, name, seed, dut, memory, inputs, expected, *,
-                  error=0, bus_error=False, cycles=2000000, provenance=None):
+                  error=0, bus_error=False, cycles=2000000, provenance=None,
+                  runtime_geometry=None, runtime_config=None):
     declarations = ""
     lookup = ("case (address)\n" +
               "\n".join(f"64'h{a:x}: memory=32'h{v:08x};"
@@ -212,9 +214,66 @@ def run_text_case(evidence, name, seed, dut, memory, inputs, expected, *,
         "STIMULUS": "\n".join(f"item(32'h{v:x},{int(i == len(inputs)-1)});"
                               for i, v in enumerate(inputs)),
     }
+    if runtime_geometry is not None:
+        byte_capacity, token_capacity = runtime_geometry
+        directory = evidence.path / f"{name}-s{seed}-input"
+        directory.mkdir()
+        # A bucket bounds storage without compiling vocabulary words or address
+        # comparisons into C++. Binary search still rejects every absent address.
+        ordered = sorted(memory.items())
+        table_capacity = 1 << (max(1, len(ordered)) - 1).bit_length()
+        if len(inputs) > byte_capacity + 1 or len(expected) > token_capacity:
+            raise ValueError("Runtime tokenizer vectors exceed their declared geometry")
+        loads = [
+            hex_input(evidence, directory, "table_records",
+                      [(address << 32) | value for address, value in ordered]
+                      + [0] * (table_capacity - len(ordered)), 96),
+            hex_input(evidence, directory, "input_words",
+                      inputs + [0] * (byte_capacity + 1 - len(inputs)), 32),
+            hex_input(evidence, directory, "expected",
+                      expected + [0] * (token_capacity - len(expected)), 64),
+            hex_input(evidence, directory, "runtime_control",
+                      [len(inputs), len(expected), error, int(bus_error), cycles, len(ordered)], 64),
+            hex_input(evidence, directory, "runtime_config", runtime_config, 1024),
+            "runtime_loaded=1;",
+        ]
+        values.update(
+            OUTPUTS="runtime_control[1]", INPUTS="runtime_control[0]",
+            ARRAY_LAST=str(token_capacity - 1), ERROR_CODE="runtime_control[2]",
+            BUS_ERROR="runtime_control[3]", CYCLES="runtime_control[4]",
+            MEMORY_DECLARATIONS=f"""
+  reg [95:0] table_records[0:{table_capacity - 1}];
+  reg [31:0] input_words[0:{byte_capacity}];
+  reg [63:0] runtime_control[0:5];
+  reg [1023:0] runtime_config[0:2];
+  reg runtime_loaded=0;
+""",
+            MEMORY_LOOKUP=r"""
+      integer low,high,middle,found;
+      begin
+        low=0; high=runtime_control[5]-1; found=-1;
+        if (address[1:0]!=0) $fatal(1,"TEXT_UNALIGNED_READ");
+        while (low<=high) begin
+          middle=low+((high-low)>>1);
+          if (table_records[middle][95:32]==address) begin found=middle; low=high+1; end
+          else if (table_records[middle][95:32]<address) low=middle+1;
+          else high=middle-1;
+        end
+        if (found<0) $fatal(1,"TEXT_UNMAPPED_READ address=%h",address);
+        memory=table_records[found][31:0];
+      end
+""",
+            VECTORS="\n".join(loads),
+            STIMULUS="""for (integer input_index=0;input_index<runtime_control[0];
+         input_index=input_index+1)
+      item(input_words[input_index],input_index==runtime_control[0]-1);""",
+        )
     bench = BENCH
     for key, value in values.items():
         bench = bench.replace(f"@{key}@", value)
+    if runtime_geometry is not None:
+        bench = bench.replace("    repeat (runtime_control[4])",
+                              "    wait (runtime_loaded===1'b1);\n    repeat (runtime_control[4])")
     root = Path(__file__).resolve().parent.parent
     sources = ["rtl/anvil_edge_numeric_pkg.sv",
                *[str(path.relative_to(root)) for path in sorted((root / "rtl").glob("*.sv"))
@@ -227,7 +286,7 @@ def run_text_case(evidence, name, seed, dut, memory, inputs, expected, *,
     }
     (evidence.path / f"{name}-s{seed}-reference.json").write_text(
         json.dumps(fixture, indent=2) + "\n", encoding="ascii")
-    evidence.simulate(f"{name}-s{seed}", bench, sources, None)
+    return evidence.simulate(f"{name}-s{seed}", bench, sources, None)
 
 
 def normalization_fixture(text):
@@ -601,7 +660,8 @@ def tokenizer_fixture(text, *, mode=0, policy=0, bos=False, special_options=(),
 
 def tokenizer_test(evidence, seed, name, text, *, mode=0, policy=0, bos=False,
                    special_options=(), dfa_kind="longest", family=1,
-                   byte_capacity=64, token_capacity=64, error=0, raw=None):
+                   byte_capacity=64, token_capacity=64, error=0, raw=None,
+                   runtime_inputs=True):
     memory, bases, counts, metadata, specials, merges = tokenizer_fixture(
         text, mode=mode, policy=policy, bos=bos, special_options=special_options,
         dfa_kind=dfa_kind, family=family)
@@ -625,8 +685,14 @@ def tokenizer_test(evidence, seed, name, text, *, mode=0, policy=0, bos=False,
     .tbl_rsp_ready(tbl_rsp_ready),.tbl_rsp_data(tbl_rsp_data),.tbl_rsp_error(tbl_rsp_error));
 """
     inputs = list(text.encode() if raw is None else raw)
-    run_text_case(evidence, "tokenizer-" + name, seed, dut, memory, inputs, expected,
+    if runtime_inputs:
+        dut = dut.replace(f"1024'h{packed_bases:x}", "runtime_config[0]").replace(
+            f"512'h{packed_counts:x}", "runtime_config[1][511:0]").replace(
+            f"1024'h{packed_metadata:x}", "runtime_config[2]")
+    return run_text_case(evidence, "tokenizer-" + name, seed, dut, memory, inputs, expected,
                   error=error, cycles=max(2000000, len(inputs) * len(inputs) * 100),
+                  runtime_geometry=(byte_capacity, token_capacity) if runtime_inputs else None,
+                  runtime_config=[packed_bases, packed_counts, packed_metadata],
                   provenance={"metadata": metadata, "specials": specials,
                               "unicodedata_version": unicodedata.unidata_version,
                               "dfa": dfa_profile(dfa_kind), "merges": [

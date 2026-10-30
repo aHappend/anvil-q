@@ -55,7 +55,9 @@ from memory import run_memory
 from mapper_cache import run_mapper_cache
 from head_row_reuse import run_head_row_reuse, run_head_row_shell
 from text import run_normalization, run_dfa, run_tokenizer, run_tokenizer_capacity
-from scheduling import resource_limits, scheduling_probe, scheduling_controls, cache_recovery
+from scheduling import (
+    CompilerStorage, resource_limits, scheduling_probe, scheduling_controls, cache_recovery,
+)
 from interactions import run_top_interactions, run_top_token_capacity, run_drain_prompts
 from official import (
     run_official_discovery, run_official_intake, run_official_assets,
@@ -156,6 +158,7 @@ class Evidence:
         self._parent_budget_s = parent_budget_s
         self._limits = resource_limits(ROOT)
         self._slots = threading.BoundedSemaphore(self._limits["workers"])
+        self._compiler_storage = CompilerStorage(ROOT)
         self.record = {
             "schema": 1,
             "kind": "verifier-preparation" if preparation else "verification",
@@ -287,10 +290,11 @@ class Evidence:
         """Every child has immutable raw logs and a separate final receipt."""
         queued = time.monotonic()
         with self._slots:
-            return self._child(argv, name, timeout, allow_failure, cwd,
-                               time.monotonic() - queued)
+            with self._compiler_storage.claim(argv) as lease:
+                return self._child(argv, name, timeout, allow_failure, cwd,
+                                   time.monotonic() - queued, lease)
 
-    def _child(self, argv, name, timeout, allow_failure, cwd, queue_seconds):
+    def _child(self, argv, name, timeout, allow_failure, cwd, queue_seconds, storage_lease=None):
         requested_timeout = timeout
         if self._parent_budget_s is not None:
             # Reserve settlement time inside the admitted aggregate patrol budget.
@@ -314,6 +318,7 @@ class Evidence:
             "stderr": self.relative(directory / "stderr.log"),
             "timed_out": False, "child_settled": False,
             "queue_duration_s": queue_seconds,
+            "compiler_storage_reservation": storage_lease,
         }
         record["storage_before"] = storage_snapshot(directory)
         write_json(directory / "initial.json", {
@@ -1064,6 +1069,7 @@ def main():
         "retained-controller-audit", "retained-provenance-audit",
         "settled-case-records",
         "compile-cache-recovery",
+        "runtime-input-reuse",
         "boot-performance", "official-stage-performance", "performance-controls",
         "uart", "detokenizer", "boot",
         "config", "mapper", "top", "synthesis", "bpe", "mutations", "clean-focus",
@@ -1198,6 +1204,10 @@ def main():
             run_controller(evidence)
         elif args.probe == "compile-cache-recovery":
             cache_recovery(evidence)
+        elif args.probe == "runtime-input-reuse":
+            from runtime_reuse import runtime_reuse
+            runtime_reuse(evidence)
+            reason = "Runtime-input equivalence, compiled reuse and bounded scheduling measured; not L1 acceptance"
         elif args.probe == "boot-performance":
             from performance import boot_performance
             boot_performance(evidence, args.repair_of)

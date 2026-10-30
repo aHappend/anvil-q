@@ -409,11 +409,6 @@ module bench;
                     64'd32*expected_tokens[operation_index]+4*embedding_index)
                   $fatal(1,"QWEN_SHELL_PREFILL_FEEDBACK frame=%0d op=%0d token=%0d address=%h",
                          frame,operation_index,expected_tokens[operation_index],ddr_req_addr);
-                if (embedding_index==0) begin
-                  $display("QWEN_SHELL_OPERATION frame=%0d position=%0d token=%0d cycles=%0d",
-                           frame,operation_index,expected_tokens[operation_index],cycles);
-                  $fflush();
-                end
               end else if (ddr_req_addr!==segment_base[2]+4*(embedding_index-8))
                 $fatal(1,"QWEN_SHELL_HEAD_FRAME_ORDER");
               embedding_reads=embedding_reads+1;
