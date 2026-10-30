@@ -1,4 +1,9 @@
-"""D2 matched eight/64-active-lane arithmetic, separate from parent service."""
+"""D2 matched eight/64-active-lane arithmetic, separate from parent service.
+
+The tensor-only build uses one C++ translation unit to avoid large optional
+precompiled headers. Workload, assertions, optimization and cycle counts are
+unchanged; larger integration builds retain their parallel compilation policy.
+"""
 
 import hashlib
 
@@ -140,7 +145,7 @@ endmodule
         "arithmetic-default",
         bench.replace("SEED_VALUE", str(seed)).replace("CASES_VALUE", "\n".join(cases)),
         ["anvil_q1_ht_mac_lane.sv", "anvil_q1_ht_tensor_array.sv"],
-        simulator="verilator", timeout=14400)
+        simulator="verilator", timeout=14400, unified_build=True)
     rows = measurement_records(transcript, "MEASURED_ARITHMETIC")
     if len(rows) != 14:
         raise AssertionError("matched arithmetic benchmark lacks all projection/lane cases")

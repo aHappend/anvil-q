@@ -8,6 +8,9 @@ Receipt-write failures emit bounded in-memory progress to stderr for independent
 runtime retention; that diagnostic never replaces missing source/log evidence.
 Nested matrix cases retain their configuration and child receipt in that
 diagnostic, since the parent's last command can precede the active child case.
+The mandatory campaign includes both parent-service projection measurements and
+the separate matched eight/64-active-lane arithmetic comparison. Cost diagnosis
+uses the same stage inventory; neither measurement replaces the other.
 """
 
 import argparse
@@ -31,6 +34,16 @@ ROOT = Path(__file__).resolve().parents[1]
 SELECTORS = ("rtl/*.sv", "tests/*.py", "design/SPEC.md", "design/ARCHITECTURE.md",
              "design/anvil_q1_ht.qsf", "design/anvil_q1_ht.sdc", "anvil_q1_reference/rtl/*.sv")
 NONPORTABLE_PATH = re.compile(r"(?:^|[\s\"'=(:,])/(?![/*])[A-Za-z0-9_.-]+/|[A-Za-z]:\\")
+MANDATORY_CAMPAIGN = (
+    "fixture-integrity", "checkpoint-repack", "checkpoint-prompts", "checkpoint-reference",
+    "parameters", "dequant", "tensor", "math",
+    "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults",
+    "command-checks", "descriptor-checks", "address-checks", "scalar-checks",
+    "upload-conflicts", "reset-integration",
+    "orphan-fault", "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
+    "synthesis", "kernel-default", "projection-default", "arithmetic-default", "bf16-default",
+    "vocabulary-default", "layer-awq", "layer-bf16", "attention-context", "attention-default",
+)
 
 
 def utc():
@@ -210,7 +223,7 @@ class Evidence:
 
     def simulate(self, name, bench, sources=None, rtl_root=None, timeout=3600,
                  simulator=None, defines=(), cxx_optimization="-O3", flatten=False,
-                 runtime_args=(), build_pool=None):
+                 runtime_args=(), build_pool=None, unified_build=False):
         simulator = simulator or getattr(self, "default_simulator", "iverilog")
         if cxx_optimization not in ("-Os", "-O3"):
             raise ValueError("unsupported C++ optimization")
@@ -238,6 +251,7 @@ class Evidence:
             build = folder / "compiled"
             options = ["--binary", "--timing", "--assert", "-Wno-fatal",
                        "-j", "2", "-CFLAGS", cxx_optimization,
+                       *(["-MAKEFLAGS", "VM_PARALLEL_BUILDS=0"] if unified_build else []),
                        *(["-CFLAGS", "-pg", "-LDFLAGS", "-pg"]
                          if getattr(self, "native_profile", False) else []),
                        *(["--flatten"] if flatten else []),
@@ -530,19 +544,7 @@ def main():
                             "Fresh-directory numerical, DMA/KV and synthesis subset only; "
                             "mandatory L1 and native acceptance remain separate.")
             return 0
-        campaign = (
-            "fixture-integrity", "checkpoint-repack", "checkpoint-prompts", "checkpoint-reference",
-            "parameters", "dequant", "tensor", "math",
-            "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults",
-            "command-checks", "descriptor-checks", "address-checks", "scalar-checks",
-            "upload-conflicts", "reset-integration",
-            "orphan-fault", "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
-            "synthesis", "kernel-default", "projection-default", "bf16-default",
-            "vocabulary-default", "layer-awq", "layer-bf16",
-            "attention-context",
-            "attention-default",
-        )
-        ledger = [{"probe": name, "outcome": "not_run"} for name in campaign]
+        ledger = [{"probe": name, "outcome": "not_run"} for name in MANDATORY_CAMPAIGN]
         evidence.record["mandatory_campaign"] = ledger
         evidence.record["unclosed_L1_requirements"] = [
             "complete observed directed-coverage ledger, including reset during active traffic",

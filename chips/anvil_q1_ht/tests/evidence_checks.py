@@ -27,6 +27,17 @@ import campaign_costs
 import reference_costs
 
 
+class MandatoryCampaignChecks(unittest.TestCase):
+    def test_matched_arithmetic_is_required_separately_from_parent_service(self):
+        for stage in ("projection-default", "arithmetic-default", "bf16-default"):
+            self.assertEqual(verify.MANDATORY_CAMPAIGN.count(stage), 1)
+
+    def test_cost_inventory_accounts_for_every_mandatory_stage(self):
+        self.assertEqual(campaign_costs.CAMPAIGN, verify.MANDATORY_CAMPAIGN)
+        self.assertEqual(len(set(verify.MANDATORY_CAMPAIGN)),
+                         len(verify.MANDATORY_CAMPAIGN))
+
+
 class OriginalReferencePrerequisiteChecks(unittest.TestCase):
     def setUp(self):
         self.root = SCRATCH / self._testMethodName

@@ -6,6 +6,8 @@ executes all tokens in both storage modes with independently generated inputs.
 Historical costs are labeled diagnostic observations, never reused test results.
 Historical comparison receipts are captured before simulation and hash-checked
 afterward; this does not establish retention of their original locations.
+Stage-cost accounting follows verify.MANDATORY_CAMPAIGN, including the separately
+measured packed-weight arithmetic baseline, without reusing historical passes.
 """
 
 import argparse
@@ -19,16 +21,9 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from experiments import integration_matrix
 from reference import MATRIX
-from verify import Evidence, ROOT, file_sha256
+from verify import Evidence, MANDATORY_CAMPAIGN, ROOT, file_sha256
 
-CAMPAIGN = (
-    "fixture-integrity", "checkpoint-repack", "parameters", "dequant", "tensor", "math",
-    "dma", "kv", "csr-upload", "integration-matrix", "faults", "numerical-faults", "orphan-fault",
-    "abort-states", "compatibility-matrix", "sensitivity", "synthesis-control",
-    "synthesis", "kernel-default", "projection-default", "bf16-default",
-    "vocabulary-default",
-    "layer-awq", "layer-bf16", "attention-context", "attention-default",
-)
+CAMPAIGN = MANDATORY_CAMPAIGN
 
 
 def historical_costs(evidence):

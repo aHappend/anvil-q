@@ -129,6 +129,20 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertEqual(len(cleanup["removed"]), 3)
         self.assertTrue((ROOT / cleanup["build"] / "Vtb.cpp").is_file())
 
+    def test_unified_build_is_explicit_and_preserves_simulation_options(self):
+        trial = self.evidence()
+        with patch("verify.shutil.which", return_value="verilator"):
+            trial.simulate("unified", "module tb; endmodule", sources=[],
+                           simulator="verilator", unified_build=True)
+        _, _, compile_command, simulation = trial.record["commands"]
+        argv = compile_command["argv"]
+        self.assertEqual(argv[argv.index("-MAKEFLAGS") + 1], "VM_PARALLEL_BUILDS=0")
+        self.assertIn("--assert", argv)
+        self.assertEqual(argv[argv.index("-CFLAGS") + 1], "-O3")
+        self.assertGreaterEqual(simulation["timeout"], 3600)
+        build, = trial.record["simulation_builds"]
+        self.assertIn("VM_PARALLEL_BUILDS=0", build["identity"]["options"])
+
     def test_native_profile_keeps_assertions_and_requires_completed_samples(self):
         trial = self.evidence()
         trial.native_profile = True
