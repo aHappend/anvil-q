@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,16 @@ from benchmark import artifact_path, load_json, require, sha
 FORMAT = "anvil-executable-replay-v1"
 ROLES = ("observation", "repeat", "reference")
 _HASHES = {}
+_PROGRESS_LOCK = threading.Lock()
+_PROGRESS_LINE = re.compile(
+    rb"PROGRESS cycle=[0-9]{1,20} requests=[0-9]{1,20} responses=[0-9]{1,20}"
+    rb" position=[0-9]{1,20} layers=[0-9]{1,20} logits=[0-9]{1,20}\n")
+_WINDOW_LINE = re.compile(rb"WINDOW_READY [0-9]{1,20}\n")
+
+
+def forward_progress(event):
+    with _PROGRESS_LOCK:
+        print(json.dumps(event, separators=(",", ":")), flush=True)
 
 
 def bound_hash(path):
@@ -232,7 +243,7 @@ class Process:
     """One live producer, paused after a complete public-pin observation window."""
 
     def __init__(self, root, directory, spec, timeout, *, replay_of=None,
-                 allow_fixture=False):
+                 allow_fixture=False, progress=forward_progress):
         self.root, self.directory, self.spec = root, directory, spec
         require(timeout >= 3600, "replay process allowance below 3600 seconds")
         validate_spec(root, spec, allow_fixture=allow_fixture)
@@ -257,6 +268,8 @@ class Process:
         self.record["pid"] = self.process.pid
         self.lines = queue.Queue(maxsize=128)
         self.reader_stop = threading.Event()
+        self.progress = progress
+        self.last_progress = float("-inf")
         self.reader = threading.Thread(target=self._read, daemon=True)
         self.reader.start()
         self.position = -1
@@ -269,6 +282,9 @@ class Process:
             for raw in iter(self.process.stdout.readline, b""):
                 self.stdout.write(raw)
                 self.stdout.flush()
+                # Read here, not in next(): other producers can be waiting on a
+                # slow observation window, including a reference awaiting ACK.
+                self._progress(raw)
                 while not self.reader_stop.is_set():
                     try:
                         self.lines.put(raw, timeout=.1)
@@ -283,6 +299,23 @@ class Process:
                     break
                 except queue.Full:
                     continue
+
+    def _progress(self, raw):
+        if _WINDOW_LINE.fullmatch(raw):
+            event = "producer_window_ready"
+        elif _PROGRESS_LINE.fullmatch(raw):
+            stamp = time.monotonic()
+            if stamp - self.last_progress < 1:
+                return
+            self.last_progress = stamp
+            event = "producer_progress"
+        else:
+            return
+        self.progress(dict(event=event, role=self.spec["role"],
+                               execution_id=self.record["execution_id"],
+                               case=self.spec["case"], mode=self.spec["mode"],
+                               workload=self.spec["workload"],
+                               message=raw.decode("ascii").rstrip("\n")))
 
     def line(self):
         remaining = self.deadline - time.monotonic()

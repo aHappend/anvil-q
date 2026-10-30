@@ -37,9 +37,9 @@
       "receipts": []
     },
     "check:prerequisites": {
-      "attempt_id": 751,
-      "duration_s": 10.662522126920521,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-prerequisites-nz_atpof/receipt.json\"}\n",
+      "attempt_id": 761,
+      "duration_s": 13.754029177129269,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-prerequisites-tth1a0p6/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },

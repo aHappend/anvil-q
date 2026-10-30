@@ -7,10 +7,12 @@ import gzip
 import json
 import math
 from pathlib import Path
+import queue
 import shutil
 import struct
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from unittest.mock import patch
 import uuid
@@ -19,7 +21,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark import Validator, load_json, require, sha
 from streaming_production import compare_window
-from streaming_replay import (Process, Resolver, data_bindings, item, now, production_bindings,
+from streaming_replay import (Process, Resolver, data_bindings, forward_progress, item, now, production_bindings,
                               specification, validate_manifest, validate_spec,
                               vector_descriptor, write_new)
 from verify import Evidence, ROOT
@@ -30,6 +32,15 @@ def worker(args):
     tokens = load_json(ROOT / args.tokens)
     replaying = directory.parent.name.startswith("replay-")
     for position, token in enumerate(tokens):
+        if args.defect in ("progress-gated", "failed-child", "failed-exit", "ordered-progress"):
+            print(f"PROGRESS cycle={(position+1)*10000000} requests={position+1}"
+                  f" responses={position+1} position={position} layers=0 logits=0", flush=True)
+        if args.defect == "progress-gated" and position == 0:
+            require(sys.stdin.readline() == "CONTINUE\n", "fixture progress gate missing")
+        if args.defect == "failed-child":
+            (directory / "failed.partial").write_bytes(b"retain failed producer bytes")
+            print("injected fixture child failure", file=sys.stderr, flush=True)
+            return 7
         if replaying and args.defect == "missing-window" and position == 1:
             return 0
         window = directory / f"position-{position}"
@@ -106,14 +117,22 @@ def worker(args):
             elif args.defect == "truncated":
                 with (window / "logits.f32").open("r+b") as stream:
                     stream.truncate(151936*4 - 1)
-        emitted_position = 2 if replaying and position == 1 and args.defect == "reordered" else position
+        emitted_position = (position + 1 if args.defect == "ordered-progress" else
+                            2 if replaying and position == 1 and args.defect == "reordered"
+                            else position)
         print(f"WINDOW_READY {emitted_position}", flush=True)
         require(sys.stdin.readline() == f"ACK {position}\n", "fixture ACK missing")
+        if args.defect in ("progress-gated", "awaiting-ack", "failed-exit"):
+            write_new(directory / f"ack-{position}.json", dict(position=position))
+    if args.defect == "failed-exit":
+        (directory / "failed.partial").write_bytes(b"retain failed producer exit")
+        print("injected fixture failed exit", file=sys.stderr, flush=True)
+        return 7
     write_new(directory / "summary.json", dict(positions_completed=len(tokens), fixture=True))
     return 0
 
 
-def origin(ev, executable, tokens, mode, role, defect="pristine"):
+def origin(ev, executable, tokens, mode, role, defect="pristine", *, progress=forward_progress):
     entry = item(ROOT, executable)
     token_entry = item(ROOT, tokens)
     argv = ["python3", "tests/streaming_replay_checks.py", "--worker",
@@ -125,7 +144,152 @@ def origin(ev, executable, tokens, mode, role, defect="pristine"):
                                  token_entry["path"]: token_entry["sha256"]},
                          tool_names=("python3", "vvp"), fixture=True)
     return Process(ROOT, ev.path / f"{mode}-{role}-{defect}-{uuid.uuid4().hex}",
-                   spec, 3600, allow_fixture=True)
+                   spec, 3600, allow_fixture=True, progress=progress)
+
+
+def progress_checks(ev, executable, tokens):
+    events = queue.Queue()
+    captured = []
+
+    def observe(event):
+        forward_progress(event)
+        events.put(event)
+
+    processes = []
+    try:
+        for role in ("observation", "repeat", "reference"):
+            processes.append(origin(
+                ev, executable, tokens, "bf16", role,
+                "awaiting-ack" if role == "reference" else "progress-gated", progress=observe))
+        actual, repeated, reference = processes
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            waiting = executor.submit(actual.next)
+            try:
+                pending = {process.record["execution_id"]: process for process in processes}
+                while pending:
+                    event = events.get(timeout=3600)
+                    captured.append(event)
+                    process = pending.pop(event["execution_id"])
+                    require(event == dict(
+                        event="producer_window_ready" if process is reference else "producer_progress",
+                        role=process.spec["role"], execution_id=process.record["execution_id"],
+                        case=process.spec["case"], mode="bf16", workload="teacher",
+                        message="WINDOW_READY 0" if process is reference else
+                        "PROGRESS cycle=10000000 requests=1 responses=1 position=0 layers=0 logits=0"),
+                        "producer progress identity/message differs")
+                require(not waiting.done() and actual.current is None and
+                        all(process.process.poll() is None for process in processes) and
+                        all(not list(process.output.glob("ack-*.json")) for process in processes) and
+                        all(not (process.output / "position-0").exists()
+                            for process in (actual, repeated)),
+                        "progress forwarding completed or acknowledged an unfinished window")
+                ev.assertion("genuine_progress_visible_before_window_while_next_waits", True,
+                             roles=[event["role"] for event in captured],
+                             execution_ids=[event["execution_id"] for event in captured])
+                require(reference.current is None and reference.position == -1 and
+                        (reference.output / "position-0/window.json").is_file(),
+                        "reference readiness was consumed or suppressed behind observation")
+                reference.next()
+                require(reference.current is not None and
+                        not (reference.output / "ack-0.json").exists() and
+                        reference.process.poll() is None,
+                        "reference window did not wait for comparison/ACK")
+                ev.assertion("reference_window_reported_without_premature_ack", True,
+                             execution_id=reference.record["execution_id"])
+                for process in (actual, repeated):
+                    process.process.stdin.write(b"CONTINUE\n")
+                    process.process.stdin.flush()
+                waiting.result(timeout=3600)
+                repeated.next()
+                for position in range(3):
+                    if position:
+                        for process in processes:
+                            process.next()
+                    require(all(process.position == position for process in processes),
+                            "progress changed ordered window positions")
+                    metrics = compare_window(ROOT, ev, *processes, "bf16",
+                                             f"progress-protocol/{position}")
+                    require(len(metrics) == 26, "progress fixture comparisons missing")
+                    for process in processes:
+                        process.release()
+                for process in processes:
+                    process.finish()
+                    require(not any(process.output.glob("position-*")) and
+                            [load_json(process.output / f"ack-{position}.json")["position"]
+                             for position in range(3)] == [0, 1, 2],
+                            "verified window disposal or ordered ACKs changed")
+                    raw = (process.directory / "stdout.txt").read_bytes()
+                    require(all(f"WINDOW_READY {position}\n".encode() in raw
+                                for position in range(3)) and
+                            (process is reference or b"PROGRESS cycle=10000000 " in raw),
+                            "forwarding lost raw producer output")
+                ev.assertion("progress_preserves_three_ordered_compared_released_windows", True,
+                             positions=3, producers=3, numerical_comparisons=78,
+                             full_model_execution=False)
+            finally:
+                # Settle a gated fixture even when an assertion fails.
+                for process in processes:
+                    if not process.finished:
+                        process.abort()
+    finally:
+        for process in processes:
+            if not process.finished:
+                process.abort()
+        while not events.empty():
+            captured.append(events.get_nowait())
+        write_new(ev.path / "progress-events.json", captured)
+
+    filtered = []
+    probe = SimpleNamespace(spec=actual.spec, record=actual.record,
+                            last_progress=float("-inf"), progress=filtered.append)
+    raw = b"PROGRESS cycle=10000000 requests=1 responses=1 position=0 layers=0 logits=0\n"
+    with patch("streaming_replay.time.monotonic", side_effect=[0., .5, 1.]):
+        for _ in range(3):
+            Process._progress(probe, raw)
+    for line in (b"unrelated log\n", b"PROGRESS unparsed\n",
+                 b"PROGRESS cycle=" + b"1"*1000 + b"\n", b"WINDOW_READY malformed\n"):
+        Process._progress(probe, line)
+    Process._progress(probe, b"WINDOW_READY 1\n")
+    require(len(filtered) == 3 and
+            [entry["event"] for entry in filtered] ==
+            ["producer_progress", "producer_progress", "producer_window_ready"],
+            "progress output is not bounded/filtered or suppressed window readiness")
+    ev.assertion("progress_rate_and_message_bounds_without_keepalives", True,
+                 progress_per_second=1, forwarded=3, malformed_or_unrelated=4,
+                 scope="synthetic filtering only; no live progress fabricated")
+
+    for defect, diagnostic in (
+        ("failed-child", "producer ended before complete ordered coverage"),
+        ("failed-exit", "replay producing process failed"),
+        ("ordered-progress", "incomplete/reordered replay coverage"),
+    ):
+        process = origin(ev, executable, tokens, "bf16", "observation", defect)
+        try:
+            def operation():
+                for _ in range(3):
+                    process.next()
+                    process.release()
+                process.finish()
+            rejection(ev, "progress-" + defect, operation, diagnostic)
+            if defect.startswith("failed-"):
+                process.process.wait(timeout=3600)
+        finally:
+            if not process.finished:
+                process.abort()
+        record = load_json(process.directory / "process.json")
+        require(record["exit_code"] == process.process.returncode and
+                not record["timed_out"], "failed producer exit not retained")
+        if defect.startswith("failed-"):
+            require(record["exit_code"] == 7 and
+                    (process.output / "failed.partial").is_file() and
+                    b"injected fixture" in (process.directory / "stderr.txt").read_bytes(),
+                    "failed child status/raw bytes lost")
+        else:
+            require((process.output / "position-0/logits.f32").is_file() and
+                    not process.windows, "unordered failed window was acknowledged/disposed")
+        rejection(ev, "seal-progress-" + defect, process.seal, "cannot seal a failed producer")
+        ev.assertion("progress_failure_retention_" + defect, True,
+                     execution=item(ROOT, process.directory / "process.json"))
 
 
 def collect_origins(ev, executable, tokens, mode):
@@ -344,6 +508,13 @@ def main():
     ev = Evidence("streaming-replay")
     passed = False
     try:
+        progress_failure = ROOT / "evidence/preparation/verifier-production-simulation-ogwn3_h7/receipt.json"
+        ev.receipt["progress_repair_diagnosis"] = dict(
+            attempt=758, receipt_path=str(progress_failure.relative_to(ROOT)),
+            receipt_present=progress_failure.is_file(),
+            scope="producer observability only; no production restart or throughput qualification")
+        if progress_failure.is_file():
+            ev.receipt["progress_repair_diagnosis"]["receipt"] = item(ROOT, progress_failure)
         attempt701 = ROOT / "evidence/preparation/verifier-production-simulation-boqrk5kr/receipt.json"
         if attempt701.is_file():
             ev.receipt["repair_of"] = item(ROOT, attempt701)
@@ -367,6 +538,7 @@ def main():
             "tests/leaf_tb.sv"], timeout=3600), "compact real-RTL build failed")
         tokens = ev.path / "fixture-tokens.json"
         write_new(tokens, [17, 53, 89])
+        progress_checks(ev, executable, tokens)
         bindings = None
         for mode in ("bf16", "fp16"):
             processes, manifests, expected = collect_origins(ev, executable, tokens, mode)

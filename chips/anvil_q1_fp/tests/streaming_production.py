@@ -6,7 +6,7 @@ from pathlib import Path
 import uuid
 
 from benchmark import Validator, greedy_stop, load_json, require
-from streaming_replay import (Process, item, production_bindings, specification,
+from streaming_replay import (Process, forward_progress, item, production_bindings, specification,
                               vector_descriptor, write_new)
 
 
@@ -152,7 +152,8 @@ def collect(ev, args, executable, model, suite, config, selected):
                         processes.append(Process(root, directory / (mode + "-" + workload +
                                                                    "-" + recipe["role"] +
                                                                    "-" + uuid.uuid4().hex),
-                                                 recipe, args.timeout))
+                                                 recipe, args.timeout,
+                                                 progress=forward_progress))
                     actual, repeated = processes[:2]
                     reference = processes[2] if workload == "teacher" else None
                     generated = []
