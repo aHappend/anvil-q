@@ -32,6 +32,7 @@ import errno
 import hashlib
 import json
 import os
+import re
 import signal
 from pathlib import Path
 import shutil
@@ -514,8 +515,12 @@ class Run:
         required_tool = {"icarus-startup": "iverilog", "verilator-startup": "verilator"}
         if build_class in required_tool and tool != required_tool[build_class]:
             raise ValueError(build_class + " reservation requires " + required_tool[build_class])
-        if tool == "verilator" and "-j" not in argv:
-            argv[1:1] = ["-j", str(self.resources["build_jobs"])]
+        if tool == "verilator" and not any(
+                arg in ("-j", "--build-jobs") or
+                re.fullmatch(r"-j\d+", str(arg)) or
+                str(arg).startswith("--build-jobs=") for arg in argv[1:]):
+            jobs = 1 if build_class == "verilator-startup" else self.resources["build_jobs"]
+            argv[1:1] = ["-j", str(jobs)]
         output_flag = "-o"
         binary = Path(argv[argv.index(output_flag) + 1])
         if tool == "verilator":

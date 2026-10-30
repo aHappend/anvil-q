@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 import threading
+import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -36,6 +37,88 @@ def assert_released(run, slots=2):
     assert not run.compiler_slots.acquire(blocking=False)
     for _ in range(slots):
         run.compiler_slots.release()
+
+
+def compiler_job_sensitivity():
+    """Synthetic compiler/capacity fixtures; no DUT or tool success claims."""
+    commands = []
+    with tempfile.TemporaryDirectory(prefix="compiler-jobs-", dir=ROOT / "evidence/preparation") as tmp:
+        run = admission_fixture()
+        run.path = Path(tmp)
+        run.resources = {"build_jobs": 2}
+        run.tool_versions = {"verilator": {"available": True, "fixture": True}}
+        run.hashes = {"fixture-source": "original"}
+        run.build_locks, run.builds, run.build_reuses = {}, {}, []
+        source = run.path / "fixture.sv"
+        source.write_text("synthetic original input\n")
+        status = 0
+
+        def compiler(argv, **kwargs):
+            commands.append(list(argv))
+            obj = ROOT / argv[argv.index("--Mdir") + 1]
+            binary = obj / argv[argv.index("-o") + 1]
+            binary.parent.mkdir(parents=True, exist_ok=True)
+            binary.write_text("synthetic compiler output\n")
+            record = {"exit_code": status, "stdout": run.rel(obj / "synthetic-stdout.txt")}
+            if status not in kwargs["expected"]:
+                raise AssertionError(f"tool exit {status}: synthetic compiler fixture")
+            return "synthetic compiler fixture", record
+
+        def command(number, options=()):
+            return ["verilator", *options, "--binary", "--threads", "1",
+                    "--Mdir", run.rel(run.path / f"obj-{number}"),
+                    "-o", "startup", run.rel(source)]
+
+        with (patch.object(run, "validate_live_sources"),
+              patch("execution.shutil.disk_usage",
+                    return_value=SimpleNamespace(free=16 * 1024**3)),
+              patch.object(run, "_tool", side_effect=compiler)):
+            options = [(), ("-j", "3"), ("-j3",),
+                       ("--build-jobs", "3"), ("--build-jobs=3",)]
+            for number, explicit in enumerate(options):
+                run.tool(command(number, explicit), build_class="verilator-startup")
+                expected = command(number, explicit)
+                if not explicit:
+                    expected[1:1] = ["-j", "1"]
+                assert commands[-1] == expected
+                assert_released(run)
+            run.tool(command(5), build_class="default")
+            assert commands[-1][1:3] == ["-j", "2"]
+            assert_released(run)
+            successful = len(run.builds)
+            failed = command(6, ("-j", "4"))
+            status = 255
+            try:
+                run.tool(failed, build_class="verilator-startup")
+            except AssertionError as exc:
+                assert "tool exit 255" in str(exc)
+            else:
+                raise AssertionError("compiler exit 255 was suppressed")
+            assert len(run.builds) == successful
+            assert (run.path / "obj-6/startup").is_file()
+            assert_released(run)
+            _, record = run.tool(failed, expected=(0, 255), build_class="verilator-startup")
+            assert record["exit_code"] == 255 and len(run.builds) == successful
+            assert_released(run)
+            status = 0
+            before = len(commands)
+            run.tool(failed, build_class="verilator-startup")
+            assert len(commands) == before + 1 and len(run.builds) == successful + 1
+            run.tool(failed, build_class="verilator-startup")
+            assert len(commands) == before + 1 and len(run.build_reuses) == 1
+            source.write_text("synthetic changed input\n")
+            run.tool(failed, build_class="verilator-startup")
+            assert len(commands) == before + 2
+            run.hashes = {"fixture-source": "changed inventory"}
+            run.tool(failed, build_class="verilator-startup")
+            assert len(commands) == before + 3
+            assert_released(run)
+    return {"scope": "synthetic driver regression, not DUT/tool acceptance",
+            "startup_default_jobs": 1, "functional_default_jobs": 2,
+            "explicit_job_forms_preserved": 4,
+            "exit255_propagated": True, "failed_binary_never_reused": True,
+            "expected_negative_not_cached": True, "reservations_released": True,
+            "cache_binds_input_content_and_public_inventory": True}
 
 
 def admission_sensitivity():
@@ -179,6 +262,7 @@ def admission_sensitivity():
             raise AssertionError("unsupported build-class use accepted")
     assert_released(run)
     return {"scope": "offline capacity/caller regression, not DUT acceptance",
+            "compiler_jobs": compiler_job_sensitivity(),
             "boundaries": boundaries, "concurrent_reservation_sum_checked": True,
             "mixed_class_wait_and_release_checked": True,
             "cancellation_wait_paths": 2, "disk_full_release_paths": 5,
