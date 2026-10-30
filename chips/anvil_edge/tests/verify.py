@@ -17,6 +17,10 @@ build with/without PCH, only after an explicit filesystem-headroom preflight.
 --probe shell-execution-acceleration profiles compact execution and compares
 source-bound runtime transport sharing, scaling and equally warmed schedules.
 It does not authorize an aggregate or complete-table retry.
+--probe shell-delay-scheduling compares an opt-in external literal-delay driver
+against the original explicit-clock driver, with compact source-bound pairs,
+unchanged scoreboards, rejection controls and cold generation/build costs.
+It preserves --timing for event coroutines and does not change production selection.
 --probe shell-full-capacity-feasibility measures the cold complete Qwen shell
 matrix within the existing patrol budget, retaining incomplete phase observations.
 It is a necessary subset, not an aggregate L1 feasibility certificate.
@@ -96,6 +100,7 @@ from deepseek_integration import run_deepseek_integration, run_deepseek_boot, ru
 from deepseek_shell import run_deepseek_shell_compact, run_deepseek_shell_feasibility
 from cycle_driver import (
     run_driver_comparison, run_driver_scaling, run_driver_capacity, EXPLICIT_CLOCK,
+    EXTERNAL_DELAYS, external_delay_bench,
 )
 from retained import audit_controller, audit_provenance
 
@@ -303,6 +308,7 @@ class Evidence:
         self.name_prefix = ""
         self.simulator_override = None
         self.explicit_clock = None
+        self.external_delays = False
         self.compiler_pch = False
         self.compiler_profile = False
         self.compiler_lto = False
@@ -811,6 +817,10 @@ class Evidence:
                     "module bench;", "module bench;\n" + "".join(input_functions), 1
                 )
             driver_source = None
+            driver_text = EXPLICIT_CLOCK if explicit_clock else None
+            external_delays = getattr(self, "external_delays", False)
+            if external_delays and not explicit_clock:
+                raise VerificationFailure("External delays require the explicit clock driver")
             if explicit_clock:
                 clocks = (
                     ("shell", "  reg clk=0,rst_n;\n  always #5 clk=~clk;"),
@@ -824,15 +834,20 @@ class Evidence:
                 compiled_bench = compiled_bench.replace(
                     "module bench;", "module bench(input wire clk);", 1
                 ).replace(clock, "  reg rst_n;", 1)
+                if external_delays:
+                    compiled_bench, delay_counts = external_delay_bench(compiled_bench)
+                    record["external_delay_counts"] = delay_counts
+                    driver_text = EXTERNAL_DELAYS
                 driver_source = directory / "clock-driver.cpp"
-                driver_source.write_text(EXPLICIT_CLOCK, encoding="ascii")
+                driver_source.write_text(driver_text, encoding="ascii")
                 record["clock_template"] = clock_kind
             compiled_source.write_text(compiled_bench, encoding="ascii")
             record.update(
                 compiled_bench_sha256=digest(compiled_source),
                 reset_settle_delays_ps=reset_delays,
                 four_state=False,
-                clock_driver="explicit-cycle" if explicit_clock else "timed-SV",
+                clock_driver=("external-delays" if external_delays else
+                              "explicit-cycle" if explicit_clock else "timed-SV"),
             )
             source_hashes = [(path, digest(ROOT / path)) for path in sources]
             compile_options = [
@@ -877,7 +892,7 @@ class Evidence:
                 }
             cache_key = hashlib.sha256(json.dumps(
                 [compiled_bench, source_hashes, compile_options, tool_identity,
-                 EXPLICIT_CLOCK if explicit_clock else None],
+                 driver_text],
                 sort_keys=True
             ).encode()).hexdigest()
             with self._lock:
@@ -1443,6 +1458,7 @@ def main():
         "shell-driver-capacity",
         "shell-execution-cost",
         "shell-execution-acceleration",
+        "shell-delay-scheduling",
         "shell-full-capacity-feasibility",
         "shell-feasibility-controls",
         "official-llama-discovery",
@@ -1461,6 +1477,7 @@ def main():
             "official-qwen-shell-general-bypass", "deepseek-shell-compact",
             "shell-driver-comparison", "shell-driver-scaling",
             "shell-driver-capacity", "controller-build-repair",
+            "shell-delay-scheduling",
             "shell-full-capacity-feasibility", "shell-feasibility-controls") else None,
     )
     exit_code, reason = 0, "Advisory unit comparisons passed; not full acceptance"
@@ -1522,6 +1539,10 @@ def main():
             from cycle_driver import run_execution_acceleration
             run_execution_acceleration(evidence)
             reason = "Compiled shell acceleration and resource-safe scheduling measured; not aggregate L1 or acceptance"
+        elif args.probe == "shell-delay-scheduling":
+            from cycle_driver import run_delay_scheduling
+            run_delay_scheduling(evidence)
+            reason = "Compact external-delay scheduling paired comparisons completed; not full-capacity feasibility or acceptance"
         elif args.probe == "shell-full-capacity-feasibility":
             from cycle_driver import run_full_capacity_feasibility
             run_full_capacity_feasibility(evidence)

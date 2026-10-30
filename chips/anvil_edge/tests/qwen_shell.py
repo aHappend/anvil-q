@@ -654,6 +654,53 @@ module bench;
 endmodule
 """
 
+PUBLIC_TRACE = r"""
+  integer verification_trace_fd;
+  longint unsigned verification_trace_cycle=0,verification_trace_count=0;
+  reg [7:0] verification_previous_pins=0;
+  reg [11:0] verification_previous_status=0;
+  wire [7:0] verification_pins=
+    {2'b0,spi_miso,spi_mosi,spi_sck,spi_cs_n,uart_rx,uart_tx};
+  wire [11:0] verification_status={boot_done,busy,done,error,error_code};
+  initial begin
+    string trace_path;
+    if (!$value$plusargs("verification_trace_file=%s",trace_path))
+      $fatal(1,"QWEN_SHELL_MISSING_TRACE_PATH");
+    verification_trace_fd=$fopen(trace_path,"wb");
+    if (!verification_trace_fd) $fatal(1,"QWEN_SHELL_TRACE_OPEN");
+  end
+  task automatic verification_trace_event(input [31:0] kind,input [191:0] payload);
+    begin
+      $fwrite(verification_trace_fd,"%u",{verification_trace_cycle,kind,payload});
+      verification_trace_count=verification_trace_count+1;
+    end
+  endtask
+  always @(posedge clk) begin
+    verification_trace_cycle=verification_trace_cycle+1;
+    if (verification_pins!==verification_previous_pins)
+      verification_trace_event(0,{184'd0,verification_pins});
+    verification_previous_pins=verification_pins;
+    if (verification_status!==verification_previous_status)
+      verification_trace_event(7,{180'd0,verification_status});
+    verification_previous_status=verification_status;
+    if (rst_n) begin
+      if (ddr_req_valid && ddr_req_ready)
+        verification_trace_event(1,{91'd0,ddr_req_write,ddr_req_addr,
+                                     ddr_req_wdata,ddr_req_wstrb});
+      if (ddr_rsp_valid && ddr_rsp_ready)
+        verification_trace_event(2,{159'd0,ddr_rsp_error,ddr_rsp_rdata});
+      if (s_axis_tvalid && s_axis_tready)
+        verification_trace_event(3,{183'd0,s_axis_tlast,s_axis_tdata});
+      if (m_axis_tvalid && m_axis_tready)
+        verification_trace_event(4,{183'd0,m_axis_tlast,m_axis_tdata});
+      if (cfg_valid && cfg_ready)
+        verification_trace_event(5,{127'd0,cfg_write,cfg_addr,cfg_wdata});
+      if (cfg_rsp_valid && cfg_rsp_ready)
+        verification_trace_event(6,{159'd0,cfg_rsp_error,cfg_rdata});
+    end
+  end
+"""
+
 
 def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen",
                bind_transport=True):
@@ -719,6 +766,18 @@ def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen",
         (BYPASS!=0 && BYPASS!=1)) $fatal(1,"QWEN_SHELL_INVALID_TRANSPORT");
   end""", 1)
         runtime_arguments = (f"+verification_bypass={bypass}",)
+    trace_path = None
+    if getattr(evidence, "capture_public_trace", False) is True:
+        # This is compact paired-driver telemetry only, never production L1 I/O.
+        trace_path = evidence.path / f"{evidence.name_prefix}{family}-b{bypass}-s{seed}.bin"
+        require(not trace_path.exists(), "Public trace output already exists")
+        bench = bench.replace("module bench;", "module bench;\n" + PUBLIC_TRACE, 1)
+        anchor = '    $display("COMPARED %0d",comparisons);'
+        require(bench.count(anchor) == 1, "Missing unique final shell comparison")
+        bench = bench.replace(anchor, """    $fclose(verification_trace_fd);
+    $display("QWEN_SHELL_TRACE records=%0d",verification_trace_count);
+""" + anchor, 1)
+        runtime_arguments += (f"+verification_trace_file={evidence.relative(trace_path)}",)
     require(re.fullmatch(r"[a-z][a-z0-9-]*", family), "Invalid shell diagnostic family")
     bench = bench.replace("QWEN_SHELL_", family.upper().replace("-", "_") + "_SHELL_")
     require(not re.search(r"@[A-Z_]+@", bench), "Unexpanded shell bench placeholder")
@@ -726,10 +785,28 @@ def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen",
         str(path.relative_to(ROOT)) for path in sorted((ROOT / "rtl").glob("*.sv"))
         if path.name != "anvil_edge_numeric_pkg.sv"
     ]
-    return evidence.simulate(f"{family}-shell-b{bypass}-s{seed}", bench, sources,
-                             None, simulator="verilator", optimize=True,
-                             explicit_clock=True, runtime_arguments=runtime_arguments,
-                             compiled_workload=True)
+    result = evidence.simulate(f"{family}-shell-b{bypass}-s{seed}", bench, sources,
+                               None, simulator="verilator", optimize=True,
+                               explicit_clock=True, runtime_arguments=runtime_arguments,
+                               compiled_workload=True)
+    if trace_path is not None:
+        size = trace_path.stat().st_size
+        prefix = family.upper().replace("-", "_") + "_SHELL"
+        text = (ROOT / result["simulation_receipt"]["stdout"]).read_text()
+        counts = re.findall(r"^" + prefix + r"_TRACE records=(\d+)$", text, re.MULTILINE)
+        require(len(counts) == 1 and int(counts[0]) > 0 and
+                size == int(counts[0]) * 36,
+                "Public trace must contain every fixed-width emitted record")
+        with trace_path.open("rb") as stream:
+            checksum = hashlib.file_digest(stream, "sha256").hexdigest()
+        result["public_trace"] = {
+            "path": evidence.relative(trace_path), "bytes": size, "records": int(counts[0]),
+            "sha256": checksum,
+            "record_bytes": 36,
+            "scope": "Pre-edge accepted DDR/config/AXI transactions, status and "
+                     "SPI/UART pin transitions, with independent rising-edge counter",
+        }
+    return result
 
 
 def shell_workers(evidence):

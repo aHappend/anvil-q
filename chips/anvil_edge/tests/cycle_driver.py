@@ -1,10 +1,10 @@
-"""Explicit shell/boot clock driver and bounded paired feasibility experiments.
+"""Explicit shell/boot drivers and bounded paired execution experiments.
 
-The candidate removes only the recurring SV clock-delay coroutine. Verilator
-timing support remains for the original edge waits and post-edge stimulus delays;
-removing those would change the experiment rather than measure the clock driver.
-Only the exact shell and boot clock templates support this driver. Other benches
-retain their existing driver; the timed SV driver remains for paired probes.
+The original explicit driver retains Verilator's timed stimulus. An opt-in
+candidate schedules those same delays externally, without changing edge waits,
+stimulus, scoreboards or simulated time. It still needs --timing for event
+coroutines; it is not a timing-free simulator or a demonstrated acceleration.
+Only the exact shell and boot clock templates support these drivers.
 """
 
 import copy
@@ -60,11 +60,337 @@ int main(int argc, char** argv) {
 }
 """
 
+EXTERNAL_DELAYS = r"""#include "Vbench.h"
+#include "Vbench__Dpi.h"
+#include "verilated.h"
+#include <array>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <limits>
+#include <memory>
+
+namespace {
+constexpr uint64_t never = std::numeric_limits<uint64_t>::max();
+struct Alarm {
+    uint64_t deadline = never;
+    bool allocated = false;
+};
+std::array<Alarm, 8> alarms;
+VerilatedContext* simulation_context = nullptr;
+uint64_t next_alarm = never;
+uint64_t delivered_alarms = 0;
+
+[[noreturn]] void scheduler_error(const char* reason) {
+    std::fprintf(stderr, "EXTERNAL_DELAY_ERROR %s\n", reason);
+    std::abort();
+}
+
+void update_next_alarm() {
+    next_alarm = never;
+    for (const auto& alarm : alarms)
+        if (alarm.deadline < next_alarm) next_alarm = alarm.deadline;
+}
+}
+
+extern "C" int verification_arm_delay(unsigned long long delay_ps) {
+    if (!simulation_context || delay_ps == 0 ||
+        delay_ps >= never - simulation_context->time())
+        scheduler_error("invalid delay or time overflow");
+    for (unsigned slot = 0; slot < alarms.size(); ++slot) {
+        auto& alarm = alarms[slot];
+        if (alarm.allocated) continue;
+        alarm.allocated = true;
+        alarm.deadline = simulation_context->time() + delay_ps;
+        if (alarm.deadline < next_alarm) next_alarm = alarm.deadline;
+        return static_cast<int>(slot);
+    }
+    scheduler_error("alarm capacity exceeded");
+}
+
+extern "C" void verification_release_delay(int slot) {
+    if (slot < 0 || slot >= static_cast<int>(alarms.size()) ||
+        !alarms[slot].allocated || alarms[slot].deadline != never)
+        scheduler_error("invalid alarm release");
+    alarms[slot].allocated = false;
+}
+
+int main(int argc, char** argv) {
+    auto context = std::make_unique<VerilatedContext>();
+    simulation_context = context.get();
+    context->commandArgs(argc, argv);
+    auto bench = std::make_unique<Vbench>(context.get());
+    bench->clk = 0;
+    bench->verification_alarms = 0;
+    bench->eval();
+    uint64_t edge = 5000;
+    uint64_t edges = 0;
+    while (!context->gotFinish()) {
+        const uint64_t next = edge < next_alarm ? edge : next_alarm;
+        if (next <= context->time()) scheduler_error("nonprogress");
+        context->time(next);
+        if (next == edge) {
+            bench->clk = !bench->clk;
+            edge += 5000;
+            ++edges;
+        }
+        if (next == next_alarm) {
+            for (unsigned slot = 0; slot < alarms.size(); ++slot) {
+                if (alarms[slot].deadline != next) continue;
+                alarms[slot].deadline = never;
+                bench->verification_alarms ^= 1U << slot;
+                ++delivered_alarms;
+            }
+            update_next_alarm();
+        }
+        bench->eval();
+    }
+    bench->final();
+    std::printf("EXPLICIT_CLOCK edges=%llu time_ps=%llu\n",
+                static_cast<unsigned long long>(edges),
+                static_cast<unsigned long long>(context->time()));
+    std::printf("EXTERNAL_DELAYS delivered=%llu\n",
+                static_cast<unsigned long long>(delivered_alarms));
+    simulation_context = nullptr;
+    return 0;
+}
+"""
+
+DELAY_TASK = r"""
+  import "DPI-C" function int verification_arm_delay(input longint unsigned delay_ps);
+  import "DPI-C" function void verification_release_delay(input int slot);
+  task automatic verification_delay(input longint unsigned delay_ps);
+    integer slot;
+    bit previous_value;
+    begin
+      slot=verification_arm_delay(delay_ps);
+      previous_value=verification_alarms[slot];
+      wait (verification_alarms[slot]!=previous_value);
+      verification_release_delay(slot);
+    end
+  endtask
+"""
+
+
+def external_delay_bench(bench):
+    """Lower only supported literal delays; reject anything left unaccounted for."""
+    header = "module bench(input wire clk);"
+    require(bench.count(header) == 1 and bench.count("endmodule") == 1,
+            "External delays require one explicit-clock bench")
+    require("verification_delay" not in bench and "verification_alarms" not in bench,
+            "External delay identifiers already used")
+    counts = {"1ps": 0, "1ns": 0}
+
+    def replace(match):
+        unit = "1ps" if match[1] else "1ns"
+        counts[unit] += 1
+        return f"verification_delay({1 if match[1] else 1000});"
+
+    candidate = re.sub(r"#1(ps)?\s*;", replace, bench)
+    # Module parameter overrides are not procedural delays.
+    require(re.search(r"#(?!\s*\(\s*\.)", candidate) is None,
+            "Unsupported procedural delay in external-delay bench")
+    require(sum(counts.values()) > 0, "External-delay bench has no literal delays")
+    candidate = candidate.replace(
+        header, "module bench(input wire clk, input wire [7:0] verification_alarms);", 1
+    ).replace("endmodule", DELAY_TASK + "\nendmodule", 1)
+    return candidate, counts
+
 
 def observable_trace(child, prefix):
     log = (ROOT / child["stdout"]).read_text()
     return [line for line in log.splitlines()
             if line.startswith((prefix + "_", "COMPARED ", "SCOREBOARD_INJECT "))]
+
+
+def compare_execution_rows(old, new, prefix):
+    def inputs(row):
+        return [arg for arg in row["runtime_arguments"]
+                if not arg.startswith("+verification_trace_file=")]
+
+    require(inputs(old) == inputs(new) and
+            old["input_files"] == new["input_files"] and
+            old["source_sha256"] == new["source_sha256"] and
+            old["actual_comparisons"] == new["actual_comparisons"] and
+            old["actual_comparisons"] > 0 and
+            observable_trace(old["simulation_receipt"], prefix) ==
+            observable_trace(new["simulation_receipt"], prefix),
+            "Execution driver changed source-bound public transaction/cycle/byte observations")
+    a, b = old["public_trace"], new["public_trace"]
+    require(a["bytes"] == b["bytes"] and a["records"] == b["records"] and
+            a["sha256"] == b["sha256"],
+            "Public event transcript length/count/digest changed")
+    with (ROOT / a["path"]).open("rb") as left, (ROOT / b["path"]).open("rb") as right:
+        while True:
+            chunk = left.read(1 << 20)
+            require(chunk == right.read(1 << 20), "Public event transcript bytes changed")
+            if not chunk:
+                break
+    result = {
+        "baseline": old["name"], "candidate": new["name"],
+        "identical_public_trace": True, "comparisons": old["actual_comparisons"],
+        "baseline_compile_seconds": old["compile_receipt"]["duration_s"],
+        "candidate_compile_seconds": new["compile_receipt"]["duration_s"],
+        "baseline_compile_cache_hit": old["compile_cache_hit"],
+        "candidate_compile_cache_hit": new["compile_cache_hit"],
+        "baseline_simulation_seconds": old["simulation_receipt"]["duration_s"],
+        "candidate_simulation_seconds": new["simulation_receipt"]["duration_s"],
+        "baseline_receipt": str(Path(old["simulation_receipt"]["stdout"]).parent /
+                                "receipt.json"),
+        "candidate_receipt": str(Path(new["simulation_receipt"]["stdout"]).parent /
+                                 "receipt.json"),
+        "exact_public_transcript_comparison": True,
+        "public_trace_records": a["records"], "public_trace_bytes": a["bytes"],
+        "public_trace_sha256": a["sha256"],
+    }
+    for row in (old, new):
+        (ROOT / row["public_trace"]["path"]).unlink()
+        row["public_trace"]["temporary_dump_removed_after_exact_comparison"] = True
+    return result
+
+
+def control_arguments(evidence, arguments, name):
+    """Controls own fresh trace outputs, never truncate a baseline transcript."""
+    arguments = list(arguments)
+    if any(arg.startswith("+verification_trace_file=") for arg in arguments):
+        path = evidence.path / (evidence.name_prefix + "control-" + name + ".bin")
+        require(not path.exists(), "Control public-trace output already exists")
+        arguments = [arg for arg in arguments
+                     if not arg.startswith("+verification_trace_file=")]
+        arguments.append("+verification_trace_file=" + evidence.relative(path))
+    return arguments
+
+
+DELAY_CONTROL = r"""
+module bench;
+  timeunit 1ns;
+  timeprecision 1ps;
+  reg clk=0,rst_n;
+  always #5 clk=~clk;
+  integer comparisons=0;
+  task automatic check_time(input integer expected,input integer label);
+    integer actual;
+    realtime observation;
+    begin
+      observation=$realtime;
+      actual=$rtoi(observation*1000.0+0.5);
+      if (actual!=expected)
+        $fatal(1,"DELAY_CONTROL_TIME label=%0d got=%0d expected=%0d realtime=%f time=%0t",
+               label,actual,expected,$realtime,$time);
+      comparisons=comparisons+1;
+      $display("DELAY_CONTROL_EVENT label=%0d time_ps=%0d",label,actual);
+    end
+  endtask
+  initial begin
+    rst_n=0;
+    #1ps; check_time(1,0);
+    fork
+      begin
+        #1; check_time(1001,1);
+        #1; check_time(2001,2);
+        @(posedge clk); #1; check_time(6000,3);
+        #1; check_time(7000,4);
+      end
+      begin
+        #1; check_time(1001,5);
+        @(negedge clk); #1; check_time(11000,6);
+      end
+    join
+    @(posedge clk); #1; check_time(16000,7);
+    if (comparisons!=8) $fatal(1,"DELAY_CONTROL_COUNTS");
+    $display("COMPARED %0d",comparisons); $finish;
+  end
+endmodule
+"""
+
+
+def run_delay_scheduling(evidence):
+    """Paired compact execution only; never launches complete-table collection."""
+    started = time.monotonic()
+    evidence.record["delay_scheduling"] = {
+        "scope": "External literal-delay scheduling hypothesis; compact synthetic "
+                 "weights/tables only, not full-capacity feasibility or acceptance",
+        "production_default_changed": False,
+        "remaining_scheduler": "--timing remains for edge/event coroutines",
+        "pairs": [], "controls": {},
+    }
+    result = evidence.record["delay_scheduling"]
+    evidence.tools(("python3", "verilator", "g++", "make"))
+    evidence.child(
+        ["python3", "tests/test_delay_driver.py", evidence.relative(evidence.path)],
+        "delay-lowering-controls")
+    directory = evidence.path / "compact-inputs"
+    directory.mkdir()
+    generation = evidence.child(
+        ["python3", "tests/qwen_shell.py", evidence.relative(directory), "--compact"],
+        "delay-scheduling-inputs")
+    result["generation_seconds"] = generation["duration_s"]
+    info = json.loads((directory / "shell-reference.json").read_bytes())
+    observations = {}
+    scopes, micros = {}, {}
+    for label, external in (("original", False), ("external", True)):
+        scope = copy.copy(evidence)
+        scope.external_delays = external
+        scope.explicit_clock = True
+        scope.name_prefix = "delay-" + label + "-"
+        micro = scope.simulate("control", DELAY_CONTROL, [], 8,
+                               simulator="verilator", explicit_clock=True)
+        # Equal-time fork callbacks need not be printed in the same order.
+        events = observable_trace(micro["simulation_receipt"], "DELAY_CONTROL")
+        require(sorted(events) == sorted([
+            f"DELAY_CONTROL_EVENT label={index} time_ps={value}"
+            for index, value in enumerate((1, 1001, 2001, 6000, 7000, 1001, 11000, 16000))
+        ] + ["COMPARED 8"]), "Delay scheduler lost or reordered a timed event")
+        scopes[label], micros[label] = scope, micro
+    for label in ("original", "external"):
+        scope, micro = scopes[label], micros[label]
+        scope.capture_public_trace = True
+        phase = time.monotonic()
+        rows = [shell_case(scope, info, seed, bypass, False)
+                for seed in (1, 17, 89) for bypass in (0, 1)]
+        require(len(rows) == 6 and all(row["status"] == "passed" for row in rows),
+                "Both drivers must finish all six compact cells")
+        baseline = next(row for row in rows if row["name"].endswith("-b1-s17"))
+        rejected = controls(scope, baseline, "qwen")
+        transport = []
+        for name, value in (("missing", None), ("negative", -1), ("oversized", 2)):
+            arguments = [arg for arg in baseline["simulation_receipt"]["argv"]
+                         if not arg.startswith("+verification_bypass=")]
+            if value is not None:
+                arguments.append(f"+verification_bypass={value}")
+            arguments = control_arguments(scope, arguments, "transport-" + name)
+            child = scope.child(arguments, f"delay-{label}-transport-{name}",
+                                allow_failure=True)
+            output = (ROOT / child["stdout"]).read_text() + (ROOT / child["stderr"]).read_text()
+            require(child["exit_code"] not in (0, None) and not child["timed_out"] and
+                    child["child_settled"] and child["process_group_settled"] and
+                    "QWEN_SHELL_INVALID_TRANSPORT" in output and "%Error:" in output,
+                    "External scheduling must preserve invalid-transport rejection")
+            transport.append(child)
+        observations[label] = rows
+        result["controls"][label] = {
+            "delay_control": micro, "scoreboard": rejected, "transport": transport,
+            "shell_and_rejection_seconds": time.monotonic() - phase,
+            "fresh_builds": sum(not row["compile_cache_hit"] for row in rows),
+        }
+        save(evidence.path / f"delay-{label}-controls.json", result["controls"][label])
+    for old, new in zip(observations["original"], observations["external"]):
+        require(new["clock_driver"] == "external-delays" and
+                new["external_delay_counts"]["1ps"] == 1 and
+                new["external_delay_counts"]["1ns"] > 0,
+                "Candidate must actually use external literal-delay scheduling")
+        result["pairs"].append(compare_execution_rows(old, new, "QWEN_SHELL"))
+    for old, new in zip(result["controls"]["original"]["scoreboard"],
+                        result["controls"]["external"]["scoreboard"]):
+        require(old["assertion"] == new["assertion"] and
+                old["mismatch"] == new["mismatch"] and old["trace"] == new["trace"],
+                "External scheduling changed an original scoreboard rejection")
+    result["cold_wall_seconds"] = time.monotonic() - started
+    result["limitation"] = (
+        "Single shared-execution serial comparison, including cold generation and "
+        "builds; neither a general speed guarantee nor the 2700-second full-capacity "
+        "result. No change to production selection is authorized by this probe.")
+    save(evidence.path / "delay-scheduling.json", result)
 
 
 def full_capacity_measurement(evidence, info, started):
@@ -569,8 +895,11 @@ def controls(evidence, baseline, family):
         (2, "duplicate", "UNEXPECTED_WRITE"),
         (3, "missing", "DRAIN"),
     ):
+        arguments = control_arguments(
+            evidence, [*baseline["simulation_receipt"]["argv"], f"+scoreboard_fault={mode}"],
+            family + "-scoreboard-" + name)
         child = evidence.child(
-            [*baseline["simulation_receipt"]["argv"], f"+scoreboard_fault={mode}"],
+            arguments,
             family + "-scoreboard-" + name, allow_failure=True)
         output = (ROOT / child["stdout"]).read_text() + (ROOT / child["stderr"]).read_text()
         assertion = prefix + "_" + suffix
