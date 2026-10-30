@@ -868,8 +868,2862 @@
       "attempt_id": 1019,
       "duration_s": 1390.9883122569881,
       "stdout_preview": "evidence/l1/l1-behavior-20261030T073151Z-5f585c25/receipt.json\n",
-      "receipt_count": 0,
-      "receipts": []
+      "receipt_count": 10,
+      "receipts": [
+        {
+          "path": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/drift.json",
+          "data": {
+            "layer_attention": [
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.0,
+                "mean_absolute_error": 0.0,
+                "rms_error": 0.0,
+                "normalized_rmse": 0.0,
+                "cosine_similarity": 1.0
+              },
+              {
+                "values_compared": 144,
+                "max_absolute_error": 4.76837158203125e-07,
+                "mean_absolute_error": 4.76837158203125e-07,
+                "rms_error": 4.76837158203125e-07,
+                "normalized_rmse": 0.007751937984496124,
+                "cosine_similarity": 1.0
+              },
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.0,
+                "mean_absolute_error": 0.0,
+                "rms_error": 0.0,
+                "normalized_rmse": 0.0,
+                "cosine_similarity": 1.0
+              }
+            ],
+            "final_residual": {
+              "values_compared": 144,
+              "max_absolute_error": 1.4901161193847656e-08,
+              "mean_absolute_error": 1.4590720335642496e-08,
+              "rms_error": 1.4745123792486783e-08,
+              "normalized_rmse": 1.5962064727080413e-09,
+              "cosine_similarity": 1.0
+            },
+            "host_readout_logit_drift": {
+              "values_compared": 24,
+              "max_absolute_error": 0.0,
+              "mean_absolute_error": 0.0,
+              "rms_error": 0.0,
+              "normalized_rmse": 0.0,
+              "cosine_similarity": 1.0
+            },
+            "mode0": {
+              "frames_compared": 9,
+              "memory_requests": 3240,
+              "memory_responses": 3240,
+              "writes_compared": 504,
+              "attention_values_compared": 432,
+              "command_to_done_cycles": [
+                3701,
+                3703,
+                3703,
+                5612,
+                5614,
+                5614,
+                7409,
+                7415,
+                7408
+              ]
+            },
+            "mode1": {
+              "frames_compared": 9,
+              "memory_requests": 5040,
+              "memory_responses": 5040,
+              "writes_compared": 576,
+              "attention_values_compared": 432,
+              "command_to_done_cycles": [
+                5380,
+                5380,
+                5380,
+                8764,
+                8773,
+                8773,
+                12130,
+                12127,
+                12127
+              ]
+            },
+            "thresholds_applied": false
+          }
+        },
+        {
+          "path": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/manifest.json",
+          "data": {
+            "suite": "anvil-q2-fp-attention-drift-v1",
+            "geometry": {
+              "layers": 3,
+              "hidden": 48,
+              "intermediate": 48,
+              "q_heads": 6,
+              "kv_heads": 1,
+              "head_dim": 8,
+              "group": 12,
+              "vocabulary": 3,
+              "positions": 3,
+              "block": 2
+            },
+            "seed": 17,
+            "shape_class": "reduced",
+            "input_class": "outlier/adversarial",
+            "initial": "((seed+11*position+7*component) mod 33 - 16)/31",
+            "sparse_projections": "q=x/4; k=head-group-first(x)/4; v=half-shifted(x)/4; FP32",
+            "feedback": "RNE_FP32(x+RNE_FP32(actual_RTL_attention_output/32)), never reset per layer",
+            "reference": "Independent rational RNE FP32 and selected-format quantization per operation",
+            "readout": "Eight FP32 host readouts of actual final residual, weights in [-8,8]/128",
+            "limits": "Per-layer attention NRMSE<=0.03; final residual NRMSE<=0.05; bounded class only",
+            "not_claimed": "Native full decoder/token throughput, RTL full-vocabulary logits or FPGA timing"
+          }
+        },
+        {
+          "path": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/receipt.json",
+          "data": {
+            "schema": 1,
+            "purpose": "verifier-attention-drift-reduced-s17-adversarial",
+            "acceptance_evidence": false,
+            "cwd": ".",
+            "started_at": "2026-10-29T04:13:41.390036+00:00",
+            "commands": [
+              {
+                "argv": [
+                  "iverilog",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.404204+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/iverilog-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/iverilog-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.421379+00:00",
+                "duration_s": 0.01688319188542664
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.421521+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/vvp-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/vvp-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.430097+00:00",
+                "duration_s": 0.008274834835901856
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.434892+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.549743+00:00",
+                "duration_s": 0.11458148318342865
+              },
+              {
+                "argv": [
+                  "g++",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.549904+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.554526+00:00",
+                "duration_s": 0.004295087186619639
+              },
+              {
+                "argv": [
+                  "make",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.554687+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.559309+00:00",
+                "duration_s": 0.004284026101231575
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.559462+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.576378+00:00",
+                "duration_s": 0.016571291023865342
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.576543+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.585444+00:00",
+                "duration_s": 0.008495807880535722
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-g2012",
+                  "-Wall",
+                  "-s",
+                  "tb",
+                  "-Ptb.MODE=0",
+                  "-Ptb.LAYERS=3",
+                  "-Ptb.HIDDEN=48",
+                  "-Ptb.QHEADS=6",
+                  "-Ptb.KVHEADS=1",
+                  "-Ptb.DIM=8",
+                  "-Ptb.POSITIONS=3",
+                  "-Ptb.BLOCK=2",
+                  "-o",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.vvp",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.588865+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:41.703939+00:00",
+                "duration_s": 0.11476009688340127
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "--assert",
+                  "--top-module",
+                  "tb",
+                  "-Wno-fatal",
+                  "-Wno-BLKANDNBLK",
+                  "--unroll-count",
+                  "512",
+                  "--unroll-stmts",
+                  "1000000",
+                  "-CFLAGS",
+                  "-O1",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-obj",
+                  "-GMODE=0",
+                  "-GLAYERS=3",
+                  "-GHIDDEN=48",
+                  "-GQHEADS=6",
+                  "-GKVHEADS=1",
+                  "-GDIM=8",
+                  "-GPOSITIONS=3",
+                  "-GBLOCK=2",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-compiled.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:41.706944+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:57.979898+00:00",
+                "duration_s": 16.272653330117464
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.vvp"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:57.991626+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-startup.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-startup.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.057011+00:00",
+                "duration_s": 0.06506804516538978
+              },
+              {
+                "argv": [
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-obj/Vtb"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.057466+00:00",
+                "timeout_s": 21600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-simulation.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-simulation.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "live_stimulus": true,
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.312262+00:00",
+                "duration_s": 0.2544730280060321
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.318315+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.433641+00:00",
+                "duration_s": 0.11497021792456508
+              },
+              {
+                "argv": [
+                  "g++",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.433806+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.438479+00:00",
+                "duration_s": 0.0043405708856880665
+              },
+              {
+                "argv": [
+                  "make",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.438655+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.443156+00:00",
+                "duration_s": 0.004173340043053031
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.443305+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.460054+00:00",
+                "duration_s": 0.01640734518878162
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.460229+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.469136+00:00",
+                "duration_s": 0.008524931035935879
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-g2012",
+                  "-Wall",
+                  "-s",
+                  "tb",
+                  "-Ptb.MODE=1",
+                  "-Ptb.LAYERS=3",
+                  "-Ptb.HIDDEN=48",
+                  "-Ptb.QHEADS=6",
+                  "-Ptb.KVHEADS=1",
+                  "-Ptb.DIM=8",
+                  "-Ptb.POSITIONS=3",
+                  "-Ptb.BLOCK=2",
+                  "-o",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.vvp",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.472144+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:13:58.587315+00:00",
+                "duration_s": 0.1148521879222244
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "--assert",
+                  "--top-module",
+                  "tb",
+                  "-Wno-fatal",
+                  "-Wno-BLKANDNBLK",
+                  "--unroll-count",
+                  "512",
+                  "--unroll-stmts",
+                  "1000000",
+                  "-CFLAGS",
+                  "-O1",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-obj",
+                  "-GMODE=1",
+                  "-GLAYERS=3",
+                  "-GHIDDEN=48",
+                  "-GQHEADS=6",
+                  "-GKVHEADS=1",
+                  "-GDIM=8",
+                  "-GPOSITIONS=3",
+                  "-GBLOCK=2",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-compiled.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:13:58.590344+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:14:14.247785+00:00",
+                "duration_s": 15.657133629079908
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.vvp"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:14:14.262245+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-startup.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-startup.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:14:14.327388+00:00",
+                "duration_s": 0.06479242001660168
+              },
+              {
+                "argv": [
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-obj/Vtb"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T04:14:14.327828+00:00",
+                "timeout_s": 21600,
+                "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-simulation.stdout.txt",
+                "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-simulation.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "live_stimulus": true,
+                "exit_code": 0,
+                "ended_at": "2026-10-29T04:14:14.660629+00:00",
+                "duration_s": 0.33250466804020107
+              }
+            ],
+            "source_sha256": {
+              "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "rtl/anvil_q2_fp_00_pkg.sv": "ece49633be9744e057e2aa9d00e6ab5ec6932c66460e716f2d8373b3251c344c",
+              "rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+              "rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+              "rtl/anvil_q2_fp_decoder_layer.sv": "554197c75d5d3fde4a406eb732638041e13c8226dfaaa3e3e937d06dd470afbb",
+              "rtl/anvil_q2_fp_dot_lane.sv": "7cf9e0b5850bff1484cba363d6b6d25a3090794dee358f9409626c67142b8e37",
+              "rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+              "rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+              "rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+              "rtl/anvil_q2_fp_gemv_bank.sv": "31a454e4f6b62411bfcbcfe2ae8b76aa518926da3fe3f5369c0344b49a0ef88c",
+              "rtl/anvil_q2_fp_gqa_attention.sv": "0d144e671dd14580ccb86a96210d3b2adfcbb2dbe238b91f51f7d6a731bdcf22",
+              "rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+              "rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+              "rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+              "rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+              "rtl/anvil_q2_fp_scalar.sv": "fd515a05bed11898b91175f289d1ad7fce3e48123a5e107020135fe04449e0a6",
+              "rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+              "rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+              "rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "design/ARCHITECTURE.md": "5e15d80b09e0edc1449f8a51d04c34fa14a2bc61be65aff0c445c9a4d1db68ce",
+              "design/INTEGRATION.md": "d28f45de29bb54c1e6f1d18d8840585cdeb11617a588daaa8cc8cd9e4550da4a",
+              "design/SPEC.md": "fc7b8c1a30f2e6da37eb839ab4d05f29e82b8eb5b1b88848429aeac2d43bf9e0",
+              "design/anvil_q2_fp.sdc": "098b4b5b225c9cffa76da057461f32d1aaec9e9f3b1af58777d3c9fe49e286b0",
+              "tests/attention_checks.py": "6fbc865345a01c239d12e0ab93ce37ef58b53f8355440181b56d0da4feab9b1f",
+              "tests/awq_lane_checks.py": "4bf50f0eac2f3126053ff6144c5d7c0b0817c180002ab6c4ae472582fa6504d3",
+              "tests/benchmark_checks.py": "1fe7139b69310a5e31c5aae8c17d8bf28b8eef69c550376598112dcdad4b2fe4",
+              "tests/build_storage_checks.py": "e463dc81bad8691d3d265b86e9fa1b89045b0705041aed785ff901fe6470bf9d",
+              "tests/cache_protocol_checks.py": "56e7fd440bf00fb8112c925fc32f037c03b8364ea6e8bc614e8c31b36579377a",
+              "tests/codec_checks.py": "d8e2f274d5009ed2fcc446c295d37a263837b0b19724d69bc2d7a699c6b31fca",
+              "tests/defect_checks.py": "c084b249455f2589b5ac73b9a49cf50dfc9ccd4438687fed616ef755b3e38597",
+              "tests/exp_checks.py": "995c81e7da8c819b276eb2ac5a1cf3bbd38b6a314c4557c553520b9bff0f337a",
+              "tests/focused_checks.py": "c6fc8e9c2fe1e92c8632280411e811107af72d2ebdc8e8eecb31c73e706f368f",
+              "tests/fp_reference.py": "21f365f59adda54cb958f31c67883a977b350cd0b669a2a1d1f4f76a090edae6",
+              "tests/hardware_vectors.py": "a267c46fb8457798d45bab80a09b55b30c14c361b3d39c571d276668202dbc34",
+              "tests/high_precision_reference.py": "e616d907499b445fe9f4626dde606ad09e1a433218fbfa04c2fdb7ffe91024b1",
+              "tests/lane_lifecycle_checks.py": "818da2c7f3669477b7a5ab76dc4a8bd2579ee316208a31acc21ff9bae805786e",
+              "tests/native_precision.py": "fe90cc20f97ba6ebd5d46fbcbb433f1ab1e2cf509fdff4a9afeb31edc5d3fc4a",
+              "tests/native_reference.py": "936000a98f9c7b8ef65983815ecba62eb465ab5def68724d9d9b55d5e6d38a9c",
+              "tests/native_reference_checks.py": "0d7ffed36e23cf89f40b3da3a63b5f820bcc6b62cbfca689ffa07417863180cf",
+              "tests/numerical_checks.py": "c4bbc0b5e479f3a8951e5cf973f60c5418594ad054aca0934b866757d2feab46",
+              "tests/parameter_checks.py": "ce5b108118479deb82593f69839dd6b40db8c514b08093c079d59b2f5403567c",
+              "tests/parent_reference.py": "b232039401a74df14f20619acdc16073672d6c57fa96ee1e015fcdf6965249f8",
+              "tests/portability_checks.py": "f33266d38f29b3f65f0a5368e73c5953b9aed3efd8ff05aa3aae758c502adadf",
+              "tests/projection_row_checks.py": "7470046eb6126d1a5293ead3f22f68cf753dc825674be380c03b878a4a451d25",
+              "tests/retained.py": "705183fae31939c215046e80a1f95b34545ae618ec17e961734b613ad13523ee",
+              "tests/scheduler_checks.py": "5c9185b0d9f7fb752a7598665270f39f7f8c756a8996085cb7f37d8ab9b3d8cf",
+              "tests/scheduler_lifecycle_checks.py": "9c8ca12259304d384b3f69410e5539f911249a48f6db079624a1d10afafbb1c7",
+              "tests/simulation.py": "9fb92ed0eb4a15e967a4e49049894440fce737e0860e31ea0f5f232bafb4b317",
+              "tests/simulation_checks.py": "e04c9c53a2f2ac9bc31edf361e67fc2462077d172d2f71297d343ceeca0a2fc8",
+              "tests/storage_retention_checks.py": "8443805f1086bea2f9deca9a63bcd30ccf13ac314912899c9e2db6e3937014f7",
+              "tests/stream_retention_checks.py": "18662e0d1fad0c052025111b5f6955b480fd709d4d7a8eea82fb8d1569da43a4",
+              "tests/suite_manifest.py": "314c8ae51e3573af64e21051b915a0b12a0f45982db8727c64275a152789d831",
+              "tests/synthesis_checks.py": "5741b824c5c83e49e1c651f651ef471b3787e891d8ee97036b6630a02662a3ae",
+              "tests/synthesis_dispatch.py": "830e0ca1ec1687f932e35f39658a89dbf2d4200aa7b9fed50a53613025db9164",
+              "tests/synthesis_dispatch_checks.py": "223de2a63ca76d4c821b4b45dc41ba3f5be6e3be4bbb26f70a2fdcea5b8288d2",
+              "tests/token_checks.py": "6331b966f9907441356a8c7ad7fac5b8551b3fb7dcfedc2c478c0e5772851151",
+              "tests/top_lifecycle_checks.py": "7fe17de6aa699b4460e11455b302a4e968321f47591e0192fd56f4302e4f63e3",
+              "tests/transformer_reference.py": "8fbd7424debdd1ec0916abd4580189542b637347ad6bccf645f58851d10fd2ac",
+              "tests/verify.py": "2c15571945dae4ba2c0e618d04b4c96f458a5436e2ca8e9ffea31841b49253e9",
+              "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+              "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+              "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+              "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+              "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+              "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+              "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+              "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+              "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+              "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+              "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+              "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+              "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+              "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+              "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+              "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+              "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d"
+            },
+            "evidence_root": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children",
+            "argv": [
+              "python3",
+              "tests/attention_checks.py",
+              "--reduced",
+              "--adversarial",
+              "--seed",
+              "17"
+            ],
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "generated_sha256": {
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/manifest.json": "ac2c6f0cdc3c9a0d04f4db13a458576067fb6d8fad902f44e4142b78a2a10adc",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0.sv": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-stimulus.jsonl": "17ddcf8a69eb9d2dd1a4ecfe8f6a628907578e36c125d846a734e7374b140e5f",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-observations.jsonl": "4b18041880659b0e7b94873fd63f12c088bf587eef20e7532584ec0369fcc172",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1.sv": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-stimulus.jsonl": "8a05139cc63211f70055b4470025659816d0774293e3525d3ebb33054e144cbf",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-observations.jsonl": "dfb3e9bdaa40390784fcfa42a6574ffa2816d3cc6471b4fbf7feccfce365cee8"
+            },
+            "compiled_models": [
+              {
+                "identity": {
+                  "sources": {
+                    "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+                    "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+                    "rtl/anvil_q2_fp_00_pkg.sv": "ece49633be9744e057e2aa9d00e6ab5ec6932c66460e716f2d8373b3251c344c",
+                    "rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+                    "rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+                    "rtl/anvil_q2_fp_decoder_layer.sv": "554197c75d5d3fde4a406eb732638041e13c8226dfaaa3e3e937d06dd470afbb",
+                    "rtl/anvil_q2_fp_dot_lane.sv": "7cf9e0b5850bff1484cba363d6b6d25a3090794dee358f9409626c67142b8e37",
+                    "rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+                    "rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+                    "rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+                    "rtl/anvil_q2_fp_gemv_bank.sv": "31a454e4f6b62411bfcbcfe2ae8b76aa518926da3fe3f5369c0344b49a0ef88c",
+                    "rtl/anvil_q2_fp_gqa_attention.sv": "0d144e671dd14580ccb86a96210d3b2adfcbb2dbe238b91f51f7d6a731bdcf22",
+                    "rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+                    "rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+                    "rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+                    "rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+                    "rtl/anvil_q2_fp_scalar.sv": "fd515a05bed11898b91175f289d1ad7fce3e48123a5e107020135fe04449e0a6",
+                    "rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+                    "rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+                    "rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+                    "rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782"
+                  },
+                  "bench": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+                  "parameters": {
+                    "MODE": 0,
+                    "LAYERS": 3,
+                    "HIDDEN": 48,
+                    "QHEADS": 6,
+                    "KVHEADS": 1,
+                    "DIM": 8,
+                    "POSITIONS": 3,
+                    "BLOCK": 2
+                  },
+                  "frontend_sha256": "9fb92ed0eb4a15e967a4e49049894440fce737e0860e31ea0f5f232bafb4b317",
+                  "options": [
+                    "--binary",
+                    "--timing",
+                    "--assert",
+                    "--top-module",
+                    "tb",
+                    "-Wno-fatal",
+                    "-Wno-BLKANDNBLK",
+                    "--unroll-count",
+                    "512",
+                    "--unroll-stmts",
+                    "1000000",
+                    "-CFLAGS",
+                    "-O1",
+                    "-j",
+                    "2"
+                  ]
+                },
+                "binary": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-obj/Vtb",
+                "binary_sha256": "ef2b0c027dcbaf2abeb05f205619633ef531865f6a12724ef9a8590011869b01",
+                "startup": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.vvp",
+                "artifact_sha256": {
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0.sv": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.sv": "ad5bed06fe9294e34c76268bac06d19afe70d081bce6b3aede988c6042949c40",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.vvp": "c65550ea15358bfcf9d9752ee4276390f0abdef4089e17320b7b92797d4048e9",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-compiled.sv": "a50cd302cd188ceaf7027ae6b4638a47a2c82a4f3a4a27e099e6e395658370dd",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stdout.txt": "26daf9ad1ba36ee1c20cab9a869d0a1fbb8117230c80c78ec2d8cf597f64c4a5",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stdout.txt": "59d1cbef41d4ae78d5063d525b7aa13d18dc0493ea00537efc19b2ee398cb5a8",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stdout.txt": "8ee498ee2fc27e8dcdf99191b454077df95e3840d841ec94321748b6d7f36819",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stdout.txt": "80b5b464f26e8b0f8a22ba7afb742d914a256ddef9644363a3ce246b28d6da9b",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stderr.txt": "36b519a8dde837c2e203668b27c230286f552df62f6435aaf4bc4506c507e417"
+                },
+                "build_commands": [
+                  {
+                    "argv": [
+                      "verilator",
+                      "--version"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.434892+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:41.549743+00:00",
+                    "duration_s": 0.11458148318342865
+                  },
+                  {
+                    "argv": [
+                      "g++",
+                      "--version"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.549904+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:41.554526+00:00",
+                    "duration_s": 0.004295087186619639
+                  },
+                  {
+                    "argv": [
+                      "make",
+                      "--version"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.554687+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:41.559309+00:00",
+                    "duration_s": 0.004284026101231575
+                  },
+                  {
+                    "argv": [
+                      "iverilog",
+                      "-V"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.559462+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:41.576378+00:00",
+                    "duration_s": 0.016571291023865342
+                  },
+                  {
+                    "argv": [
+                      "vvp",
+                      "-V"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.576543+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:41.585444+00:00",
+                    "duration_s": 0.008495807880535722
+                  },
+                  {
+                    "argv": [
+                      "iverilog",
+                      "-g2012",
+                      "-Wall",
+                      "-s",
+                      "tb",
+                      "-Ptb.MODE=0",
+                      "-Ptb.LAYERS=3",
+                      "-Ptb.HIDDEN=48",
+                      "-Ptb.QHEADS=6",
+                      "-Ptb.KVHEADS=1",
+                      "-Ptb.DIM=8",
+                      "-Ptb.POSITIONS=3",
+                      "-Ptb.BLOCK=2",
+                      "-o",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.vvp",
+                      "rtl/anvil_q2_bank_scheduler.sv",
+                      "rtl/anvil_q2_bus_mux.sv",
+                      "rtl/anvil_q2_fp_00_pkg.sv",
+                      "rtl/anvil_q2_fp_awq_dequant.sv",
+                      "rtl/anvil_q2_fp_cache_codec.sv",
+                      "rtl/anvil_q2_fp_decoder_layer.sv",
+                      "rtl/anvil_q2_fp_dot_lane.sv",
+                      "rtl/anvil_q2_fp_elementwise.sv",
+                      "rtl/anvil_q2_fp_exp.sv",
+                      "rtl/anvil_q2_fp_gemv.sv",
+                      "rtl/anvil_q2_fp_gemv_bank.sv",
+                      "rtl/anvil_q2_fp_gqa_attention.sv",
+                      "rtl/anvil_q2_fp_kv_cache.sv",
+                      "rtl/anvil_q2_fp_parameters.sv",
+                      "rtl/anvil_q2_fp_rmsnorm.sv",
+                      "rtl/anvil_q2_fp_rope.sv",
+                      "rtl/anvil_q2_fp_scalar.sv",
+                      "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                      "rtl/anvil_q2_fp_top.sv",
+                      "rtl/anvil_q2_mem_port.sv",
+                      "rtl/anvil_q2_scalar_arbiter.sv",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup.sv"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.588865+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:41.703939+00:00",
+                    "duration_s": 0.11476009688340127
+                  },
+                  {
+                    "argv": [
+                      "verilator",
+                      "--binary",
+                      "--timing",
+                      "--assert",
+                      "--top-module",
+                      "tb",
+                      "-Wno-fatal",
+                      "-Wno-BLKANDNBLK",
+                      "--unroll-count",
+                      "512",
+                      "--unroll-stmts",
+                      "1000000",
+                      "-CFLAGS",
+                      "-O1",
+                      "-j",
+                      "2",
+                      "--Mdir",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-obj",
+                      "-GMODE=0",
+                      "-GLAYERS=3",
+                      "-GHIDDEN=48",
+                      "-GQHEADS=6",
+                      "-GKVHEADS=1",
+                      "-GDIM=8",
+                      "-GPOSITIONS=3",
+                      "-GBLOCK=2",
+                      "rtl/anvil_q2_bank_scheduler.sv",
+                      "rtl/anvil_q2_bus_mux.sv",
+                      "rtl/anvil_q2_fp_00_pkg.sv",
+                      "rtl/anvil_q2_fp_awq_dequant.sv",
+                      "rtl/anvil_q2_fp_cache_codec.sv",
+                      "rtl/anvil_q2_fp_decoder_layer.sv",
+                      "rtl/anvil_q2_fp_dot_lane.sv",
+                      "rtl/anvil_q2_fp_elementwise.sv",
+                      "rtl/anvil_q2_fp_exp.sv",
+                      "rtl/anvil_q2_fp_gemv.sv",
+                      "rtl/anvil_q2_fp_gemv_bank.sv",
+                      "rtl/anvil_q2_fp_gqa_attention.sv",
+                      "rtl/anvil_q2_fp_kv_cache.sv",
+                      "rtl/anvil_q2_fp_parameters.sv",
+                      "rtl/anvil_q2_fp_rmsnorm.sv",
+                      "rtl/anvil_q2_fp_rope.sv",
+                      "rtl/anvil_q2_fp_scalar.sv",
+                      "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                      "rtl/anvil_q2_fp_top.sv",
+                      "rtl/anvil_q2_mem_port.sv",
+                      "rtl/anvil_q2_scalar_arbiter.sv",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-compiled.sv"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:41.706944+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:57.979898+00:00",
+                    "duration_s": 16.272653330117464
+                  }
+                ]
+              },
+              {
+                "identity": {
+                  "sources": {
+                    "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+                    "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+                    "rtl/anvil_q2_fp_00_pkg.sv": "ece49633be9744e057e2aa9d00e6ab5ec6932c66460e716f2d8373b3251c344c",
+                    "rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+                    "rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+                    "rtl/anvil_q2_fp_decoder_layer.sv": "554197c75d5d3fde4a406eb732638041e13c8226dfaaa3e3e937d06dd470afbb",
+                    "rtl/anvil_q2_fp_dot_lane.sv": "7cf9e0b5850bff1484cba363d6b6d25a3090794dee358f9409626c67142b8e37",
+                    "rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+                    "rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+                    "rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+                    "rtl/anvil_q2_fp_gemv_bank.sv": "31a454e4f6b62411bfcbcfe2ae8b76aa518926da3fe3f5369c0344b49a0ef88c",
+                    "rtl/anvil_q2_fp_gqa_attention.sv": "0d144e671dd14580ccb86a96210d3b2adfcbb2dbe238b91f51f7d6a731bdcf22",
+                    "rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+                    "rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+                    "rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+                    "rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+                    "rtl/anvil_q2_fp_scalar.sv": "fd515a05bed11898b91175f289d1ad7fce3e48123a5e107020135fe04449e0a6",
+                    "rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+                    "rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+                    "rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+                    "rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782"
+                  },
+                  "bench": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+                  "parameters": {
+                    "MODE": 1,
+                    "LAYERS": 3,
+                    "HIDDEN": 48,
+                    "QHEADS": 6,
+                    "KVHEADS": 1,
+                    "DIM": 8,
+                    "POSITIONS": 3,
+                    "BLOCK": 2
+                  },
+                  "frontend_sha256": "9fb92ed0eb4a15e967a4e49049894440fce737e0860e31ea0f5f232bafb4b317",
+                  "options": [
+                    "--binary",
+                    "--timing",
+                    "--assert",
+                    "--top-module",
+                    "tb",
+                    "-Wno-fatal",
+                    "-Wno-BLKANDNBLK",
+                    "--unroll-count",
+                    "512",
+                    "--unroll-stmts",
+                    "1000000",
+                    "-CFLAGS",
+                    "-O1",
+                    "-j",
+                    "2"
+                  ]
+                },
+                "binary": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-obj/Vtb",
+                "binary_sha256": "1e4fc449c6c765737746efa4d19f93695d37b1deb9753c6ee572ac75a524a645",
+                "startup": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.vvp",
+                "artifact_sha256": {
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1.sv": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.sv": "ad5bed06fe9294e34c76268bac06d19afe70d081bce6b3aede988c6042949c40",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.vvp": "f01f16dd1a0308500ccf6ffee72e76beae92f34811d54448f07f4e39cf0f9fcd",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-compiled.sv": "a50cd302cd188ceaf7027ae6b4638a47a2c82a4f3a4a27e099e6e395658370dd",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stdout.txt": "26daf9ad1ba36ee1c20cab9a869d0a1fbb8117230c80c78ec2d8cf597f64c4a5",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stdout.txt": "59d1cbef41d4ae78d5063d525b7aa13d18dc0493ea00537efc19b2ee398cb5a8",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stdout.txt": "8ee498ee2fc27e8dcdf99191b454077df95e3840d841ec94321748b6d7f36819",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stdout.txt": "4309dab4d76095f8c6e43f7b83bda981504b9f83aa415e18f4e93400447418c4",
+                  "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stderr.txt": "1bb3a5474713d28ba8aac7cfd005b8af4581b92e09146266a19d38da4aaa86c1"
+                },
+                "build_commands": [
+                  {
+                    "argv": [
+                      "verilator",
+                      "--version"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.318315+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:58.433641+00:00",
+                    "duration_s": 0.11497021792456508
+                  },
+                  {
+                    "argv": [
+                      "g++",
+                      "--version"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.433806+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:58.438479+00:00",
+                    "duration_s": 0.0043405708856880665
+                  },
+                  {
+                    "argv": [
+                      "make",
+                      "--version"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.438655+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:58.443156+00:00",
+                    "duration_s": 0.004173340043053031
+                  },
+                  {
+                    "argv": [
+                      "iverilog",
+                      "-V"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.443305+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:58.460054+00:00",
+                    "duration_s": 0.01640734518878162
+                  },
+                  {
+                    "argv": [
+                      "vvp",
+                      "-V"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.460229+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:58.469136+00:00",
+                    "duration_s": 0.008524931035935879
+                  },
+                  {
+                    "argv": [
+                      "iverilog",
+                      "-g2012",
+                      "-Wall",
+                      "-s",
+                      "tb",
+                      "-Ptb.MODE=1",
+                      "-Ptb.LAYERS=3",
+                      "-Ptb.HIDDEN=48",
+                      "-Ptb.QHEADS=6",
+                      "-Ptb.KVHEADS=1",
+                      "-Ptb.DIM=8",
+                      "-Ptb.POSITIONS=3",
+                      "-Ptb.BLOCK=2",
+                      "-o",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.vvp",
+                      "rtl/anvil_q2_bank_scheduler.sv",
+                      "rtl/anvil_q2_bus_mux.sv",
+                      "rtl/anvil_q2_fp_00_pkg.sv",
+                      "rtl/anvil_q2_fp_awq_dequant.sv",
+                      "rtl/anvil_q2_fp_cache_codec.sv",
+                      "rtl/anvil_q2_fp_decoder_layer.sv",
+                      "rtl/anvil_q2_fp_dot_lane.sv",
+                      "rtl/anvil_q2_fp_elementwise.sv",
+                      "rtl/anvil_q2_fp_exp.sv",
+                      "rtl/anvil_q2_fp_gemv.sv",
+                      "rtl/anvil_q2_fp_gemv_bank.sv",
+                      "rtl/anvil_q2_fp_gqa_attention.sv",
+                      "rtl/anvil_q2_fp_kv_cache.sv",
+                      "rtl/anvil_q2_fp_parameters.sv",
+                      "rtl/anvil_q2_fp_rmsnorm.sv",
+                      "rtl/anvil_q2_fp_rope.sv",
+                      "rtl/anvil_q2_fp_scalar.sv",
+                      "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                      "rtl/anvil_q2_fp_top.sv",
+                      "rtl/anvil_q2_mem_port.sv",
+                      "rtl/anvil_q2_scalar_arbiter.sv",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup.sv"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.472144+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:13:58.587315+00:00",
+                    "duration_s": 0.1148521879222244
+                  },
+                  {
+                    "argv": [
+                      "verilator",
+                      "--binary",
+                      "--timing",
+                      "--assert",
+                      "--top-module",
+                      "tb",
+                      "-Wno-fatal",
+                      "-Wno-BLKANDNBLK",
+                      "--unroll-count",
+                      "512",
+                      "--unroll-stmts",
+                      "1000000",
+                      "-CFLAGS",
+                      "-O1",
+                      "-j",
+                      "2",
+                      "--Mdir",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-obj",
+                      "-GMODE=1",
+                      "-GLAYERS=3",
+                      "-GHIDDEN=48",
+                      "-GQHEADS=6",
+                      "-GKVHEADS=1",
+                      "-GDIM=8",
+                      "-GPOSITIONS=3",
+                      "-GBLOCK=2",
+                      "rtl/anvil_q2_bank_scheduler.sv",
+                      "rtl/anvil_q2_bus_mux.sv",
+                      "rtl/anvil_q2_fp_00_pkg.sv",
+                      "rtl/anvil_q2_fp_awq_dequant.sv",
+                      "rtl/anvil_q2_fp_cache_codec.sv",
+                      "rtl/anvil_q2_fp_decoder_layer.sv",
+                      "rtl/anvil_q2_fp_dot_lane.sv",
+                      "rtl/anvil_q2_fp_elementwise.sv",
+                      "rtl/anvil_q2_fp_exp.sv",
+                      "rtl/anvil_q2_fp_gemv.sv",
+                      "rtl/anvil_q2_fp_gemv_bank.sv",
+                      "rtl/anvil_q2_fp_gqa_attention.sv",
+                      "rtl/anvil_q2_fp_kv_cache.sv",
+                      "rtl/anvil_q2_fp_parameters.sv",
+                      "rtl/anvil_q2_fp_rmsnorm.sv",
+                      "rtl/anvil_q2_fp_rope.sv",
+                      "rtl/anvil_q2_fp_scalar.sv",
+                      "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                      "rtl/anvil_q2_fp_top.sv",
+                      "rtl/anvil_q2_mem_port.sv",
+                      "rtl/anvil_q2_scalar_arbiter.sv",
+                      "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-compiled.sv"
+                    ],
+                    "cwd": ".",
+                    "started_at": "2026-10-29T04:13:58.590344+00:00",
+                    "timeout_s": 3600,
+                    "stdout": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stdout.txt",
+                    "stderr": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stderr.txt",
+                    "timed_out": false,
+                    "expected_exit_codes": [
+                      0
+                    ],
+                    "exit_code": 0,
+                    "ended_at": "2026-10-29T04:14:14.247785+00:00",
+                    "duration_s": 15.657133629079908
+                  }
+                ]
+              }
+            ],
+            "raw_stream_sha256": {
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stdout.txt": "26daf9ad1ba36ee1c20cab9a869d0a1fbb8117230c80c78ec2d8cf597f64c4a5",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-verilator-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stdout.txt": "59d1cbef41d4ae78d5063d525b7aa13d18dc0493ea00537efc19b2ee398cb5a8",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-cxx-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stdout.txt": "8ee498ee2fc27e8dcdf99191b454077df95e3840d841ec94321748b6d7f36819",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-make-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile-startup-compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stdout.txt": "80b5b464f26e8b0f8a22ba7afb742d914a256ddef9644363a3ce246b28d6da9b",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-compile.stderr.txt": "36b519a8dde837c2e203668b27c230286f552df62f6435aaf4bc4506c507e417",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-startup.stdout.txt": "403b5de3040cf893c0276d4afc4662fd8babfeeb83dd5c93519599542452abc8",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-startup.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-simulation.stdout.txt": "a08d010d004bd091e7bd230945f7c9e905712ce774c91a31479c5141cae16908",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode0-simulation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stdout.txt": "26daf9ad1ba36ee1c20cab9a869d0a1fbb8117230c80c78ec2d8cf597f64c4a5",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-verilator-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stdout.txt": "59d1cbef41d4ae78d5063d525b7aa13d18dc0493ea00537efc19b2ee398cb5a8",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-cxx-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stdout.txt": "8ee498ee2fc27e8dcdf99191b454077df95e3840d841ec94321748b6d7f36819",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-make-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile-startup-compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stdout.txt": "4309dab4d76095f8c6e43f7b83bda981504b9f83aa415e18f4e93400447418c4",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-compile.stderr.txt": "1bb3a5474713d28ba8aac7cfd005b8af4581b92e09146266a19d38da4aaa86c1",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-startup.stdout.txt": "625c5d8c8c18c15c0a02a0af4663f9f760612d3c43a414913d3bc93f276afe5f",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-startup.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-simulation.stdout.txt": "f8cc8e1976abded77687305c1143d04b815755d8de45670a80bf5aa20357606e",
+              "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s17-adversarial-20261029T041341Z-54de2a83/mode1-simulation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "outcome": "passed-focused-only",
+            "ended_at": "2026-10-29T04:14:14.680331+00:00",
+            "metrics": {
+              "layer_attention": [
+                {
+                  "values_compared": 144,
+                  "max_absolute_error": 0.0,
+                  "mean_absolute_error": 0.0,
+                  "rms_error": 0.0,
+                  "normalized_rmse": 0.0,
+                  "cosine_similarity": 1.0
+                },
+                {
+                  "values_compared": 144,
+                  "max_absolute_error": 4.76837158203125e-07,
+                  "mean_absolute_error": 4.76837158203125e-07,
+                  "rms_error": 4.76837158203125e-07,
+                  "normalized_rmse": 0.007751937984496124,
+                  "cosine_similarity": 1.0
+                },
+                {
+                  "values_compared": 144,
+                  "max_absolute_error": 0.0,
+                  "mean_absolute_error": 0.0,
+                  "rms_error": 0.0,
+                  "normalized_rmse": 0.0,
+                  "cosine_similarity": 1.0
+                }
+              ],
+              "final_residual": {
+                "values_compared": 144,
+                "max_absolute_error": 1.4901161193847656e-08,
+                "mean_absolute_error": 1.4590720335642496e-08,
+                "rms_error": 1.4745123792486783e-08,
+                "normalized_rmse": 1.5962064727080413e-09,
+                "cosine_similarity": 1.0
+              },
+              "host_readout_logit_drift": {
+                "values_compared": 24,
+                "max_absolute_error": 0.0,
+                "mean_absolute_error": 0.0,
+                "rms_error": 0.0,
+                "normalized_rmse": 0.0,
+                "cosine_similarity": 1.0
+              },
+              "mode0": {
+                "frames_compared": 9,
+                "memory_requests": 3240,
+                "memory_responses": 3240,
+                "writes_compared": 504,
+                "attention_values_compared": 432,
+                "command_to_done_cycles": [
+                  3701,
+                  3703,
+                  3703,
+                  5612,
+                  5614,
+                  5614,
+                  7409,
+                  7415,
+                  7408
+                ]
+              },
+              "mode1": {
+                "frames_compared": 9,
+                "memory_requests": 5040,
+                "memory_responses": 5040,
+                "writes_compared": 576,
+                "attention_values_compared": 432,
+                "command_to_done_cycles": [
+                  5380,
+                  5380,
+                  5380,
+                  8764,
+                  8773,
+                  8773,
+                  12130,
+                  12127,
+                  12127
+                ]
+              },
+              "thresholds_applied": false
+            },
+            "limitations": "Host sparse scalar feedback/readout; native full-token HIL remains mandatory."
+          }
+        },
+        {
+          "path": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s43-adversarial-20261029T041414Z-fcc90a75/drift.json",
+          "data": {
+            "layer_attention": [
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.0,
+                "mean_absolute_error": 0.0,
+                "rms_error": 0.0,
+                "normalized_rmse": 0.0,
+                "cosine_similarity": 1.0
+              },
+              {
+                "values_compared": 144,
+                "max_absolute_error": 4.76837158203125e-07,
+                "mean_absolute_error": 4.76837158203125e-07,
+                "rms_error": 4.76837158203125e-07,
+                "normalized_rmse": 0.007751937984496124,
+                "cosine_similarity": 1.0
+              },
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.0,
+                "mean_absolute_error": 0.0,
+                "rms_error": 0.0,
+                "normalized_rmse": 0.0,
+                "cosine_similarity": 1.0
+              }
+            ],
+            "final_residual": {
+              "values_compared": 144,
+              "max_absolute_error": 1.4901161193847656e-08,
+              "mean_absolute_error": 1.4590720335642496e-08,
+              "rms_error": 1.4745123792486783e-08,
+              "normalized_rmse": 1.5962064727080413e-09,
+              "cosine_similarity": 1.0
+            },
+            "host_readout_logit_drift": {
+              "values_compared": 24,
+              "max_absolute_error": 0.0,
+              "mean_absolute_error": 0.0,
+              "rms_error": 0.0,
+              "normalized_rmse": 0.0,
+              "cosine_similarity": 1.0
+            },
+            "mode0": {
+              "frames_compared": 9,
+              "memory_requests": 3240,
+              "memory_responses": 3240,
+              "writes_compared": 504,
+              "attention_values_compared": 432,
+              "command_to_done_cycles": [
+                3701,
+                3703,
+                3703,
+                5612,
+                5614,
+                5614,
+                7409,
+                7415,
+                7408
+              ]
+            },
+            "mode1": {
+              "frames_compared": 9,
+              "memory_requests": 5040,
+              "memory_responses": 5040,
+              "writes_compared": 576,
+              "attention_values_compared": 432,
+              "command_to_done_cycles": [
+                5380,
+                5380,
+                5380,
+                8764,
+                8773,
+                8773,
+                12130,
+                12127,
+                12127
+              ]
+            },
+            "thresholds_applied": false
+          }
+        },
+        {
+          "path": "evidence/l1/l1-behavior-20261029T033139Z-cd2c066e/children/verifier-attention-drift-reduced-s43-adversarial-20261029T041414Z-fcc90a75/manifest.json",
+          "data": {
+            "suite": "anvil-q2-fp-attention-drift-v1",
+            "geometry": {
+              "layers": 3,
+              "hidden": 48,
+              "intermediate": 48,
+              "q_heads": 6,
+              "kv_heads": 1,
+              "head_dim": 8,
+              "group": 12,
+              "vocabulary": 3,
+              "positions": 3,
+              "block": 2
+            },
+            "seed": 43,
+            "shape_class": "reduced",
+            "input_class": "outlier/adversarial",
+            "initial": "((seed+11*position+7*component) mod 33 - 16)/31",
+            "sparse_projections": "q=x/4; k=head-group-first(x)/4; v=half-shifted(x)/4; FP32",
+            "feedback": "RNE_FP32(x+RNE_FP32(actual_RTL_attention_output/32)), never reset per layer",
+            "reference": "Independent rational RNE FP32 and selected-format quantization per operation",
+            "readout": "Eight FP32 host readouts of actual final residual, weights in [-8,8]/128",
+            "limits": "Per-layer attention NRMSE<=0.03; final residual NRMSE<=0.05; bounded class only",
+            "not_claimed": "Native full decoder/token throughput, RTL full-vocabulary logits or FPGA timing"
+          }
+        },
+        {
+          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/drift.json",
+          "data": {
+            "layer_attention": [
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.00054931640625,
+                "mean_absolute_error": 0.00021981054063265523,
+                "rms_error": 0.0002538199524902989,
+                "normalized_rmse": 0.0047776924891792675,
+                "cosine_similarity": 0.9999901479052328
+              },
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.0008544921875,
+                "mean_absolute_error": 0.00020706423674710095,
+                "rms_error": 0.0002856249518301061,
+                "normalized_rmse": 0.0053869852929457444,
+                "cosine_similarity": 0.9999857994950441
+              },
+              {
+                "values_compared": 144,
+                "max_absolute_error": 0.000732421875,
+                "mean_absolute_error": 0.00019475629152212705,
+                "rms_error": 0.0002609398440011155,
+                "normalized_rmse": 0.004930210351937128,
+                "cosine_similarity": 0.9999878922889656
+              }
+            ],
+            "final_residual": {
+              "values_compared": 144,
+              "max_absolute_error": 2.09808349609375e-05,
+              "mean_absolute_error": 6.869716647391518e-06,
+              "rms_error": 8.29521241893003e-06,
+              "normalized_rmse": 2.706372254821442e-05,
+              "cosine_similarity": 0.9999999996344138
+            },
+            "host_readout_logit_drift": {
+              "values_compared": 24,
+              "max_absolute_error": 2.4139881134033203e-06,
+              "mean_absolute_error": 1.0071865593393643e-06,
+              "rms_error": 1.241397927080002e-06,
+              "normalized_rmse": 1.6864978076766154e-05,
+              "cosine_similarity": 0.9999999998609332
+            },
+            "mode0": {
+              "frames_compared": 9,
+              "memory_requests": 3240,
+              "memory_responses": 3240,
+              "writes_compared": 504,
+              "attention_values_compared": 432,
+              "command_to_done_cycles": [
+                3889,
+                3890,
+                3893,
+                6194,
+                6193,
+                6192,
+                8540,
+                8539,
+                8539
+              ]
+            },
+            "mode1": {
+              "frames_compared": 9,
+              "memory_requests": 5040,
+              "memory_responses": 5040,
+              "writes_compared": 576,
+              "attention_values_compared": 432,
+              "command_to_done_cycles": [
+                5817,
+                5822,
+                5822,
+                9917,
+                9917,
+                9917,
+                13891,
+                13895,
+                13895
+              ]
+            },
+            "thresholds_applied": true
+          }
+        },
+        {
+          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/manifest.json",
+          "data": {
+            "suite": "anvil-q2-fp-attention-drift-v1",
+            "geometry": {
+              "layers": 3,
+              "hidden": 48,
+              "intermediate": 48,
+              "q_heads": 6,
+              "kv_heads": 1,
+              "head_dim": 8,
+              "group": 12,
+              "vocabulary": 3,
+              "positions": 3,
+              "block": 2
+            },
+            "seed": 17,
+            "shape_class": "reduced",
+            "input_class": "bounded norm-controlled",
+            "initial": "((seed+11*position+7*component) mod 33 - 16)/31",
+            "sparse_projections": "q=x/4; k=head-group-first(x)/4; v=half-shifted(x)/4; FP32",
+            "feedback": "RNE_FP32(x+RNE_FP32(actual_RTL_attention_output/32)), never reset per layer",
+            "reference": "Independent rational RNE FP32 and selected-format quantization per operation",
+            "readout": "Eight FP32 host readouts of actual final residual, weights in [-8,8]/128",
+            "limits": "Per-layer attention NRMSE<=0.03; final residual NRMSE<=0.05; bounded class only",
+            "not_claimed": "Native full decoder/token throughput, RTL full-vocabulary logits or FPGA timing"
+          }
+        },
+        {
+          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/compiled-models/2bffb0e2c3b3158decaf1bb4da78e146a4a4503b9ea38f179c42a3b8ef5d2a23.json",
+          "data": {
+            "identity": {
+              "sources": {
+                "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+                "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+                "rtl/anvil_q2_fp_00_pkg.sv": "ece49633be9744e057e2aa9d00e6ab5ec6932c66460e716f2d8373b3251c344c",
+                "rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+                "rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+                "rtl/anvil_q2_fp_decoder_layer.sv": "554197c75d5d3fde4a406eb732638041e13c8226dfaaa3e3e937d06dd470afbb",
+                "rtl/anvil_q2_fp_dot_lane.sv": "7cf9e0b5850bff1484cba363d6b6d25a3090794dee358f9409626c67142b8e37",
+                "rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+                "rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+                "rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+                "rtl/anvil_q2_fp_gemv_bank.sv": "31a454e4f6b62411bfcbcfe2ae8b76aa518926da3fe3f5369c0344b49a0ef88c",
+                "rtl/anvil_q2_fp_gqa_attention.sv": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181",
+                "rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+                "rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+                "rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+                "rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+                "rtl/anvil_q2_fp_scalar.sv": "fd515a05bed11898b91175f289d1ad7fce3e48123a5e107020135fe04449e0a6",
+                "rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+                "rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+                "rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+                "rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782"
+              },
+              "bench": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+              "parameters": {
+                "MODE": 0,
+                "LAYERS": 3,
+                "HIDDEN": 48,
+                "QHEADS": 6,
+                "KVHEADS": 1,
+                "DIM": 8,
+                "POSITIONS": 3,
+                "BLOCK": 2
+              },
+              "frontend_sha256": "9fb92ed0eb4a15e967a4e49049894440fce737e0860e31ea0f5f232bafb4b317",
+              "options": [
+                "--binary",
+                "--timing",
+                "--assert",
+                "--top-module",
+                "tb",
+                "-Wno-fatal",
+                "-Wno-BLKANDNBLK",
+                "--unroll-count",
+                "512",
+                "--unroll-stmts",
+                "1000000",
+                "-CFLAGS",
+                "-O1",
+                "-j",
+                "2"
+              ]
+            },
+            "binary": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-obj/Vtb",
+            "binary_sha256": "2b8c15fd282560e162c2f37c8b78e950fb0e84ec352ec18b337ff046318c8704",
+            "startup": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup.vvp",
+            "artifact_sha256": {
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0.sv": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup.sv": "ad5bed06fe9294e34c76268bac06d19afe70d081bce6b3aede988c6042949c40",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup.vvp": "b1ee3cec3782bba654fbceb57b9704cfafa0c8b676f29f14a30a6c75aa7b0672",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-compiled.sv": "a50cd302cd188ceaf7027ae6b4638a47a2c82a4f3a4a27e099e6e395658370dd",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stdout.txt": "26daf9ad1ba36ee1c20cab9a869d0a1fbb8117230c80c78ec2d8cf597f64c4a5",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stdout.txt": "59d1cbef41d4ae78d5063d525b7aa13d18dc0493ea00537efc19b2ee398cb5a8",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stdout.txt": "8ee498ee2fc27e8dcdf99191b454077df95e3840d841ec94321748b6d7f36819",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stdout.txt": "40035665ac57453f2c770d4a54e0b51310cfb56149ad33e8d1b4a4ab9f03f832",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stderr.txt": "6afffecd8fe4062e65718678f052f840bd977346fd764f2f13e605dee97fb9b8"
+            },
+            "build_commands": [
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:03.330415+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:03.449072+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:03.564933+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-verilator-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:03.564954+00:00",
+                "duration_s": 0.23416749108582735
+              },
+              {
+                "argv": [
+                  "g++",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:03.565130+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:03.573289+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:03.689045+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-cxx-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:03.689065+00:00",
+                "duration_s": 0.1233850228600204
+              },
+              {
+                "argv": [
+                  "make",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:03.689242+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:03.697144+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:03.812926+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-make-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:03.812947+00:00",
+                "duration_s": 0.12330179801210761
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:03.813114+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:03.833651+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:03.949179+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-iverilog-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:03.949199+00:00",
+                "duration_s": 0.13571282499469817
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:03.949369+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:03.961525+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:04.077096+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-vvp-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:04.077116+00:00",
+                "duration_s": 0.12724949698895216
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-g2012",
+                  "-Wall",
+                  "-s",
+                  "tb",
+                  "-Ptb.MODE=0",
+                  "-Ptb.LAYERS=3",
+                  "-Ptb.HIDDEN=48",
+                  "-Ptb.QHEADS=6",
+                  "-Ptb.KVHEADS=1",
+                  "-Ptb.DIM=8",
+                  "-Ptb.POSITIONS=3",
+                  "-Ptb.BLOCK=2",
+                  "-o",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup.vvp",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:04.080276+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:04.198457+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:04.314177+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-startup-compile.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:04.314198+00:00",
+                "duration_s": 0.23356248415075243
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "--assert",
+                  "--top-module",
+                  "tb",
+                  "-Wno-fatal",
+                  "-Wno-BLKANDNBLK",
+                  "--unroll-count",
+                  "512",
+                  "--unroll-stmts",
+                  "1000000",
+                  "-CFLAGS",
+                  "-O1",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-obj",
+                  "-GMODE=0",
+                  "-GLAYERS=3",
+                  "-GHIDDEN=48",
+                  "-GQHEADS=6",
+                  "-GKVHEADS=1",
+                  "-GDIM=8",
+                  "-GPOSITIONS=3",
+                  "-GBLOCK=2",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile-compiled.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:04.317260+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:20.630994+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:20.747012+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode0-compile.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:20.747032+00:00",
+                "duration_s": 16.429417720995843
+              }
+            ]
+          }
+        },
+        {
+          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/compiled-models/c55fe0133432b15a2958658edc5a40d35af883eb804cd057c2b0611cf49cfcc4.json",
+          "data": {
+            "identity": {
+              "sources": {
+                "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+                "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+                "rtl/anvil_q2_fp_00_pkg.sv": "ece49633be9744e057e2aa9d00e6ab5ec6932c66460e716f2d8373b3251c344c",
+                "rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+                "rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+                "rtl/anvil_q2_fp_decoder_layer.sv": "554197c75d5d3fde4a406eb732638041e13c8226dfaaa3e3e937d06dd470afbb",
+                "rtl/anvil_q2_fp_dot_lane.sv": "7cf9e0b5850bff1484cba363d6b6d25a3090794dee358f9409626c67142b8e37",
+                "rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+                "rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+                "rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+                "rtl/anvil_q2_fp_gemv_bank.sv": "31a454e4f6b62411bfcbcfe2ae8b76aa518926da3fe3f5369c0344b49a0ef88c",
+                "rtl/anvil_q2_fp_gqa_attention.sv": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181",
+                "rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+                "rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+                "rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+                "rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+                "rtl/anvil_q2_fp_scalar.sv": "fd515a05bed11898b91175f289d1ad7fce3e48123a5e107020135fe04449e0a6",
+                "rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+                "rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+                "rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+                "rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782"
+              },
+              "bench": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+              "parameters": {
+                "MODE": 1,
+                "LAYERS": 3,
+                "HIDDEN": 48,
+                "QHEADS": 6,
+                "KVHEADS": 1,
+                "DIM": 8,
+                "POSITIONS": 3,
+                "BLOCK": 2
+              },
+              "frontend_sha256": "9fb92ed0eb4a15e967a4e49049894440fce737e0860e31ea0f5f232bafb4b317",
+              "options": [
+                "--binary",
+                "--timing",
+                "--assert",
+                "--top-module",
+                "tb",
+                "-Wno-fatal",
+                "-Wno-BLKANDNBLK",
+                "--unroll-count",
+                "512",
+                "--unroll-stmts",
+                "1000000",
+                "-CFLAGS",
+                "-O1",
+                "-j",
+                "2"
+              ]
+            },
+            "binary": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-obj/Vtb",
+            "binary_sha256": "9b451bd67707a2219efa692d5fdda6a4dbc761e77a1f109c64a07897da73d6e5",
+            "startup": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup.vvp",
+            "artifact_sha256": {
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1.sv": "0cdc7e594d547500184ee6c60c93769f502d7990edd7dae5505769b289e94ee8",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup.sv": "ad5bed06fe9294e34c76268bac06d19afe70d081bce6b3aede988c6042949c40",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup.vvp": "372e053411d967979cb63c133e8614951eff789addff8e6e8e4e7f1947755e4b",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-compiled.sv": "a50cd302cd188ceaf7027ae6b4638a47a2c82a4f3a4a27e099e6e395658370dd",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stdout.txt": "26daf9ad1ba36ee1c20cab9a869d0a1fbb8117230c80c78ec2d8cf597f64c4a5",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stdout.txt": "59d1cbef41d4ae78d5063d525b7aa13d18dc0493ea00537efc19b2ee398cb5a8",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stdout.txt": "8ee498ee2fc27e8dcdf99191b454077df95e3840d841ec94321748b6d7f36819",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stdout.txt": "f9199cc8658f4afcec3edeb93f29f23bb2aebf66d3eeb217cdc728aaa692f946",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stderr.txt": "c9010a85df9399c2adb11b59115cdc285ea6f0a399802944367c3813c6772a42",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stdout.txt": "d143023ea53f8541c460796f4ff151ff60036c32ec51216b6f1a3571b056037b",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stderr.txt": "78b495705ddf04a67c64ec2d10743fb0e32ee3c30e4a4979f76206e071b478fb"
+            },
+            "build_commands": [
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:21.638990+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:21.757345+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:21.873071+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-verilator-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:21.873091+00:00",
+                "duration_s": 0.23374418285675347
+              },
+              {
+                "argv": [
+                  "g++",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:21.873270+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:21.881363+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:21.997116+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-cxx-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:21.997136+00:00",
+                "duration_s": 0.12346106511540711
+              },
+              {
+                "argv": [
+                  "make",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:21.997312+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:22.005536+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:22.121241+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-make-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:22.121261+00:00",
+                "duration_s": 0.1235412540845573
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:22.121437+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:22.141949+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:22.258272+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-iverilog-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:22.258293+00:00",
+                "duration_s": 0.13637184398248792
+              },
+              {
+                "argv": [
+                  "vvp",
+                  "-V"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:22.258471+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:22.270622+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:22.386300+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-vvp-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:22.386321+00:00",
+                "duration_s": 0.12736747786402702
+              },
+              {
+                "argv": [
+                  "iverilog",
+                  "-g2012",
+                  "-Wall",
+                  "-s",
+                  "tb",
+                  "-Ptb.MODE=1",
+                  "-Ptb.LAYERS=3",
+                  "-Ptb.HIDDEN=48",
+                  "-Ptb.QHEADS=6",
+                  "-Ptb.KVHEADS=1",
+                  "-Ptb.DIM=8",
+                  "-Ptb.POSITIONS=3",
+                  "-Ptb.BLOCK=2",
+                  "-o",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup.vvp",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:22.389501+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:22.508129+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:22.624274+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-startup-compile.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:22.624295+00:00",
+                "duration_s": 0.2344324360601604
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "--assert",
+                  "--top-module",
+                  "tb",
+                  "-Wno-fatal",
+                  "-Wno-BLKANDNBLK",
+                  "--unroll-count",
+                  "512",
+                  "--unroll-stmts",
+                  "1000000",
+                  "-CFLAGS",
+                  "-O1",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-obj",
+                  "-GMODE=1",
+                  "-GLAYERS=3",
+                  "-GHIDDEN=48",
+                  "-GQHEADS=6",
+                  "-GKVHEADS=1",
+                  "-GDIM=8",
+                  "-GPOSITIONS=3",
+                  "-GBLOCK=2",
+                  "rtl/anvil_q2_bank_scheduler.sv",
+                  "rtl/anvil_q2_bus_mux.sv",
+                  "rtl/anvil_q2_fp_00_pkg.sv",
+                  "rtl/anvil_q2_fp_awq_dequant.sv",
+                  "rtl/anvil_q2_fp_cache_codec.sv",
+                  "rtl/anvil_q2_fp_decoder_layer.sv",
+                  "rtl/anvil_q2_fp_dot_lane.sv",
+                  "rtl/anvil_q2_fp_elementwise.sv",
+                  "rtl/anvil_q2_fp_exp.sv",
+                  "rtl/anvil_q2_fp_gemv.sv",
+                  "rtl/anvil_q2_fp_gemv_bank.sv",
+                  "rtl/anvil_q2_fp_gqa_attention.sv",
+                  "rtl/anvil_q2_fp_kv_cache.sv",
+                  "rtl/anvil_q2_fp_parameters.sv",
+                  "rtl/anvil_q2_fp_rmsnorm.sv",
+                  "rtl/anvil_q2_fp_rope.sv",
+                  "rtl/anvil_q2_fp_scalar.sv",
+                  "rtl/anvil_q2_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q2_fp_top.sv",
+                  "rtl/anvil_q2_mem_port.sv",
+                  "rtl/anvil_q2_scalar_arbiter.sv",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile-compiled.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:22.627427+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:38.985110+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:39.103639+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/mode1-compile.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:39.103658+00:00",
+                "duration_s": 16.475867134984583
+              }
+            ]
+          }
+        },
+        {
+          "path": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/receipt.json",
+          "data": {
+            "schema": 1,
+            "purpose": "attention-capture-recovery",
+            "acceptance_evidence": false,
+            "cwd": ".",
+            "started_at": "2026-10-29T06:32:02.783464+00:00",
+            "commands": [
+              {
+                "argv": [
+                  "python3",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:02.798534+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:02.807119+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:02.922695+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:02.922711+00:00",
+                "duration_s": 0.12387473601847887
+              },
+              {
+                "argv": [
+                  "python3",
+                  "tests/attention_checks.py",
+                  "--seed",
+                  "17",
+                  "--reduced"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:02.923140+00:00",
+                "timeout_s": 21600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "environment_overrides": {
+                  "ANVIL_EVIDENCE_ROOT": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children",
+                  "ANVIL_SIM_CACHE": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/compiled-models"
+                },
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:40.185315+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:40.301190+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:40.301211+00:00",
+                "duration_s": 37.377819722983986
+              },
+              {
+                "argv": [
+                  "python3",
+                  "tests/stream_retention_checks.py",
+                  "--action",
+                  "reopen",
+                  "--path",
+                  "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/receipt.json"
+                ],
+                "cwd": ".",
+                "started_at": "2026-10-29T06:32:40.304490+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.txt",
+                "stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stderr.txt",
+                "timed_out": false,
+                "expected_exit_codes": [
+                  0
+                ],
+                "capture_observations": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.capture.jsonl",
+                "exit_code": 0,
+                "capture_reopen": {
+                  "argv": [
+                    "python3",
+                    "tests/retained.py",
+                    "--reopen-capture",
+                    "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.capture.jsonl"
+                  ],
+                  "cwd": ".",
+                  "started_at": "2026-10-29T06:32:40.473310+00:00",
+                  "timeout_s": 3600,
+                  "exit_code": 0,
+                  "timed_out": false,
+                  "ended_at": "2026-10-29T06:32:40.589648+00:00"
+                },
+                "capture_reopen_stdout": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-29T06:32:40.589668+00:00",
+                "duration_s": 0.2848287080414593
+              }
+            ],
+            "source_sha256": {
+              "rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "rtl/anvil_q2_fp_00_pkg.sv": "ece49633be9744e057e2aa9d00e6ab5ec6932c66460e716f2d8373b3251c344c",
+              "rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+              "rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+              "rtl/anvil_q2_fp_decoder_layer.sv": "554197c75d5d3fde4a406eb732638041e13c8226dfaaa3e3e937d06dd470afbb",
+              "rtl/anvil_q2_fp_dot_lane.sv": "7cf9e0b5850bff1484cba363d6b6d25a3090794dee358f9409626c67142b8e37",
+              "rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+              "rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+              "rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+              "rtl/anvil_q2_fp_gemv_bank.sv": "31a454e4f6b62411bfcbcfe2ae8b76aa518926da3fe3f5369c0344b49a0ef88c",
+              "rtl/anvil_q2_fp_gqa_attention.sv": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181",
+              "rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+              "rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+              "rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+              "rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+              "rtl/anvil_q2_fp_scalar.sv": "fd515a05bed11898b91175f289d1ad7fce3e48123a5e107020135fe04449e0a6",
+              "rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+              "rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+              "rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "design/ARCHITECTURE.md": "1db03d55d8a46919c961bd8fa5ce0cbf36327495a5b6edf6eab5028147b93f8e",
+              "design/INTEGRATION.md": "c0cbbff5ebd17679705ed8b992b1c6df38993cd21e7ffce4cebf4b2b66c3292f",
+              "design/SPEC.md": "66c19ac4cc97712a4fdddf72990c889992e47b82f1f0066d54c3a1f627151bf2",
+              "design/anvil_q2_fp.sdc": "098b4b5b225c9cffa76da057461f32d1aaec9e9f3b1af58777d3c9fe49e286b0",
+              "tests/attention_checks.py": "6fbc865345a01c239d12e0ab93ce37ef58b53f8355440181b56d0da4feab9b1f",
+              "tests/awq_lane_checks.py": "4bf50f0eac2f3126053ff6144c5d7c0b0817c180002ab6c4ae472582fa6504d3",
+              "tests/benchmark_checks.py": "1fe7139b69310a5e31c5aae8c17d8bf28b8eef69c550376598112dcdad4b2fe4",
+              "tests/build_storage_checks.py": "e463dc81bad8691d3d265b86e9fa1b89045b0705041aed785ff901fe6470bf9d",
+              "tests/cache_protocol_checks.py": "56e7fd440bf00fb8112c925fc32f037c03b8364ea6e8bc614e8c31b36579377a",
+              "tests/capture_retention_checks.py": "939fc40dceffe29f106b401f4b1b4a2814fa6a4139a7dc2dbeae29c52f1aa003",
+              "tests/codec_checks.py": "d8e2f274d5009ed2fcc446c295d37a263837b0b19724d69bc2d7a699c6b31fca",
+              "tests/defect_checks.py": "c084b249455f2589b5ac73b9a49cf50dfc9ccd4438687fed616ef755b3e38597",
+              "tests/exp_checks.py": "995c81e7da8c819b276eb2ac5a1cf3bbd38b6a314c4557c553520b9bff0f337a",
+              "tests/focused_checks.py": "c6fc8e9c2fe1e92c8632280411e811107af72d2ebdc8e8eecb31c73e706f368f",
+              "tests/fp_reference.py": "21f365f59adda54cb958f31c67883a977b350cd0b669a2a1d1f4f76a090edae6",
+              "tests/hardware_vectors.py": "a267c46fb8457798d45bab80a09b55b30c14c361b3d39c571d276668202dbc34",
+              "tests/high_precision_reference.py": "e616d907499b445fe9f4626dde606ad09e1a433218fbfa04c2fdb7ffe91024b1",
+              "tests/lane_lifecycle_checks.py": "818da2c7f3669477b7a5ab76dc4a8bd2579ee316208a31acc21ff9bae805786e",
+              "tests/native_precision.py": "fe90cc20f97ba6ebd5d46fbcbb433f1ab1e2cf509fdff4a9afeb31edc5d3fc4a",
+              "tests/native_reference.py": "936000a98f9c7b8ef65983815ecba62eb465ab5def68724d9d9b55d5e6d38a9c",
+              "tests/native_reference_checks.py": "0d7ffed36e23cf89f40b3da3a63b5f820bcc6b62cbfca689ffa07417863180cf",
+              "tests/numerical_checks.py": "c4bbc0b5e479f3a8951e5cf973f60c5418594ad054aca0934b866757d2feab46",
+              "tests/parameter_checks.py": "ce5b108118479deb82593f69839dd6b40db8c514b08093c079d59b2f5403567c",
+              "tests/parent_reference.py": "b232039401a74df14f20619acdc16073672d6c57fa96ee1e015fcdf6965249f8",
+              "tests/portability_checks.py": "f33266d38f29b3f65f0a5368e73c5953b9aed3efd8ff05aa3aae758c502adadf",
+              "tests/projection_row_checks.py": "7470046eb6126d1a5293ead3f22f68cf753dc825674be380c03b878a4a451d25",
+              "tests/retained.py": "4b581910936ba051dd1ef12a189c4cdddac1fe50f4fa5e55b676855cc6c63f45",
+              "tests/scheduler_checks.py": "5c9185b0d9f7fb752a7598665270f39f7f8c756a8996085cb7f37d8ab9b3d8cf",
+              "tests/scheduler_lifecycle_checks.py": "9c8ca12259304d384b3f69410e5539f911249a48f6db079624a1d10afafbb1c7",
+              "tests/simulation.py": "9fb92ed0eb4a15e967a4e49049894440fce737e0860e31ea0f5f232bafb4b317",
+              "tests/simulation_checks.py": "e04c9c53a2f2ac9bc31edf361e67fc2462077d172d2f71297d343ceeca0a2fc8",
+              "tests/storage_retention_checks.py": "8443805f1086bea2f9deca9a63bcd30ccf13ac314912899c9e2db6e3937014f7",
+              "tests/stream_retention_checks.py": "18662e0d1fad0c052025111b5f6955b480fd709d4d7a8eea82fb8d1569da43a4",
+              "tests/suite_manifest.py": "314c8ae51e3573af64e21051b915a0b12a0f45982db8727c64275a152789d831",
+              "tests/synthesis_checks.py": "5741b824c5c83e49e1c651f651ef471b3787e891d8ee97036b6630a02662a3ae",
+              "tests/synthesis_dispatch.py": "830e0ca1ec1687f932e35f39658a89dbf2d4200aa7b9fed50a53613025db9164",
+              "tests/synthesis_dispatch_checks.py": "223de2a63ca76d4c821b4b45dc41ba3f5be6e3be4bbb26f70a2fdcea5b8288d2",
+              "tests/token_checks.py": "6331b966f9907441356a8c7ad7fac5b8551b3fb7dcfedc2c478c0e5772851151",
+              "tests/top_lifecycle_checks.py": "7fe17de6aa699b4460e11455b302a4e968321f47591e0192fd56f4302e4f63e3",
+              "tests/transformer_reference.py": "8fbd7424debdd1ec0916abd4580189542b637347ad6bccf645f58851d10fd2ac",
+              "tests/verify.py": "2c15571945dae4ba2c0e618d04b4c96f458a5436e2ca8e9ffea31841b49253e9",
+              "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+              "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+              "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+              "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+              "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+              "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+              "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+              "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+              "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+              "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+              "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+              "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+              "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+              "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+              "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+              "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+              "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d"
+            },
+            "evidence_root": "evidence/checks/attention-capture-retention-s17",
+            "argv": [
+              "python3",
+              "tests/capture_retention_checks.py",
+              "--action",
+              "probe"
+            ],
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": "evidence/l1/l1-benchmark-20261029T053434Z-037abc33/receipt.json",
+            "input_sha256": {
+              "evidence/l1/l1-benchmark-20261029T053434Z-037abc33/receipt.json": "659015c5be09b925d359301cb11731959673b90e74249b10f40c768ef3f33f4f",
+              "evidence/preparation/designer-attention-request-static-20261029T062619Z-54e76ddf/receipt.json": "4a563731c49577f61fc910500c167c9676b9374939f9cf27ce35b2371eff4fce"
+            },
+            "historical_failure": "AssertionError: full-head-drift-s17: failed: evidence/l1/l1-benchmark-20261029T053434Z-037abc33/children/verifier-attention-drift-native-heads-s17-bounded-20261029T053434Z-9118ef5f/receipt.json: RuntimeError: retained raw streams are unavailable: evidence/l1/l1-benchmark-20261029T053434Z-037abc33/children/verifier-attention-drift-native-heads-s17-bounded-20261029T053434Z-9118ef5f/mode0-simulation.stdout.txt",
+            "admitted_product_transition": {
+              "admission": "call-0036",
+              "description": "Registered non-fall-through attention request buffer and its SPEC, ARCHITECTURE and INTEGRATION documentation; no numerical or transaction assertion change.",
+              "sources": {
+                "rtl/anvil_q2_fp_gqa_attention.sv": {
+                  "historical": "0d144e671dd14580ccb86a96210d3b2adfcbb2dbe238b91f51f7d6a731bdcf22",
+                  "revised": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181"
+                },
+                "design/SPEC.md": {
+                  "historical": "fc7b8c1a30f2e6da37eb839ab4d05f29e82b8eb5b1b88848429aeac2d43bf9e0",
+                  "revised": "66c19ac4cc97712a4fdddf72990c889992e47b82f1f0066d54c3a1f627151bf2"
+                },
+                "design/ARCHITECTURE.md": {
+                  "historical": "5e15d80b09e0edc1449f8a51d04c34fa14a2bc61be65aff0c445c9a4d1db68ce",
+                  "revised": "1db03d55d8a46919c961bd8fa5ce0cbf36327495a5b6edf6eab5028147b93f8e"
+                },
+                "design/INTEGRATION.md": {
+                  "historical": "d28f45de29bb54c1e6f1d18d8840585cdeb11617a588daaa8cc8cd9e4550da4a",
+                  "revised": "c0cbbff5ebd17679705ed8b992b1c6df38993cd21e7ffce4cebf4b2b66c3292f"
+                }
+              }
+            },
+            "unchanged_product_source_count": 42,
+            "verification_source_changes": [
+              "tests/capture_retention_checks.py",
+              "tests/retained.py"
+            ],
+            "raw_stream_sha256": {
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.txt": "5b3e43dc38ca01e3f5a7854ba50d4330864b0c1e0f646650b2c78cf072acc366",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.capture.jsonl": "2d6acd39fbd1cdceeb783fc09518389f7954a4a986dae0931ea21a5979c3cec8",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.reopen.stdout.txt": "b3764fd4728b7ab4dcac7279e14fdf96ec227b28e398bed3d20a029032bf2eb6",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/python-version.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.txt": "41dbb1ee908ec7aa54fad7e0bf6495c2014fa0579469bc09a67395f0f1c210b1",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.capture.jsonl": "aa72c672b0c50f35bef3faa0bebbc036c81e018ebd0dd3305e6d75af93cc5b12",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.reopen.stdout.txt": "7ab0c8c82c7881884ec667e01ffc78d0d3c4a2bd756cb25360b47b214938ac6f",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/reduced-attention.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.txt": "44358a0e79ca5ae810182ea7ef44d848042e0326000032a5757858fba316f20c",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.capture.jsonl": "eebbf5aa2ce4bd6df66df73c33745e6d99a1bbcaa237823896572d77933ee29b",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.reopen.stdout.txt": "4a5589ea4b231de59ccc3ca207a12ea009ba630592f884fb35261a6577eabc00",
+              "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/independent-child-reopen.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "outcome": "passed-focused-only",
+            "ended_at": "2026-10-29T06:32:40.637170+00:00",
+            "child_receipt": "evidence/checks/attention-capture-retention-s17/attention-capture-recovery-20261029T063202Z-87d974db/children/verifier-attention-drift-reduced-s17-bounded-20261029T063203Z-24e4c0ac/receipt.json",
+            "metrics": {
+              "layer_attention": [
+                {
+                  "values_compared": 144,
+                  "max_absolute_error": 0.00054931640625,
+                  "mean_absolute_error": 0.00021981054063265523,
+                  "rms_error": 0.0002538199524902989,
+                  "normalized_rmse": 0.0047776924891792675,
+                  "cosine_similarity": 0.9999901479052328
+                },
+                {
+                  "values_compared": 144,
+                  "max_absolute_error": 0.0008544921875,
+                  "mean_absolute_error": 0.00020706423674710095,
+                  "rms_error": 0.0002856249518301061,
+                  "normalized_rmse": 0.0053869852929457444,
+                  "cosine_similarity": 0.9999857994950441
+                },
+                {
+                  "values_compared": 144,
+                  "max_absolute_error": 0.000732421875,
+                  "mean_absolute_error": 0.00019475629152212705,
+                  "rms_error": 0.0002609398440011155,
+                  "normalized_rmse": 0.004930210351937128,
+                  "cosine_similarity": 0.9999878922889656
+                }
+              ],
+              "final_residual": {
+                "values_compared": 144,
+                "max_absolute_error": 2.09808349609375e-05,
+                "mean_absolute_error": 6.869716647391518e-06,
+                "rms_error": 8.29521241893003e-06,
+                "normalized_rmse": 2.706372254821442e-05,
+                "cosine_similarity": 0.9999999996344138
+              },
+              "host_readout_logit_drift": {
+                "values_compared": 24,
+                "max_absolute_error": 2.4139881134033203e-06,
+                "mean_absolute_error": 1.0071865593393643e-06,
+                "rms_error": 1.241397927080002e-06,
+                "normalized_rmse": 1.6864978076766154e-05,
+                "cosine_similarity": 0.9999999998609332
+              },
+              "mode0": {
+                "frames_compared": 9,
+                "memory_requests": 3240,
+                "memory_responses": 3240,
+                "writes_compared": 504,
+                "attention_values_compared": 432,
+                "command_to_done_cycles": [
+                  3889,
+                  3890,
+                  3893,
+                  6194,
+                  6193,
+                  6192,
+                  8540,
+                  8539,
+                  8539
+                ]
+              },
+              "mode1": {
+                "frames_compared": 9,
+                "memory_requests": 5040,
+                "memory_responses": 5040,
+                "writes_compared": 576,
+                "attention_values_compared": 432,
+                "command_to_done_cycles": [
+                  5817,
+                  5822,
+                  5822,
+                  9917,
+                  9917,
+                  9917,
+                  13891,
+                  13895,
+                  13895
+                ]
+              },
+              "thresholds_applied": true
+            },
+            "limitations": "Reduced seed-17 attention only, both cache modes, compiled Verilator with Icarus startup. Does not explain historical loss or establish full benchmark, timing, resources, hardware or delivery acceptance."
+          }
+        }
+      ]
     },
     "check:clean-directory-reproduction": {
       "attempt_id": 1016,
