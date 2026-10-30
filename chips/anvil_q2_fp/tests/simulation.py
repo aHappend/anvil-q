@@ -197,7 +197,7 @@ def generated_artifacts(objects):
 
 
 def stream_model(run, argv, checker, transaction_prefixes, record_prefixes,
-                 label="simulation", timeout=21600):
+                 label="simulation", timeout=21600, interactive_feedback=False):
     """Check each bounded pipe record before discarding transaction text.
 
     Reproducible inputs, summary output, full-stream hashes/counts and a bounded
@@ -231,7 +231,7 @@ def stream_model(run, argv, checker, transaction_prefixes, record_prefixes,
                     output.write(line)
                 yield line
         try:
-            result = checker(lines())
+            result = checker(process, lines()) if interactive_feedback else checker(lines())
             assert process.stdout.read(1) == "", "checker did not consume the complete stream"
             return result
         except (AssertionError, ArithmeticError, RuntimeError, OSError, ValueError) as exc:

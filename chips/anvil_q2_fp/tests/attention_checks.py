@@ -20,8 +20,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmark_checks import error_metrics
 from fp_reference import add, multiply, rounded, value
-from retained import ROOT, Run, require_time_zero, with_time_zero_check
-from simulation import compile_model, startup_check
+from retained import ROOT, Run, audit_streams, require_time_zero, with_time_zero_check
+from simulation import compile_model, startup_check, stream_model
 from transformer_reference import Geometry, Transformer, coordinates, key
 
 
@@ -207,7 +207,7 @@ def run_mode(run, mode, seed, geometry, adversarial):
     stimulus = run.path / f"mode{mode}-stimulus.jsonl"
     outputs = run.path / f"mode{mode}-observations.jsonl"
 
-    def transact(process, raw):
+    def transact(process, lines):
         memory = {}
         current = []
         expected = {}
@@ -220,15 +220,16 @@ def run_mode(run, mode, seed, geometry, adversarial):
         final_residuals, logits, cycles = [], [], []
         compared_requests = compared_responses = compared_writes = 0
         frame_count = 0
+        summary_seen = False
         with stimulus.open("x") as inputs_log, outputs.open("x") as observation_log:
-            for line in process.stdout:
-                raw.write(line)
+            for line in lines:
                 fields = line.split()
                 if not fields:
                     continue
                 if fields[0] == "FRAME_READY":
                     frame = int(fields[1])
-                    assert frame == frame_count and pending is None
+                    assert not summary_seen and active_frame == -1
+                    assert frame == frame_count < g.layers * g.positions and pending is None
                     position, layer = divmod(frame, g.layers)
                     if layer == 0:
                         current = initial_residual(seed, position, g.hidden, adversarial)
@@ -256,9 +257,11 @@ def run_mode(run, mode, seed, geometry, adversarial):
                                         " ".join(f"{x:08x}" for x in query + k + v) + "\n")
                     process.stdin.flush()
                 elif fields[0] == "ATTENTION_COMMAND":
+                    assert active_frame >= 0 and start_cycle is None
                     assert tuple(map(int, fields[2:])) == (frame_context[1], frame_context[0])
                     start_cycle = int(fields[1])
                 elif fields[0] == "MEM_REQ":
+                    assert active_frame >= 0 and start_cycle is not None
                     assert pending is None, "multiple scalar requests outstanding"
                     cycle, write, kind, layer, row, col = map(int, fields[1:7])
                     data = int(fields[7], 16)
@@ -287,7 +290,10 @@ def run_mode(run, mode, seed, geometry, adversarial):
                     pending = None
                     compared_responses += 1
                 elif fields[0] == "FRAME_DONE":
+                    assert active_frame >= 0 and start_cycle is not None
                     assert int(fields[1]) == active_frame
+                    assert list(map(int, fields[3:])) == [
+                        compared_requests, compared_responses, compared_writes]
                     assert pending is None and all(not q for q in expected.values())
                     assert set(actual) == set(range(g.hidden)), "missing attention components"
                     position, layer, before = frame_context
@@ -309,10 +315,14 @@ def run_mode(run, mode, seed, geometry, adversarial):
                         final_residuals.extend(current)
                         logits.extend(readout(current, seed))
                     frame_count += 1
+                    active_frame, start_cycle = -1, None
                 elif fields[0] == "ATTENTION_COMPARED":
+                    assert not summary_seen and active_frame == -1
                     assert list(map(int, fields[1:])) == [
                         g.layers * g.positions, compared_requests, compared_responses]
-            assert frame_count == g.layers * g.positions
+                    assert frame_count == g.layers * g.positions
+                    summary_seen = True
+            assert summary_seen and frame_count == g.layers * g.positions
             assert pending is None and compared_requests == compared_responses > 0
         return {
             "contexts": dict(contexts), "final_residuals": final_residuals, "readout_logits": logits,
@@ -322,7 +332,11 @@ def run_mode(run, mode, seed, geometry, adversarial):
                         "command_to_done_cycles": cycles},
         }
 
-    observed = run.interactive([run.relative(binary)], f"mode{mode}-simulation", transact)
+    observed = stream_model(
+        run, [run.relative(binary)], transact, ("MEM_REQ ", "MEM_RSP "),
+        ("FRAME_READY ", "ATTENTION_COMMAND ", "MEM_REQ ", "MEM_RSP ",
+         "FRAME_DONE ", "ATTENTION_COMPARED "),
+        label=f"mode{mode}-simulation", interactive_feedback=True)
     for path in (bench, stimulus, outputs):
         run.receipt["generated_sha256"][run.relative(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
     return observed
@@ -352,7 +366,17 @@ def execute(seed, reduced=False, adversarial=False):
         }, indent=2) + "\n")
         run.receipt["generated_sha256"] = {
             run.relative(definition): hashlib.sha256(definition.read_bytes()).hexdigest()}
-        native, compressed = [run_mode(run, mode, seed, geometry, adversarial) for mode in (0, 1)]
+        native = run_mode(run, 0, seed, geometry, adversarial)
+        mode0_commands = list(run.receipt["commands"])
+        mode0_hashes, errors = audit_streams(mode0_commands)
+        assert not errors, errors
+        compressed = run_mode(run, 1, seed, geometry, adversarial)
+        preserved, errors = audit_streams(mode0_commands)
+        assert not errors and preserved == mode0_hashes, "mode-0 evidence changed during mode-1"
+        mode0_capture = next(command for command in mode0_commands if command.get("live_stimulus"))
+        run.command(["python3", "tests/retained.py", "--reopen-capture",
+                     mode0_capture["capture_observations"]], "mode0-reopen-after-mode1")
+        run.receipt["mode0_retention_after_mode1"] = mode0_hashes
 
         def metric(a, b):
             return error_metrics([float(value(x)) for x in a], [float(value(x)) for x in b])

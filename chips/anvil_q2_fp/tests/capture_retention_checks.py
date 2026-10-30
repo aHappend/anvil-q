@@ -19,6 +19,8 @@ ADMITTED_DESIGNER = (
     "evidence/preparation/designer-attention-request-static-20261029T062619Z-54e76ddf/"
     "receipt.json")
 ADMITTED_DESIGNER_SHA256 = "4a563731c49577f61fc910500c167c9676b9374939f9cf27ce35b2371eff4fce"
+# Canonical sorted source-hash map from the hash-pinned failed benchmark above.
+PARENT_MANIFEST_SHA256 = "7d98c610c5a74959af8ced2c640e3331580f2ebedcea9a4982783b908eeb654c"
 ADMITTED_TRANSITION = {
     "rtl/anvil_q2_fp_gqa_attention.sv": (
         "0d144e671dd14580ccb86a96210d3b2adfcbb2dbe238b91f51f7d6a731bdcf22",
@@ -95,6 +97,89 @@ def source_lineage(historical, revised, current):
         verification_changes_since_failure=changes(
             {name: digest for name, digest in historical.items() if name.startswith("tests/")},
             {name: digest for name, digest in current.items() if name.startswith("tests/")}))
+
+
+def parent_identity(current):
+    reference = {name: digest for name, digest in current.items()
+                 if name.startswith("anvil_q2_reference/rtl/")}
+    digest = hashlib.sha256(json.dumps(
+        reference, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    assert digest == PARENT_MANIFEST_SHA256, "accepted parent RTL changed"
+    return dict(source_count=len(reference), manifest_sha256=digest)
+
+
+def historical_receipt(path, expected):
+    try:
+        data = path.read_bytes()
+    except FileNotFoundError:
+        return None, dict(status="unverified", reason="historical receipt unavailable",
+                          expected_sha256=expected)
+    digest = hashlib.sha256(data).hexdigest()
+    assert digest == expected, f"admitted provenance receipt changed: {path.name}"
+    return json.loads(data), dict(status="integrity-verified", sha256=digest,
+                                 functional_acceptance=False)
+
+
+def historical_provenance(run):
+    run.receipt["unchanged_parent"] = parent_identity(run.receipt["source_sha256"])
+    admitted = {}
+    audit = run.receipt["historical_provenance"] = {}
+    for name, expected, endpoint in (
+            (FAILED_BENCHMARK, FAILED_BENCHMARK_SHA256, 0),
+            (ADMITTED_DESIGNER, ADMITTED_DESIGNER_SHA256, 1)):
+        record, audit[name] = historical_receipt(ROOT / name, expected)
+        if record is None:
+            continue
+        run.receipt["input_sha256"][name] = audit[name]["sha256"]
+        sources = record["source_sha256"]
+        parent_identity(sources)
+        for source, pair in ADMITTED_TRANSITION.items():
+            assert sources.get(source) == pair[endpoint], (
+                f"historical transition mismatch: {source}")
+        admitted[name] = record
+    if FAILED_BENCHMARK in admitted:
+        run.receipt["historical_failure"] = admitted[FAILED_BENCHMARK].get("failure")
+    if len(admitted) == 2:
+        run.receipt["source_lineage"] = source_lineage(
+            admitted[FAILED_BENCHMARK]["source_sha256"],
+            admitted[ADMITTED_DESIGNER]["source_sha256"], run.receipt["source_sha256"])
+    else:
+        run.receipt["source_lineage"] = dict(
+            status="unverified", reason="historical transition inputs unavailable",
+            missing_receipts=[name for name, row in audit.items()
+                              if row["status"] == "unverified"])
+
+
+def historical_fixtures(run):
+    path = run.path / "historical-fixture.json"
+    path.write_text('{"source_sha256": {}}\n')
+    expected = hashlib.sha256(path.read_bytes()).hexdigest()
+    record, audit = historical_receipt(path, expected)
+    assert record == {"source_sha256": {}} and audit["status"] == "integrity-verified"
+    missing, audit = historical_receipt(run.path / "unavailable-history.json", expected)
+    assert missing is None and audit["status"] == "unverified"
+    rejected = []
+    for label, check in (
+        ("receipt-corruption", lambda: historical_receipt(path, "0" * 64)),
+        ("parent-change", lambda: parent_identity(
+            run.receipt["source_sha256"] | {
+                "anvil_q2_reference/rtl/anvil_q2_top.sv": "changed"})),
+        ("parent-removal", lambda: parent_identity({
+            name: digest for name, digest in run.receipt["source_sha256"].items()
+            if name != "anvil_q2_reference/rtl/anvil_q2_top.sv"})),
+    ):
+        try:
+            check()
+        except AssertionError as exc:
+            expected_error = ("admitted provenance receipt changed" if label == "receipt-corruption"
+                              else "accepted parent RTL changed")
+            assert expected_error in str(exc), str(exc)
+            rejected.append(label)
+        else:
+            raise AssertionError(f"provenance corruption was not rejected: {label}")
+    return dict(available_integrity_compared=True, missing_history_unverified=True,
+                unchanged_parent=parent_identity(run.receipt["source_sha256"]),
+                rejected_corruptions=rejected)
 
 
 def lineage_fixtures():
@@ -223,6 +308,7 @@ def fixtures(repair_of=None):
     try:
         run.command(["python3", "--version"], "python-version")
         lineage = lineage_fixtures()
+        history = historical_fixtures(run)
         results = []
         for interactive in (False, True):
             for action in ("healthy", "missing", "replaced", "truncated"):
@@ -262,7 +348,7 @@ def fixtures(repair_of=None):
                                         receipt=child.relative(child.path / "receipt.json")))
         root_reuse = existing_root_fixture(run)
         run.finish("passed-focused-only", fixtures=results, root_reuse=root_reuse,
-                   source_lineage_fixtures=lineage,
+                   source_lineage_fixtures=lineage, historical_provenance_fixtures=history,
                    limitations="Synthetic retention failure handling only; not RTL evidence.")
         return 0
     except (AssertionError, RuntimeError, OSError, ValueError, KeyError) as exc:
@@ -276,20 +362,8 @@ def probe(repair_of=None):
     run.receipt["repair_of"] = repair_of or FAILED_BENCHMARK
     run.receipt["historical_benchmark_receipt"] = FAILED_BENCHMARK
     try:
-        admitted = {}
         run.receipt["input_sha256"] = {}
-        for name, expected in ((FAILED_BENCHMARK, FAILED_BENCHMARK_SHA256),
-                               (ADMITTED_DESIGNER, ADMITTED_DESIGNER_SHA256)):
-            data = (ROOT / name).read_bytes()
-            digest = hashlib.sha256(data).hexdigest()
-            run.receipt["input_sha256"][name] = digest
-            assert digest == expected, f"admitted provenance receipt changed: {name}"
-            admitted[name] = json.loads(data)
-        historical = admitted[FAILED_BENCHMARK]
-        revised = admitted[ADMITTED_DESIGNER]["source_sha256"]
-        run.receipt["historical_failure"] = historical.get("failure")
-        run.receipt["source_lineage"] = source_lineage(
-            historical["source_sha256"], revised, run.receipt["source_sha256"])
+        historical_provenance(run)
         run.receipt["historical_admitted_product_transition"] = {
             "admission": "call-0036",
             "description": "Registered non-fall-through attention request buffer and its "
@@ -298,10 +372,14 @@ def probe(repair_of=None):
             "sources": {name: dict(historical=pair[0], revised=pair[1])
                         for name, pair in ADMITTED_TRANSITION.items()}}
         run.receipt["source_binding_policy"] = (
-            "Historical receipts establish provenance, not a passing baseline or a freeze "
-            "on later product revisions. The current source_sha256 binds this invocation; "
+            "Available historical receipts are integrity checked, not functional prerequisites "
+            "or a passing baseline. Missing history remains explicitly unverified. "
+            "The pinned parent source manifest is enforced independently of historical files. "
+            "The current source_sha256 binds this invocation; "
             "child execution must match it exactly. Accepted parent RTL remains unchanged.")
         run.command(["python3", "--version"], "python-version")
+        run.command(["python3", "tests/attention_stream_checks.py"], "bounded-stream-fixtures",
+                    environment={"ANVIL_EVIDENCE_ROOT": run.relative(run.path / "children")})
         run.receipt["root_reuse"] = existing_root_fixture(run)
         output = run.command(
             ["python3", "tests/attention_checks.py", "--seed", "17", "--reduced"],
@@ -332,6 +410,18 @@ def probe(repair_of=None):
             assert metrics["frames_compared"] == 9
             assert metrics["memory_requests"] == metrics["memory_responses"] > 0
             assert metrics["attention_values_compared"] > 0
+        for mode, command in enumerate(simulations):
+            checked = command["checked_stream"]
+            metrics = child["metrics"][f"mode{mode}"]
+            assert checked["discarded_transaction_counts"] == {
+                "MEM_REQ": metrics["memory_requests"], "MEM_RSP": metrics["memory_responses"]}
+            assert checked["protocol_records"] == (
+                metrics["memory_requests"] + metrics["memory_responses"]
+                + 3 * metrics["frames_compared"] + 1)
+            text = (ROOT / command["stdout"]).read_text()
+            assert "\nMEM_REQ " not in text and "\nMEM_RSP " not in text
+            assert len(text.encode()) < 16384
+        assert child["mode0_retention_after_mode1"]
         run.command(["python3", "tests/stream_retention_checks.py", "--action", "reopen",
                      "--path", names[0]], "independent-child-reopen")
         hashes, errors = audit_streams(child["commands"])
