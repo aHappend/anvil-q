@@ -72,13 +72,12 @@ def failure_diagnostics_check(root, ev):
 
 
 def component_diagnostics_check(root, ev):
-    """Failed children must expose their receipt and original assertion."""
-    from contextlib import nullcontext, redirect_stderr
+    """Exercise real child publication, aggregation and exception propagation."""
+    from contextlib import redirect_stderr
     import io
-    from types import SimpleNamespace
+    import traceback
     from unittest.mock import patch
     import verify
-    import threading
 
     good = True
     for label in ("passed", "failed", "false-with-passed-assertion",
@@ -88,17 +87,13 @@ def component_diagnostics_check(root, ev):
         raises = label.startswith("exception")
         empty = label in ("true-without-assertion", "false-without-assertion",
                           "exception-before-assertion")
-        child_assertions = ([] if empty else [
+        initial_assertions = ([] if empty else [
             dict(name="original_child_success", passed=True)]
             if label in ("passed", "false-with-passed-assertion") else [
             dict(name="original_child_failure", passed=False,
                  diagnostic="synthetic retained diagnostic")])
-        expected_assertions = [item.copy() for item in child_assertions]
-        if raises:
-            expected_assertions.append(dict(
-                name="verification_exception", passed=False,
-                error="ValueError('synthetic component exception')"))
-        elif empty:
+        expected_assertions = [item.copy() for item in initial_assertions]
+        if not raises and empty:
             expected_assertions.append(dict(
                 name="component_assertions_present", passed=False,
                 error="component returned without recording an assertion"))
@@ -106,57 +101,102 @@ def component_diagnostics_check(root, ev):
             expected_assertions.append(dict(
                 name="component_return_value", passed=False,
                 error="component returned false despite passing assertions"))
-        child = SimpleNamespace(
-            path=ev.path / ("synthetic-child-" + label),
-            receipt={"assertions": child_assertions})
-        child.profile = lambda name: nullcontext()
-        statuses, parent_assertions = [], []
-        child.finish = statuses.append
+        parent = verify.Evidence("fixture-component-parent-" + label)
+        parent.receipt["scope"] = NOTICE
+        child = None
+        statuses = []
+        original = ValueError("synthetic component exception")
+        real_finish = verify.Evidence.finish
 
-        def child_assertion(name, passed, **detail):
-            child.receipt["assertions"].append(
-                dict(name=name, passed=bool(passed), **detail))
-
-        child.assertion = child_assertion
-        parent = SimpleNamespace(path=ev.path, receipt={}, lock=threading.RLock())
-
-        def assertion(name, passed, **detail):
-            parent_assertions.append(dict(name=name, passed=bool(passed), **detail))
+        def finish(holder, status):
+            statuses.append((holder, status))
+            return real_finish(holder, status)
 
         def check(holder):
-            assert holder is child
+            nonlocal child
+            child = holder
+            holder.receipt["scope"] = NOTICE
+            for item in initial_assertions:
+                holder.assertion(**item)
             if raises:
-                raise ValueError("synthetic component exception")
+                raise original
             return label in ("passed", "true-with-failed-assertion",
                              "true-without-assertion")
 
-        parent.assertion = assertion
         stderr = io.StringIO()
         caught, result = None, None
-        with patch.object(verify, "Evidence", return_value=child), redirect_stderr(stderr):
+        with patch.object(verify.Evidence, "finish", finish), redirect_stderr(stderr):
             try:
                 result = verify.component(parent, "synthetic-" + label, check)
             except ValueError as error:
-                caught = str(error)
+                caught = error
         receipt = str((child.path / "receipt.json").relative_to(root))
+        allocated = str(child.path.relative_to(root))
+        diagnostics = getattr(caught, "verification_diagnostics", [])
+        if raises:
+            expected_assertions.append(dict(
+                name="verification_exception", passed=False,
+                diagnostics=diagnostics))
+        diagnostic_ok = not diagnostics
+        if raises:
+            diagnostic_ok = (
+                len(diagnostics) == 1 and
+                diagnostics[0] == dict(
+                    phase="execution", error=repr(original),
+                    exception_type="ValueError",
+                    traceback=diagnostics[0]["traceback"], errno=None,
+                    filename=None, filename2=None,
+                    allocated_child_path=allocated) and
+                diagnostics[0]["traceback"].startswith("Traceback") and
+                "raise original" in diagnostics[0]["traceback"] and
+                diagnostics[0]["traceback"].endswith(
+                    "ValueError: synthetic component exception\n") and
+                caught is original and
+                "check" in [frame.name for frame in traceback.extract_tb(caught.__traceback__)])
         observed = [json.loads(line) for line in stderr.getvalue().splitlines()]
         passed = label == "passed"
-        expected = [dict(receipt=receipt, **item) for item in expected_assertions
-                    if not item["passed"]]
+        expected_parent_assertion = dict(
+            name="component_synthetic-" + label, passed=passed,
+            child_receipt=receipt, allocated_child_path=allocated,
+            diagnostics=diagnostics)
+        expected = [] if passed else [expected_parent_assertion]
+        child_statuses = [status for holder, status in statuses if holder is child]
+        expected_statuses = (
+            ["running"] * (2 + len(initial_assertions) +
+                           (1 if not raises and (empty or
+                            label == "false-with-passed-assertion") else 0)) +
+            ["passed" if passed else "failed"])
+        parent_receipt = str((parent.path / "receipt.json").relative_to(root))
+        published_parent = json.loads((root / parent_receipt).read_text())
+        published_child = json.loads((root / receipt).read_text())
+        publication_ok = (
+            published_child == child.receipt and
+            published_child["status"] == ("passed" if passed else "failed") and
+            published_parent == parent.receipt and
+            published_parent["status"] == "running")
+        parent.finish("passed" if passed else "failed")
+        final_parent = json.loads((root / parent_receipt).read_text())
         good = ev.assertion(
             "fixture_component_diagnostics_" + label,
-            statuses == ["passed" if passed else "failed"] and
+            child_statuses == expected_statuses and
+            [status for holder, status in statuses if holder is parent] == ["running"] and
             child.receipt["tool_versions_receipt"] ==
-            str((ev.path / "receipt.json").relative_to(root)) and
-            parent.receipt == {"children": [receipt]} and
-            parent_assertions == [dict(name="component_synthetic-" + label,
-                                       passed=passed, child_receipt=receipt)] and
+            parent_receipt and
+            parent.receipt["children"] == [receipt] and
+            parent.receipt["assertions"] == [expected_parent_assertion] and
             child.receipt["assertions"] == expected_assertions and
-            observed == expected and
-            (caught == "synthetic component exception" if raises
+            observed == expected and diagnostic_ok and publication_ok and
+            final_parent == parent.receipt and
+            final_parent["status"] == ("passed" if passed else "failed") and
+            (caught is original and result is None if raises
              else caught is None and result is passed),
             scope=NOTICE, observed=observed, expected=expected,
-            exception_propagated=caught, processes_executed=0) and good
+            child_receipt=receipt, parent_receipt=parent_receipt,
+            child_statuses=child_statuses, expected_statuses=expected_statuses,
+            publication_matches=publication_ok, diagnostics_match=diagnostic_ok,
+            exception_propagated=caught is original, processes_executed=0) and good
+        ev.receipt.setdefault("data_sha256", {}).update({
+            path: verify.digest(root / path) for path in (receipt, parent_receipt)})
     return good
 
 
