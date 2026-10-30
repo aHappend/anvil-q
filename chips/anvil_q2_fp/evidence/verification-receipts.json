@@ -863,9 +863,9 @@
       ]
     },
     "check:behavior": {
-      "attempt_id": 1069,
-      "duration_s": 1381.9668968990445,
-      "stdout_preview": "evidence/l1/l1-behavior-20261030T173444Z-818ce5d7/receipt.json\n",
+      "attempt_id": 1077,
+      "duration_s": 1412.2442027200013,
+      "stdout_preview": "evidence/l1/l1-behavior-20261030T190231Z-d6beb7f5/receipt.json\n",
       "receipt_count": 10,
       "receipts": [
         {
