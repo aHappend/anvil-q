@@ -13,7 +13,7 @@ import threading
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify import Evidence, ROOT, digest, parallel_components
+from verify import Evidence, ROOT, audit_evidence, digest, parallel_components
 
 
 CASES = ("success", "write", "short-write", "file-fsync", "replace",
@@ -23,7 +23,7 @@ NEW = {"schema": 1, "marker": "replacement-receipt", "payload": list(range(128))
 LIFECYCLE_CASES = ("pristine", "allocation", "initialization", "initial-publication",
                    "execution", "execution-spawn", "disappearance", "execution-disappearance",
                    "final-disappearance", "initialization-publication",
-                   "execution-parent-publication")
+                   "execution-parent-publication", "post-publication-disappearance")
 
 
 def lifecycle(case):
@@ -64,7 +64,13 @@ def lifecycle(case):
                 raise OSError(errno.ENOSPC, "injected initial publication", missing)
             if case == "initialization-publication":
                 raise OSError(errno.ENOSPC, "injected secondary publication", missing2)
-        return real_finish(holder, status)
+        result = real_finish(holder, status)
+        if (case == "post-publication-disappearance" and holder is not ev
+                and status == "passed"):
+            moved = ev.path / ("retained-child-" + holder.path.name.rsplit("-", 1)[-1])
+            holder.path.rename(moved)
+            ev.receipt["retained_moved_child"] = str(moved.relative_to(ROOT))
+        return result
 
     def inventory():
         return fail_source() if case in ("initialization", "initialization-publication") else real_inventory()
@@ -168,6 +174,78 @@ def exercise(case, directory):
     print(json.dumps({"events": events, "published": True}))
 
 
+def dependency_check(root, ev):
+    cases = ("pristine", "failed-mutant", "missing-child", "missing-grandchild",
+             "missing-build", "missing-stdout", "missing-stderr",
+             "malformed-child", "nonobject-child", "unsettled-child",
+             "missing-shard-receipt", "copied-project")
+    good = True
+    for case in cases:
+        directory = ev.path / ("dependencies-" + case)
+        directory.mkdir()
+        holder = Evidence.__new__(Evidence)
+        holder.path, holder.lock = directory, threading.RLock()
+        holder.receipt = {"schema": 1, "assertions": [], "records": []}
+        child = directory / "child.json"
+        grandchild = directory / "grandchild.json"
+        stdout, stderr = directory / "run.stdout", directory / "run.stderr"
+        stdout.write_text("synthetic execution output\n")
+        stderr.write_text("")
+        child_record = {
+            "status": "failed" if case == "failed-mutant" else "passed",
+            "records": [{"stdout": str(stdout.relative_to(root)),
+                         "stderr": str(stderr.relative_to(root))}],
+        }
+        reference = str(child.relative_to(root))
+        holder.receipt["children"] = [reference]
+        if case == "missing-build":
+            holder.receipt["children"] = []
+            holder.receipt["builds"] = [{"receipt": reference}]
+        if case == "missing-shard-receipt":
+            holder.receipt["children"] = []
+            holder.receipt["shards"] = [
+                {"name": "synthetic", "passed": True, "child_receipt": None}]
+        if case == "missing-grandchild":
+            child_record["children"] = [str(grandchild.relative_to(root))]
+        if case == "unsettled-child":
+            child_record["status"] = "running"
+        if case == "copied-project":
+            project = directory / "clean-project"
+            project.mkdir()
+            nested = project / "nested.json"
+            nested.write_text(json.dumps({"status": "passed", "records": []}))
+            child_record["children"] = ["nested.json"]
+            # The copied child's own log paths are relative to its project.
+            child_record["records"] = []
+            holder.receipt["child_project_roots"] = {
+                reference: str(project.relative_to(root))}
+        if case not in ("missing-child", "missing-build"):
+            child.write_text("{" if case == "malformed-child"
+                             else json.dumps([] if case == "nonobject-child"
+                                             else child_record))
+        if case in ("missing-stdout", "missing-stderr"):
+            target = stdout if case == "missing-stdout" else stderr
+            target.rename(directory / ("retained-" + target.name))
+        expected = case in ("pristine", "failed-mutant", "copied-project")
+        observed = audit_evidence(holder)
+        holder.finish("passed" if observed else "failed")
+        assertion = holder.receipt["assertions"][-1]
+        correct = observed == expected and assertion["passed"] == expected
+        if not expected:
+            diagnostic = assertion["diagnostics"][0]
+            correct = correct and diagnostic["phase"] == "dependency-audit"
+            correct = correct and bool(diagnostic["traceback"])
+        good = ev.assertion(
+            "dependency_audit_" + case, correct,
+            expected_fixture_failure=not expected,
+            fixture_receipt=str((directory / "receipt.json").relative_to(root)),
+            observed_passed=observed) and good
+        ev.receipt.setdefault("data_sha256", {})[
+            str((directory / "receipt.json").relative_to(root))] = digest(
+                directory / "receipt.json")
+    return good
+
+
 def check(root, ev):
     version_ok = ev.run("publication-python-version",
                         [sys.executable, "--version"], timeout=3600)
@@ -251,6 +329,7 @@ def check(root, ev):
                               "initial-publication": "initial-publication",
                               "initialization-publication": "initialization",
                               "final-disappearance": "final-publication",
+                              "post-publication-disappearance": "dependency-audit",
                               "disappearance": "profile-publication"}.get(case, "execution")
             correct = correct and primary["phase"] == expected_phase
             correct = correct and primary["errno"] == (
@@ -259,7 +338,7 @@ def check(root, ev):
             correct = correct and ((primary["allocated_child_path"] is None)
                                    == (case == "allocation"))
             if case not in ("allocation", "initial-publication", "disappearance",
-                            "final-disappearance"):
+                            "final-disappearance", "post-publication-disappearance"):
                 correct = correct and primary["filename"] == receipt["source_failure_fixture"]
                 correct = correct and (primary["filename2"] is None if case == "execution-spawn"
                                        else primary["filename2"].endswith("missing-source-b"))
@@ -267,6 +346,9 @@ def check(root, ev):
                 correct = correct and assertion["child_receipt"] is None
                 correct = correct and (root / receipt["retained_moved_child"]).is_dir()
                 correct = correct and any(d["phase"] == "final-publication" for d in diagnostics)
+            if case == "post-publication-disappearance":
+                correct = correct and assertion["child_receipt"] is None
+                correct = correct and (root / receipt["retained_moved_child"]).is_dir()
             if case == "initialization-publication":
                 correct = correct and len(diagnostics) == 2
                 correct = correct and diagnostics[1]["errno"] == errno.ENOSPC
@@ -279,7 +361,7 @@ def check(root, ev):
                             child_receipt=result["receipt"], child_exit_code=record["exit_code"],
                             diagnostics=diagnostics) and good
         ev.receipt.setdefault("data_sha256", {})[result["receipt"]] = digest(path)
-    return good
+    return dependency_check(root, ev) and good
 
 
 if __name__ == "__main__":

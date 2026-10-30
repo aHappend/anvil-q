@@ -274,6 +274,62 @@ class Evidence:
         return result
 
 
+def audit_evidence(ev):
+    """Recheck completed receipt/log dependencies immediately before publication."""
+    manifest = {}
+    visited = set()
+
+    def inspect_receipt(receipt, root):
+        if not isinstance(receipt, dict):
+            raise ValueError("referenced receipt must be an object")
+        for record in receipt.get("records", []):
+            for field in ("stdout", "stderr"):
+                artifact = artifact_path(root, record[field])
+                if not artifact.is_file():
+                    raise FileNotFoundError(
+                        2, "referenced execution log is absent", str(artifact))
+                manifest[str(artifact.relative_to(ROOT))] = {
+                    "kind": "execution-log", "size_bytes": artifact.stat().st_size}
+        references = list(receipt.get("children", []))
+        references += [row["receipt"] for row in receipt.get("builds", [])]
+        for row in receipt.get("shards", []):
+            if row.get("passed") is True and row.get("child_receipt") is None:
+                raise ValueError("completed shard has no retained receipt: " + row["name"])
+        references += [row["child_receipt"] for row in receipt.get("shards", [])
+                       if row.get("child_receipt") is not None]
+        for reference in dict.fromkeys(references):
+            child_path = artifact_path(root, reference)
+            if child_path in visited:
+                continue
+            visited.add(child_path)
+            raw = child_path.read_bytes()
+            child = json.loads(raw)
+            if not isinstance(child, dict):
+                raise ValueError("referenced receipt must be an object: " + str(child_path))
+            if child.get("status") not in ("passed", "failed"):
+                raise ValueError("referenced receipt is not settled: " + str(child_path))
+            manifest[str(child_path.relative_to(ROOT))] = {
+                "kind": "receipt", "sha256": hashlib.sha256(raw).hexdigest(),
+                "status": child["status"]}
+            child_root = root
+            copied_root = receipt.get("child_project_roots", {}).get(reference)
+            if copied_root is not None:
+                child_root = artifact_path(root, copied_root)
+            inspect_receipt(child, child_root)
+
+    try:
+        inspect_receipt(ev.receipt, ROOT)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        return ev.assertion(
+            "retained_evidence_dependencies", False,
+            diagnostics=[exception_diagnostic(error, "dependency-audit", ev.path)],
+            inspected_artifacts=manifest,
+            scope="Publication-time existence; not post-settlement retention")
+    return ev.assertion(
+        "retained_evidence_dependencies", True, inspected_artifacts=manifest,
+        scope="Publication-time existence; not post-settlement retention")
+
+
 def simulation_tier(requested, *, hidden=0, tokens=1, seeds=1, cycles=0,
                     full=False, mutation=False, protocol=False):
     if requested not in ("iverilog", "verilator"):
@@ -442,6 +498,14 @@ def component(ev, name, check, *args, **kwargs):
         if original is None:
             original = error
     published = receipt if receipt is not None and (ROOT / receipt).is_file() else None
+    if passed and published is None:
+        try:
+            raise FileNotFoundError(
+                2, "completed component receipt is absent", str(path / "receipt.json"))
+        except FileNotFoundError as error:
+            original = error
+            diagnostics.append(exception_diagnostic(error, "dependency-audit", path))
+        passed = False
     with ev.lock:
         if published is not None:
             ev.receipt.setdefault("children", []).append(receipt)
@@ -1120,6 +1184,8 @@ def portable_check(ev):
         raise ValueError("clean-copy receipt escaped clean project")
     retained = json.loads(receipt.read_text())
     ev.receipt.setdefault("children", []).append(str(receipt.relative_to(ROOT)))
+    ev.receipt.setdefault("child_project_roots", {})[
+        str(receipt.relative_to(ROOT))] = str(destination.relative_to(ROOT))
     assertions = {a["name"]: a["passed"] for a in retained["assertions"]}
     mandatory = ["synthesis_anvil_q1_fp_top", "leaf_independent_numerical"] + [
         f"minimum-mode{mode}-seed17_independent_architecture_numerical"
@@ -1903,6 +1969,8 @@ def main():
     finally:
         ok = ok and all(a["passed"] for a in ev.receipt["assertions"])
         try:
+            if ok:
+                ok = audit_evidence(ev)
             ev.finish("passed" if ok else "failed")
         except Exception as error:
             ok = False
