@@ -27,6 +27,18 @@ class CompilerStorage:
         self.root = root
         self.condition = threading.Condition()
         self.reserved = 0
+        self.cancelled = None
+
+    def cancel(self, reason):
+        """A storage failure closes admission for this invocation, even after cleanup."""
+        with self.condition:
+            if self.cancelled is None:
+                self.cancelled = reason
+            self.condition.notify_all()
+
+    def cancellation_reason(self):
+        with self.condition:
+            return self.cancelled
 
     @contextmanager
     def claim(self, argv):
@@ -38,6 +50,8 @@ class CompilerStorage:
             return
         with self.condition:
             while True:
+                if self.cancelled is not None:
+                    raise OSError("Compiler storage admission cancelled: " + self.cancelled)
                 free = shutil.disk_usage(self.root).free
                 budget = COMPILER_DISK_BYTES + COMPILER_RETAINED_BYTES
                 needed = self.reserved + budget + DISK_RESERVE_BYTES
@@ -52,10 +66,16 @@ class CompilerStorage:
                              "basis": "Provisional conservative budget; not a measured peak"}
                     break
                 if not self.reserved:
-                    raise OSError(
+                    self.cancel(
                         f"Compiler storage: {free} free bytes, "
                         f"{needed} required; "
                         "no active build can release space")
+                    raise OSError(self.cancelled)
+                if free < DISK_RESERVE_BYTES:
+                    self.cancel(
+                        f"Compiler storage: {free} free bytes below "
+                        f"{DISK_RESERVE_BYTES}-byte reserve while waiting for admission")
+                    raise OSError(self.cancelled)
                 self.condition.wait(timeout=1)
         try:
             yield lease
@@ -110,6 +130,8 @@ def resource_limits(root):
                   "per child. Provisional compiler transient and retained-growth "
                   "reservations are rechecked at launch and shared by nested batches. "
                   "Retained bytes remain on disk and affect every later launch. "
+                  "A storage guard failure cancels queued and active compilers for "
+                  "this invocation, even if cleanup restores headroom. "
                   "Verilator compilation uses -j 2.",
     }
 

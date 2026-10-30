@@ -10,7 +10,7 @@ def storage_probe(evidence, *, boot):
     from storage import boot_test
     from verify import ROOT, VerificationFailure, write_json
 
-    evidence.tools(("python3",))
+    evidence.tools(("python3", "make"))
     result = evidence.child([
         "python3", "tests/test_compiler_storage.py", evidence.relative(evidence.path),
     ], "storage-cleanup-regression")

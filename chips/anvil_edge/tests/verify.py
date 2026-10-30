@@ -107,6 +107,7 @@ SELECTORS = (
 )
 WALL_TIMEOUT = 3600
 VVP_TIMEOUT = 600
+GROUP_SETTLEMENT_TIMEOUT = 10
 
 
 class VerificationFailure(Exception):
@@ -230,6 +231,34 @@ def allocated_tree_bytes(directory):
         if not path.is_symlink():
             total += info.st_blocks * 512
     return total
+
+
+def signal_process_group(group, sig):
+    try:
+        os.killpg(group, sig)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def settle_process_group(group, timeout=GROUP_SETTLEMENT_TIMEOUT):
+    """Observe disappearance after killing residual descendants; never infer settlement."""
+    start = time.monotonic()
+    observation = {"timeout_s": timeout, "samples": 0, "sigkill_sent": False}
+    while True:
+        observation["samples"] += 1
+        if not signal_process_group(group, 0):
+            observation["settled"] = True
+            break
+        if not observation["sigkill_sent"]:
+            observation["sigkill_sent"] = signal_process_group(group, signal.SIGKILL)
+        remaining = timeout - (time.monotonic() - start)
+        if remaining <= 0:
+            observation["settled"] = False
+            break
+        time.sleep(min(.05, remaining))
+    observation["duration_s"] = time.monotonic() - start
+    return observation
 
 
 def cleanup_compiler_intermediates(object_dir, receipt_dir, *, success):
@@ -435,7 +464,7 @@ class Evidence:
         requested_timeout = timeout
         if self._parent_budget_s is not None:
             # Reserve settlement time inside the admitted aggregate patrol budget.
-            timeout = min(timeout, self._parent_budget_s - 10 -
+            timeout = min(timeout, self._parent_budget_s - 2 * GROUP_SETTLEMENT_TIMEOUT -
                           (time.monotonic() - self._started))
             if timeout <= 0:
                 raise VerificationFailure("Shared-runtime diagnostic budget exhausted")
@@ -458,7 +487,7 @@ class Evidence:
             "compiler_storage_reservation": storage_lease,
         }
         record["storage_before"] = storage_snapshot(directory)
-        if object_dir is not None:
+        if object_dir is not None or storage_lease is not None:
             record["compiler_storage_observation"] = {
                 "sample_interval_s": .25, "samples": 0,
                 "peak_object_allocated_bytes": 0,
@@ -468,7 +497,7 @@ class Evidence:
             }
 
         def sample_compiler_storage():
-            if object_dir is None:
+            if object_dir is None and storage_lease is None:
                 return
             observation = record["compiler_storage_observation"]
             observation["samples"] += 1
@@ -478,14 +507,20 @@ class Evidence:
             observation["minimum_filesystem_available_bytes"] = min(
                 observation["minimum_filesystem_available_bytes"], free)
             if storage_lease is not None and free < DISK_RESERVE_BYTES:
-                record["storage_guard_error"] = (
+                record.setdefault("storage_guard_error", (
                     f"Filesystem headroom fell to {free} bytes below "
-                    f"{DISK_RESERVE_BYTES}-byte reserve during compilation")
+                    f"{DISK_RESERVE_BYTES}-byte reserve during compilation"))
             if (storage_lease is not None and
                     observation["peak_object_allocated_bytes"] > storage_lease["reserved_bytes"]):
-                record["storage_guard_error"] = (
+                record.setdefault("storage_guard_error", (
                     "Compiler allocation exceeded its provisional reservation; "
-                    "retain measurements and revise admission before retry")
+                    "retain measurements and revise admission before retry"))
+            if record.get("storage_guard_error"):
+                self._compiler_storage.cancel(record["storage_guard_error"])
+            if storage_lease is not None:
+                cancelled = self._compiler_storage.cancellation_reason()
+                if cancelled is not None:
+                    record.setdefault("compiler_storage_cancelled", cancelled)
         write_json(directory / "initial.json", {
             **record, "status": "launch pending; not an execution result",
             "source_manifest": self.relative(self._root.path / "launch.json"),
@@ -556,30 +591,48 @@ class Evidence:
                                 break
                             if (time.monotonic() >= deadline or
                                     record.get("storage_guard_error") or
+                                    record.get("compiler_storage_cancelled") or
                                     record.get("evidence_error")):
                                 record["timed_out"] = time.monotonic() >= deadline
-                                os.killpg(process.pid, signal.SIGTERM)
-                                deadline = time.monotonic() + 10
+                                record["termination_reason"] = (
+                                    record.get("storage_guard_error") or
+                                    record.get("compiler_storage_cancelled") or
+                                    record.get("evidence_error") or "Child timeout")
+                                signal_process_group(process.pid, signal.SIGTERM)
+                                deadline = time.monotonic() + GROUP_SETTLEMENT_TIMEOUT
                                 while time.monotonic() < deadline:
                                     pid, status, usage = os.wait4(process.pid, os.WNOHANG)
                                     if pid:
                                         break
                                     time.sleep(.05)
                                 if not pid:
-                                    os.killpg(process.pid, signal.SIGKILL)
+                                    signal_process_group(process.pid, signal.SIGKILL)
                                     _, status, usage = os.wait4(process.pid, 0)
                                 process.returncode = os.waitstatus_to_exitcode(status)
                                 break
                             time.sleep(.05)
                     except BaseException as error:
                         interrupted = error
-                        os.killpg(process.pid, signal.SIGKILL)
+                        signal_process_group(process.pid, signal.SIGKILL)
                         _, status, usage = os.wait4(process.pid, 0)
                         process.returncode = os.waitstatus_to_exitcode(status)
                         record["interrupted"] = f"{type(error).__name__}: {error}"
                     finally:
-                        with self._lock:
-                            del self._root._active_children[process.pid]
+                        try:
+                            settlement = settle_process_group(process.pid)
+                            record["process_group_settlement"] = settlement
+                            record["process_group_settled"] = settlement["settled"]
+                        except OSError as error:
+                            record["process_group_settled"] = False
+                            record["process_group_settlement_error"] = (
+                                f"{type(error).__name__}: {error}")
+                        finally:
+                            with self._lock:
+                                del self._root._active_children[process.pid]
+                        if storage_lease is not None and not record["process_group_settled"]:
+                            self._compiler_storage.cancel(
+                                record.get("storage_guard_error") or
+                                "Compiler process group did not settle; no cleanup authorized")
                     record["exit_code"] = process.returncode
                     record["child_settled"] = process.poll() is not None
                     record["resources"] = {
@@ -588,19 +641,16 @@ class Evidence:
                         "major_page_faults": usage.ru_majflt,
                         "input_blocks": usage.ru_inblock, "output_blocks": usage.ru_oublock,
                     }
-                    try:
-                        os.killpg(process.pid, 0)
-                    except ProcessLookupError:
-                        record["process_group_settled"] = True
-                    else:
-                        os.killpg(process.pid, signal.SIGKILL)
-                        record["process_group_settled"] = False
         if object_dir is not None:
             sample_compiler_storage()
             if record["child_settled"] and record.get("process_group_settled", True):
                 try:
                     record["compiler_intermediates_removed"] = cleanup_compiler_intermediates(
-                        object_dir, directory, success=record.get("exit_code") == 0)
+                        object_dir, directory, success=(
+                            record.get("exit_code") == 0 and not record["timed_out"] and
+                            not any(record.get(key) for key in (
+                                "storage_guard_error", "compiler_storage_cancelled",
+                                "evidence_error", "interrupted"))))
                 except (OSError, VerificationFailure) as error:
                     record["compiler_cleanup_error"] = f"{type(error).__name__}: {error}"
                 record["compiler_storage_observation"]["retained_object_allocated_bytes"] = (
@@ -624,15 +674,19 @@ class Evidence:
             raise interrupted
         if record.get("compiler_cleanup_error"):
             raise VerificationFailure(
-                f"{name} compiler cleanup failed; see {self.relative(directory / 'receipt.json')}")
+                f"{name}: {record.get('storage_guard_error') or 'compiler failure'}; "
+                f"compiler cleanup failed; see {self.relative(directory / 'receipt.json')}")
         if not allow_failure and (
             record["exit_code"] != 0 or record["timed_out"]
             or record.get("storage_guard_error")
+            or record.get("compiler_storage_cancelled")
             or record.get("evidence_error") or record.get("receipt_persistence_error")
             or not record["child_settled"] or not record.get("process_group_settled", True)
         ):
+            cause = record.get("storage_guard_error") or record.get("compiler_storage_cancelled")
             raise VerificationFailure(
-                f"{name} failed; see {self.relative(directory / 'receipt.json')}"
+                f"{name} failed{': ' + cause if cause else ''}"
+                f"; see {self.relative(directory / 'receipt.json')}"
             )
         return record
 
@@ -954,7 +1008,7 @@ class Evidence:
             self.record["reason"] = "Source set changed during verification; evidence invalid"
         if not self.record["child_settled"]:
             self.record["exit_code"] = 1
-            self.record["reason"] = "A child process group did not settle; evidence invalid"
+            self.record["reason"] += "; a child process group did not settle; evidence invalid"
         write_json(self.path / "receipt.json", self.record)
         print(json.dumps({
             "exit_code": self.record["exit_code"],
