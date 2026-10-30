@@ -52,7 +52,8 @@ def compatibility_equivalence(run):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", choices=("equivalence", "compatibility-equivalence", "C", "compact"),
+    parser.add_argument("--probe", choices=("equivalence", "compatibility-equivalence", "C",
+                                          "C-symmetric", "compact"),
                         default="equivalence")
     parser.add_argument("--banks", type=int, choices=(1, 2, 4, 8), default=8)
     parser.add_argument("--tokens", type=int, choices=(1, 4), default=4,
@@ -60,10 +61,12 @@ def main():
     parser.add_argument("--mode", type=int, choices=(0, 1, 2), default=0,
                         help="compact portability cache mode")
     parser.add_argument("--asymmetric", type=int, choices=(0, 1), default=0)
+    parser.add_argument("--repair-of", help="retained diagnostic receipt repaired by this run")
     args = parser.parse_args()
     run = Run("evidence/preparation/compiled-host-" + args.probe,
               "public-pin compiled decoder driver diagnostic",
-              repair_of=("evidence/check-behavior/20261029T201448Z-48169afcddba/"
+              repair_of=args.repair_of or (
+                         "evidence/check-behavior/20261029T201448Z-48169afcddba/"
                          "tool-0190/receipt.json" if args.probe == "compatibility-equivalence" else
                          "evidence/preparation/compiled-host-equivalence/"
                          "20261029T192252Z-3b6ff5174f03/receipt.json"))
@@ -75,9 +78,10 @@ def main():
             result = equivalence(run, args.banks)
         elif args.probe == "compatibility-equivalence":
             result = compatibility_equivalence(run)
-        elif args.probe == "C":
+        elif args.probe in ("C", "C-symmetric"):
             result = decoder_case(
-                run, replace(C, BANKS=args.banks, CACHE_MODE=2, INT4_ASYM=1),
+                run, replace(C, BANKS=args.banks, CACHE_MODE=2,
+                             INT4_ASYM=int(args.probe == "C")),
                 simulator="verilator", tokens=[1, 4, 2, 6][:args.tokens],
                 prefill_tokens=min(2, args.tokens),
                 label="compiled-C", compiled_host=True)

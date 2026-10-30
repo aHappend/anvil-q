@@ -414,6 +414,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     sources = rtl if rtl is not None else [
         str(p.relative_to(ROOT)) for p in sorted(source_root.glob("*.sv"))]
     source_binding = None
+    profiled = compiled_host and g.HIDDEN_SIZE >= 1024 and not mutation_assertions
     if implementation == "q1-native":
         sources, source_binding = native_q1_sources(run, native_asset)
     if simulator == "iverilog":
@@ -424,7 +425,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
         command = ["vvp", run.rel(binary), "+directory=" + run.rel(folder)]
     elif simulator == "verilator":
         obj = folder / "obj"
-        if compiled_host:
+        if compiled_host and not profiled:
             if "g++" not in getattr(run, "tool_versions", {}):
                 run.versions([("g++", "--version")])
             constants = {"BANKS": g.BANKS, "QUEUE_DEPTH": g.QUEUE_DEPTH,
@@ -446,7 +447,7 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
             import os
             host = os.path.relpath(ROOT / "tests/decoder_host.cpp", obj)
             run.tool(argv + sources + [host])
-        else:
+        elif not compiled_host:
             argv = ["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
                     *VERILATOR_UNROLL,
                     "--top-module", "top_tb", "--Mdir", run.rel(obj), "-o", "decoder"]
@@ -462,8 +463,16 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
                 f"+stream_compare={int(stream_compare)}", f"+sparse_scan={int(sparse_scan)}"]
     if compiled_host:
         command.append(f"+host_cycles={host_cycle_limit}")
+    if profiled:
+        from compiled_build import profiled_host
+        if "g++" not in getattr(run, "tool_versions", {}):
+            run.versions([("g++", "--version")])
+        binary = profiled_host(run, g, folder, sources, command[1:])
+        command[0] = run.rel(binary)
     text, receipt = run.tool(command, expected=(0, 1, -6) if mutation_assertions else (0,),
                              timeout=14400)
+    if profiled:
+        run.release_intermediates(binary.parent)
     if mutation_assertions:
         if receipt["exit_code"] != 0:
             if not any(message in text for message in (*mutation_assertions, "NUMERICAL write",
@@ -493,6 +502,12 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     result["implementation"] = implementation
     result["simulator"] = simulator
     result["driver"] = "clock-stepped-public-pins" if compiled_host else "systemverilog"
+    if profiled:
+        result["compiler_optimization"] = {
+            "method": "fresh GCC profile training; -O3 -fno-tree-vectorize",
+            "training_cycles": 1000000, "diagnostic_edge_digest": False,
+            "bindings": str((folder / "profile-bindings.json").relative_to(run.path)),
+            "scope": "compiler-only; complete independent comparisons unchanged"}
     result["workload"] = {"seed": seed, "tokens": list(tokens),
                           "prefill_tokens": prefill_tokens}
     result["comparison_transport"] = "bounded online exact words" if stream_compare else "raw trace"

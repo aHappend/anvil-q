@@ -23,9 +23,10 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from decoder_checks import allocate, compare_trace
-from execution import ROOT, Run, VERILATOR_UNROLL, sha256, write_json
+from execution import ROOT, Run, sha256, write_json
 from parameters import C
 from reference import Fixture
+from compiled_build import build
 
 
 def fixture(folder):
@@ -62,44 +63,6 @@ VARIANTS = {
     "os-gated": (False, True, False, False),
     "lto": (True, True, False, False),
 }
-
-
-def build(run, g, name, optimize, gating, profile=False, flatten=False,
-          compiler_flags=()):
-    obj = run.path / name
-    constants = {"BANKS": g.BANKS, "QUEUE_DEPTH": g.QUEUE_DEPTH,
-                 "LAYERS": g.NUM_LAYERS, "PROFILE": g.PROFILE,
-                 "KV_DIM": g.NUM_KV_HEADS * g.HEAD_DIM,
-                 "INTERMEDIATE": g.INTERMEDIATE_SIZE, "HIDDEN": g.HIDDEN_SIZE,
-                 "VOCAB": g.VOCAB_SIZE, "THROUGHPUT_PROBE": 1,
-                 "EVAL_GATING": int(gating)}
-    if profile:
-        constants["PROFILE_EVAL"] = 1
-    flags = "-O3 -fno-tree-vectorize -std=c++20 " + " ".join(
-        f"-DHOST_{key}={value}" for key, value in constants.items())
-    flags += " " + " ".join(compiler_flags)
-    if name == "lto":
-        flags += " -flto"
-    argv = ["verilator", "--cc", "--exe", "--assert", "-Wno-fatal",
-            *VERILATOR_UNROLL, "--top-module", "anvil_q3_top",
-            "--Mdir", run.rel(obj), "-o", "decoder", "-CFLAGS", flags]
-    generation = [flag for flag in compiler_flags if flag.startswith("-fprofile-generate=")]
-    if generation:
-        argv += ["-LDFLAGS", " ".join(generation)]
-    if flatten:
-        argv.append("--flatten")
-    if name == "lto":
-        argv += ["-LDFLAGS", "-flto"]
-    argv += [f"-G{key}={value}" for key, value in asdict(g).items()]
-    argv += [str(p.relative_to(ROOT)) for p in sorted((ROOT / "rtl").glob("*.sv"))]
-    argv += [os.path.relpath(ROOT / "tests/decoder_host.cpp", obj)]
-    run.tool(argv)
-    make = ["make", "-C", run.rel(obj), "-f", "Vanvil_q3_top.mk",
-            "-j", str(run.resources["build_jobs"])]
-    if optimize:
-        make += ["OPT_FAST=-O3", "OPT_SLOW=-O3", "OPT_GLOBAL=-O3"]
-    run.tool(make)
-    return obj / "decoder"
 
 
 def main():
@@ -175,7 +138,7 @@ def main():
             use_profiles.mkdir()
             bindings = []
             for source in generated:
-                target = use_profiles / source.name.replace("#pgo-train#", "#pgo#")
+                target = use_profiles / source.name.replace("pgo-train#", "pgo#")
                 if target == use_profiles / source.name:
                     raise AssertionError("unexpected GCC profile object path: " + source.name)
                 shutil.copyfile(source, target)
