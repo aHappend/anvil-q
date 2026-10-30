@@ -39,6 +39,7 @@ import sys
 import tempfile
 import time
 import threading
+import traceback
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from numerical import (binary32, check_scalar, dot_reference, dot_vectors,
@@ -104,20 +105,48 @@ def source_inventory():
         return inventory
 
 
+def exception_diagnostic(error, phase, path=None):
+    return {
+        "phase": phase, "error": repr(error),
+        "exception_type": type(error).__name__,
+        "traceback": "".join(traceback.format_exception(error)),
+        "errno": getattr(error, "errno", None),
+        "filename": os.fsdecode(error.filename) if getattr(error, "filename", None) is not None else None,
+        "filename2": os.fsdecode(error.filename2) if getattr(error, "filename2", None) is not None else None,
+        "allocated_child_path": str(path.relative_to(ROOT)) if path is not None else None,
+    }
+
+
+def retain_exception(error, phase, path=None):
+    diagnostic = exception_diagnostic(error, phase, path)
+    error.verification_diagnostics = [
+        *getattr(error, "verification_diagnostics", []), diagnostic]
+    return diagnostic
+
+
 class Evidence:
     def __init__(self, name):
-        parent = ROOT / "evidence" / "preparation"
-        parent.mkdir(parents=True, exist_ok=True)
-        self.path = Path(tempfile.mkdtemp(prefix="verifier-" + name + "-", dir=parent))
+        self.path = None
         self.lock = threading.RLock()
         self.receipt = {
             "schema": 1, "acceptance_evidence": False,
             "argv": [sys.executable, *sys.argv], "cwd": ".",
             "python_version": sys.version,
             "started_at": now(), "records": [], "assertions": [],
-            "source_sha256": source_inventory(),
         }
-        self.finish("running")
+        self.phase = "allocation"
+        try:
+            parent = ROOT / "evidence" / "preparation"
+            parent.mkdir(parents=True, exist_ok=True)
+            self.path = Path(tempfile.mkdtemp(prefix="verifier-" + name + "-", dir=parent))
+            self.phase = "initialization"
+            self.receipt["source_sha256"] = source_inventory()
+            self.phase = "initial-publication"
+            self.finish("running")
+            self.phase = "execution"
+        except Exception as error:
+            retain_exception(error, self.phase, self.path)
+            raise
 
     def finish(self, status):
         with self.lock:
@@ -153,13 +182,25 @@ class Evidence:
     def profile(self, name):
         started = time.monotonic()
         record = {"name": name, "started_at": now()}
+        original = None
         try:
             yield
+        except Exception as error:
+            original = error
+            retain_exception(error, "execution", self.path)
+            raise
         finally:
             record.update(ended_at=now(), elapsed_s=time.monotonic()-started)
             with self.lock:
                 self.receipt.setdefault("profiles", []).append(record)
-                self.finish("running")
+                try:
+                    self.finish("running")
+                except Exception as error:
+                    if original is None:
+                        retain_exception(error, "profile-publication", self.path)
+                        raise
+                    original.verification_diagnostics.append(
+                        exception_diagnostic(error, "profile-publication", self.path))
 
     def elapsed(self, name, started):
         self.receipt.setdefault("profiles", []).append(
@@ -180,22 +221,35 @@ class Evidence:
             self.receipt["records"].append(record)
             self.finish("running")
         started = time.monotonic()
-        with stdout.open("xb") as out, stderr.open("xb") as err:
-            try:
-                completed = subprocess.run(
-                    argv, cwd=cwd, stdout=out, stderr=err, timeout=timeout,
-                    check=False,
-                )
-                record["exit_code"] = completed.returncode
-            except subprocess.TimeoutExpired:
-                record["timed_out"] = True
-                record["exit_code"] = None
-            except OSError as error:
-                record["exit_code"] = None
-                record["error"] = str(error)
+        original = None
+        try:
+            with stdout.open("xb") as out, stderr.open("xb") as err:
+                try:
+                    completed = subprocess.run(
+                        argv, cwd=cwd, stdout=out, stderr=err, timeout=timeout,
+                        check=False,
+                    )
+                    record["exit_code"] = completed.returncode
+                except subprocess.TimeoutExpired:
+                    record["timed_out"] = True
+                    record["exit_code"] = None
+        except OSError as error:
+            original = error
+            record["exit_code"] = None
+            record["error"] = str(error)
+            record["diagnostic"] = retain_exception(error, "execution", self.path)
         record["ended_at"] = now()
         record["elapsed_s"] = time.monotonic() - started
-        self.finish("running")
+        try:
+            self.finish("running")
+        except Exception as error:
+            if original is None:
+                retain_exception(error, "execution-publication", self.path)
+                raise
+            original.verification_diagnostics.append(
+                exception_diagnostic(error, "execution-publication", self.path))
+        if original is not None:
+            raise original.with_traceback(original.__traceback__)
         return record["exit_code"] == 0 and not record["timed_out"]
 
     def versions(self):
@@ -265,6 +319,7 @@ class BuildCache:
                 self.entries[key] = entry
         if owner:
             child = None
+            original = None
             try:
                 child = Evidence("build-" + key[:12])
                 child.receipt["tool_versions_receipt"] = ev.receipt.get(
@@ -300,15 +355,26 @@ class BuildCache:
                             path.unlink()
                             removed.append(path.name)
                     child.receipt["removed_completed_intermediates"] = removed
-            except (OSError, ValueError, KeyError) as error:
+            except Exception as error:
                 entry["passed"] = False
                 if child is not None:
-                    child.assertion("build_exception", False, error=repr(error))
+                    child.receipt["assertions"].append({
+                        "name": "build_exception", "passed": False,
+                        "diagnostics": [retain_exception(error, "build-execution", child.path)]})
+                original = error
                 raise
             finally:
                 try:
                     if child is not None:
-                        child.finish("passed" if entry["passed"] else "failed")
+                        try:
+                            child.finish("passed" if entry["passed"] else "failed")
+                        except Exception as error:
+                            entry["passed"] = False
+                            if original is None:
+                                retain_exception(error, "build-final-publication", child.path)
+                                raise
+                            original.verification_diagnostics.append(
+                                exception_diagnostic(error, "build-final-publication", child.path))
                 finally:
                     entry["event"].set()
         else:
@@ -336,10 +402,15 @@ def compile_simulation(ev, label, argv, executable):
 
 
 def component(ev, name, check, *args, **kwargs):
-    child = Evidence(name)
-    child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+    child = Evidence.__new__(Evidence)
     passed = False
+    original = None
+    diagnostics = []
+    phase = "allocation"
     try:
+        child.__init__(name)
+        child.receipt["tool_versions_receipt"] = str((ev.path / "receipt.json").relative_to(ROOT))
+        phase = "execution"
         with child.profile("component"):
             result = bool(check(child, *args, **kwargs))
         if not child.receipt["assertions"]:
@@ -351,18 +422,50 @@ def component(ev, name, check, *args, **kwargs):
                             error="component returned false despite passing assertions")
         passed = result and all(
             assertion["passed"] for assertion in child.receipt["assertions"])
-        return passed
-    except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
-        child.assertion("verification_exception", False, error=repr(error))
-        raise
-    finally:
+    except Exception as error:
+        original = error
+        diagnostics = list(getattr(error, "verification_diagnostics", []))
+        if not diagnostics:
+            diagnostics.append(exception_diagnostic(
+                error, phase, getattr(child, "path", None)))
+        child.receipt["assertions"].append({
+            "name": "verification_exception", "passed": False,
+            "diagnostics": diagnostics})
+        passed = False
+    path = getattr(child, "path", None)
+    receipt = str((path / "receipt.json").relative_to(ROOT)) if path is not None else None
+    try:
         child.finish("passed" if passed else "failed")
-        receipt = str((child.path / "receipt.json").relative_to(ROOT))
-        with ev.lock:
+    except Exception as error:
+        diagnostics.append(exception_diagnostic(error, "final-publication", path))
+        passed = False
+        if original is None:
+            original = error
+    published = receipt if receipt is not None and (ROOT / receipt).is_file() else None
+    with ev.lock:
+        if published is not None:
             ev.receipt.setdefault("children", []).append(receipt)
-            ev.assertion("component_" + name, passed, child_receipt=receipt)
+        assertion = {
+            "name": "component_" + name, "passed": passed,
+            "child_receipt": published,
+            "allocated_child_path": str(path.relative_to(ROOT)) if path is not None else None,
+            "diagnostics": diagnostics,
+        }
+        # Append before publication: an unavailable child cannot hide its failure.
+        ev.receipt["assertions"].append(assertion)
+        try:
+            ev.finish("running")
+        except Exception as error:
+            diagnostics.append(exception_diagnostic(error, "parent-publication", path))
+            assertion["passed"] = passed = False
+            if original is None:
+                original = error
         if not passed:
-            report_failures(child)
+            print(json.dumps(assertion), file=sys.stderr, flush=True)
+    if original is not None:
+        original.verification_diagnostics = diagnostics
+        raise original.with_traceback(original.__traceback__)
+    return passed
 
 
 def parallel_components(ev, jobs, serial=()):
@@ -398,22 +501,49 @@ def parallel_components(ev, jobs, serial=()):
     def execute(job):
         name, check, args, kwargs = job
         launch.wait()
-        transition(name, "running")
         passed = False
+        original = None
         try:
+            transition(name, "running")
             passed = component(ev, name, check, *args, **kwargs)
             return passed
-        except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
-            # component retained and reported the original exception.
+        except Exception as error:
+            original = error
             with ev.lock:
                 inventory[name]["error"] = repr(error)
+                inventory[name]["diagnostics"] = getattr(
+                    error, "verification_diagnostics",
+                    [exception_diagnostic(error, "shard-execution")])
+                if not any(row["name"] == "component_" + name
+                           and not row["passed"] for row in ev.receipt["assertions"]):
+                    ev.receipt["assertions"].append({
+                        "name": "component_" + name, "passed": False,
+                        "child_receipt": None,
+                        "diagnostics": inventory[name]["diagnostics"]})
             return False
         finally:
             with ev.lock:
                 receipts = [row["child_receipt"] for row in ev.receipt["assertions"]
                             if row["name"] == "component_" + name]
-            transition(name, "completed" if passed else "failed",
-                       passed=passed, child_receipt=receipts[-1] if receipts else None)
+            try:
+                transition(name, "completed" if passed else "failed",
+                           passed=passed, child_receipt=receipts[-1] if receipts else None)
+            except Exception as error:
+                diagnostic = exception_diagnostic(error, "shard-publication")
+                with ev.lock:
+                    inventory[name].update(status="failed", passed=False)
+                    inventory[name].setdefault("diagnostics", []).append(diagnostic)
+                    ev.receipt["shard_counts"] = {
+                        state: sum(row["status"] == state for row in inventory.values())
+                        for state in ("planned", "queued", "running", "completed", "failed")}
+                    ev.receipt["assertions"].append({
+                        "name": "shard_publication_" + name, "passed": False,
+                        "diagnostics": [diagnostic]})
+                print(json.dumps(inventory[name]), file=sys.stderr, flush=True)
+                if original is not None:
+                    original.verification_diagnostics = inventory[name]["diagnostics"]
+                    raise original.with_traceback(original.__traceback__)
+                raise
 
     with ev.profile("parallel-components"):
         for name in inventory:
@@ -1608,18 +1738,25 @@ def main():
     parser.add_argument("--python-facility", type=Path, action="append", default=[])
     parser.add_argument("--reconciled-with", type=Path)
     args = parser.parse_args()
-    ev = Evidence(args.check or args.probe)
-    if args.repair_of:
-        prior = ROOT / args.repair_of
-        ev.receipt["repair_of"] = {
-            "path": str(prior.relative_to(ROOT)), "sha256": digest(prior),
-        }
-    for path in args.diagnostic_repair_of:
-        previous = ROOT / path
-        ev.receipt.setdefault("diagnostic_repairs", []).append(
-            {"path": str(previous.relative_to(ROOT)), "sha256": digest(previous)})
+    try:
+        ev = Evidence(args.check or args.probe)
+    except Exception as error:
+        print(json.dumps({"status": "failed", "receipt": None,
+                          "diagnostics": getattr(error, "verification_diagnostics", [
+                              exception_diagnostic(error, "initialization")])}),
+              file=sys.stderr, flush=True)
+        return 1
     ok = False
     try:
+        if args.repair_of:
+            prior = ROOT / args.repair_of
+            ev.receipt["repair_of"] = {
+                "path": str(prior.relative_to(ROOT)), "sha256": digest(prior),
+            }
+        for path in args.diagnostic_repair_of:
+            previous = ROOT / path
+            ev.receipt.setdefault("diagnostic_repairs", []).append(
+                {"path": str(previous.relative_to(ROOT)), "sha256": digest(previous)})
         if args.probe == "leaves":
             ok = ev.versions() and leaf_check(ev, full=False)
         elif args.probe == "leaves-full":
@@ -1627,7 +1764,7 @@ def main():
         elif args.probe == "synthesis-dot":
             ok = ev.versions() and synthesis_check(ev, "anvil_q1_fp_dot8")
         elif args.probe == "synthesis-top":
-            ok = ev.versions() and synthesis_check(ev)
+            ok = ev.versions() and component(ev, "synthesis-top-check", synthesis_check)
         elif args.probe == "static":
             ok = static_check(ev)
         elif args.probe == "parameters":
@@ -1757,11 +1894,22 @@ def main():
                     ok = covered_ok and ok
         elif args.check == "portable":
             ok = ev.versions() and portable_check(ev)
-    except (AssertionError, ValueError, KeyError, OSError, OverflowError) as error:
-        ev.assertion("verification_exception", False, error=repr(error))
+    except Exception as error:
+        ev.receipt["assertions"].append({
+            "name": "verification_exception", "passed": False,
+            "diagnostics": getattr(error, "verification_diagnostics", [
+                exception_diagnostic(error, "execution", ev.path)])})
+        ok = False
     finally:
         ok = ok and all(a["passed"] for a in ev.receipt["assertions"])
-        ev.finish("passed" if ok else "failed")
+        try:
+            ev.finish("passed" if ok else "failed")
+        except Exception as error:
+            ok = False
+            ev.receipt["status"] = "failed"
+            ev.receipt["assertions"].append({
+                "name": "final_publication", "passed": False,
+                "diagnostics": [exception_diagnostic(error, "final-publication", ev.path)]})
     if not ok:
         report_failures(ev)
     print(json.dumps({"status": ev.receipt["status"],

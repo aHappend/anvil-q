@@ -13,13 +13,84 @@ import threading
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify import Evidence, digest
+from verify import Evidence, ROOT, digest, parallel_components
 
 
 CASES = ("success", "write", "short-write", "file-fsync", "replace",
          "directory-fsync")
 OLD = {"schema": 1, "status": "running", "marker": "previous-valid-receipt"}
 NEW = {"schema": 1, "marker": "replacement-receipt", "payload": list(range(128))}
+LIFECYCLE_CASES = ("pristine", "allocation", "initialization", "initial-publication",
+                   "execution", "execution-spawn", "disappearance", "execution-disappearance",
+                   "final-disappearance", "initialization-publication",
+                   "execution-parent-publication")
+
+
+def lifecycle(case):
+    """Run real aggregation against fresh fixtures; retain moved bytes, never delete."""
+    ev = Evidence("receipt-lifecycle-" + case)
+    ev.receipt["scope"] = "synthetic lifecycle failure, not RTL acceptance"
+    ev.receipt["source_failure_fixture"] = str(
+        (ev.path / "missing-source-a").relative_to(ROOT))
+    missing = ev.receipt["source_failure_fixture"]
+    missing2 = str((ev.path / "missing-source-b").relative_to(ROOT))
+    real_inventory = __import__("verify").source_inventory
+    real_allocate = __import__("verify").tempfile.mkdtemp
+    real_finish = Evidence._finish
+    parent_failure_injected = False
+
+    def fail_source():
+        raise FileNotFoundError(errno.ENOENT, "injected source inventory failure",
+                                missing, None, missing2)
+
+    def allocate(*args, **kwargs):
+        if case == "allocation":
+            raise PermissionError(errno.EACCES, "injected allocation failure", missing)
+        return real_allocate(*args, **kwargs)
+
+    def finish(holder, status):
+        nonlocal parent_failure_injected
+        if (case == "execution-parent-publication" and holder is ev
+                and not parent_failure_injected
+                and any(a["name"] == "component_fixture" for a in holder.receipt["assertions"])):
+            parent_failure_injected = True
+            raise OSError(errno.ENOSPC, "injected parent publication", missing2)
+        if holder is not ev:
+            if case == "final-disappearance" and status == "passed":
+                moved = ev.path / ("retained-child-" + holder.path.name.rsplit("-", 1)[-1])
+                holder.path.rename(moved)
+                ev.receipt["retained_moved_child"] = str(moved.relative_to(ROOT))
+            if case == "initial-publication" and holder.phase == "initial-publication":
+                raise OSError(errno.ENOSPC, "injected initial publication", missing)
+            if case == "initialization-publication":
+                raise OSError(errno.ENOSPC, "injected secondary publication", missing2)
+        return real_finish(holder, status)
+
+    def inventory():
+        return fail_source() if case in ("initialization", "initialization-publication") else real_inventory()
+
+    def fixture(child):
+        child.assertion("fixture_pristine_assertion", True)
+        if case == "execution-spawn":
+            return child.run("missing-executable", [missing])
+        if case in ("disappearance", "execution-disappearance"):
+            moved = ev.path / ("retained-child-" + child.path.name.rsplit("-", 1)[-1])
+            child.path.rename(moved)
+            ev.receipt["retained_moved_child"] = str(moved.relative_to(ROOT))
+        if case in ("execution", "execution-disappearance", "execution-parent-publication"):
+            fail_source()
+        return True
+
+    with ExitStack() as stack:
+        stack.enter_context(patch("verify.source_inventory", side_effect=inventory))
+        stack.enter_context(patch("verify.tempfile.mkdtemp", side_effect=allocate))
+        stack.enter_context(patch.object(Evidence, "_finish", finish))
+        results = parallel_components(ev, [("fixture", fixture, (), {})])
+    passed = all(results.values()) and all(a["passed"] for a in ev.receipt["assertions"])
+    ev.finish("passed" if passed else "failed")
+    print(json.dumps({"receipt": str((ev.path / "receipt.json").relative_to(ROOT)),
+                      "status": ev.receipt["status"]}), flush=True)
+    return 0 if passed else 1
 
 
 def exercise(case, directory):
@@ -150,12 +221,76 @@ def check(root, ev):
             str(p.relative_to(root)): digest(p)
             for p in [installed, previous, *temporaries]
         })
+    for case in LIFECYCLE_CASES:
+        label = "lifecycle-" + case
+        succeeded = ev.run(
+            label, [sys.executable, "tests/receipt_publication.py", "--lifecycle", case],
+            timeout=3600)
+        record = ev.receipt["records"][-1]
+        result = json.loads((root / record["stdout"]).read_text())
+        path = root / result["receipt"]
+        receipt = json.loads(path.read_text())
+        row = receipt["shards"][0]
+        assertion = next(a for a in receipt["assertions"] if a["name"] == "component_fixture")
+        diagnostics = assertion["diagnostics"]
+        expected = case == "pristine"
+        correct = (succeeded == expected and record["exit_code"] == (0 if expected else 1)
+                   and not record["timed_out"] and assertion["passed"] == expected
+                   and row["status"] == ("completed" if expected else "failed")
+                   and row["passed"] == expected
+                   and receipt["shard_counts"]["failed"] == (0 if expected else 1)
+                   and receipt["status"] == ("passed" if expected else "failed"))
+        if not expected:
+            correct = correct and bool(diagnostics) and row["diagnostics"] == diagnostics
+            correct = correct and all(
+                d["traceback"].startswith("Traceback") and d["phase"]
+                and "filename" in d and "filename2" in d
+                and "allocated_child_path" in d for d in diagnostics)
+            primary = diagnostics[0]
+            expected_phase = {"allocation": "allocation", "initialization": "initialization",
+                              "initial-publication": "initial-publication",
+                              "initialization-publication": "initialization",
+                              "final-disappearance": "final-publication",
+                              "disappearance": "profile-publication"}.get(case, "execution")
+            correct = correct and primary["phase"] == expected_phase
+            correct = correct and primary["errno"] == (
+                errno.EACCES if case == "allocation" else
+                errno.ENOSPC if case == "initial-publication" else errno.ENOENT)
+            correct = correct and ((primary["allocated_child_path"] is None)
+                                   == (case == "allocation"))
+            if case not in ("allocation", "initial-publication", "disappearance",
+                            "final-disappearance"):
+                correct = correct and primary["filename"] == receipt["source_failure_fixture"]
+                correct = correct and (primary["filename2"] is None if case == "execution-spawn"
+                                       else primary["filename2"].endswith("missing-source-b"))
+            if case in ("disappearance", "execution-disappearance", "final-disappearance"):
+                correct = correct and assertion["child_receipt"] is None
+                correct = correct and (root / receipt["retained_moved_child"]).is_dir()
+                correct = correct and any(d["phase"] == "final-publication" for d in diagnostics)
+            if case == "initialization-publication":
+                correct = correct and len(diagnostics) == 2
+                correct = correct and diagnostics[1]["errno"] == errno.ENOSPC
+            if case == "execution-parent-publication":
+                correct = correct and diagnostics[-1]["phase"] == "parent-publication"
+                correct = correct and diagnostics[-1]["errno"] == errno.ENOSPC
+            stderr = (root / record["stderr"]).read_text()
+            correct = correct and (primary == json.loads(stderr.splitlines()[0])["diagnostics"][0])
+        good = ev.assertion("lifecycle_" + case, correct, expected_child_failure=not expected,
+                            child_receipt=result["receipt"], child_exit_code=record["exit_code"],
+                            diagnostics=diagnostics) and good
+        ev.receipt.setdefault("data_sha256", {})[result["receipt"]] = digest(path)
     return good
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", required=True, choices=CASES)
-    parser.add_argument("--directory", required=True, type=Path)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--case", choices=CASES)
+    group.add_argument("--lifecycle", choices=LIFECYCLE_CASES)
+    parser.add_argument("--directory", type=Path)
     args = parser.parse_args()
+    if args.lifecycle:
+        sys.exit(lifecycle(args.lifecycle))
+    if args.directory is None:
+        parser.error("--case requires --directory")
     exercise(args.case, args.directory)
