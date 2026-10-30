@@ -10,6 +10,61 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import software_discrepancy as software
 
 
+class ReferenceProducerBindingChecks(unittest.TestCase):
+    def run_preparation(self, binding_error=None, preparation_error=None):
+        evidence = Mock()
+        evidence.record = {}
+        producer = Mock()
+        producer.folder = Path("evidence/preparation/synthetic-01234567")
+        producer.relative.side_effect = str
+        producer.record = {}
+        events = Mock()
+        events.attach_mock(producer.finish, "finish")
+        events.attach_mock(evidence.bind_child, "bind")
+        evidence.bind_child.side_effect = binding_error
+        with patch("verify.Evidence", return_value=producer), \
+                patch("checkpoint_reference.prepare", side_effect=preparation_error) as prepare, \
+                patch.object(software, "measure") as measure:
+            events.attach_mock(measure, "measure")
+            failure = binding_error or preparation_error
+            if failure is None:
+                software.prepare_and_measure(evidence, seed=89, smoke=True)
+            else:
+                with self.assertRaises(type(failure)) as caught:
+                    software.prepare_and_measure(evidence, seed=89, smoke=True)
+                self.assertIs(caught.exception, failure)
+            prepare.assert_called_once_with(producer, smoke=True, seed=89)
+        return evidence, producer, events, measure
+
+    def test_finalized_producer_is_bound_before_comparison(self):
+        evidence, producer, events, measure = self.run_preparation()
+        self.assertEqual([event[0] for event in events.mock_calls],
+                         ["finish", "bind", "measure"])
+        evidence.bind_child.assert_called_once_with(producer)
+        producer.finish.assert_called_once_with(
+            "probe_passed", "Integer checkpoint reference; not RTL or board acceptance.")
+        measure.assert_called_once_with(
+            evidence, str(producer.folder / "checkpoint-reference.json"))
+
+    def test_lost_child_evidence_prevents_comparison_without_refinalizing_child(self):
+        evidence, producer, events, measure = self.run_preparation(
+            binding_error=FileNotFoundError("synthetic finalized child disappeared"))
+        self.assertEqual([event[0] for event in events.mock_calls], ["finish", "bind"])
+        evidence.bind_child.assert_called_once_with(producer)
+        producer.finish.assert_called_once_with(
+            "probe_passed", "Integer checkpoint reference; not RTL or board acceptance.")
+        measure.assert_not_called()
+
+    def test_failed_preparation_cannot_be_bound_or_compared(self):
+        evidence, producer, events, measure = self.run_preparation(
+            preparation_error=ValueError("synthetic reference failure"))
+        self.assertEqual([event[0] for event in events.mock_calls], ["finish"])
+        producer.finish.assert_called_once_with(
+            "probe_failed", "ValueError: synthetic reference failure")
+        evidence.bind_child.assert_not_called()
+        measure.assert_not_called()
+
+
 class ReferencePreflightChecks(unittest.TestCase):
     def run_preflight(self, *, missing=False, digest="expected", size=151936 * 4,
                       binding="expected"):
@@ -85,7 +140,8 @@ if __name__ == "__main__":
                              "reference-preflight-regression")
             evidence.record["observations"].append({
                 "scope": "synthetic_preflight_harness_only_not_reference_or_RTL_acceptance",
-                "test_cases": 5,
+                "test_cases": unittest.defaultTestLoader.loadTestsFromModule(
+                    sys.modules[__name__]).countTestCases(),
             })
             evidence.finish("probe_passed", "Synthetic input-preflight regression only.")
         except (OSError, RuntimeError, AssertionError, ValueError) as exc:

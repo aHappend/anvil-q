@@ -696,6 +696,7 @@ def prepare_and_measure(evidence, seed=17, smoke=False):
     except Exception as exc:
         producer.finish("probe_failed", f"{type(exc).__name__}: {exc}")
         raise
+    evidence.bind_child(producer)
     measure(evidence, producer.relative(producer.folder / "checkpoint-reference.json"))
 
 
