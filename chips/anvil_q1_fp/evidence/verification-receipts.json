@@ -16,9 +16,9 @@
       "receipts": []
     },
     "check:maximum-frame-memory-capacity-diagnostics": {
-      "attempt_id": 709,
-      "duration_s": 106.8517459819559,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-kbo2fh8q/receipt.json\", \"production_collection_authorized\": false}\n",
+      "attempt_id": 747,
+      "duration_s": 106.19309024885297,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-oeh3wyk5/receipt.json\", \"production_collection_authorized\": false}\n",
       "receipt_count": 0,
       "receipts": []
     },
