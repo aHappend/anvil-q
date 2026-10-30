@@ -1,0 +1,11 @@
+{
+  "chip": "Anvil-Q2-HT",
+  "fitter_resources": {
+    "total_registers": 626560,
+    "block_memory_bits": 106460,
+    "dsp_blocks": 920,
+    "virtual_pins": 2488
+  },
+  "timing": {},
+  "verification_tiers": {}
+}
