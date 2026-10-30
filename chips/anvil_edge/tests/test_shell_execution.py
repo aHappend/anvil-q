@@ -10,7 +10,9 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qwen_shell import shell_case, shell_workers
-from verify import Evidence, VerificationFailure, observe_phase_stdout
+from verify import (
+    Evidence, VerificationFailure, observe_phase_stdout, relay_phase_progress,
+)
 from cycle_driver import full_capacity_measurement
 
 
@@ -151,6 +153,77 @@ class ShellExecutionTests(unittest.TestCase):
         self.assertEqual(record["evidence_error"]["errno"], 2)
         self.assertEqual(record["stdout_observations"], [])
         self.assertFalse(path.exists())
+
+    def progress_record(self):
+        return {"index": 7, "stdout_observations": [],
+                "stdout_progress_reports": []}, {}
+
+    def add_progress(self, record, cycles, elapsed, **fields):
+        values = {"frame": 0, "acknowledgements": cycles // 4, "cycles": cycles, **fields}
+        record["stdout_observations"].append({
+            "line": "QWEN_SHELL_PROGRESS " +
+                    " ".join(f"{key}={value}" for key, value in values.items()),
+            "observed_elapsed_s": elapsed,
+        })
+
+    def test_progress_relay_requires_actual_advance_and_rate_limits(self):
+        record, state = self.progress_record()
+        with patch("builtins.print") as output:
+            relay_phase_progress(record, state, 0)
+            output.assert_not_called()
+            self.add_progress(record, 100, 1)
+            relay_phase_progress(record, state, 1)
+            self.assertEqual(output.call_count, 1)
+            relay_phase_progress(record, state, 40)
+            self.assertEqual(output.call_count, 1)
+            self.add_progress(record, 200, 41)
+            relay_phase_progress(record, state, 41)
+            self.add_progress(record, 300, 42)
+            relay_phase_progress(record, state, 42)
+            self.assertEqual(output.call_count, 2)
+            relay_phase_progress(record, state, 43, force=True)
+            self.assertEqual(output.call_count, 3)
+            relay_phase_progress(record, state, 44, force=True)
+            self.assertEqual(output.call_count, 3)
+        reports = record["stdout_progress_reports"]
+        self.assertEqual([row["cycles"] for row in reports], [100, 200, 300])
+        self.assertEqual(reports[-1]["acknowledgements"], 75)
+        self.assertEqual(reports[-1]["observed_elapsed_s"], 42)
+        self.assertEqual(reports[-1]["relayed_elapsed_s"], 43)
+        self.assertEqual(reports[-1]["child_index"], 7)
+        self.assertEqual([row["at_settlement"] for row in reports], [False, False, True])
+        self.assertNotIn("passed", reports[-1])
+
+    def test_progress_relay_preserves_phase_and_ignores_non_events(self):
+        record, state = self.progress_record()
+        record["stdout_observations"].append({
+            "line": "QWEN_SHELL_PHASE phase=head_begin frame=2 operation=5 cycles=900",
+            "observed_elapsed_s": 1,
+        })
+        record["stdout_observations"].append({
+            "line": "QWEN_SHELL_INVALID_TRANSPORT cycles=1000",
+            "observed_elapsed_s": 2,
+        })
+        with patch("builtins.print") as output:
+            relay_phase_progress(record, state, 3)
+        message = output.call_args.args[0]
+        self.assertTrue(message.startswith("VERIFICATION_CHILD_PROGRESS "))
+        self.assertTrue(output.call_args.kwargs["flush"])
+        report = json.loads(message.split(" ", 1)[1])
+        self.assertEqual(report["phase"], "head_begin")
+        self.assertEqual(report["operation"], 5)
+        self.assertEqual(report["cycles"], 900)
+        self.assertEqual(report["frame"], 2)
+
+    def test_progress_relay_is_bounded_without_discarding_observations(self):
+        record, state = self.progress_record()
+        with patch("builtins.print") as output:
+            for index in range(140):
+                self.add_progress(record, index, index * 31)
+                relay_phase_progress(record, state, index * 31, force=True)
+        self.assertEqual(output.call_count, 128)
+        self.assertEqual(len(record["stdout_progress_reports"]), 128)
+        self.assertEqual(len(record["stdout_observations"]), 140)
 
 
 if __name__ == "__main__":

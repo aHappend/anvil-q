@@ -20,6 +20,9 @@ It does not authorize an aggregate or complete-table retry.
 --probe shell-full-capacity-feasibility measures the cold complete Qwen shell
 matrix within the existing patrol budget, retaining incomplete phase observations.
 It is a necessary subset, not an aggregate L1 feasibility certificate.
+Shell simulations relay observed cycle/transaction progress to parent stdout at
+most once per 30 seconds per child, plus settlement. This is diagnostic activity,
+not completion, acceptance or permission to extend any execution budget.
 """
 
 import argparse
@@ -170,6 +173,40 @@ def observe_phase_stdout(path, record, state, prefixes, elapsed):
                 "observed_elapsed_s": elapsed, "line": text})
 
 
+def relay_phase_progress(record, state, elapsed, *, force=False):
+    """Relay advancing public observations, never a timer-only heartbeat."""
+    reports = record["stdout_progress_reports"]
+    if len(reports) >= 128:
+        return
+    if reports and not force and elapsed - reports[-1]["relayed_elapsed_s"] < 30:
+        return
+    for event in reversed(record["stdout_observations"]):
+        match = re.match(
+            r"^(QWEN|DEEPSEEK)_SHELL_(PHASE|PROGRESS|BOOT|COMPLETION|BOOT_SEGMENT) ",
+            event["line"])
+        if match is None:
+            continue
+        fields = {key: int(value) for key, value in
+                  re.findall(r"\b([a-z_]+)=(\d+)\b", event["line"])}
+        if "cycles" not in fields:
+            continue
+        if fields["cycles"] <= state.get("relayed_cycle", -1):
+            return
+        report = {
+            "child_index": record["index"], "event": match.group(0).strip(),
+            "observed_elapsed_s": event["observed_elapsed_s"],
+            "relayed_elapsed_s": elapsed, "at_settlement": force, **fields,
+        }
+        phase = re.search(r"\bphase=([a-z_]+)\b", event["line"])
+        if phase is not None:
+            report["phase"] = phase.group(1)
+        print("VERIFICATION_CHILD_PROGRESS " +
+              json.dumps(report, sort_keys=True, separators=(",", ":")), flush=True)
+        reports.append(report)
+        state["relayed_cycle"] = fields["cycles"]
+        return
+
+
 def compiler_object_dir(argv, root, evidence_path):
     if Path(str(argv[0])).name != "verilator" or "--Mdir" not in argv:
         return None
@@ -240,7 +277,7 @@ class Evidence:
         self.compiler_pch = False
         self.compiler_profile = False
         self.compiler_lto = False
-        self.observe_stdout_prefixes = ()
+        self.observe_stdout_prefixes = ("QWEN_SHELL_", "DEEPSEEK_SHELL_")
         self.compiled_simulations = {}
         self.complete_table_producers = {}
         self._table_locks = {}
@@ -460,15 +497,24 @@ class Evidence:
             str(argv[0]).endswith("/simulation")) else ()
         if prefixes:
             record["stdout_observations"] = []
+            record["stdout_progress_reports"] = []
             record["stdout_observation_policy"] = (
                 "Parent monotonic elapsed time when a flushed phase line was read; "
                 "not exact event wall time. Nominal polling interval 0.25 seconds.")
+            record["stdout_progress_policy"] = (
+                "Relay only advancing observed shell cycles/counters to parent stdout, "
+                "at most once per 30 seconds and once at settlement; at most 128 "
+                "reports per child. Raw logs and phase observations remain authoritative. "
+                "Progress is not completion and changes no timeout or acceptance rule.")
 
-        def observe_stdout():
+        def observe_stdout(*, final=False):
             if not prefixes:
                 return
+            elapsed = time.monotonic() - start
             observe_phase_stdout(directory / "stdout.log", record, observation_state,
-                                 prefixes, time.monotonic() - start)
+                                 prefixes, elapsed)
+            with self._lock:
+                relay_phase_progress(record, observation_state, elapsed, force=final)
 
         interrupted = None
         with (directory / "stdout.log").open("xb") as stdout:
@@ -559,7 +605,7 @@ class Evidence:
                     record["compiler_cleanup_error"] = f"{type(error).__name__}: {error}"
                 record["compiler_storage_observation"]["retained_object_allocated_bytes"] = (
                     allocated_tree_bytes(object_dir))
-        observe_stdout()
+        observe_stdout(final=True)
         record["end_utc"] = utc()
         record["duration_s"] = time.monotonic() - start
         record["storage_after"] = storage_snapshot(directory)

@@ -217,6 +217,24 @@ def run_feasibility_controls(evidence):
         require(cell["status"] == "passed" and len(cell["boots"]) == 2 and
                 cell["completed_frames"] == len(info["cases"]),
                 "Phase controls require actual initial boot, reload and drained responses")
+        coverage = next(row for row in evidence.record["coverage"]
+                        if row["name"] == cell["name"])
+        child = coverage["simulation_receipt"]
+        reports = child["stdout_progress_reports"]
+        require(reports and
+                len(reports) <= 128 and
+                all(not report["at_settlement"] for report in reports[:-1]) and
+                all(b["at_settlement"] or
+                    b["relayed_elapsed_s"] - a["relayed_elapsed_s"] >= 30
+                    for a, b in zip(reports, reports[1:])) and
+                all(a["cycles"] < b["cycles"] for a, b in zip(reports, reports[1:])) and
+                all(any(report["cycles"] == int(match.group(1)) and
+                            report["observed_elapsed_s"] == event["observed_elapsed_s"]
+                        for event in child["stdout_observations"]
+                        if (match := re.search(r"\bcycles=(\d+)\b", event["line"])))
+                    for report in reports),
+                "Parent progress must be rate-limited and bound to advancing "
+                "actual child observations; settlement bypass is final-only")
         for frame, expected in zip(cell["frames"], info["cases"]):
             events = frame["events"]
             for phase in ("input_begin", "input_sent", "response_done"):
