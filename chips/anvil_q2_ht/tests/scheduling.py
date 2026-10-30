@@ -3,17 +3,63 @@
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 import fcntl
+import io
 import json
 import math
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 
 BUDGET_ENV = "ANVIL_VERIFICATION_BUDGET"
 HELD_ENV = "ANVIL_VERIFICATION_LEASE_HELD"
 GIB = 1024 ** 3
+PROGRESS_FD_ENV = "ANVIL_VERIFICATION_PROGRESS_FD"
+PROGRESS_PREFIX_ENV = "ANVIL_VERIFICATION_PROGRESS_PREFIX"
+PROGRESS_INTERVAL_S = 30.0
+
+
+@contextmanager
+def progress_channel():
+    """Keep the original outer stream reachable through nested raw-log captures."""
+    inherited = os.environ.get(PROGRESS_FD_ENV)
+    if inherited is not None:
+        descriptor = int(inherited)
+        os.fstat(descriptor)
+        yield descriptor
+        return
+    try:
+        descriptor = os.dup(sys.stdout.fileno())
+    except io.UnsupportedOperation:
+        yield None
+        return
+    try:
+        yield descriptor
+    finally:
+        os.close(descriptor)
+
+
+def report_progress(descriptor, event, command, sizes, previous=None):
+    prefix = Path(os.environ.get(PROGRESS_PREFIX_ENV, "."))
+    record = {
+        "event": "child-" + event, "pid": command["pid"],
+        "stdout": str(prefix / command["stdout"]),
+        "stderr": str(prefix / command["stderr"]),
+        "bytes": sizes,
+    }
+    if previous is not None:
+        record["growth_bytes"] = [size - old for size, old in zip(sizes, previous)]
+    if event == "finish":
+        record.update(exit=command["exit"], timed_out=command["timed_out"])
+    line = json.dumps(record, separators=(",", ":")) + "\n"
+    if descriptor is None:
+        print(line, end="", flush=True)
+    else:
+        data = line.encode()
+        if os.write(descriptor, data) != len(data):
+            raise OSError("incomplete child progress write")
 
 
 def effective_resources():
@@ -131,15 +177,33 @@ def resource_lease(root, command, delegated=False):
 
 def run_process(root, argv, command, stdout, stderr, timeout, cwd=None, delegated=False):
     """Keep actual argv and per-child wait4 costs, including failed children."""
-    with resource_lease(root, command, delegated) as slot:
-        env = None
+    with resource_lease(root, command, delegated) as slot, progress_channel() as progress:
+        env = dict(os.environ)
         if slot is not None:
-            env = dict(os.environ, **{HELD_ENV: "1"})
+            env[HELD_ENV] = "1"
+        if progress is not None:
+            env[PROGRESS_FD_ENV] = str(progress)
+        prefix = Path(env.get(PROGRESS_PREFIX_ENV, "."))
+        env[PROGRESS_PREFIX_ENV] = str(prefix / cwd if cwd is not None else prefix)
         started = time.monotonic()
         process = subprocess.Popen(argv, cwd=root / cwd if cwd is not None else root,
-                                   stdout=stdout, stderr=stderr, env=env)
+                                   stdout=stdout, stderr=stderr, env=env,
+                                   pass_fds=() if progress is None else (progress,))
         command["execution_start_monotonic_s"] = started
         command["pid"] = process.pid
+        sizes = [os.fstat(stream.fileno()).st_size for stream in (stdout, stderr)]
+        progress_errors = []
+
+        def report(event, current, previous=None):
+            try:
+                report_progress(progress, event, command, current, previous)
+            except OSError as error:
+                progress_errors.append(f"{type(error).__name__}: {error}")
+                command["progress_errors"] = progress_errors
+
+        report("start", sizes)
+        next_progress = started + PROGRESS_INTERVAL_S
+        observations = 0
         timed_out = False
         while True:
             pid, status, usage = os.wait4(process.pid, os.WNOHANG)
@@ -150,6 +214,13 @@ def run_process(root, argv, command, stdout, stderr, timeout, cwd=None, delegate
                 process.kill()
                 _, status, usage = os.wait4(process.pid, 0)
                 break
+            if time.monotonic() >= next_progress:
+                current = [os.fstat(stream.fileno()).st_size for stream in (stdout, stderr)]
+                if current != sizes:
+                    report("progress", current, sizes)
+                    sizes = current
+                    observations += 1
+                next_progress = time.monotonic() + PROGRESS_INTERVAL_S
             time.sleep(0.02)
         process.returncode = os.waitstatus_to_exitcode(status)
         command.update(
@@ -160,6 +231,12 @@ def run_process(root, argv, command, stdout, stderr, timeout, cwd=None, delegate
         # ru_maxrss is the maximum individual process RSS in this waited subtree,
         # not a simultaneous sum across compiler/simulator processes.
         command["rss_scope"] = "wait4 maximum individual process in child subtree"
+        command["progress_observations"] = observations
+        command["log_bytes"] = [os.fstat(stream.fileno()).st_size
+                                for stream in (stdout, stderr)]
+        report("finish", command["log_bytes"])
+        if progress_errors and not timed_out and process.returncode == 0:
+            raise RuntimeError("child progress reporting failed: " + "; ".join(progress_errors))
 
 
 def run_graph(experiment, ledger, execute, workers=None):

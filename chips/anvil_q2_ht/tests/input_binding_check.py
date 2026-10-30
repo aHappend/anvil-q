@@ -343,6 +343,7 @@ def main():
                             ["tests/input_binding_check.py", "tests/verify.py",
                              "tests/retention.py", "tests/build_cache.py", "tests/binding_diagnosis.py",
                              "tests/invocation.py", "tests/invocation_check.py",
+                             "tests/progress_check.py",
                              "tests/scheduling_check.py", "tests/README.md"])
     experiment.receipt["scope"] = "synthetic retention only; no RTL or aggregate suite"
     if args.repair_of:

@@ -30,6 +30,10 @@ def invocation_experiment(root, output, argv, sources):
 
 def run_regression(experiment):
     experiment.run([
+        sys.executable, "-B", "tests/progress_check.py",
+        "--output", str(experiment.output / ("progress-" + uuid.uuid4().hex)),
+    ], "progress-regression")
+    experiment.run([
         sys.executable, "-B", "tests/invocation_check.py",
         "--output", str(experiment.output / "invocation-regression"),
     ], "invocation-regression")
