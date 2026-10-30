@@ -6,16 +6,107 @@ edges in Icarus before the compiled workload runs. No DUT source is rewritten.
 """
 
 import fcntl
+from collections import Counter, deque
 import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 
 from retained import ROOT, require_time_zero
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def cleanup_intermediates(run, objects, protected=()):
+    """Only settled, attributed build products may be discarded, never receipts."""
+    objects.resolve().relative_to(run.path.resolve())
+    assert objects.name.endswith("-obj") and not objects.is_symlink()
+    protected = {Path(p).resolve() for p in protected}
+    def references(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                yield from references(key)
+                yield from references(item)
+        elif isinstance(value, (tuple, list)):
+            for item in value:
+                yield from references(item)
+        elif isinstance(value, str) and value.startswith("evidence/"):
+            yield (ROOT / value).resolve()
+    protected.update(references(run.receipt))
+    removed = []
+    for path in sorted(objects.iterdir()):
+        if path.suffix not in (".o", ".a", ".gch"):
+            continue
+        info = path.lstat()
+        assert stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid(), (
+            f"unattributed build intermediate: {path}")
+        assert info.st_nlink == 1 and path.resolve() not in protected, (
+            f"receipt-bound or shared build artifact: {path}")
+        removed.append(dict(path=run.relative(path), bytes=info.st_size,
+                            sha256=digest(path), uid=info.st_uid, inode=info.st_ino))
+    run.receipt.setdefault("disposable_build_intermediates", []).extend(removed)
+    for row in removed:
+        path = ROOT / row["path"]
+        info = path.lstat()
+        assert (info.st_ino, info.st_size, info.st_uid) == (
+            row["inode"], row["bytes"], row["uid"]), "intermediate changed before cleanup"
+        path.unlink()
+    return removed
+
+
+def stream_model(run, argv, checker, transaction_prefixes, record_prefixes,
+                 label="simulation", timeout=21600):
+    """Check each bounded pipe record before discarding transaction text.
+
+    Reproducible inputs, summary output, full-stream hashes/counts and a bounded
+    failure window are retained. This is explicitly not a raw transaction dump.
+    """
+    def handle(process, output):
+        full, records = hashlib.sha256(), hashlib.sha256()
+        counts, recent = Counter(), deque(maxlen=32)
+        byte_count = line_count = record_count = 0
+        record = run.receipt["commands"][-1]
+        record["stdout_policy"] = "live-checked transactions; summaries and failure window retained"
+
+        def lines():
+            nonlocal byte_count, line_count, record_count
+            while True:
+                line = process.stdout.readline(65537)
+                if not line:
+                    break
+                assert len(line) <= 65536, "oversized simulation record"
+                raw = line.encode("utf-8")
+                full.update(raw)
+                byte_count += len(raw)
+                line_count += 1
+                recent.append(line)
+                if line.startswith(record_prefixes):
+                    records.update(raw)
+                    record_count += 1
+                if line.startswith(transaction_prefixes):
+                    counts[line.split()[0]] += 1
+                else:
+                    output.write(line)
+                yield line
+        try:
+            result = checker(lines())
+            assert process.stdout.read(1) == "", "checker did not consume the complete stream"
+            return result
+        except (AssertionError, ArithmeticError, RuntimeError, OSError, ValueError) as exc:
+            output.write(f"STREAM_COMPARISON_FAILURE {type(exc).__name__}: {exc}\n")
+            output.write("STREAM_FAILURE_WINDOW_BEGIN\n" + "".join(recent)
+                         + "STREAM_FAILURE_WINDOW_END\n")
+            raise
+        finally:
+            record["checked_stream"] = dict(
+                sha256=full.hexdigest(), bytes=byte_count, lines=line_count,
+                protocol_sha256=records.hexdigest(), protocol_records=record_count,
+                discarded_transaction_counts=dict(counts), failure_window_records=32)
+            output.write("CHECKED_STREAM " + json.dumps(record["checked_stream"], sort_keys=True) + "\n")
+    return run.interactive(argv, label, handle, timeout=timeout)
 
 
 def compile_model(run, bench, sources, parameters, label="compile"):
@@ -93,6 +184,7 @@ def build_model(run, bench, sources, parameters, label, identity, index):
                            if c["stdout"].startswith(run.relative(run.path / label))],
     }
     run.receipt.setdefault("compiled_models", []).append(recorded)
+    cleanup_intermediates(run, objects, [binary, *artifact_paths])
     with index.open("x") as stream:
         json.dump(recorded, stream, indent=2)
         stream.write("\n")

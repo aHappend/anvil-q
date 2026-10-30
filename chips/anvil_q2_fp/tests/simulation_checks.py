@@ -123,13 +123,14 @@ def execute(case):
             assert child["outcome"] == "passed-focused-only", f"{label}: comparisons failed"
         if case == "token":
             a, b = [ROOT / records[name]["receipt"] for name in ("icarus", "compiled")]
-            markers = ("COMMAND ", "REQ ", "RSP ", "LOGIT ", "DONE ", "TOKEN_COMPARED ", "BANK ")
-            traces = [[line for line in (p.parent / "simulation.stdout.txt").read_text().splitlines()
-                       if line.startswith(markers)] for p in (a, b)]
-            assert traces[0] == traces[1], "Icarus/Verilator public transaction/cycle traces differ"
+            streams = [next(c["checked_stream"] for c in json.loads(p.read_text())["commands"]
+                            if "checked_stream" in c) for p in (a, b)]
+            assert streams[0]["protocol_sha256"] == streams[1]["protocol_sha256"], (
+                "Icarus/Verilator public transaction/cycle traces differ")
+            assert streams[0]["protocol_records"] == streams[1]["protocol_records"] > 0
             cached = json.loads((ROOT / records["cached"]["receipt"]).read_text())
             assert len(cached.get("reused_compiled_models", [])) == 1, "cache reuse not exercised"
-            records["equivalence"] = {"identical_public_trace_records": len(traces[0]),
+            records["equivalence"] = {"identical_public_trace_records": streams[0]["protocol_records"],
                                       "cached_seed": 43}
         if case == "lifecycle":
             final = json.loads((ROOT / records["activation-overflow"]["receipt"]).read_text())

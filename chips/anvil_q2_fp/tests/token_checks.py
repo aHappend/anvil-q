@@ -13,7 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from retained import ROOT, Run, require_time_zero, with_time_zero_check
-from simulation import compile_model, startup_check
+from simulation import compile_model, startup_check, stream_model
+from benchmark_checks import StageIntervals
 from transformer_reference import Geometry, Transformer, coordinates
 
 
@@ -176,7 +177,8 @@ module tb;
           req_tag[b*64+:64]};
         if(req_valid[b] && !req_ready[b]) bank_stalls[b]=bank_stalls[b]+1;
         if(rsp_valid[b] && rsp_ready[b]) begin
-          $display("RSP %0d %0d %016h %08h",cycles,b,rsp_tag[b*64+:64],rsp_data[b*32+:32]);
+          // Pipe records are independently consumed live, not retained as a dump.
+          $fdisplay(32'h80000001,"RSP %0d %0d %016h %08h",cycles,b,rsp_tag[b*64+:64],rsp_data[b*32+:32]);
           rsp_valid[b]<=0; busy[b]=0; responses=responses+1;
         end
         if(req_valid[b] && req_ready[b]) begin
@@ -192,7 +194,7 @@ module tb;
               $fatal(1,"MODEL_TENSOR_WRITE");
             contents[found]=req_data[b*32+:32]; initialized[found]=1;
           end else if(!initialized[found]) $fatal(1,"UNINITIALIZED_MEMORY_READ %026h",location);
-          $display("REQ %0d %0d %0d %026h %08h %016h",
+          $fdisplay(32'h80000001,"REQ %0d %0d %0d %026h %08h %016h",
             cycles,b,req_write[b],location,req_data[b*32+:32],req_tag[b*64+:64]);
           pending_data[b]=req_write[b] ? 0 : contents[found];
           pending_tag[b]=req_tag[b*64+:64]; busy[b]=1;
@@ -212,6 +214,12 @@ endmodule
 
 
 def compare(trace, reference, banks, depth=3):
+    with trace.open() as lines:
+        return compare_lines(lines, reference, banks, depth)
+
+
+def compare_lines(lines, reference, banks, depth=3):
+    intervals = StageIntervals(reference.stages)
     expected_writes = {address: deque(values) for address, values in reference.writes.items()}
     memory = dict(reference.loads)
     pending, seen = {}, set()
@@ -223,7 +231,8 @@ def compare(trace, reference, banks, depth=3):
     bank_metrics = {}
     peak_outstanding = 0
     occupied_cycles = Counter()
-    for line in trace.read_text().splitlines():
+    for line in lines:
+        intervals.observe(line)
         parts = line.split()
         if not parts:
             continue
@@ -306,6 +315,7 @@ def compare(trace, reference, banks, depth=3):
         "peak_outstanding_memory_transactions": peak_outstanding,
         "external_bank_occupied_cycles": dict(occupied_cycles),
         "logit_stall_cycles": summaries[0][5],
+        "stage_final_ack_interval_cycles": intervals.finish(),
         "limitations": "No scheduler fault/cancel coverage or native full-token performance claim.",
     }
 
@@ -365,15 +375,19 @@ def execute(fmt, weight_mode, cache_mode, banks, seed, geometry=None, depth=3, p
         if simulator == "verilator":
             binary = compile_model(run, bench, sources, parameters)
             startup_check(run, binary, arguments)
-            trace = run.command([run.relative(binary), *arguments], "simulation")
+            command = [run.relative(binary), *arguments]
         else:
             run.command(["iverilog", "-g2012", "-Wall", "-s", "tb",
                          *[f"-Ptb.{k}={v}" for k, v in parameters.items()],
                          "-o", run.relative(binary), *[run.relative(p) for p in sources],
                          run.relative(bench)], "compile")
-            trace = run.command(["vvp", run.relative(binary), *arguments], "simulation")
-            require_time_zero(trace)
-        metrics = compare(trace, reference, banks, depth)
+            command = ["vvp", run.relative(binary), *arguments]
+        metrics = stream_model(
+            run, command, lambda lines: compare_lines(lines, reference, banks, depth),
+            ("REQ ", "RSP "),
+            ("COMMAND ", "REQ ", "RSP ", "LOGIT ", "DONE ", "TOKEN_COMPARED ", "BANK "))
+        if simulator != "verilator":
+            require_time_zero(run.path / "simulation.stdout.txt")
         metrics.update(product=product, format=reference.fmt, weight_mode=reference.weight_mode,
                        cache_mode=cache_mode, banks=banks, seed=seed,
                        frontend=definition["frontend"], simulator=simulator)

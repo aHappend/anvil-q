@@ -73,44 +73,58 @@ def precision(reference_record, mathematical, product):
 
 
 def stage_intervals(trace, reference_record):
-    stages = reference_record["stages"]
-    queues = defaultdict(deque)
-    for index, stage in enumerate(stages):
-        length = len(stage.get("fp32", stage.get("q16", [])))
-        assert length > 0
-        for col in range(length):
-            queues[key(8, row=stage["slot"], col=col)].append(index)
-    sizes = [len(s.get("fp32", s.get("q16", []))) for s in stages]
-    acknowledged = Counter()
-    pending, ends, commands = {}, {}, {}
-    for line in trace.read_text().splitlines():
+    observer = StageIntervals(reference_record["stages"])
+    with trace.open() as lines:
+        for line in lines:
+            observer.observe(line)
+    return observer.finish()
+
+
+class StageIntervals:
+    """Same public final-ack interval assertions, evaluated during streaming."""
+
+    def __init__(self, stages):
+        self.stages = stages
+        self.queues = defaultdict(deque)
+        self.sizes = [len(s.get("fp32", s.get("q16", []))) for s in stages]
+        for index, stage in enumerate(stages):
+            assert self.sizes[index] > 0
+            for col in range(self.sizes[index]):
+                self.queues[key(8, row=stage["slot"], col=col)].append(index)
+        self.acknowledged = Counter()
+        self.pending, self.ends, self.commands = {}, {}, {}
+
+    def observe(self, line):
         fields = line.split()
         if not fields:
-            continue
+            return
         if fields[0] == "COMMAND":
-            commands[int(fields[2])] = int(fields[1])
+            self.commands[int(fields[2])] = int(fields[1])
         elif fields[0] == "REQ" and fields[3] == "1":
             address, tag = int(fields[4], 16), int(fields[6], 16)
             if coordinates(address)[0] == 8:
-                assert queues[address], "unmapped stage write"
-                pending[tag] = (queues[address].popleft(), int(fields[1]))
+                assert self.queues[address], "unmapped stage write"
+                self.pending[tag] = (self.queues[address].popleft(), int(fields[1]))
         elif fields[0] == "RSP":
             tag = int(fields[3], 16)
-            if tag in pending:
-                index, accepted_cycle = pending.pop(tag)
+            if tag in self.pending:
+                index, accepted_cycle = self.pending.pop(tag)
                 assert int(fields[1]) > accepted_cycle
-                acknowledged[index] += 1
-                if acknowledged[index] == sizes[index]:
-                    ends[index] = int(fields[1])
-    assert not pending and all(not q for q in queues.values())
-    assert len(ends) == len(stages), "missing observed stage completions"
-    totals = Counter()
-    for index, stage in enumerate(stages):
-        start = commands[stage["position"]] if stage["domain"] == "embedding" else ends[index - 1]
-        assert ends[index] > start, "overlapping/unordered stage interval"
-        for domain in domain_indices(stage):
-            totals[DOMAINS[domain]] += ends[index] - start
-    return dict(totals)
+                self.acknowledged[index] += 1
+                if self.acknowledged[index] == self.sizes[index]:
+                    self.ends[index] = int(fields[1])
+
+    def finish(self):
+        assert not self.pending and all(not q for q in self.queues.values())
+        assert len(self.ends) == len(self.stages), "missing observed stage completions"
+        totals = Counter()
+        for index, stage in enumerate(self.stages):
+            start = (self.commands[stage["position"]] if stage["domain"] == "embedding"
+                     else self.ends[index - 1])
+            assert self.ends[index] > start, "overlapping/unordered stage interval"
+            for domain in domain_indices(stage):
+                totals[DOMAINS[domain]] += self.ends[index] - start
+        return dict(totals)
 
 
 def child(run, label, arguments):
@@ -163,7 +177,7 @@ def execute(sample=False):
                 "--cache", str(cache), "--banks", str(banks), "--seed", str(seed)])
             record = json.loads((path.parent / "reference.json").read_text())
             metrics = precision(record, math_models[seed], "fp")
-            intervals = stage_intervals(path.parent / "simulation.stdout.txt", record)
+            intervals = measured["metrics"]["stage_final_ack_interval_cycles"]
             fp_cycles = measured["metrics"]["accepted_command_to_final_accepted_logit_cycles"]
             if weights:
                 parent_key = banks, cache, seed
@@ -175,8 +189,7 @@ def execute(sample=False):
                     parent_runs[parent_key] = dict(
                         receipt=run.relative(parent_path), measured=parent_measured["metrics"],
                         precision=precision(parent_record, math_models[seed], "parent"),
-                        domain_intervals=stage_intervals(
-                            parent_path.parent / "simulation.stdout.txt", parent_record))
+                        domain_intervals=parent_measured["metrics"]["stage_final_ack_interval_cycles"])
                 parent = parent_runs[parent_key]
                 parent_cycles = parent["measured"]["accepted_command_to_final_accepted_logit_cycles"]
                 speedup = sum(parent_cycles) / sum(fp_cycles)

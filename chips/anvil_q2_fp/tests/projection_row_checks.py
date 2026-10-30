@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from codec_checks import SHIFTS
 from fp_reference import add, convert, multiply, rounded
 from retained import ROOT, Run, require_time_zero, with_time_zero_check
-from simulation import compile_model, startup_check
+from simulation import compile_model, startup_check, stream_model
 
 
 BENCH = r"""
@@ -176,7 +176,7 @@ module tb;
           endcase
           if(!qw[b]) reads=reads+1;
           response[b]=data; pending[b]=1; pending_write[b]=qw[b]; due[b]=cycle+3+b;
-          $display("ROW_TRANSACTION %0d %0d %0d %0d %0d %0d %08h",
+          $fdisplay(32'h80000001,"ROW_TRANSACTION %0d %0d %0d %0d %0d %0d %08h",
             cycle,b,qw[b],kind,row,col,qw[b] ? qd[b*32+:32] : data);
         end
       end
@@ -244,9 +244,58 @@ def execute(fmt, weights, banks, projection, seed):
         binary = compile_model(run, bench, sorted((ROOT / "rtl").glob("*.sv")), parameters)
         arguments = [f"+FIXTURES={run.relative(run.path)}"]
         startup_check(run, binary, arguments)
-        trace = run.command([run.relative(binary), *arguments], "simulation", timeout=21600)
-        summaries = [line.split()[1:] for line in trace.read_text().splitlines()
-                     if line.startswith("NATIVE_ROW_GROUP_COMPARED ")]
+        def compare_rows(lines):
+            summaries, seen = [], set()
+            reads = 0
+            for line in lines:
+                parts = line.split()
+                if parts and parts[0] == "ROW_TRANSACTION":
+                    _, cycle, bank, write, kind, row, col, data = parts
+                    cycle, bank, write, kind, row, col = map(
+                        int, (cycle, bank, write, kind, row, col))
+                    data = int(data, 16)
+                    assert 0 <= bank < banks and cycle > 0 and write in (0, 1)
+                    if write:
+                        assert kind == 8 and row == (2 if projection == 0 else 12)
+                        assert 8 * bank <= col < 8 * bank + 8 and col not in seen
+                        assert data == sums[col], (
+                            f"NATIVE_PROJECTION_ROW_MISMATCH row={col} "
+                            f"got={data:08x} expected={sums[col]:08x}")
+                        seen.add(col)
+                    else:
+                        if kind == 8:
+                            assert row == (1 if projection == 0 else 11) and 0 <= col < inputs
+                            expected = activations[col]
+                        elif kind == 1:
+                            assert 0 <= row < inputs
+                            if weights:
+                                assert col == bank
+                                expected = packed[row * banks + col]
+                            else:
+                                assert 8 * bank <= col < 8 * bank + 8
+                                expected = native[row * outputs + col]
+                        elif kind == 2:
+                            assert weights and 0 <= row < groups and col == bank
+                            expected = zeros[row * banks + col]
+                        elif kind == 3:
+                            assert weights and 0 <= row < groups and 8 * bank <= col < 8 * bank + 8
+                            expected = scales[row * outputs + col]
+                        else:
+                            assert kind == 4 and projection == 0 and row == 0
+                            assert 8 * bank <= col < 8 * bank + 8
+                            expected = biases[col]
+                        assert data == expected, (
+                            f"NATIVE_ROW_READ_MISMATCH kind={kind} row={row} col={col} "
+                            f"got={data:08x} expected={expected:08x}")
+                        reads += 1
+                elif parts and parts[0] == "NATIVE_ROW_GROUP_COMPARED":
+                    summaries.append(parts[1:])
+            assert seen == set(range(outputs)), "missing independent row comparisons"
+            assert len(summaries) == 1 and int(summaries[0][2]) == reads
+            return summaries
+        summaries = stream_model(
+            run, [run.relative(binary), *arguments], compare_rows,
+            ("ROW_TRANSACTION ",), ("ROW_TRANSACTION ", "NATIVE_ROW_GROUP_COMPARED "))
         assert len(summaries) == 1
         metrics = dict(zip(("input_columns", "output_rows", "reads", "acknowledgements",
                             "partial_projection_cycles", "rows_compared"), map(int, summaries[0])))
