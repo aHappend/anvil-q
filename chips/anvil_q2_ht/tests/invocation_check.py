@@ -23,7 +23,7 @@ fail = sys.argv.pop(1) == "fail"
 def regression(experiment):
     if fail:
         raise RuntimeError("deliberate invocation failure")
-# Prevent only this regression's recursion; execute the real 22-case worker.
+# Prevent only this regression's recursion; execute the real binding worker.
 with patch.object(entry, "run_regression", regression):
     raise SystemExit(entry.main())
 """
@@ -139,9 +139,9 @@ def entrypoint_cases(experiment):
                               if "--worker" in row["argv"])
                 require(worker["argv"][worker["argv"].index("--output") + 1] == str(resolved),
                         label + ": worker received old parent")
-                require(worker["exit"] == 0 and receipt["compared_cases"] == 22,
+                require(worker["exit"] == 0 and receipt["compared_cases"] == 25,
                         label + ": original comparisons did not execute")
-                require("SYNTHETIC_BINDING_CASES 22 NO_RTL_EXECUTED" in
+                require("SYNTHETIC_BINDING_CASES 25 NO_RTL_EXECUTED" in
                         (experiment.root / worker["stdout"]).read_text(),
                         label + ": missing original comparison counter")
                 if fail:

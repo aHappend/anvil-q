@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import sys
 import threading
 import time
 
@@ -69,6 +70,19 @@ class Experiment:
         self.receipt["exit"] = code
         if failure is not None:
             self.receipt["failure"] = str(failure)
-        with (self.directory / "receipt.json").open("x") as stream:
-            stream.write(json.dumps(self.receipt, indent=2) + "\n")
+        try:
+            with (self.directory / "receipt.json").open("x") as stream:
+                stream.write(json.dumps(self.receipt, indent=2) + "\n")
+        except OSError as error:
+            print(json.dumps({
+                "event": "receipt-publication-failed",
+                "receipt": str(self.output / "receipt.json"),
+                "receipt_published": False,
+                "exit": code,
+                "failure": None if failure is None else str(failure),
+                "publication_error": f"{type(error).__name__}: {error}",
+            }), file=sys.stderr, flush=True)
+            if isinstance(failure, Exception):
+                raise failure from error
+            raise
         print(self.output / "receipt.json")

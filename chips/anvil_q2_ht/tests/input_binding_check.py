@@ -271,8 +271,57 @@ def run_cases(base):
           name + ": receipt collision not rejected")
     count += 1
     print("CHECK", name, "pass")
+    for primary, collision in ((False, False), (True, False), (True, True)):
+        name = f"receipt-publication-{int(primary)}-{int(collision)}"
+        experiment = Experiment(root, Path(name), [name], [])
+        receipt_path = experiment.directory / "receipt.json"
+        original = b'{"synthetic_retained_receipt":true}\n'
+        if collision:
+            receipt_path.write_bytes(original)
+        original_failure = RuntimeError("deliberate original workload failure") if primary else None
+        publication_failure = FileNotFoundError("deliberate missing output namespace")
+        actual_open = Path.open
+
+        def publish(path, *args, **kwargs):
+            if path == receipt_path and not collision:
+                raise publication_failure
+            return actual_open(path, *args, **kwargs)
+
+        stdout, stderr = io.StringIO(), io.StringIO()
+        caught = None
+        with patch.object(Path, "open", publish), \
+                patch.object(Path, "mkdir") as mkdir, \
+                contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            try:
+                experiment.finish(1 if primary else 0, original_failure)
+            except (OSError, RuntimeError) as error:
+                caught = error
+            check(not mkdir.called, name + ": attempted to recreate evidence")
+        if primary:
+            check(caught is original_failure, name + ": publication masked original failure")
+            check(isinstance(caught.__cause__,
+                             FileExistsError if collision else FileNotFoundError),
+                  name + ": missing chained publication failure")
+        else:
+            check(caught is publication_failure, name + ": publication failure suppressed")
+        diagnostic = json.loads(stderr.getvalue())
+        check(diagnostic["event"] == "receipt-publication-failed" and
+              diagnostic["receipt_published"] is False and
+              diagnostic["receipt"] == str(experiment.output / "receipt.json") and
+              diagnostic["exit"] == (1 if primary else 0) and
+              diagnostic["failure"] == (str(original_failure) if primary else None) and
+              diagnostic["publication_error"].startswith(
+                  "FileExistsError:" if collision else "FileNotFoundError:"),
+              name + ": incomplete stderr diagnostic")
+        check(not stdout.getvalue(), name + ": advertised an unpublished receipt")
+        if collision:
+            check(receipt_path.read_bytes() == original, name + ": prior receipt changed")
+        else:
+            check(not receipt_path.exists(), name + ": manufactured replacement receipt")
+        count += 1
+        print("CHECK", name, "pass")
     count += diagnosis_cases(base)
-    check(count == 22, "missing synthetic comparisons")
+    check(count == 25, "missing synthetic comparisons")
     print("SYNTHETIC_BINDING_CASES", count, "NO_RTL_EXECUTED")
 
 
@@ -302,7 +351,7 @@ def main():
         experiment.run([sys.executable, "--version"], "python-version")
         experiment.run([sys.executable, "-B", "tests/input_binding_check.py",
                         "--worker", "--output", str(experiment.output)], "synthetic-cases")
-        experiment.receipt["compared_cases"] = 22
+        experiment.receipt["compared_cases"] = 25
         run_regression(experiment)
         experiment.receipt["invocation_regression"] = str(
             experiment.output / "invocation-regression/receipt.json")
