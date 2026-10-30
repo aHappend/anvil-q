@@ -1,7 +1,10 @@
 """Nonzero reduced multi-token public-pin regression against a rational decoder.
 
-Each probe retains its manifest before simulation. This is not the complete
-admitted L1 matrix, scheduler fault campaign or native hardware benchmark.
+Each probe retains its manifest and independent vectors before simulation.
+Transactions are compared live through a bounded pipe; summaries, hashes and
+failure windows replace per-transaction disk traces. Stage final-ack intervals
+are measured in that same stream for the five-domain benchmark. This is not
+the complete admitted L1 matrix, scheduler fault campaign or native benchmark.
 """
 
 import argparse

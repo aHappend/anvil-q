@@ -4,6 +4,8 @@ For Q and down projections, check all native input columns for the first eight
 output rows of each bank. Stop each public bank client after its eighth write
 acknowledgement, then explicitly reset the still-active full projection. No
 legal dimension is clamped and no complete native-token throughput is claimed.
+Every transaction is checked live against independent vectors, with bounded
+failure context and retained summaries rather than per-transaction disk dumps.
 """
 
 import argparse

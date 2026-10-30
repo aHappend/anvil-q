@@ -10,8 +10,8 @@ import sys
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from retained import ROOT, Run, audit_streams
-from simulation import cleanup_intermediates, stream_model
+from retained import ROOT, Run, audit_streams, with_time_zero_check
+from simulation import cleanup_intermediates, compile_model, startup_check, stream_model
 
 
 INTERRUPTED = Path("evidence/l1/l1-behavior-20261030T010810Z-e2a4ad77")
@@ -149,7 +149,7 @@ def fixtures(directory):
 
 def replay(run):
     from benchmark_checks import stage_intervals
-    from token_checks import compare, compare_lines
+    from token_checks import BENCH, compare, compare_lines
     from transformer_reference import Geometry
 
     path = ROOT / HISTORICAL_TOKEN
@@ -180,11 +180,23 @@ def replay(run):
             assert json.loads(json.dumps(prior[name])) == expected, (
                 f"legacy comparison changed: {name}")
     assert prior["stage_final_ack_interval_cycles"] == stage_intervals(trace, record)
-    model = (old.get("compiled_models", []) + old.get("reused_compiled_models", []))[0]
-    assert sha(ROOT / model["binary"]) == model["binary_sha256"]
-    run.command(["verilator", "--version"], "verilator-version")
+    old_model = (old.get("compiled_models", []) + old.get("reused_compiled_models", []))[0]
+    run.receipt["historical_binary_available"] = (ROOT / old_model["binary"]).is_file()
+    run.receipt["input_sha256"] = {
+        str(p.relative_to(ROOT)): sha(p) for p in
+        (path, path.parent / "manifest.json", path.parent / "reference.json", memory, trace)}
+    run.receipt["repair_of"] = [
+        "evidence/preparation/storage-hygiene-replay-20261030T012059Z-04a36692/receipt.json",
+        "evidence/preparation/storage-hygiene-replay-20261030T012122Z-ee59bc1e/receipt.json"]
+    bench = run.path / "bench.sv"
+    bench.write_text(with_time_zero_check(BENCH))
+    run.receipt["generated_sha256"] = {run.relative(bench): sha(bench)}
+    binary = compile_model(run, bench, sorted((ROOT / "rtl").glob("*.sv")),
+                           old_model["identity"]["parameters"])
+    arguments = ["+SEED=17", f"+MEMORY={memory.relative_to(ROOT)}"]
+    startup_check(run, binary, arguments)
     result = stream_model(
-        run, [model["binary"], "+SEED=17", f"+MEMORY={memory.relative_to(ROOT)}"],
+        run, [run.relative(binary), *arguments],
         lambda lines: compare_lines(lines, reference, 1), ("REQ ", "RSP "),
         ("COMMAND ", "REQ ", "RSP ", "LOGIT ", "DONE ", "TOKEN_COMPARED ", "BANK "))
     assert result == prior, "live stream metrics differ from retained transaction comparison"
@@ -250,6 +262,36 @@ def execute(action):
                 ["python3", "tests/storage_hygiene_checks.py", "--worker", action,
                  "--directory", run.relative(run.path)], action)
             metrics = {"worker_output": output.read_text()}
+            if action == "fixtures":
+                def check_bad_stream(lines):
+                    count = 0
+                    for line in lines:
+                        parts = line.split()
+                        if parts and parts[0] == "FIXTURE_TRANSACTION":
+                            observed = int(parts[1])
+                            assert observed == count, (
+                                f"SYNTHETIC_STREAM_MISMATCH got={observed} expected={count}")
+                            count += 1
+                    assert count == 100
+                    return count
+                try:
+                    stream_model(
+                        run, ["python3", "-c",
+                              "for i in range(100): "
+                              "print('FIXTURE_TRANSACTION', i if i != 50 else 999)"],
+                        check_bad_stream, ("FIXTURE_TRANSACTION ",), ("FIXTURE_TRANSACTION ",),
+                        label="synthetic-failure-window")
+                except AssertionError as exc:
+                    assert str(exc) == "SYNTHETIC_STREAM_MISMATCH got=999 expected=50"
+                    diagnostic = (run.path / "synthetic-failure-window.stdout.txt").read_text()
+                    assert str(exc) in diagnostic and "FIXTURE_TRANSACTION 999" in diagnostic
+                    window = diagnostic.split("STREAM_FAILURE_WINDOW_BEGIN\n")[1].split(
+                        "STREAM_FAILURE_WINDOW_END")[0].splitlines()
+                    assert len(window) == 32
+                    run.receipt["commands"][-1]["expected_comparison_failure"] = str(exc)
+                    metrics["synthetic_failure_window_records"] = len(window)
+                else:
+                    raise AssertionError("bounded streaming accepted a corrupt fixture")
         elif action == "replay":
             metrics = replay(run)
         else:

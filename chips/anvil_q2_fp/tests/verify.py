@@ -15,8 +15,9 @@ Large/token/mutation workloads use compiled Verilator with hash-bound,
 check-local model reuse; seeds and fixture paths are run-time testbench inputs,
 not changes to DUT parameters. Icarus retains full compact leaf tests and
 four-state time-zero/edge startup checks for each compiled configuration.
-Behavior and benchmark dispatch at most four independent child jobs, with
-two compiler jobs per build. Native synthesis dispatches at most four jobs,
+Behavior and benchmark dispatch at most four independent child jobs, bounded
+by current storage and CPU capacity, with cross-process compiler admission
+and two compiler jobs per build. Native synthesis dispatches at most four jobs,
 bounded by available CPU/memory, and retains memory -nomap in every child.
 """
 
@@ -34,6 +35,7 @@ from defect_checks import MUTATIONS
 from retained import ROOT, Run
 from suite_manifest import SEEDS, configurations, manifest
 from synthesis_dispatch import policy as synthesis_policy, resources as synthesis_resources
+from simulation import build_policy
 from top_lifecycle_checks import SCENARIOS
 
 
@@ -225,6 +227,10 @@ def execute(check):
                 record["outcome"] = "missing-verification-source"
                 raise RuntimeError(f"required verification entrypoint missing: {record['argv'][1]}")
         workers = 4 if check in ("behavior", "benchmark") else 1
+        if check in ("behavior", "benchmark"):
+            dispatch = build_policy()
+            workers = dispatch["maximum_concurrent_jobs"]
+            run.receipt["simulation_dispatch"] = dispatch
         if check == "synthesis":
             dispatch = synthesis_policy(synthesis_resources())
             workers = dispatch["maximum_concurrent_jobs"]
