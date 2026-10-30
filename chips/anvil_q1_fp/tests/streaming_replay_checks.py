@@ -78,6 +78,8 @@ def worker(args):
                     "real RTL differs from independent FP64 dot inference")
             if args.defect == "numerical":
                 observed[0] = 100.
+            if args.defect == "nonfinite":
+                observed[0] = float("nan")
             if args.defect == "repeat-only":
                 observed[0] += .125
             for name, width in (("layers", 24*896), ("logits", 151936)):
@@ -482,6 +484,24 @@ def main():
         finally:
             for process in bad:
                 process.abort()
+        for with_reference in (False, True):
+            bad = []
+            try:
+                for role in ("observation", "repeat"):
+                    bad.append(origin(ev, executable, tokens, "bf16", role, "nonfinite"))
+                if with_reference:
+                    bad.append(origin(ev, executable, tokens, "bf16", "reference"))
+                for process in bad:
+                    process.next()
+                reference = bad[2] if with_reference else None
+                rejection(ev, "nonfinite-" + ("teacher" if with_reference else "greedy"),
+                          lambda: compare_window(
+                              ROOT, ev, bad[0], bad[1], reference, "bf16", "nonfinite"),
+                          "nonfinite numerical array" if with_reference else
+                          "nonfinite streamed output")
+            finally:
+                for process in bad:
+                    process.abort()
         from benchmark_fixtures import library_entrypoint_check
         require(library_entrypoint_check(ROOT, ev), "benchmark library entrypoint regressed")
         passed = True

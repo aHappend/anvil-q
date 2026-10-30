@@ -39,13 +39,14 @@ def compare_window(root, ev, actual, repeated, reference, mode, label):
     for kind, width in (("layers", 24 * 896), ("logits", 151936)):
         a = actual.vector(kind + ".f32", "<f4", width)
         b = repeated.vector(kind + ".f32", "<f4", width)
-        require(a == b, "nondeterministic output: " + label + "/" + kind)
-        require(all(math.isfinite(value) for value, in struct.iter_unpack("<f", a)),
-                "nonfinite streamed output: " + label)
         if reference is None:
+            require(a == b, "nondeterministic output: " + label + "/" + kind)
+            require(all(math.isfinite(value) for value, in struct.iter_unpack("<f", a)),
+                    "nonfinite streamed output: " + label)
             continue
         selected = reference.vector("selected-" + kind + ".f64", "<f8", width)
         checkpoint = reference.vector("checkpoint-" + kind + ".f64", "<f8", width)
+        a, b, selected, checkpoint = map(memoryview, (a, b, selected, checkpoint))
         indices = range(24) if kind == "layers" else range(1)
         count = 896 if kind == "layers" else 151936
         for layer in indices:
