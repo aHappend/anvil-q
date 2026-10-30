@@ -124,7 +124,8 @@ class Capture:
     def tools(self, names):
         pass
 
-    def simulate(self, name, bench, sources, comparisons):
+    def simulate(self, name, bench, sources, comparisons, *, compiled_workload=False):
+        assert isinstance(compiled_workload, bool)
         if name.startswith(("numerical-h", "tokenizer-")):
             if name in self.rows:
                 raise AssertionError(f"Duplicate representation case {name}")

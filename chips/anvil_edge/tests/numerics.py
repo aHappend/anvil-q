@@ -590,7 +590,8 @@ end
         "rtl/anvil_edge_numeric_pkg.sv",
         *[str(path.relative_to(root)) for path in sorted((root / "rtl").glob("*.sv"))
           if path.name != "anvil_edge_numeric_pkg.sv"],
-    ], None if fault else total_writes + len(tokens) * geometry.vocabulary)
+    ], None if fault else total_writes + len(tokens) * geometry.vocabulary,
+        compiled_workload=geometry.hidden >= 64)
 
 
 def nonlinear_test(evidence, unit, seed):

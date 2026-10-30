@@ -746,7 +746,8 @@ def boot_test(evidence, vocabulary, seed, fault=None, reload=False, *, capacity=
         *[str(path.relative_to(root)) for path in sorted((root / "rtl").glob("*.sv"))
           if path.name != "anvil_edge_numeric_pkg.sv"],
     ], None, optimize=large if optimize is None else optimize,
-        explicit_clock=large if explicit_clock is None else explicit_clock)
+        explicit_clock=large if explicit_clock is None else explicit_clock,
+        compiled_workload=large)
 
 
 def boot_observation(bench):

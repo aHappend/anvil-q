@@ -607,7 +607,9 @@ endmodule
 """
 
 
-def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen"):
+def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen",
+               bind_transport=True):
+    require(bypass in (0, 1), "Shell transport must be UART or bypass")
     cases = info["cases"][:1] if general_only else info["cases"]
     loads = []
     for frame, case in enumerate(cases):
@@ -657,6 +659,18 @@ def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen"):
     bench = SHELL
     for key, value in values.items():
         bench = bench.replace(f"@{key}@", str(value))
+    runtime_arguments = ()
+    if bind_transport:
+        declaration = (f"  localparam EXTENT={info['extent']},BYPASS={bypass},"
+                       f"FRAMES={len(cases)};")
+        require(bench.count(declaration) == 1, "Missing unique shell transport declaration")
+        bench = bench.replace(declaration, f"""  localparam EXTENT={info['extent']},FRAMES={len(cases)};
+  integer BYPASS;
+  initial begin
+    if (!$value$plusargs("verification_bypass=%d",BYPASS) ||
+        (BYPASS!=0 && BYPASS!=1)) $fatal(1,"QWEN_SHELL_INVALID_TRANSPORT");
+  end""", 1)
+        runtime_arguments = (f"+verification_bypass={bypass}",)
     require(re.fullmatch(r"[a-z][a-z0-9-]*", family), "Invalid shell diagnostic family")
     bench = bench.replace("QWEN_SHELL_", family.upper().replace("-", "_") + "_SHELL_")
     require(not re.search(r"@[A-Z_]+@", bench), "Unexpanded shell bench placeholder")
@@ -666,7 +680,13 @@ def shell_case(evidence, info, seed, bypass, general_only, *, family="qwen"):
     ]
     return evidence.simulate(f"{family}-shell-b{bypass}-s{seed}", bench, sources,
                              None, simulator="verilator", optimize=True,
-                             explicit_clock=True)
+                             explicit_clock=True, runtime_arguments=runtime_arguments,
+                             compiled_workload=True)
+
+
+def shell_workers(evidence):
+    """Keep shell concurrency within the measured three-child resource envelope."""
+    return min(3, evidence._limits["workers"])
 
 
 def run_qwen_shell(evidence, general_only=False, *, bypass_only=False):
@@ -697,7 +717,7 @@ def run_qwen_shell(evidence, general_only=False, *, bypass_only=False):
             "scope": info["scope"], "mandatory_l1_matrix_changed": False,
         }
     try:
-        evidence.run_cases(cases, workers=1)
+        evidence.run_cases(cases, workers=shell_workers(evidence))
     finally:
         if bypass_only:
             progress = []

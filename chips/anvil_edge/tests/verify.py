@@ -14,6 +14,9 @@ replace its final receipt, rerun missing work or authorize evidence reuse.
 input repair and compact controls before independent admission, not aggregate L1.
 --probe compiler-storage runs retention controls and measures the affected boot
 build with/without PCH, only after an explicit filesystem-headroom preflight.
+--probe shell-execution-acceleration profiles compact execution and compares
+source-bound runtime transport sharing, scaling and equally warmed schedules.
+It does not authorize an aggregate or complete-table retry.
 """
 
 import argparse
@@ -544,7 +547,8 @@ class Evidence:
                 self.record["tool_versions"][name] = record
 
     def simulate(self, name, bench, sources, comparisons, *, simulator=None,
-                 optimize=False, explicit_clock=False):
+                 optimize=False, explicit_clock=False, runtime_arguments=(),
+                 compiled_workload=False):
         # Only bounded arithmetic/FIFO leaves stay on the four-state interpreter.
         leaf = name == "half" or name.startswith(
             ("multiply-", "divide-", "sqrt-", "fifo-", "lowering-")
@@ -554,6 +558,9 @@ class Evidence:
         )
         if simulator not in ("iverilog", "verilator"):
             raise VerificationFailure(f"Unsupported simulator: {simulator}")
+        requested_simulator = simulator
+        if compiled_workload:
+            simulator = "verilator"
         explicit_clock = (explicit_clock if self.explicit_clock is None
                           else self.explicit_clock)
         name = self.name_prefix + name
@@ -567,6 +574,9 @@ class Evidence:
             "bench_sha256": digest(source),
             "required_comparisons": comparisons,
             "simulator": simulator,
+            "requested_simulator": requested_simulator,
+            "compiled_workload": compiled_workload,
+            "runtime_arguments": list(runtime_arguments),
             "status": "not-run",
             "stage": "scheduled",
         }
@@ -574,7 +584,8 @@ class Evidence:
         try:
             return self._simulate_attempt(
                 record, bench, sources, comparisons,
-                optimize=optimize, explicit_clock=explicit_clock)
+                optimize=optimize, explicit_clock=explicit_clock,
+                runtime_arguments=runtime_arguments)
         except BaseException as error:
             record.update(
                 status="failed", failure_stage=record["stage"],
@@ -582,7 +593,7 @@ class Evidence:
             raise
 
     def _simulate_attempt(self, record, bench, sources, comparisons, *,
-                          optimize, explicit_clock):
+                          optimize, explicit_clock, runtime_arguments):
         name, simulator = record["name"], record["simulator"]
         directory = self.path / name
         source = directory / "bench.sv"
@@ -597,7 +608,8 @@ class Evidence:
                 name + "-compile",
             )
             record["stage"] = "simulate"
-            result = self.child(["vvp", self.relative(binary)], name + "-simulate",
+            result = self.child(["vvp", self.relative(binary), *runtime_arguments],
+                                name + "-simulate",
                                 timeout=VVP_TIMEOUT, allow_failure=True)
         else:
             self.tools(("verilator", "g++", "make"))
@@ -606,7 +618,7 @@ class Evidence:
             # Verilator has no inactive-region #0 support. Keep the original
             # bench, and settle reset 1 ps before checking, never a clock later.
             compiled_bench, reset_delays = re.subn(r"#0\s*;", "#1ps;", bench)
-            runtime_args = []
+            runtime_args = list(runtime_arguments)
             seed = re.search(r"reg\s+\[31:0\]\s+rng=(\d+);", compiled_bench)
             if seed:
                 runtime_args.append("+verification_seed=" + seed[1])

@@ -17,7 +17,7 @@ from pathlib import Path
 from deepseek_shell import measure
 from official import ROOT
 from qwen_integration import save
-from qwen_shell import shell_case
+from qwen_shell import shell_case, shell_workers
 from qwen_tables import require
 
 
@@ -119,6 +119,7 @@ def run_execution_cost(evidence):
 def run_execution_acceleration(evidence):
     """Measure compiler changes and concurrency, never extrapolate a passing L1."""
     evidence.tools(("python3", "verilator", "g++", "make"))
+    run_execution_cost(evidence)
     evidence.record["execution_acceleration_scope"] = (
         "Paired synthetic capacities 257/4097 and compact six-cell schedules. "
         "All original physical head rows, SPI bytes, DDR acknowledgements, "
@@ -135,18 +136,24 @@ def run_execution_acceleration(evidence):
         info = json.loads((directory / "shell-reference.json").read_bytes())
         if capacity == 257:
             compact = info
+            evidence.child(
+                ["python3", "tests/test_shell_execution.py", evidence.relative(evidence.path),
+                 evidence.relative(directory)], "execution-policy-regressions")
         rows = []
-        for label, lto in (("baseline", False), ("lto", True)):
+        for label, lto, bind in (("literal", False, False),
+                                 ("runtime", False, True),
+                                 ("lto", True, True)):
             scope = copy.copy(evidence)
             scope.name_prefix = f"{label}-{capacity}-"
             scope.compiler_lto = lto
-            rows.append(shell_case(scope, info, 17, 1, True))
-        require(rows[0]["actual_comparisons"] == rows[1]["actual_comparisons"] and
-                rows[0]["source_sha256"] == rows[1]["source_sha256"] and
-                rows[0]["input_files"] == rows[1]["input_files"] and
-                observable_trace(rows[0]["simulation_receipt"], "QWEN_SHELL") ==
-                observable_trace(rows[1]["simulation_receipt"], "QWEN_SHELL"),
-                "Compiler acceleration changed public observations")
+            rows.append(shell_case(scope, info, 17, 1, True, bind_transport=bind))
+        for row in rows[1:]:
+            require(rows[0]["actual_comparisons"] == row["actual_comparisons"] and
+                    rows[0]["source_sha256"] == row["source_sha256"] and
+                    rows[0]["input_files"] == row["input_files"] and
+                    observable_trace(rows[0]["simulation_receipt"], "QWEN_SHELL") ==
+                    observable_trace(row["simulation_receipt"], "QWEN_SHELL"),
+                    "Compiler/input acceleration changed public observations")
         pairs.append({
             "capacity": capacity, "identical_public_trace": True,
             "comparisons": rows[0]["actual_comparisons"],
@@ -156,15 +163,44 @@ def run_execution_acceleration(evidence):
                 "resources": row["simulation_receipt"]["resources"],
                 "simulation_receipt": str(Path(row["simulation_receipt"]["stdout"]).parent /
                                           "receipt.json"),
-            } for label, row in zip(("baseline", "lto"), rows)],
+            } for label, row in zip(("literal", "runtime", "lto"), rows)],
         })
         save(evidence.path / f"acceleration-{capacity}.json", pairs[-1])
     evidence.record["execution_acceleration_pairs"] = pairs
+    literal = copy.copy(evidence)
+    literal.name_prefix = "literal-control-"
+    before = len(evidence.record["coverage"])
+    literal.run_cases([
+        (f"literal-s{seed}-b{bypass}",
+         lambda case, seed=seed, bypass=bypass:
+         shell_case(case, compact, seed, bypass, False, bind_transport=False))
+        for seed in (1, 17, 89) for bypass in (0, 1)
+    ], workers=shell_workers(evidence))
+    original_rows = evidence.record["coverage"][before:]
+    require(len(original_rows) == 6 and
+            all(row["status"] == "passed" for row in original_rows),
+            "All original literal-transport controls must complete")
+    original_traces = {
+        row["name"].removeprefix("literal-control-"):
+        observable_trace(row["simulation_receipt"], "QWEN_SHELL") for row in original_rows}
+    # Warm the exact two-frame program once, outside BOTH timed schedules.
+    # Transport, image paths and seed are runtime inputs, not compile identities.
+    warmup = copy.copy(evidence)
+    warmup.name_prefix = "schedule-warmup-"
+    started = time.monotonic()
+    warm = shell_case(warmup, compact, 17, 0, False)
+    evidence.record["execution_schedule_warmup"] = {
+        "wall_seconds": time.monotonic() - started,
+        "compile_seconds": warm["compile_receipt"]["duration_s"],
+        "simulation_seconds": warm["simulation_receipt"]["duration_s"],
+        "compile_cache_key": warm["compile_cache_key"],
+        "scope": "Excluded equally from both schedules; full cold build remains measured",
+    }
     schedules = []
-    for workers in (1, min(3, evidence._limits["workers"])):
+    baseline = None
+    for workers in dict.fromkeys((1, shell_workers(evidence))):
         scope = copy.copy(evidence)
         scope.name_prefix = f"schedule-w{workers}-"
-        scope.compiler_lto = True
         before = len(evidence.record["coverage"])
         start = time.monotonic()
         scope.run_cases([
@@ -176,6 +212,11 @@ def run_execution_acceleration(evidence):
         rows = evidence.record["coverage"][before:]
         require(len(rows) == 6 and all(row["status"] == "passed" for row in rows),
                 "Every compact scheduling cell must complete")
+        require(all(row["compile_cache_hit"] and
+                    row["compile_cache_key"] == warm["compile_cache_key"] for row in rows),
+                "Scheduling must compare equally warmed, identical production executables")
+        if baseline is None:
+            baseline = next(row for row in rows if row["name"].endswith("-b1-s17"))
         schedules.append({
             "workers": workers, "wall_seconds": time.monotonic() - start,
             "actual_comparisons": sum(row["actual_comparisons"] for row in rows),
@@ -184,12 +225,117 @@ def run_execution_acceleration(evidence):
             "traces": {re.sub(r"^schedule-w\d+-", "", row["name"]):
                        observable_trace(row["simulation_receipt"], "QWEN_SHELL") for row in rows},
             "source_sha256": rows[0]["source_sha256"],
+            "actual_builds_in_timed_region": sum(not row["compile_cache_hit"] for row in rows),
         })
+        require(schedules[-1]["traces"] == original_traces and
+                schedules[-1]["actual_comparisons"] ==
+                sum(row["actual_comparisons"] for row in original_rows),
+                "Runtime transport binding changed an original functional observation")
         save(evidence.path / f"schedule-{workers}.json", schedules[-1])
-    require(schedules[0]["traces"] == schedules[1]["traces"] and
-            schedules[0]["actual_comparisons"] == schedules[1]["actual_comparisons"],
-            "Concurrency changed public transaction/cycle/byte observations")
+    if len(schedules) == 2:
+        require(schedules[0]["traces"] == schedules[1]["traces"] and
+                schedules[0]["actual_comparisons"] == schedules[1]["actual_comparisons"],
+                "Concurrency changed public transaction/cycle/byte observations")
     evidence.record["execution_schedules"] = schedules
+    evidence.record["execution_monitor_controls"] = controls(evidence, baseline, "qwen")
+    command = baseline["simulation_receipt"]["argv"]
+    rejected = []
+    for name, value in (("missing", None), ("negative", -1), ("oversized", 2)):
+        arguments = [arg for arg in command if not arg.startswith("+verification_bypass=")]
+        if value is not None:
+            arguments.append(f"+verification_bypass={value}")
+        child = evidence.child(arguments, "transport-input-" + name, allow_failure=True)
+        output = (ROOT / child["stdout"]).read_text() + (ROOT / child["stderr"]).read_text()
+        require(child["exit_code"] not in (0, None) and not child["timed_out"] and
+                child["child_settled"] and child["process_group_settled"] and
+                "QWEN_SHELL_INVALID_TRANSPORT" in output and "%Error:" in output,
+                "Transport runtime input must fail explicitly before inference")
+        rejected.append(child)
+    evidence.record["execution_transport_controls"] = rejected
+    execution_sizing(evidence, pairs)
+
+
+def execution_sizing(evidence, pairs):
+    """Conditional workload projection, never a claimed complete-table result."""
+    relative = Path(
+        "evidence/verification/l1-da9a33ef8bca4a49b6b71c31de9288f0/"
+        "case-0221-run_qwen_shell/shell-reference.json")
+    path = ROOT / relative
+    launch_path = ROOT / Path(*relative.parts[:3]) / "launch.json"
+    boot_log = path.parent / (
+        "case-0225-qwen-shell-b0-s1/1228-qwen-shell-b0-s1-simulate/stdout.log")
+    missing = [str(item.relative_to(ROOT)) for item in (path, launch_path, boot_log)
+               if not item.is_file()]
+    if missing:
+        evidence.record["execution_sizing"] = {
+            "available": False, "path": str(relative), "missing": missing,
+            "complete_table_retry_authorized": False,
+            "limitation": "Optional historical sizing is unavailable, not passed. "
+                          "No projection or missing evidence reconstructed. "
+                          "All current functional measurements execute independently."}
+        return
+    prior = json.loads(path.read_bytes())
+    launch = json.loads(launch_path.read_bytes())
+    require(all(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == value
+                for name, value in launch["source_sha256"].items()
+                if name.startswith(("rtl/", "anvil_q1_reference/rtl/"))),
+            "Historical workload no longer describes the current design")
+    points = []
+    for pair_result in pairs:
+        result = next(row for row in pair_result["variants"] if row["variant"] == "runtime")
+        child = json.loads((ROOT / result["simulation_receipt"]).read_bytes())
+        text = (ROOT / child["stdout"]).read_text()
+        boot = re.findall(r"^QWEN_SHELL_BOOT .* cycles=(\d+)$", text, re.MULTILINE)
+        frame = re.findall(r"^QWEN_SHELL_FRAME .* operations=(\d+).* cycles=(\d+)$",
+                           text, re.MULTILINE)
+        require(len(boot) == len(frame) == 1, "Sizing requires completed compact frames")
+        operations, cycles = map(int, frame[0])
+        points.append({
+            "capacity": pair_result["capacity"], "boot_cycles": int(boot[0]),
+            "frame_cycles": cycles, "operations": operations,
+            "cycles_per_second": cycles / child["duration_s"],
+        })
+    require(points[0]["operations"] == points[1]["operations"] == 9,
+            "Both scaling points must execute all nine operations")
+    row_cycles = (
+        (points[1]["frame_cycles"] - points[1]["boot_cycles"]) -
+        (points[0]["frame_cycles"] - points[0]["boot_cycles"])
+    ) / ((points[1]["capacity"] - points[0]["capacity"]) * points[0]["operations"])
+    capacity = prior["physical_capacity"]
+    operations = [len(case["core_operation_ids"]) for case in prior["cases"]]
+    require(len(operations) == 5 and prior["max_new_tokens"] == 8 and
+            all(len(case["generated_ids"]) == 8 for case in prior["cases"]),
+            "Historical sizing must preserve the five eight-token workloads")
+    # This is the actual last observed boot in the interrupted run, not a
+    # reconstructed completion or an assumed fresh full-table execution.
+    boots = re.findall(r"^QWEN_SHELL_BOOT .* cycles=(\d+)$",
+                       boot_log.read_text(), re.MULTILINE)
+    require(len(boots) == 1, "Expected the authentic interrupted boot observation")
+    boot_cycles = int(boots[0])
+    estimated = 2 * boot_cycles + row_cycles * capacity * sum(operations)
+    rates = [point["cycles_per_second"] for point in points]
+    evidence.record["execution_sizing"] = {
+        "available": True, "historical_workload": str(relative),
+        "historical_workload_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "historical_launch_sha256": hashlib.sha256(launch_path.read_bytes()).hexdigest(),
+        "historical_boot_log": str(boot_log.relative_to(ROOT)),
+        "historical_boot_log_sha256": hashlib.sha256(boot_log.read_bytes()).hexdigest(),
+        "points": points, "cycles_per_physical_row_per_operation_fit": row_cycles,
+        "physical_capacity": capacity, "operations_per_prompt": operations,
+        "observed_historical_boot_cycles": boot_cycles,
+        "boots_per_cell": 2, "cells": 6,
+        "conditional_cell_seconds_range": [estimated / max(rates), estimated / min(rates)],
+        "conditional_three_worker_seconds_range": [
+            2 * estimated / max(rates), 2 * estimated / min(rates)],
+        "complete_table_retry_authorized": False,
+        "limitation": "Far-range synthetic-capacity linear extrapolation, not a measured "
+                      "full-table runtime, proven bound or acceptance. Assumes compact "
+                      "throughput extends to full tables. Adds two observed boot cycle "
+                      "counts but omits full-table tokenization, other non-head work, "
+                      "fresh generation/compilation and other mandatory suites. "
+                      "Concurrency cannot shorten the critical path of a single cell.",
+    }
+    save(evidence.path / "execution-sizing.json", evidence.record["execution_sizing"])
 
 
 def controls(evidence, baseline, family):
