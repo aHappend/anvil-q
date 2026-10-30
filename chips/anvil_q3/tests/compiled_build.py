@@ -90,5 +90,6 @@ def profiled_host(run, g, folder, sources, command):
         sources=sources, compiler_flags=(
             "-march=native",
             "-fprofile-use=" + os.path.relpath(use_profiles, folder / use_name),
+            "-fprofile-partial-training",
             "-Werror=missing-profile", "-Werror=coverage-mismatch"))
     return binary

@@ -504,7 +504,8 @@ def decoder_case(run, g, seed=17, simulator="iverilog", tokens=None, first_new=1
     result["driver"] = "clock-stepped-public-pins" if compiled_host else "systemverilog"
     if profiled:
         result["compiler_optimization"] = {
-            "method": "fresh GCC profile training; -O3 -march=native -fno-tree-vectorize",
+            "method": "fresh GCC profile training; -O3 -march=native "
+                      "-fprofile-partial-training -fno-tree-vectorize",
             "training_cycles": 1000000, "diagnostic_edge_digest": True,
             "bindings": str((folder / "profile-bindings.json").relative_to(run.path)),
             "scope": "compiler-only; complete independent comparisons unchanged"}
