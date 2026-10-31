@@ -2,204 +2,2143 @@
   "chip": "Anvil-Q2-HT",
   "passed_checks": {
     "check:critical-path-default-synthesis-complete-benchmark": {
-      "attempt_id": 1266,
-      "duration_s": 2135.0721180138644,
-      "stdout_preview": "35,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis/synthesize.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis/synthesize.stderr\",\"bytes\":[17726099,0],\"growth_bytes\":[944169,0]}\n{\"event\":\"child-progress\",\"pid\":891835,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis/synthesize.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis/synthesize.stderr\",\"bytes\":[18042843,0],\"growth_bytes\":[316744,0]}\n{\"event\":\"child-finish\",\"pid\":891835,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis/synthesize.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis/synthesize.stderr\",\"bytes\":[18042843,0],\"exit\":0,\"timed_out\":false}\n{\"event\":\"child-finish\",\"pid\":891830,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/default-synthesis.stderr\",\"bytes\":[123,0],\"exit\":0,\"timed_out\":false}\nevidence/preparation/verifier-critical-path-001/invocation-3da220b40b4b4de5985cf7ef2897f405/receipt.json\n",
-      "receipt_count": 6,
+      "attempt_id": 1272,
+      "duration_s": 2115.0225826038513,
+      "stdout_preview": "stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/synthesize.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/synthesize.stderr\",\"bytes\":[17714927,0],\"growth_bytes\":[7058527,0]}\n{\"event\":\"child-progress\",\"pid\":2044410,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/synthesize.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/synthesize.stderr\",\"bytes\":[18016935,0],\"growth_bytes\":[302008,0]}\n{\"event\":\"child-finish\",\"pid\":2044410,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/synthesize.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/synthesize.stderr\",\"bytes\":[18042843,0],\"exit\":0,\"timed_out\":false}\n{\"event\":\"child-finish\",\"pid\":2044408,\"stdout\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis.stdout\",\"stderr\":\"evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis.stderr\",\"bytes\":[123,0],\"exit\":0,\"timed_out\":false}\nevidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/receipt.json\n",
+      "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf/cases/added/data/model/added.json",
-          "data": {}
-        },
-        {
-          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf/cases/added/data/model/second.json",
-          "data": {}
-        },
-        {
-          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf/cases/added/run/declared-inputs-after.json",
-          "data": {
-            "anvil_q2_reference/rtl/fixture.sv": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "data/model/added.json": {
-              "bytes": 3,
-              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
-            },
-            "data/model/fixture.md": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "data/model/second.json": {
-              "bytes": 3,
-              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
-            },
-            "design/fixture.md": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "design/fixture.sdc": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "rtl/fixture.sv": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "tests/fixture.md": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            }
-          }
-        },
-        {
-          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf/cases/added/run/declared-inputs-before.json",
-          "data": {
-            "anvil_q2_reference/rtl/fixture.sv": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "data/model/fixture.md": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "data/model/second.json": {
-              "bytes": 3,
-              "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
-            },
-            "design/fixture.md": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "design/fixture.sdc": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "rtl/fixture.sv": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            },
-            "tests/fixture.md": {
-              "bytes": 19,
-              "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-            }
-          }
-        },
-        {
-          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf/cases/added/run/receipt.json",
+          "path": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/receipt.json",
           "data": {
             "schema": 1,
             "advisory": true,
             "argv": [
-              "/usr/bin/python3",
+              "python3",
               "-B",
-              "tests/input_binding_check.py",
-              "--worker",
+              "tests/scheduling_check.py",
+              "--scope",
+              "critical-path",
               "--output",
-              "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf"
+              "evidence/preparation/verifier-critical-path-001"
             ],
             "cwd": ".",
-            "start": "2026-10-31T09:12:00.277580+00:00",
+            "start": "2026-10-31T09:12:26.161496+00:00",
             "timeout_s": 3600,
             "source_hashes": {
-              "anvil_q2_reference/rtl/fixture.sv": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
-              "design/fixture.md": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
-              "design/fixture.sdc": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
-              "rtl/fixture.sv": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36",
-              "tests/fixture.md": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
+              "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+              "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+              "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+              "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+              "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+              "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+              "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+              "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+              "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+              "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+              "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+              "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+              "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+              "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+              "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+              "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+              "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+              "design/ARCHITECTURE.md": "264618601a29f81e420c5244c87b8ace1324625333a03218ff6bcb0594f43691",
+              "design/GENERATIONAL_HANDOFF.md": "a29205e281680ede2d2bdfbbaa766132240272761019dc576a682d93479cb13d",
+              "design/SPEC.md": "ef9dc808185010475a676e86e78f3618c520eafb09d73ffbe2960a8f434d2210",
+              "design/anvil_q2_ht.sdc": "fb19f69b65e8c8a1cbb437d94e5a318d37624d4a83844d4ac2deda18bdc48a97",
+              "rtl/anvil_q2_ht_00_fp_pkg.sv": "cfc0b6bd8f28467008c695574b970f251ca48395ca676820535f39c56a5bb970",
+              "rtl/anvil_q2_ht_01_int_pkg.sv": "3cbc03dc85737274e2ea06b7a0616748a6586b5c5347c9148cb282e81230c94b",
+              "rtl/anvil_q2_ht_add128_pipe.sv": "3f49d50cd90eada1591f0e440161f29c7b86e5453bb92167a7934d8d52ba1fb6",
+              "rtl/anvil_q2_ht_configuration.sv": "a6b68ffd52f5fc26c41a28d3e923c877cfaeb7fabe113e4221d9c0e3daf93b0e",
+              "rtl/anvil_q2_ht_convert.sv": "6120d9f677588b4852a8f91d4a1de294c8f82e0a43bf6118d23bcf075d80f7a0",
+              "rtl/anvil_q2_ht_ddr_fabric.sv": "da8eb385d8690b42bcb4cb6aebc816d699423bfe183020237ba3d9b544e39e12",
+              "rtl/anvil_q2_ht_ddr_prefetcher.sv": "35486e9fc108d480b2714e3aa0c9e8fb1dd17cfc6603e1fd095e78de189ad820",
+              "rtl/anvil_q2_ht_exp.sv": "a7de66fb01154613ce68abcc1e18af8c8976789874f1a58c92efbce6b4c1ebc4",
+              "rtl/anvil_q2_ht_fp32_add_pipe.sv": "17fb8c26ec7292ee4037e87357e6a7381ba36b75916b031a71d0b4e1c56c2f44",
+              "rtl/anvil_q2_ht_host_port.sv": "2c1e0f4e9e7aa543682eb8a2437c5adfb3b80a68aeadf06ad6a9ae7ed869b77f",
+              "rtl/anvil_q2_ht_integer_math.sv": "297bdc80bc13b40ff7dafede4f9e8e551eb77e6a02b776eac17b823c5f7035c8",
+              "rtl/anvil_q2_ht_kv_burst.sv": "45747491d24de22efe5103455b03739c84634efaa9381369c817eb475a5044f2",
+              "rtl/anvil_q2_ht_kv_cache.sv": "b27c4af360b5bb67178b9d1e0a013ebf30ec4d5e6ba033763cb9ff4c32a40fbf",
+              "rtl/anvil_q2_ht_kv_codec.sv": "d3074c93160c898d59be7bd69852c2502de1b1cdc610eedc295e94f0fd7c3355",
+              "rtl/anvil_q2_ht_projection.sv": "77911f270766eae113847745d3c3d2b7cfbfc2ba93407a637076dd30b74fb7dd",
+              "rtl/anvil_q2_ht_scalar_reader.sv": "40c5b51a70b74c093fc65cf4e44ccff7186494e1a96e350cd01ce5bc26f093f8",
+              "rtl/anvil_q2_ht_sequencer.sv": "e6e61f5e22394716082d9d3a70cc08753410fd477ccbe3be4ddb643e9e78f529",
+              "rtl/anvil_q2_ht_tensor_array.sv": "2bab6971836fe1a763dc3b829ed5c7da1446fcb5ce41bb1fb879366b6b17059d",
+              "rtl/anvil_q2_ht_tensor_lane.sv": "13456526ea43d593f3ac9a7212384ba9d06b77044b6296ae732c1b8a385c49d1",
+              "rtl/anvil_q2_ht_tile_buffers.sv": "d09c1241dfe565788cad472aca0532ece30fae3b8f5336868f318320f63cc640",
+              "rtl/anvil_q2_ht_top.sv": "03617cbcd59b05ff5d4b4a5b720b364a777fb091fc39e59d0be57c5429c4735f",
+              "rtl/anvil_q2_ht_vector_store.sv": "cc47adeb90beccdabebadc3167e6eb7ab43e7949c7d6ba56cb4921c8353184ce",
+              "tests/README.md": "9bfbe1042aa1dd56d5e135585a4b6883857e6727b19223556c4e222e5a9901c8",
+              "tests/array_check.py": "d272544f1efd99f4105d3010e7e4d421515b47350c809d2957feb71ec41848f9",
+              "tests/array_tb.sv": "816029e0d354040087644647ba3f0e8c3d97404ef44e4a6e00d3661072ca70a1",
+              "tests/benchmark_check.py": "ae35e7d2035cf1d49d10bf491d76784dca4d24144764b66d1e1ba92956785d02",
+              "tests/benchmark_ports.sv": "5179be968e9acf244d9ada381bc97c1a0ed893d36aec1b41bb7a4bd4d40620ee",
+              "tests/benchmark_reference.py": "d85b98575503f3918709cf9cad95cf2450cdb577daf82021cab898533b4283a7",
+              "tests/binding_diagnosis.py": "3baca6123fd3a06e1302a1d37398d5662fea02fb3b1b448d9b2a3affab5b8473",
+              "tests/bridge_mapping_check.py": "bde0e18153cab2db5e4960c11e46cc90963bdc2f729aeaa62e80062aa432e331",
+              "tests/build_cache.py": "e9b995d41eb08d31aaa86b954d0eedf3d6476c9827c378cd5406443e1ded31db",
+              "tests/build_reuse_check.py": "9b3098882dd40c8f3e11d3e570f409b878ff2ca4ae4e22251bc1b2cc13f7bb40",
+              "tests/checkpoint_import.py": "0a7ed05343ba7d93ea4638573fe793f721fc6ab7e85cbbc27d611d977c2ddebb",
+              "tests/checkpoint_pack.cpp": "735010b358ca3816675c2645e5408c1522b5b88798e2916e4c61d660ca1bac9c",
+              "tests/checkpoint_projection_check.py": "ce71d2d64f3bfa4c0717e2fbe8d89fd7489365f1aad74f0726bc8e788b8955af",
+              "tests/checkpoint_projection_tb.sv": "e7e0b843a6050e8a9ed3fccba5d9dd716b99417cda68ed631fdec35c685e70d9",
+              "tests/checkpoint_stage.py": "5d16347d6222344990c25a5554a1e31d3db33606da150f9418b59d8d3d73f1f4",
+              "tests/codec_check.py": "8c90282d043a8cda0d0780471acd783c47bbbe627d76c64d614a64a8ec6f3660",
+              "tests/codec_tb.sv": "f3af6be5e36ac8963b497a4b44599bf33599011eb31d260ba1a236830572c929",
+              "tests/configuration_check.py": "5b0a91de774a2565f99a08610f788231cc62465e44d6cd30286b5262fcb7e7ba",
+              "tests/configuration_tb.sv": "d3683eae38a0d7a20028f63635e0d2e62ffe1ba1a26f867ca8c3f3725f9dfa4d",
+              "tests/full_model_reference.cpp": "53f4589e59816624c368b8fe319aed2ed73189f43dfc0ababe4997547617bbd8",
+              "tests/full_reference_check.py": "ef9ce1dec2a66aa3d29472b5665ded497b76ad672ae53aacc0f10405b9727c3f",
+              "tests/full_reference_run.py": "a389f43d73de44d83f3a734ec2efff790074696b47e979642dd584818d4729a5",
+              "tests/hardware_bridge.json": "e41fd638ae795158c73e0f0d7bebcb69efc68c59294d08a004bbde39ea1a31fe",
+              "tests/input_binding_check.py": "7cb87111b17aa9404e2379dad962688a27b447892a701548a9923f2290423325",
+              "tests/invocation.py": "be7b2235588f23d1de4df93d51050ca1ec5844afcbf106a3ec5b3ab71a6cc37b",
+              "tests/invocation_check.py": "2f8eebfb33573a86837124f8ec005af48d7e93035615ea283b0790bf5b282bda",
+              "tests/kv_check.py": "9ec38918cc93241b3c6f54b05a0606b743fc8adffd0223ab706f9e41aa6da51f",
+              "tests/kv_tb.sv": "7a336ef23e16cb42e92ed7e1477c29034b4c3a8687c081e8499d4489b764e477",
+              "tests/numerical_check.py": "d1929211fe59b5e96296e14bb70d136e834aab71d8922309258b488bae36e9db",
+              "tests/numerical_tb.sv": "c5da7bb2033dbdfc52c844ca3e134849737921811b32973dac00918f85fd212d",
+              "tests/parameter_check.py": "900088778f66be3abf42b3059f7fbe37566a45e4c34d91904c9238b52546b7cf",
+              "tests/parent_projection_tb.sv": "2df94907fef814f2c7343fac2413d2e83f7900abc34a595bd6e80654a966c639",
+              "tests/parent_system_check.py": "13b357cf51974a669d7b809112b9ae8cd7c78cf58000f16941e2770a54182b5b",
+              "tests/parent_system_tb.sv": "d7f248a4242ac62147aad72aefb35e8299a72134c97b4d262db7921d96e846fb",
+              "tests/prefetch_check.py": "d56fb7a8eb53f1966fceb5e64b3d9275d5e072980b425f8c53458ed026a005ce",
+              "tests/prefetch_tb.sv": "25636ac27baed1e3d6d01a2eb2d06b87a4ba52376549bd162efbd9a1a02d5933",
+              "tests/progress_check.py": "da8eecfd0ebf30a194703e466e984d29bd2440bac5f9444eba9363a2462f4322",
+              "tests/projection_metrics_ports.sv": "d84b99a651575fed67b72a9c8b91beff068a1f28d2e8220cca4feeb2e3846290",
+              "tests/reference.py": "41b520e16297b830a2a4cc22ceaf9f6d735f387a26a2aac3a0ca71b738f59d59",
+              "tests/retention.py": "0114db0b06c966cc74c49dc45fe3f482b4641b58b2bdf37da6f9049c951eaf1e",
+              "tests/rope_reference.py": "e899746a142022d3e6f8b5a8a18b5ff90efc5f04ead24ca5c57371e49a94a1e9",
+              "tests/scheduling.py": "17cbab9666e6b929a7d4497b5fdffa6f244e16b1447d9030029df4ad992e9b9e",
+              "tests/scheduling_check.py": "f2fa2b112618d635319cf891e2b7ea501812fb98ee6c2beb2a8240bd5922ac1b",
+              "tests/small_model.py": "0541684cf9c7e0fe2bbac6816163e00bde4f76a8861acb9c7b74c8af0309058c",
+              "tests/source_check.py": "3d2ac2603a887f37851912cbf103e08a49f8c8720bbb8c4528fb5613d7e6b953",
+              "tests/stream_projection_check.py": "857c90e0b3fe563c7ffe8669eec048f014bcb6722870b20e5b185e4c7da3aba5",
+              "tests/synthesis_check.py": "24deb066a88fd16710c0bf09aa01ccf348d5d4fa9e629bbb965e5839314cf980",
+              "tests/system_benchmark.py": "603ff1a2bb2b027fcd2b0b86fecbbc4ee02fc9a36cf033cd063ca25fa42210d8",
+              "tests/system_check.py": "868ffb5f6a97d1646fc31d70235739b249d9bf731249782e37bd6770d4916952",
+              "tests/system_tb.sv": "e21fd3acb94c91ca2997be2a5faf9585b782129efdbb2a7c39fda5a09f79ef40",
+              "tests/verify.py": "9873af1c68a6062500647c066115c38e35af72142ecf510e925d195070f4cc26"
             },
-            "commands": [],
-            "exit": 1,
-            "declared_input_selectors": [
-              "rtl/*.sv",
-              "anvil_q2_reference/rtl/*.sv",
-              "design/*.md",
-              "design/*.sdc",
-              "tests/*",
-              "data/model/*"
+            "commands": [
+              {
+                "argv": [
+                  "python3",
+                  "--version"
+                ],
+                "cwd": ".",
+                "start": "2026-10-31T09:12:26.175143+00:00",
+                "timeout_s": 3600,
+                "stdout": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/python-version.stdout",
+                "stderr": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/python-version.stderr",
+                "exit": 0,
+                "timed_out": false,
+                "execution_start_monotonic_s": 1473488.823809243,
+                "pid": 2044400,
+                "execution_duration_s": 0.02165323798544705,
+                "user_cpu_s": 0.0,
+                "system_cpu_s": 0.003336,
+                "max_rss_kib": 24576,
+                "rss_scope": "wait4 maximum individual process in child subtree",
+                "progress_observations": 0,
+                "log_bytes": [
+                  14,
+                  0
+                ],
+                "end": "2026-10-31T09:12:26.197099+00:00",
+                "duration_s": 0.021929724141955376
+              },
+              {
+                "argv": [
+                  "python3",
+                  "tests/synthesis_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis",
+                  "--expand-packages"
+                ],
+                "cwd": ".",
+                "start": "2026-10-31T09:12:26.219539+00:00",
+                "timeout_s": 14400,
+                "stdout": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis.stdout",
+                "stderr": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis.stderr",
+                "exit": 0,
+                "timed_out": false,
+                "resource_lease": {
+                  "budget": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/resources",
+                  "slot": 0,
+                  "wait_s": 0.0006767429877072573
+                },
+                "execution_start_monotonic_s": 1473488.885558874,
+                "pid": 2044408,
+                "execution_duration_s": 2114.6590351639315,
+                "user_cpu_s": 2110.968775,
+                "system_cpu_s": 8.525969,
+                "max_rss_kib": 2378624,
+                "rss_scope": "wait4 maximum individual process in child subtree",
+                "progress_observations": 0,
+                "log_bytes": [
+                  123,
+                  0
+                ],
+                "end": "2026-10-31T09:47:40.897249+00:00",
+                "duration_s": 2114.6615067748353
+              },
+              {
+                "argv": [
+                  "python3",
+                  "tests/system_benchmark.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "cwd": ".",
+                "start": "2026-10-31T09:12:26.235707+00:00",
+                "timeout_s": 14400,
+                "stdout": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark.stdout",
+                "stderr": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark.stderr",
+                "exit": 0,
+                "timed_out": false,
+                "execution_start_monotonic_s": 1473488.884966858,
+                "pid": 2044407,
+                "execution_duration_s": 332.1152956970036,
+                "user_cpu_s": 1085.549057,
+                "system_cpu_s": 42.647622,
+                "max_rss_kib": 545924,
+                "rss_scope": "wait4 maximum individual process in child subtree",
+                "progress_observations": 0,
+                "log_bytes": [
+                  133,
+                  0
+                ],
+                "end": "2026-10-31T09:17:58.352104+00:00",
+                "duration_s": 332.1162865560036
+              },
+              {
+                "argv": [
+                  "python3",
+                  "tests/benchmark_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison",
+                  "--matrix-receipt",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json"
+                ],
+                "cwd": ".",
+                "start": "2026-10-31T09:17:58.385344+00:00",
+                "timeout_s": 14400,
+                "stdout": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison.stdout",
+                "stderr": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison.stderr",
+                "exit": 0,
+                "timed_out": false,
+                "resource_lease": {
+                  "budget": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/resources",
+                  "slot": 1,
+                  "wait_s": 0.0001489080023020506
+                },
+                "execution_start_monotonic_s": 1473821.034542491,
+                "pid": 2079586,
+                "execution_duration_s": 4.970006295945495,
+                "user_cpu_s": 4.877115,
+                "system_cpu_s": 0.058149,
+                "max_rss_kib": 24576,
+                "rss_scope": "wait4 maximum individual process in child subtree",
+                "progress_observations": 0,
+                "log_bytes": [
+                  137,
+                  0
+                ],
+                "end": "2026-10-31T09:18:03.356420+00:00",
+                "duration_s": 4.971054112073034
+              }
             ],
-            "declared_inputs_before": {
-              "rtl/fixture.sv": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "anvil_q2_reference/rtl/fixture.sv": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "design/fixture.md": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "design/fixture.sdc": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "tests/fixture.md": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "data/model/fixture.md": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "data/model/second.json": {
-                "bytes": 3,
-                "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
-              }
+            "exit": 0,
+            "invocation": {
+              "parent_output": "evidence/preparation/verifier-critical-path-001",
+              "output": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2",
+              "original_receipt": null
             },
-            "declared_inputs_before_path": "run/declared-inputs-before.json",
-            "declared_inputs_after": {
-              "rtl/fixture.sv": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "anvil_q2_reference/rtl/fixture.sv": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "design/fixture.md": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "design/fixture.sdc": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "tests/fixture.md": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "data/model/added.json": {
-                "bytes": 3,
-                "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
-              },
-              "data/model/fixture.md": {
-                "bytes": 19,
-                "sha256": "f3232d7cbfbbcbe3b1d3f07260be077fda67b03fd1453e80aadfdb4bfa2eef36"
-              },
-              "data/model/second.json": {
-                "bytes": 3,
-                "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
-              }
-            },
-            "declared_inputs_after_path": "run/declared-inputs-after.json",
-            "declared_input_changes": {
-              "added": [
-                "data/model/added.json"
+            "resource_budget": {
+              "schema": 1,
+              "directory": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/resources",
+              "affinity_cpus": 256,
+              "effective_cpu_capacity": 256.0,
+              "mem_available_bytes": 490522378240,
+              "effective_memory_headroom_bytes": 490522378240,
+              "cgroups": [
+                {
+                  "cgroup": "/user.slice/user-590503593.slice/session-19656.scope",
+                  "cpu.max": "max 100000",
+                  "memory.max": "max",
+                  "memory.high": "max",
+                  "memory.current": "100320477184"
+                },
+                {
+                  "cgroup": "/user.slice/user-590503593.slice",
+                  "cpu.max": "max 100000",
+                  "memory.max": "max",
+                  "memory.high": "max",
+                  "memory.current": "459650011136"
+                },
+                {
+                  "cgroup": "/user.slice",
+                  "cpu.max": "max 100000",
+                  "memory.max": "max",
+                  "memory.high": "max",
+                  "memory.current": "459674492928"
+                },
+                {
+                  "cgroup": "/"
+                }
               ],
-              "removed": [],
-              "changed": []
+              "memory_reservation_per_slot_bytes": 4294967296,
+              "shared_host_slot_cap": 8,
+              "slots": 8
             },
-            "input_binding_failure": "declared verification inputs changed during execution: {\"added\": [\"data/model/added.json\"], \"changed\": [], \"removed\": []}",
-            "end": "2026-10-31T09:12:00.283009+00:00",
-            "failure": "declared verification inputs changed during execution: {\"added\": [\"data/model/added.json\"], \"changed\": [], \"removed\": []}"
-          }
-        },
-        {
-          "path": "evidence/verification/input-binding-child-observation-admission-001/invocation-aa6e37aed01948beafb171fef67b4ccf/cases/changed/data/model/second.json",
-          "data": {
-            "changed": true
+            "build_cache": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds",
+            "l1_checks": [
+              {
+                "check": "array-iverilog",
+                "argv": [
+                  "python3",
+                  "tests/array_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/array-iverilog",
+                  "--simulator",
+                  "iverilog"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/array-iverilog/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "array-verilator",
+                "argv": [
+                  "python3",
+                  "tests/array_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/array-verilator",
+                  "--simulator",
+                  "verilator"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/array-verilator/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "D1-streaming-11",
+                "argv": [
+                  "python3",
+                  "tests/stream_projection_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D1-streaming-11",
+                  "--seed",
+                  "11",
+                  "--compare-parent",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D1-streaming-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "D1-streaming-29",
+                "argv": [
+                  "python3",
+                  "tests/stream_projection_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D1-streaming-29",
+                  "--seed",
+                  "29",
+                  "--compare-parent",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D1-streaming-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "D1-streaming-101",
+                "argv": [
+                  "python3",
+                  "tests/stream_projection_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D1-streaming-101",
+                  "--seed",
+                  "101",
+                  "--compare-parent",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D1-streaming-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "numerical-convert",
+                "argv": [
+                  "python3",
+                  "tests/numerical_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/numerical-convert",
+                  "--unit",
+                  "convert"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/numerical-convert/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "numerical-integer",
+                "argv": [
+                  "python3",
+                  "tests/numerical_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/numerical-integer",
+                  "--unit",
+                  "integer"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/numerical-integer/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "numerical-exp",
+                "argv": [
+                  "python3",
+                  "tests/numerical_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/numerical-exp",
+                  "--unit",
+                  "exp"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/numerical-exp/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "full-reference-crosscheck",
+                "argv": [
+                  "python3",
+                  "tests/full_reference_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/full-reference-crosscheck"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/full-reference-crosscheck/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "bridge-logical-mapping",
+                "argv": [
+                  "python3",
+                  "tests/bridge_mapping_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/bridge-logical-mapping"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/bridge-logical-mapping/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-awq-zero",
+                "argv": [
+                  "python3",
+                  "tests/array_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-awq-zero",
+                  "--mutation",
+                  "awq-zero"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-awq-zero/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-upper-bank",
+                "argv": [
+                  "python3",
+                  "tests/array_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-upper-bank",
+                  "--mutation",
+                  "upper-bank"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-upper-bank/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-bf16-round",
+                "argv": [
+                  "python3",
+                  "tests/array_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-bf16-round",
+                  "--mutation",
+                  "bf16-round"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-bf16-round/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-latency",
+                "argv": [
+                  "python3",
+                  "tests/array_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-latency",
+                  "--mutation",
+                  "latency"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-latency/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-0-0",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-0-0",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "0",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-0-0/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-persistence-0-0",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-0-0",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "0",
+                  "--scenario",
+                  "persistence",
+                  "--seed",
+                  "11",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-0-0/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-0-1",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-0-1",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "1",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-0-1/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-persistence-0-1",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-0-1",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "1",
+                  "--scenario",
+                  "persistence",
+                  "--seed",
+                  "29",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-0-1/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-0-2",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-0-2",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "2",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-0-2/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-persistence-0-2",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-0-2",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "2",
+                  "--scenario",
+                  "persistence",
+                  "--seed",
+                  "101",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-0-2/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-1-0",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-1-0",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "0",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-1-0/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-persistence-1-0",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-1-0",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "0",
+                  "--scenario",
+                  "persistence",
+                  "--seed",
+                  "11",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-1-0/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-1-1",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-1-1",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-1-1/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-persistence-1-1",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-1-1",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--scenario",
+                  "persistence",
+                  "--seed",
+                  "29",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-1-1/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-1-2",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-1-2",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "2",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-1-2/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-persistence-1-2",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-1-2",
+                  "--simulator",
+                  "verilator",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "2",
+                  "--scenario",
+                  "persistence",
+                  "--seed",
+                  "101",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-persistence-1-2/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-default-replay",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-default-replay",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-default-replay/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-icarus-roundtrip",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-icarus-roundtrip",
+                  "--simulator",
+                  "iverilog",
+                  "--scenario",
+                  "roundtrip",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-icarus-roundtrip/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-bf16-bias-11",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-11",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "0",
+                  "--seed",
+                  "11",
+                  "--bias-stress",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-bf16-bias-boundary-0",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-boundary-0",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "0",
+                  "--seed",
+                  "11",
+                  "--bias-boundary",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-boundary-0/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-bf16-bias-29",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-29",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--seed",
+                  "29",
+                  "--bias-stress",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-bf16-bias-boundary-1",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-boundary-1",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--seed",
+                  "29",
+                  "--bias-boundary",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-boundary-1/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-bf16-bias-101",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-101",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "2",
+                  "--seed",
+                  "101",
+                  "--bias-stress",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-bf16-bias-boundary-2",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-boundary-2",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "2",
+                  "--seed",
+                  "101",
+                  "--bias-boundary",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-bf16-bias-boundary-2/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-bf16-bias",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-bf16-bias",
+                  "--mode",
+                  "1",
+                  "--bias-boundary",
+                  "--mutation",
+                  "bf16-bias",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-bf16-bias/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-control-11",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-control-11",
+                  "--scenario",
+                  "control",
+                  "--seed",
+                  "11",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-control-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-control-29",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-control-29",
+                  "--scenario",
+                  "control",
+                  "--seed",
+                  "29",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-control-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-control-101",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-control-101",
+                  "--scenario",
+                  "control",
+                  "--seed",
+                  "101",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-control-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-phase-11",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-phase-11",
+                  "--scenario",
+                  "control",
+                  "--cell",
+                  "phase",
+                  "--seed",
+                  "11",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "0",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-phase-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-phase-29",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-phase-29",
+                  "--scenario",
+                  "control",
+                  "--cell",
+                  "phase",
+                  "--seed",
+                  "29",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-phase-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-phase-101",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-phase-101",
+                  "--scenario",
+                  "control",
+                  "--cell",
+                  "phase",
+                  "--seed",
+                  "101",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "2",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-phase-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-singleton-11",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-singleton-11",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "11",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "0",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-singleton-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-singleton-11",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-singleton-11",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "11"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-singleton-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-singleton-29",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-singleton-29",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "29",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-singleton-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-singleton-29",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-singleton-29",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "29"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-singleton-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-singleton-101",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-singleton-101",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "101",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "2",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-singleton-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-singleton-101",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-singleton-101",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "101"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-singleton-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-nonpower-11",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-nonpower-11",
+                  "--cell",
+                  "nonpower",
+                  "--seed",
+                  "11",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "0",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-nonpower-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-nonpower-11",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-nonpower-11",
+                  "--cell",
+                  "nonpower",
+                  "--seed",
+                  "11"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-nonpower-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-nonpower-29",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-nonpower-29",
+                  "--cell",
+                  "nonpower",
+                  "--seed",
+                  "29",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-nonpower-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-nonpower-29",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-nonpower-29",
+                  "--cell",
+                  "nonpower",
+                  "--seed",
+                  "29"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-nonpower-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-nonpower-101",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-nonpower-101",
+                  "--cell",
+                  "nonpower",
+                  "--seed",
+                  "101",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "2",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-nonpower-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-nonpower-101",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-nonpower-101",
+                  "--cell",
+                  "nonpower",
+                  "--seed",
+                  "101"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-nonpower-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-block16-11",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-block16-11",
+                  "--cell",
+                  "block16",
+                  "--seed",
+                  "11",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "0",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-block16-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-block16-11",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-block16-11",
+                  "--cell",
+                  "block16",
+                  "--seed",
+                  "11"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-block16-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-block16-29",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-block16-29",
+                  "--cell",
+                  "block16",
+                  "--seed",
+                  "29",
+                  "--mode",
+                  "1",
+                  "--cache",
+                  "1",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-block16-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-block16-29",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-block16-29",
+                  "--cell",
+                  "block16",
+                  "--seed",
+                  "29"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-block16-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "system-block16-101",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-block16-101",
+                  "--cell",
+                  "block16",
+                  "--seed",
+                  "101",
+                  "--mode",
+                  "0",
+                  "--cache",
+                  "2",
+                  "--simulator",
+                  "verilator",
+                  "--scenario",
+                  "control",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/system-block16-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "kv-block16-101",
+                "argv": [
+                  "python3",
+                  "tests/kv_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-block16-101",
+                  "--cell",
+                  "block16",
+                  "--seed",
+                  "101"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/kv-block16-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-slot",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-slot",
+                  "--mutation",
+                  "slot-association",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-slot/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "defect-kv",
+                "argv": [
+                  "python3",
+                  "tests/system_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-kv",
+                  "--mutation",
+                  "kv-exponent",
+                  "--cache",
+                  "2",
+                  "--simulator",
+                  "verilator",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/defect-kv/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-singleton-11",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-singleton-11",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "11"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-singleton-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-singleton-29",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-singleton-29",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "29"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-singleton-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-singleton-101",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-singleton-101",
+                  "--cell",
+                  "singleton",
+                  "--seed",
+                  "101"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-singleton-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-default-11",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-default-11",
+                  "--cell",
+                  "default",
+                  "--seed",
+                  "11"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-default-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-default-29",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-default-29",
+                  "--cell",
+                  "default",
+                  "--seed",
+                  "29"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-default-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-default-101",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-default-101",
+                  "--cell",
+                  "default",
+                  "--seed",
+                  "101"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-default-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-maximum-11",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-maximum-11",
+                  "--cell",
+                  "maximum",
+                  "--seed",
+                  "11"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-maximum-11/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-maximum-29",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-maximum-29",
+                  "--cell",
+                  "maximum",
+                  "--seed",
+                  "29"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-maximum-29/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "prefetch-maximum-101",
+                "argv": [
+                  "python3",
+                  "tests/prefetch_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-maximum-101",
+                  "--cell",
+                  "maximum",
+                  "--seed",
+                  "101"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/prefetch-maximum-101/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "codec-1",
+                "argv": [
+                  "python3",
+                  "tests/codec_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/codec-1",
+                  "--block",
+                  "1"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/codec-1/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "codec-16",
+                "argv": [
+                  "python3",
+                  "tests/codec_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/codec-16",
+                  "--block",
+                  "16"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/codec-16/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "codec-128",
+                "argv": [
+                  "python3",
+                  "tests/codec_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/codec-128",
+                  "--block",
+                  "128"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/codec-128/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "parameters",
+                "argv": [
+                  "python3",
+                  "tests/parameter_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/parameters"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/parameters/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "production-source",
+                "argv": [
+                  "python3",
+                  "tests/source_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/production-source"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/production-source/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "D5-common-service-benchmark",
+                "argv": [
+                  "python3",
+                  "tests/system_benchmark.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "passed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json",
+                "priority": 90,
+                "delegated": true,
+                "start_offset_s": 0.0011127970647066832,
+                "end_offset_s": 332.16641400917433
+              },
+              {
+                "check": "five-domain-ledger-recomparison",
+                "argv": [
+                  "python3",
+                  "tests/benchmark_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison",
+                  "--matrix-receipt",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json"
+                ],
+                "outcome": "passed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "D5-common-service-benchmark"
+                ],
+                "start_offset_s": 332.16719257296063,
+                "end_offset_s": 337.17102231201716
+              },
+              {
+                "check": "configuration-default-awq",
+                "argv": [
+                  "python3",
+                  "tests/configuration_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/configuration-default-awq",
+                  "--mode",
+                  "awq"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/configuration-default-awq/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "official-image-awq",
+                "argv": [
+                  "python3",
+                  "tests/checkpoint_import.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-image-awq",
+                  "--mode",
+                  "awq"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-image-awq/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "configuration-default-awq"
+                ]
+              },
+              {
+                "check": "official-projections-awq",
+                "argv": [
+                  "python3",
+                  "tests/checkpoint_projection_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-projections-awq",
+                  "--mode",
+                  "awq",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-projections-awq/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "official-image-awq"
+                ]
+              },
+              {
+                "check": "official-reference-awq",
+                "argv": [
+                  "python3",
+                  "tests/full_reference_run.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-reference-awq",
+                  "--mode",
+                  "awq",
+                  "--packed-directory",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-image-awq"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-reference-awq/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "official-image-awq",
+                  "full-reference-crosscheck"
+                ]
+              },
+              {
+                "check": "configuration-default-bf16",
+                "argv": [
+                  "python3",
+                  "tests/configuration_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/configuration-default-bf16",
+                  "--mode",
+                  "bf16"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/configuration-default-bf16/receipt.json",
+                "priority": 0
+              },
+              {
+                "check": "official-image-bf16",
+                "argv": [
+                  "python3",
+                  "tests/checkpoint_import.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-image-bf16",
+                  "--mode",
+                  "bf16"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-image-bf16/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "configuration-default-bf16"
+                ]
+              },
+              {
+                "check": "official-projections-bf16",
+                "argv": [
+                  "python3",
+                  "tests/checkpoint_projection_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-projections-bf16",
+                  "--mode",
+                  "bf16",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-projections-bf16/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "official-image-bf16"
+                ]
+              },
+              {
+                "check": "official-reference-bf16",
+                "argv": [
+                  "python3",
+                  "tests/full_reference_run.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-reference-bf16",
+                  "--mode",
+                  "bf16",
+                  "--packed-directory",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-image-bf16"
+                ],
+                "outcome": "not-executed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/official-reference-bf16/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "official-image-bf16",
+                  "full-reference-crosscheck"
+                ]
+              },
+              {
+                "check": "default-synthesis",
+                "argv": [
+                  "python3",
+                  "tests/synthesis_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis",
+                  "--expand-packages"
+                ],
+                "outcome": "passed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/receipt.json",
+                "priority": 100,
+                "start_offset_s": 0.0005048820748925209,
+                "end_offset_s": 2114.712829904165
+              }
+            ],
+            "critical_path_checks": [
+              {
+                "check": "default-synthesis",
+                "argv": [
+                  "python3",
+                  "tests/synthesis_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis",
+                  "--expand-packages"
+                ],
+                "outcome": "passed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/receipt.json",
+                "priority": 100,
+                "start_offset_s": 0.0005048820748925209,
+                "end_offset_s": 2114.712829904165
+              },
+              {
+                "check": "D5-common-service-benchmark",
+                "argv": [
+                  "python3",
+                  "tests/system_benchmark.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark",
+                  "--build-cache",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                ],
+                "outcome": "passed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json",
+                "priority": 90,
+                "delegated": true,
+                "start_offset_s": 0.0011127970647066832,
+                "end_offset_s": 332.16641400917433
+              },
+              {
+                "check": "five-domain-ledger-recomparison",
+                "argv": [
+                  "python3",
+                  "tests/benchmark_check.py",
+                  "--output",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison",
+                  "--matrix-receipt",
+                  "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json"
+                ],
+                "outcome": "passed",
+                "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison/receipt.json",
+                "priority": 0,
+                "depends_on": [
+                  "D5-common-service-benchmark"
+                ],
+                "start_offset_s": 332.16719257296063,
+                "end_offset_s": 337.17102231201716
+              }
+            ],
+            "graphs": [
+              [
+                {
+                  "check": "default-synthesis",
+                  "argv": [
+                    "python3",
+                    "tests/synthesis_check.py",
+                    "--output",
+                    "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis",
+                    "--expand-packages"
+                  ],
+                  "outcome": "passed",
+                  "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/receipt.json",
+                  "priority": 100,
+                  "start_offset_s": 0.0005048820748925209,
+                  "end_offset_s": 2114.712829904165
+                },
+                {
+                  "check": "D5-common-service-benchmark",
+                  "argv": [
+                    "python3",
+                    "tests/system_benchmark.py",
+                    "--output",
+                    "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark",
+                    "--build-cache",
+                    "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/verilator-builds"
+                  ],
+                  "outcome": "passed",
+                  "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json",
+                  "priority": 90,
+                  "delegated": true,
+                  "start_offset_s": 0.0011127970647066832,
+                  "end_offset_s": 332.16641400917433
+                },
+                {
+                  "check": "five-domain-ledger-recomparison",
+                  "argv": [
+                    "python3",
+                    "tests/benchmark_check.py",
+                    "--output",
+                    "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison",
+                    "--matrix-receipt",
+                    "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json"
+                  ],
+                  "outcome": "passed",
+                  "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison/receipt.json",
+                  "priority": 0,
+                  "depends_on": [
+                    "D5-common-service-benchmark"
+                  ],
+                  "start_offset_s": 332.16719257296063,
+                  "end_offset_s": 337.17102231201716
+                }
+              ]
+            ],
+            "schedules": [
+              {
+                "workers": 8,
+                "checks": [
+                  "default-synthesis",
+                  "D5-common-service-benchmark",
+                  "five-domain-ledger-recomparison"
+                ],
+                "journal": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/schedule-000.jsonl",
+                "outcomes": {
+                  "D5-common-service-benchmark": "passed",
+                  "five-domain-ledger-recomparison": "passed",
+                  "default-synthesis": "passed"
+                },
+                "elapsed_s": 2114.7137160361744
+              }
+            ],
+            "declared_input_metadata_path": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/declared-input-metadata.jsonl",
+            "critical_path_measurements": {
+              "overlap_s": 332.1147036808543,
+              "schedule_elapsed_s": 2114.7137160361744,
+              "children": [
+                {
+                  "check": "default-synthesis",
+                  "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/default-synthesis/receipt.json",
+                  "duration_s": 2114.6590351639315,
+                  "user_cpu_s": 2110.968775,
+                  "system_cpu_s": 8.525969,
+                  "max_rss_kib": 2378624,
+                  "rss_scope": "wait4 maximum individual process in child subtree",
+                  "exit": 0,
+                  "timed_out": false
+                },
+                {
+                  "check": "D5-common-service-benchmark",
+                  "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/D5-common-service-benchmark/receipt.json",
+                  "duration_s": 332.1152956970036,
+                  "user_cpu_s": 1085.549057,
+                  "system_cpu_s": 42.647622,
+                  "max_rss_kib": 545924,
+                  "rss_scope": "wait4 maximum individual process in child subtree",
+                  "exit": 0,
+                  "timed_out": false
+                },
+                {
+                  "check": "five-domain-ledger-recomparison",
+                  "receipt": "evidence/preparation/verifier-critical-path-001/invocation-ef1bd9518022438a9d61d39cb2854fd2/five-domain-ledger-recomparison/receipt.json",
+                  "duration_s": 4.970006295945495,
+                  "user_cpu_s": 4.877115,
+                  "system_cpu_s": 0.058149,
+                  "max_rss_kib": 24576,
+                  "rss_scope": "wait4 maximum individual process in child subtree",
+                  "exit": 0,
+                  "timed_out": false
+                }
+              ],
+              "benchmark_cells": 15,
+              "benchmark_executions": 27,
+              "recomparison": {
+                "executions": 27,
+                "compared_intermediate_words": 11016,
+                "compared_logits": 243,
+                "compared_cache_words": 8496,
+                "completed_cache_commits": 81,
+                "corrupt_observation_rejections": 27,
+                "w4_parent_to_ht_event_window_throughput_ratio": {
+                  "1": {
+                    "D1": {
+                      "minimum": 0.7710258898023796,
+                      "maximum": 0.7729203992833376
+                    },
+                    "D2": {
+                      "minimum": 0.11074767917442133,
+                      "maximum": 0.11076743019561947
+                    },
+                    "D3": {
+                      "minimum": 0.5507605235231694,
+                      "maximum": 0.6433443085606774
+                    },
+                    "D4": {
+                      "minimum": 2.1148148148148147,
+                      "maximum": 3.8568102444703145
+                    },
+                    "D5": {
+                      "minimum": 0.2533338024700046,
+                      "maximum": 0.27201591563773947
+                    }
+                  },
+                  "4": {
+                    "D1": {
+                      "minimum": 0.7710258898023796,
+                      "maximum": 0.7729203992833376
+                    },
+                    "D2": {
+                      "minimum": 0.11074767917442133,
+                      "maximum": 0.11076743019561947
+                    },
+                    "D3": {
+                      "minimum": 0.5507605235231694,
+                      "maximum": 0.6433443085606774
+                    },
+                    "D4": {
+                      "minimum": 2.1148148148148147,
+                      "maximum": 3.8568102444703145
+                    },
+                    "D5": {
+                      "minimum": 0.2533338024700046,
+                      "maximum": 0.27201591563773947
+                    }
+                  }
+                }
+              }
+            },
+            "comparison_summary": "default 128-lane top synthesis and complete fifteen-cell/twenty-seven-execution benchmark completed concurrently; dependent five-domain recomparison completed; critical-path preparation only, not aggregate or physical acceptance",
+            "measured_elapsed_s": 2114.761469982099,
+            "scope": "bounded admitted scheduler-recovery preparation only",
+            "end": "2026-10-31T09:47:40.936633+00:00"
           }
         }
       ]
