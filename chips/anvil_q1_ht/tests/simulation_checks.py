@@ -11,6 +11,8 @@ retain measured compile time and settled build-storage counts.
 compact portability smoke and the complete original workload with Verilator.
 --namespaces runs sequential, repeated scenarios on one Evidence instance,
 including the inference-to-orphan-fault transition that previously collided.
+--frontend-namespaces repeats original dequant, normalized fault-control and
+reduced hierarchy synthesis on one Evidence with exclusive source-bound outputs.
 Diagnostic modes are mutually exclusive. Redirect evidence uses the separate
 verifier-simulation-redirect-* parent namespace; performance routing is unchanged.
 None of these commands replaces any mandatory matrix row or native gate.
@@ -19,7 +21,9 @@ None of these commands replaces any mandatory matrix row or native gate.
 import argparse
 import contextlib
 import io
+import json
 from pathlib import Path
+import re
 import shutil
 import sys
 import unittest
@@ -38,6 +42,7 @@ def argument_parser():
     modes.add_argument("--flatten-performance", action="store_true")
     modes.add_argument("--redirect", action="store_true")
     modes.add_argument("--namespaces", action="store_true")
+    modes.add_argument("--frontend-namespaces", action="store_true")
     parser.add_argument("--repair-of")
     parser.add_argument("--regression-child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scratch", help=argparse.SUPPRESS)
@@ -46,20 +51,22 @@ def argument_parser():
 
 class SimulationTierChecks(unittest.TestCase):
     def test_diagnostic_parent_output_routing(self):
-        for mode in ("compact", "performance", "flatten-performance", "redirect", "namespaces"):
+        for mode in ("compact", "performance", "flatten-performance", "redirect", "namespaces",
+                     "frontend-namespaces"):
             with self.subTest(mode=mode):
                 args = argument_parser().parse_args(["--" + mode])
                 with patch.object(sys.modules[__name__], "Evidence",
                                   side_effect=RuntimeError("stop before execution")) as factory:
                     with self.assertRaisesRegex(RuntimeError, "stop before execution"):
                         run(args)
-                expected = ("simulation-" + mode if mode in ("redirect", "namespaces")
+                expected = ("simulation-" + mode if mode in (
+                    "redirect", "namespaces", "frontend-namespaces")
                             else "simulation-tiering")
                 factory.assert_called_once_with(expected, None)
 
     def test_combined_diagnostic_modes_are_rejected_before_execution(self):
         modes = ("--compact", "--performance", "--flatten-performance", "--redirect",
-                 "--namespaces")
+                 "--namespaces", "--frontend-namespaces")
         for index, first in enumerate(modes):
             for second in modes[index + 1:]:
                 with self.subTest(first=first, second=second):
@@ -367,6 +374,77 @@ class SimulationTierChecks(unittest.TestCase):
         self.assertEqual([row["reused"] for row in trial.record["simulation_builds"]],
                          [False, True])
 
+    def test_frontend_sequential_repeated_calls_preserve_every_artifact(self):
+        trial = self.evidence()
+        trial.record["repair_of"] = "synthetic-regression"
+        shutil.copytree(ROOT / "rtl", trial.folder / "sources/rtl")
+        original_command = trial.command
+
+        def simulate(name, bench, sources, **kwargs):
+            folder = trial.folder / name
+            folder.mkdir(exist_ok=False)
+            (folder / "tb.sv").write_text(bench)
+            start, stop = map(int, re.search(
+                r"for \(i=(\d+);i<(\d+);", bench).groups())
+            errors, pairs, lanes = map(int, re.search(
+                r"if\(errors!=(\d+) \|\| pair_bins!=(\d+) \|\|\s*lane_bins!=(\d+)", bench).groups())
+            trial.record["observations"].append({"observed_counters": [{
+                "encodings": stop - start, "expected_errors": errors,
+                "directed_pairs": pairs, "physical_lanes": lanes, "cycles": 1,
+            }]})
+
+        def command(argv, label, **kwargs):
+            if argv[0] == "yosys":
+                if "-l" in argv:
+                    (ROOT / argv[argv.index("-l") + 1]).write_text("synthetic tool log\n")
+                else:
+                    raise RuntimeError("synthetic stop before synthesis result")
+            return original_command(argv, label, **kwargs)
+
+        trial.simulate, trial.command = simulate, command
+        retained = {}
+        for seed in (17, 89):
+            experiments.dequant(trial, seed)
+            experiments.synthesis_fault_control(trial)
+            with self.assertRaisesRegex(RuntimeError, "synthetic stop"):
+                experiments.synthesis_probe(trial, experiments.MATRIX[1])
+            for path, digest in retained.items():
+                self.assertEqual(file_sha256(ROOT / path), digest)
+            retained = {trial.relative(path): file_sha256(path)
+                        for path in trial.folder.rglob("*") if path.is_file()}
+        invocations = trial.record["artifact_invocations"]
+        self.assertEqual(len(invocations), 14)
+        self.assertEqual(len({row["directory"] for row in invocations}), 14)
+        self.assertEqual(len(trial.record["dequant_invocations"]), 6)
+        self.assertEqual(len(trial.record["yosys_frontend_adapters"]), 4)
+        for row in invocations:
+            self.assertIn(row["source_binding_sha256"][:12], row["directory"])
+
+    def test_occupied_artifact_namespace_fails_before_rewriting(self):
+        trial = self.evidence()
+        shutil.copytree(ROOT / "rtl", trial.folder / "sources/rtl")
+        with patch("experiments.uuid.uuid4") as identifier:
+            identifier.return_value.hex = "a" * 32
+            folder = experiments.artifact_invocation(trial, "exclusive")
+            sentinel = folder / "retained.txt"
+            sentinel.write_text("must not change\n")
+            with self.assertRaises(FileExistsError):
+                experiments.artifact_invocation(trial, "exclusive")
+        self.assertEqual(sentinel.read_text(), "must not change\n")
+        self.assertEqual(len(trial.record["artifact_invocations"]), 1)
+
+    def test_artifact_namespace_binds_actual_source_changes(self):
+        trial = self.evidence()
+        rtl = trial.folder / "input-rtl"
+        rtl.mkdir()
+        source = rtl / "source.sv"
+        source.write_text("module first; endmodule\n")
+        experiments.artifact_invocation(trial, "source-bound", rtl)
+        source.write_text("module second; endmodule\n")
+        experiments.artifact_invocation(trial, "source-bound", rtl)
+        first, second = trial.record["artifact_invocations"]
+        self.assertNotEqual(first["source_binding_sha256"], second["source_binding_sha256"])
+
     def test_changed_options_or_bench_require_another_build(self):
         trial = self.evidence()
         pool = {}
@@ -475,6 +553,7 @@ def compared_case(parent, label, mode, simulator, config=0, optimization="-O3",
 
 def run(args):
     probe = ("simulation-redirect" if args.redirect else
+             "simulation-frontend-namespaces" if args.frontend_namespaces else
              "simulation-namespaces" if args.namespaces else "simulation-tiering")
     evidence = Evidence(probe, args.repair_of)
     evidence.record["scope"] = (
@@ -488,10 +567,69 @@ def run(args):
             "simulation-tier-regression")
         for tool, flags in (("python3", ["--version"]), ("iverilog", ["-V"]),
                             ("vvp", ["-V"]), ("verilator", ["--version"]),
-                            ("g++", ["--version"])):
+                            ("g++", ["--version"]), ("yosys", ["-V"])):
             if shutil.which(tool) is None:
                 raise RuntimeError(f"required diagnostic tool unavailable: {tool}")
             evidence.command([tool, *flags], "cxx-version" if tool == "g++" else tool + "-version")
+        if args.frontend_namespaces:
+            retained = {}
+            for seed in (17, 89):
+                experiments.dequant(evidence, seed)
+                experiments.synthesis_fault_control(evidence)
+                experiments.synthesis_probe(evidence, experiments.MATRIX[1])
+                for path, digest in retained.items():
+                    if file_sha256(ROOT / path) != digest:
+                        raise AssertionError("earlier frontend artifact changed: " + path)
+                retained = {evidence.relative(path): file_sha256(path)
+                            for path in evidence.folder.rglob("*")
+                            if path.is_file() and path.name != "receipt.json"}
+            invocations = evidence.record["artifact_invocations"]
+            if (len(invocations) != 14 or
+                    len({row["directory"] for row in invocations}) != 14 or
+                    len(evidence.record["dequant_invocations"]) != 6 or
+                    len(evidence.record["yosys_frontend_adapters"]) != 4):
+                raise AssertionError("incomplete repeated frontend namespace comparisons")
+            evidence.record["frontend_namespace_regression"] = {
+                "exclusive_invocations": 14, "exhaustive_dequant_runs": 6,
+                "compared_encodings": sum(row["encoding_count"]
+                                          for row in evidence.record["dequant_invocations"]),
+                "fault_control_syntheses": 4, "reduced_hierarchy_syntheses": 2,
+                "scope": "namespace repair, not full-default synthesis or campaign acceptance",
+            }
+            if args.repair_of:
+                predecessor = ROOT / args.repair_of
+                chain = []
+                while True:
+                    if (not predecessor.resolve().is_relative_to(ROOT / "evidence/preparation")
+                            or str(predecessor) in {row["path"] for row in chain}):
+                        raise ValueError("invalid or cyclic repair receipt chain")
+                    previous = json.loads(predecessor.read_text())
+                    chain.append({"path": str(predecessor),
+                                  "receipt": evidence.relative(predecessor),
+                                  "sha256": file_sha256(predecessor)})
+                    if (predecessor.parent / "dequant-vectors.hex").is_file():
+                        break
+                    if not previous.get("repair_of"):
+                        raise ValueError("repair chain lacks the original collision receipt")
+                    predecessor = ROOT / previous["repair_of"]
+                evidence.record["repair_chain"] = [
+                    {key: value for key, value in row.items() if key != "path"} for row in chain]
+                previous = json.loads(predecessor.read_text())
+                vector = predecessor.parent / "dequant-vectors.hex"
+                evidence.record["predecessor_vector_disclosure"] = {
+                    "receipt": evidence.relative(predecessor),
+                    "receipt_sha256": file_sha256(predecessor),
+                    "vector": evidence.relative(vector),
+                    "current_sha256": file_sha256(vector),
+                    "last_recorded_sha256": previous.get("runtime_input_sha256", {}).get(
+                        evidence.relative(vector)),
+                    "limitation": "The failed normalized invocation overwrote the original "
+                                  "vector file and its binding before the directory collision. "
+                                  "The original pre-overwrite binding is not recoverable from "
+                                  "this finalized receipt; matching its last binding does not "
+                                  "independently certify the earlier simulation input.",
+                }
+            evidence.flush()
         if args.compact:
             for mode in ("AWQ", "BF16"):
                 interpreted = compared_case(evidence, "compact-" + mode.lower() + "-icarus",
@@ -572,7 +710,6 @@ def run(args):
                     redirects = trial.record["simulation_tier_redirects"]
                     if len(redirects) != 1:
                         raise AssertionError("missing simulator redirect provenance")
-                    import json
                     smoke_path = ROOT / redirects[0]["compact_smoke_receipt"]
                     smoke = json.loads(smoke_path.read_text())
                     if (smoke.get("outcome") != "probe_passed" or
@@ -619,8 +756,8 @@ if __name__ == "__main__":
         sys.argv = sys.argv[:1]
         unittest.main()
     elif (arguments.compact or arguments.performance or arguments.flatten_performance or
-          arguments.redirect or arguments.namespaces):
+          arguments.redirect or arguments.namespaces or arguments.frontend_namespaces):
         raise SystemExit(run(arguments))
     else:
         parser.error("choose --compact, --performance, --flatten-performance, --redirect "
-                     "or --namespaces")
+                     "--namespaces or --frontend-namespaces")

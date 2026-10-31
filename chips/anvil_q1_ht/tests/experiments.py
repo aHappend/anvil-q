@@ -355,14 +355,40 @@ endmodule
     evidence.flush()
 
 
+def artifact_invocation(evidence, label, rtl_root=None):
+    source_dir = rtl_root or getattr(evidence, "rtl_root", evidence.folder / "sources/rtl")
+    sources = {evidence.relative(path): hashlib.sha256(path.read_bytes()).hexdigest()
+               for path in sorted(source_dir.glob("*.sv"))}
+    if not sources:
+        raise ValueError("artifact invocation requires RTL sources")
+    digest = hashlib.sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest()
+    folder = evidence.folder / f"{label}-{digest[:12]}-{uuid.uuid4().hex[:12]}"
+    folder.mkdir(exist_ok=False)
+    evidence.record.setdefault("artifact_invocations", []).append({
+        "label": label, "directory": evidence.relative(folder),
+        "source_sha256": sources, "source_binding_sha256": digest,
+    })
+    evidence.flush()
+    return folder
+
+
+def bind_artifacts(evidence, paths):
+    for path in paths:
+        evidence.record.setdefault("runtime_input_sha256", {})[evidence.relative(path)] = (
+            hashlib.sha256(path.read_bytes()).hexdigest())
+    evidence.flush()
+
+
 def dequant(evidence, seed, rtl_root=None):
     """Exhaust encodings and compare every lane/nibble pair at three finite scales."""
     rng = random.Random(seed)
-    path = evidence.folder / "dequant-vectors.hex"
+    folder = artifact_invocation(
+        evidence, "dequant-normalized" if rtl_root is not None else "dequant-original", rtl_root)
+    path = folder / "dequant-vectors.hex"
     count = 0
     expected_errors = []
     directed_scales = (0x0001, 0x2400, 0x7bff)
-    with path.open("w") as out:
+    with path.open("x") as out:
         for mode in range(2):
             for bits in range(65536):
                 lane = bits % 8
@@ -506,7 +532,7 @@ endmodule
             "VECTOR_START", str(start)).replace("VECTOR_STOP", str(stop)).replace(
             "VECTOR_COUNT", str(count)).replace("EXPECTED_ERRORS", str(errors)).replace(
             "EXPECTED_PAIRS", str(pairs)).replace("EXPECTED_LANES", "8" if pairs else "0")
-        evidence.simulate(f"dequant-{index}", program, sources, rtl_root=rtl_root)
+        evidence.simulate(f"{folder.name}-batch-{index}", program, sources, rtl_root=rtl_root)
         counters = evidence.record["observations"][-1]["observed_counters"]
         if (len(counters) != 1 or counters[0].get("encodings") != stop - start or
                 counters[0].get("expected_errors") != errors or
@@ -530,6 +556,11 @@ endmodule
                      "stall stability and response retirement",
         "scope": "dequant_primitive_not_full_tensor_or_decoder_coverage",
     }
+    evidence.record.setdefault("dequant_invocations", []).append({
+        "directory": evidence.relative(folder), "seed": seed,
+        "vector_path": evidence.relative(path),
+        "encoding_count": compared, "coverage": dict(evidence.record["dequant_coverage"]),
+    })
     evidence.flush()
 
 
@@ -1831,8 +1862,7 @@ def yosys_sources(evidence):
         if body.count(old) != 1:
             raise AssertionError(f"unexpected package syntax: {old}")
         body = body.replace(old, new)
-    normalized = evidence.folder / "yosys-input"
-    normalized.mkdir()
+    normalized = artifact_invocation(evidence, "yosys-input")
     for original in sorted((evidence.folder / "sources/rtl").glob("*.sv")):
         if original.name == package_path.name:
             continue
@@ -1851,7 +1881,8 @@ def yosys_sources(evidence):
                 r"\1(* nomem2reg *) \2",
                 text,
             )
-        (normalized / original.name).write_text(text)
+        with (normalized / original.name).open("x") as stream:
+            stream.write(text)
     evidence.record["yosys_frontend_adapter"] = {
         "operations": ["inline numerical package definitions in referencing modules",
                        "remove package qualification after local definition",
@@ -1860,13 +1891,18 @@ def yosys_sources(evidence):
         "behavior_check": "all 65536 FP16 scales and all 65536 BF16 encodings, independent oracle",
         "original_failure": evidence.record["repair_of"],
         "not_a_primitive_abstraction": True,
+        "directory": evidence.relative(normalized),
     }
+    evidence.record.setdefault("yosys_frontend_adapters", []).append(
+        dict(evidence.record["yosys_frontend_adapter"]))
+    bind_artifacts(evidence, sorted(normalized.glob("*.sv")))
     evidence.flush()
     dequant(evidence, 17, normalized)
     return " ".join(evidence.relative(path) for path in sorted(normalized.glob("*.sv")))
 
 
 def synthesis_fault_control(evidence):
+    folder = artifact_invocation(evidence, "synthesis-control")
     sources = yosys_sources(evidence)
     parameters = {
         "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
@@ -1876,14 +1912,17 @@ def synthesis_fault_control(evidence):
         if top.endswith("decoder"):
             parameters.update(GROUP_SIZE=1, VOCAB_SIZE=8)
         options = "".join(f" -chparam {key} {value}" for key, value in parameters.items())
-        script = evidence.folder / (top + ".ys")
-        script.write_text(
-            f"read_verilog -sv -defer {sources}\n"
-            f"hierarchy -check -top {top}{options}\n"
-            "proc\nopt\ncheck -assert\n"
-            "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor\n")
-        evidence.command(["yosys", "-l", evidence.relative(evidence.folder / (top + "-tool.log")),
-                          "-s", evidence.relative(script)], top)
+        script = folder / (top + ".ys")
+        with script.open("x") as stream:
+            stream.write(
+                f"read_verilog -sv -defer {sources}\n"
+                f"hierarchy -check -top {top}{options}\n"
+                "proc\nopt\ncheck -assert\n"
+                "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor\n")
+        bind_artifacts(evidence, [script])
+        evidence.command(["yosys", "-l", evidence.relative(folder / (top + "-tool.log")),
+                          "-s", evidence.relative(script)], folder.name + "-" + top)
+        bind_artifacts(evidence, [folder / (top + "-tool.log")])
         evidence.record["observations"].append({
             "scope": "focused_fault_control_synthesis_not_full_product",
             "top": top, "parameters": dict(parameters),
@@ -1893,9 +1932,10 @@ def synthesis_fault_control(evidence):
 
 
 def synthesis_probe(evidence, shape=None):
+    folder = artifact_invocation(evidence, "synthesis")
     sources = yosys_sources(evidence)
-    output = evidence.folder / "synthesis.json"
-    script = evidence.folder / "synthesis.ys"
+    output = folder / "synthesis.json"
+    script = folder / "synthesis.ys"
     parameters = ""
     if shape is not None:
         names = ("NUM_LAYERS", "HIDDEN_SIZE", "INTERMEDIATE_SIZE", "NUM_Q_HEADS",
@@ -1903,14 +1943,17 @@ def synthesis_probe(evidence, shape=None):
                  "TILE_BEATS", "KV_WINDOW")
         parameters = "".join(f" -chparam {name} {value}"
                              for name, value in zip(names, vars(shape).values()))
-    script.write_text(
-        f"read_verilog -sv -defer {sources}\n"
-        f"hierarchy -check -top anvil_q1_ht_top{parameters}\n"
-        "proc\nopt\nmemory_dff\nmemory_collect\nopt_clean\ncheck -assert\n"
-        "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor\n"
-        f"write_json {evidence.relative(output)}\nstat\n")
-    evidence.command(["yosys", "-s", evidence.relative(script)], "synthesis",
+    with script.open("x") as stream:
+        stream.write(
+            f"read_verilog -sv -defer {sources}\n"
+            f"hierarchy -check -top anvil_q1_ht_top{parameters}\n"
+            "proc\nopt\nmemory_dff\nmemory_collect\nopt_clean\ncheck -assert\n"
+            "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor\n"
+            f"write_json {evidence.relative(output)}\nstat\n")
+    bind_artifacts(evidence, [script])
+    evidence.command(["yosys", "-s", evidence.relative(script)], folder.name,
                      timeout=14400 if shape is None else 3600)
+    bind_artifacts(evidence, [output])
     design = json.loads(output.read_text())
     modules = design["modules"]
     top = modules["anvil_q1_ht_top"]
