@@ -34,8 +34,15 @@ def main():
     parser.add_argument("--suite", choices=("behavior", "mutations", "synthesis",
                         "benchmark-contract", "reproduction", "full-model-benchmarks"))
     parser.add_argument("--probe", choices=(*PROBES, "divsqrt", "exp", "sincos", "mutations",
-                                          "rmsnorm", "swiglu", "mutation-rounding", "top"))
+                                          "rmsnorm", "swiglu", "mutation-rounding", "top",
+                                          "synthesis-array", "synthesis-top", "parameters", "top-startup",
+                                          "cdc-fifo", "cdc-mailbox", "control", "compatibility"))
     parser.add_argument("--simulator", choices=("iverilog", "verilator"), default="iverilog")
+    parser.add_argument("--mode", choices=("bf16", "fp16", "w4"), default="bf16")
+    parser.add_argument("--geometry", choices=("singleton", "compact", "gqa", "medium"),
+                        default="compact")
+    parser.add_argument("--seed", type=int, choices=(17, 43, 89), default=17)
+    parser.add_argument("--threshold", type=lambda x: int(x, 0), default=0)
     parser.add_argument("--repair-of", help="project-relative retained receipt")
     args = parser.parse_args()
     if bool(args.suite) == bool(args.probe):
@@ -56,9 +63,37 @@ def main():
             if args.probe:
                 if suite in PROBES:
                     check = PROBES[suite](directory, args.simulator)
-                elif suite == "top":
+                elif suite in ("top", "top-startup"):
                     import integration_checks
-                    check = integration_checks.top(directory, args.simulator)
+                    from decoder_reference import Geometry
+                    geometries = {
+                        "singleton": Geometry(vocabulary=1, sequence=1, window=1),
+                        "compact": Geometry(),
+                        "gqa": Geometry(2, 24, 40, 3, 1, 8, 8, 31, 9, 3, 3),
+                        "medium": Geometry(2, 64, 128, 4, 2, 16, 16, 257, 17, 3, 5),
+                    }
+                    check = integration_checks.top(
+                        directory, args.simulator, geometries[args.geometry],
+                        {"bf16": 0, "fp16": 1, "w4": 2}[args.mode], args.seed,
+                        batch=args.geometry != "singleton", startup=suite == "top-startup",
+                        threshold=args.threshold)
+                elif suite in ("synthesis-array", "synthesis-top"):
+                    import synthesis_checks
+                    check = {"name": suite, "results": synthesis_checks.synthesize(
+                        directory, ("anvil_q1_ht2_top" if suite == "synthesis-top"
+                                    else "anvil_q1_ht2_tile_batch_mac",))}
+                elif suite == "parameters":
+                    import parameter_checks
+                    check = {"name": suite, "results": parameter_checks.run(directory)}
+                elif suite in ("cdc-fifo", "cdc-mailbox", "control"):
+                    import protocol_checks
+                    check = (protocol_checks.control(directory, args.simulator) if suite == "control"
+                             else protocol_checks.cdc(directory, "mailbox" if suite == "cdc-mailbox"
+                                                      else "response_fifo", args.simulator))
+                elif suite == "compatibility":
+                    import compatibility_checks
+                    check = compatibility_checks.run(
+                        directory, {"bf16": 0, "fp16": 1, "w4": 2}[args.mode], args.seed)
                 elif suite == "mutations":
                     import mutation_checks
                     check = {"name": "mutations", "results": mutation_checks.run(directory)}
@@ -75,6 +110,9 @@ def main():
             elif suite == "mutations":
                 import mutation_checks
                 result["checks"] = mutation_checks.run(directory)
+            elif suite == "synthesis":
+                import synthesis_checks
+                result["checks"] = synthesis_checks.synthesize(directory)
             else:
                 raise NotImplementedError(f"{suite}: mandatory verification suite not yet implemented")
             code = 0

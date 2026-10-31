@@ -43,15 +43,19 @@ def emit_rows(path, rows):
     return count
 
 
-def simulate(directory, name, body, modules, simulator="verilator", rtl_dir=None):
+def simulate(directory, name, body, modules, simulator="verilator", rtl_dir=None,
+             source_paths_override=None):
     work = directory / f"{name}-{uuid.uuid4().hex[:8]}"
     work.mkdir(exist_ok=False)
     tb = work / "tb.sv"
     tb.write_text(HEADER + body + "\nendmodule\n")
     source_dir = rtl_dir or ROOT / "rtl"
-    sources = [source_dir / (PREFIX + module + ".sv") for module in
-               dict.fromkeys(["00_fp_pkg", "reset_sync"] + modules)]
-    inputs = [tb, *sources, *sorted(directory.glob("*.txt"))]
+    sources = (list(source_paths_override) if source_paths_override is not None else
+               [source_dir / (PREFIX + module + ".sv") for module in
+                dict.fromkeys(["00_fp_pkg", "reset_sync"] + modules)])
+    inputs = [tb, *sources, *(p for p in sorted(directory.iterdir())
+              if p.is_file() and p.suffix in (".txt", ".hex", ".json")
+              and p.name not in ("stdout.txt", "stderr.txt", "receipt.json"))]
     source_paths = [relative(p) for p in sources]
     if simulator == "iverilog":
         binary = work / "simulation.vvp"

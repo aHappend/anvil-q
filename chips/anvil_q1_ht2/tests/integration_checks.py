@@ -180,7 +180,8 @@ CSR_TASK = r"""
 """
 
 
-def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, batch=True):
+def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, batch=True,
+        startup=False, threshold=0):
     image, tokens, logits = fixture(directory, geometry, mode, seed)
     parameters = ",\n".join(f".{key}({value})" for key, value in geometry.parameters().items())
     setup = r"""
@@ -194,6 +195,7 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
     repeat(500) tick();
     csr(0,16'h100,0,0,1,0);
     csr(1,16'h100,CONFIG,0,0,0);
+    csr(1,16'h104,THRESHOLD,0,0,0);
     fd=$fopen("DESCRIPTORS","r");
     if (!fd) $fatal(1,"FIXTURE_OPEN");
     while (!$feof(fd)) begin
@@ -213,6 +215,7 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
     $fclose(fd);
     if (descriptors_read!=DESCRIPTOR_COUNT) $fatal(1,"DESCRIPTOR_COVERAGE");
     csr(1,16'h8,6,0,0,0);
+    repeat(100) tick();
     csr(0,16'h108,0,0,1,3);
     EXPECTED_LOGITS
     @(negedge clk); token_id=INITIAL_TOKEN; token_pos=0; token_valid=1;
@@ -240,6 +243,10 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
     csr(0,16'h110,0,0,1,1);
     csr(0,16'h114,0,0,1,0);
     BATCH_BODY
+    csr(0,16'h120,0,0,1,reads*64);
+    csr(0,16'h124,0,0,1,0);
+    csr(0,16'h128,0,0,1,DENSE_BYTES);
+    csr(0,16'h12c,0,0,1,0);
     if (reads==0 || writes==0) $fatal(1,"DDR_CONNECTIVITY");
     $display("CHECK compared=%0d logits=%0d commits=%0d read_beats=%0d write_beats=%0d csr=%0d",
              checked,received,commits,reads,writes,csr_calls);
@@ -287,12 +294,45 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
         "VOCAB": str(geometry.vocabulary), "CONFIG": str(mode | (12 if batch else 0)),
         "INITIAL_TOKEN": str(tokens[0]), "DESCRIPTORS": relative(directory / "descriptors.txt"),
         "DESCRIPTOR_COUNT": str(len(image.descriptors)),
+        "THRESHOLD": str(threshold),
+        "DENSE_BYTES": str(geometry.layers * geometry.intermediate *
+                           ((geometry.hidden + 63) // 64) * (64 if mode == 2 else 128) *
+                           (2 if batch and geometry.sequence >= 5 else 1)),
     }
     for key, value in replacements.items():
         setup = setup.replace(key, value)
+    if startup:
+        setup = r"""
+  initial begin
+    INITIAL_CHECK
+    repeat(4) tick(); @(negedge clk); rst_n=1; repeat(500) tick();
+    csr(0,16'h0,0,0,1,32'h02000001);
+    csr(0,16'h100,0,0,1,0);
+    csr(0,16'h104,0,0,1,0);
+    csr(0,16'h108,0,0,1,1);
+    csr(0,16'h10c,0,0,1,0);
+    csr(0,16'h138,0,0,1,0);
+    csr(1,16'h10c,1,1,1,0);
+    csr(0,16'h114,0,1,1,0);
+    csr(0,16'h110,0,0,1,0);
+    csr(0,16'h114,0,0,1,0);
+    csr(0,16'h114,0,1,1,0);
+    csr(0,16'h120,0,0,1,0);
+    csr(0,16'h124,0,0,1,0);
+    csr(1,16'h8,4,0,0,0); repeat(100) tick();
+    @(negedge clk); #2; rst_n=0;
+    #1; reset_check(); repeat(4) tick();
+    @(negedge clk); rst_n=1; repeat(500) tick();
+    csr(0,16'h100,0,0,1,0);
+    if (reads!=0 || writes!=0) $fatal(1,"STARTUP_UNSOLICITED_MEMORY");
+    $display("CHECK compared=%0d csr=%0d startup_only=1",checked,csr_calls);
+    $finish;
+  end
+""".replace("INITIAL_CHECK", "#1; reset_check();" if simulator == "verilator" else "#0; reset_check();")
     body = (TOP_PINS.replace("PARAMETERS", parameters) +
             MEMORY.replace("MEMORY_WORDS", str(len(image.memory) // 64)).replace(
                 "MEMORY_PATH", relative(directory / "memory.hex")) + CSR_TASK + setup)
     modules = [path.stem.removeprefix("anvil_q1_ht2_")
                for path in sorted((ROOT / "rtl").glob("anvil_q1_ht2_*.sv"))]
-    return simulate(directory, f"top-{mode}-{seed}-{simulator}", body, modules, simulator)
+    return simulate(directory, f"top-{'startup-' if startup else ''}{mode}-{seed}-{simulator}",
+                    body, modules, simulator)
