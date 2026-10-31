@@ -1,0 +1,360 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-10-31T19:55:27.775437+00:00",
+  "project_dir": "/data/sufeng/anvil-q3-line/workspace/project/.vulcan/engineering/run-0002/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "failed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q3-line/workspace/project/.vulcan/engineering/run-0002/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
+    "errors": [],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 0,
+    "netlist_mode": "post_map",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": -47.936,
+    "wns_hold_ns": -0.171,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 20,
+    "failing_hold_count": 20,
+    "setup_paths": [
+      {
+        "slack_ns": -47.936,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.936,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.934,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.934,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.934,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.934,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][7]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][7]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][1]"
+      },
+      {
+        "slack_ns": -47.933,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_bank_scheduler:bank_scheduler",
+        "to_node": "owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": -0.171,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[18]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[18]"
+      },
+      {
+        "slack_ns": -0.17,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[22]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[4]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.17,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[11]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[11]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.17,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[4]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[4]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.17,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[22]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[22]"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[20]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[2]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[18]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[0]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[8]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[8]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[2]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[2]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[21]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[21]"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[20]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[20]"
+      },
+      {
+        "slack_ns": -0.169,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[19]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[19]"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[21]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[3]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[23]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[5]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[14]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[14]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[13]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[13]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[5]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[5]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[3]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[3]~_Duplicate_1"
+      },
+      {
+        "slack_ns": -0.168,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[24]|anvil_q3_decoder_layer:decoder|anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|sigmoid[24]"
+      },
+      {
+        "slack_ns": -0.167,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_decoder_layer:decoder",
+        "to_node": "anvil_q3_swiglu_mlp:mlp|anvil_q3_elementwise:silu_product|anvil_q3_silu:silu|anvil_q3_divider:divider|implementation.quotient_reg[23]|anvil_q3_decoder_layer:decoder|anvil_q3_elementwise:residual|anvil_q3_silu:silu|anvil_q3_exp:exp_unit|residue[23]"
+      }
+    ],
+    "stderr_tail": []
+  },
+  "detail": "Setup WNS -47.936 ns < 0.000 ns (worst path: anvil_q3_bank_scheduler:bank_scheduler -> owner[0][5]|anvil_q3_bank_scheduler:bank_scheduler|stage[17][0])",
+  "fit_mode": "plan_plus_post_map_sta",
+  "top_module": "anvil_q3_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 17.26,
+  "critical_path_delay_ns": 57.936,
+  "fitter_resource_summary": {
+    "alms_used": 159448,
+    "alms_total": 427200,
+    "alms_pct": "37 %",
+    "total_registers": 86560,
+    "block_memory_bits": 0,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 402,
+    "virtual_pins": 2548
+  },
+  "parameters": {
+    "PROFILE": 1,
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 16,
+    "INTERMEDIATE_SIZE": 16,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 2,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "CACHE_BLOCK": 8,
+    "TILE_K": 8,
+    "TILE_ROWS": 2,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "5b4779b9581baff845d3b608a782ed1bddf99a6d889f1597c82ba1d5820bb7d0",
+  "applicable": true
+}

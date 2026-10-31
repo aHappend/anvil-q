@@ -1,0 +1,25 @@
+Fully registered fixed point DSP blocks : 0 / 402 ( 0 % )
+Partially registered fixed point DSP blocks : 402 / 402 ( 100 % )
+Unregistered fixed point DSP blocks : 0 / 402 ( 0 % )
+ : 
+Reasons candidate registers could not be packed: : 
+  Mismatch    - Control signal mismatch (different clock/enable or clears pack to same register bank) : 88 / 402 ( 22 % )
+Fitter Status : Successful - Sat Oct 31 12:53:11 2026
+Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+Revision Name : top
+Top-level Entity Name : anvil_q3_top
+Family : Arria 10
+Device : 10AX115N2F45E1SG
+Timing Models : Final
+Logic utilization (in ALMs) : 159,448 / 427,200 ( 37 % )
+  * Logic utilization warning : A large number of ALMs contain virtual pins and count towards logic utilization
+  * ALMs containing virtual pins : 1,275 / 427,200 ( < 1 % )
+Total registers : 86560
+Total pins : 0 / 992 ( 0 % )
+Total virtual pins : 2,548
+Total block memory bits : 0 / 55,562,240 ( 0 % )
+Total RAM Blocks : 0 / 2,713 ( 0 % )
+Total DSP Blocks : 402 / 1,518 ( 26 % )
+Total HSSI RX channels : 0 / 48 ( 0 % )
+Total HSSI TX channels : 0 / 48 ( 0 % )
+Total PLLs : 0 / 112 ( 0 % )
