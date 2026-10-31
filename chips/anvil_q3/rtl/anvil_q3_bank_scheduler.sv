@@ -85,7 +85,6 @@ module anvil_q3_bank_scheduler #(
   wire [SIW-1:0] ingress_slot=request_slot[1];
   wire [BIW-1:0] ingress_bank=request_bank[1];
   wire bad_response=rst_n && |bad_bank_response;
-  integer i;
 
   assign idle=rst_n && !flush && !draining && !(|live);
   genvar b, s, c, n;
@@ -116,9 +115,30 @@ module anvil_q3_bank_scheduler #(
           response_data<=rdata[client_head[c]];
         end
       end
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          client_head[c]<=0; client_tail[c]<=0; client_count[c]<=0;
+        end else if (flush || bad_response) begin
+          client_count[c]<=0;
+        end else if (!draining) begin
+          case ({(ingress_valid && ingress==c),retire_client[c]})
+            2'b10: client_count[c]<=client_count[c]+1'b1;
+            2'b01: client_count[c]<=client_count[c]-1'b1;
+            default: begin end
+          endcase
+          if (retire_client[c] && client_count[c]>1)
+            client_head[c]<=successor[client_head[c]];
+          if (ingress_valid && ingress==c) begin
+            client_tail[c]<=ingress_slot;
+            if (client_count[c]==0 || (client_count[c]==1 && retire_client[c]))
+              client_head[c]<=ingress_slot;
+          end
+        end
+      end
     end
     for (s=0;s<SLOTS;s=s+1) begin: slots
       localparam BANK=s/SQ;
+      localparam QUEUE_INDEX=s-BANK*SQ;
       wire [SC-1:0] retire_match, append_match;
       for (c=0;c<SC;c=c+1) begin: client_match
         assign retire_match[c]=retire_client[c] && client_head[c]==s;
@@ -133,6 +153,37 @@ module anvil_q3_bank_scheduler #(
         held_slot[BANK]==s;
       assign returning[s]=mem_rsp_valid[BANK] && response_slot[BANK]==s;
       assign live[s]=stage[s]!=FREE;
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          stage[s]<=FREE; owner[s]<=0; tag[s]<=0; wr[s]<=0;
+          response_error[s]<=0; kind[s]<=0; proj[s]<=0; layer[s]<=0;
+          row[s]<=0; col[s]<=0; wdata[s]<=0; rdata[s]<=0; successor[s]<=0;
+          dispatch_queue[s]<=0;
+        end else if (flush || bad_response) begin
+          if (returning[s]) stage[s]<=FREE;
+          else if (stage[s]==SENT || issuing[s]) stage[s]<=SENT;
+          else stage[s]<=FREE;
+        end else if (draining) begin
+          if (returning[s]) stage[s]<=FREE;
+        end else begin
+          if (returning[s]) stage[s]<=RETURNED;
+          else if (issuing[s]) stage[s]<=SENT;
+          else if (dispatching[s]) stage[s]<=HELD;
+          else if (ingress_valid && ingress_slot==s) stage[s]<=QUEUED;
+          else if (retiring[s]) stage[s]<=FREE;
+          if (ingress_valid && ingress_slot==s) begin
+            owner[s]<=ingress; tag[s]<=next_tag;
+            {wr[s],kind[s],layer[s],proj[s],row[s],col[s],wdata[s]}<=request_data[1];
+          end
+          if (append_link[s]) successor[s]<=ingress_slot;
+          if (enqueue[BANK] && queue_write[BANK]==QUEUE_INDEX)
+            dispatch_queue[s]<=ingress_slot;
+          if (returning[s]) begin
+            rdata[s]<=mem_rsp_rdata[BANK*32+:32];
+            response_error[s]<=mem_rsp_error[BANK];
+          end
+        end
+      end
     end
     for (b=0;b<SB;b=b+1) begin: banks
       wire available [1:2*QT-1];
@@ -185,6 +236,32 @@ module anvil_q3_bank_scheduler #(
         mem_req_wdata[b*32+:32]=mem_req_valid[b] ? wdata[held_slot[b]] : 32'd0;
         mem_req_tag[b*64+:64]=mem_req_valid[b] ? tag[held_slot[b]] : 64'd0;
       end
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          holding[b]<=0; held_slot[b]<=0;
+          queue_read[b]<=0; queue_write[b]<=0; queue_count[b]<=0;
+        end else if (flush || bad_response) begin
+          holding[b]<=0;
+          queue_read[b]<=0; queue_write[b]<=0; queue_count[b]<=0;
+        end else if (!draining) begin
+          case ({enqueue[b],dequeue[b]})
+            2'b10: queue_count[b]<=queue_count[b]+1'b1;
+            2'b01: queue_count[b]<=queue_count[b]-1'b1;
+            default: begin end
+          endcase
+          if (enqueue[b]) begin
+            if (queue_write[b]==SQ-1) queue_write[b]<=0;
+            else queue_write[b]<=queue_write[b]+1'b1;
+          end
+          if (dequeue[b]) begin
+            holding[b]<=1;
+            held_slot[b]<=dispatch_slot[b];
+            if (queue_read[b]==SQ-1) queue_read[b]<=0;
+            else queue_read[b]<=queue_read[b]+1'b1;
+          end
+          if (mem_req_valid[b] && mem_req_ready[b]) holding[b]<=0;
+        end
+      end
     end
     for (c=0;c<CT;c=c+1) begin: ingress_leaves
       if (c<SC) begin: real_client
@@ -226,14 +303,13 @@ module anvil_q3_bank_scheduler #(
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      holding<=0; next_tag<=0; wrap_pending<=0; draining<=0;
+      next_tag<=0; wrap_pending<=0; draining<=0;
       round_robin<=0; drain_done<=0; fault<=0;
     end else begin
       drain_done<=0;
       fault<=0;
       if (flush || bad_response) begin
         draining<=1;
-        holding<=0;
         if (bad_response) fault<=1;
       end else if (draining) begin
         if (!(|live)) begin
@@ -250,82 +326,6 @@ module anvil_q3_bank_scheduler #(
           else next_tag<=next_tag+1'b1;
           if (ingress==SC-1) round_robin<=0;
           else round_robin<=ingress+1'b1;
-        end
-      end
-    end
-    for (i=0;i<SLOTS;i=i+1) begin
-      if (!rst_n) begin
-        stage[i]<=FREE; owner[i]<=0; tag[i]<=0; wr[i]<=0;
-        response_error[i]<=0; kind[i]<=0; proj[i]<=0; layer[i]<=0;
-        row[i]<=0; col[i]<=0; wdata[i]<=0; rdata[i]<=0; successor[i]<=0;
-        dispatch_queue[i]<=0;
-      end else if (flush || bad_response) begin
-        if (returning[i]) stage[i]<=FREE;
-        else if (stage[i]==SENT || issuing[i]) stage[i]<=SENT;
-        else stage[i]<=FREE;
-      end else if (draining) begin
-        if (returning[i]) stage[i]<=FREE;
-      end else begin
-        if (returning[i]) stage[i]<=RETURNED;
-        else if (issuing[i]) stage[i]<=SENT;
-        else if (dispatching[i]) stage[i]<=HELD;
-        else if (ingress_valid && ingress_slot==i) stage[i]<=QUEUED;
-        else if (retiring[i]) stage[i]<=FREE;
-        if (ingress_valid && ingress_slot==i) begin
-          owner[i]<=ingress; tag[i]<=next_tag;
-          {wr[i],kind[i],layer[i],proj[i],row[i],col[i],wdata[i]}<=request_data[1];
-        end
-        if (append_link[i]) successor[i]<=ingress_slot;
-      end
-    end
-    for (i=0;i<SC;i=i+1) begin
-      if (!rst_n) begin
-        client_head[i]<=0; client_tail[i]<=0; client_count[i]<=0;
-      end else if (flush || bad_response) begin
-        client_count[i]<=0;
-      end else if (!draining) begin
-        case ({(ingress_valid && ingress==i),retire_client[i]})
-          2'b10: client_count[i]<=client_count[i]+1'b1;
-          2'b01: client_count[i]<=client_count[i]-1'b1;
-          default: begin end
-        endcase
-        if (retire_client[i] && client_count[i]>1)
-          client_head[i]<=successor[client_head[i]];
-        if (ingress_valid && ingress==i) begin
-          client_tail[i]<=ingress_slot;
-          if (client_count[i]==0 || (client_count[i]==1 && retire_client[i]))
-            client_head[i]<=ingress_slot;
-        end
-      end
-    end
-    for (i=0;i<SB;i=i+1) begin
-      if (!rst_n) begin
-        held_slot[i]<=0; queue_read[i]<=0; queue_write[i]<=0; queue_count[i]<=0;
-      end else if (flush || bad_response) begin
-        queue_read[i]<=0; queue_write[i]<=0; queue_count[i]<=0;
-      end else if (!draining) begin
-        case ({enqueue[i],dequeue[i]})
-          2'b10: queue_count[i]<=queue_count[i]+1'b1;
-          2'b01: queue_count[i]<=queue_count[i]-1'b1;
-          default: begin end
-        endcase
-        if (enqueue[i]) begin
-          dispatch_queue[i*SQ+queue_write[i]]<=ingress_slot;
-          if (queue_write[i]==SQ-1) queue_write[i]<=0;
-          else queue_write[i]<=queue_write[i]+1'b1;
-        end
-        if (dequeue[i]) begin
-          holding[i]<=1;
-          held_slot[i]<=dispatch_slot[i];
-          if (queue_read[i]==SQ-1) queue_read[i]<=0;
-          else queue_read[i]<=queue_read[i]+1'b1;
-        end
-        if (mem_req_valid[i] && mem_req_ready[i]) begin
-          holding[i]<=0;
-        end
-        if (mem_rsp_valid[i] && response_slot[i]>=0) begin
-          rdata[response_slot[i]]<=mem_rsp_rdata[i*32+:32];
-          response_error[response_slot[i]]<=mem_rsp_error[i];
         end
       end
     end

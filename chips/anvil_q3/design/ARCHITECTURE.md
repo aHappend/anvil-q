@@ -171,8 +171,15 @@ non-power-of-two and depth-one geometries. Flush discards mailbox, client-list
 and dispatch-FIFO validity, but retains SENT slots and any held request
 accepted on the flush edge until their matching responses drain. Tag wrap
 still waits for every live slot, including returned/mailboxed work, to retire.
-Loop temporaries are not storage: scheduler iteration is unconditional,
-GEMV's result-selector loop runs even when selection is disabled, and
+Scheduler state has fixed elaborated owners: each slot writes only its own
+response data/error, request fields, successor and dispatch-FIFO entry; each
+bank owns its hold register and queue pointers/count; each client owns its
+head/tail/count and response mailbox. Every sequential process has one
+reset-dominated branch. Response matching and queue-write pointer comparisons
+enable fixed destination registers rather than dynamically indexed writes
+across separate reset branches. Reset, flush, drain and normal-operation
+priorities and all public handshake cycles remain unchanged.
+Loop temporaries are not storage: GEMV's result-selector loop runs even when selection is disabled, and
 prefetch read lanes are elaborated instances with the original read-enable
 and padding conditions. No latch or timing acceptance is inferred from these
 source changes. The retained failed STA reported setup -47.936 ns and hold
