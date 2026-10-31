@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-10-31T08:31:49.956068+00:00",
+  "timestamp_utc": "2026-10-31T11:25:24.010428+00:00",
   "project_dir": "/data/sufeng/anvil-q2-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
