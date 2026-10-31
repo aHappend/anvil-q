@@ -2,9 +2,9 @@
   "chip": "Anvil-Q1-FP",
   "passed_checks": {
     "check:benchmark-validator-fail-closed-regressions": {
-      "attempt_id": 792,
-      "duration_s": 52.43496272293851,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-g7n3soit/receipt.json\"}\n",
+      "attempt_id": 803,
+      "duration_s": 49.9534263999667,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-y49nor3d/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -16,23 +16,23 @@
       "receipts": []
     },
     "check:maximum-frame-memory-capacity-diagnostics": {
-      "attempt_id": 795,
-      "duration_s": 102.43323904601857,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-wwsx9r8r/receipt.json\", \"production_collection_authorized\": false}\n",
+      "attempt_id": 806,
+      "duration_s": 101.71511127101257,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-e76b7i5z/receipt.json\", \"production_collection_authorized\": false}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:packed-storage-lossless-corruption-regressions": {
-      "attempt_id": 794,
-      "duration_s": 123.1828639479354,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-z4etcwfz/receipt.json\"}\n",
+      "attempt_id": 805,
+      "duration_s": 123.73115126299672,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-7ly8cl34/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:portable-clean-copy": {
-      "attempt_id": 791,
-      "duration_s": 907.6854258240201,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-jnnn6_jb/receipt.json\"}\n",
+      "attempt_id": 802,
+      "duration_s": 908.4435145070311,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-g7vhamh2/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -44,9 +44,9 @@
       "receipts": []
     },
     "check:receipt-publication-failure-regressions": {
-      "attempt_id": 793,
-      "duration_s": 117.95477907406166,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-9o_9vwgs/receipt.json\"}\n",
+      "attempt_id": 804,
+      "duration_s": 120.51801398792304,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-pqf9fqrv/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     }
