@@ -72,6 +72,21 @@ def encode(sign, magnitude, power, fmt):
     return sign_bit | (exponent << fmt.fraction) | (rounded - (1 << fmt.fraction)), False
 
 
+def encode_ratio(sign, numerator, denominator, power, fmt):
+    if numerator == 0:
+        return fmt.sign if sign else 0, False
+    top = numerator.bit_length() - denominator.bit_length()
+    below = numerator < (denominator << top) if top >= 0 else (numerator << -top) < denominator
+    if below:
+        top -= 1
+    quantum = max(top + power - fmt.fraction, 1 - fmt.bias - fmt.fraction)
+    shift = power - quantum
+    n, d = (numerator << shift, denominator) if shift >= 0 else (numerator, denominator << -shift)
+    quotient, remainder = divmod(n, d)
+    rounded = quotient + (2 * remainder > d or (2 * remainder == d and quotient & 1))
+    return encode(sign, rounded, quantum, fmt)
+
+
 def convert(bits, source, destination):
     sign, magnitude, power, special = decode(bits, source)
     if special != "finite":
@@ -179,3 +194,54 @@ def transcendental(operation, bits):
         if operation == 5:
             return 1 / (1 + (-value).exp())
         raise ValueError(f"not a transcendental operation: {operation}")
+
+
+def kv_encode(values, int8):
+    if any(decode(v, BF16)[3] != "finite" for v in values):
+        return 0, [0] * len(values), True
+    if not int8:
+        return sum(v << (16*i) for i, v in enumerate(values)), values, False
+    maximum = max(v & 0x7fff for v in values)
+    if maximum == 0:
+        scale = 0x3f80
+    else:
+        _, magnitude, power, _ = decode(maximum, BF16)
+        scale = max(1, encode_ratio(False, magnitude, 127, power, BF16)[0])
+    _, sm, se, _ = decode(scale, BF16)
+    codes, decoded = [], []
+    for value in values:
+        sign, magnitude, power, _ = decode(value, BF16)
+        gap = power - se
+        n, d = (magnitude << gap, sm) if gap >= 0 else (magnitude, sm << -gap)
+        q, r = divmod(n, d)
+        q = min(127, q + (2*r > d or (2*r == d and q & 1)))
+        q = -q if sign else q
+        codes.append(q & 255)
+        reconstructed, error = encode(q < 0, abs(q)*sm, se, BF16)
+        if error:
+            return 0, [0] * len(values), True
+        decoded.append(reconstructed)
+    record = scale | sum(q << (16+8*i) for i, q in enumerate(codes))
+    return record, decoded, False
+
+
+def kv_decode(record, words, int8):
+    if not int8:
+        values = [(record >> (16*i)) & 65535 for i in range(words)]
+        error = any(decode(v, BF16)[3] != "finite" for v in values)
+        return [0]*words if error else values, error
+    scale = record & 65535
+    sign, magnitude, power, special = decode(scale, BF16)
+    if sign or magnitude == 0 or special != "finite":
+        return [0]*words, True
+    values = []
+    for i in range(words):
+        q = (record >> (16+8*i)) & 255
+        q = q - 256 if q >= 128 else q
+        if q == -128:
+            return [0]*words, True
+        value, error = encode(q < 0, abs(q)*magnitude, power, BF16)
+        if error:
+            return [0]*words, True
+        values.append(value)
+    return values, False

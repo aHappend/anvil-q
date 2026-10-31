@@ -18,7 +18,7 @@ import struct
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reference import (BF16, FP16, FP32, add, convert, dequant, multiply, tree,
-                       decimal_value, transcendental)
+                       decimal_value, transcendental, dot, kv_encode, kv_decode, decode, encode)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,6 +53,7 @@ class Run:
             "commands": self.records, "repair_of": repair_of,
         }
         self.versions = set()
+        self.started = time.monotonic()
 
     def relative(self, path):
         return str(Path(path).relative_to(ROOT))
@@ -67,6 +68,7 @@ class Run:
             self.command([tool, *args], f"version-{tool}", check=False, timeout=60)
 
     def command(self, argv, name, cwd=ROOT, timeout=2600, check=True):
+        timeout = min(timeout, max(0.01, 2670 - (time.monotonic() - self.started)))
         stdout = self.path / f"{len(self.records):03d}-{name}.stdout.txt"
         stderr = stdout.with_name(stdout.name.replace(".stdout.", ".stderr."))
         start = time.monotonic()
@@ -153,10 +155,14 @@ def numerical_rows(kind, compact=False):
                 yield value, 0, 2 | half, *convert(value, fmt, FP32)
             # Every destination encoding's adjacent midpoint, on both parities.
             for value in range(fmt.infinity):
-                low, _ = convert(value, fmt, FP32)
-                high, _ = convert(value + 1, fmt, FP32)
-                midpoint = add(low, high)[0]
-                midpoint = multiply(midpoint, 0x3f000000)[0]
+                _, low, low_power, _ = decode(value, fmt)
+                if value == fmt.infinity - 1:
+                    high, high_power = low + 1, low_power
+                else:
+                    _, high, high_power, _ = decode(value + 1, fmt)
+                power = min(low_power, high_power)
+                total = (low << (low_power-power)) + (high << (high_power-power))
+                midpoint = encode(False, total, power-1, FP32)[0]
                 for source in (midpoint - 1 if midpoint else 0, midpoint, midpoint + 1):
                     yield source, 0, half, *convert(source, FP32, fmt)
             for value in directed(FP32) + [rng.getrandbits(32) for _ in range(10000)]:
@@ -198,6 +204,8 @@ def simulate(run, tb, parameters=None, simulator="iverilog", root=ROOT, plusargs
         obj = run.path / (name + "-compile-obj")
         try:
             run.command(["verilator", "--binary", "--timing", "-Wno-fatal",
+                         "--unroll-count", "1024", "--unroll-stmts", "100000",
+                         "-CFLAGS", "-O0",
                          "--top-module", tb.stem, "--Mdir", run.relative(obj), "-j", "2",
                          *[f"-G{k}={v}" for k, v in parameters.items()], *paths],
                         name + "-compile")
@@ -467,6 +475,222 @@ def scalar_numerics(run, simulator):
     run.save()
 
 
+def mac_behavior(run, simulator):
+    rng = random.Random(17)
+    path = run.path / "mac-vectors.txt"
+    count = 64 if simulator == "iverilog" else 320
+    with path.open("w") as stream:
+        stream.write(f"{count}\n")
+        for index in range(count):
+            ah, bh = bool(index & 1), bool(index & 2)
+            af, bf = FP16 if ah else BF16, FP16 if bh else BF16
+            mask = index % 16
+            pool_a = directed(af) if index % 11 == 3 else [
+                0, af.sign, 1, af.bias << af.fraction,
+                (af.bias << af.fraction) | 3, af.sign | ((af.bias+1) << af.fraction)]
+            pool_b = directed(bf) if index % 13 == 4 else [
+                0, bf.sign, 1, bf.bias << bf.fraction, bf.sign | (bf.bias << bf.fraction)]
+            activations = [rng.choice(pool_a) for _ in range(512)]
+            weights = [rng.choice(pool_b) for _ in range(128)]
+            keep = [rng.randrange(4) != 0 and (index % 9 != 0 or j % 128 < 9)
+                    for j in range(512)]
+            biases = [rng.choice([0, 0x80000000, 0x3f800000, 0xbf800000])
+                      for _ in range(4)]
+            sums, error = [], False
+            for slot in range(4):
+                if mask & (1 << slot):
+                    result, failed = dot(activations[128*slot:128*(slot+1)], weights,
+                                         keep[128*slot:128*(slot+1)], af, bf, biases[slot])
+                    error |= failed
+                else:
+                    result = 0
+                sums.append(result)
+            stream.write(f"{int(ah):b} {int(bh):b} {mask:x} {pack(keep,1):x} "
+                         f"{pack(activations,16):x} {pack(weights,16):x} "
+                         f"{pack(biases,32):x} {pack(sums,32):x} {int(error):b}\n")
+    stdout = simulate(run, ROOT / "tests/mac_tb.sv", simulator=simulator,
+                      plusargs=["+vectors=" + run.relative(path)])
+    run.receipt["mac"] = {"summary": stdout.strip(), "simulator": simulator}
+    run.save()
+
+
+def codec_behavior(run, simulator):
+    rng = random.Random(89)
+    blocks = (1, 2, 16, 128) if simulator == "verilator" else (1, 2, 16)
+    for words in blocks:
+        rows = []
+        samples = [[0] * words, [0x8000] * words]
+        for maximum in (1, 2, 63, 64, 65, 127, 128, 0x3f00, 0x3f80, 0x3f81,
+                        0x4000, 0x7f7f):
+            samples += [[maximum] * words, [maximum | 0x8000] * words,
+                        [maximum if i % 2 else maximum | 0x8000 for i in range(words)]]
+        for _ in range(100 if words < 128 else 20):
+            samples.append([rng.randrange(0x7f80) | (rng.randrange(2) << 15)
+                            for _ in range(words)])
+        samples += [[0x7f80] * words, [0x7fc0] * words, [0xff80] * words]
+        for int8 in (False, True):
+            length = words + 2 if int8 else words * 2
+            for values in samples:
+                record, decoded, error = kv_encode(values, int8)
+                rows.append((1, int(int8), pack(values, 16), 0,
+                             0 if error else pack(decoded, 16), 0 if error else record,
+                             length, int(error), -1))
+                if not error:
+                    decoded, error = kv_decode(record, words, int8)
+                    rows.append((0, int(int8), 0, record,
+                                 0 if error else pack(decoded, 16), 0 if error else record,
+                                 length, int(error), -1))
+        for scale in (0, 0x8000, 0xbf80, 0x7f80, 0x7fc0, 0x3f80):
+            record = scale | (0x80 << 16)
+            rows.append((0, 1, 0, record, 0, 0, words + 2, 1, -1))
+        for cancel in (1, 2, 7, 10):
+            values = [0x3f80] * words
+            record, decoded, error = kv_encode(values, True)
+            rows.append((1, 1, pack(values, 16), 0, pack(decoded, 16), record,
+                         words + 2, int(error), cancel))
+        path = run.path / f"codec-{words}.txt"
+        with path.open("w") as stream:
+            stream.write(f"{len(rows)}\n")
+            for row in rows:
+                stream.write(f"{row[0]:b} {row[1]:b} " +
+                             " ".join(f"{n:x}" for n in row[2:7]) +
+                             f" {row[7]:b} {row[8]}\n")
+        stdout = simulate(run, ROOT / "tests/codec_tb.sv", {"CACHE_BLOCK": words},
+                          simulator=simulator, plusargs=["+vectors=" + run.relative(path)])
+        run.receipt.setdefault("codec", []).append(
+            {"words": words, "summary": stdout.strip(), "simulator": simulator})
+        run.save()
+
+
+def top_fixture(run):
+    memory = bytearray(131072)
+    descriptors = [bytes(64) for _ in range(32)]
+    cursor = 0x1000
+    for index in (0, 1, 2, 3, *range(16, 28)):
+        rows, columns = (1, 8)
+        if index in (0, 1):
+            rows = 2
+        elif index == 3:
+            rows = 5
+        elif index in range(16, 23):
+            rows = 8
+        values = [0] * (rows * columns)
+        if index == 0:
+            values = [0x3f80] * len(values)
+        elif index == 1:
+            values[:8] = [0x3f80] * 8
+        elif index == 3:
+            values = [0x3f80 if c % 2 == 0 else 0
+                      for _ in range(rows) for c in range(columns)]
+        elif index in (2, 23, 24):
+            values = [0x3f80] * len(values)
+        payload = pack(values, 16).to_bytes(2 * len(values), "little")
+        memory[cursor:cursor+len(payload)] = payload
+        descriptors[index] = struct.pack("<QQQQIIIIIIQ", cursor, len(payload), 0, 0,
+                                         rows, columns, 2*columns, 0, 0, 0x101, 0)
+        cursor = ((cursor+len(payload)+63)//64)*64
+    config = [(0x44, 4), (0x18, 0x10000), (0x1c, 0), (0x20, 4096), (0x24, 0)]
+    for index, descriptor in enumerate(descriptors):
+        config.extend((0x1000 + 64*index + 4*word, value)
+                      for word, value in enumerate(struct.unpack("<16I", descriptor)))
+    image_directory = run.path / "checkpoint-images"
+    image_directory.mkdir()
+    image = image_directory / "compact-model.hex"
+    image.write_text("\n".join(f"{byte:02x}" for byte in memory) + "\n")
+    cfg = run.path / "compact-model-config.txt"
+    cfg.write_text(f"{len(config)}\n" + "\n".join(f"{a:04x} {b:08x}" for a, b in config) + "\n")
+    return image, cfg
+
+
+def top_behavior(run, simulator):
+    image, cfg = top_fixture(run)
+    stdout = simulate(run, ROOT / "tests/top_tb.sv", simulator=simulator,
+                      plusargs=["+image=" + run.relative(image), "+config=" + run.relative(cfg)])
+    run.receipt["top_smoke"] = {
+        "fixture": "analytical residual-identity model: zero projections, unit embeddings/gamma, head rows one/zero",
+        "scope": "compact architectural smoke, not official-model fidelity or benchmark acceptance",
+        "summary": stdout.strip(), "simulator": simulator,
+    }
+    run.save()
+
+
+def kv_store_behavior(run, simulator):
+    for words, int8 in ((2, False), (2, True), (1, True)):
+        rows = []
+        records = 16 // words
+        decoded = {}
+
+        def append(op, x=0, y=0, z=0, fault=0, data=0, record=0):
+            rows.append((op, x, y, z, fault, data, record))
+
+        def begin(count=1, position=3, fresh=False):
+            append(0, count, position, int(fresh) | (int(int8) << 1))
+
+        def write(slot, ordinal, generation=0, fault=False, cancel=False):
+            values = [0x3f00 + 128*slot + 7*ordinal + i + 19*generation
+                      for i in range(words)]
+            encoded, result, failed = kv_encode(values, int8)
+            if failed:
+                raise RuntimeError("invalid KV-store fixture")
+            append(4 if cancel else 1, slot, ordinal, fault=int(fault),
+                   data=pack(values, 16), record=encoded)
+            decoded[slot, ordinal] = pack(result, 16)
+
+        def read(slot, position, source_slot):
+            for ordinal in range(records):
+                append(2, slot, position, ordinal, data=decoded[source_slot, ordinal])
+
+        begin(4, 0, True)
+        for slot in range(4):
+            for ordinal in range(records):
+                write(slot, ordinal)
+        # Node 3 descends from node 2, not its same-depth sibling node 1.
+        read(3, 0, 0)
+        read(3, 1, 2)
+        read(1, 1, 1)
+        read(3, 2, 3)
+        append(3, 3, 0b1101, 7)
+        begin()
+        for position, source_slot in enumerate((0, 2, 3)):
+            read(0, position, source_slot)
+        # Provisional writes must not overwrite previously committed token zero.
+        saved = dict(decoded)
+        for ordinal in range(records):
+            write(0, ordinal, generation=1)
+        append(5)
+        decoded = dict(saved)
+        begin()
+        for position, source_slot in enumerate((0, 2, 3)):
+            read(0, position, source_slot)
+        # Missing acknowledgements/completions cannot publish a pointer or data.
+        append(3, fault=1)
+        begin()
+        write(0, 0, generation=2, fault=True)
+        decoded = dict(saved)
+        append(3, fault=1)
+        begin()
+        for position, source_slot in enumerate((0, 2, 3)):
+            read(0, position, source_slot)
+        write(0, 0, generation=3, cancel=True)
+        decoded = dict(saved)
+        begin()
+        for position, source_slot in enumerate((0, 2, 3)):
+            read(0, position, source_slot)
+        append(5)
+        path = run.path / f"kv-store-b{words}-int8{int(int8)}.txt"
+        with path.open("w") as stream:
+            stream.write(f"{len(rows)}\n")
+            for op, x, y, z, fault, data, record in rows:
+                stream.write(f"{op} {x} {y} {z} {fault} {data:x} {record:x}\n")
+        stdout = simulate(run, ROOT / "tests/kv_store_tb.sv", {"CACHE_BLOCK": words},
+                          simulator=simulator, plusargs=["+vectors=" + run.relative(path)])
+        run.receipt.setdefault("kv_store", []).append({
+            "cache_block": words, "int8": int8, "transactions": len(rows),
+            "summary": stdout.strip(), "simulator": simulator,
+        })
+        run.save()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("check", choices=["numerics", "behavior", "mutations", "synthesis",
@@ -476,11 +700,13 @@ def main():
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--kind", type=int, choices=range(5))
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
-    parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "all"], default="all")
+    parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv", "top", "all"], default="all")
     args = parser.parse_args()
     run = Run(args.check, args.preparation, args.repair_of)
     try:
         if args.check == "numerics":
+            if args.kind is None and args.simulator == "verilator":
+                numerics(run, range(5), "iverilog", True)
             numerics(run, [args.kind] if args.kind is not None else range(5),
                      args.simulator, args.compact)
         elif args.check == "behavior":
@@ -489,7 +715,18 @@ def main():
             if args.leaf in ("dma", "all"):
                 dma_behavior(run, args.simulator)
             if args.leaf in ("scalar", "all"):
-                scalar_numerics(run, args.simulator)
+                scalar_numerics(run, "verilator")
+            if args.leaf in ("mac", "all"):
+                mac_behavior(run, args.simulator)
+            if args.leaf in ("codec", "all"):
+                codec_behavior(run, args.simulator)
+            if args.leaf in ("kv", "all"):
+                kv_store_behavior(run, args.simulator)
+            if args.leaf in ("top", "all"):
+                top_behavior(run, "verilator")
+        elif args.check == "synthesis":
+            from synthesis import execute
+            execute(run, ROOT, sources())
         else:
             raise RuntimeError(f"{args.check}: verification implementation not yet completed")
     except Exception as exc:
