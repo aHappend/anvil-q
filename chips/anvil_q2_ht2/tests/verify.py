@@ -827,8 +827,9 @@ def main():
         elif args.check == "reproduce":
             from reproduction import execute, child
             (child if args.reproduction_child else execute)(run)
-        else:
-            raise RuntimeError(f"{args.check}: verification implementation not yet completed")
+        elif args.check == "benchmarks":
+            from benchmarks import execute
+            execute(run)
     except Exception as exc:
         return run.finish(False, f"{type(exc).__name__}: {exc}")
     return run.finish(True, "all requested comparisons passed")
