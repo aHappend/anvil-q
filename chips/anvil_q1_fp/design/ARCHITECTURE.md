@@ -362,17 +362,60 @@ The three-stage reducer is shared arithmetic, not a fourth dot stage:
 | --- | --- |
 | 1 | Exact unpacked/prepared terms, mask, forced-invalid |
 | 2 | Largest-exponent grid, nine aligned signed integers, exception/zero metadata and alignment loss |
-| 3 | Balanced signed reduction and one nearest/even binary32 pack |
+| 3 | Exact carry-save reduction, parallel signed-magnitude resolution and one nearest/even binary32 pack |
 
 Signed aligned integers and every reduction node have 69 bits:
 nine magnitudes each below 2^64 have sum magnitude below 9*2^64,
 strictly below 2^68, fitting signed69. Alignment shifts are bounded;
 exponent distances >=64 yield zero magnitude and record discarded
 nonzero bits. Leading-bit encoders use binary subdivisions rather than
-an unbounded search. Reduction is balanced with sixteen padded leaves.
+an unbounded search. The exponent maximum uses sixteen padded leaves.
 No ready signal or hidden queue changes the three registered stages.
 Special-value metadata bypasses finite packing only at the same
 registered output stage.
+
+### Final-stage timing repair
+
+The reported retained post-fit failure was setup WNS=-5.888 ns
+(hold WNS=+0.038 ns), from `terms2[0][0]` to `result3[29]` in the
+MLP GEMV lane-6 mixed-dot reducer. This is a timing failure, not a
+functional-simulation failure. The former final-stage path used four
+levels of 69-bit carry-propagating additions, followed by conditional
+wide negation and variable-mask packing.
+
+The reducer now compresses the nine signed 69-bit aligned terms through
+four bitwise 3:2 levels, with operand counts 9->6->4->3->2.
+Each compressor preserves the exact sum modulo 2^69; the magnitude bound
+above ensures that the final signed sum is representable without overflow.
+Only the final two operands require carry resolution. Their sum and its
+negation are resolved in parallel: the negative path compresses
+`~sum + ~carry + 2` before resolution. Selecting the appropriate resolved
+magnitude avoids a serial 69-bit two's-complement negate after the sum.
+Each resolver precomputes carry-zero/carry-one results in eight-bit blocks;
+a four-level parallel prefix over nine block generate/propagate pairs
+selects the block results. The padded upper three bits are discarded,
+not part of the arithmetic width.
+
+The shared `pack_grid` retains the full 69-bit magnitude and rounds only
+once. Its exponent/distance controls are signed 12-bit values, the right
+shift is bounded to 0..69, and any required left shift is at most 23 bits
+into a 25-bit rounding significand. Seven fixed power-of-two right-shift
+steps propagate guard and sticky information directly, without dynamic
+discard masks or mask-subtraction chains. Normal and carry-incremented
+exponent encodings are prepared in parallel. Gradual underflow, tininess
+after rounding, alignment-loss inexactness, cancellation and signed-zero
+metadata are unchanged. Reciprocal/reciprocal-square-root output packing
+also uses this helper and requires independent regression.
+
+No pipeline register, public interface, launch rate, reset priority or
+E0/E1/E2 validity timing changes in this repair. It establishes no timing
+closure: fresh source-bound shared-runtime Quartus STA is mandatory.
+Independent Verifier must review the changed sources before updating
+preservation-check bindings and rerun the unchanged numerical, pipeline,
+synthesis and integration checks. The reported reduced native build and
+its external false paths do not certify production dimensions or shipped
+external constraints; correcting that gate coverage belongs to the shared
+runtime. Full-model collection and physical HIL remain unresolved.
 
 The standalone binary32 add/multiply wrappers reuse this reducer.
 Multiplication prepares one exact product; addition prepares two exact

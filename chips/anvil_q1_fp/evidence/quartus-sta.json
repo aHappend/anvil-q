@@ -1,0 +1,355 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-10-31T15:47:27.140522+00:00",
+  "project_dir": "/data/sufeng/anvil-q1-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "failed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q1-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
+    "errors": [],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": -5.888,
+    "wns_hold_ns": 0.038,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 20,
+    "failing_hold_count": 0,
+    "setup_paths": [
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.888,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.884,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.879,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.879,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.879,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      },
+      {
+        "slack_ns": -5.879,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.038,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_mem_port:memory_port|state.01|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_mem_port:memory_port|state.01"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_exp:exp_pipeline|exponent[2][8]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_exp:exp_pipeline|exponent[3][8]"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_gqa_attention:attention|anvil_q1_fp_compat_exp:compat_exp|anvil_q1_fp_compat_div:divider|busy|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_gqa_attention:attention|anvil_q1_fp_compat_exp:compat_exp|anvil_q1_fp_compat_div:divider|busy"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_exp:exp_pipeline|exponent[2][7]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_exp:exp_pipeline|exponent[3][7]"
+      },
+      {
+        "slack_ns": 0.047,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_rmsnorm:norm|anvil_q1_fp_reciprocal:reciprocal_pipeline|exponent[11][2]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_rmsnorm:norm|anvil_q1_fp_reciprocal:reciprocal_pipeline|exponent[12][2]"
+      },
+      {
+        "slack_ns": 0.047,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_exp:exp_kernel|anvil_q1_fp_compat_div:divider|busy|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_exp:exp_kernel|anvil_q1_fp_compat_div:divider|busy"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_div:divider|quotient_work[3]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_div:divider|quotient_work[4]"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|native_weights[3][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|native_weights[3][0]"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|state.011000|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|state.011000"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_reciprocal:reciprocal_pipeline|special_status[10][4]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_reciprocal:reciprocal_pipeline|special_status[11][4]"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_exp:exp_pipeline|exponent[3][6]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_exp:exp_pipeline|exponent[4][6]"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_gemv:gemv|native_bias[0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_gemv:gemv|native_bias[0]"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_exp:exp_kernel|state.100|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_exp:exp_kernel|state.100"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_exp:exp_kernel|state.000|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_compat_silu:compat_silu|anvil_q1_fp_compat_exp:exp_kernel|state.000"
+      },
+      {
+        "slack_ns": 0.048,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_gqa_attention:attention|anvil_q1_fp_compat_exp:compat_exp|state.101|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_gqa_attention:attention|anvil_q1_fp_compat_exp:compat_exp|state.101"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_reciprocal:reciprocal_pipeline|exponent[5][1]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_reciprocal:reciprocal_pipeline|exponent[6][1]"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_gqa_attention:attention|anvil_q1_fp_rsqrt:rsqrt_pipeline|quotient[1][6]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_gqa_attention:attention|anvil_q1_fp_rsqrt:rsqrt_pipeline|quotient[2][9]"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "step[3]|anvil_q1_fp_decoder_layer:decoder|step[3]"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_reciprocal:reciprocal_pipeline|exponent[10][5]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_elementwise:silu_product|anvil_q1_fp_reciprocal:reciprocal_pipeline|exponent[11][5]"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_fp_decoder_layer:decoder",
+        "to_node": "anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|scales[6][14]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|scales[6][14]"
+      }
+    ],
+    "stderr_tail": []
+  },
+  "detail": "Setup WNS -5.888 ns < 0.000 ns (worst path: anvil_q1_fp_decoder_layer:decoder -> anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|terms2[0][0]|anvil_q1_fp_decoder_layer:decoder|anvil_q1_fp_swiglu_mlp:mlp|anvil_q1_fp_gemv:gemv|anvil_q1_fp_dot8_mixed:lanes[6].native_dot|anvil_q1_fp_reduce3:pipeline|result3[29])",
+  "top_module": "anvil_q1_fp_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 62.94,
+  "critical_path_delay_ns": 15.888,
+  "fitter_resource_summary": {
+    "alms_used": 78600,
+    "alms_total": 427200,
+    "alms_pct": "18 %",
+    "total_registers": 33250,
+    "block_memory_bits": 0,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 265,
+    "virtual_pins": 312
+  },
+  "parameters": {
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 16,
+    "INTERMEDIATE_SIZE": 16,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 2,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "dd2ee58d1455bdcfcb3e96abb8d41e327280de4ac42eab86a319d5ed31dd2864",
+  "applicable": true
+}

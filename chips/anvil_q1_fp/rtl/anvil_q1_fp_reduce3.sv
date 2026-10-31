@@ -20,7 +20,11 @@ module anvil_q1_fp_reduce3(
   reg [4:0] special_status2;
   reg invalid_next, nan_next, pos_inf_next, neg_inf_next;
   reg negative_zero_next, any_active_next, lost_next;
-  wire signed [68:0] sums [1:31];
+  wire [68:0] sum1 [0:2], carry1 [0:2];
+  wire [68:0] sum2 [0:1], carry2 [0:1];
+  wire [68:0] sum3, carry3, sum4, carry4;
+  wire [68:0] negative_sum, negative_carry;
+  wire [68:0] total, negative_total;
   wire [68:0] magnitude;
   wire finite_sign;
   wire [36:0] packed_result;
@@ -29,24 +33,92 @@ module anvil_q1_fp_reduce3(
   integer i, j;
   genvar g;
 
+  // Resolve only local eight-bit carries; a parallel prefix supplies block carries.
+  function automatic [68:0] resolve69(input [68:0] a, b);
+    reg [71:0] padded_a, padded_b, resolved;
+    reg [80:0] select0, select1;
+    reg [8:0] generates [0:4];
+    reg [8:0] propagates [0:4];
+    integer block_index, level;
+    begin
+      padded_a={3'd0,a}; padded_b={3'd0,b};
+      select0=0; select1=0; resolved=0;
+      generates[0]=0; propagates[0]=0;
+      for (block_index=0;block_index<9;block_index=block_index+1) begin
+        select0[block_index*9+:9]=
+          {1'b0,padded_a[block_index*8+:8]}+
+          {1'b0,padded_b[block_index*8+:8]};
+        select1[block_index*9+:9]=
+          {1'b0,padded_a[block_index*8+:8]}+
+          {1'b0,padded_b[block_index*8+:8]}+9'd1;
+        generates[0][block_index]=select0[block_index*9+8];
+        propagates[0][block_index]=
+          &(padded_a[block_index*8+:8]^padded_b[block_index*8+:8]);
+      end
+      for (level=0;level<4;level=level+1) begin
+        generates[level+1]=generates[level];
+        propagates[level+1]=propagates[level];
+        for (block_index=0;block_index<9;block_index=block_index+1) begin
+          if (block_index>=(1<<level)) begin
+            generates[level+1][block_index]=generates[level][block_index] |
+              (propagates[level][block_index] &&
+               generates[level][block_index-(1<<level)]);
+            propagates[level+1][block_index]=propagates[level][block_index] &&
+              propagates[level][block_index-(1<<level)];
+          end
+        end
+      end
+      resolved[7:0]=select0[7:0];
+      for (block_index=1;block_index<9;block_index=block_index+1)
+        resolved[block_index*8+:8]=generates[4][block_index-1] ?
+          select1[block_index*9+:8] : select0[block_index*9+:8];
+      resolve69=resolved[68:0];
+    end
+  endfunction
+
   generate
     for (g=0;g<16;g=g+1) begin: leaves
       if (g<9) begin: populated
         assign maxima[16+g]=(active1[g] && terms1[g][63:0]!=0) ?
           $signed(terms1[g][74:64]) : -11'sd1023;
         assign aligned[g]=anvil_q1_fp_pkg::align_term(terms1[g],maxima[1]);
-        assign sums[16+g]=terms2[g];
       end else begin: padding
         assign maxima[16+g]=-11'sd1023;
-        assign sums[16+g]=69'sd0;
       end
     end
     for (g=1;g<16;g=g+1) begin: trees
       assign maxima[g]=(maxima[2*g]>maxima[2*g+1]) ?
         maxima[2*g] : maxima[2*g+1];
-      assign sums[g]=sums[2*g]+sums[2*g+1];
+    end
+    // Four exact 3:2 compressor levels reduce nine signed terms to two.
+    for (g=0;g<3;g=g+1) begin: compressors
+      assign sum1[g]=terms2[3*g]^terms2[3*g+1]^terms2[3*g+2];
+      assign carry1[g]=((terms2[3*g]&terms2[3*g+1]) |
+        (terms2[3*g]&terms2[3*g+2]) |
+        (terms2[3*g+1]&terms2[3*g+2])) << 1;
     end
   endgenerate
+
+  assign sum2[0]=sum1[0]^carry1[0]^sum1[1];
+  assign carry2[0]=((sum1[0]&carry1[0]) | (sum1[0]&sum1[1]) |
+    (carry1[0]&sum1[1])) << 1;
+  assign sum2[1]=carry1[1]^sum1[2]^carry1[2];
+  assign carry2[1]=((carry1[1]&sum1[2]) | (carry1[1]&carry1[2]) |
+    (sum1[2]&carry1[2])) << 1;
+  assign sum3=sum2[0]^carry2[0]^sum2[1];
+  assign carry3=((sum2[0]&carry2[0]) | (sum2[0]&sum2[1]) |
+    (carry2[0]&sum2[1])) << 1;
+  assign sum4=sum3^carry3^carry2[1];
+  assign carry4=((sum3&carry3) | (sum3&carry2[1]) |
+    (carry3&carry2[1])) << 1;
+
+  // -(sum4+carry4) = ~sum4 + ~carry4 + 2, modulo 2^69.
+  // Resolve both signs in parallel rather than negate a resolved wide sum.
+  assign negative_sum=sum4^carry4^69'd2;
+  assign negative_carry=((~sum4&~carry4) |
+    ((~sum4|~carry4)&69'd2)) << 1;
+  assign total=resolve69(sum4,carry4);
+  assign negative_total=resolve69(negative_sum,negative_carry);
 
   always @* begin
     invalid_next=invalid1; nan_next=0; pos_inf_next=0; neg_inf_next=0;
@@ -66,8 +138,8 @@ module anvil_q1_fp_reduce3(
     negative_zero_next=negative_zero_next && any_active_next;
   end
 
-  assign magnitude=sums[1][68] ? $unsigned(-sums[1]) : $unsigned(sums[1]);
-  assign finite_sign=(sums[1]==0) ? negative_zero2 : sums[1][68];
+  assign magnitude=total[68] ? negative_total : total;
+  assign finite_sign=(total==0) ? negative_zero2 : total[68];
   assign packed_result=anvil_q1_fp_pkg::pack_grid(magnitude,finite_sign,grid2,lost2);
   assign out_valid=rst_n && valid3;
   assign result=(rst_n && valid3) ? result3 : 32'd0;

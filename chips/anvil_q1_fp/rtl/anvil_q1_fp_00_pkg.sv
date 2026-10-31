@@ -148,52 +148,62 @@ package anvil_q1_fp_pkg;
   function automatic [36:0] pack_grid(
     input [68:0] magnitude, input sign,
     input signed [10:0] grid, input alignment_lost);
-    reg [68:0] shifted, discarded;
-    reg [24:0] significand;
+    reg [70:0] shifted;
+    reg [24:0] unrounded, significand;
     reg [31:0] value;
     reg [4:0] flags;
     reg guard_bit, sticky_bit, increment;
-    reg [7:0] encoded_exponent;
-    integer high, exponent, unit_exponent, distance;
+    reg [7:0] encoded_exponent, incremented_exponent;
+    reg [6:0] high, right_distance;
+    reg [4:0] left_distance;
+    reg signed [11:0] exponent, distance;
     begin
-      shifted=0; discarded=0; significand=0;
+      shifted=0; unrounded=0; significand=0;
       value={sign,31'd0}; flags={4'd0,alignment_lost};
-      guard_bit=0; sticky_bit=0; increment=0; encoded_exponent=0;
-      high=0; exponent=0; unit_exponent=0; distance=0;
+      guard_bit=0; sticky_bit=0; increment=0;
+      encoded_exponent=0; incremented_exponent=0;
+      high=0; exponent=0; distance=0; right_distance=0; left_distance=0;
       if (magnitude!=0) begin
         if (|magnitude[68:64])
-          high=64+$signed(32'(leading64({59'd0,magnitude[68:64]})));
-        else high=$signed(32'(leading64(magnitude[63:0])));
-        exponent=$signed(32'(grid))+high;
-        if (exponent>127) begin
+          high=7'd64+leading64({59'd0,magnitude[68:64]});
+        else high=leading64(magnitude[63:0]);
+        exponent=$signed({grid[10],grid})+$signed({5'd0,high});
+        if (exponent>12'sd127) begin
           value={sign,8'hff,23'd0};
           flags[2]=1; flags[0]=1;
         end else begin
-          unit_exponent=exponent>=-126 ? exponent-23 : -149;
-          distance=unit_exponent-$signed(32'(grid));
-          if (distance>69) begin
-            shifted=0; sticky_bit=1;
+          if (exponent>=-12'sd126)
+            distance=$signed({5'd0,high})-12'sd23;
+          else distance=-12'sd149-$signed({grid[10],grid});
+          right_distance=distance[6:0];
+          left_distance=5'(-distance);
+          shifted={magnitude,2'd0};
+          // Each fixed shift jams discarded bits into bit zero. Bit one is guard.
+          if (right_distance[0]) shifted={1'd0,shifted[70:2],|shifted[1:0]};
+          if (right_distance[1]) shifted={2'd0,shifted[70:3],|shifted[2:0]};
+          if (right_distance[2]) shifted={4'd0,shifted[70:5],|shifted[4:0]};
+          if (right_distance[3]) shifted={8'd0,shifted[70:9],|shifted[8:0]};
+          if (right_distance[4]) shifted={16'd0,shifted[70:17],|shifted[16:0]};
+          if (right_distance[5]) shifted={32'd0,shifted[70:33],|shifted[32:0]};
+          if (right_distance[6]) shifted={64'd0,shifted[70:65],|shifted[64:0]};
+          if (distance>12'sd69) begin
+            unrounded=0; sticky_bit=1;
           end else if (distance>0) begin
-            shifted=magnitude >> distance;
-            discarded=magnitude & ((69'd1 << distance)-1);
-            guard_bit=magnitude[distance-1];
-            sticky_bit=(discarded & ((69'd1 << (distance-1))-1))!=0;
-          end else shifted=magnitude << (-distance);
-          increment=guard_bit && (sticky_bit || shifted[0]);
-          significand=shifted[24:0]+{24'd0,increment};
+            unrounded=shifted[26:2];
+            guard_bit=shifted[1]; sticky_bit=shifted[0];
+          end else unrounded=magnitude[24:0] << left_distance;
+          increment=guard_bit && (sticky_bit || unrounded[0]);
+          significand=unrounded+{24'd0,increment};
           flags[0]=alignment_lost || guard_bit || sticky_bit;
-          if (exponent>=-126) begin
-            if (significand[24]) begin
-              significand=significand>>1;
-              exponent=exponent+1;
-            end
-            if (exponent>127) begin
+          encoded_exponent=8'(exponent+12'sd127);
+          incremented_exponent=8'(exponent+12'sd128);
+          if (exponent>=-12'sd126) begin
+            if (exponent==12'sd127 && significand[24]) begin
               value={sign,8'hff,23'd0};
               flags[2]=1; flags[0]=1;
-            end else begin
-              encoded_exponent=8'(exponent+127);
-              value={sign,encoded_exponent,significand[22:0]};
-            end
+            end else if (significand[24])
+              value={sign,incremented_exponent,significand[23:1]};
+            else value={sign,encoded_exponent,significand[22:0]};
           end else begin
             value={sign,7'd0,significand[23:0]};
             flags[1]=flags[0] && !significand[23];
