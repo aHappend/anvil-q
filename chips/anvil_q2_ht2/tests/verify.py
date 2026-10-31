@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import time
+import threading
 import uuid
 from decimal import Decimal, localcontext
 import struct
@@ -45,6 +46,7 @@ class Run:
         self.path = base / f"{stem}-{suffix}-{uuid.uuid4().hex[:8]}"
         self.path.mkdir(parents=True, exist_ok=False)
         self.records = []
+        self.lock = threading.RLock()
         self.receipt = {
             "schema": 1, "kind": "advisory-preparation" if preparation else "l1",
             "argv": [sys.executable if not Path(sys.executable).is_absolute() else "python3",
@@ -70,15 +72,16 @@ class Run:
 
     def command(self, argv, name, cwd=ROOT, timeout=2600, check=True, environment=None):
         timeout = min(timeout, max(0.01, self.budget_s - (time.monotonic() - self.started)))
-        stdout = self.path / f"{len(self.records):03d}-{name}.stdout.txt"
-        stderr = stdout.with_name(stdout.name.replace(".stdout.", ".stderr."))
-        start = time.monotonic()
-        record = {"argv": [str(a) for a in argv], "cwd": self.relative(cwd),
-                  "start_time": now(), "timeout_s": timeout,
-                  "stdout": self.relative(stdout), "stderr": self.relative(stderr)}
-        if environment:
-            record["environment_overrides"] = environment
-        self.records.append(record)
+        with self.lock:
+            stdout = self.path / f"{len(self.records):03d}-{name}.stdout.txt"
+            stderr = stdout.with_name(stdout.name.replace(".stdout.", ".stderr."))
+            start = time.monotonic()
+            record = {"argv": [str(a) for a in argv], "cwd": self.relative(cwd),
+                      "start_time": now(), "timeout_s": timeout,
+                      "stdout": self.relative(stdout), "stderr": self.relative(stderr)}
+            if environment:
+                record["environment_overrides"] = environment
+            self.records.append(record)
         with stdout.open("wb") as out, stderr.open("wb") as err:
             try:
                 process = subprocess.Popen([str(a) for a in argv], cwd=cwd,
@@ -112,7 +115,8 @@ class Run:
         return record, stdout.read_text(errors="replace"), stderr.read_text(errors="replace")
 
     def save(self):
-        (self.path / "receipt.json").write_text(json.dumps(self.receipt, indent=2) + "\n")
+        with self.lock:
+            (self.path / "receipt.json").write_text(json.dumps(self.receipt, indent=2) + "\n")
 
     def finish(self, success, reason):
         self.receipt.update(end_time=now(), exit_code=0 if success else 1, reason=reason,
@@ -820,9 +824,9 @@ def main():
                 stdout = simulate(run, ROOT / "tests/activation_startup_tb.sv",
                                   simulator=args.simulator)
                 run.receipt["activation_startup"] = stdout.strip()
-            if args.leaf in ("top", "all"):
+            if args.leaf == "top":
                 top_behavior(run, "verilator")
-            if args.leaf in ("top-mixed", "all"):
+            if args.leaf == "top-mixed":
                 top_behavior(run, "verilator", stem="fp16-w2-sparse-int8-model",
                              result_key="top_mixed_smoke", fp16=True, weight_bits=2,
                              sparse=True, int8=True)

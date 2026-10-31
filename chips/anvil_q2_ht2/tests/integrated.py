@@ -1,6 +1,7 @@
 """Seeded public-interface one-layer model checks, independent of RTL algorithms."""
 
 from decimal import Decimal, localcontext
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import itertools
 import json
@@ -44,7 +45,8 @@ def model(seed):
             # Diagonal paths keep token-dependent V observable, rather than
             # hiding attention defects behind identical values at every time.
             diagonal = Decimal("0.5") if index in (16, 17, 18) else Decimal("0.25")
-            values = [diagonal if r == c and not (index == 20 and r in (1, 5))
+            values = [diagonal if (c == ((r+1) % 8) if index == 18 else r == c)
+                      and not (index == 20 and r in (1, 5))
                       else Decimal(0) for r in range(rows) for c in range(8)]
         weights[index] = [rounded(value, BF16) for value in values]
     return weights
@@ -262,8 +264,8 @@ def compare(stdout, expected):
     return results
 
 
-def execute(run):
-    from verify import ROOT, sources
+def execute(run, cells=None, smokes=True):
+    from verify import ROOT, sources, top_fixture, DetectedDefect
     run.tool("verilator")
     run.tool("c++")
     obj = run.path / "top-matrix-compile-obj"
@@ -273,17 +275,56 @@ def execute(run):
                      "--unroll-count", "1024", "--unroll-stmts", "100000",
                      "-CFLAGS", "-O2", "--top-module", "top_tb", "-GMATRIX=1",
                      "--Mdir", run.relative(obj), "-j", "2",
-                     *[run.relative(p) for p in sources()], "tests/top_tb.sv"],
+                     *[run.relative(p) for p in sources(getattr(run, "design_root", ROOT))],
+                     "tests/top_tb.sv"],
                     "top-matrix-compile")
-        for seed, half, bits, sparse, int8 in itertools.product(
-                (17, 89, 211), (False, True), (16, 4, 2), (False, True), (False, True)):
+        if smokes:
+            for name, half, bits, sparse, int8 in (
+                    ("top_smoke", False, 16, False, False),
+                    ("top_mixed_smoke", True, 2, True, True)):
+                image, cfg = top_fixture(run, name, half, bits, sparse, int8)
+                _, stdout, _ = run.command(
+                    [run.relative(obj / "Vtop_tb"), "+image="+run.relative(image),
+                     "+config="+run.relative(cfg)], name)
+                if "SUMMARY top " not in stdout:
+                    raise AssertionError("missing original integrated smoke comparisons")
+                run.receipt[name] = {"summary": stdout.strip(), "simulator": "verilator",
+                                     "mode": {"fp16": half, "weight_bits": bits,
+                                              "sparse": sparse, "int8": int8}}
+                run.save()
+        cases = []
+        for seed, half, bits, sparse, int8 in (cells if cells is not None else itertools.product(
+                (17, 89, 211), (False, True), (16, 4, 2), (False, True), (False, True))):
             with localcontext() as context:
                 context.prec = 100
                 stem, image, cfg, transactions, expected = fixtures(run, seed, half, bits, sparse, int8)
-            _, stdout, _ = run.command(
+            cases.append((seed, half, bits, sparse, int8, stem, image, cfg, transactions, expected))
+
+        def exercise(case):
+            seed, half, bits, sparse, int8, stem, image, cfg, transactions, expected = case
+            markers = getattr(run, "expected_failure", ())
+            record, stdout, stderr = run.command(
                 [run.relative(obj / "Vtop_tb"), "+image="+run.relative(image),
-                 "+config="+run.relative(cfg), "+transactions="+run.relative(transactions)], stem)
-            results = compare(stdout, expected)
+                 "+config="+run.relative(cfg), "+transactions="+run.relative(transactions)],
+                stem, check=not bool(markers))
+            comparison_error = ""
+            if record["exit_code"] == 0 and not record["timed_out"]:
+                try:
+                    results = compare(stdout, expected)
+                except AssertionError as exc:
+                    comparison_error = str(exc)
+                    if not markers:
+                        raise
+            if markers:
+                detected = [marker for marker in markers if marker in stdout+stderr+comparison_error]
+                if not record["timed_out"] and detected and (
+                        record["exit_code"] != 0 or comparison_error):
+                    run.receipt["detected_defect"] = {
+                        "assertions": detected, "comparison_error": comparison_error,
+                        "command_index": run.records.index(record)}
+                    run.save()
+                    raise DetectedDefect("integrated independent comparison rejected mutated RTL")
+                raise RuntimeError("integrated mutation survived or missed designated comparison")
             # A deliberately corrupted observed logit must reach this same checker.
             sensitivity = []
             for row in expected:
@@ -296,7 +337,7 @@ def execute(run):
                     sensitivity.append(str(exc))
                 else:
                     raise AssertionError("MATRIX_SENSITIVITY sign-flipped vector survived")
-            run.receipt["integrated_matrix"].append({
+            return {
                 "seed": seed, "half": half, "weight_bits": bits, "sparse": sparse,
                 "int8": int8, "fixture": stem, "transactions": len(expected),
                 "checked_logits": 2*len(results), "comparisons": results,
@@ -305,9 +346,16 @@ def execute(run):
                 "sensitivity_rejections": sensitivity,
                 "image_sha256": hashlib.sha256(image.read_bytes()).hexdigest(),
                 "summary": next(line for line in stdout.splitlines() if line.startswith("SUMMARY ")),
-            })
-            run.save()
-            print(f"checked integrated {stem}: {len(results)} slot vectors", flush=True)
+            }
+
+        # Independent processes share only an immutable compiled executable.
+        # Eight bounded workers avoid serializing the seeded matrix behind O0.
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for result in pool.map(exercise, cases):
+                run.receipt["integrated_matrix"].append(result)
+                run.save()
+                print(f"checked integrated {result['fixture']}: "
+                      f"{len(result['comparisons'])} slot vectors", flush=True)
     finally:
         if obj.exists():
             shutil.rmtree(obj)

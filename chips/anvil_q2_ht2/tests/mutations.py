@@ -56,13 +56,21 @@ CASES = {
         "pointer<=response_position;",
         "pointer<=response_position+32'd1;",
         "tree", ("TREE_ATOMIC_PUBLICATION",)),
+    "integrated-attention-zero": (
+        "anvil_q2_ht2_attention.sv",
+        "assign m_data=m_valid && !response_error ? response : {QWORDS*16{1'b0}};",
+        "assign m_data={QWORDS*16{1'b0}};",
+        "integrated", ("MATRIX_NUMERICAL", "MATRIX_BATCH_RESULT")),
 }
 
 
 def exercise(run, fixture):
     from verify import (ROOT, BF16, FP32, convert, dequant, simulate, mac_behavior,
                         dma_behavior, kv_store_behavior, tree_behavior)
-    if fixture in ("conversion", "unpack"):
+    if fixture == "integrated":
+        from integrated import execute
+        execute(run, cells=[(17, False, 16, False, False)], smokes=False)
+    elif fixture in ("conversion", "unpack"):
         rows = []
         if fixture == "conversion":
             kind = 3
