@@ -1,0 +1,14 @@
+{
+  "chip": "Anvil-Q3",
+  "fitter_resources": {
+    "total_registers": 89449,
+    "block_memory_bits": 0,
+    "dsp_blocks": 402,
+    "virtual_pins": 2548
+  },
+  "timing": {},
+  "verification_tiers": {
+    "L3_board_hil": "L3_BRIDGE_CONNECTIVITY_PROBE_ONLY",
+    "L3_note": "Catapult PCIe BAR0 hardware bridge connectivity probe (reg 57) only; per-chip bitstream flash and on-board workload vector execution require fpga/board_hil.json role wrapper."
+  }
+}
