@@ -3,7 +3,6 @@
 
 import argparse
 import copy
-import json
 from pathlib import Path
 import shutil
 import sys
@@ -240,17 +239,25 @@ def main():
     args = parser.parse_args()
     req = bridge.load_json(bridge.project_path(args.request))
     build_dir = bridge.project_path(args.build)
+    build_manifest = bridge.load_json(build_dir / "build.json")
+    compiler_path = bridge.artifact(build_manifest["compiler_receipt"])
+    compiler_receipt = bridge.execution_provenance(build_manifest["compiler_receipt"])
+    binary = bridge.artifact(build_manifest["binary"])
     directory = bridge.project_path(args.response).parent
     if not req["integration_only"] or req["geometry"] != {
         **DEFAULT_GEOMETRY, **GEOMETRY.parameters()
-    } or req["sparse_threshold"] != 0:
+    } or req["sparse_threshold"] != 0 or req["mode"] != build_manifest["mode"] or (
+        req["image_sha256"] != build_manifest["image"]["sha256"]
+    ) or len(req["input_ids"]) != 1 or sha256(req["input_ids"]) != req["tokenized_input_sha256"]:
         raise ValueError("compact-only bridge fixture/threshold mismatch")
+    bridge.artifact(build_manifest["image"])
+    bridge.token_ids(req["input_ids"], GEOMETRY.vocabulary)
     initial = req["input_ids"][0]
     data = directory / "stimulus.txt"
     data.write_text(f"{initial} {int(req['job_type'] == 'ht2_speculative_sparse')} {DECODE_MIN}\n")
     raw = directory / "observations.txt"
     run = require_success(execute(
-        [relative(build_dir / "simulation"), f"+INPUT={relative(data)}", f"+OUTPUT={relative(raw)}"],
+        [relative(binary), f"+INPUT={relative(data)}", f"+OUTPUT={relative(raw)}"],
         directory, "compiled-execution", timeout=600, inputs=[
             data, build_dir / "benchmark_tb.sv", build_dir / "memory.hex",
             build_dir / "descriptors.txt", build_dir / "simulation"]))
@@ -282,9 +289,10 @@ def main():
     response = {key: req[key] for key in bridge.IDENTITY_FIELDS}
     response.update(
         request_sha256=sha256(req), integration_only=True, execution_kind="compiled_rtl",
-        status="completed", software_versions={"verilator": bridge.load_json(
-            run / "receipt.json")["tool_version"], "timing": "RTL 10ns testbench clock, not physical STA"},
-        provenance=[link(run / "receipt.json"), link(build_dir / "compile-receipt.json")],
+        status="completed", software_versions={
+            "verilator": (compiler_path.parent / compiler_receipt["tool_version"]["stdout"]).read_text().strip(),
+            "timing": "RTL 10ns testbench clock, not physical STA"},
+        provenance=[link(run / "receipt.json"), build_manifest["compiler_receipt"]],
         timings=timings, measured_clock_hz=100000000,
         output_token_ids=output, eos_reason="integration_boundary",
         counters=dict(cycles=timings["decode"]["elapsed_ns"] // 10,
@@ -311,11 +319,9 @@ def contract(directory, cases=CASES, modes=(("bf16", 0), ("w4", 2))):
         build_dir = directory / f"build-{mode_name}-{uuid.uuid4().hex[:8]}"
         build_dir.mkdir()
         image, binary, receipt = build(build_dir, mode)
-        # Preserve the compiler receipt's own relative raw-log references.
-        compiler = bridge.load_json(receipt)
-        compiler["stdout"] = str(receipt.parent.relative_to(build_dir) / compiler["stdout"])
-        compiler["stderr"] = str(receipt.parent.relative_to(build_dir) / compiler["stderr"])
-        write_json(build_dir / "compile-receipt.json", compiler)
+        write_json(build_dir / "build.json", {
+            "compiler_receipt": link(receipt), "binary": link(binary),
+            "image": link(build_dir / "memory.hex"), "mode": mode_name})
         document = {
             "model": {"revision": "compact-seeded-17", "tensors": [link(build_dir / "memory.hex")],
                       "config": {"sha256": sha256(GEOMETRY.parameters())},
@@ -384,10 +390,20 @@ def negative_cases(req, response):
         "provenance-hash": lambda value: value["provenance"][0].update(sha256="0" * 64),
         "truncation": lambda value: (
             value["output_token_ids"].pop(),
-            value["counters"].update(committed_tokens=len(value["output_token_ids"]))),
+            value["counters"].update(
+                committed_tokens=len(value["output_token_ids"]),
+                completed_steps=min(value["counters"]["completed_steps"],
+                                    len(value["output_token_ids"])))),
         "contradictory-counters": lambda value: value["counters"].update(
             down_projection_actual_bytes=value["counters"]["physical_read_bytes"] + 64),
         "timing": lambda value: value["timings"]["decode"].update(elapsed_ns=1),
+    }
+    diagnostics = {
+        "identity": "identity mismatch", "request-hash": "request hash mismatch",
+        "provenance": "provenance missing", "provenance-hash": "artifact identity mismatch",
+        "truncation": "truncated compact commit-boundary output",
+        "contradictory-counters": "contradictory DDR/sparse accounting",
+        "timing": "contradictory monotonic timing boundaries",
     }
     rejected = []
     for name, inject in defects.items():
@@ -396,6 +412,8 @@ def negative_cases(req, response):
         try:
             bridge.validate_response(bad, req, full=False)
         except ValueError as exc:
+            if diagnostics[name] not in str(exc):
+                raise AssertionError(f"wrong rejection for {name}: {exc}") from exc
             rejected.append({"case": name, "diagnostic": str(exc)})
         else:
             raise AssertionError(f"adapter defect escaped: {name}")

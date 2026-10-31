@@ -2,6 +2,7 @@
 
 import ast
 from collections import Counter
+import importlib
 
 from benchmark_manifest import CASES, MANIFEST, MANIFEST_SHA256, sha256
 from evidence import ROOT, write_json
@@ -12,6 +13,7 @@ def run(directory):
     files = sorted((ROOT / "tests").glob("*.py"))
     for path in files:
         ast.parse(path.read_text(), filename=str(path.relative_to(ROOT)))
+        importlib.import_module(path.stem)
     counts = Counter(case["domain"] for case in CASES)
     if len(counts) != 5 or any(count < 2 for count in counts.values()):
         raise AssertionError("frozen five-domain workload coverage")
@@ -59,6 +61,7 @@ def run(directory):
     else:
         raise AssertionError("simulated full-model result survived")
     record = {"name": "harness-selfcheck", "python_sources_parsed": len(files),
+              "python_sources_imported": len(files),
               "workload_manifest_sha256": MANIFEST_SHA256, "domains": dict(counts),
               "expected_rejections": rejected,
               "scope": "verification/adapter negative checks, not hardware/model measurements"}

@@ -187,6 +187,7 @@ def inputs():
             not quantization["software_versions"] or not quantization["calibration_manifest"]):
             raise ValueError("independently frozen AWQ quantization provenance missing")
         artifact(quantization["calibration_manifest"])
+        execution_provenance(quantization["execution_receipt"])
         if set(document["tokenized_cases"]) != {case["id"] for case in CASES}:
             raise ValueError("tokenized workload coverage mismatch")
         for case in CASES:

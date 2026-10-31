@@ -13,6 +13,8 @@ tensor maps descriptor_index to a raw binary artifact including padding.
 Layout identity is ht2-panel-major-column-64-v1. validate_image compares every
 converted byte, including padding and scratch/KV zeros, to checkpoint-derived
 streams; an asserted conversion receipt or layout label alone cannot pass.
+AWQ provenance also links an actual execution_receipt whose sources and raw
+outputs are hash-bound and retained; a software-version label alone is insufficient.
 
 Portable conversion:
 python3 tests/checkpoint_images.py --inputs inputs.json --mode bf16
@@ -423,7 +425,58 @@ def selfcheck(directory):
     if comparisons == 0 or len(rejections) != 6:
         raise AssertionError("empty checkpoint conversion coverage")
     return {"name": "checkpoint-conversion", "compared_descriptors": comparisons,
-            "rejections": rejections, "scope": "compact independent converter fixtures"}
+            "rejections": rejections, "storage": storage_checks(directory),
+            "scope": "compact independent converter fixtures"}
+
+
+def storage_checks(directory):
+    import json
+    import uuid
+    work = directory / f"tensor-storage-{uuid.uuid4().hex[:8]}"
+    work.mkdir()
+    values = (1, 0x8000, 0x3F80)
+    binary = struct.pack("<3H", *values)
+    raw_path, safe_path = work / "raw.bin", work / "tensor.safetensors"
+    raw_path.write_bytes(binary)
+    header = json.dumps({"probe": {"dtype": "BF16", "shape": [3], "data_offsets": [0, 6]}}).encode()
+    header += b" " * ((-len(header)) % 8)
+    safe_path.write_bytes(struct.pack("<Q", len(header)) + header + binary)
+    def record(path, **changes):
+        return {"name": "probe", "shape": [3], "dtype": "BF16", "storage": "raw_le",
+                "artifact": {"path": relative(path), "sha256": digest(path)}, **changes}
+    with contextlib.ExitStack() as stack:
+        raw = Tensor(record(raw_path), stack)
+        safe = Tensor(record(safe_path, storage="safetensors"), stack)
+        raw.validate_values()
+        safe.validate_values()
+        if [raw.at(i) for i in range(3)] != list(values) or [
+            safe.at(i) for i in range(3)] != list(values):
+            raise AssertionError("raw/safetensors exact BF16 conversion failed")
+    malformed = [
+        ("raw-length", record(raw_path, shape=[4]), "length mismatch"),
+        ("header-shape", record(safe_path, storage="safetensors", shape=[4]), "shape/dtype/length mismatch"),
+    ]
+    for label, dtype, bits, diagnostic in (
+        ("nonfinite-bf16", "BF16", 0x7F80, "nonfinite"),
+        ("negative-scale", "FP16", 0xBC00, "negative AWQ scale"),
+        ("wide-nibble", "U8", 16, "unsigned nibble range"),
+    ):
+        path = work / (label + ".bin")
+        path.write_bytes(bytes([bits]) if dtype == "U8" else struct.pack("<H", bits))
+        malformed.append((label, record(path, dtype=dtype, shape=[1]), diagnostic))
+    rejections = []
+    for label, item, diagnostic in malformed:
+        with contextlib.ExitStack() as stack:
+            try:
+                tensor = Tensor(item, stack)
+                tensor.validate_values()
+            except ValueError as exc:
+                if diagnostic not in str(exc):
+                    raise
+                rejections.append(label)
+            else:
+                raise AssertionError("invalid tensor survived: " + label)
+    return {"exact_values_per_storage": 3, "rejections": rejections}
 
 
 if __name__ == "__main__":
