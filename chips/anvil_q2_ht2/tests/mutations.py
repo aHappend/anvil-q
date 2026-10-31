@@ -105,6 +105,7 @@ def execute(run, selected=None):
         if fixture not in completed_fixtures:
             baseline = Run(f"mutation-control-{fixture}",
                            run.receipt["kind"] == "advisory-preparation")
+            baseline.started, baseline.budget_s = run.started, run.budget_s
             try:
                 exercise(baseline, fixture)
             except Exception as exc:
@@ -114,6 +115,7 @@ def execute(run, selected=None):
                 raise RuntimeError(f"mutation control source changed: {fixture}")
             completed_fixtures[fixture] = run.relative(baseline.path / "receipt.json")
         case = Run(f"mutation-{name}", run.receipt["kind"] == "advisory-preparation")
+        case.started, case.budget_s = run.started, run.budget_s
         case.receipt["mutation"] = {
             "id": name, "control_receipt": completed_fixtures[fixture],
             "file": "rtl/" + filename, "old": old, "new": new,

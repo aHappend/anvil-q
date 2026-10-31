@@ -28,6 +28,24 @@ def expand_packages(run, root, source_paths):
                 raise RuntimeError(f"unresolved synthesis package: {name}")
             return packages[name]
         lowered = imports.sub(inline, text)
+        if path.name in ("anvil_q2_ht_configuration.sv",
+                         "anvil_q2_ht2_native_configuration.sv"):
+            replacements = [
+                ("reg [15:0] initialized [0:ENTRIES-1];",
+                 "reg [16*ENTRIES-1:0] initialized;"),
+                ("initialized[cfg_index][cfg_addr[5:2]]",
+                 "initialized[{cfg_index,cfg_addr[5:2]}]"),
+                ("initialized[index]", "initialized[{index,4'b0000}+:16]"),
+            ]
+            for old, new in replacements:
+                if old not in lowered:
+                    raise RuntimeError(f"unrecognized configuration storage syntax: {path.name}")
+                lowered = lowered.replace(old, new)
+            lowered, resets = re.subn(
+                r"for \(i=0;\s*i<ENTRIES;\s*i=i\+1\) initialized\[i\]<=0;",
+                "initialized<=0;", lowered)
+            if resets != 1 or re.search(r"initialized\[(?:i|index|cfg_index)\]", lowered):
+                raise RuntimeError(f"unrecognized configuration reset/index: {path.name}")
         lowered = re.sub(r"\bint'\(([^()]*)\)", r"$signed(32'(\1))", lowered)
         if re.search(r"\bint'\s*\(", lowered):
             raise RuntimeError(f"unsupported nested int cast: {path.relative_to(root)}")
@@ -44,14 +62,25 @@ def expand_packages(run, root, source_paths):
         })
     run.receipt["package_expansion"] = {
         "operation": ("replace wildcard imports with verbatim package bodies; omit package units; "
-                      "lower int'(x) to $signed(32'(x))"),
+                      "lower int'(x) to $signed(32'(x)); flatten only the asynchronous-reset "
+                      "16-bit initialized register arrays in both configuration modules, "
+                      "with index {row,word} and whole-vector reset"),
         "bindings": bindings,
     }
     run.save()
     return outputs
 
 
-def execute(run, root, source_paths):
+COMPACT_PARAMETERS = {
+    "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+    "NUM_Q_HEADS": 1, "NUM_KV_HEADS": 1, "HEAD_DIM": 8,
+    "GROUP_SIZE": 1, "VOCAB_SIZE": 2, "MAX_SEQ_LEN": 5,
+    "TILE_SLOTS": 2, "READ_OUTSTANDING": 1, "QUEUE_DEPTH": 3,
+    "CACHE_BLOCK": 1, "HOT_BLOCKS": 1,
+}
+
+
+def execute(run, root, source_paths, compact=False):
     run.tool("yosys")
     record, _, stderr = run.command(
         ["yosys", "-Q", "-T", "-m", "slang", "-p", "help read_slang"],
@@ -66,9 +95,12 @@ def execute(run, root, source_paths):
             str(p.relative_to(root)) for p in source_paths)
     netlist = run.path / "production-netlist.json"
     script = run.path / "synthesis.ys"
+    parameters = COMPACT_PARAMETERS if compact else {}
+    parameter_options = "".join(f" -chparam {name} {value}"
+                                for name, value in parameters.items())
     script.write_text(
         read_command + "\n"
-        "hierarchy -check -top anvil_q2_ht2_top\n"
+        f"hierarchy -check -top anvil_q2_ht2_top{parameter_options}\n"
         "proc\nopt_expr\nopt_clean\ncheck -noinit -assert\n"
         "memory -nomap\nopt_clean\ncheck -noinit -assert\n"
         "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor\n"
@@ -116,7 +148,8 @@ def execute(run, root, source_paths):
     if sum(count for name, count in counts.items() if "dff" in name.lower()) == 0:
         raise RuntimeError("synthesis lacks registered state")
     run.receipt["synthesis"] = {
-        "configuration": "production parameter defaults", "cells": dict(counts),
+        "configuration": "compact whole top" if compact else "production parameter defaults",
+        "parameters": parameters, "cells": dict(counts),
         "hierarchy_instances": dict(origins), "memory_bits": memory_bits,
         "latches": 0, "black_boxes": 0,
         "limits": "Generic structural synthesis does not establish M20K/DSP mapping, fit or timing.",

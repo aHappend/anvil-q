@@ -54,6 +54,7 @@ class Run:
         }
         self.versions = set()
         self.started = time.monotonic()
+        self.budget_s = min(2670, float(os.environ.get("ANVIL_L1_BUDGET_SECONDS", "2670")))
 
     def relative(self, path):
         return str(Path(path).relative_to(ROOT))
@@ -67,19 +68,22 @@ class Run:
                     "yosys": ["-V"], "c++": ["--version"]}.get(tool, ["--version"])
             self.command([tool, *args], f"version-{tool}", check=False, timeout=60)
 
-    def command(self, argv, name, cwd=ROOT, timeout=2600, check=True):
-        timeout = min(timeout, max(0.01, 2670 - (time.monotonic() - self.started)))
+    def command(self, argv, name, cwd=ROOT, timeout=2600, check=True, environment=None):
+        timeout = min(timeout, max(0.01, self.budget_s - (time.monotonic() - self.started)))
         stdout = self.path / f"{len(self.records):03d}-{name}.stdout.txt"
         stderr = stdout.with_name(stdout.name.replace(".stdout.", ".stderr."))
         start = time.monotonic()
         record = {"argv": [str(a) for a in argv], "cwd": self.relative(cwd),
                   "start_time": now(), "timeout_s": timeout,
                   "stdout": self.relative(stdout), "stderr": self.relative(stderr)}
+        if environment:
+            record["environment_overrides"] = environment
         self.records.append(record)
         with stdout.open("wb") as out, stderr.open("wb") as err:
             try:
                 process = subprocess.Popen([str(a) for a in argv], cwd=cwd,
-                                           stdout=out, stderr=err, start_new_session=True)
+                                           stdout=out, stderr=err, start_new_session=True,
+                                           env={**os.environ, **(environment or {})})
             except OSError as exc:
                 record.update(exit_code=None, timed_out=False, error=str(exc), end_time=now())
                 raise
@@ -241,11 +245,12 @@ def simulate(run, tb, parameters=None, simulator="iverilog", root=None, plusargs
     return stdout
 
 
-def numerics(run, kinds=range(5), simulator="verilator", compact=False):
+def numerics(run, kinds=range(5), simulator="verilator", compact=False,
+             vector_prefix="numerics"):
     for kind in kinds:
-        vectors = run.path / f"numerics-{kind}.txt"
+        vectors = run.path / f"{vector_prefix}-{kind}.txt"
         count = 0
-        payload = run.path / f"numerics-{kind}.body"
+        payload = run.path / f"{vector_prefix}-{kind}.body"
         with payload.open("w") as stream:
             for a, b, aux, expected, error in numerical_rows(kind, compact):
                 stream.write(f"{a:08x} {b:08x} {aux:08x} {expected:08x} {int(error)}\n")
@@ -584,7 +589,7 @@ def codec_behavior(run, simulator):
         run.save()
 
 
-def top_fixture(run):
+def top_fixture(run, stem="compact-model"):
     memory = bytearray(131072)
     descriptors = [bytes(64) for _ in range(32)]
     cursor = 0x1000
@@ -616,19 +621,19 @@ def top_fixture(run):
         config.extend((0x1000 + 64*index + 4*word, value)
                       for word, value in enumerate(struct.unpack("<16I", descriptor)))
     image_directory = run.path / "checkpoint-images"
-    image_directory.mkdir()
-    image = image_directory / "compact-model.hex"
+    image_directory.mkdir(exist_ok=True)
+    image = image_directory / f"{stem}.hex"
     image.write_text("\n".join(f"{byte:02x}" for byte in memory) + "\n")
-    cfg = run.path / "compact-model-config.txt"
+    cfg = run.path / f"{stem}-config.txt"
     cfg.write_text(f"{len(config)}\n" + "\n".join(f"{a:04x} {b:08x}" for a, b in config) + "\n")
     return image, cfg
 
 
-def top_behavior(run, simulator):
-    image, cfg = top_fixture(run)
+def top_behavior(run, simulator, stem="compact-model", result_key="top_smoke"):
+    image, cfg = top_fixture(run, stem)
     stdout = simulate(run, ROOT / "tests/top_tb.sv", simulator=simulator,
                       plusargs=["+image=" + run.relative(image), "+config=" + run.relative(cfg)])
-    run.receipt["top_smoke"] = {
+    run.receipt[result_key] = {
         "fixture": "analytical residual-identity model: zero projections, unit embeddings/gamma, head rows one/zero",
         "scope": "compact architectural smoke, not official-model fidelity or benchmark acceptance",
         "summary": stdout.strip(), "simulator": simulator,
@@ -739,6 +744,7 @@ def main():
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--kind", type=int, choices=range(5))
     parser.add_argument("--mutation", help="run one named disposable defect-sensitivity case")
+    parser.add_argument("--reproduction-child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv",
                                           "activation", "activation-startup", "top", "all"], default="all")
@@ -773,10 +779,13 @@ def main():
                 top_behavior(run, "verilator")
         elif args.check == "synthesis":
             from synthesis import execute
-            execute(run, ROOT, sources())
+            execute(run, ROOT, sources(), compact=args.compact)
         elif args.check == "mutations":
             from mutations import execute
             execute(run, args.mutation)
+        elif args.check == "reproduce":
+            from reproduction import execute, child
+            (child if args.reproduction_child else execute)(run)
         else:
             raise RuntimeError(f"{args.check}: verification implementation not yet completed")
     except Exception as exc:
