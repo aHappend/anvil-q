@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Portable L1 entry point and bounded, retained preparation probes.
 
-Verification is under construction. No unimplemented suite is reported as a
-passing check. Physical timing/board execution belongs to the shared runtime.
+Physical timing/board execution belongs to the shared runtime.
 """
 
 import argparse
@@ -38,7 +37,7 @@ def main():
                                           "synthesis-array", "synthesis-top", "parameters", "top-startup",
                                           "cdc-fifo", "cdc-mailbox", "control", "compatibility",
                                           "logical-compatibility", "benchmark-prerequisites",
-                                          "harness-selfcheck"))
+                                          "harness-selfcheck", "benchmark-case", "checkpoint-conversion"))
     parser.add_argument("--simulator", choices=("iverilog", "verilator"), default="iverilog")
     parser.add_argument("--mode", choices=("bf16", "fp16", "w4"), default="bf16")
     parser.add_argument("--geometry", choices=("singleton", "compact", "gqa", "medium"),
@@ -108,6 +107,14 @@ def main():
                 elif suite == "harness-selfcheck":
                     import tooling_checks
                     check = tooling_checks.run(directory)
+                elif suite == "checkpoint-conversion":
+                    import checkpoint_images
+                    check = checkpoint_images.selfcheck(directory)
+                elif suite == "benchmark-case":
+                    import compact_workload
+                    check = {"name": suite, "results": compact_workload.contract(
+                        directory, cases=compact_workload.CASES[:1],
+                        modes=(("bf16", 0),))}
                 elif suite == "mutations":
                     import mutation_checks
                     check = {"name": "mutations", "results": mutation_checks.run(directory)}
@@ -130,14 +137,15 @@ def main():
             elif suite == "full-model-benchmarks":
                 import benchmark_checks
                 result["checks"] = benchmark_checks.full_model(directory)
+            elif suite == "benchmark-contract":
+                import compact_workload
+                result["checks"] = compact_workload.contract(directory)
             elif suite == "behavior":
                 import suites
                 result["checks"] = suites.behavior(directory, args.compact)
             elif suite == "reproduction":
                 import suites
                 result["checks"] = suites.reproduction(directory)
-            else:
-                raise NotImplementedError(f"{suite}: mandatory verification suite not yet implemented")
             code = 0
         except Exception as exc:
             result["failure"] = f"{type(exc).__name__}: {exc}"

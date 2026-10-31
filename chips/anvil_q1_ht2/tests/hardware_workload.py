@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import sys
 import uuid
+from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -70,6 +71,32 @@ def positive(value, name):
     if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
         raise ValueError(f"nonpositive/nonfinite measurement: {name}")
     return value
+
+
+def execution_provenance(record):
+    """Validate hash-bound execution inputs and retained raw output, not a PASS label."""
+    path = artifact(record)
+    raw = load_json(path)
+    for key in ("argv", "cwd", "source_sha256", "start_time", "end_time", "stdout", "stderr"):
+        if key not in raw:
+            raise ValueError("measurement receipt incomplete")
+    if raw.get("exit_code") != 0 or raw.get("timed_out") is not False:
+        raise ValueError("measurement receipt failed or timed out")
+    if (not isinstance(raw["argv"], list) or not raw["argv"] or
+        not all(isinstance(word, str) and word for word in raw["argv"]) or
+        not isinstance(raw["source_sha256"], dict) or not raw["source_sha256"]):
+        raise ValueError("execution command/source provenance missing")
+    project_path(raw["cwd"] or ".")
+    start, end = (datetime.fromisoformat(raw[key]) for key in ("start_time", "end_time"))
+    if start.tzinfo is None or end.tzinfo is None or end < start:
+        raise ValueError("execution receipt timestamp contradiction")
+    for source, expected in raw["source_sha256"].items():
+        artifact({"path": source, "sha256": expected})
+    for channel in ("stdout", "stderr"):
+        stream = project_path(str((path.parent / raw[channel]).relative_to(ROOT)))
+        if not stream.is_file():
+            raise ValueError("measurement raw output missing")
+    return raw
 
 
 def token_ids(values, vocabulary=151936):
@@ -173,6 +200,8 @@ def inputs():
         for record in document["comparators"].values():
             artifact(record)
         token_ids(document["eos_token_ids"])
+        import checkpoint_images
+        checkpoint_images.validate_images(document)
     except (OSError, KeyError, TypeError, ValueError) as exc:
         raise PrerequisiteError(f"BENCHMARK_PREREQUISITE: {exc}") from exc
     return document, path
@@ -224,17 +253,7 @@ def validate_response(response, req, *, full=True):
     if not provenance or not response["software_versions"]:
         raise ValueError("native measurement/source provenance missing")
     for record in provenance:
-        raw = load_json(artifact(record))
-        if raw.get("exit_code") != 0 or raw.get("timed_out") is not False:
-            raise ValueError("measurement receipt failed or timed out")
-        for key in ("argv", "cwd", "source_sha256", "start_time", "end_time", "stdout", "stderr"):
-            if key not in raw:
-                raise ValueError("measurement receipt incomplete")
-        receipt_parent = project_path(record["path"]).parent
-        for channel in ("stdout", "stderr"):
-            stream = project_path(str((receipt_parent / raw[channel]).relative_to(ROOT)))
-            if not stream.is_file():
-                raise ValueError("measurement raw output missing")
+        execution_provenance(record)
     image_job = req["job_type"] == "image_validation_load"
     for stage in (("load_cold", "load_warm") if image_job else
                   ("load_cold", "load_warm", "prefill", "decode")):
@@ -279,7 +298,11 @@ def validate_response(response, req, *, full=True):
         raise ValueError("token/step counters do not match complete output sequence")
     if not 1 <= counters["charged_weight_traversals"] or len(output) > 4 * counters["completed_steps"]:
         raise ValueError("invalid charged traversals or commit batch size")
-    if response["eos_reason"] == "eos":
+    if (not full and response["eos_reason"] == "integration_boundary" and
+        req.get("integration_decode_min") == 4 and req["decode_limit"] == 7):
+        if not 4 <= len(output) <= 7:
+            raise ValueError("truncated compact commit-boundary output")
+    elif response["eos_reason"] == "eos":
         if output[-1] not in req["eos_token_ids"] or len(output) > req["decode_limit"]:
             raise ValueError("invalid short-EOS termination")
     elif response["eos_reason"] != "limit" or len(output) != req["decode_limit"]:

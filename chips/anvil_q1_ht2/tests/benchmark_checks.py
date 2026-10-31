@@ -10,13 +10,7 @@ import ieee_reference as fp
 
 
 def provenance(record):
-    document = bridge.load_json(bridge.artifact(record))
-    for key in ("argv", "cwd", "source_sha256", "start_time", "end_time", "stdout", "stderr"):
-        if key not in document:
-            raise ValueError("reference/comparator execution provenance incomplete")
-    if document.get("exit_code") != 0 or document.get("timed_out") is not False:
-        raise ValueError("reference/comparator execution failed")
-    return document
+    return bridge.execution_provenance(record)
 
 
 def fidelity(response, document):
@@ -26,8 +20,23 @@ def fidelity(response, document):
         observations["case_id"] != response["case_id"] or
         observations["workload_manifest_sha256"] != MANIFEST_SHA256):
         raise ValueError("reference boundary identity mismatch")
-    provenance(observations["native_execution_receipt"])
-    provenance(observations["fp64_execution_receipt"])
+    native_receipt = provenance(observations["native_execution_receipt"])
+    wide_receipt = provenance(observations["fp64_execution_receipt"])
+    for kind, receipt in (("native", native_receipt), ("fp64", wide_receipt)):
+        identity = receipt["reference_identity"]
+        if (identity["kind"] != kind or identity["model_revision"] != document["model"]["revision"] or
+            identity["mode"] != response["mode"] or identity["case_id"] != response["case_id"] or
+            identity["workload_manifest_sha256"] != MANIFEST_SHA256 or
+            identity["model_sha256"] != response["model_sha256"] or
+            identity["algorithm"] != ("N2/N8-ordered-native" if kind == "native" else "FP64-mathematical")):
+            raise ValueError("independent reference execution identity mismatch")
+        if not identity["reference_sources"]:
+            raise ValueError("independent reference source inventory missing")
+        for path in identity["reference_sources"]:
+            if path not in receipt["source_sha256"] or path.startswith("rtl/"):
+                raise ValueError("reference execution cannot use Designer RTL as its oracle")
+    if native_receipt["argv"] == wide_receipt["argv"]:
+        raise ValueError("native and mathematical references need distinct executed configurations")
     if observations.get("independent_mathematical_reference") is not True:
         raise ValueError("FP64 mathematical reference is not independently identified")
     records, covered = [], set()
@@ -36,6 +45,8 @@ def fidelity(response, document):
         reference = item["reference_fp64"]
         if not isinstance(reference, list) or not all(type(v) in (float, int) for v in reference):
             raise ValueError("raw FP64 boundary vector required")
+        if not actual or not all(math.isfinite(v) for v in [*actual, *reference]):
+            raise ValueError("empty/nonfinite reference boundary vector")
         metrics = fp.fidelity(actual, reference)
         if (metrics["nrmse"] > .02 or metrics["cosine"] < .999 or
             (all(v == 0 for v in reference) and metrics["max_absolute_error"] > 2 ** -18)):
@@ -101,8 +112,17 @@ def full_model(directory):
     }
     results = []
     try:
-        document, input_path = bridge.inputs()
-        prefix = bridge.bridge_prefix()
+        document, input_path, prefix = None, None, None
+        for prerequisite in ("inputs", "bridge"):
+            try:
+                if prerequisite == "inputs":
+                    document, input_path = bridge.inputs()
+                else:
+                    prefix = bridge.bridge_prefix()
+            except bridge.PrerequisiteError as exc:
+                acceptance["missing_prerequisites"].append(str(exc))
+        if acceptance["missing_prerequisites"]:
+            raise bridge.PrerequisiteError("BENCHMARK_PREREQUISITE: required external inputs/bridge unavailable")
         acceptance["input_manifest"] = {"path": relative(input_path), "sha256": digest(input_path)}
         comparators = {kind: comparator(record, kind, document)
                        for kind, record in document["comparators"].items()}
@@ -192,7 +212,8 @@ def full_model(directory):
         else:
             acceptance["failure_reasons"].append("one or more mandatory performance predicates failed")
     except bridge.PrerequisiteError as exc:
-        acceptance["missing_prerequisites"].append(str(exc))
+        if not acceptance["missing_prerequisites"]:
+            acceptance["missing_prerequisites"].append(str(exc))
     except Exception as exc:
         acceptance["failure_reasons"].append(f"{type(exc).__name__}: {exc}")
     finally:
