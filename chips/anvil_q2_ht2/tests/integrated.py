@@ -96,18 +96,25 @@ class Reference:
 
     def cache(self, values):
         bf = [convert(v, self.fmt, BF16)[0] for v in values]
-        # Integrated fixture uses CACHE_BLOCK=1, including real stored INT8 scales.
-        return [kv_encode([v], self.int8)[1][0] for v in bf]
+        encoded, decoded = bytearray(), []
+        for value in bf:
+            record, reconstructed, error = kv_encode([value], self.int8)
+            if error:
+                raise ValueError("invalid independent KV fixture")
+            encoded.extend(record.to_bytes(3 if self.int8 else 2, "little"))
+            decoded.append(reconstructed[0])
+        return decoded, bytes(encoded)
 
     def infer(self, token, position, prefix):
         hidden = self.native[0][8*token:8*token+8]
         normalized = self.norm(hidden, 23)
         query = self.rotary(self.boundary(self.projection(normalized, 16, 25)), position)
-        key = self.cache(self.rotary(self.boundary(self.projection(normalized, 17, 26)), position))
-        value = self.cache(self.boundary(self.projection(normalized, 18, 27)))
-        history = prefix + [(key, value)]
+        key, key_bytes = self.cache(self.rotary(self.boundary(self.projection(normalized, 17, 26)), position))
+        value, value_bytes = self.cache(self.boundary(self.projection(normalized, 18, 27)))
+        record = (key, value, key_bytes+value_bytes)
+        history = prefix + [record]
         scores = []
-        for k, _ in history:
+        for k, _, _ in history:
             score = 0
             for q, word in zip(self.expand(query), k):
                 score = add(score, multiply(q, convert(word, BF16, FP32)[0])[0])[0]
@@ -118,7 +125,7 @@ class Reference:
         context = []
         for dimension in range(8):
             accumulated = 0
-            for p, (_, v) in zip(probabilities, history):
+            for p, (_, v, _) in zip(probabilities, history):
                 accumulated = add(accumulated, multiply(
                     rounded(p), convert(v[dimension], BF16, FP32)[0])[0])[0]
             context.append(accumulated)
@@ -134,7 +141,7 @@ class Reference:
         hidden = self.boundary([add(a, b)[0] for a, b in
                                 zip(self.expand(hidden), self.expand(projected))])
         logits = self.projection(self.norm(hidden, 2), 1)
-        return logits, (key, value), probabilities
+        return logits, record, probabilities
 
     def evaluate(self, ids, parents, position, prefix):
         logits, records, histories, probabilities = [], [], [], []
@@ -170,11 +177,14 @@ def fixtures(run, seed, half, bits, sparse, int8):
             pack([1]*len(ids), 28), 0, 1, 5, fresh)
         if error:
             raise ValueError("independent matrix fixture overflows sequence")
+        kv_bytes = b"".join(record[2] for record in records)
         transactions.append((len(ids), position, int(fresh), pack(ids, 32), pack(parents, 2),
                              0 if cancel else accepted, 0 if cancel else mask,
-                             0 if cancel else nxt, pointer if cancel else end, cancel))
+                             0 if cancel else nxt, pointer if cancel else end, cancel,
+                             len(kv_bytes), int.from_bytes(kv_bytes, "little")))
         expected.append({"label": label, "logits": logits, "cancel": cancel,
                          "K": len(ids), "accepted": 0 if cancel else accepted, "mask": mask,
+                         "kv_bytes": len(kv_bytes),
                          "targets": targets,
                          "nonuniform_rows": sum(len(p)>1 and max(p)-min(p)>Decimal("0.001") for p in probs)})
         if not cancel:
@@ -198,6 +208,14 @@ def fixtures(run, seed, half, bits, sparse, int8):
     append(ids, parents, False, "K2-committed-prefix")
     ids, parents = chain(4)
     append(ids, parents, True, "K4-chain")
+    mismatch = list(ids)
+    mismatch[1] ^= 1
+    append(mismatch, parents, True, "K4-first-child-mismatch")
+    mismatch = list(ids)
+    mismatch[2] ^= 1
+    append(mismatch, parents, True, "K4-later-mismatch")
+    ids, _ = chain(3)
+    append([ids[0], ids[1], ids[1], ids[2]], [0, 0, 0, 2], True, "K4-duplicate-low-index")
     # Noncontiguous matching path 0 -> 2 -> 3; slot 1 is a rejected sibling.
     ids, _ = chain(3)
     append([ids[0], ids[1]^1, ids[1], ids[2]], [0, 0, 0, 2], True, "K4-branch")
@@ -210,8 +228,8 @@ def fixtures(run, seed, half, bits, sparse, int8):
         raise ValueError("fixture failed to exercise nonuniform attention")
     path = run.path / f"{stem}-transactions.txt"
     path.write_text(str(len(transactions))+"\n"+"".join(
-        f"{k} {p} {f} {ids:x} {parent:x} {a} {mask:x} {n} {end} {cancel}\n"
-        for k, p, f, ids, parent, a, mask, n, end, cancel in transactions))
+        f"{k} {p} {f} {ids:x} {parent:x} {a} {mask:x} {n} {end} {cancel} {kv_length} {kv_bytes:x}\n"
+        for k, p, f, ids, parent, a, mask, n, end, cancel, kv_length, kv_bytes in transactions))
     expected_path = run.path / f"{stem}-expected.json"
     expected_path.write_text(json.dumps(expected, indent=2)+"\n")
     return stem, image, cfg, path, expected
@@ -236,7 +254,7 @@ def fidelity(actual, expected):
 
 
 def compare(stdout, expected):
-    observed, checked, witnesses = {}, set(), set()
+    observed, checked, witnesses = {}, {}, set()
     for line in stdout.splitlines():
         if line.startswith("RESULT matrix "):
             _, _, transaction, slot, index, value = line.split()
@@ -245,13 +263,18 @@ def compare(stdout, expected):
                 raise AssertionError("MATRIX_NUMERICAL duplicate result")
             observed[key] = int(value, 16)
         elif line.startswith("CHECKED matrix "):
-            checked.add(int(line.split("transaction=")[1].split()[0]))
+            transaction = int(line.split("transaction=")[1].split()[0])
+            if transaction in checked:
+                raise AssertionError("MATRIX_COVERAGE duplicate checked transaction")
+            checked[transaction] = int(line.split("kv_bytes=")[1].split()[0])
         elif line.startswith("WITNESS cancel "):
             witnesses.add(int(line.split("phase=")[1].split()[0]))
-    if checked != set(range(len(expected))) or witnesses != {1, 2, 3, 4}:
+    if set(checked) != set(range(len(expected))) or witnesses != {1, 2, 3, 4}:
         raise AssertionError("MATRIX_COVERAGE missing checked transaction/cancellation witness")
     results = []
     for transaction, row in enumerate(expected):
+        if (row["cancel"] == 0 or row["cancel"] >= 3) and checked[transaction] != row["kv_bytes"]:
+            raise AssertionError("MATRIX_KV_ACTIVATION missing checked bytes")
         if row["cancel"]:
             continue
         for slot, logits in enumerate(row["logits"]):
@@ -261,7 +284,7 @@ def compare(stdout, expected):
                             "nrmse": nrmse, "cosine": cosine})
     if any(not expected[t]["cancel"] for t, _, _ in observed):
         raise AssertionError("MATRIX_NUMERICAL unexpected logit")
-    return results
+    return results, sum(checked.values())
 
 
 def execute(run, cells=None, smokes=True):
@@ -310,7 +333,7 @@ def execute(run, cells=None, smokes=True):
             comparison_error = ""
             if record["exit_code"] == 0 and not record["timed_out"]:
                 try:
-                    results = compare(stdout, expected)
+                    results, kv_bytes = compare(stdout, expected)
                 except AssertionError as exc:
                     comparison_error = str(exc)
                     if not markers:
@@ -341,8 +364,10 @@ def execute(run, cells=None, smokes=True):
                 "seed": seed, "half": half, "weight_bits": bits, "sparse": sparse,
                 "int8": int8, "fixture": stem, "transactions": len(expected),
                 "checked_logits": 2*len(results), "comparisons": results,
+                "checked_kv_activation_bytes": kv_bytes,
                 "checked_cases": [{"label": e["label"], "K": e["K"], "accepted": e["accepted"],
-                                   "mask": e["mask"], "cancel": e["cancel"]} for e in expected],
+                                   "mask": e["mask"], "cancel": e["cancel"],
+                                   "nonuniform_rows": e["nonuniform_rows"]} for e in expected],
                 "sensitivity_rejections": sensitivity,
                 "image_sha256": hashlib.sha256(image.read_bytes()).hexdigest(),
                 "summary": next(line for line in stdout.splitlines() if line.startswith("SUMMARY ")),
