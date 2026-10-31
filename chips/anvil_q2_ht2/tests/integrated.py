@@ -24,10 +24,14 @@ def rounded(value, fmt=FP32):
 def model(seed):
     rng = random.Random(seed)
     weights = {}
+    embedding = [Decimal(rng.choice([-8, -4, 2, 6, 8])) / 8 for _ in range(8)]
     for index in (0, 1, 2, 3, *range(16, 28)):
         rows = 2 if index in (0, 1) else 5 if index == 3 else 8 if 16 <= index <= 22 else 1
         if index == 0:
-            values = [Decimal(rng.choice([-8, -4, 0, 2, 6, 8])) / 8 for _ in range(rows*8)]
+            values = embedding + [-v for v in embedding]
+        elif index == 1:
+            signs = [Decimal(1 if v > 0 else -1) / 4 for v in embedding]
+            values = [-v for v in signs] + signs
         elif index == 3:
             values = [Decimal(str(function(position * 1e6**(-pair/4))))
                       for position in range(5) for pair in range(4)
@@ -37,8 +41,11 @@ def model(seed):
         elif index >= 25:
             values = [Decimal(rng.choice([-1, 0, 1])) / 16 for _ in range(8)]
         else:
-            # Shared representable weights across native, W4 and W2 modes.
-            values = [Decimal(rng.choice([-1, 0, 1, 2])) / 4 for _ in range(rows*8)]
+            # Diagonal paths keep token-dependent V observable, rather than
+            # hiding attention defects behind identical values at every time.
+            diagonal = Decimal("0.5") if index in (16, 17, 18) else Decimal("0.25")
+            values = [diagonal if r == c and not (index == 20 and r in (1, 5))
+                      else Decimal(0) for r in range(rows) for c in range(8)]
         weights[index] = [rounded(value, BF16) for value in values]
     return weights
 
@@ -264,7 +271,7 @@ def execute(run):
     try:
         run.command(["verilator", "--binary", "--timing", "-Wno-fatal",
                      "--unroll-count", "1024", "--unroll-stmts", "100000",
-                     "-CFLAGS", "-O0", "--top-module", "top_tb", "-GMATRIX=1",
+                     "-CFLAGS", "-O2", "--top-module", "top_tb", "-GMATRIX=1",
                      "--Mdir", run.relative(obj), "-j", "2",
                      *[run.relative(p) for p in sources()], "tests/top_tb.sv"],
                     "top-matrix-compile")
