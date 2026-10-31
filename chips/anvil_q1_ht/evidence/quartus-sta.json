@@ -1,0 +1,355 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-10-31T15:57:43.684453+00:00",
+  "project_dir": "/data/sufeng/anvil-q1-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "passed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q1-ht-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
+    "errors": [],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 3.131,
+    "wns_hold_ns": 0.039,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [
+      {
+        "slack_ns": 3.131,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[78]"
+      },
+      {
+        "slack_ns": 3.131,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[79]"
+      },
+      {
+        "slack_ns": 3.131,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[80]"
+      },
+      {
+        "slack_ns": 3.131,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[81]"
+      },
+      {
+        "slack_ns": 3.131,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[84]"
+      },
+      {
+        "slack_ns": 3.131,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[82]"
+      },
+      {
+        "slack_ns": 3.182,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[54]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[78]"
+      },
+      {
+        "slack_ns": 3.182,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[54]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[79]"
+      },
+      {
+        "slack_ns": 3.182,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[54]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[80]"
+      },
+      {
+        "slack_ns": 3.182,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[54]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[81]"
+      },
+      {
+        "slack_ns": 3.182,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[54]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[84]"
+      },
+      {
+        "slack_ns": 3.182,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[54]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[82]"
+      },
+      {
+        "slack_ns": 3.252,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[78]"
+      },
+      {
+        "slack_ns": 3.252,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[79]"
+      },
+      {
+        "slack_ns": 3.252,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[80]"
+      },
+      {
+        "slack_ns": 3.252,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[81]"
+      },
+      {
+        "slack_ns": 3.252,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[84]"
+      },
+      {
+        "slack_ns": 3.252,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[82]"
+      },
+      {
+        "slack_ns": 3.261,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[78]"
+      },
+      {
+        "slack_ns": 3.261,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.current_score[36]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.max_score[82]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[66]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[66]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_math:g_legal.u_math|anvil_q1_ht_divide:u_divide|g_legal.q[0]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_math:g_legal.u_math|anvil_q1_ht_divide:u_divide|g_legal.q[0]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_nonlinear:g_legal.u_nonlinear|anvil_q1_ht_math:u_math|anvil_q1_ht_isqrt:u_isqrt|state.RESULT|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_nonlinear:g_legal.u_nonlinear|anvil_q1_ht_math:u_math|anvil_q1_ht_isqrt:u_isqrt|state.RESULT"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[19]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[19]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[51]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[51]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[11]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[11]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[20]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[20]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.norm_kind.0111|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.norm_kind.0111"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.state.ATTN_SCORE|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.state.ATTN_SCORE"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[75]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[75]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[14]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[14]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.norm_kind.0101|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.norm_kind.0101"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_math:g_legal.u_math|chunk[0]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_math:g_legal.u_math|chunk[0]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[50]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[50]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[13]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_compat_projection:g_compatibility.u_projection|anvil_q1_ht_tensor_array:u_dot|anvil_q1_ht_mac_lane:g_bank[0].g_lane[0].u_mac|accumulator_s[13]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_nonlinear:g_legal.u_nonlinear|anvil_q1_ht_math:u_math|anvil_q1_ht_isqrt:u_isqrt|state.IDLE|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_nonlinear:g_legal.u_nonlinear|anvil_q1_ht_math:u_math|anvil_q1_ht_isqrt:u_isqrt|state.IDLE"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_nonlinear:g_legal.u_nonlinear|anvil_q1_ht_math:u_math|anvil_q1_ht_isqrt:u_isqrt|state.SUBTRACT|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_nonlinear:g_legal.u_nonlinear|anvil_q1_ht_math:u_math|anvil_q1_ht_isqrt:u_isqrt|state.SUBTRACT"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[10]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[10]"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[85]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[85]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_b[8]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_b[8]"
+      }
+    ],
+    "stderr_tail": []
+  },
+  "detail": "Timing closed: Setup WNS = 3.131 ns",
+  "top_module": "anvil_q1_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 145.58,
+  "critical_path_delay_ns": 6.869,
+  "fitter_resource_summary": {
+    "alms_used": 6857,
+    "alms_total": 427200,
+    "alms_pct": "2 %",
+    "total_registers": 8140,
+    "block_memory_bits": 0,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 8,
+    "virtual_pins": 310
+  },
+  "parameters": {
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 16,
+    "INTERMEDIATE_SIZE": 16,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 2,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "81c47027c1ffc4227c51e5a56f54f1acb80381ac13746a4d6a08ac0df86cb5d3",
+  "applicable": true
+}
