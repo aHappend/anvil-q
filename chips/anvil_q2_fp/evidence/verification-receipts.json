@@ -5044,19 +5044,19 @@
       ]
     },
     "check:defect-sensitivity": {
-      "attempt_id": 1169,
-      "duration_s": 190.18695053993724,
-      "stdout_preview": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/receipt.json\n",
+      "attempt_id": 1177,
+      "duration_s": 189.48688173294067,
+      "stdout_preview": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/receipt.json",
+          "path": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/receipt.json",
           "data": {
             "schema": 1,
             "purpose": "l1-defects",
             "acceptance_evidence": false,
             "cwd": ".",
-            "started_at": "2026-10-31T12:10:02.583093+00:00",
+            "started_at": "2026-10-31T13:39:12.032739+00:00",
             "commands": [
               {
                 "argv": [
@@ -5066,39 +5066,39 @@
                   "accumulation"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T12:10:02.602981+00:00",
+                "started_at": "2026-10-31T13:39:12.055859+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T12:10:31.139909+00:00",
+                  "started_at": "2026-10-31T13:39:40.838040+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T12:10:31.255652+00:00"
+                  "ended_at": "2026-10-31T13:39:40.953904+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T12:10:31.255670+00:00",
-                "duration_s": 28.652166340034455
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T13:39:40.953946+00:00",
+                "duration_s": 28.897538194898516
               },
               {
                 "argv": [
@@ -5108,39 +5108,39 @@
                   "awq-nibbles"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T12:10:31.259032+00:00",
+                "started_at": "2026-10-31T13:39:40.958286+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T12:10:55.983666+00:00",
+                  "started_at": "2026-10-31T13:40:05.837401+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T12:10:56.099443+00:00"
+                  "ended_at": "2026-10-31T13:40:05.953370+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T12:10:56.099462+00:00",
-                "duration_s": 24.84018469695002
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T13:40:05.953388+00:00",
+                "duration_s": 24.994766691001132
               },
               {
                 "argv": [
@@ -5150,39 +5150,39 @@
                   "int8-exponent"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T12:10:56.102924+00:00",
+                "started_at": "2026-10-31T13:40:05.956610+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T12:12:48.525657+00:00",
+                  "started_at": "2026-10-31T13:41:56.153485+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T12:12:48.641339+00:00"
+                  "ended_at": "2026-10-31T13:41:56.270298+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T12:12:48.641356+00:00",
-                "duration_s": 112.5381713679526
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T13:41:56.270332+00:00",
+                "duration_s": 110.31348409317434
               },
               {
                 "argv": [
@@ -5192,39 +5192,39 @@
                   "held-request"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T12:12:48.644744+00:00",
+                "started_at": "2026-10-31T13:41:56.274468+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T12:13:12.416701+00:00",
+                  "started_at": "2026-10-31T13:42:21.160655+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T12:13:12.532508+00:00"
+                  "ended_at": "2026-10-31T13:42:21.276641+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T12:13:12.532528+00:00",
-                "duration_s": 23.88753611803986
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T13:42:21.276681+00:00",
+                "duration_s": 25.0019070180133
               }
             ],
             "source_sha256": {
@@ -5326,7 +5326,7 @@
             ],
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "generated_sha256": {
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/check-manifest.json": "4d780192d80cfab7ef5525904af667e10b3429a64344aa03488cc46b746762bc"
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/check-manifest.json": "4d780192d80cfab7ef5525904af667e10b3429a64344aa03488cc46b746762bc"
             },
             "maximum_concurrent_jobs": 1,
             "dispatch_groups": [
@@ -5344,34 +5344,34 @@
               ]
             ],
             "raw_stream_sha256": {
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.txt": "b856ad06e1a8bf271c767e7c51830930618c9ee617271427ce04b3a97816564c",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.capture.jsonl": "650f9e03162210797770a31047f8a2cd8769c2717f974e4a42ee9d62a3bb3496",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stdout.txt": "f5bbd33042765d78417af76e9e095ff63b36e9d41152016f42afcbe6b1c18238",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.txt": "c29309fbafdad06113af5a392380733dcffd29b1ff8266ac9f06d9f79bb1c850",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.capture.jsonl": "2a58533b88cd1098023118da379d23c15f0a0630b994356c22773b1234d00ef8",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stdout.txt": "6077aeae061733be64bc50597ce76e5c8e99da90e3db26dbb28b7dbaba59cd4a",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.txt": "81860f6b21f6de29db174c9914614e74471faa27cda252faef0179a37593d463",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.capture.jsonl": "f3107a79171a6e9f7a0a5c97b95e5a27093066675896c1c0151bb5101e83b3eb",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stdout.txt": "e34f9b08e758f48a65056e8d5ba919f49f7d6451e28dfe68a643baae5e15d485",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.txt": "bbcf93bbf9807ce91ce688dd6210f470dcbbfc953352a63952fd147249aec906",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.capture.jsonl": "799c5ad105ffb7f0926729fdefb92430495aa81965ec4b1ff838c729a6b27059",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stdout.txt": "d7fb16589c258802bb89fdea1f077df4b2801389488203c0622e44e4f8e41d99",
-              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.txt": "715413588526e350bb49be6117a469b1cfb6f2262fb25e13f43bb806a910e654",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.capture.jsonl": "86d0c8fde4d5cd58aa55502c62018e41bfb53e069c53360c6d0990041735b9c5",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.reopen.stdout.txt": "d01bfaf54dc13a8477312d490fed44735a98f95b4d7a5b56de6645dbf28392cf",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/accumulation.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.txt": "5dedb1c2238f1c99be88373c55d45b3b19c052a0ee21152ebfc38f44fb50eff1",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.capture.jsonl": "412485c165acbaa47c5c8cb3b5095bbc9c770b79631c62eae1d2bf39f65c4dc2",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.reopen.stdout.txt": "189b30ef78fee0481d8b81e9e730002eeef5488a744544980ad942d216198b73",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/awq-nibbles.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.txt": "6712d9bfb2f661e77e87b04a015d8130fff12115d11859efc7b946689e39dc54",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.capture.jsonl": "63022dff01724464dbadf3addf40998975559216b4c8d12b60cf80170ca37b80",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.reopen.stdout.txt": "388beea7f5484e8469da607a12c9944b0645d68bdb4431e817c447a145f0ded6",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/int8-exponent.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.txt": "fff9b835eb2361a26f789d69da3ab9dabb50c6aaad2db65371d068bf91abe66f",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.capture.jsonl": "01a14e29326f69ef7208f19eeaa61d14d28496b295030c54aa584b4bc9ad7563",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.reopen.stdout.txt": "72324637edd97807320e42721363c9a951e381ecdf8c42381861754a1ede39a4",
+              "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/held-request.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             },
             "outcome": "passed",
-            "ended_at": "2026-10-31T12:13:12.546702+00:00",
+            "ended_at": "2026-10-31T13:42:21.290576+00:00",
             "check": "defects",
             "metrics": {
               "required_runs": 4,
               "compared_runs": 4,
-              "ledger": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/ledger.json"
+              "ledger": "evidence/l1/l1-defects-20261031T133912Z-bf2ba6cc/ledger.json"
             },
             "native_hardware_acceptance": false
           }
