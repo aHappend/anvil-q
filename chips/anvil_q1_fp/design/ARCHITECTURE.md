@@ -320,9 +320,9 @@ the mux is not an independent ownership tracker.
 | Request states1,3,5,7,11,13 and response states2,4,6,8,12,14 | Same paired request/response ownership, guards and acknowledgements; retained mode00 actions |
 | Kind1/2 packed column c/8 | c>>3, equivalent for unsigned c; no runtime divider |
 | Kind2/3 group row k/G | group_index, initialized0 per tile and advanced only on group_offset+1==G; equivalent counter addressing |
-| State9 arithmetic/advance action | State9 captures dequantized weights,17 captures products,18 accumulates and performs original advance actions; arithmetic-wait retiming |
-| State9 more-k/cross-group conditions | State18 more-k guard and offset wrap; equivalent by group_index=floor(k/G), group_offset=k-group_index*G |
-| Bias acceptance/validation and shifted bias accumulation | Same state12 mode00 branch; retained |
+| State9 arithmetic/advance action | State9 captures dequantized weights,17 captures products,18 captures sign-extended addends,29..32 accumulate and commit before original advance actions; arithmetic-wait retiming |
+| State9 more-k/cross-group conditions | State32 more-k guard and offset wrap; equivalent by group_index=floor(k/G), group_offset=k-group_index*G |
+| Bias acceptance/validation and shifted bias accumulation | State12 validates/captures accepted bias and lane,27 registers conversion,28 registers shifted addend,29..32 accumulate and commit before advancing the bias lane; equivalent arithmetic-wait retiming |
 | Output rounding/saturation and tile/write/lane order | Same state13/14 mode00 actions; retained |
 | Tile clearing and first scales read | Same state16 mode00 branch; retained, including resetting explicit group counters |
 | Terminal clearing/exit, fault priority, default recovery and public decodes | Same state20/fault/default structure; retained |
@@ -346,6 +346,49 @@ separately removes the old scale-decode/multiply/accumulate combinational
 chain without changing the intended mode00 sum. Differential execution
 is still mandatory; this mapping is implementation rationale, not a
 bit-identity result.
+
+### Compatibility GEMV carry-pipeline repair
+
+The fresh source-matched reduced-geometry post-fit report completed at
+2026-10-31T21:17Z with setup WNS -1.566 ns and hold WNS +0.043 ns at
+10.000 ns. Its reported endpoints are `decoder.step[2]` and GEMV
+`accumulators[7][126]`; they do not establish an internal cell-path
+attribution. Source inspection identifies a response-selection/FP16-bias
+conversion/full-width addition cone and a separate product/full-width
+addition cone. This repair addresses both without narrowing the original
+128-bit compatibility accumulators or modifying constraints.
+
+| Pre-edge state/event | Post-edge arithmetic action and next state |
+| --- | --- |
+| 12, accepted legal mode00 bias response | Capture raw FP16 bias and destination lane; retire response once; ->27 |
+| 27 | Register the parent's exact saturated Q16.16 conversion; ->28 |
+| 28 | Register the sign-extended 128-bit bias addend shifted left 16; ->29 |
+| 18, registered products available | Register eight sign-extended 69-bit products as 128-bit addends; ->29 |
+| 29 | Register sum bits31:0 and explicit carry into bit32; ->30 |
+| 30 | Register sum bits63:32 with previous carry and carry into bit64; ->31 |
+| 31 | Register sum bits95:64 with previous carry and carry into bit96; ->32 |
+| 32 | Add bits127:96 with previous carry, commit complete 128-bit sum, then advance counters and original destination |
+
+Each chunk uses unsigned 33-bit addition with a registered carry. Negative
+products extend their bit68 through bit127; shifted biases extend bit31
+through bit127 before the shift. Only the carry beyond bit127 is discarded,
+matching the parent's modulo-2^128 addition exactly. Low chunks are held in
+private partial registers; architectural accumulators remain unchanged
+until state32. Products commit all eight lanes, while a bias commits only
+its captured lane. Input/group advancement and bias-lane advancement occur
+only on this commit; output-tile advancement still waits for the final
+write acknowledgement in state14.
+
+States27..32 issue no memory request and accept no response. Ownership
+remains with the active GEMV command, and the next request cannot begin
+until commit. Reset takes priority, clears operands/partials/carries, and
+annuls the wait; memory faults retain priority over state actions and reach
+terminal cleanup without committing pending arithmetic. Stalled requests
+and writes retain their original states and stable fields. Native states,
+native arithmetic instances, and the three-stage dot contract are unchanged.
+Independent compatibility, numerical, protocol and preservation checks,
+followed by fresh native STA, remain required; this source repair alone
+does not establish timing closure or production-scale resource/HIL results.
 
 ## Arithmetic implementation increment
 
@@ -742,7 +785,8 @@ latches/guards and arithmetic registers add no denominator items.
 | decoder, every row/step/command/selection/action | Same states/steps; renamed functional child types | R |
 | MLP, every row/projection/selection/action | Same states/projections and child ownership | R |
 | GEMV, all items except overrides in its earlier mapping | Same-numbered states and conditions | R |
-| GEMV state9 accumulate/advance, each branch and lane/k action | 9->17->18, then original destination; group counters replace quotient comparisons | E; registered arithmetic waits do not change request/ownership/order |
+| GEMV state9 accumulate/advance, each branch and lane/k action | 9->17->18->29->30->31->32, then original destination; group counters replace quotient comparisons | E; registered arithmetic waits do not change request/ownership/order |
+| GEMV state12 legal compatibility bias accumulate/advance | 12->27->28->29->30->31->32, then original destination | E; captured bias/lane, registered conversion and carry chunks preserve exact sum and completion order |
 | GEMV kind1/2/3 column/group addressing | c>>3 and group_index | E; unsigned shift and explicit group invariant produce identical addresses |
 | RMSNorm state2 square/reduce, index advancement and last transition | 2->16->17->18, then original next read or state3 | E |
 | RMSNorm state3 mean transition | 3->40->4 | E; wait for exact integer quotient |

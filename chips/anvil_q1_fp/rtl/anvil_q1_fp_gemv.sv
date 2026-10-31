@@ -29,6 +29,17 @@ module anvil_q1_fp_gemv #(
   wire signed [68:0] product [0:7];
   reg signed [68:0] product_pipe [0:7];
   reg signed [127:0] accumulators [0:7];
+  reg [15:0] compat_bias_f16;
+  reg [2:0] compat_bias_lane;
+  reg signed [31:0] compat_bias_q16;
+  reg compat_bias_pending;
+  reg [127:0] compat_addends [0:7];
+  reg [95:0] compat_partial [0:7];
+  reg [7:0] compat_carry;
+  wire [32:0] compat_sum0 [0:7];
+  wire [32:0] compat_sum1 [0:7];
+  wire [32:0] compat_sum2 [0:7];
+  wire [32:0] compat_sum3 [0:7];
   reg [15:0] native_weights [0:7];
   reg [31:0] native_accumulators [0:7];
   wire [7:0] native_valid;
@@ -41,7 +52,6 @@ module anvil_q1_fp_gemv #(
   wire [4:0] bias_status;
   wire complete, fault, request_transfer;
   wire [31:0] rd, native_read;
-  wire [15:0] bias_f16;
   wire signed [31:0] bias_value, output_value;
   reg request_valid, wr;
   reg [3:0] kind;
@@ -50,8 +60,7 @@ module anvil_q1_fp_gemv #(
   integer i;
   genvar g;
 
-  assign bias_f16=(complete && state==12) ? rd[15:0] : 16'd0;
-  assign bias_value=anvil_q1_fp_compat_pkg::f16_q16(bias_f16);
+  assign bias_value=anvil_q1_fp_compat_pkg::f16_q16(compat_bias_f16);
   assign native_read=anvil_q1_fp_pkg::widen16(rd[15:0],precision);
   assign output_value=(rst_n && state==13) ? anvil_q1_fp_compat_pkg::sat32(
     anvil_q1_fp_compat_pkg::round_shift(accumulators[lane],16)) : 32'sd0;
@@ -60,6 +69,14 @@ module anvil_q1_fp_gemv #(
     HEAD_DIM,GROUP_SIZE,AWQ_BITS,1,MAX_SEQ_LEN) parameters_ok();
   generate for (g=0;g<8;g=g+1) begin: lanes
     localparam [2:0] LOGICAL_LANE=g;
+    assign compat_sum0[g]={1'b0,accumulators[g][31:0]}+
+      {1'b0,compat_addends[g][31:0]};
+    assign compat_sum1[g]={1'b0,accumulators[g][63:32]}+
+      {1'b0,compat_addends[g][63:32]}+{32'd0,compat_carry[g]};
+    assign compat_sum2[g]={1'b0,accumulators[g][95:64]}+
+      {1'b0,compat_addends[g][95:64]}+{32'd0,compat_carry[g]};
+    assign compat_sum3[g]={1'b0,accumulators[g][127:96]}+
+      {1'b0,compat_addends[g][127:96]}+{32'd0,compat_carry[g]};
     anvil_q1_fp_awq_dequant dequant(
       .qweight_word(qw),.qzero_word(qz),.scale_f16(scales[g]),
       .lane(LOGICAL_LANE),.weight_q16_16(weight[g]),.invalid(invalid[g]));
@@ -116,8 +133,11 @@ module anvil_q1_fp_gemv #(
       inputs<=0; outputs<=0; source_slot<=0; target_slot<=0;
       group_index<=0; group_offset<=0; projection<=0; qw<=0; qz<=0;
       lane<=0; activation<=0; native_bias<=0;
+      compat_bias_f16<=0; compat_bias_lane<=0; compat_bias_q16<=0;
+      compat_bias_pending<=0; compat_carry<=0;
       for (i=0;i<8;i=i+1) begin
         scales[i]<=0; accumulators[i]<=0; weight_pipe[i]<=0; product_pipe[i]<=0;
+        compat_addends[i]<=0; compat_partial[i]<=0;
         native_weights[i]<=0; native_accumulators[i]<=0;
       end
     end else if (fault) begin failed<=1; state<=20; end
@@ -174,25 +194,17 @@ module anvil_q1_fp_gemv #(
       end
       18: begin
         for (i=0;i<8;i=i+1)
-          accumulators[i]<=accumulators[i]+{{59{product_pipe[i][68]}},product_pipe[i]};
-        lane<=0;
-        if (k+1<inputs) begin
-          k<=k+1;
-          if (group_offset+1==GROUP_SIZE) begin
-            group_offset<=0; group_index<=group_index+1; state<=5;
-          end else begin group_offset<=group_offset+1; state<=1; end
-        end else if (projection<3) state<=11;
-        else state<=13;
+          compat_addends[i]<={{59{product_pipe[i][68]}},product_pipe[i]};
+        compat_bias_pending<=0;
+        state<=29;
       end
       11: if (request_transfer) state<=12;
       12: if (complete) begin
         if (precision==0) begin
           if (anvil_q1_fp_compat_pkg::f16_invalid(rd[15:0])) begin failed<=1; state<=20; end
           else begin
-            accumulators[lane]<=accumulators[lane]+
-              ($signed({{96{bias_value[31]}},bias_value}) <<< 16);
-            if (lane==7) begin lane<=0; state<=13; end
-            else begin lane<=lane+1; state<=11; end
+            compat_bias_f16<=rd[15:0]; compat_bias_lane<=lane;
+            state<=27;
           end
         end else if (rd[31:16]!=0 || native_read[30:23]==255)
           begin failed<=1; state<=20; end
@@ -214,8 +226,11 @@ module anvil_q1_fp_gemv #(
       19: state<=20;
       20: begin
         qw<=0; qz<=0; activation<=0; lane<=0; native_bias<=0;
+        compat_bias_f16<=0; compat_bias_lane<=0; compat_bias_q16<=0;
+        compat_bias_pending<=0; compat_carry<=0;
         for (i=0;i<8;i=i+1) begin
           scales[i]<=0; accumulators[i]<=0; weight_pipe[i]<=0; product_pipe[i]<=0;
+          compat_addends[i]<=0; compat_partial[i]<=0;
           native_weights[i]<=0; native_accumulators[i]<=0;
         end
         state<=0;
@@ -247,6 +262,53 @@ module anvil_q1_fp_gemv #(
           native_accumulators[lane]<=bias_result;
           if (lane==7) begin lane<=0; state<=13; end
           else begin lane<=lane+1; state<=11; end
+        end
+      end
+      27: begin compat_bias_q16<=bias_value; state<=28; end
+      28: begin
+        compat_addends[compat_bias_lane]<=
+          {{80{compat_bias_q16[31]}},compat_bias_q16,16'd0};
+        compat_bias_pending<=1;
+        state<=29;
+      end
+      29: begin
+        for (i=0;i<8;i=i+1) begin
+          compat_partial[i][31:0]<=compat_sum0[i][31:0];
+          compat_carry[i]<=compat_sum0[i][32];
+        end
+        state<=30;
+      end
+      30: begin
+        for (i=0;i<8;i=i+1) begin
+          compat_partial[i][63:32]<=compat_sum1[i][31:0];
+          compat_carry[i]<=compat_sum1[i][32];
+        end
+        state<=31;
+      end
+      31: begin
+        for (i=0;i<8;i=i+1) begin
+          compat_partial[i][95:64]<=compat_sum2[i][31:0];
+          compat_carry[i]<=compat_sum2[i][32];
+        end
+        state<=32;
+      end
+      32: begin
+        // Discard only the carry beyond bit 127, as in the original wide add.
+        for (i=0;i<8;i=i+1)
+          if (!compat_bias_pending || compat_bias_lane==i)
+            accumulators[i]<={compat_sum3[i][31:0],compat_partial[i]};
+        if (compat_bias_pending) begin
+          if (compat_bias_lane==7) begin lane<=0; state<=13; end
+          else begin lane<=compat_bias_lane+1; state<=11; end
+        end else begin
+          lane<=0;
+          if (k+1<inputs) begin
+            k<=k+1;
+            if (group_offset+1==GROUP_SIZE) begin
+              group_offset<=0; group_index<=group_index+1; state<=5;
+            end else begin group_offset<=group_offset+1; state<=1; end
+          end else if (projection<3) state<=11;
+          else state<=13;
         end
       end
       default: state<=0;
