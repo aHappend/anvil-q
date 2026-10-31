@@ -1,0 +1,69 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-10-31T15:43:38.057607+00:00",
+  "project_dir": "/data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "failed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 5,
+    "errors": [
+      "Error (10170): Verilog HDL syntax error at anvil_edge_ddr4_boot_loader.sv(70) near text: \"for\";  expecting \"endmodule\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_edge_ddr4_boot_loader.sv Line: 70",
+      "Error (10170): Verilog HDL syntax error at anvil_edge_ddr4_boot_loader.sv(73) near text: \"end\";  expecting \"endmodule\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_edge_ddr4_boot_loader.sv Line: 73",
+      "Error (10112): Ignored design unit \"anvil_edge_ddr4_boot_loader\" at anvil_edge_ddr4_boot_loader.sv(1) due to previous errors File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_edge_ddr4_boot_loader.sv Line: 1",
+      "Error (10170): Verilog HDL syntax error at anvil_q1_decoder_layer.sv(33) near text: \"for\";  expecting \"endmodule\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_decoder_layer.sv Line: 33",
+      "Error (10112): Ignored design unit \"anvil_q1_decoder_layer\" at anvil_q1_decoder_layer.sv(1) due to previous errors File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_decoder_layer.sv Line: 1"
+    ],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 3,
+    "netlist_mode": null,
+    "clocks": [],
+    "wns_setup_ns": null,
+    "wns_hold_ns": null,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [],
+    "hold_paths": [],
+    "stderr_tail": [
+      "------------------------------------------------",
+      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
+      "",
+      "    while executing",
+      "\"create_timing_netlist -post_map\"",
+      "    (file \"vulcan_sta_ozfkkaql.tcl\" line 2)",
+      "------------------------------------------------"
+    ]
+  },
+  "detail": "quartus_map reported 5 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "top_module": "anvil_q1_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "parameters": {
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 16,
+    "INTERMEDIATE_SIZE": 16,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 2,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "eb48073db20047398a682c0f8e1c89d015a7357e3d10ccddb82015781e3c902a",
+  "applicable": true
+}

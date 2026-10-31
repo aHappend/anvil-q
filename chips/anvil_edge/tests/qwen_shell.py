@@ -821,8 +821,7 @@ def run_qwen_shell(evidence, general_only=False, *, bypass_only=False):
     evidence.tools(("python3", "verilator", "g++", "make"))
     producer, _ = complete_tables(evidence, "qwen")
     evidence.child(["./.venv/bin/python", "tests/qwen_shell.py",
-                    evidence.relative(evidence.path), "--table-source",
-                    evidence.relative(producer)], "qwen-shell-reference")
+                    evidence.relative(evidence.path), "--compact"], "qwen-shell-reference")
     info = json.loads((evidence.path / "shell-reference.json").read_bytes())
     # Initial bounded integration uses the general-knowledge prompt on both pins.
     # The complete L1 branch retains all prompts, reload and all admitted seeds.
