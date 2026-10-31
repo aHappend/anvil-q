@@ -589,10 +589,19 @@ def codec_behavior(run, simulator):
         run.save()
 
 
-def top_fixture(run, stem="compact-model"):
+def top_fixture(run, stem="compact-model", fp16=False, weight_bits=16,
+                sparse=False, int8=False):
     memory = bytearray(131072)
     descriptors = [bytes(64) for _ in range(32)]
     cursor = 0x1000
+
+    def allocate(payload):
+        nonlocal cursor
+        address = cursor
+        memory[address:address+len(payload)] = payload
+        cursor = ((cursor+len(payload)+63)//64)*64
+        return address
+
     for index in (0, 1, 2, 3, *range(16, 28)):
         rows, columns = (1, 8)
         if index in (0, 1):
@@ -611,12 +620,33 @@ def top_fixture(run, stem="compact-model"):
                       for _ in range(rows) for c in range(columns)]
         elif index in (2, 23, 24):
             values = [0x3f80] * len(values)
-        payload = pack(values, 16).to_bytes(2 * len(values), "little")
-        memory[cursor:cursor+len(payload)] = payload
-        descriptors[index] = struct.pack("<QQQQIIIIIIQ", cursor, len(payload), 0, 0,
-                                         rows, columns, 2*columns, 0, 0, 0x101, 0)
-        cursor = ((cursor+len(payload)+63)//64)*64
-    config = [(0x44, 4), (0x18, 0x10000), (0x1c, 0), (0x20, 4096), (0x24, 0)]
+        quantized = weight_bits != 16 and (index == 1 or 16 <= index <= 22)
+        if quantized:
+            codes = [2 if value == 0x3f80 else 1 for value in values]
+            row_stride = (columns * weight_bits + 7) // 8
+            payload = pack(codes, weight_bits).to_bytes(rows * row_stride, "little")
+            base = allocate(payload)
+            zero_stride = (columns * weight_bits + 7) // 8  # GROUP_SIZE=1.
+            zeros = pack([1] * (rows * columns), weight_bits).to_bytes(
+                rows * zero_stride, "little")
+            zero_base = allocate(zeros)
+            scale_base = allocate(bytes.fromhex("803f") * (rows * columns))
+            scale_stride = 2 * columns
+            flags = 0x100 if weight_bits == 4 else 0x103
+        else:
+            encoded = [convert(value, BF16, FP16)[0] for value in values] if fp16 else values
+            payload = pack(encoded, 16).to_bytes(2 * len(values), "little")
+            base = allocate(payload)
+            zero_base = scale_base = zero_stride = scale_stride = 0
+            row_stride = 2 * columns
+            flags = 0x102 if fp16 else 0x101
+        descriptors[index] = struct.pack(
+            "<QQQQIIIIIIQ", base, len(payload), zero_base, scale_base,
+            rows, columns, row_stride, zero_stride, scale_stride, flags, 0)
+    mode = (2 if fp16 else 1) | ({16: 0, 4: 4, 2: 8}[weight_bits])
+    mode |= (16 if sparse else 0) | (32 if int8 else 0)
+    config = ([(0x40, mode)] if mode != 1 else []) + [
+        (0x44, 4), (0x18, 0x10000), (0x1c, 0), (0x20, 4096), (0x24, 0)]
     for index, descriptor in enumerate(descriptors):
         config.extend((0x1000 + 64*index + 4*word, value)
                       for word, value in enumerate(struct.unpack("<16I", descriptor)))
@@ -629,13 +659,16 @@ def top_fixture(run, stem="compact-model"):
     return image, cfg
 
 
-def top_behavior(run, simulator, stem="compact-model", result_key="top_smoke"):
-    image, cfg = top_fixture(run, stem)
+def top_behavior(run, simulator, stem="compact-model", result_key="top_smoke",
+                 fp16=False, weight_bits=16, sparse=False, int8=False):
+    image, cfg = top_fixture(run, stem, fp16, weight_bits, sparse, int8)
     stdout = simulate(run, ROOT / "tests/top_tb.sv", simulator=simulator,
                       plusargs=["+image=" + run.relative(image), "+config=" + run.relative(cfg)])
     run.receipt[result_key] = {
         "fixture": "analytical residual-identity model: zero projections, unit embeddings/gamma, head rows one/zero",
         "scope": "compact architectural smoke, not official-model fidelity or benchmark acceptance",
+        "mode": {"activation": "FP16" if fp16 else "BF16", "weight_bits": weight_bits,
+                 "sparse": sparse, "int8_kv": int8},
         "summary": stdout.strip(), "simulator": simulator,
     }
     run.save()
@@ -747,7 +780,8 @@ def main():
     parser.add_argument("--reproduction-child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv",
-                                          "activation", "activation-startup", "top", "all"], default="all")
+                                          "activation", "activation-startup", "parameters",
+                                          "top", "top-mixed", "all"], default="all")
     args = parser.parse_args()
     run = Run(args.check, args.preparation, args.repair_of)
     try:
@@ -757,6 +791,9 @@ def main():
             numerics(run, [args.kind] if args.kind is not None else range(5),
                      args.simulator, args.compact)
         elif args.check == "behavior":
+            if args.leaf in ("parameters", "all"):
+                from parameters import execute
+                execute(run)
             if args.leaf in ("tree", "all"):
                 tree_behavior(run, args.simulator)
             if args.leaf in ("dma", "all"):
@@ -777,6 +814,10 @@ def main():
                 run.receipt["activation_startup"] = stdout.strip()
             if args.leaf in ("top", "all"):
                 top_behavior(run, "verilator")
+            if args.leaf in ("top-mixed", "all"):
+                top_behavior(run, "verilator", stem="fp16-w2-sparse-int8-model",
+                             result_key="top_mixed_smoke", fp16=True, weight_bits=2,
+                             sparse=True, int8=True)
         elif args.check == "synthesis":
             from synthesis import execute
             execute(run, ROOT, sources(), compact=args.compact)

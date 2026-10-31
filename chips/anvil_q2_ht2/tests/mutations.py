@@ -74,7 +74,7 @@ def exercise(run, fixture):
         else:
             kind = 4
             for q in range(4):
-                for zero in range(4):
+                for zero in (1, 0, 2, 3):
                     for scale in (1, 64, 0x3f00, 0x3f80, 0xbf80):
                         result, error = dequant(q, zero, scale)
                         rows.append((q, scale, 64 | (zero << 2) | 3, result, error))
@@ -141,6 +141,13 @@ def execute(run, selected=None):
         try:
             exercise(case, fixture)
         except DetectedDefect as exc:
+            actual_hashes = {
+                str(p.relative_to(case.design_root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sources(case.design_root)
+            }
+            if actual_hashes != case.receipt["disposable_source_hashes"]:
+                case.finish(False, "disposable source changed during execution")
+                raise RuntimeError(f"disposable source changed during mutation: {name}")
             if case.finish(True, str(exc)):
                 raise RuntimeError(f"accepted source changed during mutation: {name}")
         except Exception as exc:

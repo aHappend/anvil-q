@@ -32,6 +32,7 @@ def execute(run):
         ["python3", "tests/verify.py", "reproduce", "--reproduction-child",
          *(["--preparation"] if run.receipt["kind"] == "advisory-preparation" else [])],
         "clean-project-reproduction", cwd=workspace,
+        timeout=run.budget_s - (time.monotonic() - run.started),
         environment={"PYTHONPATH": "", "PYTHONSAFEPATH": "1",
                      "ANVIL_L1_BUDGET_SECONDS": str(remaining)})
     try:
