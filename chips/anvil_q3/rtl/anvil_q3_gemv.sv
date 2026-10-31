@@ -69,13 +69,12 @@ module anvil_q3_gemv #(
     selected=-1;
     candidate=0;
     tensor_result_ready=0;
-    if (rst_n && !internal_flush && state==RUN) begin
-      for (offset=0;offset<SB;offset=offset+1) begin
-        candidate=(round_robin+offset)&(SB-1);
-        if (selected<0 && tensor_result_valid[candidate]) selected=candidate;
-      end
-      if (selected>=0) tensor_result_ready[selected]=1;
+    for (offset=0;offset<SB;offset=offset+1) begin
+      candidate=(round_robin+offset)&(SB-1);
+      if (rst_n && !internal_flush && state==RUN &&
+          selected<0 && tensor_result_valid[candidate]) selected=candidate;
     end
+    if (selected>=0) tensor_result_ready[selected]=1;
   end
 
   anvil_q3_tensor_array #(

@@ -121,7 +121,6 @@ module anvil_q3_weight_prefetch_bank #(
   reg [127:0] read_scale;
   reg [7:0] read_mask;
   reg read_first, read_last, read_final;
-  integer i, lane;
   wire [31:0] incoming_inputs=desc_proj==6 ? INTERMEDIATE_SIZE : HIDDEN_SIZE;
   wire [31:0] incoming_outputs=(desc_proj==1 || desc_proj==2) ? KV_DIM[31:0] :
     (desc_proj==4 || desc_proj==5) ? INTERMEDIATE_SIZE : HIDDEN_SIZE;
@@ -145,6 +144,31 @@ module anvil_q3_weight_prefetch_bank #(
     (c_rsp_valid && (fill_state==F_Q_RSP || fill_state==F_Z_RSP) &&
       bad_packed_padding(c_rsp_rdata,fill_global_row & 32'hfffffff8,
                          output_limit[fill_select]));
+  wire accept_read=rst_n && !flush && !failed && !bad_fill &&
+    !(desc_valid && desc_ready && bad_descriptor) && load_read;
+
+  genvar lane;
+  generate for (lane=0;lane<8;lane=lane+1) begin: read_lanes
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        read_q[lane*4+:4]<=0;
+        read_z[lane*4+:4]<=0;
+        read_scale[lane*16+:16]<=0;
+        read_mask[lane]<=0;
+      end else if (accept_read) begin
+        read_mask[lane]<=read_input+lane<valid_inputs[head];
+        if (read_input+lane<valid_inputs[head]) begin
+          read_q[lane*4+:4]<=q_storage[(head ? CELLS : 0)+read_row*TK+read_input+lane];
+          read_z[lane*4+:4]<=z_storage[(head ? CELLS : 0)+read_row*TK+read_input+lane];
+          read_scale[lane*16+:16]<=scale_storage[(head ? CELLS : 0)+read_row*TK+read_input+lane];
+        end else begin
+          read_q[lane*4+:4]<=0;
+          read_z[lane*4+:4]<=0;
+          read_scale[lane*16+:16]<=0;
+        end
+      end
+    end
+  end endgenerate
 
   function automatic bad_packed_padding(
     input reg [31:0] word_value, input reg [31:0] packed_base, limit_value
@@ -190,14 +214,14 @@ module anvil_q3_weight_prefetch_bank #(
       fill_state<=F_IDLE; fill_row<=0; fill_input<=0;
       group_index<=0; group_offset<=0; base_group<=0; base_offset<=0; group_work<=0;
       read_row<=0; read_input<=0; all_read<=0; read_valid<=0;
-      read_q<=0; read_z<=0; read_scale<=0; read_mask<=0;
       read_epoch<=0; read_global_row<=0; read_global_input<=0;
       read_first<=0; read_last<=0; read_final<=0;
-      for (i=0;i<2;i=i+1) begin
-        tile_state[i]<=EMPTY; epoch[i]<=0; layer[i]<=0;
-        output_base[i]<=0; input_base[i]<=0; valid_rows[i]<=0; valid_inputs[i]<=0;
-        output_limit[i]<=0; projection[i]<=0;
-      end
+      tile_state[0]<=EMPTY; epoch[0]<=0; layer[0]<=0;
+      output_base[0]<=0; input_base[0]<=0; valid_rows[0]<=0; valid_inputs[0]<=0;
+      output_limit[0]<=0; projection[0]<=0;
+      tile_state[1]<=EMPTY; epoch[1]<=0; layer[1]<=0;
+      output_base[1]<=0; input_base[1]<=0; valid_rows[1]<=0; valid_inputs[1]<=0;
+      output_limit[1]<=0; projection[1]<=0;
     end else if (flush) begin
       head<=0; tail<=0; fill_state<=F_IDLE; failed<=0; fault_pulse<=0;
       tile_state[0]<=EMPTY; tile_state[1]<=EMPTY;
@@ -292,16 +316,6 @@ module anvil_q3_weight_prefetch_bank #(
             read_first<=read_input==0;
             read_last<=read_input+8>=valid_inputs[head];
             read_final<=final_load;
-            for (lane=0;lane<8;lane=lane+1) begin
-              read_mask[lane]<=read_input+lane<valid_inputs[head];
-              if (read_input+lane<valid_inputs[head]) begin
-                read_q[lane*4+:4]<=q_storage[(head ? CELLS : 0)+read_row*TK+read_input+lane];
-                read_z[lane*4+:4]<=z_storage[(head ? CELLS : 0)+read_row*TK+read_input+lane];
-                read_scale[lane*16+:16]<=scale_storage[(head ? CELLS : 0)+read_row*TK+read_input+lane];
-              end else begin
-                read_q[lane*4+:4]<=0; read_z[lane*4+:4]<=0; read_scale[lane*16+:16]<=0;
-              end
-            end
             if (final_load) all_read<=1;
             else if (read_input+8>=valid_inputs[head]) begin
               read_input<=0;

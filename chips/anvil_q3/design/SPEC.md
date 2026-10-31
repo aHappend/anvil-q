@@ -462,12 +462,25 @@ it to await drain completion.
 | Queued slot selected on later edge | Registered bus hold is established |
 | Held bus request handshake | Slot awaits its unique response |
 | Matching response, including same edge as issue | Data/error retained in its slot |
+| RETURNED client head with empty response mailbox | Data/error registered into mailbox; response valid becomes visible after that edge |
 | Oldest client response handshake | Slot freed; no newer response can overtake it |
 | Flush/fault plus issue/response | Accepted issue is retained for draining; response retires old ownership |
 | Tag ffff...ffff allocated | Ingress stops until all slots retire; counter then resets to zero |
 | QUEUE_DEPTH=1 | A retiring oldest client response can release its slot to new ingress on the same edge |
-| Non-power-of-two depth | Explicit slot search, no masked pointer wrap |
+| Non-power-of-two depth | Balanced free-slot selection and explicit dispatch-FIFO pointer wrap, not masked binary wrap |
 | Client response stalled | Complete data/error stays stable despite other bus responses |
+
+The response mailbox retains slot ownership until its public handshake.
+If the bus response transfers at E0, the earliest mailbox capture is E1
+and the earliest client consumption is E2. On consumption, the next linked
+head is installed; its mailbox capture can occur on the following edge.
+There is no combinational bus-response-to-client-result bypass.
+Simultaneous last-entry retirement and ingress to that client install the
+new slot as both head and tail without retaining the retired link.
+Dispatch FIFOs and client links preserve issue/retirement order without
+using tag magnitude; full tags are still checked for response association
+and cannot be reused until wrap quiescence. These are internal latency
+choices, not changes to the frozen top or dot8 interfaces.
 
 ### `anvil_q3_cache_codec`
 

@@ -53,9 +53,10 @@ The MLP commands the decoder's shared GEMV for gate/up/down instead of
 replicating the tensor path. The top connects BANKS+9 persistent scalar client
 identities to the scheduler: BANKS+1 GEMV clients, norm, RoPE, two attention
 clients, MLP elementwise, residual, final norm and token IO. Scheduler ingress
-arbitration now evaluates all retiring clients before reusing a slot, including
-the last client at QUEUE_DEPTH=1. This was repaired by source inspection, not
-by a claimed functional experiment.
+arbitration includes all retiring clients when reusing a slot, including
+the last client at QUEUE_DEPTH=1. Client response mailboxes register completed
+head data before retirement can supply an ingress credit. This separates
+memory-response lookup from the retirement/ingress path.
 
 ## Arithmetic mapping
 
@@ -136,6 +137,47 @@ independent bank issue/response, per-client in-order retirement, round-robin
 ingress, explicit tag-wrap quiescence, and response faults. Returned data has
 its own slot ownership under client backpressure. Read/write memory faults are
 returned to the owning client, not silently dropped.
+
+Scheduler ordering is explicit state rather than a search for the smallest
+64-bit tag. Each client owns a head/tail linked list of live slots; a successor
+is written when a request appends. Each bank owns a bounded FIFO of QUEUED
+slot indices. Moving its FIFO head into the bus hold register preserves bank
+issue order without comparing tags. Response matching still compares the
+complete tag, independently within each bank, and also recognizes a response
+on the request's acceptance edge. A returned slot remains owned until its
+client mailbox handshakes, including while that mailbox is stalled.
+
+The mailbox is a registered arbitration boundary: a RETURNED client head
+captures its data/error on a later edge, then exposes valid until accepted.
+Retirement can recycle that exact slot into new ingress on the same edge,
+including the singleton bank/queue/client case. Simultaneous append and removal
+of a client's last entry directly install the new head; for longer lists the
+old successor becomes head. A mailbox does not free capacity merely by
+capturing data. Its extra response latency does not change request/response
+handshake semantics or the top-level final-logit completion boundary.
+
+Free-slot and response-match selection use explicit binary trees with at most
+four levels for QUEUE_DEPTH<=16. Ingress computes all client bank routes in
+parallel using only the low bank-address bits, then selects the smallest
+cyclic round-robin rank in a binary tree with at most five levels for
+CLIENTS<=32. Request fields travel through that same tree, avoiding another
+selected-client payload lookup. Stored client, slot, bank and queue indices
+are sized to their legal geometry. Client head lookup ends at mailbox
+registers; neither an owner-indexed oldest-tag scan nor a serial chain of
+minimum-tag comparisons feeds the slot-stage updates.
+
+Queue pointers wrap by explicit equality with QUEUE_DEPTH-1, including
+non-power-of-two and depth-one geometries. Flush discards mailbox, client-list
+and dispatch-FIFO validity, but retains SENT slots and any held request
+accepted on the flush edge until their matching responses drain. Tag wrap
+still waits for every live slot, including returned/mailboxed work, to retire.
+Loop temporaries are not storage: scheduler iteration is unconditional,
+GEMV's result-selector loop runs even when selection is disabled, and
+prefetch read lanes are elaborated instances with the original read-enable
+and padding conditions. No latch or timing acceptance is inferred from these
+source changes. The retained failed STA reported setup -47.936 ns and hold
+-0.171 ns on compact PROFILE1 post-map analysis; fresh completed fitted STA
+and full-default/physical acceptance remain required.
 
 At default tile dimensions, the two sets consume
 2*8*128*(4+4+16)/8 = 6144 logical bytes per bank, 49152 across eight banks.
