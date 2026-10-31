@@ -590,7 +590,7 @@ def codec_behavior(run, simulator):
 
 
 def top_fixture(run, stem="compact-model", fp16=False, weight_bits=16,
-                sparse=False, int8=False):
+                sparse=False, int8=False, model=None):
     memory = bytearray(131072)
     descriptors = [bytes(64) for _ in range(32)]
     cursor = 0x1000
@@ -620,9 +620,17 @@ def top_fixture(run, stem="compact-model", fp16=False, weight_bits=16,
                       for _ in range(rows) for c in range(columns)]
         elif index in (2, 23, 24):
             values = [0x3f80] * len(values)
+        if model is not None:
+            values = model[index]
+            if len(values) != rows * columns:
+                raise ValueError(f"descriptor {index}: wrong independent fixture shape")
         quantized = weight_bits != 16 and (index == 1 or 16 <= index <= 22)
         if quantized:
-            codes = [2 if value == 0x3f80 else 1 for value in values]
+            scale = 0x3e80 if model is not None else 0x3f80
+            codes = ([int(decimal_value(value, BF16) * 4) + 1 for value in values]
+                     if model is not None else [2 if value == 0x3f80 else 1 for value in values])
+            if any(code < 0 or code >= 1 << weight_bits for code in codes):
+                raise ValueError("fixture weight is not representable at the selected width")
             row_stride = (columns * weight_bits + 7) // 8
             payload = pack(codes, weight_bits).to_bytes(rows * row_stride, "little")
             base = allocate(payload)
@@ -630,7 +638,7 @@ def top_fixture(run, stem="compact-model", fp16=False, weight_bits=16,
             zeros = pack([1] * (rows * columns), weight_bits).to_bytes(
                 rows * zero_stride, "little")
             zero_base = allocate(zeros)
-            scale_base = allocate(bytes.fromhex("803f") * (rows * columns))
+            scale_base = allocate(scale.to_bytes(2, "little") * (rows * columns))
             scale_stride = 2 * columns
             flags = 0x100 if weight_bits == 4 else 0x103
         else:
@@ -781,7 +789,7 @@ def main():
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv",
                                           "activation", "activation-startup", "parameters",
-                                          "top", "top-mixed", "all"], default="all")
+                                          "top", "top-mixed", "top-matrix", "all"], default="all")
     args = parser.parse_args()
     run = Run(args.check, args.preparation, args.repair_of)
     try:
@@ -818,6 +826,9 @@ def main():
                 top_behavior(run, "verilator", stem="fp16-w2-sparse-int8-model",
                              result_key="top_mixed_smoke", fp16=True, weight_bits=2,
                              sparse=True, int8=True)
+            if args.leaf in ("top-matrix", "all"):
+                from integrated import execute
+                execute(run)
         elif args.check == "synthesis":
             from synthesis import execute
             execute(run, ROOT, sources(), compact=args.compact)
