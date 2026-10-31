@@ -186,6 +186,15 @@ bits and has separate reset-protected initialization state. Missing required
 lanes, invalid indices and tail-column violations return explicit errors.
 Inactive slots/lanes return zero and do not require initialized storage.
 Simultaneous accepted reads/writes of the same address are write-first.
+Read/write legal-keep masks use continuous per-lane expressions, including
+singleton and partial final tiles, so constant tile inputs are evaluated at
+startup without requiring an address transition. This repairs the procedural
+mask startup defect recorded in
+`evidence/preparation/behavior-20261031T181004Z-ae317f6e/receipt.json`
+(first legal write returned an unknown error at 26 ns). Interfaces, asynchronous
+reset, ownership, stalls and mask bounds are unchanged. Fresh independent
+four-state activation-startup, compiled activation-ownership and affected
+integrated-top checks remain required; this change is not a functional pass.
 The default 16 vectors of 8960 words occupy about 9.2 Mbit of operand data
 before keep/valid/control overhead; this is a capacity calculation, not fit.
 

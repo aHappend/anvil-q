@@ -40,7 +40,7 @@ module anvil_q2_ht2_activation_store #(
     wire [31:0] read_index=r_vector*TILES+r_tile;
     wire write_range=w_vector<VECTOR_COUNT && w_tile<TILES;
     wire read_range=r_vector<VECTOR_COUNT && r_tile<TILES;
-    reg [127:0] write_legal_keep, read_legal_keep;
+    wire [127:0] write_legal_keep, read_legal_keep;
     wire write_transfer=w_valid && w_ready;
     wire read_transfer=r_valid && r_ready;
     wire response_ready=!response_valid || m_ready;
@@ -50,20 +50,14 @@ module anvil_q2_ht2_activation_store #(
     wire [3:0] memory_valid;
     wire [511:0] memory_keep;
     reg missing;
-    integer bound_j, missing_t, seq_t, seq_j;
-    genvar slot;
+    integer missing_t, seq_t, seq_j;
+    genvar slot, lane;
 
-    always @* begin
-      write_legal_keep=0;
-      read_legal_keep=0;
-      for (bound_j=0;bound_j<128;bound_j=bound_j+1) begin
-        if (w_tile<(MAX_WORDS >> 7) ||
-            (w_tile==(MAX_WORDS >> 7) && bound_j<(MAX_WORDS & 127)))
-          write_legal_keep[bound_j]=1;
-        if (r_tile<(MAX_WORDS >> 7) ||
-            (r_tile==(MAX_WORDS >> 7) && bound_j<(MAX_WORDS & 127)))
-          read_legal_keep[bound_j]=1;
-      end
+    for (lane=0;lane<128;lane=lane+1) begin: legal_keep
+      assign write_legal_keep[lane]=w_tile<(MAX_WORDS >> 7) ||
+        (w_tile==(MAX_WORDS >> 7) && lane<(MAX_WORDS & 127));
+      assign read_legal_keep[lane]=r_tile<(MAX_WORDS >> 7) ||
+        (r_tile==(MAX_WORDS >> 7) && lane<(MAX_WORDS & 127));
     end
 
     for (slot=0;slot<4;slot=slot+1) begin: token

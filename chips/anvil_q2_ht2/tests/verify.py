@@ -182,7 +182,12 @@ def numerical_rows(kind, compact=False):
                 yield value, 0, 64 | half, result, error
 
 
-def simulate(run, tb, parameters=None, simulator="iverilog", root=ROOT, plusargs=()):
+class DetectedDefect(Exception):
+    """An executed simulation reached the designated independent assertion."""
+
+
+def simulate(run, tb, parameters=None, simulator="iverilog", root=None, plusargs=()):
+    root = root or getattr(run, "design_root", ROOT)
     parameters = parameters or {}
     name = tb.stem + "-" + "-".join(f"{k}{v}" for k, v in parameters.items())
     paths = [str(p.relative_to(ROOT)) for p in sources(root)]
@@ -214,10 +219,23 @@ def simulate(run, tb, parameters=None, simulator="iverilog", root=ROOT, plusargs
                          *[f"-G{k}={v}" for k, v in parameters.items()], *paths],
                         name + "-compile")
             record, stdout, stderr = run.command(
-                [run.relative(obj / ("V" + tb.stem)), *plusargs], name + "-simulate")
+                [run.relative(obj / ("V" + tb.stem)), *plusargs], name + "-simulate",
+                check=not bool(getattr(run, "expected_failure", None)))
         finally:
             if obj.exists():
                 shutil.rmtree(obj)
+    expected_failure = getattr(run, "expected_failure", None)
+    if expected_failure:
+        if (record["exit_code"] != 0 and not record["timed_out"] and
+                any(marker in stdout + stderr for marker in expected_failure)):
+            run.receipt["detected_defect"] = {
+                "assertions": [marker for marker in expected_failure
+                               if marker in stdout + stderr],
+                "command_index": len(run.records) - 1,
+            }
+            run.save()
+            raise DetectedDefect("designated independent assertion rejected mutated RTL")
+        raise RuntimeError(f"{name}: mutation survived or failed without its designated assertion")
     if "SUMMARY " not in stdout:
         raise RuntimeError(f"{name}: no executed comparison summary")
     return stdout
@@ -720,6 +738,7 @@ def main():
     parser.add_argument("--repair-of")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--kind", type=int, choices=range(5))
+    parser.add_argument("--mutation", help="run one named disposable defect-sensitivity case")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv",
                                           "activation", "activation-startup", "top", "all"], default="all")
@@ -755,6 +774,9 @@ def main():
         elif args.check == "synthesis":
             from synthesis import execute
             execute(run, ROOT, sources())
+        elif args.check == "mutations":
+            from mutations import execute
+            execute(run, args.mutation)
         else:
             raise RuntimeError(f"{args.check}: verification implementation not yet completed")
     except Exception as exc:
