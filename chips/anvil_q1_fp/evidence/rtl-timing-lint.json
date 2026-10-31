@@ -1,6 +1,6 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-10-31T15:52:36.428603+00:00",
+  "timestamp_utc": "2026-10-31T16:18:48.944705+00:00",
   "root": "/data/sufeng/anvil-q1-fp-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
@@ -8,7 +8,7 @@
   "auto_sanitized_nomem2reg_files": [],
   "source_sha256": {
     "rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
-    "rtl/anvil_q1_fp_00_pkg.sv": "d508af25e902f842439c5bd7c62dbc29e159de00a2155796ecbf759c40c023b1",
+    "rtl/anvil_q1_fp_00_pkg.sv": "4da7f7159f976d681a07380e48a54f8e06160963d0e89b0a19c0f619b43c9062",
     "rtl/anvil_q1_fp_01_compat_pkg.sv": "316a81331458820566c2beb83fd5ce6d002078fb4cf8cff252eb6f8e8e9500e6",
     "rtl/anvil_q1_fp_awq_dequant.sv": "f714d3aa309c6dd13eadbd8390475c10b467aca3beeee62bf47ba92b32f9f157",
     "rtl/anvil_q1_fp_binary.sv": "b522d105c47c1f1810432d25de2f6d6f216044594e660be56fc95a179827cb7e",
@@ -24,7 +24,7 @@
     "rtl/anvil_q1_fp_gemv.sv": "51d671ac3d6a54034157124a89f61786d429301c1e5b7b8b4fa73b00cd12255e",
     "rtl/anvil_q1_fp_gqa_attention.sv": "fb7bc337a471c9ee73b1db61421a0d028537a984fbe037b70eb4d37035b4809a",
     "rtl/anvil_q1_fp_reciprocal.sv": "eb2d9fb3fba07cb10ff478106b14bac35ea45b9ec07da07edab1250da2838a3d",
-    "rtl/anvil_q1_fp_reduce3.sv": "126eb4683cb774b2808a40f01cba48b9d4e7a665f1a82e30ebe6cc83f9e6cd3c",
+    "rtl/anvil_q1_fp_reduce3.sv": "a792b876e74360f2487b482f5ae37fa81963fbe4ed5c043babb8370747c4f5cf",
     "rtl/anvil_q1_fp_rmsnorm.sv": "6516220e84a8afc64cdd3d9387bdf53b0e6235c97615f4d3349d17423c0545e0",
     "rtl/anvil_q1_fp_rope.sv": "aeacd351b43d4fe8386ae2adc18db163ddd9a2e1d20d3d3af8da6a9076630d5f",
     "rtl/anvil_q1_fp_rsqrt.sv": "f6674723d2c245eaba79128e05254a19243adde4f14ed696878fad6e72ff2170",

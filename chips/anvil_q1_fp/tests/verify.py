@@ -1879,6 +1879,11 @@ def protocol_shard_check(ev):
     return all(results.values())
 
 
+def reducer_check(ev, full=True):
+    from reducer_checks import check
+    return check(ROOT, ev, full=full)
+
+
 def l1_jobs():
     jobs = [
         ("benchmark-validator", benchmark_fixture_check, (), {}),
@@ -1907,6 +1912,8 @@ def l1_jobs():
                         "cases": ((name, selector, mode),)}))
     jobs += [
         ("leaves-full", leaf_check, (), {"full": True}),
+        ("reducer-full", reducer_check, (), {"full": True}),
+        ("icarus-reducer", reducer_check, (), {"full": False}),
         *[(f"protocol-mode{mode}", protocol_check, (), {"modes": (mode,)})
           for mode in (0, 1, 2)],
         ("icarus-integration", startup_check, (), {}),
@@ -2058,7 +2065,8 @@ def main():
                 parameters_ok = results["parameters"]
                 synthesis_ok = results["synthesis-top"]
                 dot_synthesis_ok = results["synthesis-dot"]
-                leaves_ok = results["leaves-full"] and results["icarus-leaves"]
+                leaves_ok = (results["leaves-full"] and results["icarus-leaves"] and
+                             results["reducer-full"] and results["icarus-reducer"])
                 defects_ok = results["leaf-defects"]
                 integration_defects_ok = results["integration-defects"]
                 protocol_ok = all(results[f"protocol-mode{mode}"] for mode in (0, 1, 2))
