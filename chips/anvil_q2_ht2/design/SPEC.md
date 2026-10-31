@@ -51,14 +51,16 @@ partially update mode/K.
 
 `anvil_q2_ht2_configuration` now connects this adapter to the unchanged parent
 configuration controller in legacy mode and to a separate native controller
-otherwise. It is an internal subsystem, not the still-missing product top.
+otherwise. It remains an internal configuration subsystem. The product top
+uses the same mode adapter with the complete unchanged parent product for
+legacy execution, rather than instantiating a second parent configuration bank.
 Every mode-bit change invalidates native descriptor publication; legacy
 configuration is reset on a mode change or explicit configuration invalidation.
 Software must revalidate the model after changing mode, and rewrite legacy
 shadow configuration when returning to legacy mode. Native shadow descriptors
 survive invalidation; a failed validation leaves the preceding committed bank
-unchanged. K-only changes do not discard descriptor banks. Top-level cache/DMA
-invalidation and quiescence enforcement remain integration obligations.
+unchanged. K-only changes do not discard descriptor banks. The product top now connects cache/DMA invalidation and quiescence enforcement;
+these paths still require independent behavioral checks.
 
 The legacy configuration register addresses remain:
 
@@ -145,7 +147,10 @@ are two-byte aligned. Native descriptors have zero metadata addresses/strides.
 RoPE rows contain interleaved cosine/sine pairs for HEAD_DIM/2 rotary pairs,
 with each coefficient stored in the selected native format. Their checkpoint
 configuration/provenance and model sequencing are still required; an address
-validator does not establish correct RoPE coefficients or execution.
+validator does not establish correct RoPE coefficients or execution. In the
+native Qwen rotate-half convention, pair j combines components j and
+j+HEAD_DIM/2, not adjacent components. Coefficient columns 2*j and 2*j+1
+are cosine and sine for that pair at the node's path-depth position.
 
 Example W4 codes [1,14,2,7] occupy bytes `e1 72`. Zero points [8,3]
 occupy `38`. BF16 scales [1,0.5] occupy `80 3f 00 3f`. With GROUP_SIZE=2,
@@ -306,7 +311,7 @@ below that origin are errors, never stale reads. New-sequence computation
 cannot read the preceding sequence as a prefix. Format/base/extent cannot
 change while committed native cache state exists, even for a new-sequence
 offer: differing physical layouts could alias the old committed data before
-publication. The top's still-required quiescent configuration invalidation
+publication. The top's quiescent configuration invalidation
 must reset the native cache controller before adopting an incompatible layout,
 after all accepted memory transactions drain. Batch annul is rollback, not
 cache invalidation, and must preserve the previous committed state.
@@ -370,20 +375,229 @@ publication.
 | Tensor command | Capture at n; validate retained command before any activation or memory request; no same-edge row response |
 | Tensor single column tile | First and last coincide; the row accumulator initializes once and returns one unbiased FP32 row |
 | Tensor partial column tile | Only columns below descriptor width enter activation reads, sparse union and MAC keeps |
-| Tensor nonlast column tile | Wait for row-accumulator dependency retirement before requesting the next increasing tile |
-| Tensor row response stalled | Row, FP32 sums, mask, tag, last and error hold; no next-row read or command acceptance |
+| Tensor nonlast column tile | Prefetch/issue increasing tiles while prior MAC work runs; the ordered accumulator waits for each four-stage dependency retirement |
+| Tensor issue queue full | Eight row/column entries; simultaneous issue/accumulator acceptance replaces one entry without overflow or reordering |
+| Tensor row response stalled | Row, FP32 sums, mask, tag, last and error hold; producer may fill remaining issue capacity, but no replacement command is accepted |
 | Tensor activation write and command | Write offer has priority; command waits for outstanding write response retirement |
 | Tensor annul/fault | Annul suppresses output and drains weight ownership; fault flushes arithmetic state before the terminal error response; no next command before drain |
-| Native shared-memory request | Capture one weight-burst owner; serialize its aligned beats onto the parent's acknowledged single-beat client without duplicating a weight stream |
-| Native shared-memory fill | Hold each returned beat/error/last under fill backpressure; advance address only on fill consumption |
+| Native shared-memory request | Reserve 128 return entries for one 1..127-beat owner; split at 16 beats and 4-KiB boundaries through the parent's pipelined burst port |
+| Native shared-memory fill | Synchronously buffer unbackpressurable DDR returns; held output data/error/last advance only on fill consumption; issue address advances on burst acceptance |
+| Native shared-memory simultaneous return/pop | Separate RAM pointers and explicit occupancy increment/decrement; output prefetch may replace a consumed beat at the same edge |
 | Native shared-memory annul | Suppress new bursts; finish all beats of an already accepted burst and deliver its terminating fill to the draining owner before reuse |
 | Native shared-memory invalid burst | Return an explicit terminal fill error without issuing DDR traffic |
 | Native shared-memory counters | Increment only on actual accepted Avalon read/write commands; do not reset on batch annul or count suppressed/hypothetical reads |
+| Inverse/scalar command | Single-owner variable-latency operation; inputs captured at n; no response or replacement acceptance at n; held response retires once |
+| Inverse finite subnormal | Normalize the complete significand before exponent arithmetic; no input flush or intermediate native-format conversion |
+| Inverse exceptional input | Zero reciprocal/rsqrt, negative nonzero rsqrt and nonfinite inputs return an explicit error; canonical NaNs are never finite success |
+| Inverse restoring step | One quotient bit per enabled edge; rsqrt then consumes one radicand bit pair per edge; no combinational division |
+| Scalar helper launch | Mul/add capture operands at the issue edge; the controller reads their seventh/fourth register only at a subsequent edge, not its pre-update value |
+| Vector count one | One input with d_last; one leaf in the FP32 partial-sum tree; one normalization/output; no empty fold or zero-width index |
+| Vector non-power-of-two count | Adjacent power-of-two partial sums merge; remaining occupied levels fold in increasing level order |
+| Vector input framing | Exactly count accepted input elements; missing or premature d_last on an accepted element is a terminal error |
+| Vector output stalled | Index, native result, FP32 result, last, tag and error remain stable; no following element is read or published |
+| Vector/RoPE annul | Drop all child arithmetic/conversion validity and owned outputs; unreset RAM is unreachable until a new complete command/input pass |
+| RoPE pair | Four non-fused FP32 products and two FP32 sums, then two synchronized native conversions; neither converted half retires alone |
+| Scalar read cache | One aligned accepted DDR read owns its response; a hit still performs the requested native classification/conversion |
+| Scalar read annul | Invalidate retained beat, cancel conversion/response, drain an accepted DDR response before command reuse |
+| Tensor idle-time read | Writes have priority over external tile reads, which have priority over projection commands; an accepted tile read owns the response until consumed |
+| Tensor read/command overlap | Projection and idle-time model reads share the same activation RAM; no command starts with an outstanding model read or write acknowledgement |
+| Attention singleton context | One score normalizes to one; K and V block zero may be both first and last; a single native head response follows completed accumulation/conversion |
+| Attention head grouping | With two KV heads, lower/upper halves of query heads select KV head zero/one; with one KV head all query heads select zero |
+| Attention sibling isolation | Every K/V request carries the original query slot into the transactional cache's ancestor-aware translation |
+| Attention annul | Co-annul the transactional KV owner; it drains accepted physical memory operations, while attention and internal statistics discard that generation |
+| Native model acceptance | Capture count/K, IDs, parents, position, mode and cache region at n; validate and begin the cache transaction before loading embedding data |
+| Native model scalar RAM | Synchronous word read, followed by capture; complete-vector validity is set only after every required word has been written |
+| Native projection boundary | Load each active slot's native input tiles, broadcast one weight stream, add Q/K/V bias once per completed row, then round to the selected activation format |
+| Native projection row queue | Eight full FP32 row records separate tensor production from bias/conversion/logit consumption; simultaneous full-queue push/pop preserves the old head |
+| Native vocabulary boundary | Emit each FP32 row in ascending vocabulary index and slot order; update greedy argmax only on an accepted logit transfer |
+| Native greedy ties | Keep the earlier, smaller vocabulary ID for equal logits, including opposite signed zeros |
+| Native batch result | All provisional logits precede cache finish; batch response consumption is the native cache's publication edge |
+| Native computation fault | Annul arithmetic and the provisional KV generation, drain accepted memory ownership, then return an error with accepted count/mask zero |
+| Top token/draft coincidence | A legacy token offer has priority; it is captured as count one, independent of configured draft K |
+| Top native legacy-token completion | Internally consume the cache response without requiring batch_ready; return done/error, not a second draft/batch response |
+| Top legacy logit extension | Capture at n; three-stage elastic Q16.16-to-FP32 RNE conversion appears after n+2, earliest transfer n+3; original data/index travel together and done waits for drainage |
+| Top cancellation | Suppress logit/result publication immediately, co-annul the model/cache, and wait for model, host and DDR ownership to drain before reuse |
+| Top native error response stalled | Preserve the error, zero accepted count/mask, and unchanged committed position until batch_ready |
+| Top configuration/host coincidence | Configuration offers/responses inhibit new host and token transfers; active mode writes return error without mutation |
+| Top legacy mode change | Require no active token/host transaction and the parent's configuration readiness, which is suppressed during its cancellation/fault drain |
 
 Control/pipelines use asynchronous active-low reset. Unreset RAM requires
 reset generation/valid protection and synchronous registered reads/writes.
 There may be no active X/Z, inferred latches, unresolved black boxes,
 combinational division/modulo or mixed sequential assignment styles.
+
+## Internal native scalar/vector interfaces
+
+These are implemented internal subsystems, not extra product ports, configuration
+registers or a substitute for independently checking the integrated model.
+All commands use the common active-low reset, annul and held ready/valid rules.
+
+`anvil_q2_ht2_inverse` accepts `s_rsqrt`, binary32 `s_data` and `s_tag[63:0]`,
+and returns binary32 `m_data`, tag and error. The zero-divide result is signed
+infinity with error. Negative nonzero rsqrt and NaNs return canonical quiet NaN
+with error. Nonfinite inputs are explicitly errors even when the defined data
+result is zero (reciprocal infinity or positive-infinity rsqrt). Finite
+underflow is gradual; overflow returns signed infinity with error.
+
+`anvil_q2_ht2_scalar` accepts `s_operation[2:0]`, binary32 `s_a/s_b` and a
+64-bit tag. Operations 0..5 are add, multiply, reciprocal, rsqrt, exp and
+sigmoid; 6/7 error. Unary operations ignore s_b. Elementary binary operations
+reuse the registered FP32 helpers. The exp polynomial, split range-reduction
+constants and exact integer inverse algorithms are described in ARCHITECTURE.md.
+No measured approximation-error claim is made by their presence in source.
+The independent relative/absolute error thresholds remain unchanged.
+
+`anvil_q2_ht2_vector_unit` has MAX_WORDS default 32768, legal 1..32768.
+Its command supplies `s_operation[2:0]`, `s_count[31:0]`, `s_fp16` and tag.
+Operations 0..4 are RMSNorm, residual addition, SwiGLU, stable softmax and
+elementwise product; other operations and counts outside 1..MAX_WORDS error.
+After the command, exactly count `d_valid && d_ready` transfers provide
+binary32 d_data/d_aux; d_last is asserted only on the final element.
+The model controller must expand native activations and coefficients exactly
+before this interface, without reinterpreting BF16 as FP16 or conversely.
+For RMSNorm d_aux is gamma, for residual it is the second operand, for SwiGLU
+d_data is gate and d_aux is up, and for product it is the second factor.
+Softmax ignores d_aux. Active required inputs must be finite.
+
+RMSNorm uses FP32 pairwise sum of squares, multiplication by the reciprocal
+of count, addition of FP32 epsilon `358637bd` (RNE of 1e-6), rsqrt, then
+two ordered FP32 products x*normalizer*gamma. SwiGLU computes
+(gate*sigmoid(gate))*up in that order. Softmax subtracts its exact finite
+maximum, computes FP32 exponentials, uses a pairwise FP32 denominator and
+multiplies by its reciprocal. The unit returns one held, increasing-index
+result per element, including `m_data[15:0]` rounded to the commanded native
+format and `m_fp32[31:0]` naming its pre-boundary FP32 computation. The latter
+is used for internal FP32 attention statistics, not to bypass a required
+native activation-storage boundary. Numerical/conversion/framing errors return
+a single terminal response (`m_error=m_last=1`), zero data and the owned tag.
+Successful outputs already consumed before an error remain provisional and
+cannot justify a KV/model transaction commit.
+
+`anvil_q2_ht2_rope_pair` takes two FP32 components in s_data (lower/upper word)
+and FP32 cosine/sine in s_coefficients (lower/upper word), plus s_fp16/tag.
+It returns the rotated pair in m_fp32 and the native rounded pair in m_data,
+lower component in the least-significant field. The model controller selects
+the rotate-half indices and reads coefficients from descriptor 3 at the
+node's depth-derived position. The module does not invent a theta, generate
+an unrelated position or reuse the parent's fixed-point coefficient values.
+Cache writes must use the selected native activation boundary followed by
+the specified native BF16/INT8 KV encoding, not unrounded m_fp32 shortcuts.
+
+`anvil_q2_ht2_scalar_reader` takes a committed native descriptor, row/column
+and tag and returns the original native word, its exact FP32 expansion and
+the descriptor's FP16 indicator. It accepts only flags 101/102 and bounds/
+alignment-correct native operands. It caches one 64-byte aligned DDR beat;
+all misses issue one acknowledged read. Annul invalidates that beat and
+drains an accepted request. Top-level mode/model/host-write invalidation must
+annul the reader before another command can observe a stale coefficient.
+This internal read-only client connects to the scalar client of the shared
+DDR fabric; it has no independent external memory controller.
+
+`anvil_q2_ht2_tensor_engine` now additionally exposes idle-time r_valid/r_ready,
+vector/tile index, four-slot mask, per-lane keep and tag, with a held r_rsp
+containing the same stored four-slot native tile. All dimensions/keeps are
+checked by its existing activation store. This is a model operand access
+port, not an additional storage copy or benchmark-only public interface.
+
+`anvil_q2_ht2_attention` processes one query head for one tree slot/layer.
+Parameters follow the admitted layer, head, cache-block and sequence geometry,
+including HIDDEN_SIZE=NUM_Q_HEADS*HEAD_DIM in 8..1536 and divisibility by eight.
+QWORDS and WORDS are diagnostic-safe width parameters and must equal HEAD_DIM
+and CACHE_BLOCK respectively in a legal configuration. Command fields are
+slot, layer, query head, committed origin, node position, selected native format,
+the complete native query head and tag. Position is the batch position plus
+path depth, not the physical slot. The controller supplies the previous
+committed origin, or the new origin for a new-sequence transaction.
+
+The attention unit expands its selected-format query, reads BF16-decoded K/V
+records through the native transactional store and forms scores with FP32
+products and increasing-dimension FP32 sums, scaled by rsqrt(HEAD_DIM).
+Stable softmax uses all positions from origin through the node itself.
+Its normalized FP32 probabilities multiply decoded V in increasing-position
+order; FP32 component accumulators round only when forming the native head
+response. All read addresses retain the requesting slot, layer, grouped KV
+head and explicit block counter. The KV map must reject siblings/descendants
+and enforce acknowledged provisional-write visibility. Successful attention
+cannot supply KV completion bits or publish a batch. Annul must also reach
+the transactional store, which owns drainage; kv_idle gates command reuse.
+The native top and sequencer now connect this path. Actual model execution,
+numerical fidelity, fit, timing and performance evidence remain outstanding.
+
+## Connected model and product control
+
+`anvil_q2_ht2_top` preserves the parent port/parameter list and adds the frozen
+draft/batch/logit extensions. Native BF16/K=1 remains reset policy. Legacy mode
+instantiates the unchanged complete `anvil_q2_ht_top`; native mode uses
+`anvil_q2_ht2_model_sequencer`, native descriptor publication, the acknowledged
+host port and the shared native DDR fabric. The Avalon mux changes owner only
+after a quiescent mode write. Parent sources remain required build inputs and
+are not numerical oracles.
+
+The native sequencer captures `s_k` as well as `s_count` and rejects a draft
+count exceeding the captured configured width. Its layer loop covers every
+configured layer, up to 28: input RMSNorm; biased Q/K/V projections; rotate-half
+Q/K RoPE at the node's path depth; acknowledged provisional K/V storage; causal
+GQA; attention output projection and residual; post-attention RMSNorm; gate/up
+projections, SwiGLU, down projection and residual. Final RMSNorm and vocabulary
+projection produce real target IDs. No externally supplied target ID reaches
+the product cache finish interface.
+
+Ten selected-format word vectors per slot hold hidden state, normalization,
+Q/K/V, context, projected residual, gate, up and activated intermediate.
+They use synchronous, unreset RAM behind reset-protected complete-vector
+validity. The tensor engine has one separate input-vector tile bank per slot;
+it is populated from these vectors before each projection. This input staging
+is a real storage/copy cost, not four weight readers or a zero-cost alias.
+All projection rows retain FP32 through dot accumulation and optional bias
+before native storage rounding. Vocabulary results remain FP32; companion
+`logit_data` is signed saturating, truncating Q16.16. Native output order is
+ascending vocabulary index, with ascending active slot inside each row.
+Legacy mode retains its original logit representation and slot zero.
+Its `logit_fp32` is RNE_FP32(logit_data * 2^-16), computed in a three-stage
+elastic pipeline while the original index/data travel with it. This is the
+floating-point representation of the actual parent result, not a claim that
+the parent's fixed-point computation was native floating point. Parent
+completion waits for this pipeline to drain, so no successful done precedes
+a stalled final logit. Cancel discards its provisional buffered logits.
+
+Native K/V records always store BF16 or native INT8 as specified. In FP16
+activation mode, a K/V component expands exactly to FP32 and rounds to BF16
+before the cache codec. Query vectors remain in the selected activation format.
+This explicit KV boundary must be modeled independently rather than treating
+FP16 bit patterns as BF16. Attention reads retain their requesting slot into
+ancestor-aware translation.
+
+Draft-interface requests retire through exactly one batch response and
+publication waits for batch_ready. Requests accepted on the legacy token
+interface are K=1 and internally consume the same transactional cache response;
+they pulse done/error without requiring the added batch_ready input and do
+not also emit a batch response. Cancellation/fault terminal responses follow
+the same interface ownership: drafts hold their error until batch_ready,
+whereas legacy-token errors retire internally after drainage. No token source
+can publish before all required logits and KV acknowledgements.
+
+Mode or descriptor-publication invalidation resets incompatible committed
+native cache state only while quiescent. Batch annul instead preserves the
+committed pointer, origin and mappings. A successful new-sequence response
+publishes the new origin together with cache selection; a failed new sequence
+does not replace it. Reset/cancel wins over a simultaneous response transfer.
+The native top retains an aborted request's terminal error response until
+accepted, and does not accept a replacement while external ownership drains.
+
+Tensor input fetching now overlaps preceding MAC execution through eight
+row/column issue records, with in-order, dependency-safe FP32 accumulation.
+Eight complete projection rows buffer between the tensor and model controller,
+allowing later rows to run while earlier rows receive bias, round or wait on
+logit_ready. The DDR adapter uses real pipelined bursts and synchronous return
+storage rather than waiting for every individual beat's consumption to issue
+the next address. These are structural overlaps, not measured speedups.
+
+The design is still incomplete for the throughput objective: each metadata/
+DMA tile remains single-owner through decode completion, and vector/coefficient
+processing and input-vector staging remain word-serialized. Multi-tile
+prefetch/decode scheduling and effective utilization must be resolved before
+design handoff; >=3500 TPM, >50% traffic reduction and every original numerical,
+compatibility and physical threshold remain mandatory. No model run is claimed.
 
 ## Legal parameters
 
