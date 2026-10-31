@@ -30,7 +30,7 @@ module anvil_q2_ht2_activation_store #(
     localparam TILES=(MAX_WORDS+127) >> 7;
     localparam DEPTH=TILES*VECTOR_COUNT;
     localparam AW=DEPTH<=1 ? 1 : $clog2(DEPTH);
-    reg [1:0] state;
+    reg read_valid, response_valid;
     reg write_response, write_error, response_error, read_error;
     reg [3:0] read_mask;
     reg [511:0] read_keep, response_keep;
@@ -43,6 +43,8 @@ module anvil_q2_ht2_activation_store #(
     reg [127:0] write_legal_keep, read_legal_keep;
     wire write_transfer=w_valid && w_ready;
     wire read_transfer=r_valid && r_ready;
+    wire response_ready=!response_valid || m_ready;
+    wire read_stage_ready=!read_valid || response_ready;
     wire write_good=write_range && (w_keep & ~write_legal_keep)==0;
     wire [8703:0] memory_data;
     wire [3:0] memory_valid;
@@ -108,8 +110,8 @@ module anvil_q2_ht2_activation_store #(
     assign w_ready=rst_n && !annul && (!write_response || w_rsp_ready);
     assign w_rsp_valid=rst_n && !annul && write_response;
     assign w_rsp_error=w_rsp_valid && write_error;
-    assign r_ready=rst_n && !annul && state==0;
-    assign m_valid=rst_n && !annul && state==2;
+    assign r_ready=rst_n && !annul && read_stage_ready;
+    assign m_valid=rst_n && !annul && response_valid;
     assign m_error=m_valid && response_error;
     assign m_data=m_valid && !response_error ? response_data : 8192'd0;
     assign m_keep=m_valid && !response_error ? response_keep : 512'd0;
@@ -117,20 +119,21 @@ module anvil_q2_ht2_activation_store #(
 
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
-        state<=0; write_response<=0; write_error<=0;
+        read_valid<=0; response_valid<=0; write_response<=0; write_error<=0;
         response_error<=0; read_error<=0; read_mask<=0;
         read_keep<=0; response_keep<=0; read_tag<=0;
         response_tag<=0; response_data<=0;
       end else if (annul) begin
-        state<=0; write_response<=0;
+        read_valid<=0; response_valid<=0; write_response<=0;
       end else begin
         if (write_response && w_rsp_ready) write_response<=0;
         if (write_transfer) begin
           write_response<=1;
           write_error<=!write_good;
         end
-        case (state)
-          0: if (read_transfer) begin
+        if (read_stage_ready) begin
+          read_valid<=read_transfer;
+          if (read_transfer) begin
             read_error<=!read_range;
             read_mask<=r_token_mask; read_tag<=r_tag;
             for (seq_t=0;seq_t<4;seq_t=seq_t+1) begin
@@ -140,9 +143,11 @@ module anvil_q2_ht2_activation_store #(
                   (r_keep[128*seq_t+:128] & ~read_legal_keep)!=0)
                 read_error<=1;
             end
-            state<=1;
           end
-          1: begin
+        end
+        if (response_ready) begin
+          response_valid<=read_valid;
+          if (read_valid) begin
             response_error<=missing;
             response_tag<=read_tag;
             response_keep<=read_keep;
@@ -150,14 +155,8 @@ module anvil_q2_ht2_activation_store #(
               for (seq_j=0;seq_j<128;seq_j=seq_j+1)
                 response_data[(128*seq_t+seq_j)*16+:16]<=read_keep[128*seq_t+seq_j] ?
                   memory_data[2176*seq_t+16*seq_j+:16] : 16'd0;
-            state<=2;
           end
-          2: if (m_ready) state<=0;
-          default: begin
-            response_error<=1; response_tag<=0; response_keep<=0;
-            response_data<=0; state<=2;
-          end
-        endcase
+        end
       end
     end
   end endgenerate

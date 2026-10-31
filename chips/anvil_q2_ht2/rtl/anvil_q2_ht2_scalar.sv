@@ -36,26 +36,6 @@ module anvil_q2_ht2_scalar (
   wire [63:0] inverse_tag;
   wire advance=rst_n && !annul;
 
-  function automatic [31:0] coefficient(input [3:0] index);
-    begin
-      case (index)
-        0,1: coefficient=32'h3f800000;
-        2: coefficient=32'h3f000000;
-        3: coefficient=32'h3e2aaaab;
-        4: coefficient=32'h3d2aaaab;
-        5: coefficient=32'h3c088889;
-        6: coefficient=32'h3ab60b61;
-        7: coefficient=32'h39500d01;
-        8: coefficient=32'h37d00d01;
-        9: coefficient=32'h3638ef1d;
-        10: coefficient=32'h3493f27e;
-        11: coefficient=32'h32d7322b;
-        12: coefficient=32'h310f76c7;
-        default: coefficient=32'h7fc00000;
-      endcase
-    end
-  endfunction
-
   wire [11:0] integer_distance=12'd150-{4'd0,temporary[30:23]};
   wire [26:0] integer_bits=right_jam27(
     {(|temporary[30:23]),temporary[22:0],3'd0},integer_distance);
@@ -107,7 +87,7 @@ module anvil_q2_ht2_scalar (
           launch_mul=1; next_pc=POLY_ADD;
         end
         POLY_ADD: begin
-          arithmetic_a=temporary; arithmetic_b=coefficient(coefficient_index);
+          arithmetic_a=temporary; arithmetic_b=exp_coefficient(int'(coefficient_index));
           launch_add=1; next_pc=POLY_NEXT;
         end
         SIG_ADD: begin
@@ -201,7 +181,7 @@ module anvil_q2_ht2_scalar (
             pc<=RANGE_HIGH;
           end
           POLY_SETUP: begin
-            residual<=temporary; accumulator<=coefficient(12);
+            residual<=temporary; accumulator<=exp_coefficient(12);
             coefficient_index<=11; pc<=POLY_MUL;
           end
           POLY_NEXT: begin

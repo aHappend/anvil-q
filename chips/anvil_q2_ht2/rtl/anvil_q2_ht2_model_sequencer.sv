@@ -89,8 +89,10 @@ module anvil_q2_ht2_model_sequencer #(
     assign kv_mem_wdata=0; assign kv_mem_be=0; assign kv_mem_rsp_ready=0;
   end else begin: implementation
     localparam MAX_WORDS=HIDDEN_SIZE>INTERMEDIATE_SIZE ? HIDDEN_SIZE : INTERMEDIATE_SIZE;
-    localparam VECTOR_COUNT=10, DEPTH=VECTOR_COUNT*MAX_WORDS;
-    localparam AW=$clog2(DEPTH), BLOCKS=HEAD_DIM >> $clog2(CACHE_BLOCK);
+    localparam VECTOR_COUNT=10, VECTOR_TILES=(MAX_WORDS+127) >> 7;
+    localparam DEPTH=VECTOR_COUNT*VECTOR_TILES;
+    localparam AW=DEPTH<=1 ? 1 : $clog2(DEPTH);
+    localparam BLOCKS=HEAD_DIM >> $clog2(CACHE_BLOCK);
     localparam [3:0] HIDDEN=0, NORMAL=1, QUERY=2, KEY=3, VALUE=4,
       CONTEXT=5, PROJECTED=6, GATE=7, UP=8, ACTIVATED=9;
     localparam [2:0] EMBEDDING=0, VECTOR=1, PROJECTION=2,
@@ -100,12 +102,10 @@ module anvil_q2_ht2_model_sequencer #(
       ELEMENT_READ=8, ELEMENT_CAPTURE=9, ELEMENT_WRITE=10,
       READER_SEND=11, READER_WAIT=12, CONVERT_SEND=13, CONVERT_WAIT=14,
       EMBED_SEND=15, EMBED_SAVE=16, ELEMENT_NEXT=17, PHASE_DONE=18,
-      VECTOR_SEND=19, VECTOR_LOAD=20, VECTOR_EXPAND=21, VECTOR_AUX=22,
-      VECTOR_AUX_EXPAND=23, VECTOR_FEED=24, VECTOR_RESULT=25,
-      VECTOR_SAVE=26, TILE_START=27, TILE_READ=28, TILE_SAVE=29,
+      VECTOR_SEND=19, VECTOR_RESULT=25,
+      TILE_START=27, TILE_READ=28, TILE_SAVE=29,
       TILE_SEND=30, TILE_ACK=31, PROJECTION_SEND=32, PROJECTION_ROW=33,
-      PROJECTION_BIAS=34, PROJECTION_SLOT=35, ADD_SEND=36, ADD_WAIT=37,
-      PROJECTION_CONVERT=38, PROJECTION_SAVE=39, PROJECTION_NEXT=40,
+      PROJECTION_BIAS=34,
       LOGIT_SEND=41, ROTARY_START=42, ROTARY_FIRST=43, ROTARY_EXPAND1=44,
       ROTARY_SECOND=45, ROTARY_EXPAND2=46, ROTARY_COS=47, ROTARY_SIN=48,
       ROTARY_SEND=49, ROTARY_WAIT=50, ROTARY_SAVE1=51, ROTARY_SAVE2=52,
@@ -114,8 +114,13 @@ module anvil_q2_ht2_model_sequencer #(
       ATTENTION_START=61, ATTENTION_ELEMENT=62, ATTENTION_SAVE=63,
       ATTENTION_SEND=64, ATTENTION_WAIT=65, ATTENTION_OUTPUT=66,
       ATTENTION_NEXT=67, FINISH=68, BATCH_RESPONSE=69, FAILURE=70,
-      FAILURE_DRAIN=71, ERROR_RESPONSE=72;
-    reg [7:0] state, memory_return, reader_return, convert_return, add_return;
+      FAILURE_DRAIN=71, ERROR_RESPONSE=72,
+      PROJECTION_PIPE=73, PROJECTION_DRAIN=74,
+      VECTOR_TILE_A_READ=75, VECTOR_TILE_A_SAVE=76,
+      VECTOR_TILE_B_READ=77, VECTOR_TILE_B_SAVE=78,
+      VECTOR_STREAM_SEND=79, VECTOR_STREAM_WAIT=80,
+      COEFFICIENT_TILE_SEND=81, COEFFICIENT_TILE_WAIT=82;
+    reg [7:0] state, memory_return, reader_return, convert_return;
     reg [4:0] phase, layer;
     reg [2:0] operation, count, width, vector_operation;
     reg [5:0] mode;
@@ -141,20 +146,20 @@ module anvil_q2_ht2_model_sequencer #(
     reg [31:0] memory_write_index;
     reg [39:0] vector_valid;
     wire [63:0] memory_data;
+    wire [8191:0] tile_memory_data;
     reg [511:0] reader_descriptor;
     reg [31:0] reader_row, reader_column, read_fp32;
     reg [15:0] read_native;
     reg convert_expand, convert_half;
     reg [31:0] convert_source, converted_value;
-    reg [31:0] operand, auxiliary, temporary, bias;
+    reg [31:0] bias;
     reg [127:0] row_sums;
     reg [31:0] row_index;
     reg row_last;
-    reg [31:0] add_a, add_b;
     reg [2047:0] tile;
+    reg [2047:0] vector_a_tile, vector_b_tile;
     reg [127:0] tile_keep;
     reg [31:0] tile_index;
-    reg [6:0] tile_word;
     reg [7:0] dimension;
     reg [6:0] pair_index, block_index, block_word;
     reg cache_value, cache_head;
@@ -173,9 +178,8 @@ module anvil_q2_ht2_model_sequencer #(
     wire [31:0] pair_second=pair_first+(HEAD_DIM >> 1);
     wire final_slot={1'b0,slot}+3'd1==count;
     wire final_element=index+32'd1==length;
-    wire [31:0] tile_column=(tile_index << 7)+{25'd0,tile_word};
-    wire final_tile_word=tile_word==127 || tile_column+32'd1==source_count;
-    wire final_tile=tile_column+32'd1==source_count;
+    wire final_tile=(({1'b0,tile_index}+33'd1) << 7)>={1'b0,source_count};
+    reg [127:0] staging_keep;
     wire final_dimension=dimension==HEAD_DIM-1;
     wire final_pair=pair_index==(HEAD_DIM >> 1)-1;
     wire final_block=block_index==BLOCKS-1;
@@ -193,22 +197,58 @@ module anvil_q2_ht2_model_sequencer #(
     wire [15:0] reader_native;
     wire [31:0] reader_fp32;
     wire [63:0] reader_tag;
+    wire coefficient_tile_ready, coefficient_tile_valid, coefficient_tile_error;
+    wire coefficient_tile_fp16, coefficient_tile_idle;
+    wire [2047:0] coefficient_tile_data;
+    wire [63:0] coefficient_tile_tag;
+    reg vector_b_fp16;
+    wire scalar_reader_mem_valid, scalar_reader_mem_ready, scalar_reader_rsp_ready;
+    wire [32:0] scalar_reader_mem_address;
+    wire tile_reader_mem_valid, tile_reader_mem_ready, tile_reader_rsp_ready;
+    wire [32:0] tile_reader_mem_address;
+    reg scalar_owner_valid, scalar_owner_tile;
+    reg scalar_offer_valid, scalar_offer_tile;
+    reg [32:0] scalar_offer_address;
+    wire scalar_request_transfer=scalar_mem_valid && scalar_mem_ready;
+    wire scalar_response_transfer=scalar_mem_rsp_valid && scalar_mem_rsp_ready;
     wire conversion_ready, conversion_valid, conversion_error;
     wire [31:0] conversion_data;
     wire [63:0] conversion_tag;
-    wire addition_ready, addition_valid, addition_error;
-    wire [31:0] addition_data;
-    wire [63:0] addition_tag;
     wire vector_ready, vector_data_ready, vector_result_valid, vector_error, vector_last;
     wire [31:0] vector_index;
     wire [15:0] vector_data;
     wire [63:0] vector_tag;
+    wire vector_result_fault=vector_error || vector_tag!=tag ||
+      vector_index!=index || vector_last!=final_element;
+    wire vector_store_write=enabled && state==VECTOR_RESULT &&
+      vector_result_valid && !vector_result_fault;
+    wire vector_input_ready, vector_input_valid, vector_input_error;
+    wire vector_input_last, vector_input_idle;
+    wire [31:0] vector_input_a, vector_input_b;
+    wire [63:0] vector_input_tag;
+    wire [31:0] vector_remaining=length-(tile_index << 7);
+    wire [7:0] vector_tile_count=vector_remaining>=128 ?
+      8'd128 : vector_remaining[7:0];
+    wire vector_tile_last=(({1'b0,tile_index}+33'd1) << 7)>={1'b0,length};
+    wire vector_input_fault=vector_input_valid &&
+      (vector_input_error || vector_input_tag!=tag);
+    wire vector_input_transfer=enabled && state==VECTOR_STREAM_WAIT &&
+      vector_input_valid && vector_data_ready && !vector_input_fault;
     wire tensor_ready, tensor_write_ready, tensor_write_valid, tensor_write_error;
     wire tensor_valid, tensor_error, tensor_last, tensor_idle, tensor_fault;
     wire [31:0] tensor_row;
     wire [127:0] tensor_sums;
     wire [3:0] tensor_tokens;
     wire [63:0] tensor_tag;
+    wire row_store_ready, row_store_valid, row_store_error, row_store_last, row_store_idle;
+    wire [63:0] row_store_data, row_store_tag;
+    wire [31:0] row_store_row;
+    wire [3:0] row_store_tokens;
+    reg [31:0] stored_rows;
+    wire row_store_fault=row_store_valid && (row_store_error ||
+      row_store_tag!=tag || row_store_tokens!=tokens || row_store_row!=stored_rows ||
+      row_store_last!=(stored_rows+32'd1==destination_count));
+    wire row_write=enabled && row_store_valid && !row_store_fault;
     reg projection_inflight;
     reg [2:0] projection_head, projection_tail;
     reg [3:0] projection_queued;
@@ -240,12 +280,27 @@ module anvil_q2_ht2_model_sequencer #(
     wire [2:0] cache_accepted;
     wire [3:0] cache_mask;
     wire [31:0] cache_next, cache_position;
-    wire all_idle=reader_idle && tensor_idle && cache_idle && !cache_active;
+    wire all_idle=reader_idle && tensor_idle && cache_idle && !cache_active &&
+      row_store_idle && vector_input_idle && coefficient_tile_idle &&
+      !scalar_owner_valid && !scalar_offer_valid;
     wire memory_read=enabled && state==ELEMENT_READ;
     wire memory_write=enabled && state==ELEMENT_WRITE;
     wire memory_read_bad=memory_index>=MAX_WORDS || memory_vector>=VECTOR_COUNT ||
       !vector_valid[10*memory_slot+memory_vector];
-    genvar bank;
+    wire tile_read=enabled && (state==TILE_READ ||
+      state==VECTOR_TILE_A_READ || state==VECTOR_TILE_B_READ);
+    wire [3:0] tile_read_vector=state==VECTOR_TILE_B_READ ? auxiliary_vector : source_vector;
+    wire tile_read_bad=tile_read_vector>=VECTOR_COUNT || tile_index>=VECTOR_TILES ||
+      !vector_valid[10*slot+tile_read_vector];
+    genvar bank, word_lane;
+    integer staging_lane, staging_write_lane;
+
+    always @* begin
+      staging_keep=0;
+      for (staging_lane=0;staging_lane<128;staging_lane=staging_lane+1)
+        staging_keep[staging_lane]=
+          ({1'b0,tile_index,7'd0}+40'(staging_lane))<{8'd0,source_count};
+    end
 
     function automatic [31:0] legacy_fixed(input [31:0] value);
       reg [55:0] magnitude;
@@ -273,18 +328,50 @@ module anvil_q2_ht2_model_sequencer #(
     endfunction
 
     for (bank=0;bank<4;bank=bank+1) begin: token_storage
-      (* ramstyle="M20K", nomem2reg *) reg [15:0] words [0:DEPTH-1];
-      reg [15:0] read_data;
-      wire [31:0] read_address=memory_vector*MAX_WORDS+memory_index;
-      wire [31:0] write_address=memory_write_vector*MAX_WORDS+memory_write_index;
-      assign memory_data[16*bank+:16]=read_data;
-      always @(posedge clk) begin
-        if (memory_write && memory_write_slot==bank &&
-            memory_write_index<MAX_WORDS && memory_write_vector<VECTOR_COUNT)
-          words[AW'(write_address)]<=memory_write_data;
-        if (memory_read && memory_slot==bank && !memory_read_bad)
-          read_data<=words[AW'(read_address)];
+      wire [2047:0] read_data;
+      wire [31:0] read_address=tile_read ?
+        tile_read_vector*VECTOR_TILES+tile_index :
+        memory_vector*VECTOR_TILES+(memory_index >> 7);
+      wire [31:0] write_address=memory_write_vector*VECTOR_TILES+(memory_write_index >> 7);
+      assign memory_data[16*bank+:16]=read_data[16*memory_index[6:0]+:16];
+      assign tile_memory_data[2048*bank+:2048]=read_data;
+      for (word_lane=0;word_lane<128;word_lane=word_lane+1) begin: column_bank
+        (* ramstyle="M20K", nomem2reg *) reg [15:0] words [0:DEPTH-1];
+        reg [15:0] data_q;
+        assign read_data[16*word_lane+:16]=data_q;
+        always @(posedge clk) begin
+          if (memory_write && memory_write_slot==bank &&
+              memory_write_index[6:0]==word_lane &&
+              memory_write_index<MAX_WORDS && memory_write_vector<VECTOR_COUNT)
+            words[AW'(write_address)]<=memory_write_data;
+          if (vector_store_write && slot==bank && index[6:0]==word_lane)
+            words[AW'(destination_vector*VECTOR_TILES+(index >> 7))]<=vector_data;
+          if (row_write && row_store_tokens[bank] && row_store_row[6:0]==word_lane)
+            words[AW'(destination_vector*VECTOR_TILES+(row_store_row >> 7))]<=
+              row_store_data[16*bank+:16];
+          if ((tile_read && slot==bank && !tile_read_bad) ||
+              (memory_read && memory_slot==bank && !memory_read_bad &&
+                memory_index[6:0]==word_lane))
+            data_q<=words[AW'(read_address)];
+        end
+
       end
+    end
+
+    anvil_q2_ht2_projection_store_pipe projection_storage (
+      .clk(clk),.rst_n(rst_n),.annul(child_annul || invalidate),
+      .s_valid(enabled && state==PROJECTION_PIPE),.s_ready(row_store_ready),
+      .s_fp16(fp16),.s_bias_valid(bias_required),.s_last(row_last),
+      .s_sum(row_sums),.s_bias(bias),.s_row(row_index),.s_token_mask(tokens),.s_tag(tag),
+      .m_valid(row_store_valid),.m_ready(enabled),.m_error(row_store_error),
+      .m_last(row_store_last),.m_data(row_store_data),.m_tag(row_store_tag),
+      .m_row(row_store_row),.m_token_mask(row_store_tokens),.idle(row_store_idle)
+    );
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) stored_rows<=0;
+      else if (child_annul || invalidate) stored_rows<=0;
+      else if (enabled && state==PROJECTION_SEND && tensor_ready) stored_rows<=0;
+      else if (row_write) stored_rows<=stored_rows+32'd1;
     end
 
     anvil_q2_ht2_scalar_reader coefficients (
@@ -295,11 +382,52 @@ module anvil_q2_ht2_model_sequencer #(
       .m_valid(reader_valid),.m_ready(enabled && state==READER_WAIT),
       .m_error(reader_error),.m_fp16(),.m_native(reader_native),
       .m_fp32(reader_fp32),.m_tag(reader_tag),.idle(reader_idle),
-      .mem_valid(scalar_mem_valid),.mem_ready(scalar_mem_ready),
-      .mem_address(scalar_mem_address),
-      .mem_rsp_valid(scalar_mem_rsp_valid),.mem_rsp_error(scalar_mem_rsp_error),
-      .mem_rsp_ready(scalar_mem_rsp_ready),.mem_rsp_data(scalar_mem_rsp_data)
+      .mem_valid(scalar_reader_mem_valid),.mem_ready(scalar_reader_mem_ready),
+      .mem_address(scalar_reader_mem_address),
+      .mem_rsp_valid(scalar_mem_rsp_valid && scalar_owner_valid && !scalar_owner_tile),
+      .mem_rsp_error(scalar_mem_rsp_error),
+      .mem_rsp_ready(scalar_reader_rsp_ready),.mem_rsp_data(scalar_mem_rsp_data)
     );
+    anvil_q2_ht2_native_tile_reader coefficient_tiles (
+      .clk(clk),.rst_n(rst_n),.annul(child_annul || invalidate),
+      .s_valid(enabled && state==COEFFICIENT_TILE_SEND),.s_ready(coefficient_tile_ready),
+      .s_descriptor(descriptor),.s_row(32'd0),.s_column(tile_index << 7),
+      .s_count(vector_tile_count),.s_tag(tag),
+      .m_valid(coefficient_tile_valid),.m_ready(enabled && state==COEFFICIENT_TILE_WAIT),
+      .m_error(coefficient_tile_error),.m_fp16(coefficient_tile_fp16),
+      .m_data(coefficient_tile_data),.m_tag(coefficient_tile_tag),
+      .idle(coefficient_tile_idle),
+      .mem_valid(tile_reader_mem_valid),.mem_ready(tile_reader_mem_ready),
+      .mem_address(tile_reader_mem_address),
+      .mem_rsp_valid(scalar_mem_rsp_valid && scalar_owner_valid && scalar_owner_tile),
+      .mem_rsp_error(scalar_mem_rsp_error),.mem_rsp_ready(tile_reader_rsp_ready),
+      .mem_rsp_data(scalar_mem_rsp_data)
+    );
+    assign scalar_mem_valid=rst_n && !child_annul && !invalidate && scalar_offer_valid;
+    assign scalar_mem_address=scalar_mem_valid ? scalar_offer_address : 33'd0;
+    assign scalar_reader_mem_ready=scalar_request_transfer && !scalar_offer_tile;
+    assign tile_reader_mem_ready=scalar_request_transfer && scalar_offer_tile;
+    assign scalar_mem_rsp_ready=rst_n && scalar_owner_valid &&
+      (scalar_owner_tile ? tile_reader_rsp_ready : scalar_reader_rsp_ready);
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        scalar_owner_valid<=0; scalar_owner_tile<=0;
+        scalar_offer_valid<=0; scalar_offer_tile<=0; scalar_offer_address<=0;
+      end else begin
+        if (scalar_response_transfer) scalar_owner_valid<=0;
+        if (scalar_request_transfer) begin
+          scalar_offer_valid<=0; scalar_owner_valid<=1;
+          scalar_owner_tile<=scalar_offer_tile;
+        end
+        if (child_annul || invalidate) scalar_offer_valid<=0;
+        else if (!scalar_owner_valid && !scalar_offer_valid &&
+            (scalar_reader_mem_valid || tile_reader_mem_valid)) begin
+          scalar_offer_valid<=1; scalar_offer_tile<=tile_reader_mem_valid;
+          scalar_offer_address<=tile_reader_mem_valid ?
+            tile_reader_mem_address : scalar_reader_mem_address;
+        end
+      end
+    end
     anvil_q2_ht2_convert_pipe conversion (
       .clk(clk),.rst_n(rst_n),.annul(child_annul),
       .s_valid(enabled && state==CONVERT_SEND),.s_ready(conversion_ready),
@@ -308,19 +436,6 @@ module anvil_q2_ht2_model_sequencer #(
       .m_valid(conversion_valid),.m_ready(enabled && state==CONVERT_WAIT),
       .m_error(conversion_error),.m_data(conversion_data),.m_tag(conversion_tag)
     );
-    anvil_q2_ht2_fp32_add_pipe addition (
-      .clk(clk),.rst_n(rst_n),.advance(addition_ready),.a(add_a),.b(add_b),
-      .sum(addition_data),.error(addition_error)
-    );
-    reg [3:0] addition_pipeline;
-    assign addition_ready=rst_n && !child_annul;
-    assign addition_valid=addition_pipeline[3];
-    assign addition_tag=tag;
-    always @(posedge clk or negedge rst_n) begin
-      if (!rst_n) addition_pipeline<=0;
-      else if (child_annul) addition_pipeline<=0;
-      else addition_pipeline<={addition_pipeline[2:0],enabled && state==ADD_SEND};
-    end
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) tensor_fault_seen<=0;
       else if (tensor_fault) tensor_fault_seen<=1;
@@ -358,13 +473,26 @@ module anvil_q2_ht2_model_sequencer #(
         endcase
       end
     end
+    anvil_q2_ht2_vector_input_pipe vector_input (
+      .clk(clk),.rst_n(rst_n),.annul(child_annul || invalidate),
+      .s_valid(enabled && state==VECTOR_STREAM_SEND),.s_ready(vector_input_ready),
+      .s_count(vector_tile_count),.s_fp16(fp16),.s_b_fp16(vector_b_fp16),
+      .s_a(vector_a_tile),.s_b(vector_b_tile),.s_tag(tag),
+      .m_valid(vector_input_valid),
+      .m_ready(enabled && state==VECTOR_STREAM_WAIT && vector_data_ready),
+      .m_error(vector_input_error),.m_last(vector_input_last),
+      .m_a(vector_input_a),.m_b(vector_input_b),.m_tag(vector_input_tag),
+      .idle(vector_input_idle)
+    );
     anvil_q2_ht2_vector_unit #(.MAX_WORDS(MAX_WORDS)) vector_execution (
       .clk(clk),.rst_n(rst_n),.annul(child_annul),
       .s_valid(enabled && state==VECTOR_SEND),.s_ready(vector_ready),
       .s_operation(vector_operation),.s_count(length),.s_fp16(fp16),.s_tag(tag),
-      .d_valid(enabled && state==VECTOR_FEED),.d_ready(vector_data_ready),
-      .d_last(final_element),.d_data(operand),
-      .d_aux(vector_operation==0 ? auxiliary : converted_value),
+      .d_valid(enabled && state==VECTOR_STREAM_WAIT &&
+        vector_input_valid && !vector_input_fault),
+      .d_ready(vector_data_ready),
+      .d_last(vector_tile_last && vector_input_last),
+      .d_data(vector_input_a),.d_aux(vector_input_b),
       .m_valid(vector_result_valid),.m_ready(enabled && state==VECTOR_RESULT),
       .m_error(vector_error),.m_last(vector_last),.m_index(vector_index),
       .m_fp32(),.m_data(vector_data),.m_tag(vector_tag)
@@ -480,7 +608,7 @@ module anvil_q2_ht2_model_sequencer #(
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
         state<=IDLE; memory_return<=0; reader_return<=0; convert_return<=0;
-        add_return<=0; phase<=0; layer<=0; operation<=0; count<=0; width<=0;
+        phase<=0; layer<=0; operation<=0; count<=0; width<=0;
         vector_operation<=0; mode<=0; ids<=0; targets<=0; maxima<=0;
         tokens<=0; maxima_valid<=0; parents<=0; position<=0; origin<=0;
         committed_origin<=0; index<=0; length<=0; kv_base<=0; kv_length<=0;
@@ -494,9 +622,10 @@ module anvil_q2_ht2_model_sequencer #(
         memory_write_index<=0; vector_valid<=0; reader_descriptor<=0;
         reader_row<=0; reader_column<=0; read_fp32<=0; read_native<=0;
         convert_expand<=0; convert_half<=0; convert_source<=0; converted_value<=0;
-        operand<=0; auxiliary<=0; temporary<=0; bias<=0; row_sums<=0;
-        row_index<=0; row_last<=0; add_a<=0; add_b<=0; tile<=0;
-        tile_keep<=0; tile_index<=0; tile_word<=0; dimension<=0;
+        bias<=0; row_sums<=0;
+        row_index<=0; row_last<=0; tile<=0; vector_a_tile<=0; vector_b_tile<=0;
+        vector_b_fp16<=0;
+        tile_keep<=0; tile_index<=0; dimension<=0;
         pair_index<=0; block_index<=0; block_word<=0; cache_value<=0;
         cache_head<=0; cache_data<=0; query_data<=0; attention_data<=0;
         rotary_source<=0; rotary_coefficients<=0; rotary_data<=0;
@@ -505,6 +634,10 @@ module anvil_q2_ht2_model_sequencer #(
         if (invalidate) begin published<=0; committed_origin<=0; sticky_fault<=0; end
       end else if (tensor_fault && !tensor_fault_seen && state!=IDLE && state!=FAILURE &&
           state!=FAILURE_DRAIN && state!=ERROR_RESPONSE) begin
+        state<=FAILURE;
+      end else if (enabled && row_store_fault) begin
+        state<=FAILURE;
+      end else if (enabled && vector_input_fault) begin
         state<=FAILURE;
       end else case (state)
         IDLE: if (s_valid && s_ready) begin
@@ -654,11 +787,6 @@ module anvil_q2_ht2_model_sequencer #(
           if (conversion_error || conversion_tag!=tag) state<=FAILURE;
           else begin converted_value<=conversion_data; state<=convert_return; end
         end
-        ADD_SEND: state<=ADD_WAIT;
-        ADD_WAIT: if (addition_valid) begin
-          if (addition_error || addition_tag!=tag) state<=FAILURE;
-          else begin temporary<=addition_data; state<=add_return; end
-        end
         EMBED_SEND: begin
           reader_descriptor<=descriptor; reader_row<=ids[32*slot+:32];
           reader_column<=index; reader_return<=EMBED_SAVE; state<=READER_SEND;
@@ -680,61 +808,58 @@ module anvil_q2_ht2_model_sequencer #(
           end else begin index<=index+32'd1; state<=EMBED_SEND; end
         end
         PHASE_DONE: begin phase<=phase+5'd1; state<=SCHEDULE; end
-        VECTOR_SEND: if (vector_ready) begin index<=0; state<=VECTOR_LOAD; end
-        VECTOR_LOAD: begin
-          memory_slot<=slot; memory_vector<=source_vector; memory_index<=index;
-          memory_return<=VECTOR_EXPAND; state<=ELEMENT_READ;
+        VECTOR_SEND: if (vector_ready) begin
+          index<=0; tile_index<=0;
+          state<=VECTOR_TILE_A_READ;
         end
-        VECTOR_EXPAND: begin
-          convert_expand<=1; convert_half<=fp16; convert_source<={16'd0,memory_value};
-          convert_return<=VECTOR_AUX; state<=CONVERT_SEND;
+        VECTOR_TILE_A_READ: begin
+          if (tile_read_bad) state<=FAILURE;
+          else state<=VECTOR_TILE_A_SAVE;
         end
-        VECTOR_AUX: begin
-          operand<=converted_value;
-          if (vector_operation==0) begin
-            reader_descriptor<=descriptor; reader_row<=0; reader_column<=index;
-            reader_return<=VECTOR_AUX_EXPAND; state<=READER_SEND;
-          end else begin
-            memory_slot<=slot; memory_vector<=auxiliary_vector; memory_index<=index;
-            memory_return<=VECTOR_AUX_EXPAND; state<=ELEMENT_READ;
-          end
+        VECTOR_TILE_A_SAVE: begin
+          vector_a_tile<=tile_memory_data[2048*slot+:2048];
+          if (vector_operation==0) state<=COEFFICIENT_TILE_SEND;
+          else state<=VECTOR_TILE_B_READ;
         end
-        VECTOR_AUX_EXPAND: begin
-          if (vector_operation==0) begin auxiliary<=read_fp32; state<=VECTOR_FEED; end
+        VECTOR_TILE_B_READ: begin
+          if (tile_read_bad) state<=FAILURE;
+          else state<=VECTOR_TILE_B_SAVE;
+        end
+        VECTOR_TILE_B_SAVE: begin
+          vector_b_tile<=tile_memory_data[2048*slot+:2048];
+          vector_b_fp16<=fp16;
+          state<=VECTOR_STREAM_SEND;
+        end
+        COEFFICIENT_TILE_SEND: if (coefficient_tile_ready) state<=COEFFICIENT_TILE_WAIT;
+        COEFFICIENT_TILE_WAIT: if (coefficient_tile_valid) begin
+          if (coefficient_tile_error || coefficient_tile_tag!=tag) state<=FAILURE;
           else begin
-            convert_expand<=1; convert_half<=fp16; convert_source<={16'd0,memory_value};
-            convert_return<=VECTOR_FEED; state<=CONVERT_SEND;
+            vector_b_tile<=coefficient_tile_data; vector_b_fp16<=coefficient_tile_fp16;
+            state<=VECTOR_STREAM_SEND;
           end
         end
-        VECTOR_FEED: begin
-          if (vector_operation!=0) auxiliary<=converted_value;
-          if (vector_data_ready) begin
-            if (final_element) begin index<=0; state<=VECTOR_RESULT; end
-            else begin index<=index+32'd1; state<=VECTOR_LOAD; end
-          end
+        VECTOR_STREAM_SEND: if (vector_input_ready) state<=VECTOR_STREAM_WAIT;
+        VECTOR_STREAM_WAIT: if (vector_input_transfer && vector_input_last) begin
+          if (vector_tile_last) begin index<=0; state<=VECTOR_RESULT; end
+          else begin tile_index<=tile_index+32'd1; state<=VECTOR_TILE_A_READ; end
         end
         VECTOR_RESULT: if (vector_result_valid) begin
-          if (vector_error || vector_tag!=tag || vector_index!=index ||
-              vector_last!=final_element) state<=FAILURE;
+          if (vector_result_fault) state<=FAILURE;
           else begin
-            memory_write_slot<=slot; memory_write_vector<=destination_vector;
-            memory_write_index<=index; memory_write_data<=vector_data;
-            memory_return<=VECTOR_SAVE; state<=ELEMENT_WRITE;
+            if (final_element) state<=ELEMENT_NEXT;
+            else index<=index+32'd1;
           end
         end
-        VECTOR_SAVE: begin
-          if (final_element) state<=ELEMENT_NEXT;
-          else begin index<=index+32'd1; state<=VECTOR_RESULT; end
-        end
-        TILE_START: begin tile<=0; tile_keep<=0; tile_word<=0; state<=TILE_READ; end
+        TILE_START: state<=TILE_READ;
         TILE_READ: begin
-          memory_slot<=slot; memory_vector<=source_vector; memory_index<=tile_column;
-          memory_return<=TILE_SAVE; state<=ELEMENT_READ;
+          if (tile_read_bad) state<=FAILURE;
+          else state<=TILE_SAVE;
         end
         TILE_SAVE: begin
-          tile[16*tile_word+:16]<=memory_value; tile_keep[tile_word]<=1;
-          if (final_tile_word) state<=TILE_SEND;
-          else begin tile_word<=tile_word+7'd1; state<=TILE_READ; end
+          for (staging_write_lane=0;staging_write_lane<128;staging_write_lane=staging_write_lane+1)
+            tile[16*staging_write_lane+:16]<=staging_keep[staging_write_lane] ?
+              tile_memory_data[2048*slot+16*staging_write_lane+:16] : 16'd0;
+          tile_keep<=staging_keep; state<=TILE_SEND;
         end
         TILE_SEND: if (tensor_write_ready) state<=TILE_ACK;
         TILE_ACK: if (tensor_write_valid) begin
@@ -756,36 +881,27 @@ module anvil_q2_ht2_model_sequencer #(
             if (bias_required) begin
               reader_descriptor<=auxiliary_descriptor; reader_row<=0;
               reader_column<=row_index; reader_return<=PROJECTION_BIAS; state<=READER_SEND;
-            end else state<=PROJECTION_SLOT;
+            end else if (operation==VOCABULARY) state<=LOGIT_SEND;
+            else state<=PROJECTION_PIPE;
           end
         end
-        PROJECTION_BIAS: begin bias<=read_fp32; state<=PROJECTION_SLOT; end
-        PROJECTION_SLOT: begin
-          if (operation==VOCABULARY) state<=LOGIT_SEND;
-          else if (bias_required) begin
-            add_a<=current_sum; add_b<=bias; add_return<=PROJECTION_CONVERT; state<=ADD_SEND;
-          end else begin temporary<=current_sum; state<=PROJECTION_CONVERT; end
+        PROJECTION_BIAS: begin bias<=read_fp32; state<=PROJECTION_PIPE; end
+        PROJECTION_PIPE: if (row_store_ready) begin
+          if (row_last) state<=PROJECTION_DRAIN;
+          else begin row_index<=row_index+32'd1; state<=PROJECTION_ROW; end
         end
-        PROJECTION_CONVERT: begin
-          convert_expand<=0; convert_half<=fp16; convert_source<=temporary;
-          convert_return<=PROJECTION_SAVE; state<=CONVERT_SEND;
-        end
-        PROJECTION_SAVE: begin
-          memory_write_slot<=slot; memory_write_vector<=destination_vector;
-          memory_write_index<=row_index; memory_write_data<=converted_value[15:0];
-          memory_return<=PROJECTION_NEXT; state<=ELEMENT_WRITE;
+        PROJECTION_DRAIN: if (row_write && row_store_last) begin
+          for (staging_write_lane=0;staging_write_lane<4;staging_write_lane=staging_write_lane+1)
+            if (tokens[staging_write_lane])
+              vector_valid[10*staging_write_lane+destination_vector]<=1;
+          state<=PHASE_DONE;
         end
         LOGIT_SEND: if (logit_ready) begin
           if (!maxima_valid[slot] || greater_sum) begin
             maxima[32*slot+:32]<=current_sum; targets[32*slot+:32]<=row_index;
             maxima_valid[slot]<=1;
           end
-          state<=PROJECTION_NEXT;
-        end
-        PROJECTION_NEXT: begin
-          if (row_last && operation!=VOCABULARY)
-            vector_valid[10*slot+destination_vector]<=1;
-          if (!final_slot) begin slot<=slot+2'd1; state<=PROJECTION_SLOT; end
+          if (!final_slot) slot<=slot+2'd1;
           else if (row_last) state<=PHASE_DONE;
           else begin row_index<=row_index+32'd1; state<=PROJECTION_ROW; end
         end

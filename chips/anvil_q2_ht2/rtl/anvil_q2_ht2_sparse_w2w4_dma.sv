@@ -38,9 +38,6 @@ module anvil_q2_ht2_sparse_w2w4_dma (
   reg [2559:0] image;
   reg failed, skipped, planned;
   reg [9:0] response_valid, response_error;
-  reg [511:0] response_keep [0:9];
-  reg [63:0] response_tag [0:9];
-  reg [9:0] response_skipped;
   reg cache_valid;
   reg [32:0] cache_address;
   reg [511:0] cache_data;
@@ -52,7 +49,7 @@ module anvil_q2_ht2_sparse_w2w4_dma (
   reg found, ended;
   reg [2559:0] filled_image, cached_image;
   reg [8:0] byte_offset;
-  integer t,j,k,b,p;
+  integer t,j,k,b;
 
   wire advance=!response_valid[9] || m_ready;
   wire fill_transfer=fill_valid && fill_ready;
@@ -70,7 +67,7 @@ module anvil_q2_ht2_sparse_w2w4_dma (
   wire cached=format==3 && address[5:0]<=32 &&
     cache_valid && cache_address=={address[32:6],6'd0};
   wire all_skipped=lane_union==0;
-  wire plan_inject=advance && state==PLAN &&
+  wire plan_inject=state==PLAN &&
     (bad_address || all_skipped || (!planned && cached));
   wire fill_inject=state==READ && fill_transfer && fill_last &&
     (last_run || bad_fill);
@@ -139,18 +136,18 @@ module anvil_q2_ht2_sparse_w2w4_dma (
     if (cached && !all_skipped) cached_image[511:0]=cache_data;
   end
 
-  assign s_ready=rst_n && !annul && state==IDLE && advance;
+  assign s_ready=rst_n && !annul && state==IDLE;
   assign m_valid=rst_n && !annul && response_valid[9];
   assign m_weight=m_valid && !m_error ? decoded_weights : 2048'd0;
-  assign m_keep=m_valid && !m_error ? response_keep[9] : 512'd0;
-  assign m_tag=m_valid ? response_tag[9] : 64'd0;
-  assign m_skipped=m_valid && !m_error && response_skipped[9];
+  assign m_keep=m_valid && !m_error ? request_keep : 512'd0;
+  assign m_tag=m_valid ? tag : 64'd0;
+  assign m_skipped=m_valid && !m_error && skipped;
   assign m_error=m_valid && (response_error[9] || (|decode_errors));
   assign mem_valid=rst_n && !annul && state==OFFER;
   assign mem_address=mem_valid ?
     ({address[32:6],6'd0}+{24'd0,run_start,6'd0}) : 33'd0;
   assign mem_beats=mem_valid ? {4'd0,run_length} : 7'd0;
-  assign fill_ready=rst_n && ((state==READ && (advance || annul)) || state==DRAIN);
+  assign fill_ready=rst_n && (state==READ || state==DRAIN);
 
   generate for (lane=0;lane<128;lane=lane+1) begin: unpack
     wire [15:0] word_value=format<2 ? payload[lane*16+:16] :
@@ -174,13 +171,10 @@ module anvil_q2_ht2_sparse_w2w4_dma (
       lane_union<=0; pending<=0; run_mask<=0; run_start<=0; run_length<=0;
       received<=0; image<=0; failed<=0; skipped<=0; planned<=0;
       response_valid<=0; response_error<=0;
-      response_skipped<=0;
-      for (p=0;p<10;p=p+1) begin response_keep[p]<=0; response_tag[p]<=0; end
       cache_valid<=0; cache_address<=0; cache_data<=0;
     end else if (annul) begin
       response_valid<=0;
       response_error<=0;
-      response_skipped<=0;
       cache_valid<=0;
       if (state==READ || state==DRAIN) begin
         if (fill_transfer && fill_last) state<=IDLE;
@@ -191,13 +185,6 @@ module anvil_q2_ht2_sparse_w2w4_dma (
         response_valid<={response_valid[8:0],inject};
         response_error<={response_error[8:0],
           ((fill_inject && bad_fill) || (plan_inject && bad_address))};
-        response_skipped<={response_skipped[8:0],plan_inject && all_skipped};
-        response_keep[0]<=request_keep;
-        response_tag[0]<=tag;
-        for (p=1;p<10;p=p+1) begin
-          response_keep[p]<=response_keep[p-1];
-          response_tag[p]<=response_tag[p-1];
-        end
       end
       case (state)
         IDLE: if (s_valid && s_ready) begin
@@ -215,8 +202,8 @@ module anvil_q2_ht2_sparse_w2w4_dma (
         PLAN: begin
           if (plan_inject) begin
             skipped<=all_skipped && !bad_address;
-            state<=IDLE;
-          end else if (advance) begin
+            state<=WAIT_RESULT;
+          end else begin
             planned<=1;
             pending<=candidates;
             run_start<=first_beat;
@@ -239,7 +226,7 @@ module anvil_q2_ht2_sparse_w2w4_dma (
               cache_address<={address[32:6],6'd0}+{24'd0,run_start,6'd0};
               cache_data<=fill_data;
             end
-            if (last_run || bad_fill) state<=IDLE;
+            if (last_run || bad_fill) state<=WAIT_RESULT;
             else begin
               pending<=remaining;
               state<=PLAN;

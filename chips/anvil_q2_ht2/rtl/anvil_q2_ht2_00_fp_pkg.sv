@@ -1,4 +1,24 @@
 package anvil_q2_ht2_fp_pkg;
+  function automatic [31:0] exp_coefficient(input integer index);
+    begin
+      case (index)
+        0,1: exp_coefficient=32'h3f800000;
+        2: exp_coefficient=32'h3f000000;
+        3: exp_coefficient=32'h3e2aaaab;
+        4: exp_coefficient=32'h3d2aaaab;
+        5: exp_coefficient=32'h3c088889;
+        6: exp_coefficient=32'h3ab60b61;
+        7: exp_coefficient=32'h39500d01;
+        8: exp_coefficient=32'h37d00d01;
+        9: exp_coefficient=32'h3638ef1d;
+        10: exp_coefficient=32'h3493f27e;
+        11: exp_coefficient=32'h32d7322b;
+        12: exp_coefficient=32'h310f76c7;
+        default: exp_coefficient=32'h7fc00000;
+      endcase
+    end
+  endfunction
+
   function automatic [5:0] leading32(input [31:0] value);
     reg [31:0] work;
     reg [5:0] count;

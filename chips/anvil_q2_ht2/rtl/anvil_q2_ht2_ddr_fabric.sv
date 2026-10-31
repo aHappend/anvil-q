@@ -40,10 +40,12 @@ module anvil_q2_ht2_ddr_fabric #(
     assign avm_read=0; assign avm_write=0; assign avm_writedata=0;
     assign avm_byteenable=0; assign avm_burstcount=0;
   end else begin: implementation
-    localparam [1:0] IDLE=0, ACTIVE=1, ERROR_RESPONSE=2;
-    reg [1:0] state;
-    reg [32:0] address;
-    reg [6:0] remaining, unissued;
+    reg [32:0] addresses [0:7];
+    reg [6:0] remaining [0:7], unissued [0:7];
+    reg [7:0] invalid_request;
+    reg [2:0] tail, issue_head, delivery_head;
+    reg [3:0] owners, to_issue;
+    reg [8:0] reserved;
     reg [7:0] pending_returns, stored;
     reg [6:0] read_pointer, write_pointer;
     reg output_valid;
@@ -56,29 +58,41 @@ module anvil_q2_ht2_ddr_fabric #(
     wire stream_wait, stream_valid;
     wire [511:0] stream_data;
     wire [1:0] stream_response;
+    wire [32:0] address=addresses[issue_head];
+    wire [6:0] issue_remaining=unissued[issue_head];
     wire [6:0] page_beats=7'd64-{1'b0,address[11:6]};
-    wire [6:0] bounded_beats=unissued>16 ? 7'd16 : unissued;
+    wire [6:0] bounded_beats=issue_remaining>16 ? 7'd16 : issue_remaining;
     wire [4:0] burst_length=bounded_beats>page_beats ?
       page_beats[4:0] : bounded_beats[4:0];
-    wire stream_request=rst_n && state==ACTIVE && unissued!=0;
+    wire stream_request=rst_n && to_issue!=0 && !invalid_request[issue_head];
     wire stream_accept=stream_request && !stream_wait;
-    wire store_return=stream_valid && state==ACTIVE && pending_returns!=0;
-    wire take_stored=rst_n && state==ACTIVE && stored!=0 &&
+    wire issue_complete=rst_n && to_issue!=0 &&
+      (invalid_request[issue_head] ||
+        (stream_accept && issue_remaining=={2'd0,burst_length}));
+    wire store_return=stream_valid && pending_returns!=0;
+    wire take_stored=rst_n && owners!=0 &&
+      !invalid_request[delivery_head] && stored!=0 &&
       (!output_valid || fill_ready);
     wire [33:0] requested_end={1'b0,weight_address}+
       {21'd0,weight_beats,6'd0};
     wire malformed=(|weight_address[5:0]) || weight_beats==0 ||
       requested_end>34'h200000000;
+    wire accept_request=weight_valid && weight_ready;
+    wire deliver=fill_valid && fill_ready;
+    wire deliver_data=deliver && !invalid_request[delivery_head];
+    wire deliver_complete=deliver && fill_last;
+    wire [8:0] reservation=malformed ? 9'd0 : {2'd0,weight_beats};
     wire parent_idle, parent_fault;
+    integer q;
 
-    // Reserve room for the entire owner before issuing unbackpressurable bursts.
+    // Reserve every accepted owner's complete return footprint before issue.
     always @(posedge clk) begin
       if (rst_n && store_return)
         returned[write_pointer]<={stream_response!=0,stream_data};
       if (take_stored) output_data<=returned[read_pointer];
     end
 
-    // Annul preserves the captured owner's unissued suffix and return reservation.
+    // Annul drains accepted owners, including their captured unissued suffixes.
     anvil_q2_ht_ddr_fabric #(
       .CLIENTS(3),.READ_OUTSTANDING(READ_OUTSTANDING)
     ) arbitration (
@@ -103,24 +117,29 @@ module anvil_q2_ht2_ddr_fabric #(
       .avm_writeresponsevalid(avm_writeresponsevalid),.avm_response(avm_response)
     );
 
-    assign weight_ready=rst_n && !annul && state==IDLE && ddr_ready;
-    assign fill_valid=rst_n &&
-      ((state==ACTIVE && output_valid) || state==ERROR_RESPONSE);
-    assign fill_error=fill_valid && (state==ERROR_RESPONSE || output_data[512]);
-    assign fill_last=fill_valid && (state==ERROR_RESPONSE || remaining==1);
+    assign weight_ready=rst_n && !annul && owners<8 && ddr_ready &&
+      reserved+reservation<=9'd128;
+    assign fill_valid=rst_n && owners!=0 &&
+      (invalid_request[delivery_head] || output_valid);
+    assign fill_error=fill_valid && (invalid_request[delivery_head] || output_data[512]);
+    assign fill_last=fill_valid &&
+      (invalid_request[delivery_head] || remaining[delivery_head]==1);
     assign fill_data=fill_valid && !fill_error ? output_data[511:0] : 512'd0;
     assign c_req_ready=rst_n && !annul ? request_ready : 3'd0;
     assign c_rsp_valid=response_valid;
     assign c_rsp_error=response_error;
     assign c_rsp_data=response_data;
-    assign idle=rst_n && state==IDLE && parent_idle;
+    assign idle=rst_n && owners==0 && to_issue==0 && pending_returns==0 &&
+      stored==0 && !output_valid && parent_idle;
     assign fault=rst_n && (parent_fault || malformed_pulse);
     assign accepted_read_beats=rst_n ? read_beats : 64'd0;
     assign accepted_write_beats=rst_n ? write_beats : 64'd0;
 
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
-        state<=IDLE; address<=0; remaining<=0; unissued<=0;
+        tail<=0; issue_head<=0; delivery_head<=0; owners<=0; to_issue<=0;
+        reserved<=0; invalid_request<=0;
+        for (q=0;q<8;q=q+1) begin addresses[q]<=0; remaining[q]<=0; unissued[q]<=0; end
         pending_returns<=0; stored<=0; read_pointer<=0; write_pointer<=0;
         output_valid<=0; malformed_pulse<=0;
         read_beats<=0; write_beats<=0;
@@ -128,8 +147,8 @@ module anvil_q2_ht2_ddr_fabric #(
         malformed_pulse<=0;
         if (stream_valid && !store_return) malformed_pulse<=1;
         if (stream_accept) begin
-          address<=address+{22'd0,burst_length,6'd0};
-          unissued<=unissued-{2'd0,burst_length};
+          addresses[issue_head]<=address+{22'd0,burst_length,6'd0};
+          unissued[issue_head]<=issue_remaining-{2'd0,burst_length};
         end
         case ({stream_accept,store_return})
           2'b10: pending_returns<=pending_returns+{3'd0,burst_length};
@@ -140,7 +159,7 @@ module anvil_q2_ht2_ddr_fabric #(
         if (store_return) write_pointer<=write_pointer+7'd1;
         if (take_stored) begin
           read_pointer<=read_pointer+7'd1; output_valid<=1;
-        end else if (state==ACTIVE && output_valid && fill_ready) output_valid<=0;
+        end else if (deliver_data) output_valid<=0;
         case ({store_return,take_stored})
           2'b10: stored<=stored+8'd1;
           2'b01: stored<=stored-8'd1;
@@ -150,20 +169,31 @@ module anvil_q2_ht2_ddr_fabric #(
           read_beats<=read_beats+{59'd0,avm_burstcount};
         if (avm_write && !avm_waitrequest)
           write_beats<=write_beats+{59'd0,avm_burstcount};
-        case (state)
-          IDLE: if (weight_valid && weight_ready) begin
-            address<=weight_address; remaining<=weight_beats; unissued<=weight_beats;
-            pending_returns<=0; stored<=0; read_pointer<=0; write_pointer<=0;
-            output_valid<=0;
-            if (malformed) begin state<=ERROR_RESPONSE; malformed_pulse<=1; end
-            else state<=ACTIVE;
-          end
-          ACTIVE: if (fill_valid && fill_ready) begin
-            if (remaining==1) begin state<=IDLE; remaining<=0; end
-            else remaining<=remaining-7'd1;
-          end
-          ERROR_RESPONSE: if (fill_ready) state<=IDLE;
-          default: begin state<=ERROR_RESPONSE; malformed_pulse<=1; end
+        if (accept_request) begin
+          addresses[tail]<=weight_address;
+          remaining[tail]<=weight_beats; unissued[tail]<=weight_beats;
+          invalid_request[tail]<=malformed; tail<=tail+3'd1;
+          if (malformed) malformed_pulse<=1;
+        end
+        if (issue_complete) issue_head<=issue_head+3'd1;
+        if (deliver_complete) delivery_head<=delivery_head+3'd1;
+        else if (deliver_data)
+          remaining[delivery_head]<=remaining[delivery_head]-7'd1;
+        case ({accept_request,deliver_complete})
+          2'b10: owners<=owners+4'd1;
+          2'b01: owners<=owners-4'd1;
+          default: begin end
+        endcase
+        case ({accept_request,issue_complete})
+          2'b10: to_issue<=to_issue+4'd1;
+          2'b01: to_issue<=to_issue-4'd1;
+          default: begin end
+        endcase
+        case ({accept_request,deliver_data})
+          2'b10: reserved<=reserved+reservation;
+          2'b01: reserved<=reserved-9'd1;
+          2'b11: reserved<=reserved+reservation-9'd1;
+          default: begin end
         endcase
       end
     end

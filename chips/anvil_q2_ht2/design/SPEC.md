@@ -13,9 +13,10 @@ Those sources are preserved unchanged. No repository intake/source index or
 checkpoint/tokenizer/corpus inputs and the Q2-FP baseline have not been supplied.
 Do not interpret the parent's provenance as passing HT2 evidence.
 
-Implementation is incremental. See `ARCHITECTURE.md` for the actual connected
-scope and outstanding work. In particular, leaf RTL is not an implemented
-28-layer accelerator, a measured throughput result, or engineering acceptance.
+The connected RTL is prepared for independent verification. See
+`ARCHITECTURE.md` for the implemented model schedule and evidence limitations.
+Implementation and static elaboration do not establish numerical fidelity,
+measured throughput, physical fit, or engineering acceptance.
 
 ## Public top-level contract
 
@@ -217,21 +218,46 @@ The internal metadata tile reader accepts a validated descriptor, logical row,
 128-aligned starting column, four native activation tiles, masks and tag.
 It recomputes the exact active-slot union, rejects tail keep bits outside the
 descriptor's columns, and reads only quantization groups required by that
-union. Two cached aligned beats independently hold zero-point and scale data;
-annul invalidates both and drains an accepted read. Expansion returns zero
+union. An eight-line aligned metadata cache serves a per-tile gather of at
+most two zero-point beats and five scale beats. The required-beat mask is
+derived before issue, including GROUP_SIZE=1; expansion handles all required
+groups in parallel instead of serializing each group's lookup/extraction.
+Annul invalidates the cache and drains an accepted read. Expansion returns zero
 points in four bits/lane, BF16 scales in 16 bits/lane, effective per-slot keeps
 and the computed payload byte address. Padding bits in a fetched final
 zero-point byte must be zero; nonfinite required scales and memory errors
 return errors, not usable zero-filled metadata. Skipped groups have no reads.
 
 `anvil_q2_ht2_weight_path` connects this reader to the frozen sparse DMA and
-serializes their accepted memory ownership. It forwards aligned read requests
-with actual beat counts and holds captured activations/masks/tag until the
-decoded shared weight tile is consumed. Errors suppress usable tensor payloads.
-Annul drains the old burst before accepting another tile. The surrounding
+keeps eight ordered tile contexts across metadata preparation, payload
+read-ahead, DMA decoding and response retirement. Each context has independently
+owned metadata and payload preparation, so one tile's address calculation,
+cache lookup or memory latency does not serialize all other tiles.
+A registered round-robin offer and eight-entry memory-owner queue share one
+external read interface between all contexts' metadata and payload work;
+each response is routed by its accepted owner, not a live selection.
+An accepted offer can be replaced at the same edge by a different producer's
+offer when owner capacity permits. Captured activations, format, effective masks, metadata and tag
+remain owned until that tile's response retires. Each context has an instance
+of the frozen DMA, still single-owner through decode/response completion.
+These eight decoders replay captured payload beats; they have no direct
+external DDR connections. Context-local payload gatherers compute the exact
+required-beat union and capture up to five aligned beats into each isolated
+context through that single arbiter/interface. A shared eight-line W2 cache
+preserves adjacent half-beat reuse across different contexts. A request matching
+an already offered/outstanding cacheable read waits for that read rather than
+issuing a duplicate; cache-hit replay creates no external memory owner or DDR
+beat charge. Annul invalidates all reuse. Skipped tiles issue neither payload nor
+metadata reads. Decoder completion may overlap, but retirement remains in
+input order. Errors suppress usable
+tensor payloads. Annul clears logical tile ownership and drains every accepted
+memory owner before accepting a new generation. The surrounding
 memory fabric must hold fill data under backpressure and mark the last beat;
 the path checks that marker against its accepted request length. Missing
 termination cannot be treated as a successful response or silently timed out.
+After a malformed metadata termination, discarded suffix beats cannot reach
+the next metadata operation. Local replay ownership is cancelled at annul;
+its terminal beat is internal and never cancels an external memory obligation.
 This subsystem does not implement the model sequencer. A9 supplies independent
 MAC operand selectors without converting or reinterpreting reconstructed
 weights. The connected tensor engine retains the command's activation mode and
@@ -352,7 +378,7 @@ publication.
 | FP32 multiply helper | Seven registers; operands at n produce result after n+6; caller advances all sidebands identically |
 | Row accumulation | Four-stage addition; first tile initializes without changing signed zero; next dependent tile waits for retirement at n+4 |
 | Single-tile row | First and last coincide; one response after n+3, earliest consumption n+4 |
-| Activation read | Registered RAM read at n, response after n+1, first consumption n+2 |
+| Activation read | Registered RAM read at n, response after n+1, first consumption n+2; two elastic stages allow one accepted read per clock after filling |
 | Activation read/write collision | An accepted legal full-tile write forwards new data and keep bits to a simultaneous read of the same slot/address |
 | Activation tile overwrite | Replaces the full tile and keep bits; not a partial merge with the previous tile |
 | Activation annul | Clears reset-protected tile validity and cancels responses; data RAM is not reset |
@@ -368,22 +394,29 @@ publication.
 | Native descriptor leaf | Capture at n; region/error response after n+5; earliest consumption n+6 |
 | Native descriptor publication | Only final inactive-bank copy edge switches the committed bank; validation error/annul leaves it unchanged |
 | Native metadata, no metadata reads | Capture at n; native/wholly skipped result after n+5; earliest consumption n+6 |
-| Metadata group boundary | GROUP_SIZE=1 scans at most 128 groups; GROUP_SIZE=128 scans one; no metadata for an unrequired group |
+| Metadata group boundary | GROUP_SIZE=1 gathers at most two zero-point and five scale beats; GROUP_SIZE=128 expands one group; no beat is requested unless a required group needs it |
 | Partial tile at address-space end | DMA bounds actual required aligned beats, not masked columns beyond the descriptor's final column |
 | Weight-path annul | Child response validity is annulled immediately; live accepted burst owner remains until its final fill transfer |
+| Weight-path queues | Eight tile contexts retain input-to-output order; separate per-context stage-ownership bits guard metadata, payload and decoder acceptance/completion; each context lives through response retirement |
+| Weight-path read arbitration | A selected offer is registered and held until accepted; eight owner records route in-order fills to the captured context and metadata/payload client, including during cancellation drainage |
+| Weight-path W2 reuse | A shared hit acknowledges the local request then holds its cached beat until accepted; an identical pending cacheable external read blocks duplicate issue until its result is cached or faulted |
+| Payload replay | Only a complete, validated payload context can start its decoder; every internal request has a bounded beat-offset check, and decoder responses retire in context order |
+| Payload annul | Cancel internal replay and flush all decoder validity; drain accepted external prefetch/metadata owners before context reuse |
 | A9 operand formats | Both independent decoders capture at the same enabled edge; output stalls freeze all decoded state; annul prevents old valid results |
 | Tensor command | Capture at n; validate retained command before any activation or memory request; no same-edge row response |
 | Tensor single column tile | First and last coincide; the row accumulator initializes once and returns one unbiased FP32 row |
 | Tensor partial column tile | Only columns below descriptor width enter activation reads, sparse union and MAC keeps |
 | Tensor nonlast column tile | Prefetch/issue increasing tiles while prior MAC work runs; the ordered accumulator waits for each four-stage dependency retirement |
-| Tensor issue queue full | Eight row/column entries; simultaneous issue/accumulator acceptance replaces one entry without overflow or reordering |
+| Tensor prefetch queue full | Eight row/column records accompany weight-path acceptance; producer advances before older weight responses return |
+| Tensor activation scheduling | Four row/column records accompany activation-read acceptance; responses may replace consumed responses each cycle and submit to the weight queue in order; tail tile masks travel with their original RAM read |
+| Tensor issue queue full | Sixty-four row/column entries accompany actual MAC acceptance; simultaneous issue/accumulator acceptance replaces one entry without overflow or reordering |
 | Tensor row response stalled | Row, FP32 sums, mask, tag, last and error hold; producer may fill remaining issue capacity, but no replacement command is accepted |
 | Tensor activation write and command | Write offer has priority; command waits for outstanding write response retirement |
 | Tensor annul/fault | Annul suppresses output and drains weight ownership; fault flushes arithmetic state before the terminal error response; no next command before drain |
-| Native shared-memory request | Reserve 128 return entries for one 1..127-beat owner; split at 16 beats and 4-KiB boundaries through the parent's pipelined burst port |
+| Native shared-memory request | Up to eight 1..127-beat owners share 128 reserved return entries; accept only when the complete request fits; split at 16 beats and 4-KiB boundaries |
 | Native shared-memory fill | Synchronously buffer unbackpressurable DDR returns; held output data/error/last advance only on fill consumption; issue address advances on burst acceptance |
 | Native shared-memory simultaneous return/pop | Separate RAM pointers and explicit occupancy increment/decrement; output prefetch may replace a consumed beat at the same edge |
-| Native shared-memory annul | Suppress new bursts; finish all beats of an already accepted burst and deliver its terminating fill to the draining owner before reuse |
+| Native shared-memory annul | Reject new owners; finish captured unissued suffixes and all accepted bursts, preserving each owner's terminating fill during drainage |
 | Native shared-memory invalid burst | Return an explicit terminal fill error without issuing DDR traffic |
 | Native shared-memory counters | Increment only on actual accepted Avalon read/write commands; do not reset on batch annul or count suppressed/hypothetical reads |
 | Inverse/scalar command | Single-owner variable-latency operation; inputs captured at n; no response or replacement acceptance at n; held response retires once |
@@ -394,7 +427,11 @@ publication.
 | Vector count one | One input with d_last; one leaf in the FP32 partial-sum tree; one normalization/output; no empty fold or zero-width index |
 | Vector non-power-of-two count | Adjacent power-of-two partial sums merge; remaining occupied levels fold in increasing level order |
 | Vector input framing | Exactly count accepted input elements; missing or premature d_last on an accepted element is a terminal error |
-| Vector output stalled | Index, native result, FP32 result, last, tag and error remain stable; no following element is read or published |
+| Vector output stalled | Index, native result, FP32 result, last, tag and error remain stable; all arithmetic/framing stages and their pending synchronous read freeze together; no extra retirement |
+| Vector ordinary result pipeline | Internal math transfer at n produces result after n+17, earliest consumption n+18; RMSNorm uses two ordered seven-stage products, residual uses a four-stage add with alignment, then four-stage native conversion |
+| Vector SwiGLU result pipeline | Internal math transfer at n produces result after n+241, earliest consumption n+242; exp, reciprocal, sign selection, both ordered products and native conversion share global enabled advances |
+| Streaming exp | 160 registered stages; range reduction and degree-12 Horner products/additions are non-fused; exponent scaling and gradual underflow are separately registered |
+| Sigmoid reciprocal | 53 registered stages for the closed domain [1,2]; fifty restoring quotient steps, normalization and RNE packing follow registered setup; an out-of-domain input is an explicit error |
 | Vector/RoPE annul | Drop all child arithmetic/conversion validity and owned outputs; unreset RAM is unreachable until a new complete command/input pass |
 | RoPE pair | Four non-fused FP32 products and two FP32 sums, then two synchronized native conversions; neither converted half retires alone |
 | Scalar read cache | One aligned accepted DDR read owns its response; a hit still performs the requested native classification/conversion |
@@ -406,9 +443,16 @@ publication.
 | Attention sibling isolation | Every K/V request carries the original query slot into the transactional cache's ancestor-aware translation |
 | Attention annul | Co-annul the transactional KV owner; it drains accepted physical memory operations, while attention and internal statistics discard that generation |
 | Native model acceptance | Capture count/K, IDs, parents, position, mode and cache region at n; validate and begin the cache transaction before loading embedding data |
-| Native model scalar RAM | Synchronous word read, followed by capture; complete-vector validity is set only after every required word has been written |
+| Native model storage | Four token banks, each split into 128 column RAMs; scalar reads retain read/capture timing, while tile reads return all 128 columns together; complete-vector validity protects unreset storage |
+| Native input staging | One synchronous full-tile read and capture per active slot/tile, with explicit final keeps; no per-word copy loop |
+| Native vector input | Capture activation and auxiliary native tiles, expand them through parallel four-stage converters, and feed one ordered operand pair per enabled clock; RMSNorm gets its auxiliary tile from the coefficient reader; tail count excludes unused columns |
+| Native coefficient tile | Validate descriptor/count/extent, gather 1..5 physical beats behind an eight-line cache, and return 1..128 native words with retained format/tag; no arithmetic or activation-format reinterpretation occurs in this reader |
+| Native coefficient memory ownership | Registered offers select scalar or tile reader; accepted owner survives annul through its response; response routing never follows the current sequencer state |
+| Native vector result storage | Each accepted, checked vector output writes its selected synchronous column bank directly; the next edge publishes complete-vector validity only after the final write |
 | Native projection boundary | Load each active slot's native input tiles, broadcast one weight stream, add Q/K/V bias once per completed row, then round to the selected activation format |
 | Native projection row queue | Eight full FP32 row records separate tensor production from bias/conversion/logit consumption; simultaneous full-queue push/pop preserves the old head |
+| Native projection storage pipeline | Capture at n; four bias-add stages and four native-conversion stages produce all four slots after n+7, earliest consumption n+8; unbiased rows bypass arithmetic without changing signed zero |
+| Native projection final row | Writes complete before full-vector validity is published; faults/annul suppress same-edge row writes; the next model phase waits for the last stored row |
 | Native vocabulary boundary | Emit each FP32 row in ascending vocabulary index and slot order; update greedy argmax only on an accepted logit transfer |
 | Native greedy ties | Keep the earlier, smaller vocabulary ID for equal logits, including opposite signed zeros |
 | Native batch result | All provisional logits precede cache finish; batch response consumption is the native cache's publication edge |
@@ -472,6 +516,23 @@ native activation-storage boundary. Numerical/conversion/framing errors return
 a single terminal response (`m_error=m_last=1`), zero data and the owned tag.
 Successful outputs already consumed before an error remain provisional and
 cannot justify a KV/model transaction commit.
+
+Statistics use `anvil_q2_ht2_stream_reduction`: sixteen occupied partial
+levels with a four-register FP32 adder per level. Each level pairs adjacent
+incoming values in order; partial levels fold from low to high, starting at
+positive zero, exactly as the previous ordered binary-carry algorithm.
+There are no padded operands for singleton or non-power-of-two counts.
+RMSNorm squares each accepted input in seven stages while loading RAM.
+Softmax first determines the maximum over the complete load, then streams
+synchronous operand reads through four-stage subtraction and 160-stage exp,
+storing each actual FP32 exponential at its delayed original index.
+One statistic can enter per cycle; gaps in the input create gaps rather than
+additional operands. The final leaf closes input, and the partial response
+waits until every in-flight carry has retired. It holds until consumed.
+Reset/annul/error flush statistics framing and occupied-level validity;
+unreset operand/exponential/partial RAM data cannot become a new operation.
+The first streaming arithmetic/conversion error is a terminal last response;
+later pipeline entries are annulled rather than emitted after that error.
 
 `anvil_q2_ht2_rope_pair` takes two FP32 components in s_data (lower/upper word)
 and FP32 cosine/sine in s_coefficients (lower/upper word), plus s_fp16/tag.
@@ -542,12 +603,31 @@ projections, SwiGLU, down projection and residual. Final RMSNorm and vocabulary
 projection produce real target IDs. No externally supplied target ID reaches
 the product cache finish interface.
 
-Ten selected-format word vectors per slot hold hidden state, normalization,
+Ten selected-format vectors per slot hold hidden state, normalization,
 Q/K/V, context, projected residual, gate, up and activated intermediate.
-They use synchronous, unreset RAM behind reset-protected complete-vector
-validity. The tensor engine has one separate input-vector tile bank per slot;
+They use 128 synchronous column RAMs per slot behind reset-protected
+complete-vector validity. Scalar access selects a column bank; projection
+staging reads a complete tile in one synchronous access followed by capture.
+The tensor engine has one separate input-vector tile bank per slot;
 it is populated from these vectors before each projection. This input staging
 is a real storage/copy cost, not four weight readers or a zero-cost alias.
+Residual and SwiGLU input loading uses two full-tile reads and a paired
+native-to-FP32 streaming converter, rather than a scalar RAM/conversion
+round-trip per operand. RMSNorm instead gathers gamma tiles through
+`anvil_q2_ht2_native_tile_reader` and uses the same paired feeder, retaining
+the coefficient descriptor's native format independently of the activation
+format. Scalar embedding/bias/RoPE reads and gamma tile reads share one
+registered, acknowledged scalar-memory client. Cancellation preserves the
+accepted reader owner until its physical response drains.
+Residual/product and normalized output use an eighteen-stage streaming result
+path. SwiGLU uses a 242-stage streaming path implementing
+`(x * sigmoid(x)) * up`, with two separate FP32 products followed by exactly
+one selected-format rounding. Both sustain one result per enabled cycle after
+filling, independently of command/startup and normalization-statistics costs.
+Results write the sequencer's column RAM directly on their accepted edges.
+The pipelined statistics tree preserves the existing adjacent-pair and
+low-to-high final-partial ordering for RMSNorm and softmax; it does not
+reassociate the denominator into a differently rounded serial sum.
 All projection rows retain FP32 through dot accumulation and optional bias
 before native storage rounding. Vocabulary results remain FP32; companion
 `logit_data` is signed saturating, truncating Q16.16. Native output order is
@@ -584,19 +664,26 @@ does not replace it. Reset/cancel wins over a simultaneous response transfer.
 The native top retains an aborted request's terminal error response until
 accepted, and does not accept a replacement while external ownership drains.
 
-Tensor input fetching now overlaps preceding MAC execution through eight
-row/column issue records, with in-order, dependency-safe FP32 accumulation.
+Tensor input fetching overlaps preceding weight responses using eight
+row/column prefetch records; sixty-four issue records then accompany actual
+MAC acceptance, with in-order, dependency-safe FP32 accumulation.
 Eight complete projection rows buffer between the tensor and model controller,
 allowing later rows to run while earlier rows receive bias, round or wait on
-logit_ready. The DDR adapter uses real pipelined bursts and synchronous return
-storage rather than waiting for every individual beat's consumption to issue
-the next address. These are structural overlaps, not measured speedups.
+logit_ready. Four parallel eight-stage bias/boundary pipelines store all
+active slots of a completed projection row together; the model no longer
+serializes four conversions and four word writes. Vocabulary slots can
+transfer on consecutive clocks. The DDR adapter accepts eight ordered
+weight/metadata owners, reserves their combined return footprint before
+acceptance and issues later bursts before earlier fills retire.
+These are structural overlaps, not measured speedups.
 
-The design is still incomplete for the throughput objective: each metadata/
-DMA tile remains single-owner through decode completion, and vector/coefficient
-processing and input-vector staging remain word-serialized. Multi-tile
-prefetch/decode scheduling and effective utilization must be resolved before
-design handoff; >=3500 TPM, >50% traffic reduction and every original numerical,
+The RTL handoff includes concurrent metadata/payload preparation, continuous
+elastic activation requests and pipelined normalization statistics, in addition
+to the retained coefficient, vector and row-result overlap. This completes
+the connected design implementation, not the throughput acceptance claim.
+Bounded context occupancy, external latency, attention, arithmetic dependencies
+and resource/frequency limits must be measured independently; none is assumed
+free. The >=3500 TPM, >50% traffic reduction and every original numerical,
 compatibility and physical threshold remain mandatory. No model run is claimed.
 
 ## Legal parameters

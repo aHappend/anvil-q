@@ -60,8 +60,7 @@ module anvil_q2_ht2_tensor_engine #(
     assign mem_valid=0; assign mem_address=0; assign mem_beats=0;
     assign fill_ready=0;
   end else begin: implementation
-    localparam [3:0] IDLE=0, VALIDATE=1, ACTIVATION_SEND=2,
-      ACTIVATION_WAIT=3, WEIGHT_SEND=4, WEIGHT_WAIT=5, WAIT_COMPLETE=6,
+    localparam [3:0] IDLE=0, VALIDATE=1, ACTIVATION_SEND=2, WAIT_COMPLETE=6,
       RESPONSE=8, FLUSH=9, FAULT_DRAIN=10;
     reg [3:0] state;
     reg [511:0] descriptor;
@@ -70,8 +69,6 @@ module anvil_q2_ht2_tensor_engine #(
     reg fp16, sparse;
     reg [1:0] weight_mode;
     reg [63:0] tag;
-    reg [8191:0] activations;
-    reg [511:0] activation_keep;
     reg response_error, response_last, sticky_fault;
     reg external_read;
     reg [31:0] issued_row [0:63], issued_column [0:63];
@@ -80,6 +77,9 @@ module anvil_q2_ht2_tensor_engine #(
     reg [31:0] prefetched_row [0:7], prefetched_column [0:7];
     reg [2:0] prefetch_head, prefetch_tail;
     reg [3:0] prefetch_count;
+    reg [31:0] activation_row [0:3], activation_column [0:3];
+    reg [1:0] activation_head, activation_tail;
+    reg [2:0] activation_count;
     wire available;
     wire arithmetic_annul;
     wire weight_annul;
@@ -139,7 +139,11 @@ module anvil_q2_ht2_tensor_engine #(
     wire issue=executing && weight_valid && prefetch_count!=0 &&
       !bad_weight && mac_ready && issue_space;
     wire prefetch_space=prefetch_count<8 || issue;
-    wire submit=executing && state==WEIGHT_SEND && weight_ready && prefetch_space;
+    wire bad_activation=store_m_error || store_tag!=tag;
+    wire activation_request=available && state==ACTIVATION_SEND &&
+      activation_count<4 && store_r_ready;
+    wire submit=executing && store_m_valid && activation_count!=0 &&
+      !bad_activation && weight_ready && prefetch_space;
     wire bad_accumulator=accumulator_error || accumulator_tokens!=tokens ||
       accumulator_tag!=tag;
     wire row_transfer=m_valid && m_ready && state!=RESPONSE;
@@ -161,7 +165,8 @@ module anvil_q2_ht2_tensor_engine #(
       .w_rsp_ready(w_rsp_ready),.w_slot(w_slot),.w_vector(w_vector),
       .w_tile(w_tile),.w_data(w_data),.w_keep(w_keep),
       .w_rsp_valid(store_w_valid),.w_rsp_error(store_w_error),
-      .r_valid((available && state==ACTIVATION_SEND) || (read_allowed && r_valid)),
+      .r_valid((available && state==ACTIVATION_SEND && activation_count<4) ||
+        (read_allowed && r_valid)),
       .r_ready(store_r_ready),
       .r_vector(state==IDLE ? r_vector : vector_id),
       .r_tile(state==IDLE ? r_tile : (column >> 7)),
@@ -169,17 +174,20 @@ module anvil_q2_ht2_tensor_engine #(
       .r_keep(state==IDLE ? r_keep : requested_keep),
       .r_tag(state==IDLE ? r_tag : tag),
       .m_ready(rst_n && !annul &&
-        ((available && state==ACTIVATION_WAIT) ||
+        ((executing && activation_count!=0 &&
+            (bad_activation || (weight_ready && prefetch_space))) ||
           (external_read && r_rsp_ready) || state==FAULT_DRAIN || state==FLUSH)),
       .m_valid(store_m_valid),.m_error(store_m_error),
       .m_data(store_data),.m_keep(store_keep),.m_tag(store_tag)
     );
     anvil_q2_ht2_weight_path #(.GROUP_SIZE(GROUP_SIZE)) weight_path (
       .clk(clk),.rst_n(rst_n),.annul(weight_annul),
-      .s_valid(available && state==WEIGHT_SEND && prefetch_space),.s_ready(weight_ready),
-      .s_descriptor(descriptor),.s_row(row),.s_col(column),
-      .s_sparse(sparse),.s_token_mask(tokens),.s_act(activations),
-      .s_keep(activation_keep),.s_tag(tag),
+      .s_valid(executing && store_m_valid && activation_count!=0 &&
+        !bad_activation && prefetch_space),.s_ready(weight_ready),
+      .s_descriptor(descriptor),.s_row(activation_row[activation_head]),
+      .s_col(activation_column[activation_head]),
+      .s_sparse(sparse),.s_token_mask(tokens),.s_act(store_data),
+      .s_keep(store_keep),.s_tag(tag),
       .m_valid(weight_valid),
       .m_ready(executing && prefetch_count!=0 &&
         (bad_weight || (mac_ready && issue_space))),
@@ -247,18 +255,21 @@ module anvil_q2_ht2_tensor_engine #(
       if (!rst_n) begin
         state<=IDLE; descriptor<=0; vector_id<=0; row<=0; rows_left<=0;
         column<=0; last_row<=0; tokens<=0; fp16<=0; sparse<=0; weight_mode<=0;
-        tag<=0; activations<=0; activation_keep<=0;
+        tag<=0;
         response_error<=0; response_last<=0; sticky_fault<=0;
         external_read<=0;
         issue_head<=0; issue_tail<=0; issue_count<=0;
         prefetch_head<=0; prefetch_tail<=0; prefetch_count<=0;
+        activation_head<=0; activation_tail<=0; activation_count<=0;
         for (q=0;q<64;q=q+1) begin issued_row[q]<=0; issued_column[q]<=0; end
         for (q=0;q<8;q=q+1) begin prefetched_row[q]<=0; prefetched_column[q]<=0; end
+        for (q=0;q<4;q=q+1) begin activation_row[q]<=0; activation_column[q]<=0; end
       end else if (annul) begin
         state<=IDLE; response_error<=0; response_last<=0;
         external_read<=0;
         issue_head<=0; issue_tail<=0; issue_count<=0;
         prefetch_head<=0; prefetch_tail<=0; prefetch_count<=0;
+        activation_head<=0; activation_tail<=0; activation_count<=0;
       end else begin
         if (external_read_transfer) external_read<=1;
         if (r_rsp_valid && r_rsp_ready) external_read<=0;
@@ -274,10 +285,21 @@ module anvil_q2_ht2_tensor_engine #(
           default: begin end
         endcase
         if (submit) begin
-          prefetched_row[prefetch_tail]<=row;
-          prefetched_column[prefetch_tail]<=column;
+          prefetched_row[prefetch_tail]<=activation_row[activation_head];
+          prefetched_column[prefetch_tail]<=activation_column[activation_head];
           prefetch_tail<=prefetch_tail+3'd1;
+          activation_head<=activation_head+2'd1;
         end
+        if (activation_request) begin
+          activation_row[activation_tail]<=row;
+          activation_column[activation_tail]<=column;
+          activation_tail<=activation_tail+2'd1;
+        end
+        case ({activation_request,submit})
+          2'b10: activation_count<=activation_count+3'd1;
+          2'b01: activation_count<=activation_count-3'd1;
+          default: begin end
+        endcase
         case ({submit,issue})
           2'b10: prefetch_count<=prefetch_count+4'd1;
           2'b01: prefetch_count<=prefetch_count-4'd1;
@@ -289,6 +311,9 @@ module anvil_q2_ht2_tensor_engine #(
         end else if (executing && accumulator_valid && bad_accumulator) begin
           state<=FLUSH;
         end else if (executing && weight_valid && bad_weight) begin
+          state<=FLUSH;
+        end else if (executing && store_m_valid && activation_count!=0 &&
+            bad_activation) begin
           state<=FLUSH;
         end else case (state)
           IDLE: if (command_transfer) begin
@@ -303,20 +328,12 @@ module anvil_q2_ht2_tensor_engine #(
             if (command_bad) state<=FLUSH;
             else state<=ACTIVATION_SEND;
           end
-          ACTIVATION_SEND: if (store_r_ready) state<=ACTIVATION_WAIT;
-          ACTIVATION_WAIT: if (store_m_valid) begin
-            if (store_m_error || store_tag!=tag) state<=FLUSH;
-            else begin
-              activations<=store_data; activation_keep<=store_keep;
-              state<=WEIGHT_SEND;
-            end
-          end
-          WEIGHT_SEND: if (submit) begin
+          ACTIVATION_SEND: if (activation_request) begin
             if (!final_tile) begin
-              column<=column+32'd128; state<=ACTIVATION_SEND;
+              column<=column+32'd128;
             end else if (rows_left!=1) begin
               row<=row+32'd1; rows_left<=rows_left-32'd1;
-              column<=0; state<=ACTIVATION_SEND;
+              column<=0;
             end else begin
               state<=WAIT_COMPLETE;
             end
@@ -326,6 +343,7 @@ module anvil_q2_ht2_tensor_engine #(
             response_error<=1; response_last<=1;
             sticky_fault<=1; issue_head<=0; issue_tail<=0; issue_count<=0;
             prefetch_head<=0; prefetch_tail<=0; prefetch_count<=0;
+            activation_head<=0; activation_tail<=0; activation_count<=0;
             state<=FAULT_DRAIN;
           end
           FAULT_DRAIN: if (weight_idle) state<=RESPONSE;

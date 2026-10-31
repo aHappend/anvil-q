@@ -27,27 +27,23 @@ module anvil_q2_ht2_vector_unit #(
   end else begin: implementation
     import anvil_q2_ht2_fp_pkg::*;
     localparam [2:0] RMSNORM=0, RESIDUAL=1, SWIGLU=2, SOFTMAX=3, PRODUCT=4;
-    localparam [5:0] IDLE=0, VALIDATE=1, LOAD=2, READ_SEND=3,
-      READ_CAPTURE=4, DISPATCH=5, SCALAR_WAIT=6, RMS_SQUARE=7,
-      SOFTMAX_SUB=8, SOFTMAX_EXP=9, SUM_PREPARE=10, SUM_FIND=11,
-      SUM_MERGED=12, FOLD=13, FOLD_SUM=14, COUNT_INVERSE=15,
+    localparam [5:0] IDLE=0, VALIDATE=1, LOAD=2,
+      SCALAR_WAIT=6, FOLD=13, FOLD_SUM=14, COUNT_INVERSE=15,
       RMS_MEAN=16, RMS_EPSILON=17, RMS_INVERSE=18, SAVE_NORMALIZER=19,
-      SOFTMAX_INVERSE=20, RMS_SCALE=21, RMS_GAMMA=22,
-      SOFTMAX_SCALE=23, RESIDUAL_ADD=24, SWI_SIGMOID=25,
-      SWI_GATE=26, SWI_PRODUCT=27, ELEMENT_PRODUCT=28,
-      CONVERT_SEND=29, CONVERT_WAIT=30, RESPONSE=31, FAILURE=32;
+      SOFTMAX_INVERSE=20, RESPONSE=31, FAILURE=32,
+      STREAM=33, STATISTICS=34;
     reg [5:0] state, return_state;
     reg [2:0] operation;
     reg [31:0] count, index;
-    reg fp16, output_pass, response_error;
+    reg fp16, response_error;
     reg [63:0] tag;
-    reg [31:0] maximum, temporary, carry, total, normalizer;
+    reg [31:0] maximum, temporary, total, normalizer;
     reg [15:0] partial_valid, rounded;
     reg [4:0] level;
     (* ramstyle="M20K", nomem2reg *) reg [31:0] operands [0:MAX_WORDS-1];
     (* ramstyle="M20K", nomem2reg *) reg [31:0] auxiliaries [0:MAX_WORDS-1];
     (* ramstyle="M20K", nomem2reg *) reg [31:0] exponentials [0:MAX_WORDS-1];
-    reg [31:0] partial [0:15];
+    (* nomem2reg *) reg [31:0] partial [0:15];
     reg [31:0] operand_q, auxiliary_q, exponential_q;
     reg launch_scalar;
     reg [2:0] scalar_operation;
@@ -56,19 +52,53 @@ module anvil_q2_ht2_vector_unit #(
     wire scalar_ready, scalar_valid, scalar_error;
     wire [31:0] scalar_data;
     wire [63:0] scalar_tag;
-    wire convert_ready, convert_valid, convert_error;
-    wire [31:0] converted;
-    wire [63:0] convert_tag;
+    reg stream_pending;
+    reg [31:0] stream_issued, stream_index;
+    wire result_ready, result_valid, result_error, result_last;
+    wire [31:0] result_index, result_fp32;
+    wire [15:0] result_data;
+    wire [63:0] result_tag;
+    wire ordinary_ready, ordinary_valid, ordinary_error, ordinary_last;
+    wire [31:0] ordinary_index, ordinary_fp32;
+    wire [15:0] ordinary_data;
+    wire [63:0] ordinary_tag;
+    wire swi_ready, swi_valid, swi_error, swi_last;
+    wire [31:0] swi_index, swi_fp32;
+    wire [15:0] swi_data;
+    wire [63:0] swi_tag;
+    wire stream_active=rst_n && !annul && state==STREAM;
+    wire stream_advance=!stream_pending || result_ready;
+    wire stream_read=stream_active && stream_advance && stream_issued<count;
+    wire result_transfer=stream_active && result_valid && m_ready;
+    wire result_annul=annul || state!=STREAM;
     wire [5:0] count_leading=leading32(count);
     wire [31:0] normalized_count=count << count_leading;
     wire [8:0] count_exponent=9'd158-{3'd0,count_leading};
     wire [31:0] count_fp32={1'b0,count_exponent[7:0],normalized_count[30:8]};
     wire last_index=index==count-32'd1;
     wire loading=rst_n && !annul && state==LOAD;
-    wire reading=rst_n && !annul && state==READ_SEND;
-    wire partial_write=rst_n && !annul && state==SUM_FIND &&
-      level<16 && !partial_valid[level];
-    wire work_write=rst_n && !annul && state==SUM_PREPARE && operation==SOFTMAX;
+    wire statistics_clear=annul || state==IDLE || state==FAILURE || state==RESPONSE;
+    wire statistics_active=rst_n && !statistics_clear;
+    wire square_input=loading && d_valid && operation==RMSNORM;
+    wire [31:0] square_data, softmax_difference, softmax_exponential;
+    wire square_error, difference_error, exponential_error;
+    reg [6:0] square_valid, square_last;
+    reg [163:0] exponential_valid, exponential_last;
+    wire [31:0] exponential_index;
+    wire delayed_difference_error;
+    reg [31:0] statistics_issued, statistics_index;
+    reg statistics_pending;
+    wire statistics_read=statistics_active && state==STATISTICS &&
+      operation==SOFTMAX && statistics_issued<count;
+    wire reduction_ready, reduction_valid, reduction_error;
+    wire [15:0] reduction_mask;
+    wire [511:0] reduction_partials;
+    wire reduction_input=statistics_active && (operation==RMSNORM ?
+      square_valid[6] : exponential_valid[163]);
+    wire statistics_capture=statistics_active && state==STATISTICS &&
+      reduction_valid;
+    wire work_write=statistics_active && operation==SOFTMAX && exponential_valid[163];
+    integer partial_index;
     wire input_nonfinite=d_data[30:23]==8'hff ||
       (operation!=SOFTMAX && d_aux[30:23]==8'hff);
     wire magnitudes_zero=d_data[30:0]==0 && maximum[30:0]==0;
@@ -81,13 +111,72 @@ module anvil_q2_ht2_vector_unit #(
         operands[index]<=d_data;
         auxiliaries[index]<=d_aux;
       end
-      if (reading) begin
-        operand_q<=operands[index];
-        auxiliary_q<=auxiliaries[index];
-        exponential_q<=exponentials[index];
+      if (stream_read) begin
+        operand_q<=operands[stream_issued];
+        auxiliary_q<=auxiliaries[stream_issued];
+        exponential_q<=exponentials[stream_issued];
       end
-      if (work_write) exponentials[index]<=temporary;
-      if (partial_write) partial[level]<=carry;
+      if (statistics_read) operand_q<=operands[statistics_issued];
+      if (work_write) exponentials[exponential_index]<=softmax_exponential;
+      if (statistics_capture)
+        for (partial_index=0;partial_index<16;partial_index=partial_index+1)
+          partial[partial_index]<=reduction_partials[32*partial_index+:32];
+    end
+
+    anvil_q2_ht2_fp32_mul_pipe square_pipeline (
+      .clk(clk),.rst_n(rst_n),.advance(statistics_active),
+      .a(square_input ? d_data : 32'd0),.b(square_input ? d_data : 32'd0),
+      .product(square_data),.error(square_error)
+    );
+    anvil_q2_ht2_fp32_add_pipe maximum_subtraction (
+      .clk(clk),.rst_n(rst_n),.advance(statistics_active),
+      .a(statistics_pending ? operand_q : 32'd0),
+      .b(statistics_pending ? {~maximum[31],maximum[30:0]} : 32'd0),
+      .sum(softmax_difference),.error(difference_error)
+    );
+    anvil_q2_ht2_exp_datapath exponential_pipeline (
+      .clk(clk),.rst_n(rst_n),.advance(statistics_active),
+      .s_data(softmax_difference),.m_data(softmax_exponential),
+      .m_error(exponential_error)
+    );
+    anvil_q2_ht2_delay #(.WIDTH(32),.STAGES(164)) statistics_index_delay (
+      .clk(clk),.rst_n(rst_n),.advance(statistics_active),
+      .s_data(statistics_index),.m_data(exponential_index)
+    );
+    anvil_q2_ht2_delay #(.WIDTH(1),.STAGES(160)) subtraction_error_delay (
+      .clk(clk),.rst_n(rst_n),.advance(statistics_active),
+      .s_data(difference_error),.m_data(delayed_difference_error)
+    );
+    anvil_q2_ht2_stream_reduction reduction (
+      .clk(clk),.rst_n(rst_n),.annul(statistics_clear),
+      .s_valid(reduction_input),.s_ready(reduction_ready),
+      .s_last(operation==RMSNORM ? square_last[6] : exponential_last[163]),
+      .s_error(operation==RMSNORM ? square_error :
+        (exponential_error || delayed_difference_error)),
+      .s_data(operation==RMSNORM ? square_data : softmax_exponential),
+      .m_valid(reduction_valid),.m_ready(statistics_capture),
+      .m_error(reduction_error),.m_mask(reduction_mask),
+      .m_partials(reduction_partials)
+    );
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        square_valid<=0; square_last<=0; exponential_valid<=0; exponential_last<=0;
+        statistics_issued<=0; statistics_index<=0; statistics_pending<=0;
+      end else if (statistics_clear) begin
+        square_valid<=0; square_last<=0; exponential_valid<=0; exponential_last<=0;
+        statistics_issued<=0; statistics_index<=0; statistics_pending<=0;
+      end else begin
+        square_valid<={square_valid[5:0],square_input};
+        square_last<={square_last[5:0],square_input && last_index};
+        exponential_valid<={exponential_valid[162:0],statistics_pending};
+        exponential_last<={exponential_last[162:0],
+          statistics_pending && statistics_index+32'd1==count};
+        statistics_pending<=statistics_read;
+        if (statistics_read) begin
+          statistics_index<=statistics_issued;
+          statistics_issued<=statistics_issued+32'd1;
+        end
+      end
     end
 
     always @* begin
@@ -95,22 +184,6 @@ module anvil_q2_ht2_vector_unit #(
       scalar_return=FAILURE;
       if (rst_n && !annul) begin
         case (state)
-          RMS_SQUARE: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=operand_q; scalar_b=operand_q; scalar_return=SUM_PREPARE;
-          end
-          SOFTMAX_SUB: begin
-            launch_scalar=1; scalar_a=operand_q;
-            scalar_b={~maximum[31],maximum[30:0]}; scalar_return=SOFTMAX_EXP;
-          end
-          SOFTMAX_EXP: begin
-            launch_scalar=1; scalar_operation=4;
-            scalar_a=temporary; scalar_return=SUM_PREPARE;
-          end
-          SUM_FIND: if (level<16 && partial_valid[level]) begin
-            launch_scalar=1; scalar_a=partial[level]; scalar_b=carry;
-            scalar_return=SUM_MERGED;
-          end
           FOLD: if (level<16 && partial_valid[level]) begin
             launch_scalar=1; scalar_a=total; scalar_b=partial[level];
             scalar_return=FOLD_SUM;
@@ -135,38 +208,6 @@ module anvil_q2_ht2_vector_unit #(
             launch_scalar=1; scalar_operation=2;
             scalar_a=total; scalar_return=SAVE_NORMALIZER;
           end
-          RMS_SCALE: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=operand_q; scalar_b=normalizer; scalar_return=RMS_GAMMA;
-          end
-          RMS_GAMMA: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=temporary; scalar_b=auxiliary_q; scalar_return=CONVERT_SEND;
-          end
-          SOFTMAX_SCALE: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=exponential_q; scalar_b=normalizer; scalar_return=CONVERT_SEND;
-          end
-          RESIDUAL_ADD: begin
-            launch_scalar=1; scalar_a=operand_q; scalar_b=auxiliary_q;
-            scalar_return=CONVERT_SEND;
-          end
-          SWI_SIGMOID: begin
-            launch_scalar=1; scalar_operation=5;
-            scalar_a=operand_q; scalar_return=SWI_GATE;
-          end
-          SWI_GATE: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=operand_q; scalar_b=temporary; scalar_return=SWI_PRODUCT;
-          end
-          SWI_PRODUCT: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=temporary; scalar_b=auxiliary_q; scalar_return=CONVERT_SEND;
-          end
-          ELEMENT_PRODUCT: begin
-            launch_scalar=1; scalar_operation=1;
-            scalar_a=operand_q; scalar_b=auxiliary_q; scalar_return=CONVERT_SEND;
-          end
           default: begin end
         endcase
       end
@@ -180,35 +221,70 @@ module anvil_q2_ht2_vector_unit #(
       .m_valid(scalar_valid),.m_error(scalar_error),
       .m_data(scalar_data),.m_tag(scalar_tag)
     );
-    anvil_q2_ht2_convert_pipe conversion (
-      .clk(clk),.rst_n(rst_n),.annul(annul),
-      .s_valid(rst_n && !annul && state==CONVERT_SEND),
-      .s_ready(convert_ready),.s_to_fp32(1'b0),.s_fp16(fp16),
-      .s_data(temporary),.s_tag(tag),
-      .m_ready(rst_n && !annul && state==CONVERT_WAIT),
-      .m_valid(convert_valid),.m_error(convert_error),
-      .m_data(converted),.m_tag(convert_tag)
+    anvil_q2_ht2_vector_result_pipe output_pipeline (
+      .clk(clk),.rst_n(rst_n),.annul(result_annul),
+      .s_valid(stream_active && stream_pending && operation!=SWIGLU),.s_ready(ordinary_ready),
+      .s_operation(operation),.s_fp16(fp16),
+      .s_last(stream_index+32'd1==count),
+      .s_data(operand_q),.s_aux(auxiliary_q),.s_exponential(exponential_q),
+      .s_normalizer(normalizer),.s_index(stream_index),.s_tag(tag),
+      .m_valid(ordinary_valid),.m_ready(stream_active && operation!=SWIGLU && m_ready),
+      .m_error(ordinary_error),.m_last(ordinary_last),.m_index(ordinary_index),
+      .m_fp32(ordinary_fp32),.m_data(ordinary_data),.m_tag(ordinary_tag)
     );
+    anvil_q2_ht2_swiglu_pipe swiglu_pipeline (
+      .clk(clk),.rst_n(rst_n),.annul(result_annul),
+      .s_valid(stream_active && stream_pending && operation==SWIGLU),.s_ready(swi_ready),
+      .s_fp16(fp16),.s_last(stream_index+32'd1==count),
+      .s_gate(operand_q),.s_up(auxiliary_q),.s_index(stream_index),.s_tag(tag),
+      .m_valid(swi_valid),.m_ready(stream_active && operation==SWIGLU && m_ready),
+      .m_error(swi_error),.m_last(swi_last),.m_index(swi_index),
+      .m_fp32(swi_fp32),.m_data(swi_data),.m_tag(swi_tag)
+    );
+    assign result_ready=operation==SWIGLU ? swi_ready : ordinary_ready;
+    assign result_valid=operation==SWIGLU ? swi_valid : ordinary_valid;
+    assign result_error=operation==SWIGLU ? swi_error : ordinary_error;
+    assign result_last=operation==SWIGLU ? swi_last : ordinary_last;
+    assign result_index=operation==SWIGLU ? swi_index : ordinary_index;
+    assign result_fp32=operation==SWIGLU ? swi_fp32 : ordinary_fp32;
+    assign result_data=operation==SWIGLU ? swi_data : ordinary_data;
+    assign result_tag=operation==SWIGLU ? swi_tag : ordinary_tag;
 
     assign s_ready=rst_n && !annul && state==IDLE;
     assign d_ready=loading;
-    assign m_valid=rst_n && !annul && state==RESPONSE;
-    assign m_error=m_valid && response_error;
-    assign m_last=m_valid && (response_error || last_index);
-    assign m_index=m_valid ? index : 32'd0;
-    assign m_fp32=m_valid && !response_error ? temporary : 32'd0;
-    assign m_data=m_valid && !response_error ? rounded : 16'd0;
-    assign m_tag=m_valid ? tag : 64'd0;
+    assign m_valid=rst_n && !annul &&
+      (state==RESPONSE || (state==STREAM && result_valid));
+    assign m_error=m_valid && (state==STREAM ? result_error : response_error);
+    assign m_last=m_valid && (state==STREAM ?
+      (result_error || result_last) : (response_error || last_index));
+    assign m_index=m_valid ? (state==STREAM ? result_index : index) : 32'd0;
+    assign m_fp32=m_valid && !m_error ? (state==STREAM ? result_fp32 : temporary) : 32'd0;
+    assign m_data=m_valid && !m_error ? (state==STREAM ? result_data : rounded) : 16'd0;
+    assign m_tag=m_valid ? (state==STREAM ? result_tag : tag) : 64'd0;
+
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        stream_pending<=0; stream_issued<=0; stream_index<=0;
+      end else if (annul || state!=STREAM) begin
+        stream_pending<=0; stream_issued<=0; stream_index<=0;
+      end else if (stream_advance) begin
+        stream_pending<=stream_read;
+        if (stream_read) begin
+          stream_index<=stream_issued; stream_issued<=stream_issued+32'd1;
+        end
+      end
+    end
 
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
         state<=IDLE; return_state<=0; operation<=0;
-        count<=0; index<=0; fp16<=0; output_pass<=0; response_error<=0;
-        tag<=0; maximum<=0; temporary<=0; carry<=0; total<=0;
+        count<=0; index<=0; fp16<=0; response_error<=0;
+        tag<=0; maximum<=0; temporary<=0; total<=0;
         normalizer<=0; partial_valid<=0; rounded<=0; level<=0;
       end else if (annul) begin
         state<=IDLE; partial_valid<=0; response_error<=0; rounded<=0;
-      end else if (state==SCALAR_WAIT) begin
+      end else if (reduction_input && !reduction_ready) state<=FAILURE;
+      else if (state==SCALAR_WAIT) begin
         if (scalar_valid) begin
           if (scalar_error || scalar_tag!=tag) state<=FAILURE;
           else begin temporary<=scalar_data; state<=return_state; end
@@ -216,7 +292,6 @@ module anvil_q2_ht2_vector_unit #(
       end else if (launch_scalar) begin
         if (scalar_ready) begin
           return_state<=scalar_return; state<=SCALAR_WAIT;
-          if (state==SUM_FIND) partial_valid[level]<=0;
         end
       end else case (state)
         IDLE: if (s_valid) begin
@@ -234,40 +309,11 @@ module anvil_q2_ht2_vector_unit #(
             if (index==0 || input_larger) maximum<=d_data;
             if (last_index) begin
               index<=0;
-              output_pass<=operation!=RMSNORM && operation!=SOFTMAX;
-              state<=READ_SEND;
+              if (operation==RESIDUAL || operation==PRODUCT || operation==SWIGLU)
+                state<=STREAM;
+              else state<=STATISTICS;
             end else index<=index+32'd1;
           end
-        end
-        READ_SEND: state<=READ_CAPTURE;
-        READ_CAPTURE: state<=DISPATCH;
-        DISPATCH: begin
-          case (operation)
-            RMSNORM: begin
-              if (output_pass) state<=RMS_SCALE;
-              else state<=RMS_SQUARE;
-            end
-            SOFTMAX: begin
-              if (output_pass) state<=SOFTMAX_SCALE;
-              else state<=SOFTMAX_SUB;
-            end
-            RESIDUAL: state<=RESIDUAL_ADD;
-            SWIGLU: state<=SWI_SIGMOID;
-            PRODUCT: state<=ELEMENT_PRODUCT;
-            default: state<=FAILURE;
-          endcase
-        end
-        SUM_PREPARE: begin carry<=temporary; level<=0; state<=SUM_FIND; end
-        SUM_FIND: begin
-          if (level>=16) state<=FAILURE;
-          else begin
-            partial_valid[level]<=1;
-            if (last_index) begin level<=0; total<=0; state<=FOLD; end
-            else begin index<=index+32'd1; state<=READ_SEND; end
-          end
-        end
-        SUM_MERGED: begin
-          carry<=temporary; level<=level+5'd1; state<=SUM_FIND;
         end
         FOLD: begin
           if (level==16) begin
@@ -277,17 +323,16 @@ module anvil_q2_ht2_vector_unit #(
         end
         FOLD_SUM: begin total<=temporary; level<=level+5'd1; state<=FOLD; end
         SAVE_NORMALIZER: begin
-          normalizer<=temporary; output_pass<=1; index<=0; state<=READ_SEND;
+          normalizer<=temporary; index<=0; state<=STREAM;
         end
-        CONVERT_SEND: if (convert_ready) state<=CONVERT_WAIT;
-        CONVERT_WAIT: if (convert_valid) begin
-          if (convert_error || convert_tag!=tag) state<=FAILURE;
-          else begin rounded<=converted[15:0]; state<=RESPONSE; end
+        STATISTICS: if (statistics_capture) begin
+          if (reduction_error) state<=FAILURE;
+          else begin
+            partial_valid<=reduction_mask; level<=0; total<=0; state<=FOLD;
+          end
         end
-        RESPONSE: if (m_ready) begin
-          if (response_error || last_index) state<=IDLE;
-          else begin index<=index+32'd1; state<=READ_SEND; end
-        end
+        STREAM: if (result_transfer && (result_error || result_last)) state<=IDLE;
+        RESPONSE: if (m_ready) state<=IDLE;
         FAILURE: begin
           response_error<=1; rounded<=0; temporary<=0; state<=RESPONSE;
         end

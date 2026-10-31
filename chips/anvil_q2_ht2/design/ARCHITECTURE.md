@@ -2,7 +2,8 @@
 
 ## Current source state
 
-This is a partial implementation, not a ready accelerator. The accepted parent
+This is a connected RTL handoff for independent verification, not an accepted
+accelerator. The accepted parent
 RTL remains unchanged under `anvil_q2_ht_reference/rtl/`. Its Q16.16 activation
 path and legacy KV codec cannot establish native HT2 numerics.
 
@@ -14,9 +15,14 @@ KV subsystem now combines real external memory requests, the exact-ratio codec,
 acknowledged record/layer progress, isolated scratch pages, ancestor-aware
 translation and the tree's atomic pointer/mapping publication. The compatible
 top and a native model sequencer now connect these subsystems through all
-configured layers. Tensor issue, row consumption and DDR bursts now overlap;
-the remaining single-owner tile path and word-oriented model schedule are not
-a completed throughput implementation. No model has executed in this Designer role.
+configured layers. Metadata, tensor issue, parallel row storage and queued DDR
+bursts now overlap. Payload read-ahead, eight independently owned local
+decoders, tile-streamed RMSNorm coefficients and streaming vector results
+extend that overlap without changing the frozen DMA leaf. Context-local
+metadata/payload preparation now shares an eight-owner registered read arbiter;
+activation requests use two elastic stages, and normalization statistics use
+streaming products/exp plus a pipelined adjacent-pair tree.
+No model has executed in this Designer role, and no throughput is certified.
 Native scalar, vector, rotate-half pair and transactional-cache attention
 operators are connected by that sequencer.
 A native shared-memory adapter reuses the parent DDR
@@ -24,7 +30,8 @@ arbitrator for one weight stream and three acknowledged single-beat clients.
 A connected configuration subsystem routes
 legacy requests to the unchanged parent and native requests to a separately
 validated atomic descriptor bank. A connected weight path expands required
-metadata groups and feeds the sparse DMA through one memory owner. Neither
+metadata groups and feeds the sparse DMA through one shared read interface
+with explicit ordered memory ownership. Neither
 subsystem has independent execution evidence yet.
 A connected tensor engine now owns the activation store, weight path, physical
 MAC and ordered row accumulator. It returns real unbiased FP32 projection rows,
@@ -44,7 +51,7 @@ Naming a leaf or subsystem is not evidence that the top uses it.
 | `anvil_q2_ht2_convert_pipe.sv` | Four-stage FP32/native conversion, gradual underflow and direct RNE at each boundary |
 | `anvil_q2_ht2_fp32_mul_pipe.sv` | Seven-stage full FP32 product used by the native scalar/statistics operators |
 | `anvil_q2_ht2_row_accumulator.sv` | Four-stage ordered row accumulation with explicit dependency and first/last checking |
-| `anvil_q2_ht2_activation_store.sv` | Four synchronous native tile RAMs with reset validity, keep checking and write-first collisions |
+| `anvil_q2_ht2_activation_store.sv` | Four synchronous native tile RAMs with two elastic read stages, reset validity, keep checking and write-first collisions |
 | `anvil_q2_ht2_kv_map.sv` | Four-bank atomic logical map, ancestor translation, scratch allocator and instantiated tree verifier |
 | `anvil_q2_ht2_native_kv_store.sv` | Instantiated map/codec, packed native DDR records, acknowledged progress and cancellation drainage |
 | `anvil_q2_ht2_mode_control.sv` | Serialized extension registers and legacy configuration forwarding with cancelled-response drainage |
@@ -52,16 +59,26 @@ Naming a leaf or subsystem is not evidence that the top uses it.
 | `anvil_q2_ht2_native_configuration.sv` | Shadow/committed banks, cache reservation, overlap scanning and atomic native descriptor publication |
 | `anvil_q2_ht2_configuration.sv` | Connected mode adapter and legacy/native configuration routing |
 | `anvil_q2_ht2_metadata_tile.sv` | Exact slot-union group selection, cached metadata reads and per-lane expansion |
-| `anvil_q2_ht2_weight_path.sv` | Connected metadata-to-sparse-DMA stream with single burst owner and cancellation drainage |
+| `anvil_q2_ht2_weight_path.sv` | Eight ordered independently prepared tile contexts, local decoders, shared W2 cache, registered sixteen-client/eight-owner read arbitration and ordered owner drainage |
+| `anvil_q2_ht2_payload_prefetch.sv` | Context-local exact needed-beat gather, isolated image, W2 beat reuse and cancellation drainage through the shared arbiter |
 | `anvil_q2_ht2_tensor_engine.sv` | Connected activation store, idle-time native operand reads, weight path, A9 MAC and ordered row accumulator; held FP32 projection-row stream |
 | `anvil_q2_ht2_ddr_fabric.sv` | Native weight-burst adapter and three single-beat clients sharing the unchanged parent DDR arbitrator; accepted-beat accounting |
 | `anvil_q2_ht2_inverse.sv` | Sequential exact-ratio reciprocal and integer-radicand rsqrt, normalization and FP32 RNE packing |
 | `anvil_q2_ht2_scalar.sv` | Connected FP32 add/multiply/inverse, split-reduction degree-12 exp and stable-sign sigmoid |
 | `anvil_q2_ht2_vector_unit.sv` | Real buffered RMSNorm/residual/SwiGLU/stable-softmax/product operations, pairwise FP32 statistics and native boundary conversion |
+| `anvil_q2_ht2_stream_reduction.sv` | Sixteen occupied adjacent-pair levels, four-stage adders, input closure/drain and held partial response |
 | `anvil_q2_ht2_rope_pair.sv` | Four FP32 products/two sums and paired native conversions for checkpoint-provided rotate-half coefficients |
 | `anvil_q2_ht2_scalar_reader.sv` | Bounds-checked cached native coefficient reads, exact format expansion and accepted-request cancellation drainage |
+| `anvil_q2_ht2_native_tile_reader.sv` | Bounds-checked 1..128-word native coefficient tiles with aligned beat cache and accepted-request drainage |
+| `anvil_q2_ht2_delay.sv` | Enabled registered alignment for arithmetic operands, framing, tags and errors |
+| `anvil_q2_ht2_vector_result_pipe.sv` | Eighteen-stage ordered RMSNorm/residual/product/softmax-output arithmetic and native conversion |
+| `anvil_q2_ht2_exp_datapath.sv` | 160-stage non-fused split-range degree-12 exponential with gradual-underflow packing |
+| `anvil_q2_ht2_sigmoid_reciprocal.sv` | 53-stage restoring reciprocal restricted to sigmoid's [1,2] denominator domain |
+| `anvil_q2_ht2_swiglu_pipe.sv` | 242-stage stable sigmoid, ordered gate/up multiplication and native conversion |
 | `anvil_q2_ht2_attention.sv` | Native query conversion, grouped transactional K/V reads, FP32 dot/softmax/weighted-value computation and native head result |
-| `anvil_q2_ht2_model_sequencer.sv` | Connected embedding/layer/final-head schedule, native word RAM, bias/boundary conversion, RoPE, provisional KV acknowledgements, attention and real greedy target IDs |
+| `anvil_q2_ht2_model_sequencer.sv` | Connected embedding/layer/final-head schedule, column-banked native RAM, full-tile input staging, parallel row retirement, RoPE, KV acknowledgements, attention and real greedy target IDs |
+| `anvil_q2_ht2_projection_store_pipe.sv` | Four parallel bias/native-boundary paths, eight elastic stages, row/mask/tag/last/error alignment and exact bypass for unbiased sums |
+| `anvil_q2_ht2_vector_input_pipe.sv` | Paired four-stage BF16/FP16 expansion, one operand pair per enabled cycle, partial-tile framing, retained tags and explicit invalid-count errors |
 | `anvil_q2_ht2_top.sv` | Parent-compatible ports/defaults, native/legacy configuration and execution routing, one external Avalon owner, token/draft priority and native cancellation drain |
 | `anvil_q2_ht2_legacy_logit_pipe.sv` | Three-stage elastic parent-Q16.16-to-FP32 RNE representation, with unchanged logit data/index |
 
@@ -273,23 +290,31 @@ cache implementation.
 
 The metadata tile reader owns one captured row/column and activation union.
 It registers row-stride products, row addresses, column offsets and bounds
-before offering memory work. It scans at most 128 groups, skips unrequired
-groups, and uses separate one-beat zero-point/scale caches. A cache miss issues
-one aligned 64-byte read, waits for its response, then extracts the packed
-unsigned code or little-endian BF16 scale. Required nonfinite scales, fetched
+before offering memory work. It derives the union's required metadata beats,
+gathers at most two zero-point lines and five scale lines, and expands every
+required lane together. An eight-line metadata cache retains aligned beats
+between tiles; misses issue only lines required by a nonzero union lane.
+GROUP_SIZE=1 no longer loops through 128 group-state sequences.
+Required nonfinite scales, fetched
 nonzero padding, out-of-range keeps or failed reads form explicit errors.
 Zero scales, signed zeros and subnormal scales are not silently filtered.
 No metadata read is issued for a wholly skipped tile or native payload.
 
-The connected weight path instantiates this reader and the frozen sparse DMA.
-It retains original activations and tag, passes expanded metadata and effective
-keeps into DMA, and multiplexes their sequential read requests onto one burst
-interface. Actual last markers are compared with the accepted beat count.
+The connected weight path instantiates one metadata reader, payload gatherer
+and frozen sparse DMA for each of eight contexts.
+Eight tile contexts retain original activations, descriptor coordinates, tag,
+format, expanded metadata and effective keeps until response retirement.
+Acceptance/output pointers preserve response order, while per-context
+stage-started/stage-complete flags guard independent intermediate progression.
+The metadata and prefetch units prepare later contexts while decoders own older tiles.
+Their requests share one registered, round-robin-selected burst offer; a
+eight-entry owner FIFO routes returned beats independently of the current
+offer. Actual last markers are compared with each accepted beat count.
 Error responses have no usable tensor payload; missing terminators retain
-ownership, and annul drains before reuse. Metadata/DMA cache invalidation
-is explicit via annul, including required future mode/host-write invalidation.
-This is a serialized loader, not a claim of multi-outstanding prefetch
-throughput or a connected 512-lane model execution path.
+ownership, and annul drains before reuse. Metadata/DMA/cache invalidation is explicit via annul, including the connected
+top's mode/host-write invalidation.
+Each frozen DMA remains single-owner through its ten-stage decode and held
+response; this overlap alone does not establish sustained production throughput.
 
 ## Required connected dataflow
 
@@ -410,8 +435,10 @@ Its zero tile bias is not a model bias: the subsequent model operation must
 add each row's actual Qwen bias once after the complete dot product, before
 rounding at the activation boundary.
 
-An eight-entry row/column issue FIFO accompanies MAC input acceptance. The
-producer can read/fetch the next tile or row immediately after issue, without
+An eight-entry row/column prefetch FIFO accompanies weight-path acceptance.
+The producer can read/fetch the next tile or row before older weight responses
+return. A separate sixty-four-entry issue FIFO accompanies actual MAC input
+acceptance, without
 waiting for the 39-stage MAC or four-stage row accumulator. FIFO entries
 remain owned until the corresponding MAC result transfers into the accumulator.
 The accumulator alone enforces increasing-column arithmetic dependencies;
@@ -439,18 +466,19 @@ stream; the secondary burst port is inactive. Round-robin arbitration, read-owne
 private response slots, held Avalon commands and write acknowledgements are
 retained rather than reimplemented. READ_OUTSTANDING remains 1..16 (default 8).
 
-The adapter captures one aligned 1..127-beat weight request, checking its
-33-bit extent. Invalid requests return a terminal fill error without DDR
-issue. Accepted requests split into at-most-16-beat bursts at 4-KiB boundaries.
-Burst acceptance advances the issue address and can precede earlier returns.
-Each transaction reserves the full capacity of a 128-entry synchronous
-513-bit return RAM (data plus error), sufficient for all 127 possible beats
+The adapter captures up to eight aligned 1..127-beat weight/metadata requests,
+checking each 33-bit extent. Invalid requests return an ordered terminal fill
+error without DDR issue. Accepted requests split into at-most-16-beat bursts
+at 4-KiB boundaries. Independent issue/delivery heads allow later owners'
+bursts to precede earlier owners' fill consumption. Acceptance reserves the
+request's entire footprint within a shared 128-entry synchronous 513-bit
+return RAM; aggregate reservations, not per-request fit alone, bound storage
 even with fill_ready continuously low. Separate write/read pointers and stored
 occupancy track returns and output prefetch; an output register holds its beat
 under backpressure. Only fill consumption decrements remaining delivery beats.
 Annul blocks new owners and exposed
-client requests, but an already accepted burst remains an obligation: its
-remaining beats complete into the cancelling weight owner's drain interface.
+client requests, but accepted owners remain obligations, including captured
+unissued suffixes: their remaining beats complete into the cancelling owner's drain interface.
 It is not silently shortened or reused by a new tile. Exposed single-beat
 owners must likewise drain their accepted responses on annul.
 
@@ -540,17 +568,26 @@ errors. No silent catch or success-shaped replacement handles an arithmetic
 fault.
 
 `anvil_q2_ht2_vector_unit` connects this scalar engine to three synchronous
-FP32 RAMs and a native converter. One input pass owns exactly count words.
+FP32 RAMs and streaming result pipelines. One input pass owns exactly count words.
 The operand/auxiliary RAMs support the second normalization/output pass;
 the work RAM stores actual computed softmax exponentials. No data RAM is
 asynchronously cleared. Control/count/phase validity makes old words
 unreachable until the required new input/compute pass completes.
-Sixteen reset-protected occupied flags guard sixteen FP32 partial sums:
-each incoming square/exponential merges adjacent equal-sized blocks from
-level zero upward, and the final occupied levels fold in increasing level
-order. Thus neither RMSNorm nor a 32768-position denominator requires one
-32768-deep serial rounding chain. Singleton/non-power-of-two counts use the
-same tree without padded imaginary inputs.
+Sixteen reset-protected occupied flags guard sixteen FP32 partial sums in
+`anvil_q2_ht2_stream_reduction`. Each incoming square/exponential merges adjacent
+equal-sized blocks from level zero upward through a four-register FP32 adder
+at each level. Independent levels and successive pairs pipeline concurrently;
+the final occupied levels still fold in increasing level order. RMSNorm squares
+inputs in a seven-stage pipeline during the RAM load, rather than making a
+second scalar square pass. After its maximum is known, softmax reads operands
+at one word per clock, subtracts that maximum in four stages and evaluates exp
+in 160 stages. A matching 164-register index delay directs each exponential
+write to its original RAM location. Valid/last shift registers clear on
+annul/failure/new operation, so stale arithmetic cannot enter a new reduction.
+The final leaf closes input; a partial response is offered only after all carry
+valids have drained, and then holds under backpressure. The singleton count
+holds level zero without any imaginary padded addition; non-power-of-two
+counts retain the same low-to-high partial fold as before.
 
 RMSNorm, residual addition, SwiGLU, stable max-subtracted softmax and product
 produce real FP32 results and native rounded output streams. Input framing,
@@ -611,9 +648,9 @@ terminate the head without successful data. Batch rollback/publication remain
 the native store's responsibility. The top must co-annul attention and that
 store; kv_idle prevents acceptance while the physical owner drains.
 
-These operators are now connected through the configurable 28-layer product
-datapath described below. Multi-tile throughput completion remains unfinished.
-No new
+These operators are connected through the configurable 28-layer product
+datapath described below. The completed RTL handoff remains subject to all
+independent numerical, throughput and physical requirements. No
 simulation/reference/mutation/synthesis harness was authored. No functional,
 error-bound, DSP-fit, timing or TPM result follows from these source changes.
 
@@ -629,9 +666,19 @@ external port. Quiescent switching also requires parent configuration readiness:
 that readiness is inhibited by the parent's real fault/cancellation drainage.
 New host/token requests are inhibited during configuration offers/responses.
 
-The native sequencer owns ten vectors in each of four synchronous word RAMs.
+The native sequencer owns ten vectors in each of four token banks, with 128
+synchronous native-word column RAMs per token. A scalar access selects one
+column bank, while input staging reads a complete 128-column tile in one
+registered access followed by capture.
 Complete-vector bits reset on each batch/annul and are set only after the
 required vector's final write. Every operand read checks them and its bounds.
+For residual/SwiGLU loading, two tile reads capture source and auxiliary
+vectors; RMSNorm instead reads its auxiliary coefficient tile from the shared
+memory client. A paired four-stage converter feeds the buffered vector operator
+one FP32 operand pair per enabled cycle. A 1..128-word tile count protects
+partial tails; only the last tile's last transferred element asserts the
+vector operator's final marker. Output stalls freeze both conversions and
+their shared framing. Annul clears the feeder generation before reuse.
 Embedding writes hidden state. Each layer then schedules:
 
 1. RMSNorm into normalization storage, followed by broadcast Q, K and V
@@ -657,15 +704,23 @@ FP16 K/V expands to FP32 then rounds to BF16 for the explicitly BF16/INT8 cache;
 the query remains FP16. Native KV bytes are never produced by relabeling an
 FP16 word or the parent's Q16.16 codec.
 
-For projection input, the controller copies source words into one 128-column
-tensor staging vector per slot, with explicit final-tile keeps. It then
+For projection input, the controller copies complete source tiles into one
+128-column tensor staging vector per slot, with explicit final-tile keeps. It then
 launches one tensor command covering the actual row count. The tensor's shared
 weight stream broadcasts to all active slots. An eight-entry FP32 row FIFO
 accepts complete tensor rows independently of the controller's bias, native
 conversion, word writes and logit transfers. It stores row index, sums,
 token mask, tag, error and last together. Consumption validates the record
 against the expected row before exposing it; annul clears queue ownership.
-The model word RAM and input
+Four parallel bias-add/conversion paths retire a row through eight elastic
+stages, writing all active slots' native words together. Unbiased rows bypass
+the add result exactly, preserving signed-zero behavior. Row/mask/tag/last
+and arithmetic errors advance/stall together. An independent stored-row
+counter checks ordered writes, and the final row's write precedes complete
+vector publication and phase advance. Vocabulary logits remain FP32 and
+can transfer consecutive slots on consecutive clocks; greedy updates still
+occur only on those transfers.
+The model RAM and input
 tile staging are distinct storage and copy costs; this increment does not
 silently claim zero-copy use of the tensor's optional idle-time read interface.
 The latter remains available but unused in this schedule.
@@ -688,13 +743,89 @@ until all buffered logits have retired. These are the parent's actual fixed
 results represented in FP32, not a reinterpretation of their bits or a claim
 that legacy inference meets native numerical fidelity.
 
-This is not a completed throughput design. The eight issue records, eight
-completed rows and reserved burst-return RAM establish bounded overlap without
-duplicating token-specific weight streams. However the single-owner metadata/
-DMA tile path still cannot launch a replacement until decode completion.
-The model vector/coefficient path and input-vector staging remain
-word-oriented. Multi-tile prefetch/decode scheduling and sustained effective
-utilization must be implemented, not inferred from 512 physical lanes.
+Eight queued tile contexts overlap
+metadata preparation, payload read-ahead and local decoding; sixty-four issue records decouple
+MAC input from dependent row accumulation, and eight completed rows feed
+parallel row storage. Eight DDR owners share one capacity-reserved return RAM,
+without duplicating token-specific weight streams. Input-vector staging now
+copies full tiles rather than individual words. Each of eight context-bound
+DMA instances keeps the frozen single-owner/ten-stage contract, while replaying
+an isolated payload image gathered through one shared DDR interface. Each
+context now has independently owned metadata and payload preparation, removing
+the single metadata-address engine and single payload owner's serialization.
+These context-local producers all feed the same registered sixteen-client
+arbiter, with eight accepted memory owners; none is a token-specific reader.
+An accepted offer can be replaced at the same edge with another eligible
+producer, without accepting the still-visible old request twice.
+The shared W2 cache holds eight physical beats across context reuse and blocks
+duplicate requests matching a pending cacheable read. A cache-hit response
+acknowledges the local gatherer, then holds its beat until consumed; it never
+creates an external owner or accepted DDR beat. The per-context gatherers
+read only the union's needed beats.
+Context data is unreachable before successful payload completion, and context
+reuse waits for ordered response consumption. On annul, local replay can
+terminate immediately because its beats are already captured; accepted external
+reads still drain through their original owners.
+
+The native coefficient tile reader validates row/column/count, separately
+registers address calculations, and gathers up to five beats through an
+eight-line cache. It returns native bits/format/tag without premature rounding.
+It shares one registered memory-offer/response owner with the scalar reader;
+cancelled accepted requests cannot be reassigned to the other reader.
+RMSNorm now loads activation/gamma pairs at one enabled word per cycle after
+tile capture. No scalar coefficient request/conversion round-trip is made per
+element. The source format of gamma is retained independently in the paired
+conversion pipeline.
+
+Vector output RAM reads have a registered pending stage feeding either an
+eighteen-stage ordinary result pipeline or a 242-stage SwiGLU pipeline.
+RMSNorm performs two ordered seven-stage FP32 products; residual and simple
+product are aligned to that fourteen-stage arithmetic boundary, followed by
+four-stage native conversion. Softmax scales its actual stored FP32
+exponentials. Global stalls freeze arithmetic, validity, framing, errors,
+indices and tags together. The model stores accepted vector results directly
+in its selected synchronous column bank, rather than serializing each result
+through scalar-write controller states. Complete-vector publication follows
+the final checked write.
+
+The streaming SwiGLU path computes z=exp(-abs(x)), reciprocal(1+z), and selects
+that reciprocal for nonnegative x or z times the reciprocal for negative x.
+It then computes `(x*sigmoid(x))*up` as two distinct FP32 products.
+The exp datapath has 160 registered stages: classified safe argument,
+seven-stage range multiplication, registered integer rounding and encoding,
+parallel split-ln(2) products and ordered subtraction, twelve eleven-stage
+Horner steps, registered exponent adjustment/underflow/packing. Its
+coefficients are the same mathematical FP32 encodings now shared in the
+package with the scalar engine, not checkpoint-derived tables.
+Only exceptional exp inputs take the explicitly tagged canonical/error
+bypass. The restricted-domain sigmoid reciprocal uses registered setup,
+fifty one-bit restoring steps, normalization and RNE packing (53 stages).
+Inputs outside its declared [1,2] domain produce canonical NaN with error;
+they are not clamped to a successful reciprocal. Sign/operands and all
+sidebands align with these stages before the final four-stage native
+conversion. These pipeline counts are source-level design contracts,
+not observed simulation results or timing closure.
+
+The activation store now has two elastic read stages. Registered RAM output,
+read metadata, missing-word checks and response capture remain aligned during
+stalls, while a consumed response can be replaced on the same edge.
+Four row/column ownership records associate accepted activation requests with
+their later weight-path submission. The projection scanner advances on read
+acceptance, not on completion of each isolated request/response round-trip;
+weight and accumulator ownership still retire in order.
+
+| Internal boundary | Pre-edge transfer and post-edge result |
+|---|---|
+| Activation tile | Accept at n; RAM/read metadata at n; response after n+1; first consume n+2; full stages hold together on stall |
+| RMSNorm square | Accept input at n; square/valid after n+6; tree first owns it at n+7 |
+| Softmax statistic | Read RAM at r; subtraction accepts at r+1; exp/index/valid after r+164; tree and work-RAM write consume at r+165 |
+| Partial tree, count one | Leaf at f closes input; held level-zero response after f+1, first consume f+2 |
+| Partial tree, larger count | Four registered stages per adjacent-pair carry; response waits for all carries, never just the final input's arrival |
+| Context/cache replacement | A context frees only at ordered output consumption; a cached word is captured before replacement can affect its held local response |
+| Annul and response/commit | Annul wins, clears logical validity/reuse and drains accepted external owners; no same-edge success publication |
+
+These are source-level scheduling contracts, not measured benefits of 512
+physical lanes or a replacement for independently executed coverage.
 All numerical, compatibility, traffic, >=3500 TPM, fit/timing and hardware
 requirements remain unchanged and independently untested.
 
@@ -708,12 +839,15 @@ requirements remain unchanged and independently untested.
 | A9 repair, connected tensor engine and native memory adapter parse | Icarus 12.0 static exit 0 in 2.52 seconds: `evidence/preparation/ht2-a9-tensor-ddr-static-20261031T155617253142Z/receipt.json`; current RTL hashes remained unchanged during the check |
 | Scalar/inverse/vector/RoPE/attention/coefficient-read hierarchy and shared activation reads parse | Icarus static exit 0 in 2.22 seconds: `evidence/preparation/ht2-native-operators-static-20261031T160729691043Z/receipt.json`; includes the current tensor-engine port extension and all six new modules |
 | Connected production model/top snapshot parses | Icarus static exit 0: `evidence/preparation/ht2-connected-model-static-20261031T161815492504Z/receipt.json`; predates the overlap and retirement changes |
-| Tensor issue/row overlap, burst-return storage and compatible retirement parse | Production-top Icarus static exit 0 in 2.92 seconds: `evidence/preparation/ht2-overlap-retirement-static-20261031T162359268379Z/receipt.json`; includes the three-stage legacy logit extension and all current RTL |
+| Tensor issue/row overlap, burst-return storage and compatible retirement parse | Production-top Icarus static exit 0 in 2.92 seconds: `evidence/preparation/ht2-overlap-retirement-static-20261031T162359268379Z/receipt.json`; predates queued metadata/DDR ownership and banked model staging |
+| Queued metadata/DDR ownership, banked model staging, parallel row storage and paired vector-input streaming parse | Production-top Icarus static exit 0 in 3.02 seconds: `evidence/preparation/ht2-prefetch-staging-static-20261031T163418421007Z/receipt.json`; all 33 current HT2 modules and 22 parent modules were included |
+| Payload read-ahead, context-bound decoder pool, coefficient tiles and streaming vector arithmetic | Advisory static diagnostic retained at `evidence/preparation/ht2-read-ahead-vector-static-20261031T164353Z/receipt.json`; exact source hashes and compiler outcome are recorded there, not functional acceptance |
+| Concurrent context preparation, elastic activation scheduling and pipelined normalization statistics | Static diagnostic receipt: `evidence/preparation/ht2-stream-scheduling-static-65a0e91c/receipt.json`; consult its exact source hashes and exit status; no behavioral or synthesis claim |
 | Parent preservation for this increment | All 22 parent hashes equal the previous receipt in the new static receipt |
 | Functional/numerical/mutation/synthesis/model results | Not executed; independent Verifier ownership |
 | Production fit, DSP mapping, timing, board behavior and throughput | No evidence; mandatory shared-runtime gates and benchmark acceptance remain outstanding |
 
-All seven receipts retain exact portable argv/cwd, source hashes, compiler-version
+All receipts retain exact portable argv/cwd, source hashes, compiler-version
 logs, start/end timestamps, timeout/exit status and raw stdout/stderr. These are
 static-elaboration diagnostics only, not passing L1 evidence. No simulation or
 synthesis harness was authored or executed by Designer. The first two historical
@@ -722,6 +856,16 @@ address-bound repair; the third includes that increment but predates A9.
 The fourth first includes the independent operand selectors, tensor engine and
 native memory adapter; the fifth also includes the native operator hierarchy
 and idle-time activation-read port. The sixth connects the model sequencer and
-top; the seventh adds the bounded overlap and legacy-retirement implementation.
-No RTL changed after the seventh compile. Static elaboration does not establish numerical
+top; the seventh adds bounded overlap and legacy retirement. The eighth adds
+queued tile/DDR ownership, beat-oriented metadata expansion, full-tile banked
+input staging, parallel projection storage and paired vector-input streaming.
+Every frozen DMA instance remains single-owner through response consumption;
+no latency or transaction-ownership relaxation was made. The ninth snapshot
+adds payload read-ahead, a context-bound decoder pool, native coefficient tile
+reads and streaming ordinary/SwiGLU result execution. It also prevents a
+malformed metadata response's discarded suffix from reaching a subsequent
+metadata operation. These are inspection-driven changes, not claimed repairs
+of independently executed functional failures. This increment addresses inspected serialization/ownership bottlenecks;
+no functional failing test or numerical repair was executed or claimed.
+Static elaboration does not establish numerical
 behavior, cancellation correctness, memory inference, timing or performance.
