@@ -1,0 +1,1869 @@
+{
+  "chip": "Anvil-Q1-HT2",
+  "passed_checks": {
+    "check:behavior": {
+      "attempt_id": 9,
+      "duration_s": 2033.1529565020464,
+      "stdout_preview": " running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-simulate running\nprogress: behavior singleton-functional\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: behavior gqa-seed43\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: behavior medium-seed89\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: behavior compatibility-0\nprogress: behavior compatibility-2\nprogress: behavior compatibility-entry-alias\n{\"status\": \"passed\", \"receipt\": \"evidence/behavior-20261031T181320Z-7dc4c81f/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/behavior-20261031T181320Z-7dc4c81f/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "behavior"
+            ],
+            "checks": [
+              {
+                "compared": "15",
+                "csr": "15",
+                "name": "top-startup-0-17-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/startup-e0f96ea5/top-startup-0-17-iverilog-simulate-9ad45a7e/receipt.json",
+                "simulator": "iverilog",
+                "startup_only": "1"
+              },
+              {
+                "compared": "764744",
+                "exhaustive_per_format": "65536",
+                "name": "conversions-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/conversions-iverilog-8e571074/conversions-iverilog-simulate-ea120fc6/receipt.json",
+                "rows": "191186",
+                "simulator": "iverilog"
+              },
+              {
+                "add32": "45724",
+                "compared": "189012",
+                "mul16": "45732",
+                "mul32": "45732",
+                "name": "pipelines-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/pipelines-iverilog-0f5a4a97/pipelines-iverilog-simulate-76daed6a/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "1450",
+                "dma_transactions": "225",
+                "errors": "41",
+                "name": "sparse-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/sparse-iverilog-e8688c5b/sparse-iverilog-simulate-8243fa29/receipt.json",
+                "simulator": "iverilog",
+                "skipped": "1184"
+              },
+              {
+                "compared": "19699",
+                "exhaustive_tree_assignments": "19692",
+                "name": "verifier-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/verifier-iverilog-259c9546/verifier-iverilog-simulate-1278aa93/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "533",
+                "name": "masks-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/masks-iverilog-88ad3fa9/masks-iverilog-simulate-f64433ee/receipt.json",
+                "simulator": "iverilog",
+                "trees_and_sequence_boundaries": "533"
+              },
+              {
+                "compared": "28672",
+                "lanes": "8",
+                "name": "awq-iverilog",
+                "q_values": "16",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/dequant-iverilog-b3bf0492/awq-iverilog-simulate-af882b39/receipt.json",
+                "scale_classes": "14",
+                "simulator": "iverilog",
+                "zero_values": "16"
+              },
+              {
+                "accepted_beats": "130",
+                "compared": "331776",
+                "completed_dots": "14",
+                "live_paths": "256",
+                "name": "mac-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/mac-iverilog-5d4a857e/mac-iverilog-simulate-ca8d092c/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "3980",
+                "name": "divsqrt-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/divsqrt-iverilog-bdc88431/divsqrt-iverilog-simulate-4ed697fc/receipt.json",
+                "requests": "3980",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "1629",
+                "name": "exp-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/exp-iverilog-1628ba44/exp-iverilog-simulate-6cc8aefe/receipt.json",
+                "requests": "1629",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "294",
+                "name": "sincos-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/sincos-iverilog-aca3030a/sincos-iverilog-simulate-9850243e/receipt.json",
+                "requests": "294",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "528",
+                "inputs": "96",
+                "name": "rmsnorm-8-iverilog",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/rmsnorm-iverilog-ddd39134/rmsnorm-8-iverilog-simulate-1403d15e/receipt.json",
+                "simulator": "iverilog",
+                "stalled_comparisons": "36"
+              },
+              {
+                "compared": "672",
+                "inputs": "96",
+                "name": "swiglu-8-iverilog",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/swiglu-iverilog-a0270242/swiglu-8-iverilog-simulate-eca17f46/receipt.json",
+                "simulator": "iverilog",
+                "stalled_comparisons": "72"
+              },
+              {
+                "compared": "75",
+                "csr": "75",
+                "low_word_wraps": "16",
+                "name": "control-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/control-iverilog-3ca0b94e/control-iverilog-simulate-2e201095/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "472",
+                "delivered": "80",
+                "full_observations": "1472",
+                "name": "cdc-mailbox-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/mailbox-iverilog-6f53dfb7/cdc-mailbox-iverilog-simulate-013ef73a/receipt.json",
+                "simulator": "iverilog",
+                "stalls": "312"
+              },
+              {
+                "compared": "4684",
+                "delivered": "1200",
+                "full_observations": "1625",
+                "name": "cdc-response_fifo-iverilog",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/response_fifo-iverilog-7482badb/cdc-response_fifo-iverilog-simulate-3d755a61/receipt.json",
+                "simulator": "iverilog",
+                "stalls": "2284"
+              },
+              {
+                "compared": "764744",
+                "exhaustive_per_format": "65536",
+                "name": "conversions-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/conversions-verilator-fc904583/conversions-verilator-simulate-05503bfe/receipt.json",
+                "rows": "191186",
+                "simulator": "verilator"
+              },
+              {
+                "add32": "45724",
+                "compared": "189012",
+                "mul16": "45732",
+                "mul32": "45732",
+                "name": "pipelines-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/pipelines-verilator-e5163334/pipelines-verilator-simulate-e9f1e117/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "1450",
+                "dma_transactions": "225",
+                "errors": "41",
+                "name": "sparse-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/sparse-verilator-6745d049/sparse-verilator-simulate-b3be47cc/receipt.json",
+                "simulator": "verilator",
+                "skipped": "1184"
+              },
+              {
+                "compared": "19699",
+                "exhaustive_tree_assignments": "19692",
+                "name": "verifier-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/verifier-verilator-26c19742/verifier-verilator-simulate-a862d3fd/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "533",
+                "name": "masks-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/masks-verilator-69d9f19e/masks-verilator-simulate-1c6ab9c4/receipt.json",
+                "simulator": "verilator",
+                "trees_and_sequence_boundaries": "533"
+              },
+              {
+                "compared": "28672",
+                "lanes": "8",
+                "name": "awq-verilator",
+                "q_values": "16",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/dequant-verilator-355449ae/awq-verilator-simulate-39ba45f9/receipt.json",
+                "scale_classes": "14",
+                "simulator": "verilator",
+                "zero_values": "16"
+              },
+              {
+                "accepted_beats": "130",
+                "compared": "331776",
+                "completed_dots": "14",
+                "live_paths": "256",
+                "name": "mac-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/mac-verilator-46e12795/mac-verilator-simulate-aaa7f5ba/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "3980",
+                "name": "divsqrt-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/divsqrt-verilator-b2ac0143/divsqrt-verilator-simulate-3b3ad739/receipt.json",
+                "requests": "3980",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "1629",
+                "name": "exp-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/exp-verilator-577f2523/exp-verilator-simulate-5998382a/receipt.json",
+                "requests": "1629",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "294",
+                "name": "sincos-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/sincos-verilator-75468b78/sincos-verilator-simulate-f1fb56b4/receipt.json",
+                "requests": "294",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "528",
+                "inputs": "96",
+                "name": "rmsnorm-8-verilator",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/rmsnorm-verilator-1182c392/rmsnorm-8-verilator-simulate-3cebed49/receipt.json",
+                "simulator": "verilator",
+                "stalled_comparisons": "36"
+              },
+              {
+                "compared": "672",
+                "inputs": "96",
+                "name": "swiglu-8-verilator",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/swiglu-verilator-5fa6f7f8/swiglu-8-verilator-simulate-128c305a/receipt.json",
+                "simulator": "verilator",
+                "stalled_comparisons": "72"
+              },
+              {
+                "compared": "75",
+                "csr": "75",
+                "low_word_wraps": "16",
+                "name": "control-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/control-verilator-d30ae9bb/control-verilator-simulate-1f8afcf1/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "472",
+                "delivered": "80",
+                "full_observations": "1472",
+                "name": "cdc-mailbox-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/mailbox-verilator-3c3574cf/cdc-mailbox-verilator-simulate-97856191/receipt.json",
+                "simulator": "verilator",
+                "stalls": "312"
+              },
+              {
+                "compared": "4684",
+                "delivered": "1200",
+                "full_observations": "1625",
+                "name": "cdc-response_fifo-verilator",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/response_fifo-verilator-6e5a236c/cdc-response_fifo-verilator-simulate-06e4c17f/receipt.json",
+                "simulator": "verilator",
+                "stalls": "2284"
+              },
+              {
+                "cases": [
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-layers",
+                    "parameters": {
+                      "NUM_LAYERS": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-layers-diagnostic-fd114e03/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-layers",
+                    "parameters": {
+                      "NUM_LAYERS": 25
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-layers-diagnostic-5bd6011d/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "hidden-zero",
+                    "parameters": {
+                      "HIDDEN_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/hidden-zero-diagnostic-c5f4ceed/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "hidden-too-large",
+                    "parameters": {
+                      "HIDDEN_SIZE": 904
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/hidden-too-large-diagnostic-a10de7ee/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "hidden-alignment",
+                    "parameters": {
+                      "HIDDEN_SIZE": 9
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/hidden-alignment-diagnostic-f851b3a8/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "intermediate-zero",
+                    "parameters": {
+                      "INTERMEDIATE_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/intermediate-zero-diagnostic-caf7781e/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "intermediate-too-large",
+                    "parameters": {
+                      "INTERMEDIATE_SIZE": 4872
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/intermediate-too-large-diagnostic-6f807ba1/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "intermediate-alignment",
+                    "parameters": {
+                      "INTERMEDIATE_SIZE": 9
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/intermediate-alignment-diagnostic-f9cb7df2/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-query-heads",
+                    "parameters": {
+                      "NUM_Q_HEADS": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-query-heads-diagnostic-0963a9ec/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-query-heads",
+                    "parameters": {
+                      "NUM_Q_HEADS": 15
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-query-heads-diagnostic-8a5ade75/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-kv-heads",
+                    "parameters": {
+                      "NUM_KV_HEADS": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-kv-heads-diagnostic-7211777c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-kv-heads",
+                    "parameters": {
+                      "NUM_KV_HEADS": 3
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-kv-heads-diagnostic-b2d75052/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "odd-head-dimension",
+                    "parameters": {
+                      "HEAD_DIM": 7
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/odd-head-dimension-diagnostic-3829bb0f/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "head-too-small",
+                    "parameters": {
+                      "HEAD_DIM": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/head-too-small-diagnostic-97cfe8b8/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "head-too-large",
+                    "parameters": {
+                      "HEAD_DIM": 66
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/head-too-large-diagnostic-e580fac9/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "query-hidden-mismatch",
+                    "parameters": {
+                      "NUM_Q_HEADS": 2
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/query-hidden-mismatch-diagnostic-bc06ed29/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "gqa-indivisible",
+                    "parameters": {
+                      "HIDDEN_SIZE": 24,
+                      "NUM_KV_HEADS": 2,
+                      "NUM_Q_HEADS": 3
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/gqa-indivisible-diagnostic-bc9a91db/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "kv-width-alignment",
+                    "parameters": {
+                      "HEAD_DIM": 4,
+                      "NUM_Q_HEADS": 2
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/kv-width-alignment-diagnostic-d32b2559/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-group",
+                    "parameters": {
+                      "GROUP_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-group-diagnostic-e7f95833/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "group-too-large",
+                    "parameters": {
+                      "GROUP_SIZE": 9
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/group-too-large-diagnostic-ed6fa430/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "group-hidden-divisibility",
+                    "parameters": {
+                      "GROUP_SIZE": 3,
+                      "INTERMEDIATE_SIZE": 24
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/group-hidden-divisibility-diagnostic-88af3d11/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "group-intermediate-divisibility",
+                    "parameters": {
+                      "GROUP_SIZE": 3,
+                      "HIDDEN_SIZE": 24,
+                      "INTERMEDIATE_SIZE": 8,
+                      "NUM_Q_HEADS": 3
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/group-intermediate-divisibility-diagnostic-f0c68fa3/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-vocabulary",
+                    "parameters": {
+                      "VOCAB_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-vocabulary-diagnostic-33f9cb8b/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-vocabulary",
+                    "parameters": {
+                      "VOCAB_SIZE": 151937
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-vocabulary-diagnostic-23953fe9/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-sequence",
+                    "parameters": {
+                      "MAX_SEQ_LEN": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-sequence-diagnostic-a5e02e71/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-sequence",
+                    "parameters": {
+                      "MAX_SEQ_LEN": 32769
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-sequence-diagnostic-61a668da/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "awq-width",
+                    "parameters": {
+                      "AWQ_BITS": 3
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/awq-width-diagnostic-fc247e9d/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "array-lanes",
+                    "parameters": {
+                      "LANES": 32
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/array-lanes-diagnostic-00b8dd4d/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "array-banks",
+                    "parameters": {
+                      "BANKS": 4
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/array-banks-diagnostic-93489006/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "array-bank-lanes",
+                    "parameters": {
+                      "LANES_PER_BANK": 4
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/array-bank-lanes-diagnostic-23c2408a/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "ddr-width",
+                    "parameters": {
+                      "DDR_WIDTH": 256
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/ddr-width-diagnostic-f38d23ee/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-tile",
+                    "parameters": {
+                      "TILE_BEATS": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-tile-diagnostic-e8e5694c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-tile",
+                    "parameters": {
+                      "TILE_BEATS": 257
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-tile-diagnostic-10b153bb/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-window",
+                    "parameters": {
+                      "KV_WINDOW": 0
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/zero-window-diagnostic-9e11e5f7/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-window",
+                    "parameters": {
+                      "KV_WINDOW": 129
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/excess-window-diagnostic-1dd7aded/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "window-exceeds-sequence",
+                    "parameters": {
+                      "KV_WINDOW": 2,
+                      "MAX_SEQ_LEN": 1
+                    },
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/illegal-parameters-e056f0ef/window-exceeds-sequence-diagnostic-00438b4e/receipt.json"
+                  }
+                ],
+                "name": "illegal-parameters"
+              },
+              {
+                "commits": "2",
+                "compared": "238",
+                "csr": "181",
+                "logits": "7",
+                "name": "top-0-17-verilator",
+                "read_beats": "1134",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compact-top-mode0-0ac1e4bf/top-0-17-verilator-simulate-be18df89/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "14"
+              },
+              {
+                "commits": "2",
+                "compared": "238",
+                "csr": "181",
+                "logits": "7",
+                "name": "top-1-17-verilator",
+                "read_beats": "1134",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compact-top-mode1-250b29a4/top-1-17-verilator-simulate-eae13d89/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "14"
+              },
+              {
+                "commits": "2",
+                "compared": "362",
+                "csr": "307",
+                "logits": "7",
+                "name": "top-2-17-verilator",
+                "read_beats": "1806",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compact-top-mode2-6dfff656/top-2-17-verilator-simulate-bfb51bce/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "14"
+              },
+              {
+                "commits": "0",
+                "compared": "182",
+                "csr": "173",
+                "logits": "1",
+                "name": "top-0-17-verilator",
+                "read_beats": "276",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/singleton-functional-e5294a65/top-0-17-verilator-simulate-305d97e0/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "2"
+              },
+              {
+                "commits": "2",
+                "compared": "483",
+                "csr": "307",
+                "logits": "31",
+                "name": "top-0-43-verilator",
+                "read_beats": "6622",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/gqa-seed43-92b48873/top-0-43-verilator-simulate-48f98206/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "28"
+              },
+              {
+                "commits": "1",
+                "compared": "956",
+                "csr": "303",
+                "logits": "257",
+                "name": "top-0-89-verilator",
+                "read_beats": "9786",
+                "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/medium-seed89-630a4e87/top-0-89-verilator-simulate-e36cd7fa/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "20"
+              },
+              {
+                "compared_logits": 16,
+                "mode": 0,
+                "name": "compatibility",
+                "runs": [
+                  {
+                    "compared": "162",
+                    "name": "compatibility-parent",
+                    "outputs": "16",
+                    "read_beats": "214",
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compatibility-0-88d573c1/compatibility-parent-simulate-0e7b564e/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  },
+                  {
+                    "compared": "162",
+                    "name": "compatibility-candidate",
+                    "outputs": "16",
+                    "read_beats": "214",
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compatibility-0-88d573c1/compatibility-candidate-simulate-48ae7952/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  }
+                ],
+                "seed": 17,
+                "tokens": 2,
+                "top": "anvil_q1_ht_top"
+              },
+              {
+                "compared_logits": 16,
+                "mode": 2,
+                "name": "compatibility",
+                "runs": [
+                  {
+                    "compared": "274",
+                    "name": "compatibility-parent",
+                    "outputs": "16",
+                    "read_beats": "522",
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compatibility-2-99135556/compatibility-parent-simulate-7bc6a32f/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  },
+                  {
+                    "compared": "274",
+                    "name": "compatibility-candidate",
+                    "outputs": "16",
+                    "read_beats": "522",
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compatibility-2-99135556/compatibility-candidate-simulate-36ee96a1/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  }
+                ],
+                "seed": 17,
+                "tokens": 2,
+                "top": "anvil_q1_ht_top"
+              },
+              {
+                "compared_logits": 16,
+                "name": "logical-compatibility",
+                "runs": [
+                  {
+                    "compared": "16",
+                    "name": "logical-parent",
+                    "outputs": "16",
+                    "reads": "4696",
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compatibility-entry-alias-55ff7186/logical-parent-simulate-f1f63798/receipt.json",
+                    "simulator": "verilator",
+                    "writes": "304"
+                  },
+                  {
+                    "compared": "16",
+                    "name": "logical-candidate",
+                    "outputs": "16",
+                    "reads": "4696",
+                    "receipt": "evidence/behavior-20261031T181320Z-7dc4c81f/compatibility-entry-alias-55ff7186/logical-candidate-simulate-27ec6fb3/receipt.json",
+                    "simulator": "verilator",
+                    "writes": "304"
+                  }
+                ],
+                "tokens": 2
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 2032.911527751945,
+            "end_time": "2026-10-31T18:47:13.853286+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "62a74269a47a40973b7d79ba37b3becc11b6fee04efdd2eccf101d37f6aebd65",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "23a974d21c3e7a3f13083edf959bcb2d3c89a841316ec043caffc0069607a88d",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "2b92e4189507e19116083544e6158b588831c23b8c0dafdbcfbdfcaeab0824de",
+              "tests/verify.py": "b547b5114b59c71c5a8d9f9ca637cce745d8e2c838de3c114b24fc28dd52b1cc"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-10-31T18:13:20.941769+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "behavior",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    },
+    "check:defect-sensitivity": {
+      "attempt_id": 10,
+      "duration_s": 198.42574877501465,
+      "stdout_preview": "progress: mac-verilator-compile running\nprogress: mac-verilator-compile running\n{\"status\": \"passed\", \"receipt\": \"evidence/mutations-20261031T184716Z-c1b820a7/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/mutations-20261031T184716Z-c1b820a7/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "mutations"
+            ],
+            "checks": [
+              {
+                "after_sha256": "5f8f6cadb266815dd6b34ab03d45c9d5d82b78c89da3db3bdbc8423bb0bc8431",
+                "before_sha256": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261031T184716Z-c1b820a7/multiply-rounding-0756e528/rtl/anvil_q1_ht2_fp16_mul.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "MUL16",
+                "name": "multiply-rounding",
+                "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/multiply-rounding-0756e528/pipelines-verilator-simulate-287b2ef6/receipt.json",
+                "unmutated_comparison": {
+                  "add32": "45724",
+                  "compared": "189012",
+                  "mul16": "45732",
+                  "mul32": "45732",
+                  "name": "pipelines-verilator",
+                  "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/multiply-rounding-0756e528/baseline-904ac098/pipelines-verilator-simulate-c0453a24/receipt.json",
+                  "simulator": "verilator"
+                }
+              },
+              {
+                "after_sha256": "c9393a9ee20d50a2ce40c0db0f72270a081051f42ca9b5dfc4cfc0247fbb8359",
+                "before_sha256": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261031T184716Z-c1b820a7/awq-lane-order-4a505eb5/rtl/anvil_q1_ht2_dequant.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "AWQ",
+                "name": "awq-lane-order",
+                "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/awq-lane-order-4a505eb5/awq-verilator-simulate-93a6f3a5/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "28672",
+                  "lanes": "8",
+                  "name": "awq-verilator",
+                  "q_values": "16",
+                  "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/awq-lane-order-4a505eb5/baseline-6efa44b3/awq-verilator-simulate-6b80a7ff/receipt.json",
+                  "scale_classes": "14",
+                  "simulator": "verilator",
+                  "zero_values": "16"
+                }
+              },
+              {
+                "after_sha256": "52dc6990a6068926960706caf7aaa686286bf0be5cafde05458e8a48692c3fa1",
+                "before_sha256": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261031T184716Z-c1b820a7/slot-broadcast-008eb98f/rtl/anvil_q1_ht2_tile_batch_mac.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "MAC_NUMERIC",
+                "name": "slot-broadcast",
+                "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/slot-broadcast-008eb98f/mac-verilator-simulate-9a85f9d7/receipt.json",
+                "unmutated_comparison": {
+                  "accepted_beats": "130",
+                  "compared": "331776",
+                  "completed_dots": "14",
+                  "live_paths": "256",
+                  "name": "mac-verilator",
+                  "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/slot-broadcast-008eb98f/baseline-a40db344/mac-verilator-simulate-f1111804/receipt.json",
+                  "simulator": "verilator"
+                }
+              },
+              {
+                "after_sha256": "c66e89f2270754190db600994dfc0e3f918154a0e09235e4ef4dbe6955163665",
+                "before_sha256": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261031T184716Z-c1b820a7/sparse-cross-slot-1b22f2e2/rtl/anvil_q1_ht2_sparse_dma.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": [
+                  "SPARSE_DECISION",
+                  "DMA_REQUEST"
+                ],
+                "name": "sparse-cross-slot",
+                "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/sparse-cross-slot-1b22f2e2/sparse-verilator-simulate-80552edc/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "1450",
+                  "dma_transactions": "225",
+                  "errors": "41",
+                  "name": "sparse-verilator",
+                  "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/sparse-cross-slot-1b22f2e2/baseline-8a34b1bc/sparse-verilator-simulate-4c3faab3/receipt.json",
+                  "simulator": "verilator",
+                  "skipped": "1184"
+                }
+              },
+              {
+                "after_sha256": "00bcd7ea1a9738178d509d6c6c3f923d66b82c08c9fc07155f66d5c08ae3c495",
+                "before_sha256": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261031T184716Z-c1b820a7/causal-sibling-leakage-6218f911/rtl/anvil_q1_ht2_tree_mask.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "CAUSAL_MASK",
+                "name": "causal-sibling-leakage",
+                "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/causal-sibling-leakage-6218f911/masks-verilator-simulate-ae7d0ac4/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "533",
+                  "name": "masks-verilator",
+                  "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/causal-sibling-leakage-6218f911/baseline-ea934a4f/masks-verilator-simulate-04f754ff/receipt.json",
+                  "simulator": "verilator",
+                  "trees_and_sequence_boundaries": "533"
+                }
+              },
+              {
+                "after_sha256": "f6ce83b98d3ca12bbea58bad0fcad0401b86b5ffa319d720104ec9a4e10dd4b2",
+                "before_sha256": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261031T184716Z-c1b820a7/speculative-mismatch-815321ca/rtl/anvil_q1_ht2_spec_verifier.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "TREE_WALK",
+                "name": "speculative-mismatch",
+                "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/speculative-mismatch-815321ca/verifier-verilator-simulate-51fce292/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "19699",
+                  "exhaustive_tree_assignments": "19692",
+                  "name": "verifier-verilator",
+                  "receipt": "evidence/mutations-20261031T184716Z-c1b820a7/speculative-mismatch-815321ca/baseline-dc955a8c/verifier-verilator-simulate-d146fa62/receipt.json",
+                  "simulator": "verilator"
+                }
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 198.18594732088968,
+            "end_time": "2026-10-31T18:50:34.918755+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "62a74269a47a40973b7d79ba37b3becc11b6fee04efdd2eccf101d37f6aebd65",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "23a974d21c3e7a3f13083edf959bcb2d3c89a841316ec043caffc0069607a88d",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "2b92e4189507e19116083544e6158b588831c23b8c0dafdbcfbdfcaeab0824de",
+              "tests/verify.py": "b547b5114b59c71c5a8d9f9ca637cce745d8e2c838de3c114b24fc28dd52b1cc"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-10-31T18:47:16.732798+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "mutations",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    },
+    "check:synthesis": {
+      "attempt_id": 11,
+      "duration_s": 226.0502355080098,
+      "stdout_preview": "progress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/synthesis-20261031T185038Z-e3eaebc3/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/synthesis-20261031T185038Z-e3eaebc3/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "synthesis"
+            ],
+            "checks": [
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp16_mul": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 9,
+                  "$adff": 10,
+                  "$and": 1,
+                  "$eq": 8,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 12,
+                  "$logic_not": 11,
+                  "$logic_or": 6,
+                  "$lt": 3,
+                  "$mul": 1,
+                  "$mux": 85,
+                  "$neg": 1,
+                  "$reduce_bool": 4,
+                  "$reduce_or": 9,
+                  "$shiftx": 1,
+                  "$shl": 1,
+                  "$shr": 2,
+                  "$sub": 8,
+                  "$xor": 2
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp16_mul-aee72c44/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp16_mul-synthesis-f159292d/receipt.json",
+                "registered_cells": 10,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp16_mul",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_add": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 9,
+                  "$adff": 17,
+                  "$and": 2,
+                  "$ge": 2,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 7,
+                  "$logic_not": 4,
+                  "$logic_or": 5,
+                  "$lt": 3,
+                  "$mux": 93,
+                  "$ne": 2,
+                  "$neg": 1,
+                  "$or": 1,
+                  "$reduce_and": 7,
+                  "$reduce_bool": 1,
+                  "$reduce_or": 11,
+                  "$shiftx": 1,
+                  "$shl": 1,
+                  "$shr": 4,
+                  "$sub": 8
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_add-cd83f57d/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_add-synthesis-ee2bd5f2/receipt.json",
+                "registered_cells": 17,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_add",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_mul": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 10,
+                  "$adff": 9,
+                  "$and": 1,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 6,
+                  "$logic_not": 5,
+                  "$logic_or": 6,
+                  "$lt": 3,
+                  "$mul": 1,
+                  "$mux": 76,
+                  "$neg": 1,
+                  "$reduce_and": 6,
+                  "$reduce_or": 10,
+                  "$shiftx": 1,
+                  "$shl": 1,
+                  "$shr": 2,
+                  "$sub": 6,
+                  "$xor": 2
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_mul-c24559a7/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_mul-synthesis-9999a760/receipt.json",
+                "registered_cells": 9,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_mul",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_divsqrt": 1,
+                  "anvil_q1_ht2_reset_sync": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 18,
+                  "$adff": 14,
+                  "$and": 1,
+                  "$eq": 21,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 15,
+                  "$logic_not": 23,
+                  "$logic_or": 13,
+                  "$lt": 3,
+                  "$mux": 149,
+                  "$neg": 1,
+                  "$pmux": 9,
+                  "$reduce_and": 6,
+                  "$reduce_or": 20,
+                  "$shiftx": 1,
+                  "$shl": 3,
+                  "$shr": 2,
+                  "$sub": 16,
+                  "$xor": 3
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_divsqrt-59239b10/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_divsqrt-synthesis-e4741eec/receipt.json",
+                "registered_cells": 14,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_divsqrt",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_add": 1,
+                  "anvil_q1_ht2_fp32_exp": 1,
+                  "anvil_q1_ht2_fp32_mul": 1,
+                  "anvil_q1_ht2_reset_sync": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 37,
+                  "$adff": 38,
+                  "$and": 6,
+                  "$eq": 62,
+                  "$ge": 4,
+                  "$gt": 18,
+                  "$le": 10,
+                  "$logic_and": 27,
+                  "$logic_not": 26,
+                  "$logic_or": 14,
+                  "$lt": 13,
+                  "$mem_v2": 1,
+                  "$mul": 1,
+                  "$mux": 367,
+                  "$ne": 2,
+                  "$neg": 6,
+                  "$not": 2,
+                  "$or": 1,
+                  "$pmux": 16,
+                  "$reduce_and": 14,
+                  "$reduce_bool": 1,
+                  "$reduce_or": 36,
+                  "$shiftx": 5,
+                  "$shl": 5,
+                  "$shr": 12,
+                  "$sub": 26,
+                  "$xor": 2
+                },
+                "memory_bits": 464,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_exp-d5506fda/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_exp-synthesis-10553148/receipt.json",
+                "registered_cells": 38,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_exp",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_add": 1,
+                  "anvil_q1_ht2_fp32_mul": 1,
+                  "anvil_q1_ht2_fp32_sincos": 1,
+                  "anvil_q1_ht2_reset_sync": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 50,
+                  "$adff": 66,
+                  "$and": 13,
+                  "$eq": 178,
+                  "$ge": 2,
+                  "$gt": 18,
+                  "$le": 12,
+                  "$logic_and": 26,
+                  "$logic_not": 41,
+                  "$logic_or": 19,
+                  "$lt": 16,
+                  "$mem_v2": 2,
+                  "$mul": 1,
+                  "$mux": 568,
+                  "$ne": 3,
+                  "$neg": 20,
+                  "$not": 12,
+                  "$or": 13,
+                  "$pmux": 38,
+                  "$reduce_and": 14,
+                  "$reduce_bool": 5,
+                  "$reduce_or": 35,
+                  "$shift": 16,
+                  "$shiftx": 24,
+                  "$shl": 8,
+                  "$shr": 11,
+                  "$sub": 34,
+                  "$xor": 3
+                },
+                "memory_bits": 976,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_sincos-7420f5f2/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_fp32_sincos-synthesis-d9fc892d/receipt.json",
+                "registered_cells": 66,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_sincos",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp16_mul": 256,
+                  "anvil_q1_ht2_fp32_add": 256,
+                  "anvil_q1_ht2_mac_lane": 256,
+                  "anvil_q1_ht2_reset_sync": 1,
+                  "anvil_q1_ht2_tile_batch_mac": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 4611,
+                  "$adff": 9228,
+                  "$and": 768,
+                  "$eq": 3872,
+                  "$ge": 512,
+                  "$gt": 2048,
+                  "$le": 1024,
+                  "$logic_and": 8208,
+                  "$logic_not": 4878,
+                  "$logic_or": 4353,
+                  "$lt": 1536,
+                  "$mul": 256,
+                  "$mux": 55593,
+                  "$ne": 513,
+                  "$neg": 512,
+                  "$or": 256,
+                  "$pmux": 5,
+                  "$reduce_and": 2560,
+                  "$reduce_bool": 1280,
+                  "$reduce_or": 5121,
+                  "$shiftx": 512,
+                  "$shl": 512,
+                  "$shr": 1536,
+                  "$sub": 4096,
+                  "$xor": 512
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_tile_batch_mac-0b365f03/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_tile_batch_mac-synthesis-49150788/receipt.json",
+                "registered_cells": 9228,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_tile_batch_mac",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_reset_sync": 1,
+                  "anvil_q1_ht2_sparse_dma": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 1,
+                  "$adff": 9,
+                  "$eq": 12,
+                  "$gt": 5,
+                  "$logic_and": 11,
+                  "$logic_not": 12,
+                  "$logic_or": 6,
+                  "$mux": 42,
+                  "$pmux": 3,
+                  "$reduce_bool": 2
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_sparse_dma-3dc5f313/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_sparse_dma-synthesis-d30aea87/receipt.json",
+                "registered_cells": 9,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_sparse_dma",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_reset_sync": 1,
+                  "anvil_q1_ht2_spec_verifier": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 3,
+                  "$adff": 11,
+                  "$and": 3,
+                  "$eq": 42,
+                  "$ge": 4,
+                  "$gt": 1,
+                  "$logic_and": 58,
+                  "$logic_not": 24,
+                  "$logic_or": 1,
+                  "$lt": 20,
+                  "$mux": 94,
+                  "$ne": 4,
+                  "$neg": 7,
+                  "$not": 3,
+                  "$or": 3,
+                  "$pmux": 5,
+                  "$shift": 7,
+                  "$shiftx": 3
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_spec_verifier-de7bc205/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_spec_verifier-synthesis-3e8d7b79/receipt.json",
+                "registered_cells": 11,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_spec_verifier",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_attention": 1,
+                  "anvil_q1_ht2_burst_reader": 4,
+                  "anvil_q1_ht2_control": 1,
+                  "anvil_q1_ht2_counter_cdc": 1,
+                  "anvil_q1_ht2_decoder": 1,
+                  "anvil_q1_ht2_dequant": 64,
+                  "anvil_q1_ht2_descriptors": 1,
+                  "anvil_q1_ht2_dma_mux": 2,
+                  "anvil_q1_ht2_execution": 1,
+                  "anvil_q1_ht2_fp16_mul": 256,
+                  "anvil_q1_ht2_fp32_add": 356,
+                  "anvil_q1_ht2_fp32_divsqrt": 40,
+                  "anvil_q1_ht2_fp32_exp": 36,
+                  "anvil_q1_ht2_fp32_mul": 164,
+                  "anvil_q1_ht2_fp32_sincos": 12,
+                  "anvil_q1_ht2_image_loader": 1,
+                  "anvil_q1_ht2_kv": 1,
+                  "anvil_q1_ht2_kv_reader": 1,
+                  "anvil_q1_ht2_kv_writer": 1,
+                  "anvil_q1_ht2_mac_lane": 256,
+                  "anvil_q1_ht2_mailbox": 8,
+                  "anvil_q1_ht2_panel_prefetch": 1,
+                  "anvil_q1_ht2_projection": 1,
+                  "anvil_q1_ht2_provisional_kv": 1,
+                  "anvil_q1_ht2_reset_sync": 215,
+                  "anvil_q1_ht2_response_fifo": 1,
+                  "anvil_q1_ht2_rmsnorm": 1,
+                  "anvil_q1_ht2_rope": 2,
+                  "anvil_q1_ht2_rope_frequency": 2,
+                  "anvil_q1_ht2_scalar": 4,
+                  "anvil_q1_ht2_sparse_dma": 1,
+                  "anvil_q1_ht2_spec_verifier": 1,
+                  "anvil_q1_ht2_swiglu": 1,
+                  "anvil_q1_ht2_swiglu_engine": 8,
+                  "anvil_q1_ht2_tile_batch_mac": 1,
+                  "anvil_q1_ht2_top": 1,
+                  "anvil_q1_ht2_transport": 1,
+                  "anvil_q1_ht2_tree_mask": 1
+                },
+                "initial_state": [
+                  {
+                    "init": "0000000000",
+                    "module": "anvil_q1_ht2_transport",
+                    "wire": "bus_ledger[0]"
+                  }
+                ],
+                "leaf_cells": {
+                  "$add": 11688,
+                  "$adff": 14967,
+                  "$and": 1754,
+                  "$dff": 43,
+                  "$eq": 13408,
+                  "$ge": 881,
+                  "$gt": 5021,
+                  "$le": 2567,
+                  "$logic_and": 14372,
+                  "$logic_not": 10002,
+                  "$logic_or": 7729,
+                  "$lt": 3830,
+                  "$mem_v2": 86,
+                  "$mul": 435,
+                  "$mux": 136541,
+                  "$ne": 864,
+                  "$neg": 1586,
+                  "$not": 277,
+                  "$or": 598,
+                  "$pmux": 1736,
+                  "$reduce_and": 5324,
+                  "$reduce_bool": 1766,
+                  "$reduce_or": 11214,
+                  "$shift": 233,
+                  "$shiftx": 1687,
+                  "$shl": 1385,
+                  "$shr": 3361,
+                  "$sub": 8726,
+                  "$xor": 974
+                },
+                "memory_bits": 19007744,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_top-2703106b/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht2_top-synthesis-d135d79d/receipt.json",
+                "registered_cells": 15010,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_top",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht_address": 1,
+                  "anvil_q1_ht_avalon_mux": 1,
+                  "anvil_q1_ht_cdc_mailbox": 8,
+                  "anvil_q1_ht_ddr_scalar": 1,
+                  "anvil_q1_ht_decoder": 1,
+                  "anvil_q1_ht_dequant": 64,
+                  "anvil_q1_ht_descriptors": 1,
+                  "anvil_q1_ht_divide": 2,
+                  "anvil_q1_ht_image_guard": 1,
+                  "anvil_q1_ht_isqrt": 2,
+                  "anvil_q1_ht_kernel": 1,
+                  "anvil_q1_ht_kv_window": 1,
+                  "anvil_q1_ht_logical_memory": 1,
+                  "anvil_q1_ht_mac_lane": 64,
+                  "anvil_q1_ht_math": 2,
+                  "anvil_q1_ht_nonlinear": 1,
+                  "anvil_q1_ht_projection": 1,
+                  "anvil_q1_ht_reset_sync": 28,
+                  "anvil_q1_ht_tensor_array": 1,
+                  "anvil_q1_ht_tile_bank": 2,
+                  "anvil_q1_ht_top": 1,
+                  "anvil_q1_ht_transaction_mux": 2,
+                  "anvil_q1_ht_weight_dma": 1,
+                  "anvil_q1_ht_weight_stream": 1,
+                  "anvil_q1_ht_weight_tiles": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 1134,
+                  "$adff": 2404,
+                  "$and": 605,
+                  "$dff": 10,
+                  "$eq": 3077,
+                  "$ge": 367,
+                  "$gt": 350,
+                  "$le": 2,
+                  "$logic_and": 1326,
+                  "$logic_not": 1106,
+                  "$logic_or": 388,
+                  "$lt": 103,
+                  "$mem_v2": 10,
+                  "$mul": 336,
+                  "$mux": 7960,
+                  "$ne": 121,
+                  "$neg": 566,
+                  "$not": 46,
+                  "$or": 491,
+                  "$pmux": 356,
+                  "$reduce_and": 11,
+                  "$reduce_bool": 162,
+                  "$reduce_or": 130,
+                  "$shift": 44,
+                  "$shiftx": 60,
+                  "$shl": 405,
+                  "$shr": 330,
+                  "$sshr": 4,
+                  "$sub": 482,
+                  "$xor": 384
+                },
+                "memory_bits": 29212160,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht_top-d9795c67/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_ht_top-synthesis-e22014ba/receipt.json",
+                "registered_cells": 2414,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht_top",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht_compat_projection": 1,
+                  "anvil_q1_ht_decoder": 1,
+                  "anvil_q1_ht_dequant": 1,
+                  "anvil_q1_ht_divide": 2,
+                  "anvil_q1_ht_isqrt": 2,
+                  "anvil_q1_ht_kernel": 1,
+                  "anvil_q1_ht_mac_lane": 64,
+                  "anvil_q1_ht_math": 2,
+                  "anvil_q1_ht_nonlinear": 1,
+                  "anvil_q1_ht_reset_sync": 2,
+                  "anvil_q1_ht_tensor_array": 1,
+                  "anvil_q1_top": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 867,
+                  "$adff": 1469,
+                  "$and": 596,
+                  "$eq": 2038,
+                  "$ge": 20,
+                  "$gt": 139,
+                  "$logic_and": 464,
+                  "$logic_not": 257,
+                  "$logic_or": 47,
+                  "$lt": 16,
+                  "$mul": 260,
+                  "$mux": 3290,
+                  "$ne": 82,
+                  "$neg": 53,
+                  "$not": 24,
+                  "$or": 404,
+                  "$pmux": 259,
+                  "$reduce_and": 1,
+                  "$reduce_bool": 71,
+                  "$reduce_or": 47,
+                  "$shift": 32,
+                  "$shiftx": 41,
+                  "$shl": 20,
+                  "$shr": 10,
+                  "$sshr": 4,
+                  "$sub": 27,
+                  "$xor": 384
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_top-57eb1636/netlist.json",
+                "receipt": "evidence/synthesis-20261031T185038Z-e3eaebc3/anvil_q1_top-synthesis-ea0a1f71/receipt.json",
+                "registered_cells": 1469,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_top",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 225.7824568171054,
+            "end_time": "2026-10-31T18:54:23.898037+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "62a74269a47a40973b7d79ba37b3becc11b6fee04efdd2eccf101d37f6aebd65",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "23a974d21c3e7a3f13083edf959bcb2d3c89a841316ec043caffc0069607a88d",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "2b92e4189507e19116083544e6158b588831c23b8c0dafdbcfbdfcaeab0824de",
+              "tests/verify.py": "b547b5114b59c71c5a8d9f9ca637cce745d8e2c838de3c114b24fc28dd52b1cc"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-10-31T18:50:38.115597+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "synthesis",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    }
+  }
+}
