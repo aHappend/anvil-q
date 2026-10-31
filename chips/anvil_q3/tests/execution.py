@@ -259,7 +259,7 @@ class Run:
                 "in-flight verification evidence lost; refusing to recreate: "
                 + ", ".join(missing))
 
-    def parallel(self, jobs):
+    def parallel(self, jobs, *, max_workers=None):
         """Observe completion order; return results in the unchanged inventory order."""
         jobs = list(jobs)
         order = list(range(len(jobs)))
@@ -270,7 +270,9 @@ class Run:
             write_json(self.path / "workload-inventory.json", [
                 {"id": job.id, "workload": job.descriptor, "scheduling_cost": job.cost}
                 for job in jobs if isinstance(job, Workload)])
-        workers = self.resources["workers"]
+        if max_workers is not None and (not isinstance(max_workers, int) or max_workers < 1):
+            raise ValueError("parallel worker bound must be a positive integer")
+        workers = min(self.resources["workers"], max_workers or self.resources["workers"])
         pool = ThreadPoolExecutor(max_workers=workers)
         pending = {}
         remaining = iter(order)

@@ -4,6 +4,7 @@ from dataclasses import asdict
 import json
 import re
 import shutil
+import time
 
 from execution import ROOT, VERILATOR_UNROLL, write_json
 from parameters import positive_cases, negative_cases, legal, leaf_cases, leaf_legal, baseline_geometries
@@ -64,158 +65,21 @@ def timing_lint(run):
             "scope": "forbidden-structure lint; does not establish physical timing"}
 
 
-def structure(run, *, simulators=("iverilog", "verilator"), include_negative=True,
-              include_timing_lint=True, selected_cases=None):
-    from preparation_checks import preparation_dispatch_sensitivity
-    from harness_checks import (board_prerequisite_sensitivity, decoder_trace_sensitivity,
-                                hardware_metrics, inflight_tool_receipt,
-                                physical_inventory_sensitivity, fitted_summary_sensitivity)
-    from public_asset_checks import public_asset_checks
-    from compiler_admission_checks import admission_sensitivity, clean_worker_sensitivity
-    from startup_retention_checks import retention_sensitivity
+def startup_matrix(run, cases, sources, simulators, output):
+    """Two independent cold compilers at most; every case still executes separately."""
+    completed = {}
+    progress = time.monotonic()
 
-    cases = [(label, g, True) for label, g in positive_cases()]
-    if include_negative:
-        cases += [(label, g, False) for label, g in negative_cases()]
-    if selected_cases is not None:
-        cases = selected_cases
-    leaf_count = sum(include_negative or expected for _, _, expected in leaf_cases())
-    run.plan_startup_storage(
-        (len(cases) + leaf_count + len(list(baseline_geometries()))) * len(simulators))
-    results = []
-    lint = {"assignments": sequential_lint(), "hardware_metric_checker": hardware_metrics(),
-            "compiler_admission_checker": admission_sensitivity(run.path),
-            "compiler_clean_worker_checker": clean_worker_sensitivity(run.path),
-            "startup_retention_checker": retention_sensitivity(run),
-            "preparation_dispatch_checker": preparation_dispatch_sensitivity(),
-            "public_asset_checker": public_asset_checks(run),
-            "board_prerequisite_checker": board_prerequisite_sensitivity(run),
-            "physical_inventory_checker": physical_inventory_sensitivity(run),
-            "fitted_summary_checker": fitted_summary_sensitivity(run),
-            "decoder_trace_checker": decoder_trace_sensitivity(run),
-            "inflight_tool_receipt": inflight_tool_receipt(run)}
-    if include_timing_lint:
-        lint["timing"] = timing_lint(run)
-    write_json(run.path / "parameter-manifest.json",
-               [{"label": label, "parameters": asdict(g), "legal": expected}
-                for label, g, expected in cases])
-    rtl = [str(p.relative_to(ROOT)) for p in sorted((ROOT / "rtl").glob("*.sv"))]
-    for number, (label, g, expected) in enumerate(cases):
-        if legal(g) != expected:
-            raise AssertionError(f"verification geometry error: {label} {asdict(g)}")
-        folder = run.path / f"geometry-{number:04d}"
+    def execute(number, case):
+        nonlocal progress
+        folder = run.path / case["folder"]
         folder.mkdir()
-        connections = ".clk(1'b0),.rst_n(1'b0),.cancel(1'b0),.token_valid(1'b0)"
-        overrides = {"PROFILE": g.PROFILE} if label == "official-default" else asdict(g)
-        parameters = ",".join(f".{k}({sv_literal(v)})" for k, v in overrides.items())
-        tb = folder / "startup.sv"
-        tb.write_text("`timescale 1ns/1ps\nmodule parameter_startup;\n"
-                      f"anvil_q3_top #({parameters}) accelerator ({connections});\n"
-                      'initial begin #10; $display("STARTUP_COMPLETE"); $finish; end\nendmodule\n')
-        for simulator in simulators:
-            if simulator == "iverilog":
-                binary = folder / "startup.vvp"
-                run.tool(["iverilog", "-g2012", "-Wall", "-s", "parameter_startup",
-                          "-o", run.rel(binary), *rtl, run.rel(tb)],
-                         build_class="icarus-startup")
-                argv = ["vvp", run.rel(binary)]
-            else:
-                obj = folder / "obj"
-                run.tool(["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
-                          *VERILATOR_UNROLL,
-                          "--top-module", "parameter_startup", "--Mdir", run.rel(obj),
-                          "-o", "startup", *rtl, run.rel(tb)],
-                         build_class="verilator-startup")
-                binary = obj / "startup"
-                argv = [run.rel(binary)]
-            text, record = run.tool(argv, expected=(0,) if expected else tuple(range(-128, 129)))
-            if expected:
-                if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
-                    raise AssertionError("positive startup failed " + label)
-            elif record["exit_code"] == 0 or "PARAMETER ERROR" not in text:
-                raise AssertionError("illegal case did not diagnose and fail " + label)
-            results.append({"label": label, "parameters": asdict(g), "simulator": simulator,
-                            "overrides": overrides,
-                            "expected_legal": expected, "observed_exit": record["exit_code"],
-                            "stdout": record["stdout"]})
-            write_json(run.path / "parameter-results.json", results)
-            run.compact_startup(binary)
-    leaves = leaf_structure(run, simulators=simulators, include_negative=include_negative)
-    parents = parent_structure(run, simulators=simulators)
-    return {"parameters": results, "leaf_parameters": leaves, "supplied_parameters": parents, "lint": lint,
-            "scope": "elaboration/diagnostics only; no functional or timing certification"}
-
-
-def parent_structure(run, *, simulators=("iverilog", "verilator")):
-    cases = list(baseline_geometries())
-    if not hasattr(run, "startup_storage"):
-        run.plan_startup_storage(len(cases) * len(simulators))
-    write_json(run.path / "supplied-parameter-manifest.json",
-               [{"implementation": implementation, "parameters": asdict(g)}
-                for implementation, g in cases])
-    sources = [str(p.relative_to(ROOT)) for p in sorted(
-        (ROOT / "anvil_q2_reference/rtl").glob("*.sv"))]
-    results = []
-    for number, (implementation, g) in enumerate(cases):
-        if not legal(g):
-            raise AssertionError("illegal supplied-baseline geometry")
-        parameters = {key: value for key, value in asdict(g).items()
-                      if key not in ("PROFILE", "INT4_ASYM", "TILE_K", "TILE_ROWS")}
-        parameters["COMPAT_Q1"] = int(implementation == "q1-wrapper")
-        folder = run.path / f"supplied-geometry-{number:04d}"
-        folder.mkdir()
-        overrides = ",".join(f".{key}({sv_literal(value)})" for key, value in parameters.items())
-        tb = folder / "startup.sv"
-        tb.write_text("`timescale 1ns/1ps\nmodule parameter_startup;\n"
-                      f"anvil_q2_top #({overrides}) accelerator "
-                      "(.clk(1'b0),.rst_n(1'b0),.cancel(1'b0),.token_valid(1'b0));\n"
-                      'initial begin #10; $display("STARTUP_COMPLETE"); $finish; end\nendmodule\n')
-        for simulator in simulators:
-            if simulator == "iverilog":
-                binary = folder / "startup.vvp"
-                run.tool(["iverilog", "-g2012", "-Wall", "-s", "parameter_startup",
-                          "-o", run.rel(binary), *sources, run.rel(tb)],
-                         build_class="icarus-startup")
-                command = ["vvp", run.rel(binary)]
-            else:
-                obj = folder / "obj"
-                run.tool(["verilator", "--binary", "--timing", "--assert", "-Wno-fatal",
-                          *VERILATOR_UNROLL, "--top-module", "parameter_startup",
-                          "--Mdir", run.rel(obj), "-o", "startup", *sources, run.rel(tb)],
-                         build_class="verilator-startup")
-                binary = obj / "startup"
-                command = [run.rel(binary)]
-            text, receipt = run.tool(command)
-            if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
-                raise AssertionError("supplied-baseline positive startup failed")
-            results.append({"implementation": implementation, "parameters": parameters,
-                            "simulator": simulator, "stdout": receipt["stdout"],
-                            "independent_q1": False})
-            write_json(run.path / "supplied-parameter-results.json", results)
-            run.compact_startup(binary)
-    return results
-
-
-def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negative=True):
-    cases = [(module, parameters, expected) for module, parameters, expected in leaf_cases()
-             if include_negative or expected]
-    if not hasattr(run, "startup_storage"):
-        run.plan_startup_storage(len(cases) * len(simulators))
-    write_json(run.path / "leaf-parameter-manifest.json",
-               [{"module": module, "parameters": p, "legal": expected}
-                for module, p, expected in cases])
-    sources = [str(p.relative_to(ROOT)) for p in sorted((ROOT / "rtl").glob("*.sv"))]
-    results = []
-    for number, (module, parameters, expected) in enumerate(cases):
-        if leaf_legal(module, parameters) != expected:
-            raise AssertionError("leaf legality manifest disagreement")
-        folder = run.path / f"leaf-geometry-{number:04d}"
-        folder.mkdir()
-        overrides = ",".join(f".{key}({sv_literal(value)})" for key, value in parameters.items())
         tb = folder / "startup.sv"
         tb.write_text("`timescale 1ns/1ps\nmodule parameter_startup;\n" +
-                      f"{module} #({overrides}) accelerator (.clk(1'b0),.rst_n(1'b0),.flush(1'b0));\n" +
-                      'initial begin #10; $display("STARTUP_COMPLETE"); $finish; end\nendmodule\n')
+                      case["instance"] +
+                      '\ninitial begin #10; $display("STARTUP_COMPLETE"); $finish; end\nendmodule\n')
+        results = []
+        expected = case["expected"]
         for simulator in simulators:
             if simulator == "iverilog":
                 binary = folder / "startup.vvp"
@@ -234,12 +98,128 @@ def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negativ
             text, receipt = run.tool(command, expected=(0,) if expected else tuple(range(-128, 129)))
             if expected:
                 if "PARAMETER ERROR" in text or text.count("STARTUP_COMPLETE") != 1:
-                    raise AssertionError("leaf legal startup incomplete")
+                    raise AssertionError("legal startup incomplete: " + case["folder"])
             elif receipt["exit_code"] == 0 or "PARAMETER ERROR" not in text:
-                raise AssertionError("leaf illegal startup did not explicitly reject")
-            results.append({"module": module, "parameters": parameters, "expected_legal": expected,
-                            "simulator": simulator, "observed_exit": receipt["exit_code"],
-                            "stdout": receipt["stdout"]})
-            write_json(run.path / "leaf-parameter-results.json", results)
+                raise AssertionError("illegal startup did not explicitly reject: " + case["folder"])
+            result = {**case["metadata"], "simulator": simulator, "stdout": receipt["stdout"]}
+            if "independent_q1" not in result:
+                result["observed_exit"] = receipt["exit_code"]
+            results.append(result)
+            with run.lock:
+                completed[number] = list(results)
+                write_json(run.path / output, [
+                    row for index in sorted(completed) for row in completed[index]])
+                if time.monotonic() - progress >= 30:
+                    print(f"startup {output}: {sum(map(len, completed.values()))}/"
+                          f"{len(cases)*len(simulators)}", flush=True)
+                    progress = time.monotonic()
             run.compact_startup(binary)
-    return results
+        return results
+
+    rows = run.parallel([lambda number=number, case=case: execute(number, case)
+                         for number, case in enumerate(cases)], max_workers=2)
+    return [row for result in rows for row in result]
+
+
+def structure(run, *, simulators=("iverilog", "verilator"), include_negative=True,
+              include_timing_lint=True, selected_cases=None):
+    from preparation_checks import preparation_dispatch_sensitivity
+    from harness_checks import (board_prerequisite_sensitivity, decoder_trace_sensitivity,
+                                hardware_metrics, inflight_tool_receipt,
+                                physical_inventory_sensitivity, fitted_summary_sensitivity)
+    from public_asset_checks import public_asset_checks
+    from compiler_admission_checks import admission_sensitivity, clean_worker_sensitivity
+    from startup_retention_checks import retention_sensitivity
+    from startup_scalability_checks import startup_scalability_sensitivity
+
+    cases = [(label, g, True) for label, g in positive_cases()]
+    if include_negative:
+        cases += [(label, g, False) for label, g in negative_cases()]
+    if selected_cases is not None:
+        cases = selected_cases
+    leaf_count = sum(include_negative or expected for _, _, expected in leaf_cases())
+    run.plan_startup_storage(
+        (len(cases) + leaf_count + len(list(baseline_geometries()))) * len(simulators))
+    lint = {"assignments": sequential_lint(), "hardware_metric_checker": hardware_metrics(),
+            "compiler_admission_checker": admission_sensitivity(run.path),
+            "compiler_clean_worker_checker": clean_worker_sensitivity(run.path),
+            "startup_retention_checker": retention_sensitivity(run),
+            "startup_scalability_checker": startup_scalability_sensitivity(run.path),
+            "preparation_dispatch_checker": preparation_dispatch_sensitivity(),
+            "public_asset_checker": public_asset_checks(run),
+            "board_prerequisite_checker": board_prerequisite_sensitivity(run),
+            "physical_inventory_checker": physical_inventory_sensitivity(run),
+            "fitted_summary_checker": fitted_summary_sensitivity(run),
+            "decoder_trace_checker": decoder_trace_sensitivity(run),
+            "inflight_tool_receipt": inflight_tool_receipt(run)}
+    if include_timing_lint:
+        lint["timing"] = timing_lint(run)
+    write_json(run.path / "parameter-manifest.json",
+               [{"label": label, "parameters": asdict(g), "legal": expected}
+                for label, g, expected in cases])
+    rtl = [str(p.relative_to(ROOT)) for p in sorted((ROOT / "rtl").glob("*.sv"))]
+    startup_cases = []
+    for number, (label, g, expected) in enumerate(cases):
+        if legal(g) != expected:
+            raise AssertionError(f"verification geometry error: {label} {asdict(g)}")
+        connections = ".clk(1'b0),.rst_n(1'b0),.cancel(1'b0),.token_valid(1'b0)"
+        overrides = {"PROFILE": g.PROFILE} if label == "official-default" else asdict(g)
+        parameters = ",".join(f".{k}({sv_literal(v)})" for k, v in overrides.items())
+        startup_cases.append({
+            "folder": f"geometry-{number:04d}", "expected": expected,
+            "instance": f"anvil_q3_top #({parameters}) accelerator ({connections});",
+            "metadata": {"label": label, "parameters": asdict(g), "overrides": overrides,
+                         "expected_legal": expected}})
+    results = startup_matrix(run, startup_cases, rtl, simulators, "parameter-results.json")
+    leaves = leaf_structure(run, simulators=simulators, include_negative=include_negative)
+    parents = parent_structure(run, simulators=simulators)
+    return {"parameters": results, "leaf_parameters": leaves, "supplied_parameters": parents, "lint": lint,
+            "scope": "elaboration/diagnostics only; no functional or timing certification"}
+
+
+def parent_structure(run, *, simulators=("iverilog", "verilator")):
+    cases = list(baseline_geometries())
+    if not hasattr(run, "startup_storage"):
+        run.plan_startup_storage(len(cases) * len(simulators))
+    write_json(run.path / "supplied-parameter-manifest.json",
+               [{"implementation": implementation, "parameters": asdict(g)}
+                for implementation, g in cases])
+    sources = [str(p.relative_to(ROOT)) for p in sorted(
+        (ROOT / "anvil_q2_reference/rtl").glob("*.sv"))]
+    startup_cases = []
+    for number, (implementation, g) in enumerate(cases):
+        if not legal(g):
+            raise AssertionError("illegal supplied-baseline geometry")
+        parameters = {key: value for key, value in asdict(g).items()
+                      if key not in ("PROFILE", "INT4_ASYM", "TILE_K", "TILE_ROWS")}
+        parameters["COMPAT_Q1"] = int(implementation == "q1-wrapper")
+        overrides = ",".join(f".{key}({sv_literal(value)})" for key, value in parameters.items())
+        startup_cases.append({
+            "folder": f"supplied-geometry-{number:04d}", "expected": True,
+            "instance": f"anvil_q2_top #({overrides}) accelerator "
+                        "(.clk(1'b0),.rst_n(1'b0),.cancel(1'b0),.token_valid(1'b0));",
+            "metadata": {"implementation": implementation, "parameters": parameters,
+                         "independent_q1": False}})
+    return startup_matrix(run, startup_cases, sources, simulators, "supplied-parameter-results.json")
+
+
+def leaf_structure(run, *, simulators=("iverilog", "verilator"), include_negative=True):
+    cases = [(module, parameters, expected) for module, parameters, expected in leaf_cases()
+             if include_negative or expected]
+    if not hasattr(run, "startup_storage"):
+        run.plan_startup_storage(len(cases) * len(simulators))
+    write_json(run.path / "leaf-parameter-manifest.json",
+               [{"module": module, "parameters": p, "legal": expected}
+                for module, p, expected in cases])
+    sources = [str(p.relative_to(ROOT)) for p in sorted((ROOT / "rtl").glob("*.sv"))]
+    startup_cases = []
+    for number, (module, parameters, expected) in enumerate(cases):
+        if leaf_legal(module, parameters) != expected:
+            raise AssertionError("leaf legality manifest disagreement")
+        overrides = ",".join(f".{key}({sv_literal(value)})" for key, value in parameters.items())
+        startup_cases.append({
+            "folder": f"leaf-geometry-{number:04d}", "expected": expected,
+            "instance": f"{module} #({overrides}) accelerator "
+                        "(.clk(1'b0),.rst_n(1'b0),.flush(1'b0));",
+            "metadata": {"module": module, "parameters": parameters, "expected_legal": expected}})
+    return startup_matrix(run, startup_cases, sources, simulators, "leaf-parameter-results.json")
