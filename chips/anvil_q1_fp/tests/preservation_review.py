@@ -15,7 +15,7 @@ import hashlib
 import json
 
 
-TREE_SHA256 = "89256889437b38e7cca4ed79f0db0c4ebe6320fa21516c70143ab5005221668a"
+TREE_SHA256 = "f2f93fb8a954fd63be17ab7b1ce818488ce92ddbab74faf51bb311a6423c9845"
 INVENTORY_SHA256 = "b731b0abddda6d6c85ac39035b9b52d0e0cce8695d8537164f94a78107d3dff9"
 ORIGINAL_ITEMS = 1385
 
@@ -34,7 +34,7 @@ REVIEWED_RTL_SHA256 = {
     "rtl/anvil_q1_fp_dot8_mixed.sv": "49634a43f9b8fcbccc595be251f702d481e9f06717512a54a74dc34bafe87901",
     "rtl/anvil_q1_fp_elementwise.sv": "c3e5389120c5b004d84b343de9c1c15b887d9e3ab4d00121e407f03639106701",
     "rtl/anvil_q1_fp_exp.sv": "01d296faff3310a91875a0b2628e3b050e78be56cd19125eb28b4c44f5bc8d15",
-    "rtl/anvil_q1_fp_gemv.sv": "51d671ac3d6a54034157124a89f61786d429301c1e5b7b8b4fa73b00cd12255e",
+    "rtl/anvil_q1_fp_gemv.sv": "97029e9f21cac8c3ae4952c8077131ff19dff0ae8152c3b6abf2d027ed06bcbe",
     "rtl/anvil_q1_fp_gqa_attention.sv": "fb7bc337a471c9ee73b1db61421a0d028537a984fbe037b70eb4d37035b4809a",
     "rtl/anvil_q1_fp_reciprocal.sv": "eb2d9fb3fba07cb10ff478106b14bac35ea45b9ec07da07edab1250da2838a3d",
     "rtl/anvil_q1_fp_reduce3.sv": "4da472a7ff77ad63e8876b7e5878c58ee8a15a9f4cdd2d84e84a33294e14b703",
@@ -48,6 +48,85 @@ REVIEWED_RTL_SHA256 = {
 }
 
 REVIEW_BASIS = {
+    "gemv_carry_revision_review": {
+        "date": "2026-10-31",
+        "previous_tree_sha256": "89256889437b38e7cca4ed79f0db0c4ebe6320fa21516c70143ab5005221668a",
+        "previous_gemv_sha256": "51d671ac3d6a54034157124a89f61786d429301c1e5b7b8b4fa73b00cd12255e",
+        "previous_source": (
+            "evidence/preparation/verifier-build-01445dde57af-liyox2lk/"
+            "compile-inputs/rtl/anvil_q1_fp_gemv.sv"),
+        "parent_source": "anvil_q1_reference/rtl/anvil_q1_w4a16_gemv.sv",
+        "failure_receipt": "evidence/preparation/verifier-preservation-coc4rmus/receipt.json",
+        "aggregate_failure_receipt": "evidence/preparation/verifier-l1-_hoozc5p/receipt.json",
+        "scope": (
+            "Read the complete current GEMV, the hash-matched retained pre-repair "
+            "GEMV and the immutable parent, then inspected their complete repair "
+            "diff and the unchanged compatibility conversion/rounding functions. "
+            "Only GEMV differs from the previously reviewed RTL fingerprints; "
+            "parent fingerprints and the other 24 RTL files are unchanged. "
+            "This entry supersedes the older GEMV wait-state description, not "
+            "the prior reviews of unchanged controllers and arithmetic leaves."),
+        "bias_capture_and_conversion": (
+            "State12 accepts data only on complete after state11 request transfer, "
+            "with response fault taking priority over capture. Invalid FP16 still "
+            "faults before arithmetic. A legal mode00 response captures its low "
+            "16 bits and the current lane once, then deasserts response-ready. "
+            "State27 registers the unchanged parent's saturated, half-away Q16.16 "
+            "conversion from that captured word; state28 registers the addend. "
+            "No later bus contents or live cmd_precision can affect that bias. "
+            "The 80 sign bits, 32 converted bits and 16 zero bits are exactly the "
+            "parent's sign-extended 128-bit value shifted left16, including "
+            "negative values and saturated conversion endpoints."),
+        "wide_addition": (
+            "State18 captures all eight exact signed69 products as 128-bit "
+            "two's-complement addends using 59 copies of bit68; it no longer "
+            "commits accumulators or advances k. Unsigned chunk addition is "
+            "bit-equivalent to signed addition modulo2^128 after this explicit "
+            "extension. Each 33-bit chunk sum fits: two 32-bit words plus at "
+            "most one carry are at most2^33-1. States29/30/31 register successive "
+            "low32/middle32/high32 partial words and carries; state32 combines "
+            "the final high32 sum with all96 registered low bits. Accumulators "
+            "and addends remain stable throughout those four edges. State29 "
+            "ignores the old carry and overwrites it, so no preceding lane/tile "
+            "operation can seed this addition. Every partial slice is overwritten "
+            "before commit. Discarding only the bit128 carry matches the old "
+            "128-bit assignment exactly; no per-chunk saturation is introduced."),
+        "selected_lane_and_advancement": (
+            "Products clear bias_pending and commit all eight lanes. Biases set "
+            "bias_pending and commit only captured bias_lane at state32; stale "
+            "addends/partials computed for other lanes never reach architectural "
+            "accumulators. No other accumulator write occurs during29..31. "
+            "Only the product state32 branch advances k/group_offset/group_index "
+            "or selects bias/output issue; its guards/actions match former "
+            "state18 and the parent's state9 decision. Only the bias state32 "
+            "branch advances the captured bias lane or selects output issue. "
+            "Output lane/tile counters still advance only on acknowledged writes "
+            "in state14. Thus state13 sees a complete sum, not a partial word."),
+        "ownership_reset_fault_and_native": (
+            "All request field decodes and request/response wait pairs remain "
+            "unchanged. Added states27..32 assert neither request-valid nor "
+            "response-ready, so the accepted bias response is retired exactly "
+            "once and unsolicited responses cannot change state. Controller bus "
+            "ownership remains held until GEMV completion. Synchronous reset has "
+            "priority over fault and the state case, clearing new raw/converted "
+            "bias, lane, pending, addend, partial and carry registers along with "
+            "the original state. A response fault enters20 without arithmetic "
+            "commit; state20 clears all new registers before idle. Fault cannot "
+            "coincide with a carry-state commit because response-ready is zero "
+            "there. Native21..26, native dot/add launch/wait/fatal guards, "
+            "precision capture, seven projection assignments, AWQ decoding, "
+            "output round/saturation and command legality are unchanged."),
+        "preservation_and_limits": (
+            "No changed source/control defect found in this bounded manual "
+            "review. Entire GEMV remains conservatively C (194 original items); "
+            "native streaming still differs from parent AWQ scheduling. No new "
+            "state earns credit. All classifications, the complete1385-item "
+            "inventory binding and85-percent threshold remain unchanged: "
+            "1102R+81E=1183 credited,202C. Source review is not functional "
+            "equivalence, synthesis or timing proof. Attempt798 remains failed "
+            "with100 passing shards and its stale-binding preservation failure; "
+            "fresh mandatory checks and source-bound native STA remain required."),
+    },
     "binary_packing_revision_review": {
         "date": "2026-10-31",
         "previous_tree_sha256": "eb06e476bbde6cda8bf28ffa9c50c0ffdf83d1640bf150c4609ae07639ede7d9",
