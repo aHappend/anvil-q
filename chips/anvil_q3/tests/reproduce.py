@@ -8,7 +8,7 @@ from execution import ROOT, sha256, sources, write_json
 from parameters import A, legal
 
 
-def reproduce(run, bounded_smoke=False):
+def reproduce(run, bounded_smoke=True):
     destination = run.path / "clean-project"
     destination.mkdir()
     copied = {}

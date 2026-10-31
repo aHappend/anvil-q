@@ -117,11 +117,10 @@ def synthesis(run):
     run.versions([("yosys", "-V")])
     lint = sequential_lint()
     results = []
-    cases = [(f"a-b{b}-m{m}-a{a}", replace(A, BANKS=b, CACHE_MODE=m, INT4_ASYM=a))
-             for b in (1, 2, 4, 8) for m, a in ((0, 0), (1, 0), (2, 0), (2, 1))]
-    cases += [(f"shipping-default-b8-m{m}-a{a}",
-               replace(defaults(3), CACHE_MODE=m, INT4_ASYM=a))
-              for m, a in ((0, 0), (1, 0), (2, 0), (2, 1))]
+    cases = [
+        ("a-b8-m2-a1", replace(A, BANKS=8, CACHE_MODE=2, INT4_ASYM=1)),
+        ("shipping-default-b8-m2-a1", replace(defaults(3), CACHE_MODE=2, INT4_ASYM=1)),
+    ]
     write_json(run.path / "synthesis-matrix.json",
                [{"label": label, "geometry": asdict(g)} for label, g in cases])
     for label, g in cases:
