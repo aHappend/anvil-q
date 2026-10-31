@@ -202,8 +202,12 @@ def simulate(run, tb, parameters=None, simulator="iverilog", root=ROOT, plusargs
         run.tool("verilator")
         run.tool("c++")
         obj = run.path / (name + "-compile-obj")
+        # Verilator 5.020 V3Gate crashes on singleton indexed validity vectors.
+        optimizer_flags = (["-fno-gate"] if tb.stem in
+                           ("activation_tb", "activation_startup_tb") else [])
         try:
             run.command(["verilator", "--binary", "--timing", "-Wno-fatal",
+                         *optimizer_flags,
                          "--unroll-count", "1024", "--unroll-stmts", "100000",
                          "-CFLAGS", "-O0",
                          "--top-module", tb.stem, "--Mdir", run.relative(obj), "-j", "2",
@@ -691,6 +695,23 @@ def kv_store_behavior(run, simulator):
         run.save()
 
 
+def activation_behavior(run, simulator):
+    if simulator == "verilator":
+        simulate(run, ROOT / "tests/activation_startup_tb.sv", simulator="iverilog")
+    configurations = ((1, 1, 17), (136, 2, 89), (256, 2, 211))
+    for words, vectors, seed in configurations:
+        simulate(run, ROOT / "tests/activation_startup_tb.sv", {"MAX_WORDS": words},
+                 simulator=simulator)
+        stdout = simulate(run, ROOT / "tests/activation_tb.sv",
+                          {"MAX_WORDS": words, "VECTOR_COUNT": vectors, "SEED": seed},
+                          simulator=simulator)
+        run.receipt.setdefault("activation", []).append({
+            "words": words, "vectors": vectors, "seed": seed,
+            "summary": stdout.strip(), "simulator": simulator,
+        })
+        run.save()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("check", choices=["numerics", "behavior", "mutations", "synthesis",
@@ -700,7 +721,8 @@ def main():
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--kind", type=int, choices=range(5))
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
-    parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv", "top", "all"], default="all")
+    parser.add_argument("--leaf", choices=["tree", "dma", "scalar", "mac", "codec", "kv",
+                                          "activation", "activation-startup", "top", "all"], default="all")
     args = parser.parse_args()
     run = Run(args.check, args.preparation, args.repair_of)
     try:
@@ -722,6 +744,12 @@ def main():
                 codec_behavior(run, args.simulator)
             if args.leaf in ("kv", "all"):
                 kv_store_behavior(run, args.simulator)
+            if args.leaf in ("activation", "all"):
+                activation_behavior(run, args.simulator)
+            if args.leaf == "activation-startup":
+                stdout = simulate(run, ROOT / "tests/activation_startup_tb.sv",
+                                  simulator=args.simulator)
+                run.receipt["activation_startup"] = stdout.strip()
             if args.leaf in ("top", "all"):
                 top_behavior(run, "verilator")
         elif args.check == "synthesis":

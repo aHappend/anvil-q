@@ -59,7 +59,7 @@ def execute(run, root, source_paths):
     if record["exit_code"] != 0:
         lowered = expand_packages(run, root, source_paths)
         frontend = []
-        read_command = "read_verilog -sv " + " ".join(run.relative(p) for p in lowered)
+        read_command = "read_verilog -sv -defer " + " ".join(run.relative(p) for p in lowered)
     else:
         frontend = ["-m", "slang"]
         read_command = "read_slang --top anvil_q2_ht2_top " + " ".join(
