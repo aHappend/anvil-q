@@ -39,7 +39,7 @@ def project_path(value):
 
 
 def artifact(record):
-    if not isinstance(record, dict) or set(record) < {"path", "sha256"}:
+    if not isinstance(record, dict) or not {"path", "sha256"} <= set(record):
         raise ValueError("artifact needs path and sha256")
     path = project_path(record["path"])
     if not re.fullmatch(r"[a-f0-9]{64}", record["sha256"]) or digest(path) != record["sha256"]:
@@ -235,13 +235,24 @@ def validate_response(response, req, *, full=True):
             stream = project_path(str((receipt_parent / raw[channel]).relative_to(ROOT)))
             if not stream.is_file():
                 raise ValueError("measurement raw output missing")
-    for stage in ("load_cold", "load_warm", "prefill", "decode"):
+    image_job = req["job_type"] == "image_validation_load"
+    for stage in (("load_cold", "load_warm") if image_job else
+                  ("load_cold", "load_warm", "prefill", "decode")):
         timing = response["timings"][stage]
         start = uint(timing["start_monotonic_ns"], "start")
         end = uint(timing["end_monotonic_ns"], "end")
         elapsed = positive(timing["elapsed_ns"], "elapsed")
         if end - start != elapsed:
             raise ValueError("contradictory monotonic timing boundaries")
+    if image_job:
+        validation = response["image_validation"]
+        if (validation.get("finite_tensors") is not True or
+            validation.get("descriptors_verified") is not True or
+            validation.get("loaded_image_sha256") != req["image_sha256"]):
+            raise ValueError("image validation/load failed")
+        if full and not response.get("device_identity"):
+            raise ValueError("physical device identity missing")
+        return response
     clock = positive(response["measured_clock_hz"], "clock")
     counters = response["counters"]
     for key in ("cycles", "committed_tokens", "completed_steps", "physical_read_bytes",

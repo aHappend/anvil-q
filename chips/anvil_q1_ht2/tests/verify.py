@@ -36,13 +36,17 @@ def main():
     parser.add_argument("--probe", choices=(*PROBES, "divsqrt", "exp", "sincos", "mutations",
                                           "rmsnorm", "swiglu", "mutation-rounding", "top",
                                           "synthesis-array", "synthesis-top", "parameters", "top-startup",
-                                          "cdc-fifo", "cdc-mailbox", "control", "compatibility"))
+                                          "cdc-fifo", "cdc-mailbox", "control", "compatibility",
+                                          "logical-compatibility", "benchmark-prerequisites",
+                                          "harness-selfcheck"))
     parser.add_argument("--simulator", choices=("iverilog", "verilator"), default="iverilog")
     parser.add_argument("--mode", choices=("bf16", "fp16", "w4"), default="bf16")
     parser.add_argument("--geometry", choices=("singleton", "compact", "gqa", "medium"),
                         default="compact")
     parser.add_argument("--seed", type=int, choices=(17, 43, 89), default=17)
     parser.add_argument("--threshold", type=lambda x: int(x, 0), default=0)
+    parser.add_argument("--compact", action="store_true",
+                        help="bounded clean-reproduction matrix; not official full-model evidence")
     parser.add_argument("--repair-of", help="project-relative retained receipt")
     args = parser.parse_args()
     if bool(args.suite) == bool(args.probe):
@@ -94,6 +98,16 @@ def main():
                     import compatibility_checks
                     check = compatibility_checks.run(
                         directory, {"bf16": 0, "fp16": 1, "w4": 2}[args.mode], args.seed)
+                elif suite == "logical-compatibility":
+                    import compatibility_checks
+                    check = compatibility_checks.logical_top(directory)
+                elif suite == "benchmark-prerequisites":
+                    import hardware_workload
+                    document, path = hardware_workload.inputs()
+                    check = {"name": suite, "manifest": relative(path)}
+                elif suite == "harness-selfcheck":
+                    import tooling_checks
+                    check = tooling_checks.run(directory)
                 elif suite == "mutations":
                     import mutation_checks
                     check = {"name": "mutations", "results": mutation_checks.run(directory)}
@@ -113,6 +127,15 @@ def main():
             elif suite == "synthesis":
                 import synthesis_checks
                 result["checks"] = synthesis_checks.synthesize(directory)
+            elif suite == "full-model-benchmarks":
+                import benchmark_checks
+                result["checks"] = benchmark_checks.full_model(directory)
+            elif suite == "behavior":
+                import suites
+                result["checks"] = suites.behavior(directory, args.compact)
+            elif suite == "reproduction":
+                import suites
+                result["checks"] = suites.reproduction(directory)
             else:
                 raise NotImplementedError(f"{suite}: mandatory verification suite not yet implemented")
             code = 0

@@ -21,7 +21,7 @@ def fixture(directory, geometry, mode, seed):
     native_prefix, wide_prefix = [], []
     tokens, expected = [], []
     token = min(3, geometry.vocabulary - 1)
-    for position in range(min(5, geometry.sequence)):
+    for position in range(min(7, geometry.sequence)):
         logits, target, state = native.token(token, position, native_prefix)
         wide_logits, _, wide_state = mathematical.token(token, position, wide_prefix)
         native_prefix.append(state)
@@ -188,7 +188,7 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
   integer descriptor_index,kind,layer,projection,base,length,descriptors_read=0;
   integer received=0,result_stalls=0,commits=0;
   reg [31:0] expected[0:VOCAB-1];
-  reg [31:0] expected_tokens[0:4];
+  reg [31:0] expected_tokens[0:6];
   initial begin
     INITIAL_RESET_CHECK
     repeat(4) tick(); @(negedge clk); rst_n=1;
@@ -224,7 +224,7 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
     end
     @(negedge clk); token_valid=0; age=0;
     while (done!==1) begin
-      logit_ready=(age%7<3);
+      logit_ready=(age%7<3) && (received!=0 || result_stalls>=4);
       @(posedge clk);
       if (logit_valid===1) begin
         if (received>=VOCAB || {logit_index,logit_data} !== {32'(received),expected[received]})
@@ -283,7 +283,72 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
     csr(0,16'h114,0,0,1,0);
     csr(0,16'h118,0,0,1,1);
     csr(0,16'h11c,0,0,1,0);
+    CORRECTION_BODY
 """
+    corrective = r"""
+    @(negedge clk); batch_count=4; batch_parents={3'd2,3'd1,3'd0,3'd4};
+    batch_token_ids={4{32'((expected_tokens[5]+1)%VOCAB)}};
+    batch_valid=1; age=0;
+    begin : reject_accept
+      forever begin
+        @(posedge clk);
+        if (batch_ready===1) begin #1; disable reject_accept; end
+        #1; age=age+1; if (age>1000) $fatal(1,"CORRECTION_ADMISSION");
+      end
+    end
+    @(negedge clk); batch_valid=0; commit_ready=0; age=0; held=0;
+    while (done!==1) begin
+      @(posedge clk);
+      if (logit_valid!==0) $fatal(1,"REJECTED_BRANCH_LOGIT");
+      if (commit_valid===1) begin
+        if ({commit_count,commit_token_ids,commit_position,commit_error} !==
+            {3'd1,96'b0,expected_tokens[5],32'd5,1'b0})
+          $fatal(1,"CORRECTIVE_COMMIT");
+        held=held+1; checked=checked+1;
+        if (commit_ready) commits=commits+1;
+        if (done!==0) $fatal(1,"CORRECTIVE_DONE_EARLY");
+      end
+      #1; age=age+1; cycles=cycles+1;
+      if (age>200000) $fatal(1,"CORRECTION_COMPLETION");
+      @(negedge clk); if (held>=5) commit_ready=1;
+    end
+    if (error!==0 || commits!=2 || held<5) $fatal(1,"CORRECTION_RESULT");
+    commit_ready=0; tick(); tick();
+    FINAL_EXPECTED_LOGITS
+    @(negedge clk); token_id=expected_tokens[6]; token_pos=6; token_valid=1; age=0;
+    begin : dependent_accept
+      forever begin
+        @(posedge clk);
+        if (token_ready===1) begin #1; disable dependent_accept; end
+        #1; age=age+1; if (age>1000) $fatal(1,"DEPENDENT_ADMISSION");
+      end
+    end
+    @(negedge clk); token_valid=0; age=0; received=0; held=0;
+    while (done!==1) begin
+      logit_ready=held>=4 && age%7<3;
+      @(posedge clk);
+      if (logit_valid===1) begin
+        if (received>=VOCAB || {logit_index,logit_data} !== {32'(received),expected[received]})
+          $fatal(1,"CORRECTIVE_KV_LOGIT index=%0d got=%h expected=%h",
+                 logit_index,logit_data,expected[received]);
+        checked=checked+1; held=held+1;
+        if (logit_ready) received=received+1;
+      end
+      #1; age=age+1; cycles=cycles+1;
+      if (age>150000) $fatal(1,"DEPENDENT_COMPLETION");
+      @(negedge clk);
+    end
+    if (error!==0 || received!=VOCAB) $fatal(1,"DEPENDENT_RESULT");
+    logit_ready=0; tick(); tick();
+    csr(0,16'h110,0,0,1,7); csr(0,16'h114,0,0,1,0);
+    csr(0,16'h118,0,0,1,2); csr(0,16'h11c,0,0,1,0);
+"""
+    correction_test = (batch and geometry.hidden <= 32 and geometry.sequence >= 9 and
+                       geometry.vocabulary > 1)
+    if correction_test:
+        corrective = corrective.replace("FINAL_EXPECTED_LOGITS", "\n".join(
+            f"expected[{i}]=32'h{word:08x};" for i, word in enumerate(logits[6])))
+    batch_body = batch_body.replace("CORRECTION_BODY", corrective if correction_test else "")
     setup = setup.replace("BATCH_BODY", batch_body if batch and geometry.sequence >= 5 else "")
     setup = setup.replace("EXPECTED_TOKENS", "\n".join(
         f"expected_tokens[{i}]=32'h{token:08x};" for i, token in enumerate(tokens)))
@@ -297,7 +362,8 @@ def top(directory, simulator="verilator", geometry=Geometry(), mode=0, seed=17, 
         "THRESHOLD": str(threshold),
         "DENSE_BYTES": str(geometry.layers * geometry.intermediate *
                            ((geometry.hidden + 63) // 64) * (64 if mode == 2 else 128) *
-                           (2 if batch and geometry.sequence >= 5 else 1)),
+                           (5 if correction_test else
+                            2 if batch and geometry.sequence >= 5 else 1)),
     }
     for key, value in replacements.items():
         setup = setup.replace(key, value)

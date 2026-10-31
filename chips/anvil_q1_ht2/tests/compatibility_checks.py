@@ -56,6 +56,10 @@ class ParentImage(Image):
 
 
 def run(directory, mode=0, seed=17, top_name="anvil_q1_ht_top"):
+    if top_name == "anvil_q1_top":
+        return logical_top(directory)
+    if mode not in (0, 2):
+        raise ValueError("the parent compatibility ABI supports BF16 or AWQ, not native FP16")
     g = Geometry(vocabulary=8, sequence=3, window=1)
     image = ParentImage(g, mode, seed)
     (directory / "memory.hex").write_text("".join(
@@ -143,3 +147,114 @@ def run(directory, mode=0, seed=17, top_name="anvil_q1_ht_top"):
         raise AssertionError("delivered compatibility output differs from parent")
     return {"name": "compatibility", "mode": mode, "seed": seed,
             "top": top_name, "compared_logits": 16, "tokens": 2, "runs": records}
+
+
+def logical_top(directory):
+    body = r"""
+  reg token_valid=0,logit_ready=0,new_sequence=0;
+  reg [31:0] token_id=0,token_pos=0;
+  wire token_ready,logit_valid,done,error;
+  wire [31:0] logit_index,logit_data;
+  wire mem_req_valid,mem_req_write,mem_rsp_ready;
+  wire [3:0] mem_req_kind;
+  wire [31:0] mem_req_layer,mem_req_row,mem_req_col,mem_req_wdata;
+  wire [2:0] mem_req_proj;
+  reg mem_req_ready=0,mem_rsp_valid=0,mem_rsp_error=0;
+  reg [31:0] mem_rsp_rdata=0;
+  reg [31:0] scratch[0:1535];
+  integer mem_cycles=0,pending=0,delay_count=0,word_index,init_index,reads=0,writes=0;
+  integer token,received,age,outputs=0;
+  anvil_q1_top #(.NUM_LAYERS(1),.HIDDEN_SIZE(8),.INTERMEDIATE_SIZE(8),
+    .NUM_Q_HEADS(1),.NUM_KV_HEADS(1),.HEAD_DIM(8),.GROUP_SIZE(1),
+    .VOCAB_SIZE(8),.MAX_SEQ_LEN(3)) dut(.*);
+  always @(negedge clk) begin
+    mem_cycles=mem_cycles+1;
+    mem_req_ready=rst_n && !pending && !mem_rsp_valid && mem_cycles%5!=1;
+  end
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      pending<=0; mem_rsp_valid<=0; mem_rsp_rdata<=0; delay_count<=0;
+    end else begin
+      if (mem_rsp_valid && mem_rsp_ready) begin mem_rsp_valid<=0; pending<=0; end
+      if (pending && !mem_rsp_valid) begin
+        if (delay_count==0) mem_rsp_valid<=1;
+        else delay_count<=delay_count-1;
+      end
+      if (mem_req_valid && mem_req_ready) begin
+        if (pending || mem_req_layer!=0 || mem_req_row>=16 || mem_req_col>=8)
+          $fatal(1,"LOGICAL_MEMORY_BOUNDS");
+        pending<=1; delay_count<=2;
+        word_index=mem_req_kind*128+mem_req_row*8+mem_req_col;
+        if (mem_req_write) begin
+          if (mem_req_kind<8 || mem_req_kind>10) $fatal(1,"LOGICAL_WRITE_KIND");
+          scratch[word_index]=mem_req_wdata;
+          mem_rsp_rdata<=0; writes=writes+1;
+        end else begin
+          reads=reads+1;
+          case (mem_req_kind)
+            0: mem_rsp_rdata<=32'h3800;
+            1: mem_rsp_rdata<=32'h77777777;
+            2: mem_rsp_rdata<=32'h88888888;
+            3: mem_rsp_rdata<=32'h2400;
+            4: mem_rsp_rdata<=0;
+            5,6,7: mem_rsp_rdata<=32'h3c00;
+            8,9,10: mem_rsp_rdata<=scratch[word_index];
+            11: mem_rsp_rdata<=mem_req_col[0] ? 0 : 32'd65536;
+            default: $fatal(1,"LOGICAL_READ_KIND");
+          endcase
+        end
+      end
+    end
+  end
+  initial begin
+    for (init_index=0;init_index<1536;init_index=init_index+1) scratch[init_index]=0;
+    repeat(4) tick(); @(negedge clk); rst_n=1; repeat(20) tick();
+    for (token=0;token<2;token=token+1) begin
+      @(negedge clk); token_id=token; token_pos=token; token_valid=1; new_sequence=(token==0);
+      age=0;
+      begin : accept
+        forever begin
+          @(posedge clk);
+          if (token_ready===1) begin #1; disable accept; end
+          #1; age=age+1; if (age>10000) $fatal(1,"LOGICAL_TOKEN_ADMISSION");
+        end
+      end
+      @(negedge clk); token_valid=0; new_sequence=0; received=0; age=0;
+      while (done!==1) begin
+        logit_ready=age%7<3;
+        @(posedge clk);
+        if (logit_valid===1 && logit_ready) begin
+          if (logit_index!==32'(received) || (^logit_data)===1'bx)
+            $fatal(1,"LOGICAL_OUTPUT_ORDER");
+          $display("RESULT %0d %0d %08h",token,logit_index,logit_data);
+          received=received+1; outputs=outputs+1; checked=checked+1;
+        end
+        #1; age=age+1; cycles=cycles+1;
+        if (age>200000) $fatal(1,"LOGICAL_COMPLETION");
+        @(negedge clk);
+      end
+      if (received!=8 || error!==0) $fatal(1,"LOGICAL_RESULT");
+      logit_ready=0; tick(); tick();
+    end
+    if (outputs!=16 || reads==0 || writes==0) $fatal(1,"LOGICAL_COVERAGE");
+    $display("CHECK compared=%0d outputs=%0d reads=%0d writes=%0d",checked,outputs,reads,writes);
+    $finish;
+  end
+"""
+    results, traces = [], []
+    for candidate in (False, True):
+        parent = ROOT / ("rtl" if candidate else "anvil_q1_ht_reference/rtl")
+        sources = [*sorted(parent.glob("anvil_q1_ht_*.sv")), parent / "anvil_q1_top.sv"]
+        record = simulate(directory, f"logical-{'candidate' if candidate else 'parent'}",
+                          body, [], "verilator", source_paths_override=sources)
+        path = ROOT / record["receipt"]
+        trace = re.findall(r"^RESULT (\d+) (\d+) ([0-9a-fA-F]{8})$",
+                           (path.parent / "stdout.txt").read_text(), re.M)
+        if len(trace) != 16:
+            raise AssertionError("logical compatibility comparison missing outputs")
+        traces.append(trace)
+        results.append(record)
+    if traces[0] != traces[1]:
+        write_json(directory / "logical-mismatch.json", {"parent": traces[0], "candidate": traces[1]})
+        raise AssertionError("anvil_q1_top compatibility mismatch")
+    return {"name": "logical-compatibility", "compared_logits": 16, "tokens": 2, "runs": results}
