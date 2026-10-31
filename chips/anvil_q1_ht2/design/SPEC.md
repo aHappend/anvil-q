@@ -4,9 +4,13 @@
 
 The independently admitted work order is the acceptance contract. This document
 records its interface and numerical freeze; it does not assert acceptance.
-The initial source increment contains native arithmetic and transaction leaves.
-The connected native decoder/top, compatibility delivery copies, complete image
-conversion/layout integration and hardware measurements remain unfinished.
+The saved source increments contain native arithmetic, transaction leaves,
+a connected projection subsystem, vector-operator and causal attention
+controllers, provisional/committed KV transactions, the HT2 CSR overlay,
+a connected native decoder/execution controller, a validating descriptor
+endpoint and a reset-draining DDR transport.
+The native top, compatibility delivery copies, image-load/transport arbitration,
+complete throughput scheduling and hardware measurements remain unfinished.
 Do not use the leaf increment as a reduced substitute for the full product.
 
 Designer owns `rtl/*.sv` and `design/*.md`. Independent Verifier owns
@@ -164,6 +168,36 @@ after an edge is not a second transfer at that edge.
 | Final response plus new_sequence/reset | Reset cancels all ownership; sequence flush cannot reuse provisional KV |
 | Fault plus fault-clear | New fault wins; no successful committed-KV update on failure |
 | Counter increment plus low read | Snapshot owns pre-edge complete value |
+| Projection preflight | Exact padded lengths and extended exclusive ends checked before any weight or metadata request |
+| Projection sparse skip | A logical MAC beat is retained even when its physical burst is removed |
+| Projection nonzero skip | Required weight read completes before admitting the dense product; no approximate downstream state is exposed |
+| Operator slots with unequal scalar latency | Early divide/exp/trig responses remain held until every participating controller response is available |
+| Provisional KV layer | Read ownership appears only after the final legal ascending-column write |
+| Provisional KV read plus layer write | Reading the layer being written returns an explicit error; unrelated completed layers may be read concurrently |
+| Provisional KV retain mask zero | Legal discard of every draft, including correction-only commits |
+| Provisional KV flush | Cancels pending responses and all ownership; RAM contents need not reset |
+| Attention query fill | Exactly NUM_Q_HEADS*HEAD_DIM ascending selected-format four-slot words |
+| Attention invisible node | No scalar-context update, score reduction, exponential sum or KV read for an invisible source |
+| Attention equal scores | Strict-greater maximum replacement retains the earliest visible position, including signed-zero ties |
+| Attention output | Ascending head then dimension; valid/data/slots/index hold until handshake |
+| KV read plus response | Collector accepts a response coincident with its physical request handshake |
+| KV layer copy | Entire provisional layer is collected and validated before the first physical write |
+| KV copy final write | Completion follows the final acknowledged K/V write, not just request acceptance |
+| KV copy failure | Prefix ownership is unchanged; partial raw writes remain outside the committed prefix |
+| KV copy and read | Layer copies serialize against attention reads; copy has priority when both are presented while idle |
+| HT2 CSR response | One outstanding transaction; forwarding and CDC waits cannot overwrite a stalled response |
+| DDR counter snapshot | Source holds all 64 bits before synchronized acknowledgement; core never synchronizes counter bits independently |
+| Decoder matrix panel | Exact ascending panel index, active-row mask and slot mask are checked before storing rows |
+| Decoder residual read | Synchronous residual read precedes the four-slot registered addition request |
+| Ordinary-token output | All logits are buffered internally until every token KV layer is acknowledged; external indices ascend from zero |
+| Ordinary-token publication | Final external logit handshake publishes the new prefix and increments accepted tokens; done is high in the following cycle |
+| Draft publication | All selected nodes are copied in parent-before-child order, all layers per node, before atomic commit |
+| Corrective token | Selected nodes are copied first; a fresh provisional transaction evaluates correction against that reserved prefix, then copies every correction layer |
+| Failed KV publication | Physical rows beyond the old prefix may have changed, but old prefix length/target remain unchanged and no successful commit is emitted |
+| Sequence flush | Flush wins over inference/result handshakes; ready/valid are suppressed during flush and in-flight work drains before retry |
+| Image recommit | Installed descriptor checks precede real model-tensor reads; a host flag cannot assert finite-image ownership |
+| DDR command/first response | A physical response coincident with request acceptance is collected exactly once |
+| DDR reset debt | Logical owners/mailboxes reset; a power-up-initialized one-word physical debt ledger survives logical reset until every old accepted bus response drains |
 
 Reset cannot relabel stale DDR responses as new requests: native integration
 must retain reset-safe drain/epoch ownership. Memory data need not reset.
@@ -246,6 +280,353 @@ FP16 predicate conversion must retain original-nonzero information separately.
 Every skipped nonzero original activation unconditionally triggers dense replay
 before commit unless a later independently admitted certificate proves otherwise.
 No heuristic logit margin is authorized.
+
+## Internal native projection layout and interfaces
+
+`anvil_q1_ht2_projection` connects the sparse decision unit, a bounded
+one/two-beat response collector, 64 parallel AWQ dequantizers and the complete
+four-slot/64-lane MAC array. Its command latches format, slots, dimensions,
+descriptor intervals, down-projection identity and sparse controls. Inputs
+are exactly HIDDEN_SIZE or INTERMEDIATE_SIZE; output rows are bounded by the
+largest configured hidden/intermediate/vocabulary dimension. All address
+preflight and input-vector finite checks precede memory traffic.
+
+The internal native layout is panel-major, then ascending input column, then
+64 output rows. Every panel has 64 physical rows, including a partial final
+panel. Dense BF16/FP16 columns occupy 128 bytes, least-significant row first.
+W4 columns occupy one 64-byte burst, with eight AWQ-permuted eight-row packed
+words in the low 32 bytes and padding in the remaining bytes. This padding
+is real traffic, not an asserted fourfold packing benefit. Each panel/group
+has a 64-byte zero record (eight packed words in the low 32 bytes) and a
+128-byte record of 64 finite nonnegative FP16 scales. Metadata records follow
+ascending groups within each panel. Required descriptor lengths are exactly
+`panels*inputs*(format==W4 ? 64 : 128)`,
+`panels*groups*64` and `panels*groups*128`, respectively, where
+`panels=ceil(outputs/64)` and `groups=inputs/GROUP_SIZE`.
+Padding is charged and inactive rows do not participate in arithmetic.
+The native descriptor endpoint and decoder use these lengths. The external
+top/image-loader connection and Verifier-owned checkpoint conversion remain
+required; installed descriptors alone are not a validated image.
+
+The activation stream supplies all four selected-format values for each
+ascending input column once, plus four original-arithmetic-nonzero bits.
+Those bits survive selected-format and FP16-to-BF16 predicate underflow.
+An encoded nonzero also forces the nonzero classification, regardless of
+the accompanying bit. All active slots share each collected weight burst.
+Skipped columns still send a zero-weight logical beat through the array, so
+column modulo-four contexts and transaction first/last do not change.
+
+Only the down-projection command identity enables eligible-byte accounting;
+it is independent of whether sparse mode is enabled. Eligible weight bytes
+are reported once per original column/panel, avoided bytes only for a
+finalized exact-zero skip, and replay bytes when the replay read is accepted.
+These event deltas are not physical-read counters: actual accepted response
+beats must be counted by the DDR owner.
+
+`cmd_finite_weights` is an internal image-ownership guarantee, never a
+host-supplied accuracy certificate. It may be asserted only after hardware
+has validated the corresponding complete image, including AWQ metadata.
+Without that guarantee, even a zero skip is replayed. A skipped original
+nonzero always replays the weight column before its product is accumulated.
+No speculative arithmetic result is released before this dense repair.
+Replay eliminates avoidance for that column. For validated finite weights,
+an exact-zero input contributes only signed-zero products; contexts start
+at +0 and separately rounded finite FP32 sums cannot acquire -0 from such
+an addition, so the zero-weight logical beat preserves the dense accumulator.
+This reasoning remains subject to independent directed verification.
+
+The projection command completes only after all panel result handshakes.
+An abort cancels local MAC/dequant/sparse ownership but drains an already
+accepted external burst before completing with error. The burst collector
+accepts response data coincident with its request handshake and holds the
+assembled response under backpressure. Its upstream DDR owner must still
+provide reset-safe draining/epochs; this local collector does not solve
+stale external responses after a whole-device reset.
+
+## Saved operator and provisional-state interfaces
+
+`anvil_q1_ht2_scalar` serializes internal FP32 add, multiply, divide, square
+root, exp and sin/cos requests (opcodes 0..5). Nonfinite decoder operands or
+results produce an explicit error. Primitive modules retain their separate
+IEEE-special-value behavior.
+
+`anvil_q1_ht2_rmsnorm` takes one command for four masked slots, then HIDDEN_SIZE
+ascending FP32 vectors and common selected-format gamma values. Four scalar
+paths preserve each slot's ascending square/add left fold, followed by mean,
+epsilon addition, square root, reciprocal, x*inverse and gamma multiplication.
+It stores input/gamma vectors in synchronous, non-reset RAM and returns
+ascending FP32 vectors. It does not insert a matrix-input rounding boundary.
+
+`anvil_q1_ht2_swiglu` takes ascending gate/up FP32 vectors for
+INTERMEDIATE_SIZE elements. It uses the frozen sign-dependent stable sigmoid
+sequence and returns FP32 intermediates, their once-rounded selected-format
+encodings and original nonzero flags. Nonfinite narrowing is an execution
+error, not an output transfer.
+
+`anvil_q1_ht2_rope` takes four positions and streams split-half pairs, in head
+order then ascending j. It returns both FP32 rotated values and their
+selected-format encodings, with logical first/second indices. Position-
+independent ROM constants cover every even HEAD_DIM from 2 through 64.
+They encode RNE32(1000000^(-2*j/HEAD_DIM)), generated with 180-decimal-digit
+constant evaluation and rational ties-to-even packing, not position-dependent
+host answers. Independent high-precision checking is still mandatory.
+
+`anvil_q1_ht2_fp32_sincos` reduces the exact FP32 input against a 320-fractional-
+bit interval for pi/2. Sixteen quotient-bit decisions use eleven 32-bit
+subtract/copy steps each, avoiding a combinational wide divider/subtractor.
+It bounds the nearest-quadrant decision using the full interval and converts
+both residual-magnitude endpoints independently to FP32 with guard/sticky
+information. Disagreeing decisions, a domain violation or an unresolved
+interval raises an explicit numerical error. Only agreeing endpoints reach
+the separately rounded degree-eight Horner sequencer and exact quadrant
+mapping. Signed zero is handled directly. No simulator real arithmetic or
+position lookup is used. Domain coverage, exact reduction, mathematical error,
+completion bound and fitted timing remain independent obligations.
+
+`anvil_q1_ht2_tree_mask` validates count, preceding-parent topology, prefix
+ownership and sequence bounds, then returns per-node absolute positions and
+four ancestor bits per node, including self. Prefix positions are separately
+visible; these bits never make a sibling visible. Its response is registered
+after E+1 for a request accepted at E and holds under backpressure.
+
+`anvil_q1_ht2_provisional_kv` stores four nodes' selected-format K/V pairs for
+every layer in synchronous block-inference RAM. A begin command establishes
+slot ownership. Ascending first..last writes make a complete layer readable;
+partial, malformed and stale accesses return explicit errors. A retain command
+can only remove owned nodes, including removing every node. It cannot confer
+committed ownership. Flush/reset cancels all ownership without clearing RAM.
+Committed DDR KV, causal attention traversal, selected-node copying and
+corrective-token state publication require connected decoder/top control.
+The saved transaction modules below implement raw KV transport and layer copying;
+they do not independently confer committed-prefix ownership.
+
+## Saved attention, KV transport and control interfaces
+
+`anvil_q1_ht2_attention` accepts a slot mask, committed prefix length, absolute
+node positions, ancestor masks and format. The prefix length is a count: prefix
+positions are `0..length-1`. An ordinary first token has length zero, slot0 at
+position0 and only its self ancestor bit. The scheduler must supply validated
+tree-mask results for a batch. Attention additionally checks self/preceding
+ownership, nested ancestor masks, distinct visible positions and that each
+node's ancestors occupy exactly the consecutive positions after the prefix.
+It rejects out-of-range positions before accepting query words or reading KV.
+
+Queries arrive in head-major, dimension-ascending order as four selected-format
+16-bit words. The command owns the query RAM until completion. The attention
+controller uses a single outstanding internal KV request: source class,
+provisional node, absolute position, mapped KV head and head dimension.
+The responding KV subsystem must return the actual selected-format key/value,
+not a computed score or host attention result. Responses can coincide with
+request acceptance; otherwise request ownership persists until response.
+Nonfinite operands/results and KV transport/ownership faults fail execution.
+
+Within each head, the controller traverses committed positions and then
+provisional nodes in ascending node order. Each slot participates only for its
+prefix/self/ancestors; earlier-parent topology makes that slot's participating
+node order an ascending-position order even when siblings have equal or lower
+positions than a preceding node. Every source dot accumulates head dimensions
+into four FP32 contexts by dimension low bits, reduces `((c0+c1)+c2)+c3`
+and multiplies by a separately computed `div32(1,sqrt32(RNE32(HEAD_DIM)))`.
+It completes the maximum pass before exponentiation, preserves the earliest
+position on ties, folds exponentials in ascending visible position, divides
+each by the finished sum and rounds probabilities once to the selected format.
+The value pass updates contexts by absolute-position low bits, excluding
+invisible positions entirely, before the same ordered reduction.
+FP32 outputs stream in ascending head/dimension order. These dot/value products
+are native floating point; learned projections remain assigned to the connected
+four-slot projection array rather than this scalar sequencer.
+
+Score/exponential/probability arrays are synchronous inferred RAM, reused for
+each head. Scalar paths run across the four slots with held-response rendezvous,
+not four serial full attention invocations. Latency depends on visible positions,
+scalar completion, KV traffic and backpressure; no measured throughput or fitted
+timing is implied. Abort drains an owned KV response before error completion.
+The containing memory interface must enforce reset epochs/draining: resetting
+this controller alone does not distinguish an old untagged DDR response.
+
+Native per-layer committed K/V descriptors each have
+`MAX_SEQ_LEN * stride` bytes, where
+`stride = 64 * ceil((2*NUM_KV_HEADS*HEAD_DIM)/64)`.
+Each absolute-position row is head-major, dimension-ascending, selected-format
+16-bit values followed by zero padding through its 64-byte-aligned stride.
+K and V use separate nonoverlapping descriptors. This is native HT2 layout,
+not the parent's Q16 KV representation. Descriptor installation must enforce
+global tensor nonoverlap. Arithmetic preflight uses extended exclusive ends;
+an interval ending at `2^33` remains legal.
+
+`anvil_q1_ht2_kv_reader` checks those descriptor lengths, alignment, physical
+ends, prefix ownership, position/head/column range before issuing reads. It
+caches one matching pair of 512-bit K/V lines using full physical-address tags;
+adjacent dimensions in the same lines reuse those actual response registers.
+Descriptor/image changes and sequence/copy invalidation must invalidate the
+cache. The module checks the selected values for nonfiniteness, retains an
+outstanding read across abort until its response drains, and holds its result
+under backpressure. Image loading cannot run concurrently with active reads.
+
+`anvil_q1_ht2_kv_writer` accepts one reserved, uncommitted position and a whole
+layer's ascending K/V words with exact first/last markers. It checks bounds,
+descriptors and finite encoding, collects the complete layer in synchronous
+storage and zero-pads its final beat before any write. Every emitted request
+is one 64-byte write with all byte enables set and requires one write response;
+the containing Avalon adapter supplies burstcount1. Key then value are written
+for each beat. Errors/abort drain an accepted request and return failure.
+No writer output advances prefix ownership. A failed transfer may leave raw
+bytes at a reserved position, which remain invisible to committed reads.
+
+`anvil_q1_ht2_kv` connects that reader/writer to the provisional RAM. It routes
+attention reads by their actual prefix/provisional source, preserving layer
+and node ownership checks. A copy command names one selected node, layer and
+reserved destination position; it reads the completed provisional layer and
+feeds the native writer, rejecting missing or nonfinite state. Copy and
+attention-read transactions serialize, with command, copy, then read priority
+while idle; provisional write handshakes remain explicit. Flush/abort discards
+provisional ownership and drains accepted external transactions before error
+responses. The decoder/top must copy every layer of every selected token,
+complete any correction forward pass, publish the committed prefix atomically,
+and only then admit a dependent batch. Layer-copy success alone is not a token
+commit, speculative rollback proof or correction-state update.
+
+`anvil_q1_ht2_control` implements the HT2 CSR overlay and forwards the
+inherited `0x0000..0x003c` map, except mode address `0x000c`, to the descriptor endpoint.
+It implements all five low/high counter pairs, reserved/read-only/unaligned
+errors, held CSR responses, format/threshold validation and busy interlocks.
+Counter event inputs must be actual completed token/batch handshakes and
+finalized logical dense/avoided-byte deltas. Format changes pulse both image
+and prefix invalidation. The top must prevent a simultaneous configuration
+mutation and new inference/image-load acceptance; accepting an inference on
+the same edge using the old configuration is not authorized by the overlay.
+The overlay handles inherited mode reads/writes against the same authoritative
+format register: zero selects W4-to-BF16, one selects dense BF16 (or retains an
+explicitly selected FP16 format). Both dense formats read as one. Every accepted
+legacy mode write invalidates image/prefix, including a same-mode write.
+The native descriptor endpoint deliberately rejects a directly routed mode
+write: integration must not create a second independently mutable format state.
+
+## Connected native decoder and execution transaction
+
+`anvil_q1_ht2_decoder` connects the shared four-slot projection array to
+RMSNorm, Q/K/V biases, split-half Q/K RoPE, provisional-KV stores, causal GQA,
+O/residual, FFN RMSNorm, gate/up, SwiGLU, down/residual, final RMSNorm and the
+tied output head. Per-slot residuals remain FP32 in synchronous RAM.
+Every learned projection feeds all active slots from one traversal. Projection
+panels remain owned until each valid row has been stored/processed; this also
+prevents a following weight request from racing a bias read.
+The native argmax checks finite logits, traverses ascending vocabulary indices
+and replaces only on strict greater-than, retaining the smallest ID on ties.
+
+The official tied embedding/output matrix occupies global kind0, layer0,
+projection0. It uses the dense panel layout above with token IDs as output rows
+and hidden dimensions as input columns. Its exact length is
+`ceil(VOCAB_SIZE/64)*HIDDEN_SIZE*128`. Byte offset for embedding token `t`,
+hidden dimension `j`, is
+`floor(t/64)*HIDDEN_SIZE*128 + j*128 + 2*(t mod 64)`.
+The RTL implements the power-of-two quotient/remainder by slicing/shifts.
+Embedding reads expand the selected 16-bit value exactly. The output head
+uses the same descriptor and dense array path, so no additional independently
+quantized or host-computed head is introduced. W4-to-BF16 quantizes the seven
+decoder matrices, not this shared embedding/head tensor. Embedding/head,
+normalization weights and Q/K/V biases remain BF16 in W4 mode; scales remain
+FP16. FP16 mode selects FP16 for every dense stored-format tensor.
+Conversion must preserve the official tied-weight identity and publish these
+format boundaries rather than quantizing the tied head implicitly.
+
+Bias vectors and normalization vectors are ascending 16-bit elements padded
+through a 64-byte boundary. Q/K/V bias lengths are respectively
+`pad64(2*HIDDEN_SIZE)`, `pad64(2*NUM_KV_HEADS*HEAD_DIM)` and the same KV length.
+All normalization lengths are `pad64(2*HIDDEN_SIZE)`.
+The parent's Q/K/V bias descriptors remain mandatory; an absent checkpoint bias
+must be represented by an explicit zero tensor, not a missing unchecked fetch.
+No other projection bias is configured by this ABI.
+
+`anvil_q1_ht2_execution` supplies the connected tree mask, decoder, provisional/
+committed KV router and speculative verifier. It never accepts a batch without
+an internally cached committed-prefix target. Ordinary commands require
+`token_pos == committed_prefix_length`; after reset/sequence flush this is zero.
+A sequence flush suppresses command/result handshakes and invalidates prefix
+ownership, so a coincident token must be retried after flush. Simultaneously
+presented ordinary and batch commands are accepted only as an explicit error,
+not two decoder jobs. Disabled speculation, illegal count/IDs/topology, missing
+prefix and sequence overflow fail without successful publication.
+
+Ordinary logits are stored in one vocabulary-sized synchronous 32-bit RAM.
+After a successful forward pass, all token layers are copied to reserved DDR
+rows. Only then are buffered logits emitted externally. Their final handshake
+publishes prefix length/target and contributes one accepted token. A batch emits
+no ordinary logits. The verifier's mask selects draft nodes in ascending node
+order, which is also parent-before-child order. Every layer of each selected
+node is copied before moving to the next position. If the returned token list
+contains a correction, a new single-slot provisional transaction evaluates it
+against the reserved selected-node prefix, then copies every correction layer.
+The final reserved length must equal old prefix length plus emitted count.
+The one atomic commit handshake publishes the new prefix/target and contributes
+the accepted-token count plus one completed batch step.
+Public `done` is one clock immediately following the final logit/commit
+handshake. Faulted batches return `commit_valid,commit_error` with count/payload
+zero and do not increment success counters. Ordinary forward/copy failures
+complete with `done,error` without releasing buffered logits. Cancellation of an
+already emitting result discards the remaining stream without publication.
+Raw partial writes remain outside the old
+committed prefix. Sequence cancellation drains accepted transactions before
+another command can reuse storage.
+
+## Native descriptor validation and DDR transport
+
+`anvil_q1_ht2_descriptors` preserves the inherited descriptor-index identity,
+staging versus installed-entry reads, zero-length removal, global interval
+nonoverlap, exact-end legality and recommit scan. Dense/W4 matrix and metadata
+lengths use the native panel formulas; K/V lengths use the native row stride.
+Scratch kind8 and compatibility RoPE kind11 descriptors retain their inherited
+lengths and required presence, but native arithmetic does not consume their
+contents. They do not provide residual state or position-dependent trig answers.
+Other absent/extra entries fail the full descriptor scan, including stale AWQ
+metadata in a dense image.
+
+Successful recommit requires an initialized transport, no loading/failure,
+unchanged format and all required descriptors. The endpoint then actually reads
+every model-tensor beat (kinds0..7), including packed W4/zero metadata, before
+asserting image/finite ownership. Every dense stored halfword, including padding,
+must be finite in its selected format. FP16 scales additionally must be
+nonnegative; negative zero is accepted. Packed nibbles/zero records need no
+floating-point classification. Finite FP16 scales times the bounded signed
+four-bit difference produce finite BF16 weights. A read/format/load/numerical
+error rejects recommit and retains explicit CSR error/sticky fault.
+Loading, installation, invalidation and recommit invalidate prefix ownership;
+only successful completed validation asserts `finite_image`.
+The image loader/top must interlock loading and new commands against descriptor
+validation and CSR mutations, including the same acceptance edge.
+
+`anvil_q1_ht2_transport` serializes core requests through acknowledged
+bundled-data mailboxes. It buffers an entire accepted read burst of 1..255 beats
+in synchronous DDR-domain RAM before forwarding held responses to the core;
+writes are exactly one beat with an acknowledged write response. All command
+intervals use extended exclusive ends. Payloads/ready/valid/requests are zero
+during reset. The core admits one command until its final response handshake.
+Top-level client arbitration and the image loader remain to be connected.
+
+The physical Avalon interface has no response tags or response backpressure.
+Consequently reset cancellation cannot erase the count of requests already
+accepted by memory. A single ten-bit, FPGA-configuration-initialized storage
+word records physical response debt and a fail-closed protocol-fault bit.
+It is the deliberately retained storage exception, not logical client
+ownership: it is updated on actual Avalon handshakes/responses even while
+logical reset is asserted. Logical DDR/core FSMs, counters, mailbox ownership
+and buffered-result ownership asynchronously reset normally.
+After reset, availability stays low until the old debt has drained; only then
+can a new epoch issue traffic. No quiet-time assumption or stale-response
+relabeling is used. Full cold FPGA configuration initializes this one word;
+ordinary `rst_n` does not. Unexpected response types/counts are explicit
+protocol faults and quarantine the transport until FPGA reconfiguration,
+instead of guessing ownership. These implementation mechanisms still require
+independent reset/CDC, synthesis and hardware checks; they are not timing proof.
+
+`anvil_q1_ht2_counter_cdc` counts actual accepted DDR response beats by64 bytes
+in the DDR domain. A core snapshot request crosses as a synchronized toggle;
+the source captures and holds all64 bits, acknowledges that toggle, and the
+core captures the held bus only after the acknowledgement synchronizer.
+New requests are blocked through response consumption. This acknowledged
+bundled-data transfer is not independent bit synchronization or throughput
+inference. Common reset cancels snapshot ownership and resets the live counter.
+Neither sequence flush nor image recommit resets it.
 
 `anvil_q1_ht2_spec_verifier` accepts 1..4 drafts, each node's actually evaluated
 target, parents and cached prefix target. Starting from prefix, choose lowest

@@ -15,6 +15,7 @@ module anvil_q1_ht2_projection #(
   input wire activation_valid,
   output wire activation_ready,
   input wire [63:0] activation_data,
+  input wire [3:0] activation_nonzero,
   output wire result_valid,
   input wire result_ready,
   output wire [31:0] result_panel,
@@ -78,8 +79,8 @@ module anvil_q1_ht2_projection #(
   reg stats_pulse, replay_pulse;
   reg [31:0] dense_bytes, avoided_bytes, replay_bytes;
   (* ramstyle = "M20K", ram_style = "block", nomem2reg *)
-  reg [63:0] activation_store [0:MAX_INPUTS-1];
-  reg [63:0] activation_q;
+  reg [67:0] activation_store [0:MAX_INPUTS-1];
+  reg [67:0] activation_q;
   reg input_bad, row_bad, original_nonzero;
   wire [63:0] sparse_activations;
   wire worker_rst_n = run_n && !cancel_workers;
@@ -124,7 +125,8 @@ module anvil_q1_ht2_projection #(
         if (format == 1) begin
           if (activation_data[16*slot_index+10+:5] == 5'h1f) input_bad = 1;
         end else if (activation_data[16*slot_index+7+:8] == 8'hff) input_bad = 1;
-        if (activation_q[16*slot_index+:15] != 0) original_nonzero = 1;
+        if (activation_q[16*slot_index+:15] != 0 || activation_q[64+slot_index])
+          original_nonzero = 1;
       end
     end
     row_bad = 0;
@@ -194,7 +196,7 @@ module anvil_q1_ht2_projection #(
     .clk(clk), .rst_n(worker_rst_n),
     .in_valid(state == MAC_SEND && !abort_error), .in_ready(mac_ready),
     .in_first(column_index == 0), .in_last(final_column), .in_fp16(format == 1),
-    .in_slots(slots), .in_mask(mask), .in_activation(activation_q), .in_weights(weights),
+    .in_slots(slots), .in_mask(mask), .in_activation(activation_q[63:0]), .in_weights(weights),
     .out_valid(mac_valid), .out_ready(state == MAC_RESPONSE),
     .out_data(mac_data), .out_mask(mac_mask), .out_slots(mac_slots), .out_error(mac_error)
   );
@@ -217,7 +219,7 @@ module anvil_q1_ht2_projection #(
   always @(posedge clk) begin
     if (run_n) begin
       if (vector_transfer && !input_bad)
-        activation_store[input_index] <= activation_data;
+        activation_store[input_index] <= {activation_nonzero, activation_data};
       if (state == COLUMN_READ) activation_q <= activation_store[column_index];
     end
   end
