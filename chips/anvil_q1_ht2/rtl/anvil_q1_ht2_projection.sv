@@ -56,7 +56,8 @@ module anvil_q1_ht2_projection #(
     WEIGHT_REQUEST = 5'd15, WEIGHT_RESPONSE = 5'd16, WEIGHT_CHECK = 5'd17,
     DEQUANT_SEND = 5'd18, DEQUANT_WAIT = 5'd19, MAC_SEND = 5'd20,
     MAC_RESPONSE = 5'd21, PANEL_RESULT = 5'd22, COMPLETE = 5'd23,
-    FAIL_DRAIN = 5'd24;
+    FAIL_DRAIN = 5'd24, PREFETCH_BEGIN = 5'd25, DENSE_STREAM = 5'd26,
+    DENSE_FLUSH = 5'd27;
   wire run_n;
   reg [4:0] state;
   reg [1:0] format;
@@ -109,6 +110,38 @@ module anvil_q1_ht2_projection #(
   wire [63:0] mac_mask;
   wire [3:0] mac_slots;
   wire mac_transfer = state == MAC_SEND && mac_ready && !abort_error;
+  wire pf_ready, pf_valid, pf_out_ready, pf_busy, pf_done, pf_error, pf_data_error;
+  wire [1023:0] pf_data;
+  wire [12:0] pf_column;
+  wire pf_dma_valid, pf_dma_ready, pf_dma_data_ready;
+  wire [32:0] pf_dma_address;
+  wire [7:0] pf_dma_beats;
+  wire r_dma_valid, r_dma_ready, r_dma_data_ready;
+  wire [32:0] r_dma_address;
+  wire [7:0] r_dma_beats;
+  wire [3:0] local_ready, local_rsp_valid;
+  wire [511:0] local_rsp_data;
+  wire local_rsp_error, local_busy, local_fault;
+  reg [7:0] local_remaining;
+  reg dense_valid, dense_error;
+  reg [12:0] dense_column;
+  reg [1023:0] dense_weights;
+  reg [63:0] dense_activation;
+  reg dense_bad;
+  wire dense_mode = state == DENSE_STREAM;
+  wire pipelined_w4 = format == 2 && !sparse_enable;
+  wire dense_sink_ready = pipelined_w4 ? (&dequant_ready) : mac_ready;
+  wire dense_advance = !dense_valid || dense_sink_ready;
+  wire dense_transfer = dense_mode && dense_valid && dense_sink_ready &&
+    !dense_bad && !abort_error;
+  wire w4_group_end = pipelined_w4 && dense_valid &&
+    group_offset + 1'b1 == G && dense_column + 1'b1 != inputs;
+  reg [76:0] dequant_tags [0:3];
+  wire w4_result = pipelined_w4 && (&dequant_valid);
+  wire w4_bad = w4_result && (|(dequant_error & mask));
+  wire w4_mac_transfer = w4_result && mac_ready && !w4_bad &&
+    !abort_error && !cancel_workers;
+  wire pf_transfer = pf_valid && pf_out_ready;
   wire vector_transfer = activation_valid && activation_ready;
   integer slot_index, row_index;
   genvar lane, token_slot;
@@ -130,11 +163,16 @@ module anvil_q1_ht2_projection #(
       end
     end
     row_bad = 0;
+    dense_bad = dense_error;
     for (row_index = 0; row_index < 64; row_index = row_index + 1) begin
       if (mask[row_index]) begin
         if (format == 1) begin
           if (row_words[16*row_index+10+:5] == 5'h1f) row_bad = 1;
         end else if (row_words[16*row_index+7+:8] == 8'hff) row_bad = 1;
+        if (format == 1) begin
+          if (dense_weights[16*row_index+10+:5] == 5'h1f) dense_bad = 1;
+        end else if (format == 0 &&
+          dense_weights[16*row_index+7+:8] == 8'hff) dense_bad = 1;
       end
     end
   end
@@ -147,18 +185,29 @@ module anvil_q1_ht2_projection #(
     for (lane = 0; lane < 64; lane = lane + 1) begin : g_dequant
       anvil_q1_ht2_dequant u_dequant (
         .clk(clk), .rst_n(worker_rst_n),
-        .in_valid(state == DEQUANT_SEND && (&dequant_ready) && !abort_error),
+        .in_valid(!abort_error && ((state == DEQUANT_SEND && (&dequant_ready)) ||
+          (pipelined_w4 && dense_transfer))),
         .in_ready(dequant_ready[lane]),
-        .in_qweight(mask[lane] ? row_words[32*(lane >> 3)+:32] : 32'b0),
+        .in_qweight(mask[lane] ? (pipelined_w4 ?
+          dense_weights[32*(lane >> 3)+:32] : row_words[32*(lane >> 3)+:32]) : 32'b0),
         .in_qzero(mask[lane] ? zero_words[32*(lane >> 3)+:32] : 32'b0),
         .in_lane(3'(lane & 7)),
         .in_scale(mask[lane] ? scale_words[16*lane+:16] : 16'b0),
         .out_valid(dequant_valid[lane]),
-        .out_ready(state == DEQUANT_WAIT),
+        .out_ready(pipelined_w4 ? mac_ready && !abort_error && !cancel_workers :
+          state == DEQUANT_WAIT),
         .out_weight(dequant_weights[16*lane+:16]), .out_error(dequant_error[lane])
       );
     end
   endgenerate
+  always @(posedge clk) begin
+    if (run_n && pipelined_w4 && (&dequant_ready)) begin
+      dequant_tags[0] <= {dense_column, dense_activation};
+      dequant_tags[1] <= dequant_tags[0];
+      dequant_tags[2] <= dequant_tags[1];
+      dequant_tags[3] <= dequant_tags[2];
+    end
+  end
   anvil_q1_ht2_sparse_dma u_sparse (
     .clk(clk), .rst_n(worker_rst_n),
     .req_valid(state == SPARSE_REQUEST && !abort_error), .req_ready(sparse_ready),
@@ -170,7 +219,8 @@ module anvil_q1_ht2_projection #(
     .decision_skipped(sparse_skipped), .decision_error(sparse_error)
   );
   assign reader_cmd_valid = run_n && !abort_error &&
-    (state == ZERO_REQUEST || state == SCALE_REQUEST || state == WEIGHT_REQUEST ||
+    (state == ZERO_REQUEST || state == SCALE_REQUEST ||
+     (state == WEIGHT_REQUEST && sparse_enable) ||
      (state == SPARSE_RESPONSE && sparse_dma_valid));
   assign reader_cmd_address = !reader_cmd_valid ? 33'b0 :
     state == ZERO_REQUEST ? zero_address : state == SCALE_REQUEST ? scale_address :
@@ -186,17 +236,66 @@ module anvil_q1_ht2_projection #(
   anvil_q1_ht2_burst_reader u_reader (
     .clk(clk), .rst_n(run_n), .cmd_valid(reader_cmd_valid), .cmd_ready(reader_cmd_ready),
     .cmd_address(reader_cmd_address), .cmd_burstcount(reader_cmd_beats),
-    .mem_valid(dma_valid), .mem_ready(dma_ready), .mem_address(dma_address),
-    .mem_burstcount(dma_burstcount), .mem_data_valid(dma_data_valid),
-    .mem_data_ready(dma_data_ready), .mem_data(dma_data), .mem_error(dma_error),
+    .mem_valid(r_dma_valid), .mem_ready(r_dma_ready), .mem_address(r_dma_address),
+    .mem_burstcount(r_dma_beats), .mem_data_valid(local_rsp_valid[0]),
+    .mem_data_ready(r_dma_data_ready), .mem_data(local_rsp_data), .mem_error(local_rsp_error),
     .rsp_valid(reader_rsp_valid), .rsp_ready(reader_rsp_ready),
     .rsp_data(reader_data), .rsp_error(reader_error)
   );
+  anvil_q1_ht2_panel_prefetch u_prefetch (
+    .clk(clk), .rst_n(run_n),
+    .abort_error(abort_error || cancel_workers || state == FAIL_DRAIN),
+    .cmd_valid(state == PREFETCH_BEGIN && !abort_error), .cmd_ready(pf_ready),
+    .cmd_address(weight_address), .cmd_columns(inputs), .cmd_w4(format == 2),
+    .out_valid(pf_valid), .out_ready(pf_out_ready), .out_data(pf_data),
+    .out_column(pf_column), .out_error(pf_data_error),
+    .busy(pf_busy), .done(pf_done), .error(pf_error),
+    .mem_valid(pf_dma_valid), .mem_ready(pf_dma_ready), .mem_address(pf_dma_address),
+    .mem_burstcount(pf_dma_beats), .mem_data_valid(local_rsp_valid[1]),
+    .mem_data_ready(pf_dma_data_ready), .mem_data(local_rsp_data), .mem_error(local_rsp_error)
+  );
+  assign pf_out_ready = run_n && !abort_error &&
+    ((dense_mode && dense_advance && !(dense_valid && dense_bad) && !w4_group_end) ||
+     (state == WEIGHT_REQUEST && !sparse_enable));
+  assign r_dma_ready = local_ready[0];
+  assign pf_dma_ready = local_ready[1];
+  anvil_q1_ht2_dma_mux u_memory (
+    .clk(clk), .rst_n(run_n),
+    .client_valid({2'b0, pf_dma_valid, r_dma_valid}), .client_ready(local_ready),
+    .client_write(4'b0), .client_address({66'b0, pf_dma_address, r_dma_address}),
+    .client_burstcount({16'b0, pf_dma_beats, r_dma_beats}),
+    .client_writedata(2048'b0), .client_byteenable(256'b0),
+    .client_rsp_valid(local_rsp_valid),
+    .client_rsp_ready({2'b0, pf_dma_data_ready, r_dma_data_ready}),
+    .client_rsp_data(local_rsp_data), .client_rsp_error(local_rsp_error),
+    .busy(local_busy), .protocol_error(local_fault),
+    .req_valid(dma_valid), .req_ready(dma_ready), .req_write(),
+    .req_address(dma_address), .req_burstcount(dma_burstcount),
+    .req_writedata(), .req_byteenable(),
+    .rsp_valid(dma_data_valid), .rsp_ready(dma_data_ready),
+    .rsp_write(1'b0), .rsp_last(local_remaining == 1),
+    .rsp_error(dma_error), .rsp_data(dma_data)
+  );
+  always @(posedge clk or negedge run_n) begin
+    if (!run_n) local_remaining <= 0;
+    else begin
+      if (dma_valid && dma_ready) local_remaining <= dma_burstcount;
+      if (dma_data_valid && dma_data_ready) local_remaining <= local_remaining - 1'b1;
+    end
+  end
   anvil_q1_ht2_tile_batch_mac u_array (
     .clk(clk), .rst_n(worker_rst_n),
-    .in_valid(state == MAC_SEND && !abort_error), .in_ready(mac_ready),
-    .in_first(column_index == 0), .in_last(final_column), .in_fp16(format == 1),
-    .in_slots(slots), .in_mask(mask), .in_activation(activation_q[63:0]), .in_weights(weights),
+    .in_valid(!abort_error && !cancel_workers && ((state == MAC_SEND) ||
+      (!pipelined_w4 && dense_mode && dense_valid && !dense_bad) ||
+      (w4_result && !w4_bad))), .in_ready(mac_ready),
+    .in_first(pipelined_w4 ? dequant_tags[3][76:64] == 0 :
+      dense_mode ? dense_column == 0 : column_index == 0),
+    .in_last(pipelined_w4 ? dequant_tags[3][76:64] + 1'b1 == inputs :
+      dense_mode ? dense_column + 1'b1 == inputs : final_column), .in_fp16(format == 1),
+    .in_slots(slots), .in_mask(mask),
+    .in_activation(pipelined_w4 ? dequant_tags[3][63:0] :
+      dense_mode ? dense_activation : activation_q[63:0]),
+    .in_weights(pipelined_w4 ? dequant_weights : dense_mode ? dense_weights : weights),
     .out_valid(mac_valid), .out_ready(state == MAC_RESPONSE),
     .out_data(mac_data), .out_mask(mac_mask), .out_slots(mac_slots), .out_error(mac_error)
   );
@@ -221,6 +320,7 @@ module anvil_q1_ht2_projection #(
       if (vector_transfer && !input_bad)
         activation_store[input_index] <= {activation_nonzero, activation_data};
       if (state == COLUMN_READ) activation_q <= activation_store[column_index];
+      if (dense_mode && pf_transfer) dense_activation <= activation_store[pf_column];
     end
   end
   always @(posedge clk or negedge run_n) begin
@@ -269,6 +369,10 @@ module anvil_q1_ht2_projection #(
       dense_bytes <= 0;
       avoided_bytes <= 0;
       replay_bytes <= 0;
+      dense_valid <= 0;
+      dense_error <= 0;
+      dense_column <= 0;
+      dense_weights <= 0;
     end else begin
       stats_pulse <= 0;
       replay_pulse <= 0;
@@ -277,7 +381,8 @@ module anvil_q1_ht2_projection #(
       replay_bytes <= 0;
       if (reader_transfer) reader_owned <= 1;
       if (reader_response) reader_owned <= 0;
-      if (abort_error && state != IDLE && state != COMPLETE && state != FAIL_DRAIN) begin
+      if ((abort_error || local_fault || w4_bad || pf_error) &&
+          state != IDLE && state != COMPLETE && state != FAIL_DRAIN) begin
         failed <= 1;
         cancel_workers <= 1;
         state <= FAIL_DRAIN;
@@ -351,8 +456,49 @@ module anvil_q1_ht2_projection #(
                                           64'hffffffffffffffff >> (64-remaining_rows);
           column_index <= 0;
           group_offset <= 0;
-          state <= COLUMN_READ;
+          dense_valid <= 0;
+          if (sparse_enable) state <= COLUMN_READ;
+          else state <= PREFETCH_BEGIN;
         end
+        PREFETCH_BEGIN: if (pf_ready) begin
+          if (format == 2) state <= ZERO_REQUEST;
+          else state <= DENSE_STREAM;
+        end
+        DENSE_STREAM: begin
+          if (dense_advance) begin
+            dense_valid <= pf_transfer;
+            if (pf_transfer) begin
+              dense_weights <= pf_data;
+              dense_column <= pf_column;
+              dense_error <= pf_data_error;
+            end
+          end
+          if (dense_valid && dense_bad) begin
+            failed <= 1;
+            cancel_workers <= 1;
+            dense_valid <= 0;
+            state <= FAIL_DRAIN;
+          end else if (dense_transfer) begin
+            weight_address <= weight_address + {1'b0, column_bytes};
+            if (down_projection) begin
+              stats_pulse <= 1;
+              dense_bytes <= column_bytes;
+            end
+            if (dense_column + 1'b1 == inputs) begin
+              dense_valid <= 0;
+              if (pipelined_w4) state <= DENSE_FLUSH;
+              else state <= MAC_RESPONSE;
+            end else if (pipelined_w4) begin
+              if (w4_group_end) begin
+                dense_valid <= 0;
+                group_offset <= 0;
+                state <= ZERO_REQUEST;
+              end else group_offset <= group_offset + 1'b1;
+            end
+          end
+        end
+        DENSE_FLUSH: if (w4_mac_transfer && dequant_tags[3][76:64] + 1'b1 == inputs)
+          state <= MAC_RESPONSE;
         COLUMN_READ: state <= COLUMN_SETUP;
         COLUMN_SETUP: begin
           replay_column <= 0;
@@ -389,6 +535,7 @@ module anvil_q1_ht2_projection #(
         end
         WEIGHT_BEGIN: begin
           if (sparse_enable) state <= SPARSE_REQUEST;
+          else if (pipelined_w4) state <= DENSE_STREAM;
           else state <= WEIGHT_REQUEST;
         end
         SPARSE_REQUEST: if (sparse_ready) state <= SPARSE_RESPONSE;
@@ -408,13 +555,21 @@ module anvil_q1_ht2_projection #(
             state <= MAC_SEND;
           end
         end
-        WEIGHT_REQUEST: if (reader_transfer) begin
-          if (replay_column) begin
-            stats_pulse <= 1;
-            replay_pulse <= 1;
-            replay_bytes <= column_bytes;
+        WEIGHT_REQUEST: begin
+          if (!sparse_enable && pf_transfer) begin
+            if (pf_data_error || pf_column != column_index) begin
+              failed <= 1;
+              cancel_workers <= 1;
+              state <= FAIL_DRAIN;
+            end else begin row_words <= pf_data; state <= WEIGHT_CHECK; end
+          end else if (sparse_enable && reader_transfer) begin
+            if (replay_column) begin
+              stats_pulse <= 1;
+              replay_pulse <= 1;
+              replay_bytes <= column_bytes;
+            end
+            state <= WEIGHT_RESPONSE;
           end
-          state <= WEIGHT_RESPONSE;
         end
         WEIGHT_RESPONSE: if (reader_response) begin
           if (reader_error) begin
@@ -460,7 +615,8 @@ module anvil_q1_ht2_projection #(
           if (panel + 18'd64 >= outputs) state <= COMPLETE;
           else begin panel <= panel + 18'd64; state <= PANEL_BEGIN; end
         end
-        FAIL_DRAIN: if (!reader_owned || reader_response) state <= COMPLETE;
+        FAIL_DRAIN: if ((!reader_owned || reader_response) && !pf_busy && !local_busy)
+          state <= COMPLETE;
         COMPLETE: state <= IDLE;
         default: begin
           failed <= 1;

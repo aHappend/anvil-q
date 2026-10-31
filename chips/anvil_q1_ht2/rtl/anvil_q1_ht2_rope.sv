@@ -27,7 +27,8 @@ module anvil_q1_ht2_rope #(
     MUL0_SEND = 5'd6, MUL0_WAIT = 5'd7, MUL1_SEND = 5'd8, MUL1_WAIT = 5'd9,
     ADD0_SEND = 5'd10, ADD0_WAIT = 5'd11,
     MUL2_SEND = 5'd12, MUL2_WAIT = 5'd13, MUL3_SEND = 5'd14, MUL3_WAIT = 5'd15,
-    ADD1_SEND = 5'd16, ADD1_WAIT = 5'd17, OUTPUT_PAIR = 5'd18, COMPLETE = 5'd19;
+    ADD1_SEND = 5'd16, ADD1_WAIT = 5'd17, OUTPUT_PAIR = 5'd18, COMPLETE = 5'd19,
+    TRIG_READ = 5'd20, TRIG_LOAD = 5'd21;
   wire run_n;
   reg [4:0] state, pair_index;
   reg [9:0] row_base;
@@ -35,6 +36,9 @@ module anvil_q1_ht2_rope #(
   reg fp16, failed, cancel;
   reg [127:0] positions, first_input, second_input, angle, sine, cosine;
   reg [127:0] first_product, second_product, first_result, second_result;
+  (* ramstyle = "M20K", ram_style = "block", nomem2reg *)
+  reg [255:0] trig_cache [0:(D >> 1)-1];
+  reg [255:0] trig_q;
   wire [31:0] frequency;
   wire worker_rst_n = run_n && !cancel;
   wire [3:0] multiply_valid, add_valid, trig_valid, trig_ready, trig_error;
@@ -128,6 +132,13 @@ module anvil_q1_ht2_rope #(
   assign busy = run_n && state != IDLE;
   assign done = run_n && state == COMPLETE;
   assign error = done && failed;
+  always @(posedge clk) begin
+    if (run_n && !abort_error) begin
+      if (state == TRIG_WAIT && trig_consume && !trig_failed)
+        trig_cache[pair_index] <= {trig_cos, trig_sin};
+      if (state == TRIG_READ) trig_q <= trig_cache[pair_index];
+    end
+  end
   always @(posedge clk or negedge run_n) begin
     if (!run_n) begin
       state <= IDLE;
@@ -167,7 +178,18 @@ module anvil_q1_ht2_rope #(
       end
       INPUT_PAIR: if (in_valid && in_ready) begin
         if (input_error) begin failed <= 1; state <= COMPLETE; end
-        else begin first_input <= in_first; second_input <= in_second; state <= ANGLE_SEND; end
+        else begin
+          first_input <= in_first;
+          second_input <= in_second;
+          if (row_base == 0) state <= ANGLE_SEND;
+          else state <= TRIG_READ;
+        end
+      end
+      TRIG_READ: state <= TRIG_LOAD;
+      TRIG_LOAD: begin
+        sine <= trig_q[127:0];
+        cosine <= trig_q[255:128];
+        state <= MUL0_SEND;
       end
       ANGLE_SEND: state <= ANGLE_WAIT;
       MUL0_SEND: state <= MUL0_WAIT;

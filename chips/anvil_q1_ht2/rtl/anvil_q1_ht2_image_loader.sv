@@ -38,6 +38,7 @@ module anvil_q1_ht2_image_loader (
   wire [1:0] result;
   wire release_valid, release_source_ready;
   wire clear_valid, clear_source_ready;
+  wire clear_ready = ddr_state == WAIT_LOAD || ddr_state == REQUEST || ddr_state == GRANT;
   wire beat_bad = (|beat[581:576]);
   wire grant = acquire_valid && acquire_ready;
 
@@ -76,7 +77,7 @@ module anvil_q1_ht2_image_loader (
   anvil_q1_ht2_mailbox u_clear (
     .source_clk(clk), .destination_clk(ddr_clk), .rst_n(rst_n),
     .source_valid(clear_state == 1), .source_ready(clear_source_ready), .source_data(1'b0),
-    .destination_valid(clear_valid), .destination_ready(ddr_state == WAIT_LOAD),
+    .destination_valid(clear_valid), .destination_ready(clear_ready),
     .destination_data()
   );
   assign acquire_pending = core_run_n && acquire_valid;
@@ -159,7 +160,7 @@ module anvil_q1_ht2_image_loader (
   always @(posedge ddr_clk or negedge ddr_run_n) begin
     if (!ddr_run_n) begin ddr_state <= WAIT_LOAD; failed_ddr <= 0; end
     else begin
-      if (clear_valid && ddr_state == WAIT_LOAD) failed_ddr <= 0;
+      if (clear_valid && clear_ready) failed_ddr <= 0;
       case (ddr_state)
         WAIT_LOAD: if (load_valid && !failed_ddr && !clear_valid) ddr_state <= REQUEST;
         REQUEST: if (acquire_source_ready) ddr_state <= GRANT;

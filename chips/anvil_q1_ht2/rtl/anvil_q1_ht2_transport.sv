@@ -23,24 +23,21 @@ module anvil_q1_ht2_transport (
   input wire [1:0] avm_response,
   input wire avm_writeresponsevalid
 );
-  localparam IDLE = 3'd0, COMMAND = 3'd1, COLLECT = 3'd2,
-    READ_BUFFER = 3'd3, SEND_READ = 3'd4, SEND_WRITE = 3'd5;
+  localparam IDLE = 2'd0, COMMAND = 2'd1, COLLECT = 2'd2, SEND_ERROR = 2'd3;
   wire core_run_n, ddr_run_n;
   wire command_source_ready, command_valid, command_ready;
   wire response_source_ready, response_valid;
   wire [617:0] command_data;
   wire [514:0] response_data;
   reg core_owned;
-  reg [2:0] state;
+  reg [1:0] state;
   reg writing, failed, ddr_recovered;
   reg [32:0] address;
-  reg [7:0] burstcount, received, sending;
-  reg [511:0] writedata, response_q;
+  reg [7:0] burstcount;
+  reg [511:0] writedata;
   reg [63:0] byteenable;
-  (* ramstyle = "M20K", ram_style = "block", nomem2reg *)
-  reg [511:0] responses [0:254];
 
-  // Physical bus debt survives a logical reset; clients and response RAM ownership do not.
+  // Physical bus debt survives a logical reset; clients and FIFO ownership do not.
   reg [9:0] bus_ledger [0:0];
   initial bus_ledger[0] = 10'b0;
   wire [9:0] ledger = bus_ledger[0];
@@ -59,14 +56,17 @@ module anvil_q1_ht2_transport (
   wire physical_read_last = physical_read && physical_remaining == 1;
   wire capture_read = ddr_run_n && physical_read &&
     (state == COLLECT || (state == COMMAND && physical_accept));
+  wire capture_write = ddr_run_n && physical_write &&
+    (state == COLLECT || (state == COMMAND && physical_accept));
   wire [33:0] command_end = {1'b0, command_data[616:584]} +
     {20'b0, command_data[583:576], 6'b0};
   wire command_bad = command_data[583:576] == 0 ||
     (|command_data[589:584]) || command_end > 34'h200000000 ||
     (command_data[617] && command_data[583:576] != 1);
-  wire [514:0] outgoing_response = state == SEND_READ ?
-    {1'b0, sending + 1'b1 == burstcount, failed, response_q} :
-    {writing, 1'b1, failed, 512'b0};
+  wire response_enqueue = capture_read || capture_write || state == SEND_ERROR;
+  wire [514:0] outgoing_response = capture_read ?
+    {1'b0, physical_read_last, failed || avm_response != 0, avm_readdata} :
+    {writing, 1'b1, failed || avm_response != 0, 512'b0};
   reg [9:0] next_ledger;
   (* async_reg = "true", altera_attribute = "-name SYNCHRONIZER_IDENTIFICATION FORCED" *)
   reg available_meta, available_sync, fault_meta, fault_sync;
@@ -81,9 +81,10 @@ module anvil_q1_ht2_transport (
     .destination_valid(command_valid), .destination_ready(command_ready),
     .destination_data(command_data)
   );
-  anvil_q1_ht2_mailbox #(.WIDTH(515)) u_responses (
+  // One owned transaction has at most 255 beats; 512 entries absorb it without Avalon backpressure.
+  anvil_q1_ht2_response_fifo u_responses (
     .source_clk(ddr_clk), .destination_clk(clk), .rst_n(rst_n),
-    .source_valid(ddr_run_n && (state == SEND_READ || state == SEND_WRITE)),
+    .source_valid(ddr_run_n && response_enqueue),
     .source_ready(response_source_ready), .source_data(outgoing_response),
     .destination_valid(response_valid), .destination_ready(core_run_n && rsp_ready && core_owned),
     .destination_data(response_data)
@@ -112,12 +113,11 @@ module anvil_q1_ht2_transport (
     if (physical_accept) next_ledger[8:0] = {writing, writing ? 8'd1 : burstcount};
     if (physical_read) next_ledger[7:0] = physical_remaining - 1'b1;
     if (physical_write) next_ledger[7:0] = 0;
-    if (unexpected) next_ledger[9] = 1;
+    if (unexpected || (ddr_run_n && response_enqueue && !response_source_ready))
+      next_ledger[9] = 1;
   end
   always @(posedge ddr_clk) begin
     bus_ledger[0] <= next_ledger;
-    if (capture_read) responses[received] <= avm_readdata;
-    if (ddr_run_n && state == READ_BUFFER) response_q <= responses[sending];
   end
   always @(posedge clk or negedge core_run_n) begin
     if (!core_run_n) begin
@@ -147,8 +147,6 @@ module anvil_q1_ht2_transport (
       failed <= 0;
       address <= 0;
       burstcount <= 0;
-      received <= 0;
-      sending <= 0;
       writedata <= 0;
       byteenable <= 0;
     end else case (state)
@@ -159,35 +157,26 @@ module anvil_q1_ht2_transport (
         writedata <= command_data[575:64];
         byteenable <= command_data[63:0];
         failed <= command_bad;
-        received <= 0;
-        sending <= 0;
-        if (command_bad) state <= SEND_WRITE;
+        if (command_bad) state <= SEND_ERROR;
         else state <= COMMAND;
       end
       COMMAND: if (physical_accept) begin
         state <= COLLECT;
         if (physical_read) begin
           failed <= avm_response != 0;
-          received <= 1;
-          if (physical_read_last) state <= READ_BUFFER;
+          if (physical_read_last) state <= IDLE;
         end
-        if (physical_write) begin failed <= avm_response != 0; state <= SEND_WRITE; end
+        if (physical_write) begin failed <= avm_response != 0; state <= IDLE; end
       end
       COLLECT: begin
         if (physical_read) begin
           failed <= failed || avm_response != 0;
-          received <= received + 1'b1;
-          if (physical_read_last) state <= READ_BUFFER;
+          if (physical_read_last) state <= IDLE;
         end
-        if (physical_write) begin failed <= failed || avm_response != 0; state <= SEND_WRITE; end
+        if (physical_write) begin failed <= failed || avm_response != 0; state <= IDLE; end
       end
-      READ_BUFFER: state <= SEND_READ;
-      SEND_READ: if (response_source_ready) begin
-        if (sending + 1'b1 == burstcount) state <= IDLE;
-        else begin sending <= sending + 1'b1; state <= READ_BUFFER; end
-      end
-      SEND_WRITE: if (response_source_ready) state <= IDLE;
-      default: begin failed <= 1; state <= SEND_WRITE; end
+      SEND_ERROR: if (response_source_ready) state <= IDLE;
+      default: begin failed <= 1; state <= SEND_ERROR; end
     endcase
   end
 endmodule

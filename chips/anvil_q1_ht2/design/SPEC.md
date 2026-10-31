@@ -4,14 +4,14 @@
 
 The independently admitted work order is the acceptance contract. This document
 records its interface and numerical freeze; it does not assert acceptance.
-The saved source increments contain native arithmetic, transaction leaves,
-a connected projection subsystem, vector-operator and causal attention
-controllers, provisional/committed KV transactions, the HT2 CSR overlay,
-a connected native decoder/execution controller, a validating descriptor
-endpoint and a reset-draining DDR transport.
-The native top, compatibility delivery copies, image-load/transport arbitration,
-complete throughput scheduling and hardware measurements remain unfinished.
-Do not use the leaf increment as a reduced substitute for the full product.
+The Designer sources connect native arithmetic, the four-slot projection
+array, sparse/replay scheduling, vector operators, causal attention,
+provisional/committed KV, the HT2 CSR overlay, decoder/execution control,
+finite-image validation and the native top. DDR responses cross through a
+streaming FIFO; dense panel prefetch overlaps arithmetic issue. Deliverable
+compatibility copies are present. This is a design handoff, not numerical,
+performance or engineering acceptance. Independent behavioral, synthesis,
+timing, hardware and benchmark results remain pending.
 
 Designer owns `rtl/*.sv` and `design/*.md`. Independent Verifier owns
 `tests/*.py`, reference models, stimulus, mutations and synthesis. The shared
@@ -198,11 +198,89 @@ after an edge is not a second transfer at that edge.
 | Image recommit | Installed descriptor checks precede real model-tensor reads; a host flag cannot assert finite-image ownership |
 | DDR command/first response | A physical response coincident with request acceptance is collected exactly once |
 | DDR reset debt | Logical owners/mailboxes reset; a power-up-initialized one-word physical debt ledger survives logical reset until every old accepted bus response drains |
+| CSR plus inference presentation | CSR presentation reserves admission priority; neither ordinary nor batch input handshakes at that edge |
+| Load acquire plus inference presentation | An already visible load-acquire request blocks inference; a request still crossing clocks waits for any accepted inference to finish |
+| Load beat | Captured on ddr_clk with pre-edge load_valid && load_ready; next load beat waits for the preceding physical write response |
+| Load last or fault | load_done pulses on ddr_clk only after the final write acknowledgement, or after rejecting an invalid beat without traffic; load_error remains sticky until explicit clear |
+| Load ownership return | Core remains busy until acknowledgement of the DDR-domain completion pulse returns; image recommit cannot race a pending upload result |
+| Fault clear plus pending load acquire | The DDR domain can acknowledge clear before granting the waiting upload; clear cannot deadlock behind the ungranted request |
+| DMA arbitration | Local request handshake captures all payload fields; selected owner and request remain registered through transport acceptance and the last response |
+| Streaming DDR return | Each owned physical beat is written once into the response FIFO; final-read and accumulated-error tags cross with its payload |
+| FIFO reservation | One owned transaction has at most 255 beats; its 512-entry response FIFO can absorb the entire unbackpressurable physical burst |
+| FIFO read/stall | Synchronous RAM prefetch owns a separate output register; a stalled output cannot be overwritten by a later FIFO word |
+| Panel prefetch | A 128-column ring reserves at most 64 columns per request, only with at least 64 free entries; synchronous column reads release ring storage into a held output register |
+| Panel tail | The final request contains exactly the remaining columns, with one W4 or two dense beats per column; no read crosses the preflighted panel end |
+| Dense array issue | Activation RAM read and broadcast-word capture use the same column handshake; their held operands advance together into the array |
+| AWQ group transition | Stop column admission at the group boundary; previously admitted dequantization/MAC work drains while the next group's zeros/scales are fetched |
+| AWQ metadata/data stall | Four dequantization stages and their activation/column tags share the same advance; a blocked array cannot mispair a later activation |
+| RMSNorm scaling | After inverse computation, two separately rounded three-stage FP32 multipliers stream x*inverse then product*gamma; gamma/index tags freeze with both pipelines |
+| SwiGLU interleave | Ascending input/output indices select engine index[2:0]; eight independent four-slot engines execute without changing per-element arithmetic order |
+| SwiGLU minimum geometry | INTERMEDIATE_SIZE=8 gives one vector per engine, with no zero-length engine or hidden extra input |
+| SwiGLU abort | Stop public input/output admission, cancel every engine, and finish only after all engine ownership drains, including while abort remains asserted |
+| RoPE trig reuse | The first head computes every pair's sin/cos in RTL; later heads read only that command's completed cache entries; reset or a new command requires first-head recomputation |
 
 Reset cannot relabel stale DDR responses as new requests: native integration
 must retain reset-safe drain/epoch ownership. Memory data need not reset.
 Synchronous storage ports do not acquire asynchronous-reset data writes.
 `done` is one clock following final accepted result, never early.
+
+## Connected native integration
+
+The ordinary, batch, commit, logit and CSR interfaces use `clk`. The load
+interface and Avalon interface use `ddr_clk`, preserving the parent clocking
+contract. Both domains asynchronously assert reset and synchronize release.
+No frequency ratio or relative phase between the clocks is assumed.
+
+`anvil_q1_ht2_top.u_execution` contains the native decoder, causal KV routing
+and speculative verifier. The decoder's learned projection path instantiates
+the four-slot MAC array and sparse DMA predicate; its weights and activation
+vectors are actual DDR/model data, not externally supplied operator answers.
+The top's DMA mux has four owners: execution reads, execution KV writes,
+descriptor-validation reads and image writes. It captures one complete
+request and routes every response to that owner. Loading and descriptor
+mutation cannot acquire execution ownership concurrently.
+
+The image loader holds a whole-upload reservation. An acquisition invalidates
+the image and prefix before any write. Individual beats cross through held,
+acknowledged mailboxes, preserve all byte enables, and issue one aligned
+64-byte write each. A new beat waits for the previous write's acknowledgement;
+zero byte enables are legal as in the parent. Last and errors cross back to
+the DDR domain, where completion pulses and a further acknowledgement returns
+the reservation to the core. An unaligned load is rejected without a write.
+The greatest legal aligned address is `0x1ffffffc0`, whose exclusive end is
+exactly `2^33`. Load errors do not make an image valid. Explicit error clear,
+descriptor installation and a successful finite-data recommit remain required.
+
+Inference admission is suppressed by CSR presentation, a pending CSR response,
+descriptor configuration/validation, a visible load acquisition, active
+upload, transport quarantine or sticky error. CSR accesses during execution
+can still read counters/status; mutation requests receive explicit errors.
+New faults take priority over fault clear. The inherited physical-read-beat
+counter crosses as acknowledged whole-width snapshots; its descriptor endpoint
+then holds low/high read pairs with parent semantics. HT2 physical-byte reads
+use their separate on-demand acknowledged counter snapshots.
+
+The request crossing remains an acknowledged mailbox, with one complete
+transaction owned until its final core response handshake. The DDR response
+crossing is `anvil_q1_ht2_response_fifo`: a 512-entry, 515-bit dual-clock RAM
+FIFO carrying write/read identity, last, error and data. Binary pointers
+address RAM; registered Gray pointers cross through two-flop synchronizers.
+The destination has a synchronous registered RAM read and holds its output
+until consumed. Physical Avalon responses cannot be backpressured, so FIFO
+capacity is reserved structurally by the one-transaction/255-beat bound,
+not by assuming the core is ready. Overflow or an unexpected response
+quarantines the transport. Logical reset cancels FIFO/client ownership while
+the reset-persistent physical-debt ledger drains stale physical responses.
+FIFO CDC constraints and fitted implementation remain native-gate obligations;
+static parsing does not establish CDC or memory inference.
+
+The 29 compatibility modules reside in `rtl/` under their original names.
+Their fixed-point formats, interfaces, arithmetic and cycle sequencing remain
+the parent contract. Five delivery copies move helper-function evaluation
+outside clocked processes without adding registers or changing input samples,
+to avoid synthesis treating function-local temporaries as asynchronous-reset
+state. The supplied reference directory is unchanged. Compatibility and
+reference sources must never be selected together in a compilation.
 
 ## Frozen arithmetic and decoder ordering
 
@@ -284,8 +362,9 @@ No heuristic logit margin is authorized.
 ## Internal native projection layout and interfaces
 
 `anvil_q1_ht2_projection` connects the sparse decision unit, a bounded
-one/two-beat response collector, 64 parallel AWQ dequantizers and the complete
-four-slot/64-lane MAC array. Its command latches format, slots, dimensions,
+one/two-beat metadata/sparse response collector, dense panel prefetch,
+64 parallel AWQ dequantizers and the complete four-slot/64-lane MAC array.
+Its command latches format, slots, dimensions,
 descriptor intervals, down-projection identity and sparse controls. Inputs
 are exactly HIDDEN_SIZE or INTERMEDIATE_SIZE; output rows are bounded by the
 largest configured hidden/intermediate/vocabulary dimension. All address
@@ -304,9 +383,9 @@ ascending groups within each panel. Required descriptor lengths are exactly
 `panels*groups*64` and `panels*groups*128`, respectively, where
 `panels=ceil(outputs/64)` and `groups=inputs/GROUP_SIZE`.
 Padding is charged and inactive rows do not participate in arithmetic.
-The native descriptor endpoint and decoder use these lengths. The external
-top/image-loader connection and Verifier-owned checkpoint conversion remain
-required; installed descriptors alone are not a validated image.
+The native descriptor endpoint, decoder and connected top/image loader use
+these lengths. Verifier-owned checkpoint conversion must reproduce this
+layout; installed descriptors alone are not a validated image.
 
 The activation stream supplies all four selected-format values for each
 ascending input column once, plus four original-arithmetic-nonzero bits.
@@ -315,6 +394,17 @@ An encoded nonzero also forces the nonzero classification, regardless of
 the accompanying bit. All active slots share each collected weight burst.
 Skipped columns still send a zero-weight logical beat through the array, so
 column modulo-four contexts and transaction first/last do not change.
+
+With sparsity disabled, up to 64 contiguous columns are fetched per request,
+with an exact shortened tail. A 128-column synchronous ring retains
+unconsumed columns. Credit reservation precedes every request; one native
+column uses two beats and one W4 column uses one beat. Broadcast words and
+synchronous activation reads enter the same held issue stage. W4 activation/
+column tags follow the four-stage dequantization pipeline. Group metadata
+changes only after all inputs of the old group have entered dequantization;
+it cannot change those already captured products. Sparse operation instead
+waits for the connected predicate before each physical weight request and
+never fetches a would-be skipped column speculatively.
 
 Only the down-projection command identity enables eligible-byte accounting;
 it is independent of whether sparse mode is enabled. Eligible weight bytes
@@ -355,13 +445,20 @@ ascending FP32 vectors and common selected-format gamma values. Four scalar
 paths preserve each slot's ascending square/add left fold, followed by mean,
 epsilon addition, square root, reciprocal, x*inverse and gamma multiplication.
 It stores input/gamma vectors in synchronous, non-reset RAM and returns
-ascending FP32 vectors. It does not insert a matrix-input rounding boundary.
+ascending FP32 vectors. Final scaling uses two separate three-stage
+multipliers with common stall and gamma/index tags, permitting one vector
+per enabled clock after fill. The ordered sum is not reassociated to obtain
+that overlap. It does not insert a matrix-input rounding boundary.
 
 `anvil_q1_ht2_swiglu` takes ascending gate/up FP32 vectors for
 INTERMEDIATE_SIZE elements. It uses the frozen sign-dependent stable sigmoid
 sequence and returns FP32 intermediates, their once-rounded selected-format
 encodings and original nonzero flags. Nonfinite narrowing is an execution
 error, not an output transfer.
+Eight independent four-slot engines execute interleaved element indices;
+each receives exactly INTERMEDIATE_SIZE/8 vectors. Both public directions
+remain ascending and independent, so inputs may advance while earlier
+outputs are pending. Abort cancels and drains every engine before done.
 
 `anvil_q1_ht2_rope` takes four positions and streams split-half pairs, in head
 order then ascending j. It returns both FP32 rotated values and their
@@ -369,7 +466,10 @@ selected-format encodings, with logical first/second indices. Position-
 independent ROM constants cover every even HEAD_DIM from 2 through 64.
 They encode RNE32(1000000^(-2*j/HEAD_DIM)), generated with 180-decimal-digit
 constant evaluation and rational ties-to-even packing, not position-dependent
-host answers. Independent high-precision checking is still mandatory.
+host answers. The first head computes each pair's trigonometry in RTL;
+later heads reuse a command-local synchronous cache, invalidated by always
+recomputing the first head on the next command. Independent high-precision
+checking is still mandatory.
 
 `anvil_q1_ht2_fp32_sincos` reduces the exact FP32 input against a 320-fractional-
 bit interval for pi/2. Sixteen quotient-bit decisions use eleven 32-bit

@@ -115,6 +115,7 @@ module anvil_q1_ht2_decoder #(
   reg [4:0] layer;
   reg [2:0] projection;
   reg [12:0] vector_index;
+  reg [12:0] swiglu_received;
   reg [1:0] embedding_slot, store_node;
   reg [127:0] embedding_word, row_value, row_operand, targets, maxima;
   reg [3:0] maximum_owned;
@@ -230,6 +231,11 @@ module anvil_q1_ht2_decoder #(
   wire [31:0] w_index;
   wire [63:0] w_activation;
   wire [3:0] w_nonzero, w_slots;
+  wire swiglu_active = state == SWIGLU_READ || state == SWIGLU_INPUT ||
+    state == SWIGLU_OUTPUT;
+  wire swiglu_response = swiglu_active && w_valid && !cancel;
+  wire swiglu_bad = swiglu_response &&
+    (w_index != {19'b0, swiglu_received} || w_index >= I || w_slots != slots);
   wire [3:0] add_valid;
   wire [127:0] add_data;
   wire worker_error = p_error || n_error || (|r_error) || a_error || w_error;
@@ -435,7 +441,7 @@ module anvil_q1_ht2_decoder #(
     .cmd_slots(slots), .cmd_fp16(fp16),
     .in_valid(state == SWIGLU_INPUT && !cancel), .in_ready(w_input_ready),
     .in_gate(gate_q), .in_up(up_q),
-    .out_valid(w_valid), .out_ready(state == SWIGLU_OUTPUT || state == FAIL_DRAIN),
+    .out_valid(w_valid), .out_ready(swiglu_active || state == FAIL_DRAIN),
     .out_index(w_index), .out_data(), .out_activation(w_activation),
     .out_nonzero(w_nonzero), .out_slots(w_slots),
     .busy(w_busy), .done(w_done), .error(w_error)
@@ -522,7 +528,7 @@ module anvil_q1_ht2_decoder #(
         end
         if (state == ATTN_OUTPUT && a_valid && a_index < H && a_slots == slots)
           attention_vectors[a_index] <= a_data;
-        if (state == SWIGLU_OUTPUT && w_valid && w_index < I && w_slots == slots)
+        if (swiglu_response && !swiglu_bad)
           intermediate_vectors[w_index] <= {w_nonzero, w_activation};
       end
     end
@@ -548,6 +554,7 @@ module anvil_q1_ht2_decoder #(
       layer <= 0;
       projection <= 0;
       vector_index <= 0;
+      swiglu_received <= 0;
       embedding_slot <= 0;
       store_node <= 0;
       embedding_word <= 0;
@@ -585,7 +592,8 @@ module anvil_q1_ht2_decoder #(
     end else begin
       if (lookup_valid && lookup_ready) lookup_owned <= 1;
       if (lookup_rsp_valid && lookup_rsp_ready) lookup_owned <= 0;
-      if ((abort_error || kv_store_error || worker_error) &&
+      if (swiglu_response && !swiglu_bad) swiglu_received <= swiglu_received + 1'b1;
+      if ((abort_error || kv_store_error || worker_error || swiglu_bad) &&
           state != IDLE && state != RESPONSE && state != COMPLETE && state != FAIL_DRAIN) begin
         failed <= 1;
         state <= FAIL_DRAIN;
@@ -901,15 +909,17 @@ module anvil_q1_ht2_decoder #(
           else vector_index <= vector_index + 1'b1;
         end
         ATTN_FINISH: if (a_done) begin projection <= 3; state <= PROJ_BEGIN; end
-        SWIGLU_COMMAND: if (w_ready) begin vector_index <= 0; state <= SWIGLU_READ; end
+        SWIGLU_COMMAND: if (w_ready) begin
+          vector_index <= 0;
+          swiglu_received <= 0;
+          state <= SWIGLU_READ;
+        end
         SWIGLU_READ: state <= SWIGLU_INPUT;
-        SWIGLU_INPUT: if (w_input_ready) state <= SWIGLU_OUTPUT;
-        SWIGLU_OUTPUT: if (w_valid) begin
-          if (w_index != {19'b0, vector_index} || w_slots != slots) begin
-            failed <= 1; state <= FAIL_DRAIN;
-          end else if (vector_index + 1 == I) state <= SWIGLU_FINISH;
+        SWIGLU_INPUT: if (w_input_ready) begin
+          if (vector_index + 1 == I) state <= SWIGLU_OUTPUT;
           else begin vector_index <= vector_index + 1'b1; state <= SWIGLU_READ; end
         end
+        SWIGLU_OUTPUT: if (swiglu_received == I) state <= SWIGLU_FINISH;
         SWIGLU_FINISH: if (w_done) begin projection <= 6; state <= PROJ_BEGIN; end
         FAIL_DRAIN: if (!workers_busy && !dma_owned && !s_valid && !lookup_owned)
           state <= RESPONSE;
