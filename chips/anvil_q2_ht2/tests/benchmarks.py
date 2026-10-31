@@ -179,6 +179,8 @@ class PromptAccount:
         require(self.cell in cells(), "unknown measurement cell")
         require(begin["boundary"] == BOUNDARY, "measurement boundary mismatch")
         self.clock = integer(begin["measured_clock_hz"], "measured clock", 1)
+        self.initial_position = integer(begin["sequence_position"], "initial sequence position",
+                                        0, 32768)
         self.vocabulary, self.eos_ids, self.hidden_size = vocabulary, eos_ids, hidden_size
         self.expected = begin["greedy_ids"]
         require(isinstance(self.expected, list) and self.expected,
@@ -198,6 +200,7 @@ class PromptAccount:
         self.targets = {}
         self.compared = 0
         self.original_quality = []
+        self.layer_quality = {}
 
     def ddr(self, item):
         phase, direction, category = item["phase"], item["direction"], item["category"]
@@ -220,6 +223,9 @@ class PromptAccount:
         nrmse, cosine = fidelity(item["actual"], item["reference"])
         require(nrmse <= Decimal("0.01") and cosine >= Decimal("0.999"),
                 "floating-point fidelity threshold failed")
+        previous = self.layer_quality.get(layer, (Decimal(0), Decimal(1), 0))
+        self.layer_quality[layer] = (max(previous[0], nrmse), min(previous[1], cosine),
+                                     previous[2]+1)
         self.compared += 1
         if layer == 28:
             target = greedy(item["actual"])
@@ -245,7 +251,8 @@ class PromptAccount:
         require(integer(item["accepted"], "accepted count", 1, self.cell["k"]) == len(path) and
                 integer(item["mask"], "accepted mask", 1, 15) == mask and
                 integer(item["next_token"], "next token", 0, self.vocabulary-1) == next_token and
-                integer(item["position"], "position") == len(self.prefix)+len(path),
+                integer(item["position"], "position", 0, 32768) ==
+                self.initial_position+len(self.prefix)+len(path),
                 "incorrect tree acceptance, next token or pointer")
         start = integer(item["accept_ns"], "batch acceptance time")
         end = integer(item["commit_ns"], "batch commit time")
@@ -273,6 +280,9 @@ class PromptAccount:
 
     def finish(self, end):
         output = end["output_ids"]
+        require(isinstance(output, list), "output IDs must be a list")
+        for token in output:
+            integer(token, "observed output token", 0, self.vocabulary-1)
         require(output == self.expected and self.prefix == output,
                 "unobserved output tokens or different independent greedy sequence")
         require(self.previous_commit == self.begin["decode_end_ns"] and not self.seen,
@@ -295,6 +305,10 @@ class PromptAccount:
             "ddr_classes": {"/".join(key): value for key, value in self.bytes_by_class.items()},
             "acceptance": dict(self.acceptance), "compared_vectors": self.compared,
             "quantized_vs_original_bf16": self.original_quality,
+            "layer_quality": {str(layer): {"max_nrmse": str(values[0]),
+                                           "min_cosine": str(values[1]),
+                                           "compared_vectors": values[2]}
+                              for layer, values in sorted(self.layer_quality.items())},
         }
 
 
@@ -304,8 +318,17 @@ def summarize(rows):
     require(tokens > 0 and duration > 0, "empty benchmark measurement")
     traffic = sum(row["ddr_bytes"]["decode"] for row in rows)
     acceptance = Counter()
+    layer_quality = {}
+    original_quality = []
     for row in rows:
         acceptance.update(row["acceptance"])
+        original_quality.extend(row["quantized_vs_original_bf16"])
+        for layer, quality in row["layer_quality"].items():
+            previous = layer_quality.get(layer, (Decimal(0), Decimal(1), 0))
+            layer_quality[layer] = (
+                max(previous[0], Decimal(quality["max_nrmse"])),
+                min(previous[1], Decimal(quality["min_cosine"])),
+                previous[2]+quality["compared_vectors"])
     return {
         "tokens": tokens, "decode_ns": duration,
         "prefill_ns": sum(row["prefill_ns"] for row in rows),
@@ -316,6 +339,13 @@ def summarize(rows):
         "acceptance": dict(acceptance),
         "measured_clocks_hz": sorted({row["measured_clock_hz"] for row in rows}),
         "compared_vectors": sum(row["compared_vectors"] for row in rows),
+        "layer_quality": {layer: {"max_nrmse": str(value[0]), "min_cosine": str(value[1]),
+                                 "compared_vectors": value[2]}
+                          for layer, value in layer_quality.items()},
+        "quantized_vs_original_bf16": (
+            {"max_nrmse": str(max(Decimal(value[0]) for value in original_quality)),
+             "min_cosine": str(min(Decimal(value[1]) for value in original_quality)),
+             "compared_logits": len(original_quality)} if original_quality else None),
     }
 
 
@@ -358,6 +388,42 @@ def prerequisites(root, manifest):
         if not required or not required.issubset(supplied):
             errors.append("checkpoint_index: weight_map shards are not completely manifested")
     return paths, errors
+
+
+def read_export(path, expected_header, prompts, vocabulary, eos_ids, grouped, hidden_size=1536):
+    with path.open() as stream:
+        first = next(stream, None)
+        require(first is not None, "empty observation export")
+        header = json.loads(first)
+        require(header == expected_header, "observation provenance/header binding mismatch")
+        active = None
+        for line_number, line in enumerate(stream, 2):
+            item = json.loads(line)
+            kind = item["type"]
+            if kind == "begin":
+                require(active is None, "overlapping prompt observations")
+                prompt = item["prompt_id"]
+                require(prompt in prompts, "unknown corpus prompt")
+                active = PromptAccount(item, vocabulary, eos_ids, hidden_size)
+                key = cell_key(item["cell"])
+                require(prompt not in grouped[key], "duplicate cell/prompt measurement")
+            else:
+                require(active is not None, f"orphan observation at line {line_number}")
+                if kind == "end":
+                    grouped[key][prompt] = active.finish(item)
+                    active = None
+                else:
+                    require(kind in ("ddr", "vector", "batch", "token"),
+                            f"unknown observation at line {line_number}")
+                    getattr(active, kind)(item)
+        require(active is None, "truncated prompt observation")
+
+
+def performance_thresholds(tpm, reduction):
+    require(Decimal(tpm) >= Decimal(3500),
+            "measured aggregate production decode TPM is below 3500")
+    require(Decimal(reduction) > Decimal("0.5"),
+            "actual per-committed-token DDR reduction is not greater than 50 percent")
 
 
 def execute(run):
@@ -407,43 +473,16 @@ def execute(run):
     grouped = defaultdict(dict)
     source_hashes = {key: value for key, value in hashes().items()
                      if key.startswith(("rtl/", "anvil_q2_ht_reference/rtl/", "design/"))}
+    expected_header = {
+        "schema": 1, "model": manifest["model"], "source_sha256": source_hashes,
+        "corpus_sha256": manifest["corpus"]["sha256"],
+        "asset_sha256": {key: value for key, value in report["asset_hashes"].items()
+                         if not key.startswith("observations/")},
+        "board": "10AX115N2F45E1SG", "origin": "hardware"}
     for index, binding in enumerate(manifest["observations"]):
         path = paths[f"observations/{index}"]
-        with path.open() as stream:
-            header = json.loads(next(stream))
-            require(header["schema"] == 1 and header["model"] == manifest["model"] and
-                    header["source_sha256"] == source_hashes and
-                    header["corpus_sha256"] == manifest["corpus"]["sha256"],
-                    "observation source/model/corpus binding mismatch")
-            require(header["asset_sha256"] == {
-                key: value for key, value in report["asset_hashes"].items()
-                if not key.startswith("observations/")},
-                "observation assets/reference/baseline binding mismatch")
-            require(header["board"] == "10AX115N2F45E1SG" and header["origin"] == "hardware",
-                    "production accounting requires actual production-device observations")
-            active = None
-            for line_number, line in enumerate(stream, 2):
-                item = json.loads(line)
-                kind = item["type"]
-                if kind == "begin":
-                    require(active is None, "overlapping prompt observations")
-                    prompt = item["prompt_id"]
-                    require(prompt in prompts, "unknown corpus prompt")
-                    active = PromptAccount(item, config["vocab_size"], eos_ids)
-                    key = cell_key(item["cell"])
-                    require(prompt not in grouped[key], "duplicate cell/prompt measurement")
-                else:
-                    require(active is not None, f"orphan observation at line {line_number}")
-                    if kind == "end":
-                        grouped[key][prompt] = active.finish(item)
-                        active = None
-                    else:
-                        require(kind in ("ddr", "vector", "batch", "token"),
-                                f"unknown observation at line {line_number}")
-                        getattr(active, kind)(item)
-            require(active is None, "truncated prompt observation")
+        read_export(path, expected_header, prompts, config["vocab_size"], eos_ids, grouped)
     failures = []
-    summaries = {}
     for entry in matrix:
         cell, domain = entry["cell"], entry["domain"]
         required = {key for key, prompt in prompts.items() if prompt["domain"] == domain}
@@ -455,7 +494,6 @@ def execute(run):
             continue
         summary = summarize([available[prompt] for prompt in sorted(required)])
         entry.update(status="measured", summary=summary)
-        summaries[cell_key(cell), domain] = summary
         if summary["tokens"] < 1000:
             failures.append(f"{cell_key(cell)}/{domain}: fewer than 1000 committed tokens")
     report["measurement_errors"] = failures
@@ -487,7 +525,4 @@ def execute(run):
     report["production_comparisons"] = comparisons
     save()
     aggregate = comparisons[-1]
-    require(Decimal(aggregate["production"]["decode_tpm"]) >= Decimal(3500),
-            "measured aggregate production decode TPM is below 3500")
-    require(Decimal(aggregate["ddr_reduction"]) > Decimal("0.5"),
-            "actual per-committed-token DDR reduction is not greater than 50 percent")
+    performance_thresholds(aggregate["production"]["decode_tpm"], aggregate["ddr_reduction"])

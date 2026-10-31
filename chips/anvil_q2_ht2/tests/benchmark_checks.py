@@ -2,6 +2,7 @@
 """No-claim unit tests for benchmark corpus, provenance checks and accounting."""
 
 import argparse
+from collections import defaultdict
 import copy
 from decimal import Decimal
 import hashlib
@@ -13,7 +14,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmarks import (BOUNDARY, DOMAINS, PromptAccount, cell_key, cells, corpus,
                         digest, draft, fidelity, greedy, integer, portable_path,
-                        prerequisites, selected_path, summarize, validate_asset)
+                        performance_thresholds, prerequisites, read_export,
+                        selected_path, summarize, validate_asset)
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = None
@@ -24,6 +26,7 @@ def begin(cell=None, expected=None):
         "type": "begin", "prompt_id": "dialogue-00",
         "cell": cell or {"engine": "ht2", "k": 1, "mode": "bf16-dense", "kv": "bf16"},
         "boundary": BOUNDARY, "measured_clock_hz": 100000000,
+        "sequence_position": 0,
         "prefill_start_ns": 10, "prefill_end_ns": 110,
         "decode_start_ns": 110, "decode_end_ns": 310,
         "greedy_ids": expected or [0, 1],
@@ -283,7 +286,8 @@ class AccountingChecks(unittest.TestCase):
                         "actual": [0, 0x3f800000, 0, 0],
                         "reference": [0, 0x3f800000, 0, 0],
                         "original_bf16": [0, 0x40000000, 0, 0]})
-        self.assertEqual(account.original_quality, [("0.5", "1")])
+        self.assertEqual([tuple(Decimal(value) for value in pair)
+                          for pair in account.original_quality], [(Decimal("0.5"), Decimal(1))])
 
     def test_aggregate_is_token_weighted_not_mean_of_tpm(self):
         first = completed_account().finish(end())
@@ -297,6 +301,84 @@ class AccountingChecks(unittest.TestCase):
     def test_empty_aggregate_is_not_success(self):
         with self.assertRaisesRegex(ValueError, "empty benchmark"):
             summarize([])
+
+    def test_exact_performance_thresholds(self):
+        performance_thresholds("3500", "0.5000000001")
+        with self.assertRaisesRegex(ValueError, "below 3500"):
+            performance_thresholds("3499.999999999", "0.75")
+        with self.assertRaisesRegex(ValueError, "greater than 50"):
+            performance_thresholds("7000", "0.5")
+
+    def test_negative_or_boolean_beats_rejected(self):
+        for count in (-1, True):
+            with self.subTest(count=count), self.assertRaises(ValueError):
+                completed_account().ddr({"phase": "decode", "direction": "read",
+                                         "category": "weights", "accepted_beats": count})
+
+
+class ExportChecks(unittest.TestCase):
+    header = {"scope": "no-claim unit fixture, not a production hardware export"}
+
+    def read_rows(self, rows, header=None, grouped=None):
+        path = FIXTURES / (self._testMethodName + ".jsonl")
+        path.write_text("".join(json.dumps(row)+"\n" for row in rows))
+        grouped = grouped if grouped is not None else defaultdict(dict)
+        read_export(path, header or self.header, {"dialogue-00": {"domain": "dialogue"}},
+                    4, [1], grouped, hidden_size=8)
+        return grouped
+
+    def baseline_rows(self):
+        cell = {"engine": "anvil-q2-ht", "k": 1, "mode": "baseline", "kv": "baseline"}
+        start = begin(cell)
+        traffic = [
+            {"type": "ddr", "phase": "prefill", "direction": "read",
+             "category": "weights", "accepted_beats": 1},
+            {"type": "ddr", "phase": "decode", "direction": "read",
+             "category": "weights", "accepted_beats": 5},
+            {"type": "ddr", "phase": "decode", "direction": "write",
+             "category": "kv", "accepted_beats": 2}]
+        return [self.header, start, *traffic, {"type": "token", "id": 0, "commit_ns": 210},
+                {"type": "token", "id": 1, "commit_ns": 310}, end()]
+
+    def test_complete_stream(self):
+        rows = self.baseline_rows()
+        grouped = self.read_rows(rows)
+        result = grouped[cell_key(rows[1]["cell"])]["dialogue-00"]
+        self.assertEqual(result["tokens"], 2)
+        self.assertEqual(result["ddr_bytes"]["decode"], 448)
+
+    def test_stale_header_rejected(self):
+        with self.assertRaisesRegex(ValueError, "provenance/header"):
+            self.read_rows(self.baseline_rows(), header={"stale": True})
+
+    def test_empty_export_rejected(self):
+        with self.assertRaisesRegex(ValueError, "empty observation"):
+            self.read_rows([])
+
+    def test_truncated_export_rejected(self):
+        with self.assertRaisesRegex(ValueError, "truncated"):
+            self.read_rows(self.baseline_rows()[:-1])
+
+    def test_unknown_record_rejected(self):
+        rows = self.baseline_rows()
+        rows.insert(-1, {"type": "ignored-error"})
+        with self.assertRaisesRegex(ValueError, "unknown observation"):
+            self.read_rows(rows)
+
+    def test_orphan_record_rejected(self):
+        with self.assertRaisesRegex(ValueError, "orphan"):
+            self.read_rows([self.header, {"type": "token", "id": 0}])
+
+    def test_duplicate_prompt_rejected(self):
+        rows = self.baseline_rows()
+        with self.assertRaisesRegex(ValueError, "duplicate cell/prompt"):
+            self.read_rows(rows + rows[1:])
+
+    def test_overlapping_prompts_rejected(self):
+        rows = self.baseline_rows()
+        rows.insert(2, rows[1])
+        with self.assertRaisesRegex(ValueError, "overlapping"):
+            self.read_rows(rows)
 
 
 def main():
