@@ -133,13 +133,16 @@ def dot8_case(run, simulator, seed=17, rtl=None, must_fail=False):
         command = [run.rel(obj / "dot8"), "+vectors=" + run.rel(vectors)]
     text, receipt = run.tool(command, expected=(0, 1, -6) if must_fail else (0,))
     if must_fail:
-        if receipt["exit_code"] == 0 or "DOT8 " not in text:
+        if receipt["exit_code"] == 0 or not any(
+                marker in text for marker in ("DOT8 preedge cycle", "DOT8 postedge cycle")):
             raise AssertionError("mutation survived or failed for a nonassertion reason")
     elif f"DOT8_COMPLETE cycles={cycles} transactions={transactions}" not in text:
         raise AssertionError("missing exact comparison counts")
     result = {"simulator": simulator, "seed": seed, "cycles_compared": cycles,
               "accepted_transactions": transactions, "coverage": coverage,
               "functional_mutation_killed": must_fail, "stdout": receipt["stdout"]}
+    if must_fail:
+        result["assertion"] = text
     write_json(folder / "result.json", result)
     return result
 

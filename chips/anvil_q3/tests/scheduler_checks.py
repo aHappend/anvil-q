@@ -49,7 +49,8 @@ def scheduler_case(run, banks=8, depth=3, simulator="iverilog", rtl=None, must_f
     if must_fail:
         if receipt["exit_code"] == 0 or not any(assertion in text for assertion in (
                 "SCHEDULER response association/order", "SCHEDULER live tag alias",
-                "SCHEDULER client stability", "SCHEDULER bus stability")):
+                "SCHEDULER client stability", "SCHEDULER bus stability",
+                "SCHEDULER cancelled response not drained")):
             raise AssertionError("scheduler mutation survived or failed without a functional assertion")
         return {"functional_mutation_killed": True, "assertion": text,
                 "stdout": receipt["stdout"]}
