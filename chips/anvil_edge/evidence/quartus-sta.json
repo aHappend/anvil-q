@@ -1,23 +1,17 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-10-31T15:43:38.057607+00:00",
+  "timestamp_utc": "2026-10-31T16:02:35.466941+00:00",
   "project_dir": "/data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
   "min_setup_slack_ns": 0.0,
   "min_hold_slack_ns": 0.0,
-  "status": "failed",
+  "status": "passed",
   "map_summary": {
     "exists": true,
     "path": "/data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
-    "error_count": 5,
-    "errors": [
-      "Error (10170): Verilog HDL syntax error at anvil_edge_ddr4_boot_loader.sv(70) near text: \"for\";  expecting \"endmodule\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_edge_ddr4_boot_loader.sv Line: 70",
-      "Error (10170): Verilog HDL syntax error at anvil_edge_ddr4_boot_loader.sv(73) near text: \"end\";  expecting \"endmodule\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_edge_ddr4_boot_loader.sv Line: 73",
-      "Error (10112): Ignored design unit \"anvil_edge_ddr4_boot_loader\" at anvil_edge_ddr4_boot_loader.sv(1) due to previous errors File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_edge_ddr4_boot_loader.sv Line: 1",
-      "Error (10170): Verilog HDL syntax error at anvil_q1_decoder_layer.sv(33) near text: \"for\";  expecting \"endmodule\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_decoder_layer.sv Line: 33",
-      "Error (10112): Ignored design unit \"anvil_q1_decoder_layer\" at anvil_q1_decoder_layer.sv(1) due to previous errors File: /data/sufeng/anvil-edge-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_decoder_layer.sv Line: 1"
-    ],
+    "error_count": 0,
+    "errors": [],
     "lpm_divide_error_count": 0,
     "lpm_divide_errors": [],
     "warning_10268_count": 0,
@@ -26,33 +20,325 @@
     "uninferred_rams": []
   },
   "sta_summary": {
-    "exit_code": 3,
-    "netlist_mode": null,
-    "clocks": [],
-    "wns_setup_ns": null,
-    "wns_hold_ns": null,
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 0.691,
+    "wns_hold_ns": 0.045,
     "unconstrained_setup_paths": 0,
     "unconstrained_functional_endpoints": 0,
     "unapproved_timing_exceptions": 0,
     "failing_setup_count": 0,
     "failing_hold_count": 0,
-    "setup_paths": [],
-    "hold_paths": [],
-    "stderr_tail": [
-      "------------------------------------------------",
-      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
-      "",
-      "    while executing",
-      "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_ozfkkaql.tcl\" line 2)",
-      "------------------------------------------------"
-    ]
+    "setup_paths": [
+      {
+        "slack_ns": 0.691,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[18]"
+      },
+      {
+        "slack_ns": 0.692,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[28]"
+      },
+      {
+        "slack_ns": 0.693,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[24]"
+      },
+      {
+        "slack_ns": 0.693,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[21]"
+      },
+      {
+        "slack_ns": 0.693,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[25]"
+      },
+      {
+        "slack_ns": 0.694,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[22]"
+      },
+      {
+        "slack_ns": 0.703,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[18]"
+      },
+      {
+        "slack_ns": 0.704,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[28]"
+      },
+      {
+        "slack_ns": 0.705,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[21]"
+      },
+      {
+        "slack_ns": 0.705,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[25]"
+      },
+      {
+        "slack_ns": 0.705,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[24]"
+      },
+      {
+        "slack_ns": 0.706,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[22]"
+      },
+      {
+        "slack_ns": 0.714,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[18]"
+      },
+      {
+        "slack_ns": 0.715,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[28]"
+      },
+      {
+        "slack_ns": 0.716,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[21]"
+      },
+      {
+        "slack_ns": 0.716,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[25]"
+      },
+      {
+        "slack_ns": 0.716,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[24]"
+      },
+      {
+        "slack_ns": 0.717,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[22]"
+      },
+      {
+        "slack_ns": 0.724,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[18]"
+      },
+      {
+        "slack_ns": 0.725,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|lane[1]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|output_value[28]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|state.WAIT_RESULT|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|state.WAIT_RESULT"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|anvil_edge_unsigned_divider:divider|divider.state.HOLD|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|anvil_edge_unsigned_divider:divider|divider.state.HOLD"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "activation_reuse_valid",
+        "to_node": "activation_reuse_valid"
+      },
+      {
+        "slack_ns": 0.047,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|anvil_edge_unsigned_divider:divider|divider.state.ITERATE|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|anvil_edge_unsigned_divider:divider|divider.state.ITERATE"
+      },
+      {
+        "slack_ns": 0.047,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|anvil_edge_unsigned_divider:divider|divider.state.IDLE|anvil_q1_decoder_layer:decoder|anvil_q1_gqa_attention:attention|anvil_edge_round_div:rounded_divider|anvil_edge_unsigned_divider:divider|divider.state.IDLE"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "state.IDLE",
+        "to_node": "state.IDLE"
+      },
+      {
+        "slack_ns": 0.053,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "state.LOGIT",
+        "to_node": "state.LOGIT"
+      },
+      {
+        "slack_ns": 0.056,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|anvil_edge_exp_q24:exp_unit|anvil_edge_unsigned_divider:divider|divider.dividend_shift[0]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|anvil_edge_exp_q24:exp_unit|anvil_edge_unsigned_divider:divider|divider.dividend_shift[0]"
+      },
+      {
+        "slack_ns": 0.056,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_w4a16_gemv:gemv|qw[1]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|qw[1]"
+      },
+      {
+        "slack_ns": 0.056,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_w4a16_gemv:gemv|qw[2]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|qw[2]"
+      },
+      {
+        "slack_ns": 0.057,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|state.DIVIDE|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|state.DIVIDE"
+      },
+      {
+        "slack_ns": 0.057,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|anvil_edge_exp_q24:exp_unit|anvil_edge_unsigned_divider:divider|divider.state.HOLD|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|anvil_edge_exp_q24:exp_unit|anvil_edge_unsigned_divider:divider|divider.state.HOLD"
+      },
+      {
+        "slack_ns": 0.057,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_rmsnorm:norm|anvil_edge_signed_multiplier:multiplier|multiplier.valid_pipe[6]|anvil_q1_decoder_layer:decoder|anvil_q1_rmsnorm:norm|anvil_edge_signed_multiplier:multiplier|multiplier.valid_pipe[7]"
+      },
+      {
+        "slack_ns": 0.057,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|anvil_edge_signed_multiplier:multiplier|multiplier.valid_result|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|anvil_edge_signed_multiplier:multiplier|multiplier.valid_result"
+      },
+      {
+        "slack_ns": 0.057,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_rmsnorm:final_norm",
+        "to_node": "state.IDLE|anvil_q1_rmsnorm:final_norm|state.IDLE"
+      },
+      {
+        "slack_ns": 0.058,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|activation[12]|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|activation[12]"
+      },
+      {
+        "slack_ns": 0.058,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_w4a16_gemv:gemv|qw[6]|anvil_q1_decoder_layer:decoder|anvil_q1_w4a16_gemv:gemv|qw[6]"
+      },
+      {
+        "slack_ns": 0.058,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|anvil_edge_unsigned_divider:divider|divider.state.HOLD|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_elementwise:silu_product|anvil_edge_silu_q16:silu_unit|anvil_edge_unsigned_divider:divider|divider.state.HOLD"
+      },
+      {
+        "slack_ns": 0.058,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|anvil_edge_signed_multiplier:multiplier|multiplier.busy|anvil_q1_decoder_layer:decoder|anvil_q1_swiglu_mlp:mlp|anvil_q1_w4a16_gemv:gemv|anvil_edge_signed_multiplier:multiplier|multiplier.busy"
+      },
+      {
+        "slack_ns": 0.058,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_decoder_layer:decoder",
+        "to_node": "anvil_q1_rmsnorm:norm|state.SCALE_WAIT|anvil_q1_decoder_layer:decoder|anvil_q1_rmsnorm:norm|state.SCALE_WAIT"
+      }
+    ],
+    "stderr_tail": []
   },
-  "detail": "quartus_map reported 5 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "detail": "Timing closed: Setup WNS = 0.691 ns",
   "top_module": "anvil_q1_top",
   "clock_port": "clk",
   "clock_period_ns": 10.0,
   "target_frequency_mhz": 100.0,
+  "fmax_mhz": 107.42,
+  "critical_path_delay_ns": 9.309,
+  "fitter_resource_summary": {
+    "alms_used": 17612,
+    "alms_total": 427200,
+    "alms_pct": "4 %",
+    "total_registers": 26424,
+    "block_memory_bits": 512,
+    "m20k_ram_blocks": 1,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 159,
+    "virtual_pins": 310
+  },
   "parameters": {
     "VOCAB_SIZE": 16,
     "HIDDEN_SIZE": 16,
