@@ -9,9 +9,9 @@
       "receipts": []
     },
     "check:l1-functional-numerical-defects-synthesis": {
-      "attempt_id": 790,
-      "duration_s": 2110.93256417918,
-      "stdout_preview": "{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 118785, \"elapsed_s\": 30.05765561084263}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 192513, \"elapsed_s\": 60.409577359911054}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 286721, \"elapsed_s\": 91.03374223597348}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 380929, \"elapsed_s\": 121.48414915287867}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 458753, \"elapsed_s\": 152.70690934499726}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 598017, \"elapsed_s\": 183.3005153790582}\n{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-tlrmi7u0/receipt.json\"}\n",
+      "attempt_id": 801,
+      "duration_s": 2116.33055908815,
+      "stdout_preview": "{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 114689, \"elapsed_s\": 30.71199468895793}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 188417, \"elapsed_s\": 60.89970645215362}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 278529, \"elapsed_s\": 91.78584744012915}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 389121, \"elapsed_s\": 122.67916685994714}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 466945, \"elapsed_s\": 153.43045494309627}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 614401, \"elapsed_s\": 184.0189922391437}\n{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-ik_h1hp9/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
