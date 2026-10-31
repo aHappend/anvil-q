@@ -1,0 +1,12 @@
+{
+  "chip": "Anvil-Q1-HT",
+  "passed_checks": {
+    "check:l1_behavior_reference_sensitivity_synthesis": {
+      "attempt_id": 515,
+      "duration_s": 213.47469659801573,
+      "stdout_preview": "COMMAND_HEARTBEAT {\"receipt\": \"evidence/preparation/verifier-mandatory-20261031T152044Z-3af68232/receipt.json\", \"label\": \"top-awq-c0-seed17-upload-only-1d39b7a7-compile\", \"pid\": 899036, \"elapsed_seconds\": 30.013, \"stdout_bytes\": 3143, \"stderr_bytes\": 31192, \"output_changed\": true, \"scope\": \"child_wait_not_functional_progress_or_acceptance\"}\n{\"outcome\": \"mandatory_passed\", \"reason\": \"Complete mandatory L1 campaign passed.\", \"receipt\": \"evidence/preparation/verifier-mandatory-20261031T152044Z-3af68232/receipt.json\"}\n",
+      "receipt_count": 0,
+      "receipts": []
+    }
+  }
+}

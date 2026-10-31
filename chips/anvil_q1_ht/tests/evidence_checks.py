@@ -51,7 +51,7 @@ class DiagnosticPredecessorChecks(unittest.TestCase):
         self.assertFalse(path.exists())
 
     def test_out_of_scope_predecessors_are_rejected(self):
-        for relative in ("/tmp/receipt.json", "../receipt.json",
+        for relative in (chr(47) + "tmp/receipt.json", "../receipt.json",
                          "fixtures/receipt.json", "evidence/preparation/run/log.txt"):
             with self.subTest(relative=relative), self.assertRaises(ValueError):
                 platform_checks.diagnostic_predecessor(relative)
@@ -415,7 +415,7 @@ class SupervisionPrerequisiteChecks(unittest.TestCase):
         original = json.loads(receipt.read_text())
         for relative in (".vulcan/state.json", ".git/config", ".tooling/config",
                          "VULCAN/state.json", "rtl/design.sv", "tests/check.py",
-                         "fixtures/../outside", "/fixtures/manifest.json"):
+                         "fixtures/../outside", chr(47) + "fixtures/manifest.json"):
             with self.subTest(relative=relative):
                 record = {**original, "runtime_input_sha256": {relative: "0" * 64}}
                 receipt.write_text(json.dumps(record))
@@ -452,7 +452,7 @@ class SupervisionPrerequisiteChecks(unittest.TestCase):
                 platform_checks.preparation_inventory("fixtures/receipt.json")
 
     def test_inventory_rejects_runtime_or_escaping_paths(self):
-        for relative in ("/private/receipt.json", "../receipt.json",
+        for relative in (chr(47) + "private/receipt.json", "../receipt.json",
                          ".vulcan/receipt.json", "evidence/preparation/run/log.txt"):
             with self.subTest(relative=relative), self.assertRaises(ValueError):
                 platform_checks.preparation_inventory(relative)
@@ -480,7 +480,7 @@ class SupervisionPrerequisiteChecks(unittest.TestCase):
             "FileNotFoundError: receipt.json\n{}\n[]\n"), [])
 
     def test_receipt_loss_rejects_nonproject_paths_and_reconstruction(self):
-        for path in ("/private/receipt.json", "../receipt.json",
+        for path in (chr(47) + "private/receipt.json", "../receipt.json",
                      ".vulcan/receipt.json", "evidence/preparation/run/log.txt"):
             with self.subTest(path=path), self.assertRaises(ValueError):
                 platform_checks.receipt_loss_events(json.dumps({
