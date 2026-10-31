@@ -171,9 +171,9 @@ package anvil_q1_fp_pkg;
     input signed [10:0] grid, input alignment_lost);
     reg [71:0] padded;
     reg [8:0] nonzero, selected;
-    reg [2:0] local_high [0:8];
-    reg [31:0] window [0:8];
-    reg [31:0] normalized [0:8];
+    reg [26:0] local_high;
+    reg [287:0] window;
+    reg [287:0] normalized;
     reg [8:0] tail;
     reg [70:0] shifted;
     reg [24:0] normal_unrounded, normal_significand;
@@ -192,11 +192,12 @@ package anvil_q1_fp_pkg;
       // Normalize each eight-bit leading window before selecting the leading block.
       for (block_index=0;block_index<9;block_index=block_index+1) begin
         nonzero[block_index]=|padded[block_index*8+:8];
-        local_high[block_index]=leading8(padded[block_index*8+:8]);
+        local_high[block_index*3+:3]=leading8(padded[block_index*8+:8]);
         if (block_index>=3)
-          window[block_index]=32'(padded >> (block_index*8-24));
-        else window[block_index]=32'(padded << (24-block_index*8));
-        normalized[block_index]=window[block_index] << (~local_high[block_index]);
+          window[block_index*32+:32]=32'(padded >> (block_index*8-24));
+        else window[block_index*32+:32]=32'(padded << (24-block_index*8));
+        normalized[block_index*32+:32]=window[block_index*32+:32] <<
+          (~local_high[block_index*3+:3]);
         if (block_index>=4)
           tail[block_index]=|(padded << (72-(block_index*8-24)));
       end
@@ -204,14 +205,14 @@ package anvil_q1_fp_pkg;
         selected[block_index]=nonzero[block_index] &&
           !(|(nonzero >> (block_index+1)));
         normal_unrounded=normal_unrounded |
-          ({25{selected[block_index]}} & {1'b0,normalized[block_index][31:8]});
+          ({25{selected[block_index]}} & {1'b0,normalized[block_index*32+8+:24]});
         normal_guard=normal_guard |
-          (selected[block_index] && normalized[block_index][7]);
+          (selected[block_index] && normalized[block_index*32+7]);
         normal_sticky=normal_sticky |
           (selected[block_index] &&
-           ((|normalized[block_index][6:0]) || tail[block_index]));
+           ((|normalized[block_index*32+:7]) || tail[block_index]));
         high=high | ({7{selected[block_index]}} &
-          {4'(block_index),local_high[block_index]});
+          {4'(block_index),local_high[block_index*3+:3]});
       end
       normal_significand=normal_unrounded+
         {24'd0,(normal_guard && (normal_sticky || normal_unrounded[0]))};

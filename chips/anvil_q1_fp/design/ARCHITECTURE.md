@@ -451,6 +451,20 @@ gradual underflow, tininess after rounding and all exception conventions
 are preserved. Reciprocal, reciprocal-square-root and elaboration-time
 dimension constants also use this changed helper.
 
+The subsequent synthesis failures at
+`evidence/preparation/verifier-synthesis-top-v6o6s7p5/receipt.json` and
+`evidence/preparation/verifier-synthesis-dot-5cw4fwc7/receipt.json`
+identified Yosys constant evaluation rejecting the packer's unpacked local
+arrays. Its nine three-bit leading positions and nine 32-bit window and
+normalized candidates now occupy flat packed vectors, with candidate `i`
+at `[3*i+:3]` or `[32*i+:32]`. Indexed slices preserve each candidate's
+width, including the three-bit complemented normalization shift, guard,
+sticky and significand fields. Both attention's `DIM_PACKED` and RMSNorm's
+`H_PACKED` continue to call the same helper at elaboration; no duplicate
+constant-conversion algorithm or runtime conversion replaces it. This
+representation-only repair retains the parallel candidate logic above and
+does not establish a successful synthesis or timing result.
+
 Dot and mixed-dot retain their prescribed E0 term preparation, E1
 alignment and E2 exact nine-term reduction. Both resolved signs now
 enter parallel packers, with final sign selection after packing rather
