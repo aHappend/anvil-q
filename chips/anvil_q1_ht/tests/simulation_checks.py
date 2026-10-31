@@ -12,7 +12,7 @@ compact portability smoke and the complete original workload with Verilator.
 --namespaces runs sequential, repeated scenarios on one Evidence instance,
 including the inference-to-orphan-fault transition that previously collided.
 --frontend-namespaces repeats original dequant, normalized fault-control and
-reduced hierarchy synthesis on one Evidence with exclusive source-bound outputs.
+full-default hierarchy synthesis on one Evidence with exclusive source-bound outputs.
 Diagnostic modes are mutually exclusive. Redirect evidence uses the separate
 verifier-simulation-redirect-* parent namespace; performance routing is unchanged.
 None of these commands replaces any mandatory matrix row or native gate.
@@ -576,7 +576,7 @@ def run(args):
             for seed in (17, 89):
                 experiments.dequant(evidence, seed)
                 experiments.synthesis_fault_control(evidence)
-                experiments.synthesis_probe(evidence, experiments.MATRIX[1])
+                experiments.synthesis_probe(evidence)
                 for path, digest in retained.items():
                     if file_sha256(ROOT / path) != digest:
                         raise AssertionError("earlier frontend artifact changed: " + path)
@@ -593,8 +593,9 @@ def run(args):
                 "exclusive_invocations": 14, "exhaustive_dequant_runs": 6,
                 "compared_encodings": sum(row["encoding_count"]
                                           for row in evidence.record["dequant_invocations"]),
-                "fault_control_syntheses": 4, "reduced_hierarchy_syntheses": 2,
-                "scope": "namespace repair, not full-default synthesis or campaign acceptance",
+                "fault_control_syntheses": 4, "full_default_hierarchy_syntheses": 2,
+                "scope": "namespace repair and generic synthesis, not native timing "
+                         "or campaign acceptance",
             }
             if args.repair_of:
                 predecessor = ROOT / args.repair_of
