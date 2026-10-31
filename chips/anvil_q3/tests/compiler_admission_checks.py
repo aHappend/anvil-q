@@ -40,10 +40,13 @@ def assert_released(run, slots=2):
         run.compiler_slots.release()
 
 
-def compiler_job_sensitivity():
+def compiler_job_sensitivity(parent=None):
     """Synthetic compiler/capacity fixtures; no DUT or tool success claims."""
     commands = []
-    with tempfile.TemporaryDirectory(prefix="compiler-jobs-", dir=ROOT / "evidence/preparation") as tmp:
+    parent = ROOT / "evidence/preparation" if parent is None else Path(parent)
+    parent.resolve().relative_to(ROOT.resolve())
+    parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="compiler-jobs-", dir=parent) as tmp:
         run = admission_fixture()
         run.path = Path(tmp)
         run.resources = {"build_jobs": 2}
@@ -138,7 +141,27 @@ def compiler_job_sensitivity():
             "cache_binds_input_content_and_public_inventory": True}
 
 
-def admission_sensitivity():
+def clean_worker_sensitivity(parent):
+    """Run the real fixture with neither evidence nor its temporary parent present."""
+    project = Path(parent).resolve() / "compiler-clean-project"
+    project.mkdir()
+    temporary_parent = project / "evidence/invocation/compiler-fixtures"
+    assert not (project / "evidence").exists()
+    with (patch(__name__ + ".ROOT", project),
+          patch("execution.ROOT", project)):
+        result = compiler_job_sensitivity(temporary_parent)
+        assert temporary_parent.is_dir()
+        assert not list(temporary_parent.iterdir())
+        assert not (project / "evidence/preparation").exists()
+        fallback = compiler_job_sensitivity()
+        assert (project / "evidence/preparation").is_dir()
+        assert not list((project / "evidence/preparation").iterdir())
+    return {"caller_parent_created": True, "fallback_parent_created": True,
+            "temporary_fixtures_cleaned": True,
+            "caller_fixture": result, "standalone_fixture": fallback}
+
+
+def admission_sensitivity(parent=None):
     """Mock filesystem capacity only; exercise the actual admission and caller."""
     boundaries = []
     for build_class, reserve in BUILD_CLASS_RESERVES.items():
@@ -280,7 +303,7 @@ def admission_sensitivity():
             raise AssertionError("unsupported build-class use accepted")
     assert_released(run)
     return {"scope": "offline capacity/caller regression, not DUT acceptance",
-            "compiler_jobs": compiler_job_sensitivity(),
+            "compiler_jobs": compiler_job_sensitivity(parent),
             "boundaries": boundaries, "concurrent_reservation_sum_checked": True,
             "mixed_class_wait_and_release_checked": True,
             "cancellation_wait_paths": 2, "disk_full_release_paths": 5,

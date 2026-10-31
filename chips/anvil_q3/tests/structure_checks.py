@@ -71,7 +71,7 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
                                 hardware_metrics, inflight_tool_receipt,
                                 physical_inventory_sensitivity, fitted_summary_sensitivity)
     from public_asset_checks import public_asset_checks
-    from compiler_admission_checks import admission_sensitivity
+    from compiler_admission_checks import admission_sensitivity, clean_worker_sensitivity
     from startup_retention_checks import retention_sensitivity
 
     cases = [(label, g, True) for label, g in positive_cases()]
@@ -84,7 +84,8 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
         (len(cases) + leaf_count + len(list(baseline_geometries()))) * len(simulators))
     results = []
     lint = {"assignments": sequential_lint(), "hardware_metric_checker": hardware_metrics(),
-            "compiler_admission_checker": admission_sensitivity(),
+            "compiler_admission_checker": admission_sensitivity(run.path),
+            "compiler_clean_worker_checker": clean_worker_sensitivity(run.path),
             "startup_retention_checker": retention_sensitivity(run),
             "preparation_dispatch_checker": preparation_dispatch_sensitivity(),
             "public_asset_checker": public_asset_checks(run),

@@ -33,9 +33,12 @@ def main():
             g = replace(A, BANKS=8, CACHE_MODE=mode, INT4_ASYM=asym)
             if not legal(g) or g.NUM_KV_HEADS * g.HEAD_DIM != 2:
                 raise AssertionError("A geometry changed")
-            results.append(decoder_case(run, g, seed=17,
-                                        simulator="verilator",
-                                        tokens=[1, 4] if args.bounded_smoke else None))
+            result = decoder_case(run, g, seed=17, simulator="verilator",
+                                  tokens=[1, 4] if args.bounded_smoke else None)
+            if (result["tokens"] != (2 if args.bounded_smoke else 7) or
+                    result["compared_bits"] <= 0 or result["bit_mismatches"] != 0):
+                raise AssertionError("incomplete clean reproduction numerical workload")
+            results.append(result)
     except Exception as exc:
         run.finish("failed", diagnosis=str(exc))
         raise

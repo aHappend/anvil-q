@@ -27,12 +27,16 @@ def compiler_candidate_dispatch_sensitivity():
     assert inspect.signature(decoder_case).parameters["profile_compile"].default is False
     jobs = behavior_inventory()
     assert all(not job.kwargs.get("profile_compile", False) for job in jobs)
-    selected = next(row for row in shard_inventory("evidence/check-c-four-token")["shards"]
-                    if row["id"] == "decoder-36c0bbcad86b21431b7d")
-    assert selected["argv"] == [
-        "python3", "tests/verify.py", "--check", "behavior", "--behavior-shard",
-        "decoder-36c0bbcad86b21431b7d", "--output",
-        "evidence/check-c-four-token/decoder-36c0bbcad86b21431b7d"]
+    output = "evidence/check-c-four-token"
+    selected = shard_inventory(output)["shards"]
+    assert jobs and len(selected) == len(jobs)
+    planned = {job.id: job.descriptor for job in jobs}
+    assert len(planned) == len(jobs) and {row["id"] for row in selected} == set(planned)
+    for row in selected:
+        assert row["workload"] == planned[row["id"]]
+        assert row["argv"] == [
+            "python3", "tests/verify.py", "--check", "behavior", "--behavior-shard",
+            row["id"], "--output", output + "/" + row["id"]]
     for probe, profiled in (("C", False), ("C-symmetric", True)):
         fake_run = MagicMock()
         fake_run.rel.return_value = "offline-mocked-receipt"

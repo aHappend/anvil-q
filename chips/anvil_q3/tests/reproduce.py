@@ -8,7 +8,10 @@ from execution import ROOT, sha256, sources, write_json
 from parameters import A, legal
 
 
-def reproduce(run, bounded_smoke=True):
+FAILED_RECEIPT = "evidence/check-reproduce/20261031T163338Z-39097158fb5f/receipt.json"
+
+
+def reproduce(run, bounded_smoke=False):
     destination = run.path / "clean-project"
     destination.mkdir()
     copied = {}
@@ -38,5 +41,6 @@ def reproduce(run, bounded_smoke=True):
     if result["status"] != "passed" or result["source_hashes"] != copied:
         raise AssertionError("clean reproduction failure or input binding mismatch")
     return {"copy_manifest": run.rel(run.path / "copy-manifest.json"),
+            "repair_of": FAILED_RECEIPT,
             "scope": "bounded clean-copy diagnostic only" if bounded_smoke else "admitted clean reproduction",
             "receipt": run.rel(receipts[0]), "stdout": receipt["stdout"], "result": result["result"]}
