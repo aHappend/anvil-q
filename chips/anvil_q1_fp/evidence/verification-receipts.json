@@ -2,37 +2,37 @@
   "chip": "Anvil-Q1-FP",
   "passed_checks": {
     "check:benchmark-validator-fail-closed-regressions": {
-      "attempt_id": 769,
-      "duration_s": 58.20079361507669,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-1fghnkit/receipt.json\"}\n",
+      "attempt_id": 778,
+      "duration_s": 52.114824008895084,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-benchmark-fixtures-nfdn6gqt/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:l1-functional-numerical-defects-synthesis": {
-      "attempt_id": 767,
-      "duration_s": 2422.7631183261983,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-sowidmqz/receipt.json\"}\n",
+      "attempt_id": 776,
+      "duration_s": 2211.559007243952,
+      "stdout_preview": "{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 114689, \"elapsed_s\": 30.079274474876}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 192513, \"elapsed_s\": 61.34064091392793}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 278529, \"elapsed_s\": 91.97834259900264}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 380929, \"elapsed_s\": 122.24226988106966}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 454657, \"elapsed_s\": 152.24967217701487}\n{\"role\": \"verifier\", \"execution\": \"reducer-reference\", \"phase\": \"stimulus\", \"vectors\": 593921, \"elapsed_s\": 182.97421542694792}\n{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-l1-ckw88f9_/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:maximum-frame-memory-capacity-diagnostics": {
-      "attempt_id": 772,
-      "duration_s": 111.86611876101233,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-g_zh7yhz/receipt.json\", \"production_collection_authorized\": false}\n",
+      "attempt_id": 781,
+      "duration_s": 103.94498623115942,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-maximum-frame-memory-h_lp2gbv/receipt.json\", \"production_collection_authorized\": false}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:packed-storage-lossless-corruption-regressions": {
-      "attempt_id": 771,
-      "duration_s": 149.36258235108107,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-73q2l1gk/receipt.json\"}\n",
+      "attempt_id": 780,
+      "duration_s": 125.45161422318779,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-packed-storage-0pd2n0lu/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
     "check:portable-clean-copy": {
-      "attempt_id": 768,
-      "duration_s": 929.6916374878492,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-6xdwq_jb/receipt.json\"}\n",
+      "attempt_id": 777,
+      "duration_s": 846.3378637728747,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-portable-ehsln4as/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },
@@ -44,9 +44,9 @@
       "receipts": []
     },
     "check:receipt-publication-failure-regressions": {
-      "attempt_id": 770,
-      "duration_s": 130.3125735821668,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-r17zctyh/receipt.json\"}\n",
+      "attempt_id": 779,
+      "duration_s": 117.54682047804818,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-receipt-publication-cs_tq_q8/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     }
