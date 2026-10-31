@@ -2,6 +2,7 @@
 
 from dataclasses import asdict, replace
 import errno
+import gzip
 import json
 import os
 from pathlib import Path
@@ -113,11 +114,27 @@ def compiler_job_sensitivity():
             run.tool(failed, build_class="verilator-startup")
             assert len(commands) == before + 3
             assert_released(run)
+            default = command(100)
+            run.tool(default)
+            cached, _, _ = run.builds[next(reversed(run.builds))]
+            manifest = run.validate_cached_build(cached)
+            assert manifest["compression"] == "gzip" and cached.name == "executable.gz"
+            original = (run.path / "obj-100/startup").read_bytes()
+            assert gzip.decompress(cached.read_bytes()) == original
+            before = len(commands)
+            # Different output location, identical functional elaboration inputs.
+            run.tool(command(101))
+            assert len(commands) == before
+            restored = run.path / "obj-101/startup"
+            assert restored.read_bytes() == original
+            assert str(restored.resolve()) not in getattr(run, "startup_executables", {})
+            assert_released(run)
     return {"scope": "synthetic driver regression, not DUT/tool acceptance",
             "startup_default_jobs": 1, "functional_default_jobs": 2,
             "explicit_job_forms_preserved": 4,
             "exit255_propagated": True, "failed_binary_never_reused": True,
             "expected_negative_not_cached": True, "reservations_released": True,
+            "functional_cache_lossless_restore": True,
             "cache_binds_input_content_and_public_inventory": True}
 
 

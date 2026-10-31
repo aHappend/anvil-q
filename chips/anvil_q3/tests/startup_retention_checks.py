@@ -5,10 +5,12 @@ import argparse
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import shutil
 import sys
+import tarfile
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -19,6 +21,178 @@ from execution import (BUILD_CLASS_RESERVES, DISK_FLOOR_BYTES, ROOT, Run, VERILA
 
 
 CAPACITY_FAILED_RECEIPT = "evidence/check-structure/20261030T140107Z-c15e3fa79f44/receipt.json"
+STORAGE_REPAIR_RECEIPT = "evidence/check-structure/20261031T093708Z-ca7f85574c82/receipt.json"
+
+
+def storage_repair_sensitivity(run):
+    """Synthetic compiler artifacts only; no RTL or simulator execution."""
+    fixture = admission_fixture()
+    fixture.path = run.path / "storage-repair-fixtures"
+    fixture.path.mkdir()
+    fixture.records = []
+    expected = {}
+    for label, status, settled in (("completed", 0, True), ("failed", 255, True),
+                                    ("live", None, False), ("unrecorded", 0, True),
+                                    ("conflicting", 0, True), ("make-live", 0, True)):
+        directory = fixture.path / label
+        directory.mkdir()
+        contents = {name: (b"synthetic " + name.encode() + b"\n") * 4096
+                    for name in ("model.cpp", "model.h", "model.mk", "model.dat", "model.d")}
+        contents.update({name: b"retained comparison/provenance fixture\n"
+                         for name in ("decoder", "observed.tsv", "comparison.json", "memory.hex",
+                                      "memory.dat", "host.cpp")})
+        for name, payload in contents.items():
+            (directory / name).write_bytes(payload)
+        expected[label] = contents
+        if label != "unrecorded":
+            fixture.records.append({
+                "argv": ["verilator", "--binary", "--prefix", "model",
+                         "--Mdir", fixture.rel(directory)],
+                "cwd": ".", "exit_code": status, "process_scope_settled": settled,
+                "stdout": fixture.rel(directory / "compiler-stdout.txt")})
+        if label == "conflicting":
+            fixture.records.append({
+                "argv": ["verilator", "--binary", "--prefix", "model",
+                         "--Mdir", fixture.rel(directory)],
+                "cwd": ".", "exit_code": 255, "process_scope_settled": True})
+        if label == "make-live":
+            fixture.records.append({
+                "argv": ["make", "-C", fixture.rel(directory)],
+                "cwd": ".", "exit_code": None, "process_scope_settled": False})
+    linked = fixture.path / "completed/linked.cpp"
+    linked.symlink_to(fixture.path / "failed/model.cpp")
+    fixture.compact_compiler_sources()
+    directory = fixture.path / "completed"
+    manifest = json.loads((directory / "generated-sources.json").read_text())
+    archive = ROOT / manifest["archive"]
+    assert sha256(archive) == manifest["archive_sha256"]
+    with tarfile.open(archive, "r:gz") as bundle:
+        assert sorted(bundle.getnames()) == sorted(manifest["files"])
+        for member in bundle.getmembers():
+            assert bundle.extractfile(member).read() == expected["completed"][member.name]
+            assert manifest["files"][member.name] == hashlib.sha256(
+                expected["completed"][member.name]).hexdigest()
+    assert archive.stat().st_size < sum(len(v) for v in expected["completed"].values()) // 10
+    for name, payload in expected["completed"].items():
+        if name in manifest["files"]:
+            assert not (directory / name).exists()
+        else:
+            assert (directory / name).read_bytes() == payload
+    assert linked.is_symlink()
+    for label in expected.keys() - {"completed"}:
+        for name, payload in expected[label].items():
+            assert (fixture.path / label / name).read_bytes() == payload
+        assert not (fixture.path / label / "generated-sources.tar.gz").exists()
+    fixture.compact_compiler_sources()
+
+    # Archive creation failure must leave every original generated input intact.
+    directory = fixture.path / "archive-failure"
+    directory.mkdir()
+    model = directory / "model.cpp"
+    model.write_bytes(b"synthetic source must survive archive failure\n")
+    fixture.records = [{
+        "argv": ["verilator", "--build", "--prefix", "model", "--Mdir", fixture.rel(directory)],
+        "cwd": ".", "exit_code": 0, "process_scope_settled": True,
+        "stdout": fixture.rel(directory / "compiler-stdout.txt")}]
+    with patch("execution.tarfile.open", side_effect=OSError(errno.ENOSPC, "synthetic disk full")):
+        try:
+            fixture.compact_compiler_sources()
+        except OSError as exc:
+            assert exc.errno == errno.ENOSPC
+        else:
+            raise AssertionError("archive failure suppressed")
+    assert model.read_bytes() == b"synthetic source must survive archive failure\n"
+    assert not (directory / "generated-sources.json").exists()
+
+    directory = fixture.path / "archive-corruption"
+    directory.mkdir()
+    model = directory / "model.cpp"
+    original = b"synthetic source must survive failed archive readback\n"
+    model.write_bytes(original)
+    fixture.records = [{
+        "argv": ["verilator", "--build", "--prefix", "model", "--Mdir", fixture.rel(directory)],
+        "cwd": ".", "exit_code": 0, "process_scope_settled": True,
+        "stdout": fixture.rel(directory / "compiler-stdout.txt")}]
+    with patch("execution.hashlib.file_digest",
+               return_value=SimpleNamespace(hexdigest=lambda: "deliberately wrong fixture hash")):
+        try:
+            fixture.compact_compiler_sources()
+        except AssertionError as exc:
+            assert "archive content differs" in str(exc)
+        else:
+            raise AssertionError("corrupt archive readback accepted")
+    assert model.read_bytes() == original
+    assert not (directory / "generated-sources.json").exists()
+
+    foreign = run.path / "foreign-compiler-fixture"
+    foreign.mkdir()
+    (foreign / "model.cpp").write_bytes(original)
+    (foreign / "model.o").write_bytes(original)
+    fixture.records = [{
+        "argv": ["verilator", "--build", "--prefix", "model", "--Mdir", fixture.rel(foreign)],
+        "cwd": ".", "exit_code": 0, "process_scope_settled": True}]
+    for operation in (fixture.compact_compiler_sources,
+                      fixture.reclaim_settled_compiler_intermediates):
+        try:
+            operation()
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("foreign compiler directory was accepted")
+    assert (foreign / "model.cpp").read_bytes() == (foreign / "model.o").read_bytes() == original
+
+    # Exercise the actual _tool cleanup branch with an explicitly fake child.
+    direct = []
+    for label, code in (("success", 0), ("failure", 255), ("launch-failure", None)):
+        child_run = admission_fixture()
+        child_run.path = fixture.path / ("direct-" + label)
+        child_run.path.mkdir()
+        child_run.records, child_run.active_processes = [], {}
+        obj = child_run.path / "obj"
+        obj.mkdir()
+        intermediate = obj / "unit.o"
+        intermediate.write_bytes(b"synthetic compiler intermediate\n")
+        child = SimpleNamespace(pid=123456789, poll=lambda: code, returncode=code)
+        with (patch.object(child_run, "validate_live_sources"),
+              patch.object(child_run, "validate_tool_retention"),
+              patch.object(child_run, "finish"),
+              patch.object(child_run, "process_group_live", return_value=False),
+              patch("execution.subprocess.Popen", **(
+                  {"side_effect": OSError(errno.ENOSPC, "synthetic launch failure")}
+                  if code is None else {"return_value": child}))):
+            try:
+                _, record = child_run._tool(
+                    ["verilator", "--binary", "--Mdir", child_run.rel(obj)],
+                    expected=(0, 255))
+            except RuntimeError:
+                assert code is None
+            else:
+                assert record["exit_code"] == code
+        assert intermediate.exists() == (code != 0)
+        direct.append({"scenario": label, "intermediate_preserved": intermediate.exists()})
+
+    # A directory settling after the first capacity sample can release headroom.
+    admission = admission_fixture()
+    small = BUILD_CLASS_RESERVES["icarus-startup"]
+    calls = []
+    def reclaim():
+        calls.append(True)
+        return [{"path": "synthetic-owned-settled.o", "bytes": 1}] if len(calls) == 2 else []
+    with (patch("execution.shutil.disk_usage", side_effect=lambda _: SimpleNamespace(
+            free=DISK_FLOOR_BYTES + small - int(len(calls) < 2))),
+          patch.object(admission, "reclaim_settled_compiler_intermediates", side_effect=reclaim),
+          patch("execution.CAPACITY_POLL_SECONDS", 0.001)):
+        with admission.compiler_admission("icarus-startup") as record:
+            assert len(calls) == 2 and record["available_bytes"] == record["required_bytes"]
+    assert_released(admission)
+    return {"scope": "Python-only synthetic execution-storage regression, no DUT coverage",
+            "lossless_generated_source_archive": True,
+            "failed_live_unrecorded_conflicting_make_inputs_preserved": True,
+            "comparisons_fixtures_executable_and_symlink_preserved": True,
+            "archive_failure_preserves_originals": True, "direct_cleanup": direct,
+            "corrupt_archive_rejected_before_release": True,
+            "foreign_directory_rejected": True,
+            "late_settled_reclamation": True}
 
 
 def retention_sensitivity(run):
@@ -293,6 +467,7 @@ def retention_sensitivity(run):
     assert (cleanup.path / "completed/linked.o").is_symlink()
     assert len(list((cleanup.path / "completed").iterdir())) == 6
     return {"scope": "synthetic driver regression; no RTL acceptance",
+            "execution_storage_repair": storage_repair_sensitivity(run),
             "round_trips": 4, "compressed_reuses": 2,
             "compiler_failure_preserved": True, "simulation_failure_preserved": True,
             "source_inventory_tool_changes_recompile": True,
@@ -456,21 +631,43 @@ def main():
                           "retention": retention_sensitivity(holder)}, sort_keys=True))
         return
     parser = argparse.ArgumentParser()
-    parser.add_argument("--repair-of", default=CAPACITY_FAILED_RECEIPT)
+    parser.add_argument("--repair-of")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--offline", action="store_true",
+                      help="Python-only storage fixtures; do not compile or simulate RTL")
+    mode.add_argument("--cold-only", action="store_true",
+                      help="Fresh startup builds only; no historical executable dependency")
     args = parser.parse_args()
     output = ("evidence/preparation/startup-capacity-recovery-" +
               datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
-    run = Run(output,
-              "compact future startup build retention", repair_of=args.repair_of)
+    run = Run(output, "Python-only execution-storage repair regression" if args.offline else
+              "cold startup build retention" if args.cold_only else
+              "compact future startup build retention",
+              repair_of=args.repair_of or (
+                  STORAGE_REPAIR_RECEIPT if args.offline else CAPACITY_FAILED_RECEIPT))
     print(run.rel(run.path / "receipt.json"), flush=True)
     try:
+        if args.offline:
+            run.versions([("python3", "--version")])
+            text, _ = run.tool(["python3", "tests/startup_retention_checks.py",
+                               "--worker", run.rel(run.path / "regressions")])
+            run.finish("passed", result=json.loads(text))
+            print(json.dumps({"receipt": run.rel(run.path / "receipt.json"),
+                              "scope": "Python-only storage regression; no RTL coverage"}))
+            return
         run.versions([("python3", "--version"), ("iverilog", "-V"), ("vvp", "-V"),
                       ("verilator", "--version"), ("g++", "--version"), ("make", "--version")])
         text, _ = run.tool(["python3", "tests/startup_retention_checks.py",
                             "--worker", run.rel(run.path / "regressions")])
-        result = {"original_failure": CAPACITY_FAILED_RECEIPT, "regressions": json.loads(text),
-                  "retained_binary_round_trips": retained_binary_round_trips(run),
-                  "cold_startup_round_trips": cold_startup_round_trips(run)}
+        result = {
+            "original_failure": run.repair_of,
+            "scope": ("fresh startup/archive diagnostic only; historical binary "
+                      "round trips not requested" if args.cold_only else
+                      "historical binary and fresh startup/archive diagnostic"),
+            "regressions": json.loads(text)}
+        if not args.cold_only:
+            result["retained_binary_round_trips"] = retained_binary_round_trips(run)
+        result["cold_startup_round_trips"] = cold_startup_round_trips(run)
         from parameters import positive_cases, negative_cases, leaf_cases, baseline_geometries
         count = 2 * (len(list(positive_cases())) + len(list(negative_cases())) +
                      len(list(leaf_cases())) + len(list(baseline_geometries())))

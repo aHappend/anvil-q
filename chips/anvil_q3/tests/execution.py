@@ -39,6 +39,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import uuid
@@ -346,9 +347,8 @@ class Run:
         write_json(self.path / "startup-storage.json", plan)
         return free >= required
 
-    def reclaim_settled_compiler_intermediates(self):
-        """Revisit only this invocation's successful, settled compiler directories."""
-        removed = []
+    def settled_compiler_directories(self):
+        """Exclude directories also owned by failed or unfinished build records."""
         candidates, protected = set(), set()
         for record in getattr(self, "records", ()):
             argv = record.get("argv", ())
@@ -363,11 +363,89 @@ class Run:
                 protected.add(directory)
             else:
                 candidates.add(directory)
+        for record in getattr(self, "records", ()):
+            argv = record.get("argv", ())
+            if not argv or argv[0] != "make" or "-C" not in argv:
+                continue
+            if (record.get("exit_code") != 0 or
+                    record.get("process_scope_settled") is not True or
+                    record.get("timeout") or record.get("cancelled") or
+                    any(key in record for key in
+                        ("launch_error", "cleanup_error", "retention_error"))):
+                directory = ROOT / record["cwd"] / argv[argv.index("-C") + 1]
+                protected.add(directory.resolve())
         protected.update(Path(path).resolve() for path in
                          getattr(self, "transient_builds", {}).values())
-        for directory in sorted(candidates - protected):
+        return candidates - protected
+
+    def reclaim_settled_compiler_intermediates(self):
+        """Revisit only this invocation's successful, settled compiler directories."""
+        removed = []
+        for directory in sorted(self.settled_compiler_directories()):
             removed.extend(self.release_intermediates(directory))
         return removed
+
+    def compact_compiler_sources(self):
+        """Losslessly retain generated sources after successful workload comparison."""
+        settled = self.settled_compiler_directories()
+        for record in self.records:
+            argv = record.get("argv", ())
+            if (not argv or argv[0] != "verilator" or "--Mdir" not in argv or
+                    not any(flag in argv for flag in ("--binary", "--build")) or
+                    record.get("exit_code") != 0 or
+                    record.get("process_scope_settled") is not True or
+                    record.get("timeout") or record.get("cancelled") or
+                    any(key in record for key in
+                        ("launch_error", "cleanup_error", "retention_error"))):
+                continue
+            directory = (ROOT / record["cwd"] / argv[argv.index("--Mdir") + 1]).resolve()
+            if directory not in settled:
+                continue
+            directory.relative_to(self.path.resolve())
+            if "--prefix" in argv:
+                prefix = argv[argv.index("--prefix") + 1]
+            elif "--top-module" in argv:
+                prefix = "V" + argv[argv.index("--top-module") + 1]
+            else:
+                continue
+            files = [path for path in sorted(directory.iterdir())
+                     if not path.is_symlink() and path.is_file() and
+                     path.name.startswith(prefix) and
+                     path.suffix in (".cpp", ".h", ".mk", ".dat", ".d")]
+            if not files:
+                continue
+            archive = directory / "generated-sources.tar.gz"
+            manifest = directory / "generated-sources.json"
+            if archive.exists() or manifest.exists():
+                raise AssertionError("compiler source archive already exists: " + self.rel(archive))
+            hashes = {path.name: sha256(path) for path in files}
+            with archive.open("xb") as target:
+                with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as zipped:
+                    with tarfile.open(fileobj=zipped, mode="w|") as bundle:
+                        for path in files:
+                            info = tarfile.TarInfo(path.name)
+                            info.size = path.stat().st_size
+                            info.mode = path.stat().st_mode & 0o777
+                            with path.open("rb") as source:
+                                bundle.addfile(info, source)
+            with tarfile.open(archive, "r:gz") as bundle:
+                members = bundle.getmembers()
+                if [member.name for member in members] != list(hashes):
+                    raise AssertionError("compiler source archive inventory differs")
+                for member in members:
+                    with bundle.extractfile(member) as source:
+                        if hashlib.file_digest(source, "sha256").hexdigest() != hashes[member.name]:
+                            raise AssertionError("compiler source archive content differs")
+            write_json(manifest, {
+                "archive": self.rel(archive), "archive_sha256": sha256(archive),
+                "files": hashes,
+                "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
+                "scope": "generated compiler sources only; workload comparisons already returned"})
+            for path in files:
+                if sha256(path) != hashes[path.name]:
+                    raise AssertionError("compiler source changed before compaction: " + self.rel(path))
+            for path in files:
+                path.unlink()
 
     @staticmethod
     def validate_cached_build(cached):
@@ -432,7 +510,6 @@ class Run:
                 acquired = self.compiler_slots.acquire(timeout=0.1)
             started = time.monotonic()
             heartbeat = started + 30
-            reclaimed = False
             while True:
                 self.check_cancelled()
                 with self.lock:
@@ -465,10 +542,10 @@ class Run:
                                         self.startup_storage["remaining"]
                                         if hasattr(self, "startup_storage") else 0))
                     recovery["samples"] += 1
-                    if not reclaimed:
-                        recovery["released_intermediates"] = (
-                            self.reclaim_settled_compiler_intermediates())
-                        reclaimed = True
+                    removed = self.reclaim_settled_compiler_intermediates()
+                    recovery.setdefault("released_intermediates", []).extend(removed)
+                    if removed:
+                        continue
                     if time.monotonic() - started >= CAPACITY_RECOVERY_SECONDS:
                         recovery["status"] = "shortage"
                         raise OSError(
@@ -630,6 +707,7 @@ class Run:
                 raise AssertionError("portability smoke exceeds compact cycle tier")
             if isinstance(result, dict):
                 result = {**result, "evidence_receipt": child.rel(child.path / "receipt.json")}
+            child.compact_compiler_sources()
             child.workload_artifacts = {
                 str(path.relative_to(child.path)): sha256(path)
                 for path in sorted(child.path.rglob("*"))
@@ -721,11 +799,12 @@ class Run:
                     with gzip.open(cached, "rb") as source, binary.open("wb") as target:
                         shutil.copyfileobj(source, target)
                     if sha256(binary) != manifest["executable_sha256"]:
-                        raise AssertionError("restored startup executable identity changed")
-                    if not hasattr(self, "startup_executables"):
-                        self.startup_executables = {}
-                    self.startup_executables[str(binary.resolve())] = cached, record
-                    getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
+                        raise AssertionError("restored executable identity changed")
+                    if build_class in ("icarus-startup", "verilator-startup"):
+                        if not hasattr(self, "startup_executables"):
+                            self.startup_executables = {}
+                        self.startup_executables[str(binary.resolve())] = cached, record
+                        getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
                 else:
                     shutil.copyfile(cached, binary)
                 binary.chmod(0o755)
@@ -745,29 +824,26 @@ class Run:
             cache = self.path / "builds" / key
             cache.mkdir(parents=True)
             compact = build_class in ("icarus-startup", "verilator-startup")
-            cached = cache / ("executable.gz" if compact else "executable")
+            cached = cache / "executable.gz"
+            with binary.open("rb") as source, cached.open("wb") as target:
+                with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as archive:
+                    shutil.copyfileobj(source, archive)
             if compact:
-                with binary.open("rb") as source, cached.open("wb") as target:
-                    with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as archive:
-                        shutil.copyfileobj(source, archive)
                 if not hasattr(self, "startup_executables"):
                     self.startup_executables = {}
                 self.startup_executables[str(binary.resolve())] = cached, record
                 getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
-            else:
-                shutil.copyfile(binary, cached)
-                cached.chmod(0o755)
             write_json(cache / "build.json", {
                 "key": key, "identity": identity, "executable_sha256": sha256(binary),
-                **({"compression": "gzip", "archive_sha256": sha256(cached)}
-                   if compact else {}),
+                "compression": "gzip", "archive_sha256": sha256(cached),
                 "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
                 "original_executable": self.rel(binary),
                 "intermediates": ("only .o/.a/.gch removed after settled compilation; "
                                   "generated model sources retained; startup executable "
                                   "retained losslessly as gzip" if compact else
                                   "only .o/.a/.gch removed after settled compilation; "
-                                  "generated model sources and executable retained")})
+                                  "executable cache retained losslessly as gzip; "
+                                  "generated model sources archived after workload comparison")})
             self.validate_cached_build(cached)
             with self.lock:
                 self.builds[key] = cached, text, record
@@ -918,7 +994,8 @@ class Run:
                     else:
                         caught = RuntimeError("owned process group did not settle: "
                                               + str(child.pid))
-                if settled and str(argv[0]) == "verilator" and "--Mdir" in argv:
+                if (settled and caught is None and record["exit_code"] == 0 and
+                        str(argv[0]) == "verilator" and "--Mdir" in argv):
                     directory = work / argv[argv.index("--Mdir") + 1]
                     try:
                         record["released_intermediates"] = self.release_intermediates(directory)
