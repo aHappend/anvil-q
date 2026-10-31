@@ -9,6 +9,8 @@ retain measured compile time and settled build-storage counts.
 --flatten-performance compares -O3 builds with and without module inlining.
 --redirect checks that an explicit multi-token Icarus request executes a separate
 compact portability smoke and the complete original workload with Verilator.
+--namespaces runs sequential, repeated scenarios on one Evidence instance,
+including the inference-to-orphan-fault transition that previously collided.
 Diagnostic modes are mutually exclusive. Redirect evidence uses the separate
 verifier-simulation-redirect-* parent namespace; performance routing is unchanged.
 None of these commands replaces any mandatory matrix row or native gate.
@@ -35,6 +37,7 @@ def argument_parser():
     modes.add_argument("--performance", action="store_true")
     modes.add_argument("--flatten-performance", action="store_true")
     modes.add_argument("--redirect", action="store_true")
+    modes.add_argument("--namespaces", action="store_true")
     parser.add_argument("--repair-of")
     parser.add_argument("--regression-child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scratch", help=argparse.SUPPRESS)
@@ -43,18 +46,20 @@ def argument_parser():
 
 class SimulationTierChecks(unittest.TestCase):
     def test_diagnostic_parent_output_routing(self):
-        for mode in ("compact", "performance", "flatten-performance", "redirect"):
+        for mode in ("compact", "performance", "flatten-performance", "redirect", "namespaces"):
             with self.subTest(mode=mode):
                 args = argument_parser().parse_args(["--" + mode])
                 with patch.object(sys.modules[__name__], "Evidence",
                                   side_effect=RuntimeError("stop before execution")) as factory:
                     with self.assertRaisesRegex(RuntimeError, "stop before execution"):
                         run(args)
-                expected = "simulation-redirect" if mode == "redirect" else "simulation-tiering"
+                expected = ("simulation-" + mode if mode in ("redirect", "namespaces")
+                            else "simulation-tiering")
                 factory.assert_called_once_with(expected, None)
 
     def test_combined_diagnostic_modes_are_rejected_before_execution(self):
-        modes = ("--compact", "--performance", "--flatten-performance", "--redirect")
+        modes = ("--compact", "--performance", "--flatten-performance", "--redirect",
+                 "--namespaces")
         for index, first in enumerate(modes):
             for second in modes[index + 1:]:
                 with self.subTest(first=first, second=second):
@@ -308,6 +313,43 @@ class SimulationTierChecks(unittest.TestCase):
             self.assertEqual(file_sha256(ROOT / path), digest)
         self.assertEqual(len(trial.record["engineering_fixture"]["tokens"]), 2)
 
+    def test_sequential_and_repeated_scenarios_keep_exclusive_namespaces(self):
+        trial = self.evidence()
+        calls = []
+
+        def simulate(name, bench, **kwargs):
+            folder = trial.folder / name
+            folder.mkdir(exist_ok=False)
+            (folder / "tb.sv").write_text(bench)
+            calls.append((name, kwargs))
+
+        trial.simulate = simulate
+        retained = {}
+        for options in ({"diagnostic_first_token": True}, {"orphan_fault": True},
+                        {"orphan_fault": True}, {"diagnostic_first_token": True}):
+            experiments.top_probe(trial, "AWQ", 17, **options)
+            if len(calls) == 2:
+                sentinel = trial.folder / calls[0][0] / "retained.txt"
+                sentinel.write_text("prior evidence must remain unchanged\n")
+            for path, digest in retained.items():
+                self.assertEqual(file_sha256(ROOT / path), digest)
+            retained.update(trial.record["runtime_input_sha256"])
+        cases = trial.record["runtime_cases"]
+        self.assertEqual(len(cases), 4)
+        self.assertEqual(len({case["directory"] for case in cases}), 4)
+        self.assertEqual(len({name for name, _ in calls}), 8)
+        for case, (reset, functional) in zip(cases, zip(calls[::2], calls[1::2])):
+            self.assertIn(case["namespace"], case["directory"])
+            self.assertEqual(reset[0], case["namespace"] + "-four-state-reset")
+            self.assertEqual(functional[0], case["namespace"])
+            self.assertEqual(reset[1]["runtime_args"], functional[1]["runtime_args"])
+            self.assertIn("+CASE_DIR=" + case["directory"], functional[1]["runtime_args"])
+            self.assertTrue(all(path.startswith(case["directory"] + "/")
+                                for path in case["input_sha256"]))
+        self.assertIn("orphan-fault", cases[1]["namespace"])
+        self.assertIn("orphan-fault", cases[2]["namespace"])
+        self.assertEqual(sentinel.read_text(), "prior evidence must remain unchanged\n")
+
     def test_reuse_executes_each_runtime_case_and_binds_the_original_build(self):
         trial = self.evidence()
         pool = {}
@@ -432,8 +474,9 @@ def compared_case(parent, label, mode, simulator, config=0, optimization="-O3",
 
 
 def run(args):
-    evidence = Evidence("simulation-redirect" if args.redirect else "simulation-tiering",
-                        args.repair_of)
+    probe = ("simulation-redirect" if args.redirect else
+             "simulation-namespaces" if args.namespaces else "simulation-tiering")
+    evidence = Evidence(probe, args.repair_of)
     evidence.record["scope"] = (
         "Harness regression and simulator performance diagnosis only; "
         "no requirement, mandatory check, or patrol limit is changed.")
@@ -457,6 +500,37 @@ def run(args):
                                          mode, "verilator")
                 if interpreted["compared_counters"] != compiled["compared_counters"]:
                     raise AssertionError(f"{mode}: simulator counters or numerical comparisons differ")
+        if args.namespaces:
+            retained = {}
+            for mode in ("AWQ", "BF16"):
+                counters = []
+                for simulator in ("iverilog", "verilator"):
+                    experiments.top_probe(evidence, mode, 17, diagnostic_first_token=True,
+                                          simulator=simulator)
+                    counters.append(evidence.record["observations"][-1]["observed_counters"])
+                if counters[0] != counters[1]:
+                    raise AssertionError(f"{mode}: compact simulator comparisons differ")
+                for _ in range(2):
+                    experiments.top_probe(evidence, mode, 17, orphan_fault=True)
+                    for path, digest in retained.items():
+                        if file_sha256(ROOT / path) != digest:
+                            raise AssertionError("earlier scenario input changed: " + path)
+                    retained.update(evidence.record["runtime_input_sha256"])
+            cases = evidence.record["runtime_cases"]
+            names = [row["name"] for row in evidence.record["observations"]]
+            builds = evidence.record["simulation_builds"]
+            if (len(cases) != 8 or len({case["directory"] for case in cases}) != 8 or
+                    len(names) != 14 or len(set(names)) != 14 or
+                    len(builds) != 6 or not any(build["reused"] for build in builds)):
+                raise AssertionError("missing sequential scenarios, exclusive outputs or build reuse")
+            evidence.record["namespace_regression"] = {
+                "invocations": len(cases), "exclusive_simulation_outputs": len(names),
+                "compiled_runs": len(builds),
+                "reused_builds": sum(build["reused"] for build in builds),
+                "scope": "compact AWQ/BF16 portability and repeated orphan-fault recovery; "
+                         "not aggregate L1 or native acceptance",
+            }
+            evidence.flush()
         if args.performance:
             baseline = compared_case(evidence, "performance-os", "AWQ", "verilator",
                                      config=2, optimization="-Os")
@@ -545,7 +619,8 @@ if __name__ == "__main__":
         sys.argv = sys.argv[:1]
         unittest.main()
     elif (arguments.compact or arguments.performance or arguments.flatten_performance or
-          arguments.redirect):
+          arguments.redirect or arguments.namespaces):
         raise SystemExit(run(arguments))
     else:
-        parser.error("choose --compact, --performance, --flatten-performance or --redirect")
+        parser.error("choose --compact, --performance, --flatten-performance, --redirect "
+                     "or --namespaces")

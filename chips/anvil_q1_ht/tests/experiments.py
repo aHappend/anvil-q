@@ -13,6 +13,7 @@ import math
 import random
 import re
 import shutil
+import uuid
 
 from reference import (AWQ_SHIFTS, EngineeringModel, MATRIX, bf16, fp_q16, norm, silu,
                        round_div, round_shift, sat32, signed, trunc_div)
@@ -833,9 +834,27 @@ def top_probe(evidence, mode, seed, upload_only=False, config=0,
             "One independently compared first token only; not the mandatory matrix, "
             "sequence reuse, window rollover, or full-model acceptance.")
     runtime_cases = evidence.record.setdefault("runtime_cases", [])
-    case_folder = evidence.folder / f"case-inputs-{len(runtime_cases):04d}"
+    scenarios = [
+        label for enabled, label in (
+            (upload_only, "upload-only"),
+            (fault_read >= 0, f"read-fault-{fault_read}"),
+            (fault_write >= 0, f"write-fault-{fault_write}"),
+            (orphan_fault, "orphan-fault"),
+            (abort_stage is not None, "abort-" + str(abort_stage)),
+            (diagnostic_first_token, "first-token"),
+            (numerical_fault is not None, "numerical-fault"),
+            (command_validation, "command-validation"),
+            (pending_upload_validation, "pending-upload"),
+            (reset_validation, "reset-validation"),
+            (late_read_fault, "late-read-fault"),
+        ) if enabled
+    ]
+    scenario = "-".join(scenarios) or "inference"
+    name = f"top-{mode.lower()}-c{config}-seed{seed}-{scenario}-{uuid.uuid4().hex[:8]}"
+    case_folder = evidence.folder / ("case-inputs-" + name)
     case_folder.mkdir(exist_ok=False)
-    runtime_case = {"directory": evidence.relative(case_folder)}
+    runtime_case = {"directory": evidence.relative(case_folder),
+                    "namespace": name, "scenario": scenario}
     runtime_cases.append(runtime_case)
     image = case_folder / "image.hex"
     image.write_text("".join(f"{int.from_bytes(model.image[i:i+64], 'little'):0128x}\n"
@@ -1540,7 +1559,6 @@ endtask
     }
     runtime_case["engineering_fixture"] = evidence.record["engineering_fixture"]
     evidence.flush()
-    name = "top-" + mode.lower() + ("-" + abort_stage if abort_stage else "")
     if simulator == "verilator":
         evidence.simulate(name + "-four-state-reset", bench, defines=("RESET_ONLY",),
                           simulator="iverilog", runtime_args=runtime_args)
