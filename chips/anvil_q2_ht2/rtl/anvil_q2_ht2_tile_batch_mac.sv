@@ -1,5 +1,5 @@
 module anvil_q2_ht2_tile_batch_mac (
-  input wire clk, rst_n, annul, s_valid, m_ready, s_fp16,
+  input wire clk, rst_n, annul, s_valid, m_ready, s_fp16, s_weight_fp16,
   input wire [3:0] s_token_mask,
   input wire [511:0] s_keep,
   input wire [8191:0] s_act,
@@ -34,6 +34,7 @@ module anvil_q2_ht2_tile_batch_mac (
     for (j=0;j<128;j=j+1) begin: lane
       anvil_q2_ht2_product_pipe multiplier (
         .clk(clk),.rst_n(rst_n),.advance(advance),.fp16(s_fp16),
+        .weight_fp16(s_weight_fp16),
         .keep(s_valid && s_token_mask[t] && s_keep[128*t+j]),
         .a(s_act[(128*t+j)*16+:16]),.b(s_weight[j*16+:16]),
         .product(tree[t][0][j]),.error(errors[t][0][j])

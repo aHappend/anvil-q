@@ -29,7 +29,7 @@ module anvil_q2_ht2_row_accumulator (
       s_token_mask!=token_mask || s_tag!=row_tag);
   wire bad_terminal=!s_last && s_column_tile==32'hffffffff;
   wire arithmetic_error=|(add_error & masks[3]);
-  wire result_error=errors[3] || (!first[3] && arithmetic_error);
+  wire result_error=errors[3] || arithmetic_error;
   wire terminal=last[3] || result_error;
   wire retire=valid[3] && (!terminal || m_ready);
   wire advance=!valid[3] || !terminal || m_ready;

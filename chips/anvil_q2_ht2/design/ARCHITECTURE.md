@@ -9,21 +9,47 @@ path and legacy KV codec cannot establish native HT2 numerics.
 The new foundation provides leaf RTL for pipelined floating-point arithmetic,
 the fixed four-by-128 broadcast tile array, single-owner sparse unpacking,
 the six-stage tree decision unit and an exact-ratio native KV codec.
-None has independent functional or synthesis evidence yet. The top, full native
-model sequencer, transactional cache mapping/storage and approximation operators
-still require implementation and integration. Naming a leaf is not evidence
-that the top uses it.
+None has independent functional or synthesis evidence yet. A connected native
+KV subsystem now combines real external memory requests, the exact-ratio codec,
+acknowledged record/layer progress, isolated scratch pages, ancestor-aware
+translation and the tree's atomic pointer/mapping publication. The compatible
+top, full native model sequencer and approximation operators still require
+implementation. A native shared-memory adapter now reuses the parent DDR
+arbitrator for one weight stream and three acknowledged single-beat clients;
+it has not been connected to a product top. A connected configuration subsystem now routes
+legacy requests to the unchanged parent and native requests to a separately
+validated atomic descriptor bank. A connected weight path expands required
+metadata groups and feeds the sparse DMA through one memory owner. Neither
+subsystem is yet connected to a product top or target-model inference.
+A connected tensor engine now owns the activation store, weight path, physical
+MAC and ordered row accumulator. It returns real unbiased FP32 projection rows,
+with A9's independent format selection, but not complete model operations.
+Naming a leaf or subsystem is not evidence that the top uses it.
 
 | Source under `rtl/` | Implemented leaf structure |
 |---|---|
 | `anvil_q2_ht2_00_fp_pkg.sv` | Leading-zero, sticky-shift and FP32 RNE packing helpers |
 | `anvil_q2_ht2_fp32_add_pipe.sv` | Align, add/subtract, normalize, round: four stages |
-| `anvil_q2_ht2_product_pipe.sv` | Native BF16/FP16 decode, multiply, normalize and round: seven stages |
+| `anvil_q2_ht2_product_pipe.sv` | Independent activation/weight BF16/FP16 decode, multiply, normalize and round: seven stages |
 | `anvil_q2_ht2_tile_batch_mac.sv` | 512 product instances, seven four-stage reduction levels, four-stage bias addition |
 | `anvil_q2_ht2_unpack_lane.sv` | Ten-stage native/dequantized lane, directly rounding integer-times-BF16 to BF16 |
 | `anvil_q2_ht2_sparse_w2w4_dma.sv` | Active-slot union, required-beat run selection, fill ownership, W2 beat reuse and cancellation drainage |
 | `anvil_q2_ht2_spec_verifier.sv` | Single-owner six-stage topology/completion validation and greedy-path decision |
 | `anvil_q2_ht2_native_kv_codec.sv` | Native BF16 records and sequential exact-ratio INT8 scale/quantize/reconstruct |
+| `anvil_q2_ht2_convert_pipe.sv` | Four-stage FP32/native conversion, gradual underflow and direct RNE at each boundary |
+| `anvil_q2_ht2_fp32_mul_pipe.sv` | Seven-stage full FP32 product for future scalar/statistics operators |
+| `anvil_q2_ht2_row_accumulator.sv` | Four-stage ordered row accumulation with explicit dependency and first/last checking |
+| `anvil_q2_ht2_activation_store.sv` | Four synchronous native tile RAMs with reset validity, keep checking and write-first collisions |
+| `anvil_q2_ht2_kv_map.sv` | Four-bank atomic logical map, ancestor translation, scratch allocator and instantiated tree verifier |
+| `anvil_q2_ht2_native_kv_store.sv` | Instantiated map/codec, packed native DDR records, acknowledged progress and cancellation drainage |
+| `anvil_q2_ht2_mode_control.sv` | Serialized extension registers and legacy configuration forwarding with cancelled-response drainage |
+| `anvil_q2_ht2_descriptor_check.sv` | Registered native descriptor shape, format, stride, extent and region checks |
+| `anvil_q2_ht2_native_configuration.sv` | Shadow/committed banks, cache reservation, overlap scanning and atomic native descriptor publication |
+| `anvil_q2_ht2_configuration.sv` | Connected mode adapter and legacy/native configuration routing |
+| `anvil_q2_ht2_metadata_tile.sv` | Exact slot-union group selection, cached metadata reads and per-lane expansion |
+| `anvil_q2_ht2_weight_path.sv` | Connected metadata-to-sparse-DMA stream with single burst owner and cancellation drainage |
+| `anvil_q2_ht2_tensor_engine.sv` | Connected activation store, weight path, A9 MAC and ordered row accumulator; held FP32 projection-row stream |
+| `anvil_q2_ht2_ddr_fabric.sv` | Native weight-burst adapter and three single-beat clients sharing the unchanged parent DDR arbitrator; accepted-beat accounting |
 
 Compile the package before the modules importing it. No parent arithmetic helper
 is used in the new native path. Parent modules remain reference/legacy sources,
@@ -36,7 +62,18 @@ iverilog -g2012 -t null \
   -s anvil_q2_ht2_tile_batch_mac \
   -s anvil_q2_ht2_sparse_w2w4_dma \
   -s anvil_q2_ht2_spec_verifier \
-  -s anvil_q2_ht2_native_kv_codec rtl/*.sv
+  -s anvil_q2_ht2_native_kv_store \
+  -s anvil_q2_ht2_convert_pipe \
+  -s anvil_q2_ht2_fp32_mul_pipe \
+  -s anvil_q2_ht2_row_accumulator \
+  -s anvil_q2_ht2_activation_store \
+  -s anvil_q2_ht2_configuration \
+  -s anvil_q2_ht2_weight_path \
+  -s anvil_q2_ht2_tensor_engine \
+  -s anvil_q2_ht2_ddr_fabric \
+  rtl/*.sv \
+  anvil_q2_ht_reference/rtl/anvil_q2_ht_configuration.sv \
+  anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_fabric.sv
 ```
 
 Icarus Verilog 12.0 is the observed static compiler version, not a dependency
@@ -57,12 +94,26 @@ sideband together. Bias is delayed through 35 registers to meet the final
 four-stage adder. Valid/tag/mask use 39 registers. Annul clears validity so
 old arithmetic cannot reappear as a new transfer.
 
+Admitted A9 is implemented: MAC `s_fp16` selects activation decode and the new
+one-bit `s_weight_fp16` selects weight decode. Product-lane `fp16` and
+`weight_fp16` independently control exponent, significand, infinity and NaN
+classification. Both decodes are registered in the same first product stage;
+no operand conversion, format guessing or tag encoding is used. Decoded state
+then advances through the existing seven stages, so alternating selector
+combinations require no new pipeline stage or sideband. The tensor engine
+retains the command's native format and selects FP16 weights only for a
+validated FP16 weight-path response. W4/W2 reconstructed weights select BF16
+even with FP16 activations.
+
 The unpacker uses ten registers, including input and output. Quantized products
 are at most a four-bit magnitude times an eight-bit BF16 significand; conversion
 does not pass through FP32. Unneeded lanes are replaced before classification.
 DMA groups adjacent required beats into a burst and skips gaps; it never
 reissues a completed run. Odd native byte offsets mark both bytes of a straddling
-element. The W2 cache holds one physical beat, invalidated on reset, annul or
+element. The DMA address bound now uses the highest required aligned beat,
+rather than a hypothetical full tile extending past masked final columns.
+This is necessary for a legal partial final tile at the 33-bit address limit.
+The W2 cache holds one physical beat, invalidated on reset, annul or
 fill/protocol error. Integration must annul it when host writes or mode changes
 invalidate weights. Only one accepted external burst is owned at a time.
 
@@ -87,10 +138,141 @@ No FP32 intermediate or combinational division is used. These are implementation
 algorithms awaiting an independently derived exact-rational comparison.
 
 The tree leaf owns only the committed pointer and its decision response.
-Its `commit_valid` pulse reports successful response consumption; it does not
-by itself store or publish KV data. The future top/cache controller must use
-that same consumption event to publish the complete selected-path cache mapping.
-Top-level vocabulary range validation and actual target argmax remain required.
+`anvil_q2_ht2_kv_map` instantiates it and writes selected-path mappings on the
+same successful response-consumption edge. The native store instantiates that
+map and supplies completion/error bits from real acknowledged K/V writes.
+Actual computed target argmax still must come from the future model sequencer;
+the subsystem input is not an implemented target model.
+
+### Native storage and publication
+
+`anvil_q2_ht2_activation_store` accepts full native tiles for one slot on its
+write port and reads four slots in parallel. Each stored tile includes 128 keep
+bits and has separate reset-protected initialization state. Missing required
+lanes, invalid indices and tail-column violations return explicit errors.
+Inactive slots/lanes return zero and do not require initialized storage.
+Simultaneous accepted reads/writes of the same address are write-first.
+The default 16 vectors of 8960 words occupy about 9.2 Mbit of operand data
+before keep/valid/control overhead; this is a capacity calculation, not fit.
+
+The converter expands native operands exactly when representable in FP32 and
+rounds FP32 directly to the chosen native format, including subnormal results.
+Its direction/format/sign/classification/data/tag advance together through four
+registers. The FP32 multiplier has a 48-bit exact significand product and
+separate leading-zero, normalization, denormalization, rounding and output
+stages. The new scalar multiplier is not a replacement for the array's 512
+native product lanes.
+
+The row accumulator accepts one tile at a time. First-tile sums are delayed
+alongside the adder rather than arithmetically adding +0, preserving a legal
+negative-zero initial value. Further tiles require identical row/tag/mask and
+the next increasing column-tile index. A dependent input is blocked until
+the four-stage result retires. Last or error returns one held response;
+nonlast retirement updates the owned accumulator without an external response.
+This intentionally conservative scheduler is not a throughput demonstration.
+
+The map uses MAX_SEQ_LEN+4 physical token pages. Reset reserves pages 0..3
+as scratch and begins allocation at four. Successful append consumes selected
+scratch pages, then replaces them from a monotonic bounded cursor. A successful
+new sequence records its four current scratch IDs as excluded seed pages,
+resets the cursor to zero and makes every old committed mapping unreachable.
+The allocator skips those four IDs and never revisits another assigned page
+within that sequence. It needs no reset sweep of a large free bitmap. Four
+interleaved map RAMs permit one publication write per bank for an accepted
+path of up to four contiguous logical positions, even for noncontiguous slots.
+Publication and committed origin change only on the tree response handshake.
+An internal allocator bound violation is explicit sticky `allocator_error`,
+not a wrapped physical page. Annul leaves committed data and pending scratch
+replenishment intact; new batches wait for replenishment.
+
+The native store's begin ports capture count/IDs/parents/position, BF16 versus
+INT8 KV, and a 33-bit base/extent. Its write port addresses slot, layer, K/V,
+head and block and accepts BF16 block words. The read port adds the requesting
+node and absolute sequence position. Translation selects a committed page or
+one of that node's provisional ancestors/self. The progress scoreboard rejects
+reads before the relevant record's successful acknowledgement. Writing a
+different slot may interleave, but each slot writes increasing layer then
+K/V/head/block ordinal. Final layer completion includes both K and V, all heads
+and every cache block; it is not a count of issued requests.
+
+The store has one external memory owner. Its `mem_*` port requests a single
+aligned 512-bit beat and receives a ready/valid response for reads and writes.
+Packed records cross beat boundaries correctly through a bounded six-beat
+window; partial writes have exact byte enables. All address products/additions
+are registered before issue and record bounds are checked in 64 bits.
+`mem_rsp_ready` deliberately remains asserted for an owned transaction during
+annul so the previous request drains; no new request is accepted until drained.
+External memory/fabric must preserve response ownership and hold responses
+under backpressure. Every issued read/write, including partial-record padding
+and encoded scale bytes, must be charged by future integrated traffic counters.
+
+Begin-time region validation requires the full physical-page allocation,
+rounded up to a 64-byte boundary. A committed format/base/extent is immutable
+until the controller is reset. Even new-sequence offers with a different
+layout are rejected, because speculative writes under a changed stride could
+alias still-visible old data. The future mode/configuration integration must
+drain and reset this subsystem while quiescent to invalidate incompatible KV;
+ordinary batch annul never provides that invalidation. An unchanged-layout
+new sequence can reuse old physical pages only after successful publication.
+Failed or cancelled new sequences retain the old mapping/data/configuration.
+
+`s_finish_valid` supplies computed target IDs only after inference. The store
+itself supplies the 112 completion bits and four error bits to the map/tree.
+Finish waits for memory work and read/write responses to retire and seals
+the batch against further operations. The six-stage tree then holds the batch
+response until consumption. Cancel on that edge wins over publication.
+
+### Configuration and shared weight loading
+
+The mode-control adapter implements the three HT2 extension addresses.
+The new configuration wrapper connects its forwarded requests to the unchanged
+parent configuration in legacy mode, or to the native controller otherwise.
+One adapter owner spans the request/response lifetime, including cancelled
+response drainage. Native BF16/K=1 are reset defaults. Native legacy-selector
+shadows remain readable/writable but cannot override HT2_MODE's selected
+formats. A mode change invalidates native publication and resets legacy
+configuration; a K-only change does not discard descriptors. Model/cache
+configuration is not ready for use again until successful revalidation.
+
+The native descriptor checker is single-owner, with registered shape, product,
+length, bound and response stages. It returns up to three 33-bit base/34-bit
+exclusive-end pairs: payload, zero points and scales. The native configuration
+controller first reserves the native store's complete MAX_SEQ_LEN+4 physical
+pages, then scans each validated region against prior regions. It permits
+only the parent's exact embedding/head payload alias. Reserved descriptors
+must be zero; uninitialized shadow words read as zero rather than exposing
+unreset memory. Native row-major descriptors are separate from the parent's
+legacy tiled layout and byte-exact flags. Roles/layouts are frozen in SPEC.md.
+
+After all checks, one descriptor per cycle copies into an inactive committed
+RAM bank. The last copy edge switches the bank, committed mode and cache
+base/extent atomically. Failed/cancelled validation never switches banks.
+The native controller retains an error response for a cancelled accepted
+configuration request so the adapter can drain it; cancellation does not
+silently strand that owner. Descriptor responses are independently annulled.
+Every mode-bit change still must drain/invalidate actual KV and weight state
+at the future top. The wrapper's descriptor invalidation alone is not that
+cache implementation.
+
+The metadata tile reader owns one captured row/column and activation union.
+It registers row-stride products, row addresses, column offsets and bounds
+before offering memory work. It scans at most 128 groups, skips unrequired
+groups, and uses separate one-beat zero-point/scale caches. A cache miss issues
+one aligned 64-byte read, waits for its response, then extracts the packed
+unsigned code or little-endian BF16 scale. Required nonfinite scales, fetched
+nonzero padding, out-of-range keeps or failed reads form explicit errors.
+Zero scales, signed zeros and subnormal scales are not silently filtered.
+No metadata read is issued for a wholly skipped tile or native payload.
+
+The connected weight path instantiates this reader and the frozen sparse DMA.
+It retains original activations and tag, passes expanded metadata and effective
+keeps into DMA, and multiplexes their sequential read requests onto one burst
+interface. Actual last markers are compared with the accepted beat count.
+Error responses have no usable tensor payload; missing terminators retain
+ownership, and annul drains before reuse. Metadata/DMA cache invalidation
+is explicit via annul, including required future mode/host-write invalidation.
+This is a serialized loader, not a claim of multi-outstanding prefetch
+throughput or a connected 512-lane model execution path.
 
 ## Required connected dataflow
 
@@ -146,14 +328,141 @@ in `SPEC.md`; their entry point has not been supplied by this design increment.
 No simulation, synthesis, timing, board, benchmark or product acceptance is
 claimed here.
 
-The next design increment must implement the compatible top/configuration ABI,
-real shared memory arbitration/prefetch/metadata expansion, native activation
-storage and model sequencing, approximation operators with coefficient
-provenance, dependency-tracked row accumulation, and isolated provisional KV
-storage plus atomic selected-path mappings. Native FP16 activations must not
-reinterpret BF16 dequantized weights as FP16; integration needs an explicitly
-rounded compatible operand boundary. Mode changes/host writes must invalidate
+The next design increment must implement the compatible top, connect the
+shared memory adapter and model sequencing, add needed prefetch overlap,
+approximation operators with coefficient provenance, and connect the newly
+implemented configuration/weight/storage/row/cache subsystems into that model
+datapath. A9 now represents mixed BF16-weight/FP16-activation operands without
+another rounding boundary. Mode changes/host writes must invalidate
 weight reuse. Actual model argmax and acknowledged KV completion bits must
-replace leaf-only stimulus at integration. Independent verification follows
+come from the sequencer/native store at integration. Independent verification follows
 the completed design handoff; none of these requirements is satisfied by
 standalone leaves or by the static command above.
+
+### A9 repair and connected tensor execution
+
+The retained defect was a shared product-format selector: HT2_MODE permits
+FP16 activations with W4/W2 weights, but the unpacker reconstructs BF16
+weights. The previous product lane interpreted both operands using `fp16`.
+Admitted A9 repairs that contradiction by adding the independent weight
+selector described above. No existing source increment was replaced.
+
+An analytical counterexample uses one kept lane, zero bias and positive-zero
+remaining lanes: FP16 activation `3c01` is exactly 1025/1024. A quantized code
+1, zero point 0 and BF16 scale `3f80` reconstruct weight `3f80`, exactly 1
+in BF16. The required product is 1025/1024 (FP32 `3f802000`).
+With the previous shared `s_fp16=1`, that weight was
+instead interpreted as FP16 15/8, producing 15375/8192. With the previous shared `s_fp16=0`,
+the activation is interpreted as BF16 129/16384. Both selections are finite
+but wrong; masking and error propagation cannot distinguish or repair them.
+These are encoding-derived values, not results from an executed simulation.
+
+Converting the activation to BF16 would introduce an unadmitted rounding
+boundary (the example rounds to 1). Converting every BF16 weight to FP16
+cannot be lossless either: BF16 `0001` is 2^-133, below the smallest positive
+FP16 value. Excluding FP16 quantized modes violates required integration
+coverage. Inferring formats from operand bits is ambiguous; identical 16-bit
+patterns are legal in both formats. Tag or mask overloading would silently
+change their frozen semantics.
+
+The repaired interface supplies `s_fp16=1, s_weight_fp16=0` for that example.
+The expected encoding above is an analytical requirement, not an executed
+numerical result. Verifier owns independent bit-exact checks of all four
+selector combinations, alternating formats, stalls, annul, signed zeros,
+subnormals and specials. All original numerical and timing thresholds remain.
+
+`anvil_q2_ht2_tensor_engine` captures the descriptor, vector ID, row range,
+token mask, activation mode, weight mode, sparsity policy and tag at command
+acceptance. Retained command validation precedes any RAM or DDR request:
+columns must be 8..MAX_WORDS, divisible by eight and GROUP_SIZE; rows must lie
+inside the descriptor's 1..151936 rows; weight flags must match the captured
+policy; the token mask must be nonempty and the activation vector in range.
+Its parameters are MAX_WORDS (default 8960, 8..8960 divisible by eight and
+GROUP_SIZE), VECTOR_COUNT (default 16, 1..32), and power-of-two GROUP_SIZE
+(default 128, 1..128). Invalid parameter tuples use a guarded diagnostic
+branch, not clamping.
+
+The internal activation store exposes a full-tile write/acknowledgement port
+to the future native model controller. Writes have priority over new commands;
+the controller must retire a write acknowledgement before starting work.
+While a command runs, the engine alone reads its selected vector for all
+active tokens. Increasing 128-column tiles generate explicit partial-tail
+keeps. The weight path computes union sparsity and returns the captured
+activation, shared weight and format together. A successful response transfers
+directly into the physical four-by-128 MAC with the two operand selectors.
+Its zero tile bias is not a model bias: the subsequent model operation must
+add each row's actual Qwen bias once after the complete dot product, before
+rounding at the activation boundary.
+
+The MAC result feeds the ordered four-stage accumulator. A nonlast tile waits
+for retirement before the next dependent tile is requested. One-tile rows set
+first and last together. Each complete row produces `m_sum` (four FP32 words),
+absolute `m_row`, active mask, tag, error and last; a stalled response blocks
+the next row. `m_last` marks the final requested row or a terminal error.
+Activation, weight, format/tag/mask, MAC and accumulator errors cannot return
+a successful partial row. Arithmetic validity is flushed before the terminal
+error response. A weight-protocol fault first annuls the weight operation,
+drains accepted memory ownership and any outstanding operand read, then returns
+that error. External annul
+suppresses responses and invalidates activation tiles; accepting a new command
+waits for the weight path's drain. The sticky fault output is reset only by
+reset; top-level fault/cancellation coordination is still required.
+
+### Native shared-memory adapter
+
+`anvil_q2_ht2_ddr_fabric` instantiates the unchanged parent DDR fabric with four
+acknowledged single-beat clients: internal client zero is the weight-burst
+adapter; exposed clients zero, one and two are intended for native KV, scalar
+model reads and host access respectively. The parent's unused legacy burst
+read ports are tied inactive. Its round-robin arbitration, read-owner queue,
+private response slots, held Avalon commands and write acknowledgements are
+retained rather than reimplemented. READ_OUTSTANDING remains 1..16 (default 8).
+
+The adapter captures one aligned 1..127-beat weight request, checking its
+33-bit extent. Invalid requests return a terminal fill error without DDR
+issue. Accepted requests issue one beat at a time; each response holds data,
+error and last under fill backpressure. Only fill consumption increments the
+next address/decrements remaining beats. Annul blocks new bursts and exposed
+client requests, but an already accepted burst remains an obligation: its
+remaining beats complete into the cancelling weight owner's drain interface.
+It is not silently shortened or reused by a new tile. Exposed single-beat
+owners must likewise drain their accepted responses on annul.
+
+All backend commands here are single-beat, so none crosses a 4-KiB boundary.
+The two 64-bit counters increment only on actual accepted Avalon read/write
+commands, including metadata, KV, scalar and host traffic routed through this
+fabric. Multiply beat totals by 64 to account for physical DDR bytes, including
+partial-write padding. They are internal subsystem observations, not added
+benchmark-only product ports. The beat-serialized adapter is conservative;
+neither it nor the tensor scheduler demonstrates required production
+throughput or replaces future prefetch/timing/resource evidence.
+
+The compatible top, model sequencer, approximation operators and product-level
+DDR/KV integration remain incomplete. The new tensor engine and memory adapter
+are not connected to a full target-model execution path. Missing official model/tokenizer/corpus inputs,
+the Q2-FP baseline and authentic `design/GENERATIONAL_HANDOFF.md` are separate
+prerequisites, not consequences of this interface conflict. Existing accepted
+source increments and mandatory checks remain in place.
+
+## Advisory diagnostic index
+
+| Claim | Actual retained result |
+|---|---|
+| Initial arithmetic/DMA/tree/codec snapshot parses | Icarus 12.0 static exit 0: `evidence/preparation/ht2-leaf-static-20261031T152612032440Z/receipt.json`; the later exceptional-dequantization edit was not in that snapshot |
+| Updated arithmetic/DMA and new storage/configuration-adapter snapshot parses | Icarus 12.0 static exit 0: `evidence/preparation/ht2-storage-static-20261031T153805186666Z/receipt.json`; includes the previous dequantization repair |
+| Connected configuration/metadata/weight snapshot parses | Icarus static exit 0: `evidence/preparation/ht2-configuration-weight-static-20261031T154545083175Z/receipt.json`; includes the actual-required-beat bound repair and all five new configuration/weight modules |
+| A9 repair, connected tensor engine and native memory adapter parse | Icarus 12.0 static exit 0 in 2.52 seconds: `evidence/preparation/ht2-a9-tensor-ddr-static-20261031T155617253142Z/receipt.json`; current RTL hashes remained unchanged during the check |
+| Parent preservation for this increment | All 22 parent hashes equal the previous receipt in the new static receipt |
+| Functional/numerical/mutation/synthesis/model results | Not executed; independent Verifier ownership |
+| Production fit, DSP mapping, timing, board behavior and throughput | No evidence; mandatory shared-runtime gates and benchmark acceptance remain outstanding |
+
+All four receipts retain exact portable argv/cwd, source hashes, compiler-version
+logs, start/end timestamps, timeout/exit status and raw stdout/stderr. These are
+static-elaboration diagnostics only, not passing L1 evidence. No simulation or
+synthesis harness was authored or executed by Designer. The first two historical
+receipts predate the configuration/metadata increment and its required-beat
+address-bound repair; the third includes that increment but predates A9.
+Only the fourth includes the independent operand selectors, tensor engine and
+native memory adapter. This index entry was added after the fourth compile;
+no RTL changed after it. Static elaboration does not establish numerical
+behavior, cancellation correctness, memory inference, timing or performance.

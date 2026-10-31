@@ -1,5 +1,5 @@
 module anvil_q2_ht2_product_pipe (
-  input wire clk, rst_n, advance, keep, fp16,
+  input wire clk, rst_n, advance, keep, fp16, weight_fp16,
   input wire [15:0] a, b,
   output wire [31:0] product,
   output wire error
@@ -26,11 +26,11 @@ module anvil_q2_ht2_product_pipe (
   wire [15:0] av=keep ? a : 16'd0;
   wire [15:0] bv=keep ? b : 16'd0;
   wire an=fp16 ? av[14:10]==5'h1f : av[14:7]==8'hff;
-  wire bn=fp16 ? bv[14:10]==5'h1f : bv[14:7]==8'hff;
+  wire bn=weight_fp16 ? bv[14:10]==5'h1f : bv[14:7]==8'hff;
   wire az=av[14:0]==0;
   wire bz=bv[14:0]==0;
   wire aq=an && (fp16 ? (|av[9:0]) : (|av[6:0]));
-  wire bq=bn && (fp16 ? (|bv[9:0]) : (|bv[6:0]));
+  wire bq=bn && (weight_fp16 ? (|bv[9:0]) : (|bv[6:0]));
   wire invalid=aq || bq || (an && bz) || (bn && az);
   wire [31:0] exceptional=invalid ? 32'h7fc00000 :
     {av[15]^bv[15],8'hff,23'd0};
@@ -55,16 +55,19 @@ module anvil_q2_ht2_product_pipe (
     end else if (advance) begin
       if (fp16) begin
         a1<={(|av[14:10]),av[9:0]};
-        b1<={(|bv[14:10]),bv[9:0]};
         ae1<=av[14:10]==0 ? -12'sd24 :
           $signed({7'd0,av[14:10]})-12'sd25;
+      end else begin
+        a1<={3'd0,(|av[14:7]),av[6:0]};
+        ae1<=av[14:7]==0 ? -12'sd133 :
+          $signed({4'd0,av[14:7]})-12'sd134;
+      end
+      if (weight_fp16) begin
+        b1<={(|bv[14:10]),bv[9:0]};
         be1<=bv[14:10]==0 ? -12'sd24 :
           $signed({7'd0,bv[14:10]})-12'sd25;
       end else begin
-        a1<={3'd0,(|av[14:7]),av[6:0]};
         b1<={3'd0,(|bv[14:7]),bv[6:0]};
-        ae1<=av[14:7]==0 ? -12'sd133 :
-          $signed({4'd0,av[14:7]})-12'sd134;
         be1<=bv[14:7]==0 ? -12'sd133 :
           $signed({4'd0,bv[14:7]})-12'sd134;
       end

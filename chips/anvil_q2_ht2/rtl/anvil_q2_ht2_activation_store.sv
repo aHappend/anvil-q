@@ -48,19 +48,19 @@ module anvil_q2_ht2_activation_store #(
     wire [3:0] memory_valid;
     wire [511:0] memory_keep;
     reg missing;
-    integer j,t;
+    integer bound_j, missing_t, seq_t, seq_j;
     genvar slot;
 
     always @* begin
       write_legal_keep=0;
       read_legal_keep=0;
-      for (j=0;j<128;j=j+1) begin
+      for (bound_j=0;bound_j<128;bound_j=bound_j+1) begin
         if (w_tile<(MAX_WORDS >> 7) ||
-            (w_tile==(MAX_WORDS >> 7) && j<(MAX_WORDS & 127)))
-          write_legal_keep[j]=1;
+            (w_tile==(MAX_WORDS >> 7) && bound_j<(MAX_WORDS & 127)))
+          write_legal_keep[bound_j]=1;
         if (r_tile<(MAX_WORDS >> 7) ||
-            (r_tile==(MAX_WORDS >> 7) && j<(MAX_WORDS & 127)))
-          read_legal_keep[j]=1;
+            (r_tile==(MAX_WORDS >> 7) && bound_j<(MAX_WORDS & 127)))
+          read_legal_keep[bound_j]=1;
       end
     end
 
@@ -98,10 +98,10 @@ module anvil_q2_ht2_activation_store #(
 
     always @* begin
       missing=read_error;
-      for (t=0;t<4;t=t+1)
-        if (read_mask[t] && (|read_keep[128*t+:128]) &&
-            (!memory_valid[t] ||
-              (read_keep[128*t+:128] & ~memory_keep[128*t+:128])!=0))
+      for (missing_t=0;missing_t<4;missing_t=missing_t+1)
+        if (read_mask[missing_t] && (|read_keep[128*missing_t+:128]) &&
+            (!memory_valid[missing_t] ||
+              (read_keep[128*missing_t+:128] & ~memory_keep[128*missing_t+:128])!=0))
           missing=1;
     end
 
@@ -133,11 +133,11 @@ module anvil_q2_ht2_activation_store #(
           0: if (read_transfer) begin
             read_error<=!read_range;
             read_mask<=r_token_mask; read_tag<=r_tag;
-            for (t=0;t<4;t=t+1) begin
-              read_keep[128*t+:128]<=r_token_mask[t] ?
-                r_keep[128*t+:128] : 128'd0;
-              if (r_token_mask[t] &&
-                  (r_keep[128*t+:128] & ~read_legal_keep)!=0)
+            for (seq_t=0;seq_t<4;seq_t=seq_t+1) begin
+              read_keep[128*seq_t+:128]<=r_token_mask[seq_t] ?
+                r_keep[128*seq_t+:128] : 128'd0;
+              if (r_token_mask[seq_t] &&
+                  (r_keep[128*seq_t+:128] & ~read_legal_keep)!=0)
                 read_error<=1;
             end
             state<=1;
@@ -146,10 +146,10 @@ module anvil_q2_ht2_activation_store #(
             response_error<=missing;
             response_tag<=read_tag;
             response_keep<=read_keep;
-            for (t=0;t<4;t=t+1)
-              for (j=0;j<128;j=j+1)
-                response_data[(128*t+j)*16+:16]<=read_keep[128*t+j] ?
-                  memory_data[2176*t+16*j+:16] : 16'd0;
+            for (seq_t=0;seq_t<4;seq_t=seq_t+1)
+              for (seq_j=0;seq_j<128;seq_j=seq_j+1)
+                response_data[(128*seq_t+seq_j)*16+:16]<=read_keep[128*seq_t+seq_j] ?
+                  memory_data[2176*seq_t+16*seq_j+:16] : 16'd0;
             state<=2;
           end
           2: if (m_ready) state<=0;

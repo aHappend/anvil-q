@@ -59,9 +59,11 @@ module anvil_q2_ht2_sparse_w2w4_dma (
   wire [4:0] remaining=pending & ~run_mask;
   wire last_run=remaining==0;
   wire [4:0] candidates=planned ? pending : needed;
-  wire [33:0] payload_end={1'b0,address}+
-    (format<2 ? 34'd256 : (format==2 ? 34'd64 : 34'd32));
-  wire bad_address=payload_end>34'h200000000;
+  wire [2:0] needed_extent=needed[4] ? 3'd5 : (needed[3] ? 3'd4 :
+    (needed[2] ? 3'd3 : (needed[1] ? 3'd2 : (needed[0] ? 3'd1 : 3'd0))));
+  wire [33:0] required_end={1'b0,address[32:6],6'd0}+
+    {25'd0,needed_extent,6'd0};
+  wire bad_address=required_end>34'h200000000;
   wire cached=format==3 && address[5:0]<=32 &&
     cache_valid && cache_address=={address[32:6],6'd0};
   wire all_skipped=lane_union==0;
