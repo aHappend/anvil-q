@@ -122,11 +122,10 @@ package anvil_q1_fp_pkg;
     end
   endfunction
 
-  function automatic [69:0] align_term(
+  function automatic [64:0] align_magnitude(
     input [79:0] term, input signed [10:0] maximum);
     reg [63:0] mag;
     reg lost;
-    reg signed [68:0] aligned;
     integer distance;
     begin
       distance=$signed(32'(maximum))-$signed(32'($signed(term[74:64])));
@@ -138,9 +137,31 @@ package anvil_q1_fp_pkg;
           lost=(term[63:0] & ((64'd1 << distance)-1))!=0;
         end else mag=term[63:0];
       end
-      aligned=$signed({5'd0,mag});
+      align_magnitude={lost,mag};
+    end
+  endfunction
+
+  function automatic [69:0] align_term(
+    input [79:0] term, input signed [10:0] maximum);
+    reg [64:0] magnitude;
+    reg signed [68:0] aligned;
+    begin
+      magnitude=align_magnitude(term,maximum);
+      aligned=$signed({5'd0,magnitude[63:0]});
       if (term[75]) aligned=-aligned;
-      align_term={lost,aligned};
+      align_term={magnitude[64],aligned};
+    end
+  endfunction
+
+  function automatic [2:0] leading8(input [7:0] x);
+    reg [7:0] v;
+    reg [2:0] high;
+    begin
+      v=x; high=0;
+      if (|v[7:4]) begin v=v>>4; high[2]=1; end
+      if (|v[3:2]) begin v=v>>2; high[1]=1; end
+      high[0]=v[1];
+      leading8=high;
     end
   endfunction
 
@@ -148,66 +169,93 @@ package anvil_q1_fp_pkg;
   function automatic [36:0] pack_grid(
     input [68:0] magnitude, input sign,
     input signed [10:0] grid, input alignment_lost);
+    reg [71:0] padded;
+    reg [8:0] nonzero, selected;
+    reg [2:0] local_high [0:8];
+    reg [31:0] window [0:8];
+    reg [31:0] normalized [0:8];
+    reg [8:0] tail;
     reg [70:0] shifted;
-    reg [24:0] unrounded, significand;
+    reg [24:0] normal_unrounded, normal_significand;
+    reg [24:0] tiny_unrounded, tiny_significand;
     reg [31:0] value;
     reg [4:0] flags;
-    reg guard_bit, sticky_bit, increment;
-    reg [7:0] encoded_exponent, incremented_exponent;
+    reg normal_guard, normal_sticky, tiny_guard, tiny_sticky;
     reg [6:0] high, right_distance;
     reg [4:0] left_distance;
-    reg signed [11:0] exponent, distance;
+    reg signed [11:0] biased_grid, carried_grid;
+    reg signed [11:0] biased_exponent, carried_exponent, distance;
+    integer block_index;
     begin
-      shifted=0; unrounded=0; significand=0;
+      padded={3'd0,magnitude}; nonzero=0; selected=0; tail=0;
+      normal_unrounded=0; normal_guard=0; normal_sticky=0; high=0;
+      // Normalize each eight-bit leading window before selecting the leading block.
+      for (block_index=0;block_index<9;block_index=block_index+1) begin
+        nonzero[block_index]=|padded[block_index*8+:8];
+        local_high[block_index]=leading8(padded[block_index*8+:8]);
+        if (block_index>=3)
+          window[block_index]=32'(padded >> (block_index*8-24));
+        else window[block_index]=32'(padded << (24-block_index*8));
+        normalized[block_index]=window[block_index] << (~local_high[block_index]);
+        if (block_index>=4)
+          tail[block_index]=|(padded << (72-(block_index*8-24)));
+      end
+      for (block_index=0;block_index<9;block_index=block_index+1) begin
+        selected[block_index]=nonzero[block_index] &&
+          !(|(nonzero >> (block_index+1)));
+        normal_unrounded=normal_unrounded |
+          ({25{selected[block_index]}} & {1'b0,normalized[block_index][31:8]});
+        normal_guard=normal_guard |
+          (selected[block_index] && normalized[block_index][7]);
+        normal_sticky=normal_sticky |
+          (selected[block_index] &&
+           ((|normalized[block_index][6:0]) || tail[block_index]));
+        high=high | ({7{selected[block_index]}} &
+          {4'(block_index),local_high[block_index]});
+      end
+      normal_significand=normal_unrounded+
+        {24'd0,(normal_guard && (normal_sticky || normal_unrounded[0]))};
+      // The subnormal shift depends only on the grid, not on leading detection.
+      distance=-12'sd149-$signed({grid[10],grid});
+      right_distance=distance[6:0];
+      left_distance=5'(-distance);
+      shifted={magnitude,2'd0};
+      if (right_distance[0]) shifted={1'd0,shifted[70:2],|shifted[1:0]};
+      if (right_distance[1]) shifted={2'd0,shifted[70:3],|shifted[2:0]};
+      if (right_distance[2]) shifted={4'd0,shifted[70:5],|shifted[4:0]};
+      if (right_distance[3]) shifted={8'd0,shifted[70:9],|shifted[8:0]};
+      if (right_distance[4]) shifted={16'd0,shifted[70:17],|shifted[16:0]};
+      if (right_distance[5]) shifted={32'd0,shifted[70:33],|shifted[32:0]};
+      if (right_distance[6]) shifted={64'd0,shifted[70:65],|shifted[64:0]};
+      tiny_unrounded=0; tiny_guard=0; tiny_sticky=0;
+      if (distance>12'sd69) tiny_sticky=1;
+      else if (distance>0) begin
+        tiny_unrounded=shifted[26:2];
+        tiny_guard=shifted[1]; tiny_sticky=shifted[0];
+      end else tiny_unrounded=magnitude[24:0] << left_distance;
+      tiny_significand=tiny_unrounded+
+        {24'd0,(tiny_guard && (tiny_sticky || tiny_unrounded[0]))};
+      biased_grid=$signed({grid[10],grid})+12'sd127;
+      carried_grid=$signed({grid[10],grid})+12'sd128;
+      biased_exponent=biased_grid+$signed({5'd0,high});
+      carried_exponent=carried_grid+$signed({5'd0,high});
       value={sign,31'd0}; flags={4'd0,alignment_lost};
-      guard_bit=0; sticky_bit=0; increment=0;
-      encoded_exponent=0; incremented_exponent=0;
-      high=0; exponent=0; distance=0; right_distance=0; left_distance=0;
       if (magnitude!=0) begin
-        if (|magnitude[68:64])
-          high=7'd64+leading64({59'd0,magnitude[68:64]});
-        else high=leading64(magnitude[63:0]);
-        exponent=$signed({grid[10],grid})+$signed({5'd0,high});
-        if (exponent>12'sd127) begin
+        if (biased_exponent>12'sd254) begin
           value={sign,8'hff,23'd0};
           flags[2]=1; flags[0]=1;
+        end else if (biased_exponent>=12'sd1) begin
+          flags[0]=alignment_lost || normal_guard || normal_sticky;
+          if (biased_exponent==12'sd254 && normal_significand[24]) begin
+            value={sign,8'hff,23'd0};
+            flags[2]=1; flags[0]=1;
+          end else if (normal_significand[24])
+            value={sign,carried_exponent[7:0],normal_significand[23:1]};
+          else value={sign,biased_exponent[7:0],normal_significand[22:0]};
         end else begin
-          if (exponent>=-12'sd126)
-            distance=$signed({5'd0,high})-12'sd23;
-          else distance=-12'sd149-$signed({grid[10],grid});
-          right_distance=distance[6:0];
-          left_distance=5'(-distance);
-          shifted={magnitude,2'd0};
-          // Each fixed shift jams discarded bits into bit zero. Bit one is guard.
-          if (right_distance[0]) shifted={1'd0,shifted[70:2],|shifted[1:0]};
-          if (right_distance[1]) shifted={2'd0,shifted[70:3],|shifted[2:0]};
-          if (right_distance[2]) shifted={4'd0,shifted[70:5],|shifted[4:0]};
-          if (right_distance[3]) shifted={8'd0,shifted[70:9],|shifted[8:0]};
-          if (right_distance[4]) shifted={16'd0,shifted[70:17],|shifted[16:0]};
-          if (right_distance[5]) shifted={32'd0,shifted[70:33],|shifted[32:0]};
-          if (right_distance[6]) shifted={64'd0,shifted[70:65],|shifted[64:0]};
-          if (distance>12'sd69) begin
-            unrounded=0; sticky_bit=1;
-          end else if (distance>0) begin
-            unrounded=shifted[26:2];
-            guard_bit=shifted[1]; sticky_bit=shifted[0];
-          end else unrounded=magnitude[24:0] << left_distance;
-          increment=guard_bit && (sticky_bit || unrounded[0]);
-          significand=unrounded+{24'd0,increment};
-          flags[0]=alignment_lost || guard_bit || sticky_bit;
-          encoded_exponent=8'(exponent+12'sd127);
-          incremented_exponent=8'(exponent+12'sd128);
-          if (exponent>=-12'sd126) begin
-            if (exponent==12'sd127 && significand[24]) begin
-              value={sign,8'hff,23'd0};
-              flags[2]=1; flags[0]=1;
-            end else if (significand[24])
-              value={sign,incremented_exponent,significand[23:1]};
-            else value={sign,encoded_exponent,significand[22:0]};
-          end else begin
-            value={sign,7'd0,significand[23:0]};
-            flags[1]=flags[0] && !significand[23];
-          end
+          value={sign,7'd0,tiny_significand[23:0]};
+          flags[0]=alignment_lost || tiny_guard || tiny_sticky;
+          flags[1]=flags[0] && !tiny_significand[23];
         end
       end
       pack_grid={flags,value};

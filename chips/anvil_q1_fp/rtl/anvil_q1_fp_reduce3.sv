@@ -25,9 +25,7 @@ module anvil_q1_fp_reduce3(
   wire [68:0] sum3, carry3, sum4, carry4;
   wire [68:0] negative_sum, negative_carry;
   wire [68:0] total, negative_total;
-  wire [68:0] magnitude;
-  wire finite_sign;
-  wire [36:0] packed_result;
+  wire [36:0] positive_packed, negative_packed, packed_result;
   reg [31:0] result3;
   reg [4:0] status3;
   integer i, j;
@@ -138,9 +136,10 @@ module anvil_q1_fp_reduce3(
     negative_zero_next=negative_zero_next && any_active_next;
   end
 
-  assign magnitude=total[68] ? negative_total : total;
-  assign finite_sign=(total==0) ? negative_zero2 : total[68];
-  assign packed_result=anvil_q1_fp_pkg::pack_grid(magnitude,finite_sign,grid2,lost2);
+  // Keep sign resolution out of the normalization path.
+  assign positive_packed=anvil_q1_fp_pkg::pack_grid(total,negative_zero2,grid2,lost2);
+  assign negative_packed=anvil_q1_fp_pkg::pack_grid(negative_total,1'b1,grid2,lost2);
+  assign packed_result=total[68] ? negative_packed : positive_packed;
   assign out_valid=rst_n && valid3;
   assign result=(rst_n && valid3) ? result3 : 32'd0;
   assign status=(rst_n && valid3) ? status3 : 5'd0;

@@ -37,9 +37,9 @@
       "receipts": []
     },
     "check:prerequisites": {
-      "attempt_id": 775,
-      "duration_s": 11.68728256993927,
-      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-prerequisites-o017dezx/receipt.json\"}\n",
+      "attempt_id": 783,
+      "duration_s": 11.409648343920708,
+      "stdout_preview": "{\"status\": \"passed\", \"receipt\": \"evidence/preparation/verifier-prerequisites-hkk_tgq_/receipt.json\"}\n",
       "receipt_count": 0,
       "receipts": []
     },

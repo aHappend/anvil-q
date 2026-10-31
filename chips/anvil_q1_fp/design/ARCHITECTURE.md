@@ -356,13 +356,13 @@ are exact before alignment. BF16 and FP16 products need at most 22
 significand bits; binary32 products need at most 48. Binary32 seeds
 need at most 24. Each therefore fits exactly before alignment.
 
-The three-stage reducer is shared arithmetic, not a fourth dot stage:
+The dot/mixed-dot three-stage reducer has no fourth dot stage:
 
 | Register stage | Work captured |
 | --- | --- |
 | 1 | Exact unpacked/prepared terms, mask, forced-invalid |
 | 2 | Largest-exponent grid, nine aligned signed integers, exception/zero metadata and alignment loss |
-| 3 | Exact carry-save reduction, parallel signed-magnitude resolution and one nearest/even binary32 pack |
+| 3 | Exact carry-save reduction, parallel positive/negative resolution and packing, then sign selection |
 
 Signed aligned integers and every reduction node have 69 bits:
 nine magnitudes each below 2^64 have sum magnitude below 9*2^64,
@@ -376,14 +376,14 @@ registered output stage.
 
 ### Final-stage timing repair
 
-The reported retained post-fit failure was setup WNS=-5.888 ns
+The earlier retained post-fit failure was setup WNS=-5.888 ns
 (hold WNS=+0.038 ns), from `terms2[0][0]` to `result3[29]` in the
 MLP GEMV lane-6 mixed-dot reducer. This is a timing failure, not a
 functional-simulation failure. The former final-stage path used four
 levels of 69-bit carry-propagating additions, followed by conditional
 wide negation and variable-mask packing.
 
-The reducer now compresses the nine signed 69-bit aligned terms through
+The preceding repair compressed the nine signed 69-bit aligned terms through
 four bitwise 3:2 levels, with operand counts 9->6->4->3->2.
 Each compressor preserves the exact sum modulo 2^69; the magnitude bound
 above ensures that the final signed sum is representable without overflow.
@@ -396,34 +396,80 @@ a four-level parallel prefix over nine block generate/propagate pairs
 selects the block results. The padded upper three bits are discarded,
 not part of the arithmetic width.
 
-The shared `pack_grid` retains the full 69-bit magnitude and rounds only
-once. Its exponent/distance controls are signed 12-bit values, the right
-shift is bounded to 0..69, and any required left shift is at most 23 bits
-into a 25-bit rounding significand. Seven fixed power-of-two right-shift
-steps propagate guard and sticky information directly, without dynamic
-discard masks or mask-subtraction chains. Normal and carry-incremented
-exponent encodings are prepared in parallel. Gradual underflow, tininess
-after rounding, alignment-loss inexactness, cancellation and signed-zero
-metadata are unchanged. Reciprocal/reciprocal-square-root output packing
-also uses this helper and requires independent regression.
+Fresh source-bound post-fit timing still failed at setup WNS=-3.617 ns,
+hold WNS=+0.038 ns, at the same 10.0 ns clock. The retained diagnostic is
+`.vulcan/engineering/run-0001/quartus-sta.json`; its raw
+`quartus_sta_work/top.sta.rpt:31` identifies final norm's binary add
+`terms2[1][32] -> result3[30]`. These are diagnostic links, not deliverable
+source/check selectors. Carry resolution, sign/magnitude selection,
+leading detection, exponent/distance arithmetic, normalization, sticky
+generation and rounding still formed one serial final-stage path.
+Mapping/fitting reported no errors or uninferred-RAM diagnosis.
+
+The current repair separates binary arithmetic from the nine-term dot
+reducer and shortens packing for every reachable user of `pack_grid`:
+
+| Binary register stage | Work captured |
+| --- | --- |
+| 1 (E0) | Addition: exact terms ordered by unsigned IEEE magnitude code; multiplication: one exact product |
+| 2 (E1) | Addition: align only the smaller magnitude, compute unsigned sum/difference and select exact magnitude; multiplication: transfer exact magnitude; capture grid, sign, exception and alignment-loss metadata |
+| 3 (E2) | Normalize and nearest/even pack the registered magnitude, or return the registered special result |
+
+Finite binary32 magnitude codes order subnormals and zeros correctly;
+this comparison runs in parallel with term preparation, not after its
+normalizer. NaNs/infinities use the metadata bypass. The larger finite
+term needs no alignment. The aligned smaller magnitude and larger
+magnitude are each below 2^64, so unsigned65 holds their sum; the ordered
+difference is nonnegative. Choosing sum for equal signs and difference
+for opposite signs is exactly the original signed-grid reduction, with
+no wide negate or carry propagation left in binary stage 3. Multiplication
+needs no two-term reduction. The magnitude is zero-extended into the
+shared unsigned69 packer. Exact nonzero cancellation selects +0; all
+negative zero operands retain -0. Alignment loss remains status metadata,
+not an extra rounding bit.
+
+Normal packing no longer encodes a global leading position and then
+uses it to calculate a barrel-shift distance. The 69-bit magnitude is
+zero-padded to nine eight-bit blocks. Each block independently prepares
+a fixed 32-bit window, its local three-bit leading position and a
+zero-to-seven-bit left normalization. A parallel highest-nonzero-block
+selection combines the already normalized candidates. The chosen window
+provides 24 significand bits, guard and sticky; a separate fixed lower
+tail reduction preserves every bit below that window. Leading-position
+encoding and biased-exponent calculation proceed alongside significand
+selection/rounding, not ahead of normalization. Normal and rounded-carry
+exponent candidates are also prepared independently.
+
+Subnormal packing is a separate parallel candidate: its distance
+`-149-grid` depends only on the grid, never on leading detection.
+Seven fixed jam-shift steps retain guard/sticky for right distances
+0..69; larger distances produce a zero significand with sticky set for
+nonzero magnitudes. Required left shifts on this branch are at most
+23 bits. Normal/subnormal/overflow selection follows candidate rounding.
+Signed 12-bit exponent/distance controls, the full 69-bit magnitude,
+gradual underflow, tininess after rounding and all exception conventions
+are preserved. Reciprocal, reciprocal-square-root and elaboration-time
+dimension constants also use this changed helper.
+
+Dot and mixed-dot retain their prescribed E0 term preparation, E1
+alignment and E2 exact nine-term reduction. Both resolved signs now
+enter parallel packers, with final sign selection after packing rather
+than before leading detection. Their carry-save/prefix reduction and
+69-bit bound are unchanged. This exchanges combinational duplication
+for lower serial depth; its actual ALM/DSP cost must be measured, not
+inferred from source.
 
 No pipeline register, public interface, launch rate, reset priority or
 E0/E1/E2 validity timing changes in this repair. It establishes no timing
 closure: fresh source-bound shared-runtime Quartus STA is mandatory.
-Independent Verifier must review the changed sources before updating
-preservation-check bindings and rerun the unchanged numerical, pipeline,
-synthesis and integration checks. The reported reduced native build and
-its external false paths do not certify production dimensions or shipped
-external constraints; correcting that gate coverage belongs to the shared
-runtime. Full-model collection and physical HIL remain unresolved.
-
-The standalone binary32 add/multiply wrappers reuse this reducer.
-Multiplication prepares one exact product; addition prepares two exact
-binary32 terms. Two-term alignment at 64 positions supplies far more
-than binary32 guard precision, but independent verification must still
-establish all rounding/status cases; no executed correctness claim is
-made here. Underflow detection is after final rounding. Zero sign is
-preserved independently of unsigned magnitude storage.
+Under the current Coordinator direct-check policy, the completed Designer
+handoff proceeds directly to unchanged source-bound numerical, pipeline,
+synthesis and integration checks and fresh native STA. No verification
+sources or preservation bindings are changed by Designer. The reported
+reduced native build and its external false paths do not certify production
+dimensions or shipped external constraints; correcting that gate coverage
+belongs to the shared runtime. Full-model collection, native resource
+comparison and physical HIL remain unresolved.
 
 `anvil_q1_fp_dot8_mixed` is the internal binary32-activation/native-weight
 variant: a has eight 32-bit lanes, b has eight selected-format 16-bit

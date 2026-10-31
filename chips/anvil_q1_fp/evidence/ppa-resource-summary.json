@@ -1,10 +1,10 @@
 {
   "chip": "Anvil-Q1-FP",
   "fitter_resources": {
-    "alms_used": 78600,
+    "alms_used": 84992,
     "alms_total": 427200,
-    "alms_pct": "18 %",
-    "total_registers": 33250,
+    "alms_pct": "20 %",
+    "total_registers": 33264,
     "block_memory_bits": 0,
     "m20k_ram_blocks": 0,
     "m20k_ram_blocks_total": 2713,
@@ -15,9 +15,9 @@
     "device": "10AX115N2F45E1SG",
     "netlist_mode": "post_fit",
     "target_frequency_mhz": 100.0,
-    "fmax_mhz": 62.94,
-    "critical_path_delay_ns": 15.888,
-    "wns_setup_ns": -5.888,
+    "fmax_mhz": 73.44,
+    "critical_path_delay_ns": 13.617,
+    "wns_setup_ns": -3.617,
     "wns_hold_ns": 0.038
   },
   "verification_tiers": {}
