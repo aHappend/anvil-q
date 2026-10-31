@@ -15,16 +15,16 @@ import hashlib
 import json
 
 
-TREE_SHA256 = "eb06e476bbde6cda8bf28ffa9c50c0ffdf83d1640bf150c4609ae07639ede7d9"
+TREE_SHA256 = "89256889437b38e7cca4ed79f0db0c4ebe6320fa21516c70143ab5005221668a"
 INVENTORY_SHA256 = "b731b0abddda6d6c85ac39035b9b52d0e0cce8695d8537164f94a78107d3dff9"
 ORIGINAL_ITEMS = 1385
 
 REVIEWED_RTL_SHA256 = {
     "rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
-    "rtl/anvil_q1_fp_00_pkg.sv": "4da7f7159f976d681a07380e48a54f8e06160963d0e89b0a19c0f619b43c9062",
+    "rtl/anvil_q1_fp_00_pkg.sv": "eac1e0eeb66843257e06b87d76a206dabed4079f91c0994330532aadcedda786",
     "rtl/anvil_q1_fp_01_compat_pkg.sv": "316a81331458820566c2beb83fd5ce6d002078fb4cf8cff252eb6f8e8e9500e6",
     "rtl/anvil_q1_fp_awq_dequant.sv": "f714d3aa309c6dd13eadbd8390475c10b467aca3beeee62bf47ba92b32f9f157",
-    "rtl/anvil_q1_fp_binary.sv": "b522d105c47c1f1810432d25de2f6d6f216044594e660be56fc95a179827cb7e",
+    "rtl/anvil_q1_fp_binary.sv": "8d36c5f1b5c27bc1925c16467b37303e96d1c24ecf47ba93dc67cea2958da795",
     "rtl/anvil_q1_fp_compat_div.sv": "8343e2e3d22ae19b0a6d15b1782220ba4d3e990d5a1c98f24a71c827a923c8cf",
     "rtl/anvil_q1_fp_compat_exp.sv": "d5f1ff1c09dc76e08926474404d33d01f1858e247423622019c084b997c86ac4",
     "rtl/anvil_q1_fp_compat_round_div.sv": "ad0ddaa524f45e6aaaf70f69bec10bc8ea718141818143c31a0309d33429fd58",
@@ -37,7 +37,7 @@ REVIEWED_RTL_SHA256 = {
     "rtl/anvil_q1_fp_gemv.sv": "51d671ac3d6a54034157124a89f61786d429301c1e5b7b8b4fa73b00cd12255e",
     "rtl/anvil_q1_fp_gqa_attention.sv": "fb7bc337a471c9ee73b1db61421a0d028537a984fbe037b70eb4d37035b4809a",
     "rtl/anvil_q1_fp_reciprocal.sv": "eb2d9fb3fba07cb10ff478106b14bac35ea45b9ec07da07edab1250da2838a3d",
-    "rtl/anvil_q1_fp_reduce3.sv": "a792b876e74360f2487b482f5ae37fa81963fbe4ed5c043babb8370747c4f5cf",
+    "rtl/anvil_q1_fp_reduce3.sv": "4da472a7ff77ad63e8876b7e5878c58ee8a15a9f4cdd2d84e84a33294e14b703",
     "rtl/anvil_q1_fp_rmsnorm.sv": "6516220e84a8afc64cdd3d9387bdf53b0e6235c97615f4d3349d17423c0545e0",
     "rtl/anvil_q1_fp_rope.sv": "aeacd351b43d4fe8386ae2adc18db163ddd9a2e1d20d3d3af8da6a9076630d5f",
     "rtl/anvil_q1_fp_rsqrt.sv": "f6674723d2c245eaba79128e05254a19243adde4f14ed696878fad6e72ff2170",
@@ -48,6 +48,74 @@ REVIEWED_RTL_SHA256 = {
 }
 
 REVIEW_BASIS = {
+    "binary_packing_revision_review": {
+        "date": "2026-10-31",
+        "previous_tree_sha256": "eb06e476bbde6cda8bf28ffa9c50c0ffdf83d1640bf150c4609ae07639ede7d9",
+        "failure_receipt": "evidence/preparation/verifier-preservation-x6qq_h2k/receipt.json",
+        "scope": (
+            "Read the complete current fp_00_pkg, fp_binary and fp_reduce3, "
+            "and both dot wrappers before renewing bindings. Exactly these three "
+            "RTL fingerprints differ from the prior review; every parent and "
+            "command/controller fingerprint is unchanged. Earlier review entries "
+            "are historical, not descriptions of the new binary implementation."),
+        "binary": (
+            "Addition orders exact decoded terms by unsigned binary32 magnitude "
+            "codes at E0; this orders all finite magnitudes including subnormals "
+            "and signed zeros. E1 aligns only the smaller term to the larger "
+            "exponent's 64-position grid. Equal signs select a 65-bit unsigned "
+            "sum; opposite signs select a nonnegative difference. Multiplication "
+            "captures one exact 48-bit significand product and a zero second "
+            "term, requiring no alignment loss. Zero extension to 69 bits and "
+            "grid=larger_exponent-63 preserve the mathematical grid sum. E2 packs "
+            "only registered magnitude/metadata; binary no longer instantiates "
+            "the nine-term reducer. Exact cancellation selects +0; all-negative "
+            "zero addition and signed-zero multiplication retain -0. NaNs, "
+            "opposite infinities, zero-times-infinity and signaling NaNs use "
+            "registered canonical special results and invalid status."),
+        "normal_packing": (
+            "Checked all nine fixed eight-bit blocks of the zero-padded 69-bit "
+            "magnitude. Packed three-bit local leading positions drive local "
+            "complemented shifts of 0..7, not a widened complement. Each fixed "
+            "32-bit window places the block's bit zero at bit24; normalization "
+            "puts its leader at bit31. Highest-nonzero-block one-hot selection "
+            "therefore yields the 24-bit significand at31:8 and guard at7. "
+            "Bits6:0 plus the separate low tail reduction include every "
+            "discarded bit. Tail shifts retain precisely bits below each "
+            "window, including block8 with only five populated bits. RNE uses "
+            "guard&&(sticky||lsb); independent biased and carry exponents handle "
+            "rounding carry and overflow without changing the significand."),
+        "tiny_packing_and_helpers": (
+            "The separate subnormal candidate uses distance=-149-grid, with "
+            "seven fixed shift-jam levels. Distances1..69 retain quotient, "
+            "guard and sticky; >69 yields sticky-only for nonzero magnitude. "
+            "The selected subnormal branch bounds required left shifts below24. "
+            "RNE promotion sets the minimum normal exponent and suppresses "
+            "underflow; otherwise inexact tiny outputs set underflow. Alignment "
+            "loss marks inexact but does not perturb the defined truncated sum. "
+            "Reviewed packed candidate slices and initialization, term/product "
+            "decoders, align_magnitude/align_term, widening and bounded division/"
+            "sqrt helpers; no state, memory ownership or command interface is "
+            "introduced by package functions."),
+        "dot_reducer": (
+            "Rechecked the four exact 3:2 compressor levels and nine-block "
+            "carry-prefix resolver. Nine signed terms of magnitude below2^64 "
+            "fit signed69. The parallel negative resolver computes "
+            "~sum4+~carry4+2 modulo2^69, the exact negation of the positive "
+            "resolved total. Positive total and negative magnitude now enter "
+            "separate packers; only total[68] selects the completed packed "
+            "result. Nonnegative zero uses the original negative_zero metadata. "
+            "Both dot wrappers still feed eight active products plus the FP32 "
+            "seed, with inactive operands suppressed before exception reduction."),
+        "preservation": (
+            "Public E0/E1/E2 validity, consecutive launches, synchronous reset, "
+            "bubble-zero outputs and special/status gating are unchanged in "
+            "binary and reducer. No controller, scratch/KV address, bus owner, "
+            "projection, sequence or completion logic changed. The complete "
+            "1385-item parent inventory, classification rules and 85 percent "
+            "threshold remain unchanged, including conservative GEMV exclusion. "
+            "This is a substantive source/control audit, not numerical "
+            "equivalence, synthesis acceptance or proof of timing closure."),
+    },
     "reducer_revision_review": {
         "date": "2026-10-31",
         "previous_tree_sha256": "6e1b887ff0ce53a8d84f319bfb4f4bfc1521fc9a5739eec2791f7aad88b4ec16",

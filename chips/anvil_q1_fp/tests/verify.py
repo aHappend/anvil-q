@@ -1706,7 +1706,8 @@ def leaf_defect_check(ev):
         ("dot_valid_latency", "anvil_q1_fp_reduce3.sv",
          "assign out_valid=rst_n && valid3;", "assign out_valid=rst_n && valid2;"),
         ("wide_accumulator_cancellation", "anvil_q1_fp_00_pkg.sv",
-         "aligned=$signed({5'd0,mag});", "aligned=$signed({5'd0,mag[63:40],40'd0});"),
+         "aligned=$signed({5'd0,magnitude[63:0]});",
+         "aligned=$signed({5'd0,magnitude[63:40],40'd0});"),
     )
     passed = True
     for name, filename, before, after in recipes:
