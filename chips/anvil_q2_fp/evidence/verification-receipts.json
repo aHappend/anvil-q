@@ -863,9 +863,9 @@
       ]
     },
     "check:behavior": {
-      "attempt_id": 1159,
-      "duration_s": 1411.3955328189768,
-      "stdout_preview": "evidence/l1/l1-behavior-20261031T100247Z-e6936715/receipt.json\n",
+      "attempt_id": 1167,
+      "duration_s": 1394.5520533709787,
+      "stdout_preview": "evidence/l1/l1-behavior-20261031T113328Z-ede9cc6e/receipt.json\n",
       "receipt_count": 10,
       "receipts": [
         {
@@ -5044,19 +5044,19 @@
       ]
     },
     "check:defect-sensitivity": {
-      "attempt_id": 1161,
-      "duration_s": 197.5633925900329,
-      "stdout_preview": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/receipt.json\n",
+      "attempt_id": 1169,
+      "duration_s": 190.18695053993724,
+      "stdout_preview": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/receipt.json",
+          "path": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/receipt.json",
           "data": {
             "schema": 1,
             "purpose": "l1-defects",
             "acceptance_evidence": false,
             "cwd": ".",
-            "started_at": "2026-10-31T10:39:47.908779+00:00",
+            "started_at": "2026-10-31T12:10:02.583093+00:00",
             "commands": [
               {
                 "argv": [
@@ -5066,39 +5066,39 @@
                   "accumulation"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:39:47.923575+00:00",
+                "started_at": "2026-10-31T12:10:02.602981+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:40:16.204745+00:00",
+                  "started_at": "2026-10-31T12:10:31.139909+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:40:16.320818+00:00"
+                  "ended_at": "2026-10-31T12:10:31.255652+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:40:16.320857+00:00",
-                "duration_s": 28.39680739189498
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:10:31.255670+00:00",
+                "duration_s": 28.652166340034455
               },
               {
                 "argv": [
@@ -5108,39 +5108,39 @@
                   "awq-nibbles"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:40:16.324491+00:00",
+                "started_at": "2026-10-31T12:10:31.259032+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:40:42.451923+00:00",
+                  "started_at": "2026-10-31T12:10:55.983666+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:40:42.567428+00:00"
+                  "ended_at": "2026-10-31T12:10:56.099443+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:40:42.567448+00:00",
-                "duration_s": 26.24269311898388
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:10:56.099462+00:00",
+                "duration_s": 24.84018469695002
               },
               {
                 "argv": [
@@ -5150,39 +5150,39 @@
                   "int8-exponent"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:40:42.571042+00:00",
+                "started_at": "2026-10-31T12:10:56.102924+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:42:39.172544+00:00",
+                  "started_at": "2026-10-31T12:12:48.525657+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:42:39.289175+00:00"
+                  "ended_at": "2026-10-31T12:12:48.641339+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:42:39.289207+00:00",
-                "duration_s": 116.71787768113427
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:12:48.641356+00:00",
+                "duration_s": 112.5381713679526
               },
               {
                 "argv": [
@@ -5192,39 +5192,39 @@
                   "held-request"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:42:39.293987+00:00",
+                "started_at": "2026-10-31T12:12:48.644744+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.txt",
-                "stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stderr.txt",
+                "stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.txt",
+                "stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.capture.jsonl"
+                    "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:43:05.128654+00:00",
+                  "started_at": "2026-10-31T12:13:12.416701+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:43:05.244291+00:00"
+                  "ended_at": "2026-10-31T12:13:12.532508+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:43:05.244308+00:00",
-                "duration_s": 25.94999572285451
+                "capture_reopen_stdout": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:13:12.532528+00:00",
+                "duration_s": 23.88753611803986
               }
             ],
             "source_sha256": {
@@ -5326,7 +5326,7 @@
             ],
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "generated_sha256": {
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/check-manifest.json": "4d780192d80cfab7ef5525904af667e10b3429a64344aa03488cc46b746762bc"
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/check-manifest.json": "4d780192d80cfab7ef5525904af667e10b3429a64344aa03488cc46b746762bc"
             },
             "maximum_concurrent_jobs": 1,
             "dispatch_groups": [
@@ -5344,34 +5344,34 @@
               ]
             ],
             "raw_stream_sha256": {
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.txt": "86317a5a9d2a9454d8af0ec34f31e4bb31d52886ee3a323498bd33ae07ae698b",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.capture.jsonl": "bf86263b3048b50b849f9a455ab0db00f787b9e1b72a7c3b7c2cea05e27ef931",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.reopen.stdout.txt": "4c84667d49bf3046a5e0bc0c711c1f6136c89ce47725d430b3de99cacef155b2",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/accumulation.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.txt": "290a9bb60c963b3b1f71d0795d282810dfe626e3ce78b470e26323af8fcedffc",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.capture.jsonl": "34b1c3e3471800a0b4337fd61bc61f00abc6f0c16f27fa4d4ec5c337cb9f9c86",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.reopen.stdout.txt": "0a1c901566c20e3c6d0e2bf53a624260893a971c8bfa0d5ad91ade85f1bb2088",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/awq-nibbles.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.txt": "658d16b16b25bc1fe8942905a1d2001f20d80969e3c30aed336d61d836cb1351",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.capture.jsonl": "130c48e8e3b0bf621fc6c0944a848a7ccb743b1be5ebcfca84c389e5425ee375",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.reopen.stdout.txt": "3aca36a4c2e99a78af4a4e529f694331da46d4ace1b2ea0ae3f5a3a8208cf2d2",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/int8-exponent.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.txt": "34b5b7171ef0d2a6a9802c3c5611f98b70192630c648ca9513383c93205c7f6c",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.capture.jsonl": "b59f4e3004365e0304dffce47dca8f467a2eecce75adfdd6cfe95721c07baf89",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.reopen.stdout.txt": "e6e15352e3ce9e4ef6771e8344709a85e16cbcb40233a2497f0eeb15395ba4d5",
-              "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/held-request.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.txt": "b856ad06e1a8bf271c767e7c51830930618c9ee617271427ce04b3a97816564c",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.capture.jsonl": "650f9e03162210797770a31047f8a2cd8769c2717f974e4a42ee9d62a3bb3496",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stdout.txt": "f5bbd33042765d78417af76e9e095ff63b36e9d41152016f42afcbe6b1c18238",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/accumulation.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.txt": "c29309fbafdad06113af5a392380733dcffd29b1ff8266ac9f06d9f79bb1c850",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.capture.jsonl": "2a58533b88cd1098023118da379d23c15f0a0630b994356c22773b1234d00ef8",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stdout.txt": "6077aeae061733be64bc50597ce76e5c8e99da90e3db26dbb28b7dbaba59cd4a",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/awq-nibbles.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.txt": "81860f6b21f6de29db174c9914614e74471faa27cda252faef0179a37593d463",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.capture.jsonl": "f3107a79171a6e9f7a0a5c97b95e5a27093066675896c1c0151bb5101e83b3eb",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stdout.txt": "e34f9b08e758f48a65056e8d5ba919f49f7d6451e28dfe68a643baae5e15d485",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/int8-exponent.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.txt": "bbcf93bbf9807ce91ce688dd6210f470dcbbfc953352a63952fd147249aec906",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.capture.jsonl": "799c5ad105ffb7f0926729fdefb92430495aa81965ec4b1ff838c729a6b27059",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stdout.txt": "d7fb16589c258802bb89fdea1f077df4b2801389488203c0622e44e4f8e41d99",
+              "evidence/l1/l1-defects-20261031T121002Z-ad13022c/held-request.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             },
             "outcome": "passed",
-            "ended_at": "2026-10-31T10:43:05.256655+00:00",
+            "ended_at": "2026-10-31T12:13:12.546702+00:00",
             "check": "defects",
             "metrics": {
               "required_runs": 4,
               "compared_runs": 4,
-              "ledger": "evidence/l1/l1-defects-20261031T103947Z-d7c507c6/ledger.json"
+              "ledger": "evidence/l1/l1-defects-20261031T121002Z-ad13022c/ledger.json"
             },
             "native_hardware_acceptance": false
           }
@@ -5772,19 +5772,19 @@
       ]
     },
     "check:synthesis": {
-      "attempt_id": 1160,
-      "duration_s": 744.5715692830272,
-      "stdout_preview": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/receipt.json\n",
+      "attempt_id": 1168,
+      "duration_s": 733.5059459658805,
+      "stdout_preview": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/receipt.json",
+          "path": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/receipt.json",
           "data": {
             "schema": 1,
             "purpose": "l1-synthesis",
             "acceptance_evidence": false,
             "cwd": ".",
-            "started_at": "2026-10-31T10:26:50.882195+00:00",
+            "started_at": "2026-10-31T11:57:16.760950+00:00",
             "commands": [
               {
                 "argv": [
@@ -5799,42 +5799,42 @@
                   "--format",
                   "bf16",
                   "--weights",
-                  "1"
+                  "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:26:50.895227+00:00",
+                "started_at": "2026-10-31T11:57:16.784115+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:28:27.698813+00:00",
+                  "started_at": "2026-10-31T11:58:50.849293+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:28:27.815447+00:00"
+                  "ended_at": "2026-10-31T11:58:50.916063+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:28:27.815478+00:00",
-                "duration_s": 96.9200093569234
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T11:58:50.916086+00:00",
+                "duration_s": 94.13164089084603
               },
               {
                 "argv": [
@@ -5849,42 +5849,42 @@
                   "--format",
                   "bf16",
                   "--weights",
-                  "0"
+                  "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:26:50.895940+00:00",
+                "started_at": "2026-10-31T11:57:16.786412+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:28:31.101994+00:00",
+                  "started_at": "2026-10-31T11:58:49.505895+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:28:31.218222+00:00"
+                  "ended_at": "2026-10-31T11:58:49.621783+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:28:31.218280+00:00",
-                "duration_s": 100.3220681459643
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T11:58:49.621820+00:00",
+                "duration_s": 92.83502899692394
               },
               {
                 "argv": [
@@ -5902,39 +5902,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:26:50.898099+00:00",
+                "started_at": "2026-10-31T11:57:16.788938+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:28:49.299481+00:00",
+                  "started_at": "2026-10-31T11:59:14.341735+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:28:49.465826+00:00"
+                  "ended_at": "2026-10-31T11:59:14.407810+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:28:49.465886+00:00",
-                "duration_s": 118.56747713591903
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T11:59:14.407830+00:00",
+                "duration_s": 117.61853116704151
               },
               {
                 "argv": [
@@ -5952,39 +5952,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:26:50.898931+00:00",
+                "started_at": "2026-10-31T11:57:16.789721+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:28:52.006649+00:00",
+                  "started_at": "2026-10-31T11:59:14.604740+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:28:52.121947+00:00"
+                  "ended_at": "2026-10-31T11:59:14.720750+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:28:52.121977+00:00",
-                "duration_s": 121.22280767210759
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T11:59:14.720802+00:00",
+                "duration_s": 117.93072876008227
               },
               {
                 "argv": [
@@ -6002,39 +6002,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:28:27.817469+00:00",
+                "started_at": "2026-10-31T11:58:49.624117+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:30:02.345459+00:00",
+                  "started_at": "2026-10-31T12:00:24.042272+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:30:02.462229+00:00"
+                  "ended_at": "2026-10-31T12:00:24.157782+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:30:02.462276+00:00",
-                "duration_s": 94.64448650903068
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:00:24.157797+00:00",
+                "duration_s": 94.53338348586112
               },
               {
                 "argv": [
@@ -6052,39 +6052,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:28:31.221296+00:00",
+                "started_at": "2026-10-31T11:58:50.918080+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:30:11.461262+00:00",
+                  "started_at": "2026-10-31T12:00:26.003969+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:30:11.577778+00:00"
+                  "ended_at": "2026-10-31T12:00:26.120003+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:30:11.577800+00:00",
-                "duration_s": 100.35616955300793
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:00:26.120025+00:00",
+                "duration_s": 95.20165689988062
               },
               {
                 "argv": [
@@ -6102,39 +6102,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:28:49.468706+00:00",
+                "started_at": "2026-10-31T11:59:14.410104+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:30:45.496876+00:00",
+                  "started_at": "2026-10-31T12:01:16.545158+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:30:45.613067+00:00"
+                  "ended_at": "2026-10-31T12:01:16.661420+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:30:45.613091+00:00",
-                "duration_s": 116.14405513205566
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:01:16.661465+00:00",
+                "duration_s": 122.25107284495607
               },
               {
                 "argv": [
@@ -6152,39 +6152,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:28:52.124438+00:00",
+                "started_at": "2026-10-31T11:59:14.723383+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:30:59.979129+00:00",
+                  "started_at": "2026-10-31T12:01:22.261669+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:31:00.094886+00:00"
+                  "ended_at": "2026-10-31T12:01:22.378280+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:31:00.094921+00:00",
-                "duration_s": 127.9701656899415
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:01:22.378334+00:00",
+                "duration_s": 127.65464189602062
               },
               {
                 "argv": [
@@ -6202,39 +6202,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:30:02.464432+00:00",
+                "started_at": "2026-10-31T12:00:24.159329+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:31:44.514686+00:00",
+                  "started_at": "2026-10-31T12:01:59.003922+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:31:44.631563+00:00"
+                  "ended_at": "2026-10-31T12:01:59.120322+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:31:44.631610+00:00",
-                "duration_s": 102.16692018904723
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:01:59.120344+00:00",
+                "duration_s": 94.96085314895026
               },
               {
                 "argv": [
@@ -6252,39 +6252,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:30:11.580350+00:00",
+                "started_at": "2026-10-31T12:00:26.122629+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:31:46.615975+00:00",
+                  "started_at": "2026-10-31T12:01:59.960746+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:31:46.732517+00:00"
+                  "ended_at": "2026-10-31T12:02:00.076641+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:31:46.732571+00:00",
-                "duration_s": 95.15190948592499
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:02:00.076664+00:00",
+                "duration_s": 93.95374312694184
               },
               {
                 "argv": [
@@ -6302,39 +6302,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:30:45.615817+00:00",
+                "started_at": "2026-10-31T12:01:16.664222+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:32:46.099238+00:00",
+                  "started_at": "2026-10-31T12:03:19.689542+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:32:46.215916+00:00"
+                  "ended_at": "2026-10-31T12:03:19.805420+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:32:46.215940+00:00",
-                "duration_s": 120.59982388094068
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:03:19.805440+00:00",
+                "duration_s": 123.14092586608604
               },
               {
                 "argv": [
@@ -6352,39 +6352,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:31:00.097732+00:00",
+                "started_at": "2026-10-31T12:01:22.381319+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:33:07.836966+00:00",
+                  "started_at": "2026-10-31T12:03:31.701515+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:33:07.953495+00:00"
+                  "ended_at": "2026-10-31T12:03:31.817828+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:33:07.953545+00:00",
-                "duration_s": 127.85565988183953
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:03:31.817848+00:00",
+                "duration_s": 129.43621827312745
               },
               {
                 "argv": [
@@ -6402,39 +6402,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:31:44.635543+00:00",
+                "started_at": "2026-10-31T12:01:59.123291+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:33:28.176280+00:00",
+                  "started_at": "2026-10-31T12:03:35.217010+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:33:28.292299+00:00"
+                  "ended_at": "2026-10-31T12:03:35.352320+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:33:28.292340+00:00",
-                "duration_s": 103.6563646059949
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:03:35.352352+00:00",
+                "duration_s": 96.228760963073
               },
               {
                 "argv": [
@@ -6452,39 +6452,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:31:46.735869+00:00",
+                "started_at": "2026-10-31T12:02:00.079803+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:33:22.023185+00:00",
+                  "started_at": "2026-10-31T12:03:35.372295+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:33:22.139421+00:00"
+                  "ended_at": "2026-10-31T12:03:35.489875+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:33:22.139467+00:00",
-                "duration_s": 95.40328894322738
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:03:35.489924+00:00",
+                "duration_s": 95.40983150922693
               },
               {
                 "argv": [
@@ -6502,39 +6502,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:32:46.219308+00:00",
+                "started_at": "2026-10-31T12:03:19.808632+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:34:50.810231+00:00",
+                  "started_at": "2026-10-31T12:05:23.650167+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:34:50.926651+00:00"
+                  "ended_at": "2026-10-31T12:05:23.766149+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:34:50.926698+00:00",
-                "duration_s": 124.70707607711665
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:05:23.766173+00:00",
+                "duration_s": 123.95725268614478
               },
               {
                 "argv": [
@@ -6552,39 +6552,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:33:07.957096+00:00",
+                "started_at": "2026-10-31T12:03:31.821192+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:35:13.806212+00:00",
+                  "started_at": "2026-10-31T12:05:33.880495+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:35:13.922285+00:00"
+                  "ended_at": "2026-10-31T12:05:33.996779+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:35:13.922309+00:00",
-                "duration_s": 125.9649271199014
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:05:33.996800+00:00",
+                "duration_s": 122.17531583597884
               },
               {
                 "argv": [
@@ -6602,39 +6602,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:33:22.142188+00:00",
+                "started_at": "2026-10-31T12:03:35.356027+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:35:09.853924+00:00",
+                  "started_at": "2026-10-31T12:05:13.644609+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:35:09.920867+00:00"
+                  "ended_at": "2026-10-31T12:05:13.760856+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:35:09.920890+00:00",
-                "duration_s": 107.77850748808123
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:05:13.760882+00:00",
+                "duration_s": 98.40456862701103
               },
               {
                 "argv": [
@@ -6652,39 +6652,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:33:28.295638+00:00",
+                "started_at": "2026-10-31T12:03:35.493632+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:35:10.547148+00:00",
+                  "started_at": "2026-10-31T12:05:13.830330+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:35:10.664662+00:00"
+                  "ended_at": "2026-10-31T12:05:13.896376+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:35:10.664683+00:00",
-                "duration_s": 102.36878217593767
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:05:13.896427+00:00",
+                "duration_s": 98.40250116796233
               },
               {
                 "argv": [
@@ -6702,39 +6702,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:34:50.930545+00:00",
+                "started_at": "2026-10-31T12:05:13.764997+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:12.962727+00:00",
+                  "started_at": "2026-10-31T12:07:33.998440+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:13.078113+00:00"
+                  "ended_at": "2026-10-31T12:07:34.064739+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:13.078133+00:00",
-                "duration_s": 142.1472002840601
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:34.064760+00:00",
+                "duration_s": 140.2994674660731
               },
               {
                 "argv": [
@@ -6752,39 +6752,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:35:09.924782+00:00",
+                "started_at": "2026-10-31T12:05:13.900771+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:23.526621+00:00",
+                  "started_at": "2026-10-31T12:07:26.278884+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:23.592212+00:00"
+                  "ended_at": "2026-10-31T12:07:26.394916+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:23.592252+00:00",
-                "duration_s": 133.66718836897053
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:26.394937+00:00",
+                "duration_s": 132.49386629695073
               },
               {
                 "argv": [
@@ -6802,39 +6802,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:35:10.668660+00:00",
+                "started_at": "2026-10-31T12:05:23.769854+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:36:51.016674+00:00",
+                  "started_at": "2026-10-31T12:07:03.154504+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:36:51.132545+00:00"
+                  "ended_at": "2026-10-31T12:07:03.270989+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:36:51.132668+00:00",
-                "duration_s": 100.4637161239516
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:03.271017+00:00",
+                "duration_s": 99.50086673512124
               },
               {
                 "argv": [
@@ -6852,39 +6852,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:35:13.926414+00:00",
+                "started_at": "2026-10-31T12:05:34.000819+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:00.277509+00:00",
+                  "started_at": "2026-10-31T12:07:17.753104+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:00.393233+00:00"
+                  "ended_at": "2026-10-31T12:07:17.869198+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:00.393263+00:00",
-                "duration_s": 106.46651680790819
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:17.869221+00:00",
+                "duration_s": 103.86811099085025
               },
               {
                 "argv": [
@@ -6902,39 +6902,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:36:51.137058+00:00",
+                "started_at": "2026-10-31T12:07:03.275893+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:39:03.651335+00:00",
+                  "started_at": "2026-10-31T12:09:19.173247+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:39:03.767932+00:00"
+                  "ended_at": "2026-10-31T12:09:19.290283+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:39:03.767990+00:00",
-                "duration_s": 132.63064263900742
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:09:19.290341+00:00",
+                "duration_s": 136.0141258710064
               },
               {
                 "argv": [
@@ -6952,39 +6952,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:00.397703+00:00",
+                "started_at": "2026-10-31T12:07:17.873961+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:39:15.061308+00:00",
+                  "started_at": "2026-10-31T12:09:29.832427+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:39:15.177196+00:00"
+                  "ended_at": "2026-10-31T12:09:29.948906+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:39:15.177222+00:00",
-                "duration_s": 134.77929602493532
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:09:29.948926+00:00",
+                "duration_s": 132.07467268500477
               },
               {
                 "argv": [
@@ -7000,39 +7000,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:13.081402+00:00",
+                "started_at": "2026-10-31T12:07:26.399417+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:24.821661+00:00",
+                  "started_at": "2026-10-31T12:07:38.093939+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:24.937617+00:00"
+                  "ended_at": "2026-10-31T12:07:38.210281+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:24.937660+00:00",
-                "duration_s": 11.856048665940762
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:38.210304+00:00",
+                "duration_s": 11.810575991868973
               },
               {
                 "argv": [
@@ -7048,39 +7048,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:23.596678+00:00",
+                "started_at": "2026-10-31T12:07:34.069094+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:35.893333+00:00",
+                  "started_at": "2026-10-31T12:07:46.423523+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:36.009308+00:00"
+                  "ended_at": "2026-10-31T12:07:46.539773+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:36.009345+00:00",
-                "duration_s": 12.412375262007117
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:46.539794+00:00",
+                "duration_s": 12.47040729294531
               },
               {
                 "argv": [
@@ -7096,39 +7096,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:24.942979+00:00",
+                "started_at": "2026-10-31T12:07:38.215218+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:38.091963+00:00",
+                  "started_at": "2026-10-31T12:07:52.068097+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:38.208100+00:00"
+                  "ended_at": "2026-10-31T12:07:52.184272+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:38.208138+00:00",
-                "duration_s": 13.264850083040074
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:07:52.184308+00:00",
+                "duration_s": 13.968789201928303
               },
               {
                 "argv": [
@@ -7144,39 +7144,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:36.014564+00:00",
+                "started_at": "2026-10-31T12:07:46.545838+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:51.271254+00:00",
+                  "started_at": "2026-10-31T12:08:00.495843+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:51.387248+00:00"
+                  "ended_at": "2026-10-31T12:08:00.611904+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:51.387288+00:00",
-                "duration_s": 15.372412639902905
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:08:00.611923+00:00",
+                "duration_s": 14.065795541973785
               },
               {
                 "argv": [
@@ -7192,39 +7192,39 @@
                   "0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:38.213278+00:00",
+                "started_at": "2026-10-31T12:07:52.189799+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:37:55.869183+00:00",
+                  "started_at": "2026-10-31T12:08:09.707453+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:37:55.934243+00:00"
+                  "ended_at": "2026-10-31T12:08:09.824513+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:37:55.934257+00:00",
-                "duration_s": 17.720672729890794
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:08:09.824582+00:00",
+                "duration_s": 17.634486314840615
               },
               {
                 "argv": [
@@ -7240,39 +7240,39 @@
                   "1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-10-31T10:37:51.392802+00:00",
+                "started_at": "2026-10-31T12:08:00.617304+00:00",
                 "timeout_s": 86400,
-                "stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.txt",
-                "stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stderr.txt",
+                "stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.txt",
+                "stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stderr.txt",
                 "timed_out": false,
                 "expected_exit_codes": [
                   0,
                   1
                 ],
                 "environment_overrides": {
-                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/children",
-                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/compiled-models"
+                  "ANVIL_EVIDENCE_ROOT": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/children",
+                  "ANVIL_SIM_CACHE": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/compiled-models"
                 },
-                "capture_observations": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.capture.jsonl",
+                "capture_observations": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.capture.jsonl",
                 "exit_code": 0,
                 "capture_reopen": {
                   "argv": [
                     "python3",
                     "tests/retained.py",
                     "--reopen-capture",
-                    "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.capture.jsonl"
+                    "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.capture.jsonl"
                   ],
                   "cwd": ".",
-                  "started_at": "2026-10-31T10:38:11.456851+00:00",
+                  "started_at": "2026-10-31T12:08:18.175273+00:00",
                   "timeout_s": 3600,
                   "exit_code": 0,
                   "timed_out": false,
-                  "ended_at": "2026-10-31T10:38:11.573219+00:00"
+                  "ended_at": "2026-10-31T12:08:18.291383+00:00"
                 },
-                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.reopen.stdout.txt",
-                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.reopen.stderr.txt",
-                "ended_at": "2026-10-31T10:38:11.573266+00:00",
-                "duration_s": 20.180166403995827
+                "capture_reopen_stdout": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.reopen.stdout.txt",
+                "capture_reopen_stderr": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.reopen.stderr.txt",
+                "ended_at": "2026-10-31T12:08:18.291405+00:00",
+                "duration_s": 17.6737903021276
               }
             ],
             "source_sha256": {
@@ -7374,16 +7374,16 @@
             ],
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "generated_sha256": {
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/check-manifest.json": "6e3928ae2dfff283416b5fafc7d1205e14b1c088c1e940ccb33dfdf20218a4db"
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/check-manifest.json": "6e3928ae2dfff283416b5fafc7d1205e14b1c088c1e940ccb33dfdf20218a4db"
             },
             "synthesis_dispatch": {
-              "available_bytes": 474103533568,
+              "available_bytes": 487147151360,
               "cpu_capacity": 256,
               "memory_method": "MemAvailable",
               "cgroup_limits": [],
               "maximum_concurrent_jobs": 4,
               "per_job_reserved_bytes": 2147483648,
-              "headroom_bytes": 118525883392
+              "headroom_bytes": 121786787840
             },
             "maximum_concurrent_jobs": 4,
             "dispatch_groups": [
@@ -7479,164 +7479,164 @@
               ]
             ],
             "raw_stream_sha256": {
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.txt": "904c00c06a23b3ecb89a90d549e2a06f9deb1403d24ca2d6998c96a4024eeea6",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.capture.jsonl": "dde9b729fce74d66c7c01be7d4a86d6b169dd43a172b629c66c901c537caac7b",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.reopen.stdout.txt": "4e8e16395f51f591dc646ba9e26311b456852ac022dba67009c6d1ecc17e5323",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.txt": "6be3dce76119274fcc0d18a2d68b10fadef437a858c3f33af78ebad19f8479e4",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.capture.jsonl": "ba855b54de6e31f2886b48a2d9147bb0b88e69d6cfcf3f5d374c0f92bb99fa1c",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.reopen.stdout.txt": "977f4ca0a6cf540947f08d3efbbb416edf89c672cc0f56fc615212135a6d0011",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.txt": "22e589af5a9f1ea430149e4746defb827135299d62d07507c59acb1cc015a26b",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.capture.jsonl": "9611e9325f1321359c07b7568abecb14f544a965bd9345de43aebcc2897e6412",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.reopen.stdout.txt": "471291ea462d454c9715a1077da4933c66ecb087f7c6655de1bb94640105c1df",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.txt": "2eb653e6b071d8956de146dc06cff73231d72deb9075116675e621fe728f3ca8",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.capture.jsonl": "ffecd64382396ddda1abbd662c9f4958de5f1783b709ca771f38972c60ace996",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.reopen.stdout.txt": "7f54887a2a0f282703351b4785e930796a0398cc11760b2c88c4843743e68de2",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c0-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.txt": "4fd715cdb616327332e26ec3fcee2b88a0211a489ac1d9b2d0cfdf4f77405ed1",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.capture.jsonl": "7baa8344c21c942cef23a6fecafff14f1dbeef65145466791c29feca1d56e0e3",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.reopen.stdout.txt": "db0a9456d9c601b935f818a87a70957174fd9adc158444c59109bc4984b857bf",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.txt": "2155544933bc840f28fd42c9b178ad207f5654c156b7c29c17132be0a2138eed",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.capture.jsonl": "2745f6de15c4be849aa2b853e176f57ad234f02c7a369cf694c4614f1cdf19f0",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.reopen.stdout.txt": "f93e948ee4c75964424cac92c600efb3d1c6c5824a2e74fcbf65f91a94acc61e",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.txt": "05153232e96170c6e2a2db42ee3c86057e6d4cbbf1b0343d56cc1dbbe103366d",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.capture.jsonl": "6956db0fcb205bb520b22c99dd58a43834e22539d2cb557b9dc3c4e499597d6f",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.reopen.stdout.txt": "2c902f2eea24f236d28d8e4b348502cb716f87e7a637c5211b5136014bc46b90",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.txt": "0c0c12d6cf4b5b106c24dfb5f98870832dc46afa9ae3d753bee139dd5ae31275",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.capture.jsonl": "4c0c0692b878eb0e3b9dca6fcb9a3adf71a1715827c0c86243f94916e46d76cb",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.reopen.stdout.txt": "c022a76802b1fbbeaebb475fcee161c5f79dbb11f87ca82d6e22cf0188b372a5",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b1-c1-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.txt": "fb2e96b1512148747655f88186c2d4cb346884045cff640646a22450b33117a8",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.capture.jsonl": "f5d6f5e4efe8b034b309bbcc61c3397df667790f33cad2850dac3643770251a4",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.reopen.stdout.txt": "e43bfe4c7ec5a46cb200cff1d1154debf44f5c2672a97b0dfb63c8b2d8a8b547",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.txt": "b4f8c83dcbb24f80ffdb81028b44bacddd810e6ce2fcdb336d3cfacd79486526",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.capture.jsonl": "94e515c9f3ce72590bf27e9baca3365552ef1ee961dc6d17e35e94ff20bd0f0d",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.reopen.stdout.txt": "6e9ce219c6d932858082f5a0cb9b949cbdcf6eadc81452300a53f953577f76ec",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.txt": "980761c22bfac7c64b4aa53fe068e5f522505e87895bd8f9d998c95961f64612",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.capture.jsonl": "4efb452298391d138f245dce0c359f5d96c8b3d7692844ab8b1ff12598f074e7",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.reopen.stdout.txt": "4a6ef5efe567a71ea960594e5d8fbde7c9b2e6228aee4e70fe1da9fefab53e51",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.txt": "e35c5c04178676ba394d706b7c98d95b68159beae136f9122eec69fbdefc0c67",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.capture.jsonl": "a81edb4e3d7b2e3286fd69c5630c0537025e4e204264dc6d6771c524eb1ec912",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.reopen.stdout.txt": "b6df2feff21600ad5bbe599942ade9396a64dbd7b682dc9ec37e10bdaf28b831",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c0-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.txt": "b798223871249fa67405acbc28173fdfe83cd8bcd1efd312ae7e5a8ac79e2d32",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.capture.jsonl": "4fba22f583fa0def1d5e6afd7597993fa00a5fbd92c739f3141a7c5e29616a50",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.reopen.stdout.txt": "cfd2d9c4877ec4bb48a455dd0a715d2bce102efb557cebde5a4635f1812da906",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.txt": "af1312aefc976a6feaf698465f1923a7ba91a7a996e61b089297933c5869113d",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.capture.jsonl": "73e3043bb23b435051daa3d89e632873b1440c9d6d4dac2a3c7e647d5b688e08",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.reopen.stdout.txt": "896a3fa0ffb3bdfef13b57e9539a07e528312168ce4c93c66644c596af6beeb8",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.txt": "098709306ac2d83c8e6787f5dea9360d2005b658ad79982bc923e322e8d3515f",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.capture.jsonl": "898c4876d24b4876b08ee9b2156dd14e41f7831358e74ac8809262471534f7e3",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.reopen.stdout.txt": "93c5cae8ec08a60a300eed9572cd53e2e39ebd058b42a2badd178e339a75193c",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.txt": "ea1d8ca2f763ae79728d98e1931edd3b5354edadafdfc95a939041139f2ed42a",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.capture.jsonl": "9a0ae48a80f53429c381b37480aa126323827d12f19c149bbba0ca546160f9fa",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.reopen.stdout.txt": "7180f1625d015adafd76ddc1b6c618578a79f614971e5f7d68cbdc3e8bdc3361",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b2-c1-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.txt": "68a5d898663d0c82075a25799b00a2219274d4cdd38b4a316e0b80bea699d557",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.capture.jsonl": "1a43a29c6f40d65860f6dfd45aad373eaab139b51333a24dc84bcad69578e56d",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.reopen.stdout.txt": "b1fe9a65ee514864d154a7f9d19b81cc1f6254e2fada9bff979341cb2a4e9f5f",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.txt": "06f9cf492e55bb72b25d403780b2a16a295e8c599b9ddefb7a2fe70f96b58589",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.capture.jsonl": "dff60b5ebf690e86edcdeabe066bdb68a6c40c4ace80569f9e0a1e4a03dc5c92",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.reopen.stdout.txt": "05df9f678d08679e84d501ffaeda19414d2c3241e7eb81341d313ea52719b57a",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.txt": "f3191882a04458e785470850840d04270e4dffec14acebc8fb5487324a6c9b9c",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.capture.jsonl": "025d0c2643680800c412b49e8a2432cb1ab833039a174933ede903d69f5d8d94",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.reopen.stdout.txt": "c44f6b6c5c79184ea11e2c6039ee427e36bd873102bc85ce6ac022a337e335cd",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.txt": "899b114b7c93f71559d15ff7ca1e1c2eeeb18b9f5524341eb000e49d86249316",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.capture.jsonl": "cac303ce7c942098a5f28a15cf1c65a6adeed12d21e4244f327528300c2cf967",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.reopen.stdout.txt": "dbec926280f7abac7bd76715272e63ff7dadd1af124c1824c185bddcfa252459",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c0-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.txt": "28039662c0d2bbab3b4abc7c8466a488c20decc708fb0b8766007c7479c813ec",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.capture.jsonl": "ca4f0b6e6e5b7d12ad3877d18c967b721cbb3eaf94c62389fb4d7e2471859957",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.reopen.stdout.txt": "10609898521a7d283077473797e9aad5efd2b4b9fc96d57563f27738b8cc718b",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.txt": "63276e80ea342885b6e05ae46f866b069692b4589dffb4f9e96d86c082093245",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.capture.jsonl": "286d10335b770316177359f9ba87072ce0145556b61ed99623267a9fbc6a25d6",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.reopen.stdout.txt": "562d6de5a4e04ff0254e77b631ac1ba7d69ee805e3d8e1ba97f6b7ce81eaf06a",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.txt": "edb5a2b163a66832f3cc893681be0197943b79245297be92c6e1d569204aa20f",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.capture.jsonl": "3edb24bdd5b0eb76f371a72992ac9f8233a604f657696fe6e1b4ffb678dfc47d",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.reopen.stdout.txt": "98ee2c61ce6fd26cf2d872b06c37341514d7c0671d171436c2c6ce0843839980",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.txt": "8802ee4f7fc167622b6fe79c67849978cebcc6192394ff1cec62252fdae0655b",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.capture.jsonl": "9101c09410bc5c9381b3b511323dc8d0be41cc403b1217b1d4771b19dfca796a",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.reopen.stdout.txt": "95464d87ffaa9a5c6512e06c2a902c4d021c454ef17a5e69695274f53f90718d",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/fp-native-b4-c1-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.txt": "6683a459d84dd09eb2bcaf2ab80e4d59944182076233a77721455a0bb4bc7aab",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.capture.jsonl": "dc6c7a404668f26f9a6666a040a4f94899dd337834e63df10392278c43dec6a2",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.reopen.stdout.txt": "514a9f72071e8796676368271bc8d950ee6d9f2a3a04353b7739cd92252868c2",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.txt": "118bfca7fa82acf48d18011085de6236f9f390ce359d3d0e8b053e9d1973e8a6",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.capture.jsonl": "6ce72db92b1f510ccfeebcb16d12713ddc261846c4a624b5ff858e3b8b567f0c",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.reopen.stdout.txt": "ab63615822cda787353333e6713bdb070d331b065ac83f30b07e4458d42fea63",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b1-c1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.txt": "480a10803f30efe8c5c9cdc5e8d00a236a6e51d15c9f8bec659e3f48da4472c5",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.capture.jsonl": "b6b9e697d3a01c3a932eac315b2da904118977fd47929cd122dc12157bc5b68b",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.reopen.stdout.txt": "2c9dc47bc1a712a727560a2706fba897e6f4522b9e2c46b58491ae1a8d463743",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.txt": "d36ca81ef153df2641bbf5f2883a3d6c7c08c6d2aa7bff27b444dabbcf046372",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.capture.jsonl": "119250e94524006ba787ec6ce00cf028f2e07279ed61026e32c2b1c97914778a",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.reopen.stdout.txt": "d5222f061a10c32f3284ebe4f38febff1bf7692d23b5c23bf4f3baa31c13dcc4",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b2-c1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.txt": "345f53c667158ed0fccb4ed17992b740529507d7fa115494d0c22aeb73bed665",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.capture.jsonl": "39903ff9ce9326941a1eeff6d256cce5f46f20dc3a03dbe956d6c1546b2c3596",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.reopen.stdout.txt": "5b4bedf06f5da2e8211b709d737a1db00bc0c66079e22b4d7cfb6c072078c063",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.txt": "7b2610e93174ca22df464ead8a5ac4105d44b91e83ff3a58f6cc43359de95376",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.capture.jsonl": "a20892f673ca0140b63874b4cdfa2613043085e1596963da2f409882cbf6eda2",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.reopen.stdout.txt": "5d2c5b799fc68f2850b77354d60cbdf3bbcd7a879b9f38e14b52469ae0a909b8",
-              "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/parent-native-b4-c1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.txt": "1d1fbc8b42cebe6ae70998b262ba3d4fccc0bf0c3b7deaeac65e6a2422aaa02b",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.capture.jsonl": "f30d51bdc7c7065187d17c55b2f97fbedd8be51e1999164035cee05638d0ef74",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.reopen.stdout.txt": "8ecff244b3ad12fb9d738a33996786a5c789513194945a3fb9970cce95ec1b82",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.txt": "9eb5ec9584ad79bc3fdee67fabc317bb6e052a723bc41d26898cbe7e1d4ed7d5",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.capture.jsonl": "472b2e39993bfc3ad28433a494348ea508496f1884e00e25b39ae38644beb389",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.reopen.stdout.txt": "abd88bf40915affbe1d0a983879cef36959da46dc2db103d172ce3c3adbc4ab2",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.txt": "b31df7ca1e966c3bf00580ee4e30fe991c5d86a57c24f88ec027da2c4bc3b3cf",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.capture.jsonl": "7e10587936c02bfbf4777a952fbcca2eb34ae5304540a46a2c63a209d2d89988",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.reopen.stdout.txt": "d34866d91bc18ec35386098570a7563bca250f026e64fe70618eedc4e40ab7a6",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.txt": "73b999e4886e8445c6c70217e1149687bd3b3bda333bc82ecaa48d9f083f574f",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.capture.jsonl": "13a7ea00dc61556c303fc36e5f84eaa79f851bfa1db115caaf6b01d5e63aefe9",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.reopen.stdout.txt": "776b95e7a7185083e35a04720981ef4ba37cedadc1fecda6c32906e8fd871f97",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c0-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.txt": "da572e0319665a2f2340365eda5a2799136a7fac4f3e16aa074a41ef39c0394d",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.capture.jsonl": "856e2dda30d9b53ff3127777d7459e60c9b55deaef4eee90a44b9e4bb6533443",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.reopen.stdout.txt": "392b3cf5c23daee37690cddd9aed28c9038408cbe66fb072dc41f0a521a629dc",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.txt": "774337ce98e804857dc6b05a7b7fe56b85df63a9e30880927c5f34fd45cbd713",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.capture.jsonl": "bb1dad66d6f4dc40eb6139c1e962c16112b246adc6931de168e38ac33aad8ad4",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.reopen.stdout.txt": "fe727af67bd75afd6a0649ce9dcb7aad1f9aa9925a15259f7a54c2c72d4ab722",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.txt": "1d6f9fd1a02cc79c23d748b1297d8d9b2480ac292da94f3f03e7a28ad5c0f3ac",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.capture.jsonl": "e62d4cfbdd8da2210b53d0f2355661b44e9fc351c554573bfc326f20571fc848",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.reopen.stdout.txt": "e437e334cd2221e2a0d1b90d34443268f894a1c36cddfd854bb164b6d5819cf4",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.txt": "0dfd28cb7ccbac68bc27243c9c9218426178a48905e7ecebc2890612e5e7c68c",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.capture.jsonl": "b89dacfc2708cc29b96a07bf16569b2d2fe052e24c16f3970860aca669add1ac",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.reopen.stdout.txt": "a437c0a9874c28710948a042c6509e8fc9297f6df99d0f4abc02e72908f0d815",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b1-c1-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.txt": "06d4563e30506b57af6cb605fd6aed24dd366b19edbb60c5882138761e44550c",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.capture.jsonl": "da0f2aab3ff767fdbb48dfc0e32c373273c593999b0d66b5a1abc148c6b3c18f",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.reopen.stdout.txt": "c21cfe0c18d2f66ddc00bfa635b0f9473aedead3da4140450098e0f875ee2a25",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.txt": "63708463ed1ec4a78bd94e6b0d105cf6d7aeb4a2151f6cff3546e808f261e3e2",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.capture.jsonl": "498a6d7c25cd242c0bb11396f832e363a084bf046003fb381c06378dea9b8127",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.reopen.stdout.txt": "f877a249069373cb9ba0b1fa6b73365c902bdb9679fe95ac5a72393143d6a5bc",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.txt": "6f58383ca2e5c5f392c73a314e15968ee77a326e15888a9e6b76544268e2f67f",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.capture.jsonl": "e45844a391a40d2fc93f75d16876de32aa4ba781a2b1ecd72e2a18f13e5e0c8b",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.reopen.stdout.txt": "611998fd869c721ba6e0a90355c57837c3d8e358eba8238369516c96f9468a03",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.txt": "2dfa4d18fc82fbf871b0d45779db4811952faaebdc362a3059640eb9ba4ee681",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.capture.jsonl": "adae6ef4065cc49869b03520a1827a15e2862691fa0159044a3e7b1e14d1c81d",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.reopen.stdout.txt": "610baf8355929c760365f184ff2748909998975dbc6745a4675b3e217b952040",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c0-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.txt": "c6d5d09d65649664d7f1ebad101f11bb31be5725e9f84a157656feccde5ef625",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.capture.jsonl": "a78dafecfae26d9db431d84ed13c71c2b910cf02eb5e19a2213de560b6d5208b",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.reopen.stdout.txt": "8869d5345fd840fa4abf2729e5ac4a00715ca9beaa1ab9bbc05b65edcf032185",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.txt": "5801f9481b3b7469d6307b3a45ebce449a14de608bccb0f278b55f62f86812d0",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.capture.jsonl": "09cdedecb1c92efd565567f0b4a32f05a9bb9d78603ec8f13fe2bf08b06eba85",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.reopen.stdout.txt": "ff48358637e5c8d99678818673187fbab0c149675d2e7447cd278720dd76fbe5",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.txt": "748fb3488c126aa27b90faceb163f75e08e750cb9bded9ed08c30ae29d45fe3d",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.capture.jsonl": "3809e5cb8f61f25f5c62df6caaba85be65f770675221032459e0f669159cefc4",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.reopen.stdout.txt": "7144c223637c27f50c9ec8b092d2c44025fe1afbaaf6bb7c5c9076ba058e6be7",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.txt": "eab40695cdcf6be389a421381b4cf0979293d17d0281114f7114f70e864ade18",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.capture.jsonl": "3822f8a96d56e8c8cb802d07a44e02c5daf59469906f425058413d7d944038d8",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.reopen.stdout.txt": "6dfd27ecad5383664caef9344d6af29326346478b8ebc2a19d9978a2dd217b52",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b2-c1-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.txt": "5bc20568c52cf4f1db0fff973682d4af5178bfe3c5ec45250ea6db335a938286",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.capture.jsonl": "ea9a6e5458d20b7b0a74aa901d8f54aa58c8666b9d704f2311961e2638926100",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.reopen.stdout.txt": "e293c148ff8f4cdb783dd431d10d6e04f9955b157129195dfbf445c52dd98f4e",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.txt": "8cf152092ed7a06490fd796cda0320fdca0ba3d2ba236b83f10e1947f275f19f",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.capture.jsonl": "020b8772088999fe94f2b5f271bdc62f387ff9221354e4186f0f22f639014a18",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.reopen.stdout.txt": "cbff65ddb1346531507dec41a65cbfa09b8550c9a61210e8c5812ede0c44111c",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.txt": "406bfb0d3986df38175b1a4662f7283b82a17bff977ec0b7a92836749767a7b5",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.capture.jsonl": "9d2c868b330d7fe27f45cd35206ab1bd4a5e59ffd005000eb09d9e25a2bd83b1",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.reopen.stdout.txt": "d116dad2ed30f7cf6d28ac72ffe629a2ee2c3111b28d3e937547af42ec8f8c27",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.txt": "ec0fa3ac5da45f556b509dd821a9beb61895abc1e0ca10adeb8e0e1e23d94706",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.capture.jsonl": "42ab8d8b8f06b924e47184041b9036c09b7a12f63dd1c85abb690a183f652901",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.reopen.stdout.txt": "b62d3a8458ffe735231857abd8c0999ec2bc9cb78185d4e462b7008ccfd8e9f3",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c0-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.txt": "06051764e043ebc392441b18b77bb209d7300dd65f5084d763f696452c71e01a",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.capture.jsonl": "cd6b15b73bc877d16e61798fe7546c9e34546337232847d68dc5ad9945dd5891",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.reopen.stdout.txt": "8624e9d2f182de91b7dd7316462835e43bbcb5372a8b8ac63ef10d0dcdcdcbf5",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.txt": "86caca07e8558ec6ffdd3f81b59e5a49eff1f27990194dc0b23ff317b5d432e1",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.capture.jsonl": "410504667d7d5cd05bd56ebafe4abe7c9cc3ae9d5b335f9834b464903657ce1b",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.reopen.stdout.txt": "20669dbfcc9abd5c0a2b505326d18c827b9b25dc5c929b1d76ff189c3e64a8db",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-bf16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.txt": "0f509e9e6949a851e630e60c0887043f91f94c8fd42dffd7b44829a6e0dcc452",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.capture.jsonl": "d8220e3bd81a8a1449ba7a09613822951e5ab0e297c8a664daed6b2f383b643e",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.reopen.stdout.txt": "cc3841984637770a4cb1b6e0978466dd0b47141c46951ec2a26f7fff23d96006",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.txt": "bc2236c5da1522864a115bd54923420df30ece54d860d7e0756ab358be9eb0ab",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.capture.jsonl": "4af38833647c0ac288adc06a5ece37ddeba4dd6613880524901b010aa74496e2",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.reopen.stdout.txt": "0201a6d2a4eaed404c28a6b27b6bd0f21928d209296e741980e6c8d4de0f853a",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/fp-native-b4-c1-fp16-w1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.txt": "ca68bac60b3027d65eb4b79eb4037c958308c39456d473b19939c6aa397e17ce",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.capture.jsonl": "c65018f2c06716c7bcee43e4e367d222efbeb710f0ceb6b03390e3d9304caeeb",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.reopen.stdout.txt": "4686332d95e8053dbb99ef32c9b1a4c72db038529b60cd3f985d34a92518fd64",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.txt": "83762290de73668e187e819d215672678515686c425222780ba9d48c88661bb8",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.capture.jsonl": "44861984d5e2ccc4a38bc5a24d4b12d41d9217aa236d0c721e811c7c7dc01590",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.reopen.stdout.txt": "a3bcfbea9e626df5b76a6d8303c359fbbf154942dfd1635a9e10275d06bc2cfa",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b1-c1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.txt": "0ce52c3a062d9c4245ea6734e0e049dc1013beb1c072f72102ca72c419d5d44d",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.capture.jsonl": "6e685e97e19a67a8a5301cdfc8b7623f770591a24466eddeeb3b26e67e283aa0",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.reopen.stdout.txt": "65688cabcec11988fe0ffc33542f3760af3cd99bcbaee211a492492ddef60f36",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.txt": "2cd3a0a35fd9bbd274f6cb16d9ac4624f966bd52a9d8e0c619bccfb48d8e70d3",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.capture.jsonl": "6edc1f39b90a49d5ed5ab08c2bd6393fd7d24fb3e466df8759ef3d105596ea3d",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.reopen.stdout.txt": "29aeba2c9116f40be7fcec94ff97e914f543ebc2b6aed429bc0eba3c799cb592",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b2-c1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.txt": "082ad811d424dcdf9af908c34164d2b79e4728cfa69ca63454ecdbd1c27ecbeb",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.capture.jsonl": "a577239e3f488a2602db9cf517113b4920a2d79b2e707ca0305131ee0b9cfbb1",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.reopen.stdout.txt": "27e557bc3442515a7f11b874e2c6884a67b261160c31ab40bc14b081252c2226",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c0.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.txt": "276812d5d969b0cff17a7b8164124ca2cf260aeea81e0b68294b8232de5eda42",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.capture.jsonl": "44b36a520a7d723cffaf959b9ca700b81b7d4648a34ba122f4aff8ac4658362d",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.reopen.stdout.txt": "b2a6efc0b91298ffe44e7b40f2969c97f71230deccb99825714b1fd5399bdd6e",
+              "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/parent-native-b4-c1.stdout.reopen.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             },
             "outcome": "passed",
-            "ended_at": "2026-10-31T10:39:15.262016+00:00",
+            "ended_at": "2026-10-31T12:09:30.033588+00:00",
             "check": "synthesis",
             "metrics": {
               "required_runs": 30,
               "compared_runs": 30,
-              "ledger": "evidence/l1/l1-synthesis-20261031T102650Z-2381acd7/ledger.json"
+              "ledger": "evidence/l1/l1-synthesis-20261031T115716Z-db4a1325/ledger.json"
             },
             "native_hardware_acceptance": false
           }
