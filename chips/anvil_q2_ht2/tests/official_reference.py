@@ -137,6 +137,11 @@ class Checkpoint:
         require(mode in ("bf16", "fp16", "w4", "w2"), "unsupported reference mode")
         self.mode, self.half = mode, mode == "fp16"
         self.manifest = json.loads((ROOT / "tests/benchmark_manifest.json").read_text())
+        bindings = self.manifest["independent_reference_sources"]
+        require({b["path"] for b in bindings} == set(IMPLEMENTATION),
+                "incomplete independent reference source bindings")
+        for binding in bindings:
+            validate_asset(ROOT, binding)
         self.source = validate_asset(ROOT, self.manifest["checkpoint_shards"][0])
         self.config = json.loads(validate_asset(ROOT, self.manifest["assets"]["config"]).read_text())
         with self.source.open("rb") as stream:
@@ -373,7 +378,7 @@ def smoke(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("check", "smoke", "_check", "_smoke"))
+    parser.add_argument("command", choices=("check", "smoke", "matrix", "_check", "_smoke"))
     parser.add_argument("--mode", choices=("bf16", "fp16", "w4", "w2"), default="bf16")
     parser.add_argument("--kv", choices=("bf16", "int8"), default="bf16")
     parser.add_argument("--cache-block", type=int, default=128)
@@ -400,15 +405,37 @@ def main():
                     "numpy-version")
         run.command(["python3", "tests/official_reference.py", "_check"],
                     "exact-numerical-and-corruption-controls")
-        if args.command == "smoke":
-            output = args.output or run.relative(run.path / "reference-output")
-            run.command(["python3", "tests/official_reference.py", "_smoke",
-                         "--mode", args.mode, "--kv", args.kv, "--cache-block", str(args.cache_block),
-                         "--tokens", *map(str, args.tokens), "--decode", str(args.decode),
-                         "--output", output], "official-prefill-decode")
-            result = json.loads((portable_path(ROOT, output) / "result.json").read_text())
-            run.receipt["reference_execution"] = result
-            run.receipt["asset_hashes"] = {b["path"]: b["sha256"] for b in result["inputs"]}
+        if args.command in ("smoke", "matrix"):
+            from official_reference_tests import validate_execution, quality
+            cells = ([(mode, kv) for mode in ("bf16", "fp16", "w4", "w2")
+                      for kv in ("bf16", "int8")] if args.command == "matrix" else
+                     [(args.mode, args.kv)])
+            base = portable_path(ROOT, args.output) if args.output else run.path / "reference-output"
+            require(not base.exists(), "refusing to overwrite reference outputs")
+            executions = []
+            for mode, kv in cells:
+                output = base / f"{mode}-{kv}" if args.command == "matrix" else base
+                run.command(["python3", "tests/official_reference.py", "_smoke",
+                             "--mode", mode, "--kv", kv, "--cache-block", str(args.cache_block),
+                             "--tokens", *map(str, args.tokens), "--decode", str(args.decode),
+                             "--output", run.relative(output)], f"official-{mode}-{kv}-prefill-decode")
+                result = validate_execution(output)
+                executions.append({"output": run.relative(output), "result": result})
+                run.receipt["reference_executions"] = executions
+                run.receipt["asset_hashes"] = {
+                    b["path"]: b["sha256"] for e in executions for b in e["result"]["inputs"]}
+                run.save()
+            if args.command == "matrix":
+                comparisons = []
+                for kv in ("bf16", "int8"):
+                    baseline = base / f"bf16-{kv}"
+                    for mode in ("fp16", "w4", "w2"):
+                        for position in range(len(args.tokens)):
+                            comparisons.append({"mode": mode, "kv": kv, "position": position,
+                                                **quality(base / f"{mode}-{kv}", baseline, position)})
+                run.receipt["bounded_same_prefix_vs_original_bf16"] = comparisons
+            run.command(["python3", "tests/official_reference_tests.py", "--validate",
+                         *[e["output"] for e in executions]], "independent-retained-output-check")
         return run.finish(True, "Independent software reference controls/execution completed; "
                           "not accelerator or benchmark acceptance")
     except Exception as exc:

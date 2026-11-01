@@ -5,11 +5,13 @@ from decimal import Decimal, localcontext
 import hashlib
 import json
 import random
+import sys
 import tempfile
 from pathlib import Path
 
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reference import (BF16, FP16, FP32, add, convert, decode, dequant, dot,
                        decimal_value, encode_ratio, kv_encode, multiply, transcendental)
 import official_reference as candidate
@@ -327,5 +329,110 @@ def execute():
           flush=True)
 
 
+def validate_execution(output):
+    """Check retained full logits/greedy IDs and every required layer observation."""
+    data = json.loads((output / "result.json").read_text())
+    if data["implementation_sha256"] != {
+            p: candidate.digest(candidate.ROOT / p) for p in candidate.IMPLEMENTATION}:
+        raise AssertionError("reference execution source mismatch")
+    for binding in data["inputs"]:
+        candidate.validate_asset(candidate.ROOT, binding)
+    if data["kind"] != "software-reference-only" or data["cache_block"] not in (
+            1, 2, 4, 8, 16, 32, 64, 128):
+        raise AssertionError("invalid reference execution identity")
+    counts = data["numerical_audit"]["comparison_counts"]
+    for required in ("official_normalizers", "official_norm_products",
+                     "official_projection_rows", "official_projection_products",
+                     "official_kv_values", "official_kv_bytes", "official_nonlinear_samples",
+                     "high_precision_comparisons", "rope_coefficients"):
+        if counts.get(required, 0) <= 0:
+            raise AssertionError("unexecuted official comparison "+required)
+    if data["max_softmax_sum_error"] > 2e-4:
+        raise AssertionError("reference softmax sum error")
+    records = data["tokens"]
+    if len(records) < 3 or data["layers_executed"] != len(records)*28:
+        raise AssertionError("missing full-model token/layer execution")
+    rows = [json.loads(line) for line in (output / "layers.jsonl").read_text().splitlines()]
+    if [(r["position"], r["layer"]) for r in rows] != [
+            (p, layer) for p in range(len(records)) for layer in range(28)]:
+        raise AssertionError("incomplete or duplicated layer observations")
+    for row in rows:
+        if (row["input_id"], row["phase"]) != (
+                records[row["position"]]["input_id"], records[row["position"]]["phase"]):
+            raise AssertionError("layer observation belongs to another request")
+        for field, elements in (("activation", 1536), ("key", 256), ("value", 256)):
+            summary = row[field]
+            if summary["count"] != elements or len(summary["first_values"]) != 8:
+                raise AssertionError("missing readable numerical layer values")
+            scalars = [summary[k] for k in ("min", "max", "mean", "rms")]
+            if not all(np.isfinite(scalars)) or not summary["min"] <= summary["mean"] <= summary["max"]:
+                raise AssertionError("invalid numerical layer statistics")
+            if any(not summary["min"] <= x <= summary["max"] for x in summary["first_values"]):
+                raise AssertionError("invalid layer sample")
+        expected_bytes = 1024 if data["kv"] == "bf16" else 512+1024//data["cache_block"]
+        if row["kv_bytes"] != expected_bytes:
+            raise AssertionError("incorrect KV encoded byte count")
+    compared, corruptions = 0, 0
+    for position, record in enumerate(records):
+        logits = np.load(output / f"logits-{position}.npy", allow_pickle=False)
+        if logits.dtype != np.dtype("<f4") or logits.shape != (151936,) or not np.isfinite(logits).all():
+            raise AssertionError("invalid retained full-vocabulary logits")
+        if record["position"] != position or record["logits"] != candidate.summaries(logits):
+            raise AssertionError("retained logits do not match execution summary")
+        greedy = max(range(logits.size), key=lambda i: float(logits[i]))
+        if greedy != record["greedy_id"]:
+            raise AssertionError("retained logits disagree with greedy ID")
+        if record["phase"] == "decode" and record["input_id"] != records[position-1]["greedy_id"]:
+            raise AssertionError("decode input is not the previous actual greedy result")
+        compared += logits.size
+        corrupted = logits.copy()
+        corrupted.view("<u4")[position] ^= np.uint32(1)
+        expected_hash = record["logits"]["sha256_fp32_le"]
+        try:
+            if hashlib.sha256(corrupted.tobytes()).hexdigest() != expected_hash:
+                raise AssertionError("injected retained logit corruption")
+        except AssertionError:
+            corruptions += 1
+        else:
+            raise AssertionError("undetected actual official-logit corruption")
+        try:
+            if (greedy+1) % logits.size != record["greedy_id"]:
+                raise AssertionError("injected greedy result corruption")
+        except AssertionError:
+            corruptions += 1
+        else:
+            raise AssertionError("undetected actual greedy corruption")
+    if compared <= 0 or corruptions != 2*len(records):
+        raise AssertionError("missing retained-output/corruption coverage")
+    data["retained_output_check"] = {
+        "compared_logits": int(compared), "layer_records": len(rows),
+        "executed_official_output_corruptions_rejected": corruptions}
+    print(json.dumps({"output": str(output.relative_to(candidate.ROOT)),
+                      "checked": data["retained_output_check"]}), flush=True)
+    return data
+
+
+def quality(output, baseline, position):
+    record = json.loads((output / "result.json").read_text())["tokens"][position]
+    original = json.loads((baseline / "result.json").read_text())["tokens"][position]
+    if record["input_id"] != original["input_id"] or record["phase"] != "prefill":
+        raise AssertionError("quality comparison does not have the same committed input prefix")
+    a = np.load(output / f"logits-{position}.npy", allow_pickle=False).astype("float64")
+    b = np.load(baseline / f"logits-{position}.npy", allow_pickle=False).astype("float64")
+    aa, bb = np.sum(a*a), np.sum(b*b)
+    if min(aa, bb) <= 0:
+        raise AssertionError("empty original-quality comparison")
+    return {"compared_logits": int(a.size), "nrmse": float(np.sqrt(np.sum((a-b)**2)/bb)),
+            "cosine": float(np.sum(a*b)/np.sqrt(aa*bb)),
+            "original_greedy_id": original["greedy_id"], "mode_greedy_id": record["greedy_id"],
+            "scope": "bounded original-weight difference, not same-weight fidelity acceptance"}
+
+
 if __name__ == "__main__":
-    execute()
+    if len(sys.argv) > 1:
+        if sys.argv[1] != "--validate" or len(sys.argv) < 3:
+            raise SystemExit("usage: official_reference_tests.py [--validate OUTPUT ...]")
+        for directory in sys.argv[2:]:
+            validate_execution(candidate.portable_path(candidate.ROOT, directory))
+    else:
+        execute()
