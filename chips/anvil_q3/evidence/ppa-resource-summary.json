@@ -1,10 +1,10 @@
 {
   "chip": "Anvil-Q3",
   "fitter_resources": {
-    "alms_used": 63326,
+    "alms_used": 63470,
     "alms_total": 427200,
     "alms_pct": "15 %",
-    "total_registers": 87223,
+    "total_registers": 89198,
     "block_memory_bits": 0,
     "m20k_ram_blocks": 0,
     "m20k_ram_blocks_total": 2713,
@@ -15,10 +15,10 @@
     "device": "10AX115N2F45E1SG",
     "netlist_mode": "post_fit",
     "target_frequency_mhz": 100.0,
-    "fmax_mhz": 87.67,
-    "critical_path_delay_ns": 11.406,
-    "wns_setup_ns": -1.406,
-    "wns_hold_ns": 0.034
+    "fmax_mhz": 100.74,
+    "critical_path_delay_ns": 9.927,
+    "wns_setup_ns": 0.073,
+    "wns_hold_ns": 0.045
   },
   "verification_tiers": {
     "L3_board_hil": "L3_BRIDGE_CONNECTIVITY_PROBE_ONLY",
