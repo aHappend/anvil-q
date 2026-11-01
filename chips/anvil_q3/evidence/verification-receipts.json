@@ -47225,9 +47225,9 @@
       ]
     },
     "check:portable-clean-directory-reproduction": {
-      "attempt_id": 556,
-      "duration_s": 879.8945736659225,
-      "stdout_preview": "evidence/check-reproduce/20261101T004801Z-0a23cf747409/receipt.json\n",
+      "attempt_id": 574,
+      "duration_s": 865.5354337238241,
+      "stdout_preview": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/receipt.json\n",
       "receipt_count": 40,
       "receipts": [
         {
