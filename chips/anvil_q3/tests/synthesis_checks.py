@@ -10,6 +10,21 @@ from parameters import A, defaults, legal
 from structure_checks import sequential_lint
 
 
+def scheduler_identifier_annotations(text):
+    annotations = []
+    for name, width in (("capture_client", "CIW"), ("capture_slot", "SIW")):
+        declaration = f"reg [{width}-1:0] {name};"
+        pattern = rf"(?m)^([ \t]*){re.escape(declaration)}[ \t]*$"
+        if len(re.findall(pattern, text)) != 1:
+            raise AssertionError("scheduler identifier declaration changed: " + name)
+        annotated = '(* fsm_encoding="none" *) ' + declaration
+        text = re.sub(pattern, lambda m: m[1] + annotated, text)
+        annotations.append({"register": name, "declaration": declaration,
+                            "annotated_declaration": annotated,
+                            "reason": "transaction identifier, not FSM state"})
+    return text, annotations
+
+
 def lower_packages(folder):
     """Normalize package, signed-port and declaration syntax for native Yosys."""
     package = ROOT / "rtl/anvil_q3_00_pkg.sv"
@@ -37,6 +52,9 @@ def lower_packages(folder):
             raise AssertionError("no module in " + source.name)
         aliases = []
         declaration_moves = []
+        identifier_annotations = []
+        if source.name == "anvil_q3_bank_scheduler.sv":
+            converted, identifier_annotations = scheduler_identifier_annotations(converted)
         if source.name == "anvil_q3_rmsnorm.sv":
             # Yosys 0.33 genrtlil.cc asserts for $signed(unsigned_whole_wire) ports.
             # An explicit signed alias preserves all 128 bits and the port signedness.
@@ -69,11 +87,13 @@ def lower_packages(folder):
         bindings.append({"source": str(source.relative_to(ROOT)), "sha256": sha256(source),
                          "lowered": str(target.relative_to(ROOT)), "lowered_sha256": sha256(target),
                          "modules": modules, "signed_port_aliases": aliases,
-                         "declaration_moves": declaration_moves})
+                         "declaration_moves": declaration_moves,
+                         "identifier_annotations": identifier_annotations})
     write_json(folder / "package-lowering.json",
                {"operation": "remove package qualification; inline identical functions; "
                              "materialize bit-identical signed whole-wire port aliases; "
-                             "move unchanged forward-referenced declarations before use",
+                             "move unchanged forward-referenced declarations before use; "
+                             "mark scheduler capture identifiers fsm_encoding=none",
                 "package_sha256": sha256(package), "sources": bindings})
     return paths
 

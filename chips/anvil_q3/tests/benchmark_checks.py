@@ -108,6 +108,22 @@ def baseline_prerequisites(assets, source_hashes, generations=("Q1", "Q2")):
             "q1_wrapper_is_independent_q1": False}
 
 
+def benchmark_prompts(data, banks):
+    """All frozen prompts at one bank; retain the identical-work eight-bank anchor."""
+    return data["prompts"] if banks == 1 else data["prompts"][:1]
+
+
+def assert_domain_coverage(rows):
+    expected = {(mode, asym, p["id"]) for mode, asym in THRESHOLDS
+                for p in corpus()[0]["prompts"]}
+    observed = [(r["cache_mode"], r["int4_asymmetric"], r["prompt_id"])
+                for r in rows if r["banks"] == 1]
+    if len(observed) != len(set(observed)) or set(observed) != expected:
+        raise AssertionError("incomplete/duplicate frozen five-domain cache-mode benchmark")
+    if any(r["compared_bits"] <= 0 or r["bit_mismatches"] != 0 for r in rows):
+        raise AssertionError("benchmark row lacks successful independent comparisons")
+
+
 def benchmark(run):
     tensor_speedup(run)
     declared = list(json.loads((ROOT / "tests/public_assets.json").read_text())["assets"])
@@ -124,55 +140,70 @@ def benchmark(run):
     if lock != frozen:
         raise AssertionError("frozen corpus/tensors/reference changed; cannot replace failing fixtures")
     write_json(run.path / "frozen-quality-inputs.json", frozen)
+    def cache_variant(mode, asym):
+        results, outputs = [], {}
+        seed = 17
+        for banks in (1, 8):
+            g = replace(A, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym)
+            if tensor_digest(Fixture(g, seed)) != frozen["seeds"][str(seed)]["tensor_sha256"]:
+                raise AssertionError("bank/cache variant changed immutable corpus tensors")
+            domains = {domain: ([], []) for domain in DOMAINS}
+            prompts = benchmark_prompts(data, banks)
+            for prompt in prompts:
+                tokens = prompt["prefill"] + prompt["decode"]
+                result = decoder_case(run, g, seed=seed, simulator="verilator", tokens=tokens,
+                                      prefill_tokens=len(prompt["prefill"]), label=prompt["id"])
+                actual = result.pop("logits")
+                reference = references[seed][prompt["id"]]
+                domains[prompt["domain"]][0].extend(actual)
+                domains[prompt["domain"]][1].extend(reference)
+                key = prompt["id"]
+                if banks == 1:
+                    outputs[key] = result["cycles"], actual
+                baseline_cycles, baseline_logits = outputs[key]
+                if actual != baseline_logits:
+                    raise AssertionError("cache-matched output differs across banks")
+                prefill_cycles = sum(result["token_cycles"][:len(prompt["prefill"])])
+                decode_cycles = sum(result["token_cycles"][len(prompt["prefill"]):])
+                row = {"schema": 1, "generation": "Anvil-Q3", "profile": 3,
+                       "model": "frozen nonzero synthetic fixture", "seed": seed,
+                       "prompt_id": prompt["id"], "domain": prompt["domain"],
+                       "classification": data["classification"],
+                       "precision": "external binary16/AWQ W4; internal Q16.16",
+                       "cache_mode": mode, "int4_asymmetric": asym, "banks": banks,
+                       "prefill_cycles": prefill_cycles, "decode_cycles": decode_cycles,
+                       "total_cycles": result["cycles"], "stalls": result["stalls"],
+                       "weight_bytes": result["traffic"]["weight_bytes"],
+                       "cache_payload_metadata_bytes":
+                           result["traffic"]["cache_payload_metadata_bytes"],
+                       "cosine": str(cosine(actual, reference)),
+                       "compared_bits": result["compared_bits"], "bit_mismatches": 0,
+                       "speedup": baseline_cycles / result["cycles"],
+                       "trace_sha256": result["trace_sha256"], "geometry": result["geometry"]}
+                results.append(row)
+                write_json(run.path / f"benchmark-rows-m{mode}-a{asym}.json", results)
+            quality = {domain: str(cosine(actual, reference))
+                       for domain, (actual, reference) in domains.items() if actual}
+            required_domains = {p["domain"] for p in prompts}
+            if set(quality) != required_domains:
+                raise AssertionError("benchmark missing required domain comparisons")
+            write_json(run.path / f"quality-s{seed}-m{mode}-a{asym}-b{banks}.json",
+                       {"threshold": str(THRESHOLDS[mode, asym]), "domains": quality,
+                        "prompt_ids": [p["id"] for p in prompts],
+                        "scope": "all frozen domains" if banks == 1 else
+                                 "identical-work multibank anchor, not five-domain coverage"})
+            if any(Decimal(value) < THRESHOLDS[mode, asym] for value in quality.values()):
+                raise AssertionError("per-domain aggregate cosine below frozen acceptance")
+        return results
+
+    jobs = [lambda mode=mode, asym=asym: cache_variant(mode, asym)
+            for mode, asym in THRESHOLDS]
     if any(supported_q1(a) for a in assets):
-        native_q1_benchmark(run, assets, data, bounded_smoke=True)
-    results, outputs = [], {}
-    for seed in (17,):
-        for mode, asym in THRESHOLDS:
-            for banks in (1, 8):
-                g = replace(A, BANKS=banks, CACHE_MODE=mode, INT4_ASYM=asym)
-                if tensor_digest(Fixture(g, seed)) != frozen["seeds"][str(seed)]["tensor_sha256"]:
-                    raise AssertionError("bank/cache variant changed immutable corpus tensors")
-                domains = {domain: ([], []) for domain in DOMAINS}
-                for prompt in data["prompts"][:1]:
-                    tokens = prompt["prefill"] + prompt["decode"]
-                    result = decoder_case(run, g, seed=seed, simulator="verilator", tokens=tokens,
-                                          prefill_tokens=len(prompt["prefill"]), label=prompt["id"])
-                    actual = result.pop("logits")
-                    reference = references[seed][prompt["id"]]
-                    domains[prompt["domain"]][0].extend(actual)
-                    domains[prompt["domain"]][1].extend(reference)
-                    key = seed, mode, asym, prompt["id"]
-                    if banks == 1:
-                        outputs[key] = result["cycles"], actual
-                    baseline_cycles, baseline_logits = outputs[key]
-                    if actual != baseline_logits:
-                        raise AssertionError("cache-matched output differs across banks")
-                    prefill_cycles = sum(result["token_cycles"][:len(prompt["prefill"])])
-                    decode_cycles = sum(result["token_cycles"][len(prompt["prefill"]):])
-                    row = {"schema": 1, "generation": "Anvil-Q3", "profile": 3,
-                           "model": "frozen nonzero synthetic fixture", "seed": seed,
-                           "prompt_id": prompt["id"], "domain": prompt["domain"],
-                           "classification": data["classification"],
-                           "precision": "external binary16/AWQ W4; internal Q16.16",
-                           "cache_mode": mode, "int4_asymmetric": asym, "banks": banks,
-                           "prefill_cycles": prefill_cycles, "decode_cycles": decode_cycles,
-                           "total_cycles": result["cycles"], "stalls": result["stalls"],
-                           "weight_bytes": result["traffic"]["weight_bytes"],
-                           "cache_payload_metadata_bytes":
-                               result["traffic"]["cache_payload_metadata_bytes"],
-                           "cosine": str(cosine(actual, reference)),
-                           "compared_bits": result["compared_bits"], "bit_mismatches": 0,
-                           "speedup": baseline_cycles / result["cycles"],
-                           "trace_sha256": result["trace_sha256"], "geometry": result["geometry"]}
-                    results.append(row)
-                    write_json(run.path / "benchmark-rows.json", results)
-                quality = {domain: str(cosine(actual, reference))
-                           for domain, (actual, reference) in domains.items() if actual}
-                write_json(run.path / f"quality-s{seed}-m{mode}-a{asym}-b{banks}.json",
-                           {"threshold": str(THRESHOLDS[mode, asym]), "domains": quality})
-                if any(Decimal(value) < THRESHOLDS[mode, asym] for value in quality.values()):
-                    raise AssertionError("per-domain aggregate cosine below frozen acceptance")
+        jobs.append(lambda: native_q1_benchmark(run, assets, data, bounded_smoke=True))
+    completed = run.parallel(jobs, max_workers=5)
+    results = [row for variant in completed[:len(THRESHOLDS)] for row in variant]
+    write_json(run.path / "benchmark-rows.json", results)
+    assert_domain_coverage(results)
     return results
 
 
@@ -189,7 +220,7 @@ def native_q1_benchmark(run, assets, data=None, simulator="verilator", bounded_s
     data = corpus()[0] if data is None else data
     g = replace(startup_geometry(1), BANKS=1, CACHE_MODE=0)
     seeds = (17,) if bounded_smoke else (17, 89, 257)
-    prompts = data["prompts"][:1] if bounded_smoke else data["prompts"]
+    prompts = data["prompts"]
     fixtures, references = {}, {}
     for seed in seeds:
         fixture = Fixture(g, seed)
@@ -244,7 +275,7 @@ def native_q1_benchmark(run, assets, data=None, simulator="verilator", bounded_s
             write_json(run.path / "native-q1-benchmark-rows.json", ledger)
         quality = {domain: str(cosine(actual, reference))
                    for domain, (actual, reference) in domains.items() if actual}
-        if not bounded_smoke and set(quality) != DOMAINS:
+        if set(quality) != DOMAINS:
             raise AssertionError("native Q1 benchmark missing a domain comparison")
         write_json(run.path / f"native-q1-quality-s{seed}.json", {
             "domains": quality, "threshold": str(THRESHOLDS[0, 0]),
