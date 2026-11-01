@@ -114,10 +114,11 @@ def benchmark_prompts(data, banks):
 
 
 def assert_domain_coverage(rows):
-    expected = {(mode, asym, p["id"]) for mode, asym in THRESHOLDS
-                for p in corpus()[0]["prompts"]}
-    observed = [(r["cache_mode"], r["int4_asymmetric"], r["prompt_id"])
-                for r in rows if r["banks"] == 1]
+    data = corpus()[0]
+    expected = {(mode, asym, banks, p["id"]) for mode, asym in THRESHOLDS
+                for banks in (1, 8) for p in benchmark_prompts(data, banks)}
+    observed = [(r["cache_mode"], r["int4_asymmetric"], r["banks"], r["prompt_id"])
+                for r in rows]
     if len(observed) != len(set(observed)) or set(observed) != expected:
         raise AssertionError("incomplete/duplicate frozen five-domain cache-mode benchmark")
     if any(r["compared_bits"] <= 0 or r["bit_mismatches"] != 0 for r in rows):
@@ -140,6 +141,14 @@ def benchmark(run):
     if lock != frozen:
         raise AssertionError("frozen corpus/tensors/reference changed; cannot replace failing fixtures")
     write_json(run.path / "frozen-quality-inputs.json", frozen)
+    write_json(run.path / "benchmark-coverage-plan.json", {
+        "seed": 17, "simulator": "verilator",
+        "single_bank": [p["id"] for p in benchmark_prompts(data, 1)],
+        "eight_bank_identical_work_anchor": [p["id"] for p in benchmark_prompts(data, 8)],
+        "cache_variants": list(THRESHOLDS),
+        "scope": "all ten frozen prompts/five domains in every cache variant at one bank; "
+                 "retain all eight original bank/cache anchor measurements; "
+                 "not a domain-by-bank-by-seed Cartesian sweep"})
     def cache_variant(mode, asym):
         results, outputs = [], {}
         seed = 17
@@ -210,6 +219,7 @@ def benchmark(run):
 def native_q1_benchmark(run, assets, data=None, simulator="verilator", bounded_smoke=False):
     """Native single-port Q1, same fixed corpus and independent profile-1 math.
 
+    bounded_smoke bounds seeds to 17, not the frozen prompt/domain inventory.
     There is no Q1 multibank/cache-mode emulation. Speedup is measured only
     against identical Q1-profile work on Q3, including streaming and stalls.
     This is structural synthetic evaluation, not trained language-model quality.

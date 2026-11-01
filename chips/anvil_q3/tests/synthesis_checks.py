@@ -134,8 +134,11 @@ def synthesis_case(run, g, label):
 
 
 def synthesis(run):
+    from delivery_repair_checks import adaptation_sensitivity
+
     run.versions([("yosys", "-V")])
     lint = sequential_lint()
+    write_json(run.path / "identifier-adaptation-checker.json", adaptation_sensitivity())
     results = []
     cases = [
         ("a-b8-m2-a1", replace(A, BANKS=8, CACHE_MODE=2, INT4_ASYM=1)),

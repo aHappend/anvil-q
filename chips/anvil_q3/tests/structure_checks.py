@@ -131,6 +131,7 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
     from compiler_admission_checks import admission_sensitivity, clean_worker_sensitivity
     from startup_retention_checks import retention_sensitivity
     from startup_scalability_checks import startup_scalability_sensitivity
+    from delivery_repair_checks import adaptation_sensitivity, benchmark_dispatch_sensitivity
 
     cases = [(label, g, True) for label, g in positive_cases()]
     if include_negative:
@@ -140,7 +141,11 @@ def structure(run, *, simulators=("iverilog", "verilator"), include_negative=Tru
     leaf_count = sum(include_negative or expected for _, _, expected in leaf_cases())
     run.plan_startup_storage(
         (len(cases) + leaf_count + len(list(baseline_geometries()))) * len(simulators))
+    repair_fixtures = run.path / "delivery-repair-fixtures-0000"
+    repair_fixtures.mkdir()
     lint = {"assignments": sequential_lint(), "hardware_metric_checker": hardware_metrics(),
+            "identifier_adaptation_checker": adaptation_sensitivity(),
+            "benchmark_dispatch_checker": benchmark_dispatch_sensitivity(repair_fixtures),
             "compiler_admission_checker": admission_sensitivity(run.path),
             "compiler_clean_worker_checker": clean_worker_sensitivity(run.path),
             "startup_retention_checker": retention_sensitivity(run),
