@@ -160,8 +160,16 @@ Free-slot and response-match selection use explicit binary trees with at most
 four levels for QUEUE_DEPTH<=16. Ingress computes all client bank routes in
 parallel using only the low bank-address bits, then selects the smallest
 cyclic round-robin rank in a binary tree with at most five levels for
-CLIENTS<=32. Request fields travel through that same tree, avoiding another
-selected-client payload lookup. Stored client, slot, bank and queue indices
+CLIENTS<=32. Only narrow arbitration metadata travels through that tree.
+Each client snapshots its 136-bit request fields unconditionally on every edge;
+the accepted client/slot and tag are registered alongside those snapshots.
+On the next edge, a registered capture-valid/slot enables the fixed destination
+slot to copy the accepted client's snapshot and tag. Client input changes after
+acceptance cannot change that copy. The slot is reserved and its dispatch index
+enqueued on the acceptance edge, so this capture boundary adds no queue capacity
+and cannot accept over the per-bank limit. The earliest dequeue coincides with
+payload capture; the held bus request becomes visible only after that edge.
+Stored client, slot, bank and queue indices
 are sized to their legal geometry. Client head lookup ends at mailbox
 registers; neither an owner-indexed oldest-tag scan nor a serial chain of
 minimum-tag comparisons feeds the slot-stage updates.
@@ -178,13 +186,39 @@ head/tail/count and response mailbox. Every sequential process has one
 reset-dominated branch. Response matching and queue-write pointer comparisons
 enable fixed destination registers rather than dynamically indexed writes
 across separate reset branches. Reset, flush, drain and normal-operation
-priorities and all public handshake cycles remain unchanged.
+priorities and all public handshake cycles remain unchanged. Slot payload/tag
+capture and response-data capture have separate reset-dominated fixed-owner
+processes, outside flush/drain priority. Flush still gates ingress acceptance
+immediately and annuls ownership immediately; it does not gate the wide payload
+register enables. A previously accepted capture may finish into an annulled
+slot, but cannot publish a request or response, change capacity, or survive as
+live work. Tags are allocated on acceptance, including an acceptance immediately
+before flush, and wrap still waits for all live reservations to drain.
+
+Scheduler capture cycle and degenerate-boundary table:
+
+| Pre-edge event | Post-edge state / observable consequence |
+| --- | --- |
+| Active reset | All snapshots, capture metadata, ownership and public outputs are zero; no acceptance |
+| First edge after reset release | Idle ingress may accept; no unaccepted snapshot creates ownership |
+| E0 client valid/ready | Reserve slot/tag, append client list and bank FIFO, snapshot client fields, register capture destination/valid |
+| E1 earliest bank dequeue | Copy E0 snapshot/tag into reserved slot and install hold slot; bus payload/valid are visible after E1 and can transfer at E2 |
+| Simultaneous retirement and acceptance | Reuse the retired slot at E0, including BANKS=CLIENTS=QUEUE_DEPTH=1; old response mailbox data is independent of the E1 payload copy |
+| Consecutive acceptances | E1 copies E0 snapshot while registering the next acceptance; nonblocking snapshots preserve both payloads |
+| Flush or response fault at E0 | No new live reservation survives; discard queued/returned work, retain accepted bus transactions until matched responses drain |
+| Flush at E1 with pending capture | Ownership/dispatch are annulled; the E0 payload copy is harmless and cannot issue; the next capture-valid clears |
+| Held bus request stalled | Slot payload/tag are immutable until response retirement; no ingress capture targets that live slot |
+| QUEUE_DEPTH=1 or non-power-of-two | Existing explicit pointer wrap and slot credits apply unchanged; a single queued request cannot dequeue before its payload capture |
+
 Loop temporaries are not storage: GEMV's result-selector loop runs even when selection is disabled, and
 prefetch read lanes are elaborated instances with the original read-enable
 and padding conditions. No latch or timing acceptance is inferred from these
-source changes. The retained failed STA reported setup -47.936 ns and hold
--0.171 ns on compact PROFILE1 post-map analysis; fresh completed fitted STA
-and full-default/physical acceptance remain required.
+source changes. The latest retained compact PROFILE1 post-fit STA reported
+setup -1.406 ns and hold +0.034 ns at 10 ns, with SEQUENCE_FLUSH/ABORT_FLUSH
+to scheduler col[21][12] as the failing path. The capture separation addresses
+that control-to-wide-payload path, not a measured multiplier bottleneck.
+Fresh completed fitted STA, full-default timing and physical acceptance remain
+required; static elaboration cannot establish timing closure.
 
 At default tile dimensions, the two sets consume
 2*8*128*(4+4+16)/8 = 6144 logical bytes per bank, 49152 across eight banks.

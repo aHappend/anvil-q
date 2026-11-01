@@ -78,7 +78,11 @@ module anvil_q3_bank_scheduler #(
   wire [CIW-1:0] request_client [1:2*CT-1];
   wire [SIW-1:0] request_slot [1:2*CT-1];
   wire [BIW-1:0] request_bank [1:2*CT-1];
-  wire [135:0] request_data [1:2*CT-1];
+  (* mem2reg *) reg [135:0] client_payload [0:SC-1];
+  reg capture_valid;
+  reg [CIW-1:0] capture_client;
+  reg [SIW-1:0] capture_slot;
+  reg [63:0] capture_tag;
   wire accept_enable=rst_n && !flush && !draining && !wrap_pending;
   wire ingress_valid=accept_enable && request_valid[1];
   wire [CIW-1:0] ingress=request_client[1];
@@ -92,6 +96,12 @@ module anvil_q3_bank_scheduler #(
     for (c=0;c<SC;c=c+1) begin: clients
       reg response_valid, response_failed;
       reg [31:0] response_data;
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) client_payload[c]<=0;
+        else client_payload[c]<={c_req_write[c],c_req_kind[c*4+:4],
+          c_req_layer[c*32+:32],c_req_proj[c*3+:3],c_req_row[c*32+:32],
+          c_req_col[c*32+:32],c_req_wdata[c*32+:32]};
+      end
       wire responding=rst_n && !flush && !draining &&
         response_valid;
       always @* begin
@@ -155,9 +165,7 @@ module anvil_q3_bank_scheduler #(
       assign live[s]=stage[s]!=FREE;
       always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-          stage[s]<=FREE; owner[s]<=0; tag[s]<=0; wr[s]<=0;
-          response_error[s]<=0; kind[s]<=0; proj[s]<=0; layer[s]<=0;
-          row[s]<=0; col[s]<=0; wdata[s]<=0; rdata[s]<=0; successor[s]<=0;
+          stage[s]<=FREE; owner[s]<=0; successor[s]<=0;
           dispatch_queue[s]<=0;
         end else if (flush || bad_response) begin
           if (returning[s]) stage[s]<=FREE;
@@ -172,16 +180,30 @@ module anvil_q3_bank_scheduler #(
           else if (ingress_valid && ingress_slot==s) stage[s]<=QUEUED;
           else if (retiring[s]) stage[s]<=FREE;
           if (ingress_valid && ingress_slot==s) begin
-            owner[s]<=ingress; tag[s]<=next_tag;
-            {wr[s],kind[s],layer[s],proj[s],row[s],col[s],wdata[s]}<=request_data[1];
+            owner[s]<=ingress;
           end
           if (append_link[s]) successor[s]<=ingress_slot;
           if (enqueue[BANK] && queue_write[BANK]==QUEUE_INDEX)
             dispatch_queue[s]<=ingress_slot;
-          if (returning[s]) begin
-            rdata[s]<=mem_rsp_rdata[BANK*32+:32];
-            response_error[s]<=mem_rsp_error[BANK];
-          end
+        end
+      end
+      // Annul ownership, not a pending copy into an unobservable slot.
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          tag[s]<=0; wr[s]<=0; kind[s]<=0; proj[s]<=0;
+          layer[s]<=0; row[s]<=0; col[s]<=0; wdata[s]<=0;
+        end else if (capture_valid && capture_slot==s) begin
+          tag[s]<=capture_tag;
+          {wr[s],kind[s],layer[s],proj[s],row[s],col[s],wdata[s]}<=
+            client_payload[capture_client];
+        end
+      end
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          rdata[s]<=0; response_error[s]<=0;
+        end else if (returning[s]) begin
+          rdata[s]<=mem_rsp_rdata[BANK*32+:32];
+          response_error[s]<=mem_rsp_error[BANK];
         end
       end
     end
@@ -277,16 +299,12 @@ module anvil_q3_bank_scheduler #(
         assign request_client[CT+c]=CIW'(c);
         assign request_slot[CT+c]=free_slot[route];
         assign request_bank[CT+c]=route;
-        assign request_data[CT+c]={c_req_write[c],c_req_kind[c*4+:4],
-          c_req_layer[c*32+:32],c_req_proj[c*3+:3],c_req_row[c*32+:32],
-          c_req_col[c*32+:32],c_req_wdata[c*32+:32]};
       end else begin: padding
         assign request_valid[CT+c]=0;
         assign request_rank[CT+c]=0;
         assign request_client[CT+c]=0;
         assign request_slot[CT+c]=0;
         assign request_bank[CT+c]=0;
-        assign request_data[CT+c]=0;
       end
     end
     for (n=1;n<CT;n=n+1) begin: ingress_selection
@@ -297,9 +315,19 @@ module anvil_q3_bank_scheduler #(
       assign request_client[n]=left_wins ? request_client[2*n] : request_client[2*n+1];
       assign request_slot[n]=left_wins ? request_slot[2*n] : request_slot[2*n+1];
       assign request_bank[n]=left_wins ? request_bank[2*n] : request_bank[2*n+1];
-      assign request_data[n]=left_wins ? request_data[2*n] : request_data[2*n+1];
     end
   endgenerate
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      capture_valid<=0; capture_client<=0; capture_slot<=0; capture_tag<=0;
+    end else begin
+      capture_valid<=ingress_valid && !bad_response;
+      capture_client<=ingress;
+      capture_slot<=ingress_slot;
+      capture_tag<=next_tag;
+    end
+  end
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
