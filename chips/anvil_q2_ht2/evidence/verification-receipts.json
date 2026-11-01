@@ -7297,13 +7297,13 @@
       ]
     },
     "check:l1-portability-numerics": {
-      "attempt_id": 160,
-      "duration_s": 49.20051961997524,
-      "stdout_preview": "{\"exit_code\": 0, \"reason\": \"all requested comparisons passed\", \"receipt\": \"evidence/l1/numerics-20261101T064550Z-cbea2bfb/receipt.json\"}\n",
+      "attempt_id": 505,
+      "duration_s": 48.60351568902843,
+      "stdout_preview": "{\"exit_code\": 0, \"reason\": \"all requested comparisons passed\", \"receipt\": \"evidence/l1/numerics-20261101T141045Z-702ba6ce/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/receipt.json",
+          "path": "evidence/l1/numerics-20261101T141045Z-702ba6ce/receipt.json",
           "data": {
             "schema": 1,
             "kind": "l1",
@@ -7313,7 +7313,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_time": "2026-11-01T06:45:50.569362+00:00",
+            "start_time": "2026-11-01T14:10:45.491009+00:00",
             "source_hashes": {
               "rtl/anvil_q2_ht2_00_fp_pkg.sv": "c754bf1868de1fe61d06733f1992e23c7883abd2a4e044a52429eda0b32f6dc3",
               "rtl/anvil_q2_ht2_activation_store.sv": "c8cf308a6893da395b846499a740dffedfda3b346f9e0ff0b02cd1a08976b0e6",
@@ -7380,14 +7380,17 @@
               "anvil_q2_ht_reference/rtl/anvil_q2_ht_vector_store.sv": "cc47adeb90beccdabebadc3167e6eb7ab43e7949c7d6ba56cb4921c8353184ce",
               "design/ARCHITECTURE.md": "22bde05c5b84c1ce3aee8cc0692df4a9c226502f2aa41b47f6a5c5aa1ccaca4d",
               "design/SPEC.md": "b75e36e851b0fedcc4d671f61efb2f1b124775458dd3b5d28fc49ccbf9b92fad",
-              "tests/METHOD.md": "051a0e0d4e4a3651d666490c5473ee0a0c5a846a0e203c0311344d7a0335c5ed",
+              "tests/METHOD.md": "413d13049698efebaacb5afa3a6fef2f215f61c371e88f10e71c206bba1e1adc",
               "tests/activation_startup_tb.sv": "5ea74cc5ad54913a12425ee6a80cb0fd6b3c4335bfdf58e0599e46ebdcba34cb",
               "tests/activation_tb.sv": "7aff691b5cd287708e7a7ef9a93a2bcdad85e311c94ba5bead7e2c3e0c377946",
               "tests/benchmark_checks.py": "e3d4e744d30e85b21c238b7f3eeb966d1f5d52970779207d4854c8e5169e9249",
               "tests/benchmark_corpus.json": "f6f7cfabe0b59e3b43aa750de867cb954f393a2018fcec0424eb77f41232bacb",
-              "tests/benchmark_manifest.json": "150bc03cb2642171036a252bc982f983ff0544efd9aec2f874fced83eb5f8d9e",
+              "tests/benchmark_manifest.json": "cf5b29be7269e44f89e6a803c4e933745bbaea04ced19eacd7ee1a2784a1bf33",
               "tests/benchmarks.py": "4d2cf8cb0962e143abc861e3b9d3dae9175fdcb806314d4b21e48efe711c682c",
               "tests/codec_tb.sv": "40d14d84491876c005b4c850685bb41774a083ca7e93930cdc24acf7a01b7ee3",
+              "tests/device_image.py": "9c8976ce94627406e94d7eb89d03f56eeddd8e28e58c393a237d325bdfd35ff3",
+              "tests/device_image_checks.py": "668d58691d9fb1a95c7ce2d62a5f862a453c2f7c63d3afaddc5b507d6c4f5f2c",
+              "tests/device_image_config_tb.sv": "c2f62b5ce93bf8e6d461d7d5f2e7e221c5de4caf229339a67dd7f71e7ab5afe6",
               "tests/dma_tb.sv": "27eb35f322201231dcf3c3a49106433253a91b70c8ac184a17a6a8f960f4b789",
               "tests/integrated.py": "9408a1565e9fa28d43652ab2d28b98b82ca73122400a4267581b4db884e339b4",
               "tests/kv_store_tb.sv": "a8cb698f0fa51aa835bc1f0b755f7fa73063d4bd983a94a9b7147c7a37cf22d9",
@@ -7404,7 +7407,7 @@
               "tests/reproduction.py": "6dcb7194612d63ce2a9e5dee7c4c49da8201e592cc1a9b20ed357211e08bf737",
               "tests/scalar_tb.sv": "87f8b708be9565c191d0a15f41decc1ffb3258d648461b4fc2e8d8c54861fefa",
               "tests/synthesis.py": "6c05f44c739cbf7502a8fae0498fa1af33e74aadcf400ca846807a0404d511c8",
-              "tests/top_tb.sv": "054be724f1f1c995d25105699a259ea041586d15cb7a181527d2ea106bf4e763",
+              "tests/top_tb.sv": "f1454894bff75a38b2e645a9f6bad2f1e93174cd7b233e3f1186ec80e757b0bc",
               "tests/tree_tb.sv": "93f6c84c0ec32387344e6db8d34b27bc6977ee2120ea3e8cf7c258428350ef6f",
               "tests/verify.py": "a02e1afce53fe327723769a1f277c220a0f6c8a4ccfb14a86c7693069d0ca65d"
             },
@@ -7415,14 +7418,14 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:50.983096+00:00",
+                "start_time": "2026-11-01T14:10:45.905803+00:00",
                 "timeout_s": 60,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/000-version-iverilog.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/000-version-iverilog.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/000-version-iverilog.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/000-version-iverilog.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.03442728379741311,
-                "end_time": "2026-11-01T06:45:51.017445+00:00"
+                "duration_s": 0.034455271204933524,
+                "end_time": "2026-11-01T14:10:45.940180+00:00"
               },
               {
                 "argv": [
@@ -7430,14 +7433,14 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:51.018177+00:00",
+                "start_time": "2026-11-01T14:10:45.940917+00:00",
                 "timeout_s": 60,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/001-version-vvp.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/001-version-vvp.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/001-version-vvp.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/001-version-vvp.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.009511427953839302,
-                "end_time": "2026-11-01T06:45:51.027610+00:00"
+                "duration_s": 0.009604523191228509,
+                "end_time": "2026-11-01T14:10:45.950442+00:00"
               },
               {
                 "argv": [
@@ -7447,7 +7450,7 @@
                   "-s",
                   "numerics_tb",
                   "-o",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND0.vvp",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND0.vvp",
                   "-Pnumerics_tb.KIND=0",
                   "rtl/anvil_q2_ht2_00_fp_pkg.sv",
                   "rtl/anvil_q2_ht2_activation_store.sv",
@@ -7515,30 +7518,30 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:51.028424+00:00",
+                "start_time": "2026-11-01T14:10:45.951286+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/002-numerics_tb-KIND0-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/002-numerics_tb-KIND0-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/002-numerics_tb-KIND0-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/002-numerics_tb-KIND0-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.11581884394399822,
-                "end_time": "2026-11-01T06:45:51.144169+00:00"
+                "duration_s": 0.16594977490603924,
+                "end_time": "2026-11-01T14:10:46.117161+00:00"
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND0.vvp",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-0.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND0.vvp",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-0.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:51.145280+00:00",
+                "start_time": "2026-11-01T14:10:46.118156+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/003-numerics_tb-KIND0-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/003-numerics_tb-KIND0-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/003-numerics_tb-KIND0-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/003-numerics_tb-KIND0-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.11580064008012414,
-                "end_time": "2026-11-01T06:45:51.260998+00:00"
+                "duration_s": 0.11610116506926715,
+                "end_time": "2026-11-01T14:10:46.234189+00:00"
               },
               {
                 "argv": [
@@ -7548,7 +7551,7 @@
                   "-s",
                   "numerics_tb",
                   "-o",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND1.vvp",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND1.vvp",
                   "-Pnumerics_tb.KIND=1",
                   "rtl/anvil_q2_ht2_00_fp_pkg.sv",
                   "rtl/anvil_q2_ht2_activation_store.sv",
@@ -7616,30 +7619,30 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:51.484578+00:00",
+                "start_time": "2026-11-01T14:10:46.454809+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/004-numerics_tb-KIND1-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/004-numerics_tb-KIND1-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/004-numerics_tb-KIND1-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/004-numerics_tb-KIND1-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.1661015769932419,
-                "end_time": "2026-11-01T06:45:51.650592+00:00"
+                "duration_s": 0.11592723103240132,
+                "end_time": "2026-11-01T14:10:46.570662+00:00"
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND1.vvp",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-1.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND1.vvp",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-1.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:51.651691+00:00",
+                "start_time": "2026-11-01T14:10:46.571762+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/005-numerics_tb-KIND1-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/005-numerics_tb-KIND1-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/005-numerics_tb-KIND1-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/005-numerics_tb-KIND1-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 1.3197568620089442,
-                "end_time": "2026-11-01T06:45:52.971271+00:00"
+                "duration_s": 1.3183514790143818,
+                "end_time": "2026-11-01T14:10:47.890046+00:00"
               },
               {
                 "argv": [
@@ -7649,7 +7652,7 @@
                   "-s",
                   "numerics_tb",
                   "-o",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND2.vvp",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND2.vvp",
                   "-Pnumerics_tb.KIND=2",
                   "rtl/anvil_q2_ht2_00_fp_pkg.sv",
                   "rtl/anvil_q2_ht2_activation_store.sv",
@@ -7717,30 +7720,30 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:53.172158+00:00",
+                "start_time": "2026-11-01T14:10:48.087432+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/006-numerics_tb-KIND2-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/006-numerics_tb-KIND2-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/006-numerics_tb-KIND2-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/006-numerics_tb-KIND2-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.1664599261712283,
-                "end_time": "2026-11-01T06:45:53.338545+00:00"
+                "duration_s": 0.1160078018438071,
+                "end_time": "2026-11-01T14:10:48.203367+00:00"
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND2.vvp",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-2.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND2.vvp",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-2.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:53.339724+00:00",
+                "start_time": "2026-11-01T14:10:48.204690+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/007-numerics_tb-KIND2-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/007-numerics_tb-KIND2-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/007-numerics_tb-KIND2-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/007-numerics_tb-KIND2-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 1.5194452470168471,
-                "end_time": "2026-11-01T06:45:54.859100+00:00"
+                "duration_s": 1.419040349079296,
+                "end_time": "2026-11-01T14:10:49.623661+00:00"
               },
               {
                 "argv": [
@@ -7750,7 +7753,7 @@
                   "-s",
                   "numerics_tb",
                   "-o",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND3.vvp",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND3.vvp",
                   "-Pnumerics_tb.KIND=3",
                   "rtl/anvil_q2_ht2_00_fp_pkg.sv",
                   "rtl/anvil_q2_ht2_activation_store.sv",
@@ -7818,30 +7821,30 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:57.218996+00:00",
+                "start_time": "2026-11-01T14:10:51.972485+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/008-numerics_tb-KIND3-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/008-numerics_tb-KIND3-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/008-numerics_tb-KIND3-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/008-numerics_tb-KIND3-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.16620176495052874,
-                "end_time": "2026-11-01T06:45:57.385151+00:00"
+                "duration_s": 0.1661626328714192,
+                "end_time": "2026-11-01T14:10:52.138603+00:00"
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND3.vvp",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-3.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND3.vvp",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-3.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:57.386148+00:00",
+                "start_time": "2026-11-01T14:10:52.140037+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/009-numerics_tb-KIND3-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/009-numerics_tb-KIND3-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/009-numerics_tb-KIND3-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/009-numerics_tb-KIND3-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.11587176192551851,
-                "end_time": "2026-11-01T06:45:57.501977+00:00"
+                "duration_s": 0.11604153388179839,
+                "end_time": "2026-11-01T14:10:52.256011+00:00"
               },
               {
                 "argv": [
@@ -7851,7 +7854,7 @@
                   "-s",
                   "numerics_tb",
                   "-o",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND4.vvp",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND4.vvp",
                   "-Pnumerics_tb.KIND=4",
                   "rtl/anvil_q2_ht2_00_fp_pkg.sv",
                   "rtl/anvil_q2_ht2_activation_store.sv",
@@ -7919,30 +7922,30 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:58.138370+00:00",
+                "start_time": "2026-11-01T14:10:52.886054+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/010-numerics_tb-KIND4-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/010-numerics_tb-KIND4-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/010-numerics_tb-KIND4-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/010-numerics_tb-KIND4-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.1662849800195545,
-                "end_time": "2026-11-01T06:45:58.304599+00:00"
+                "duration_s": 0.16620175610296428,
+                "end_time": "2026-11-01T14:10:53.052201+00:00"
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND4.vvp",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-4.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND4.vvp",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-4.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:58.306056+00:00",
+                "start_time": "2026-11-01T14:10:53.053671+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/011-numerics_tb-KIND4-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/011-numerics_tb-KIND4-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/011-numerics_tb-KIND4-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/011-numerics_tb-KIND4-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.16609577694907784,
-                "end_time": "2026-11-01T06:45:58.472083+00:00"
+                "duration_s": 0.16609466611407697,
+                "end_time": "2026-11-01T14:10:53.219696+00:00"
               },
               {
                 "argv": [
@@ -7950,14 +7953,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:58.870371+00:00",
+                "start_time": "2026-11-01T14:10:53.620353+00:00",
                 "timeout_s": 60,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/012-version-verilator.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/012-version-verilator.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/012-version-verilator.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/012-version-verilator.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.11613007402047515,
-                "end_time": "2026-11-01T06:45:58.986428+00:00"
+                "duration_s": 0.11616985406726599,
+                "end_time": "2026-11-01T14:10:53.736450+00:00"
               },
               {
                 "argv": [
@@ -7965,14 +7968,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:58.987785+00:00",
+                "start_time": "2026-11-01T14:10:53.737859+00:00",
                 "timeout_s": 60,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/013-version-c++.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/013-version-c++.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/013-version-c++.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/013-version-c++.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.00542290392331779,
-                "end_time": "2026-11-01T06:45:58.993130+00:00"
+                "duration_s": 0.005649074912071228,
+                "end_time": "2026-11-01T14:10:53.743431+00:00"
               },
               {
                 "argv": [
@@ -7989,7 +7992,7 @@
                   "--top-module",
                   "numerics_tb",
                   "--Mdir",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND0-compile-obj",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND0-compile-obj",
                   "-j",
                   "2",
                   "-GKIND=0",
@@ -8059,29 +8062,29 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:45:58.994436+00:00",
+                "start_time": "2026-11-01T14:10:53.744757+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/014-numerics_tb-KIND0-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/014-numerics_tb-KIND0-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/014-numerics_tb-KIND0-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/014-numerics_tb-KIND0-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 5.177999659907073,
-                "end_time": "2026-11-01T06:46:04.172364+00:00"
+                "duration_s": 4.87803510716185,
+                "end_time": "2026-11-01T14:10:58.622721+00:00"
               },
               {
                 "argv": [
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND0-compile-obj/Vnumerics_tb",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-0.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND0-compile-obj/Vnumerics_tb",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-0.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:04.174457+00:00",
+                "start_time": "2026-11-01T14:10:58.624951+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/015-numerics_tb-KIND0-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/015-numerics_tb-KIND0-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/015-numerics_tb-KIND0-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/015-numerics_tb-KIND0-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 1.2689220700412989,
-                "end_time": "2026-11-01T06:46:05.443295+00:00"
+                "duration_s": 1.2187561690807343,
+                "end_time": "2026-11-01T14:10:59.843625+00:00"
               },
               {
                 "argv": [
@@ -8098,7 +8101,7 @@
                   "--top-module",
                   "numerics_tb",
                   "--Mdir",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND1-compile-obj",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND1-compile-obj",
                   "-j",
                   "2",
                   "-GKIND=1",
@@ -8168,29 +8171,29 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:05.668142+00:00",
+                "start_time": "2026-11-01T14:11:00.071116+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/016-numerics_tb-KIND1-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/016-numerics_tb-KIND1-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/016-numerics_tb-KIND1-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/016-numerics_tb-KIND1-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 4.87715603900142,
-                "end_time": "2026-11-01T06:46:10.545225+00:00"
+                "duration_s": 4.828638379927725,
+                "end_time": "2026-11-01T14:11:04.899682+00:00"
               },
               {
                 "argv": [
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND1-compile-obj/Vnumerics_tb",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-1.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND1-compile-obj/Vnumerics_tb",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-1.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:10.547369+00:00",
+                "start_time": "2026-11-01T14:11:04.901892+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/017-numerics_tb-KIND1-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/017-numerics_tb-KIND1-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/017-numerics_tb-KIND1-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/017-numerics_tb-KIND1-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.6679168678820133,
-                "end_time": "2026-11-01T06:46:11.215199+00:00"
+                "duration_s": 0.667484775884077,
+                "end_time": "2026-11-01T14:11:05.569291+00:00"
               },
               {
                 "argv": [
@@ -8207,7 +8210,7 @@
                   "--top-module",
                   "numerics_tb",
                   "--Mdir",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND2-compile-obj",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND2-compile-obj",
                   "-j",
                   "2",
                   "-GKIND=2",
@@ -8277,29 +8280,29 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:11.419447+00:00",
+                "start_time": "2026-11-01T14:11:05.770238+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/018-numerics_tb-KIND2-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/018-numerics_tb-KIND2-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/018-numerics_tb-KIND2-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/018-numerics_tb-KIND2-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 4.175787787185982,
-                "end_time": "2026-11-01T06:46:15.595163+00:00"
+                "duration_s": 5.129268090939149,
+                "end_time": "2026-11-01T14:11:10.899435+00:00"
               },
               {
                 "argv": [
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND2-compile-obj/Vnumerics_tb",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-2.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND2-compile-obj/Vnumerics_tb",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-2.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:15.597340+00:00",
+                "start_time": "2026-11-01T14:11:10.901857+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/019-numerics_tb-KIND2-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/019-numerics_tb-KIND2-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/019-numerics_tb-KIND2-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/019-numerics_tb-KIND2-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.6677176761440933,
-                "end_time": "2026-11-01T06:46:16.264971+00:00"
+                "duration_s": 0.6681100919377059,
+                "end_time": "2026-11-01T14:11:11.569883+00:00"
               },
               {
                 "argv": [
@@ -8316,7 +8319,7 @@
                   "--top-module",
                   "numerics_tb",
                   "--Mdir",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND3-compile-obj",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND3-compile-obj",
                   "-j",
                   "2",
                   "-GKIND=3",
@@ -8386,29 +8389,29 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:18.573889+00:00",
+                "start_time": "2026-11-01T14:11:13.706607+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/020-numerics_tb-KIND3-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/020-numerics_tb-KIND3-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/020-numerics_tb-KIND3-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/020-numerics_tb-KIND3-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 5.18054234306328,
-                "end_time": "2026-11-01T06:46:23.754388+00:00"
+                "duration_s": 4.928162216907367,
+                "end_time": "2026-11-01T14:11:18.634730+00:00"
               },
               {
                 "argv": [
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND3-compile-obj/Vnumerics_tb",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-3.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND3-compile-obj/Vnumerics_tb",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-3.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:23.756910+00:00",
+                "start_time": "2026-11-01T14:11:18.637189+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/021-numerics_tb-KIND3-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/021-numerics_tb-KIND3-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/021-numerics_tb-KIND3-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/021-numerics_tb-KIND3-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 6.633238709066063,
-                "end_time": "2026-11-01T06:46:30.390069+00:00"
+                "duration_s": 6.08164601912722,
+                "end_time": "2026-11-01T14:11:24.718773+00:00"
               },
               {
                 "argv": [
@@ -8425,7 +8428,7 @@
                   "--top-module",
                   "numerics_tb",
                   "--Mdir",
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND4-compile-obj",
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND4-compile-obj",
                   "-j",
                   "2",
                   "-GKIND=4",
@@ -8495,29 +8498,29 @@
                   "tests/numerics_tb.sv"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:31.190427+00:00",
+                "start_time": "2026-11-01T14:11:25.524570+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/022-numerics_tb-KIND4-compile.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/022-numerics_tb-KIND4-compile.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/022-numerics_tb-KIND4-compile.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/022-numerics_tb-KIND4-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 5.229659463046119,
-                "end_time": "2026-11-01T06:46:36.420013+00:00"
+                "duration_s": 5.228545198915526,
+                "end_time": "2026-11-01T14:11:30.753029+00:00"
               },
               {
                 "argv": [
-                  "evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics_tb-KIND4-compile-obj/Vnumerics_tb",
-                  "+vectors=evidence/l1/numerics-20261101T064550Z-cbea2bfb/numerics-4.txt"
+                  "evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics_tb-KIND4-compile-obj/Vnumerics_tb",
+                  "+vectors=evidence/l1/numerics-20261101T141045Z-702ba6ce/numerics-4.txt"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T06:46:36.422801+00:00",
+                "start_time": "2026-11-01T14:11:30.755497+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/023-numerics_tb-KIND4-simulate.stdout.txt",
-                "stderr": "evidence/l1/numerics-20261101T064550Z-cbea2bfb/023-numerics_tb-KIND4-simulate.stderr.txt",
+                "stdout": "evidence/l1/numerics-20261101T141045Z-702ba6ce/023-numerics_tb-KIND4-simulate.stdout.txt",
+                "stderr": "evidence/l1/numerics-20261101T141045Z-702ba6ce/023-numerics_tb-KIND4-simulate.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 3.0739875889848918,
-                "end_time": "2026-11-01T06:46:39.496693+00:00"
+                "duration_s": 3.0745217949151993,
+                "end_time": "2026-11-01T14:11:33.829940+00:00"
               }
             ],
             "repair_of": null,
@@ -8593,7 +8596,7 @@
                 "simulator": "verilator"
               }
             ],
-            "end_time": "2026-11-01T06:46:39.513905+00:00",
+            "end_time": "2026-11-01T14:11:33.846788+00:00",
             "exit_code": 0,
             "reason": "all requested comparisons passed",
             "source_hashes_unchanged": true
