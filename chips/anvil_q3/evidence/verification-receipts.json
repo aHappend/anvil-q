@@ -5,7 +5,7 @@
       "attempt_id": 571,
       "duration_s": 823.5770477659535,
       "stdout_preview": "evidence/check-benchmark/20261101T033219Z-6b3d3f6ef4d6/receipt.json\n",
-      "receipt_count": 40,
+      "receipt_count": 39,
       "receipts": [
         {
           "path": "evidence/check-synthesis/20261101T040121Z-de3748350a15/identifier-adaptation-checker.json",
@@ -706,7 +706,153 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/model_provenance.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/copy-manifest.json",
+          "data": {
+            "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+            "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+            "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+            "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+            "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+            "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+            "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+            "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+            "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+            "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+            "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+            "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+            "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+            "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+            "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+            "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+            "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+            "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+            "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+            "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+            "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+            "design/ARCHITECTURE.md": "54b61fef01ea4b09c197707e634b50f0887e7b5236811c663799159122178f6c",
+            "design/SPEC.md": "3c0064d42a1c9939b37328af11fd5dcbb1557a6277a2572568226df45b54f6ed",
+            "design/model_provenance.json": "abcc1b75cee007372b0cb9d13b6e1b37dd0abe4a4857c66ea1d49f61e8011128",
+            "design/qwen2_5_3b_awq_config.json": "9366ca39ab036f807f40ff93f03d77ce910d512174150821a87a87080c2b8c65",
+            "fpga/INTEGRATION.md": "035a1ba109575d634cf0a024e2acb28a7e26bde47314026133a4f65a5050ec58",
+            "fpga/anvil_q3.qsf": "af4b3482d5f8579969a576d7b3fd535e8b219122fd825520cfa94f5c7f5a2f1d",
+            "fpga/anvil_q3.sdc": "9207cb04a8dcb1c5ad932550c606fbb67e0928d419d7039e6a346539818836c4",
+            "fpga/anvil_q3_board_top.sv": "e7f3b5d9a0f671c5c2448f375df68d5e75fa74f0559dc80d0dcae3c714142414",
+            "fpga/anvil_q3_ddr_bridge.sv": "fe61d978c7fa55beda9bdb28a49af70e22ab370dea7fd96b60ec7e817d941712",
+            "fpga/anvil_q3_fpga_shell.sv": "b02247ef0d52030cf0cd70fc9c25df64cc500560b373d840316feba536dfcdbe",
+            "fpga/anvil_q3_host.h": "fdf698ee72f4a0b445628d988e5570c6dd87649f0fc2ac06ae2fd086820bcb62",
+            "fpga/anvil_q3_host_control.sv": "9e84c8e5c40cf5ce33f2c5986fec84053fd75ff9901f09c958a07e8bedf41adf",
+            "fpga/anvil_q3_memory_map.sv": "3cfb1812a5bab5416fc39e013bc1863fbfabe31d8b6b5d983be7f82e2ba55a68",
+            "fpga/anvil_q3_reset_release.sv": "8258c52bea7d6c324d51a4998919c4d5b152269804bb94fe386672ade57dfe47",
+            "fpga/board_clocks.sdc": "e4a81b0de641cf6914ce80cbad3413282726eb8d134614810832fbb6deb466d7",
+            "fpga/board_ip.qip": "d7266a372130cdc6853f8c20d7e294b6fce0a828b786b59e1bc9e6e25b0b0118",
+            "fpga/board_manifest.example.json": "5421d71c7b82bbf6dfade06e32e4520b821b7bbe1a20fb30057da19d9b0e3e8d",
+            "fpga/board_manifest.json": "4bf78d746d711e60b547968a50198bdad3ce610e4e11324e010f788d8d66fa15",
+            "fpga/board_pins.qsf": "3d9dea57bffa211bc61274e6236d14deaca45cfd93ff6c757c0650fb826a0bd0",
+            "fpga/build.tcl": "c16779ce4417553aad80c92b821ebc08c7ab35ce40758cc5d224a119a175d352",
+            "fpga/memory_layout.py": "cb94cbea8223ae29481735aa59abfa609622a2b4daec26f1619fe939adb74781",
+            "fpga/prepare_quartus.py": "1d44c5cfce15a5e9092918d75174a3aa0c322d179f5adcf7b7cb39f04bfdd01e",
+            "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+            "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+            "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+            "rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+            "rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+            "rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+            "rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+            "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+            "rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+            "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+            "rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+            "rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+            "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+            "rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+            "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+            "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+            "rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+            "rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+            "rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+            "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+            "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+            "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+            "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+            "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+            "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+            "rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+            "tests/README.md": "c069cff3fc5b76070f37419ff06146563e22921415a06c500c7533d77a4d273e",
+            "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
+            "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
+            "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
+            "tests/baseline_discovery.py": "7b5f5830750ceb06e3efaab3f84d03d791eb2c8b49a7f473a597827ce11a802a",
+            "tests/benchmark_checks.py": "382644941387fbf52ac746b24e191987c45db946840ad020dd6ce1e31f251989",
+            "tests/benchmark_corpus.json": "40d905b7bc78f30d6e4c58de83f4aebe193e143311ca80e407502db45dea70a8",
+            "tests/benchmark_lock.json": "f6508e23809f108ffe1fccfb403386cc439d792d9951702797d8304e3b237511",
+            "tests/boundary_checks.py": "5e314b3ae3d8cff915d9f899b57d7d2c3a159c08a36294f89564272d8f3034f9",
+            "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
+            "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
+            "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
+            "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+            "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+            "tests/compiler_admission_checks.py": "6fdac7ec3bf8076580ae5bd661955b6ab847cb7c15a1f924a0a69ebf64f09cd1",
+            "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+            "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
+            "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
+            "tests/delivery_repair_checks.py": "f979e35241444238dc51633c586c1f8dc59bbfcfc55920a9eef974d9a709d0eb",
+            "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
+            "tests/execution.py": "5d855db119b25cf1682ad088a8b5de36786cba4a8b89ae5fb8f9fe75cc40de90",
+            "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
+            "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
+            "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
+            "tests/harness_checks.py": "1a1da65efd15655c6af76a79c86beba88b01065099ca34355e875eb3bef732c9",
+            "tests/host_tb.sv": "0e14de1621a499842182767f24be2ac56d380f743817cb30eca8eb4437e3381e",
+            "tests/icarus_throughput_probe.py": "e40da487c5bb332821a3601e50b085729ba82f2453b23cd719a61d45a67da3be",
+            "tests/leaf_checks.py": "1244a6f36061559f0c6303dcad1bfb7646b349661748f0f626952b547504cdfc",
+            "tests/map_checks.py": "d31737267617be8780f1d59f3c87b38d2b03d10faa49b80ac92d8886218c74a4",
+            "tests/map_tb.sv": "3d0fefcc5183fe0d488a25eeaabeada8b1e64881aa87172816be48a386ea703c",
+            "tests/math_memory_checks.py": "39d885029f3fbf955ef5e1dbd0734050336d6abb29a69442c78a0236b8906776",
+            "tests/math_memory_tb.sv": "56efd04c9a1144b0082db9ce561213f5e50a00ff93bee37e2b48d9a2199053e3",
+            "tests/mutation_checks.py": "c1b0c22b966a140bb3e7b33a259a363cb26e565041b4e318f3ef181ea00c163f",
+            "tests/mutation_repair_checks.py": "a5f52389033df85e01ef26fed19bd17a913b8eb6d9a38a93921c9946c11d33a9",
+            "tests/native_baselines.py": "93acfe1dd49c5a9ca591b8b444133380539dc794b499590b838a8f6815069c38",
+            "tests/official_slice.py": "bf74e9c43ea685a84ee397a5a452426e9c1e99b76372310438b60b8fa19d578c",
+            "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
+            "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
+            "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
+            "tests/preparation_checks.py": "2ba52dfcb8e53fe2115d1293d248740b703e045efb69d47c00c676e18ebaa42c",
+            "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
+            "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
+            "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
+            "tests/public_assets.json": "c76fe680fdcc406b498e2bb8e1ca88a45ff1233cf3e079bb6acf8db409b1c549",
+            "tests/public_assets.py": "668a21834a4a9d4977a5c4ef56f8bfd7a18c740ccbd7a1a880b9c31f03d0ff64",
+            "tests/quality_reference.py": "a38d7609d9eb137fdcf6651db0bc68b7b9843856aa75114bf8fc06828b976bbe",
+            "tests/receipt_write_checks.py": "fa64a6a2a9b4960982e0fafa0f30d4692f4fdb307e4594a1c843d2bdd01e1dbf",
+            "tests/reference.py": "63fddc7b43063a5e2a48142fedd7eedccc551cc23bc4e9d34f19a194cebfb5d5",
+            "tests/reproduce.py": "3f0afc1d9f504aba19031f5b387579edcb573d38ac4a34a1913412524b648c99",
+            "tests/reproduce_worker.py": "019cde77cc1565c8b785ba7cdddb513d2e8eee1cc4039179026622ebff80d036",
+            "tests/responder_scan_checks.py": "a51337a88421c288561bdd782831adbb955ebad269432d1d3e54b568fc9bc3b5",
+            "tests/scalar_checks.py": "8b4ce68cef9f2d8a093e0e66ec483276c970fb66f38119e2f029b7ba81e04f00",
+            "tests/scalar_tb.sv": "0cd208c6a718efe1ecfad8ad26db2b28029c389585f777c914dc75267b70150c",
+            "tests/scheduler_checks.py": "92fd8fd2c0d6591a919a90ea58a858ccba35f36fd8e284e1365b3f89b02bb546",
+            "tests/scheduler_regression.py": "ee40eb3a9b6671bbd53707bb67513f2152abb7a49f31c2bb27f5650e97e1521e",
+            "tests/scheduler_tb.sv": "1ae84d0e11b25d592ff2b4ca0e99749373a241b73d49bd3a228916517de5176d",
+            "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
+            "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
+            "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+            "tests/startup_retention_checks.py": "8b3688cd059d4602f511e26c0f08ff5b02d6c47ec97f88ff1d6b46f770ea9f08",
+            "tests/startup_scalability_checks.py": "bcb62a072b805423630f5e6049ddfeb1b7d7b7b913d496d70ab58af78b1b8a53",
+            "tests/structure_checks.py": "001d8b283cbdb619b200706e1ce355de60821da83bb86c69114dca65e4df3485",
+            "tests/synthesis_checks.py": "ff519ee54d235765e811589302ec162becb04548dc9c266608eb13c9fab28c21",
+            "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
+            "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
+            "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
+            "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
+            "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
+            "tests/top_tb.sv": "3dd76511820b07345a90979988e960f1bd6472eae96459f290b1c78e06eea9b2",
+            "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
+            "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
+            "tests/verify.py": "e2908aa2e345426614fcb990320518e40c7b7d38678b9b820b6700d61d474b6a"
+          }
+        },
+        {
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -725,7 +871,7 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -763,67 +909,77 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/boolean-schema/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.example.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "f7bb2a4c48fc411a5e08275a466e4e6d06a736f6207645b3e55b5eab55d486c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
+            "device": "10AX115N2F45E1SG",
+            "board": {
+              "manufacturer": null,
+              "model": null,
+              "revision": null,
+              "documentation_url": null
             },
-            "unmet": [
-              "schema 1 and exact Arria 10 GX target 10AX115N2F45E1SG"
-            ]
+            "ddr4": {
+              "part": null,
+              "channels": null,
+              "data_width_bits": null,
+              "capacity_bytes": null,
+              "documentation_url": null
+            },
+            "pcie": {
+              "generation": 3,
+              "lanes": 8,
+              "ip_name": null,
+              "ip_version": null,
+              "license_description": null
+            },
+            "quartus_version": null,
+            "top_module": null,
+            "top_source": null,
+            "pin_qsf": null,
+            "board_sdc": null,
+            "qip_files": [],
+            "support_sources": [],
+            "timing_exceptions": []
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-boolean/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "6e376a13742029b602cee12517aff732e517b66a0465138e5068e79e7079d1c8",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNVERIFIED claims only: physical board/device identity, schematic-backed pins, DDR4 arrangement and licensed generated IP have not been established",
+            "device": "10AX115N2F45E1SG",
+            "timing_exceptions": [],
+            "quartus_version": "17.1.0 Build 590 10/25/2017 SJ Standard Edition",
+            "board": {
+              "manufacturer": "Terasic",
+              "model": "DE10-Pro-SX",
+              "revision": "B",
+              "documentation_url": "https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1144"
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-float/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "0d094150bae5ee509090318dd02896a0f8de30a135dd645af8936c954c769d1e",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "ddr4": {
+              "part": "MT40A1G8SA-075:E",
+              "documentation_url": "https://www.micron.com/products/memory/dram-components/ddr4-sdram",
+              "channels": 2,
+              "data_width_bits": 64,
+              "capacity_bytes": 8589934592
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-negative/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "2f25165c87347d602563dac480743a6c381bbec68860bac6058c4543f3f189c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "pcie": {
+              "ip_name": "altera_pcie_a10_hip",
+              "ip_version": "17.1",
+              "license_description": "Quartus Prime Standard Edition IP Base Suite",
+              "generation": 3,
+              "lanes": 8
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
+            "top_module": "anvil_q3_board_top",
+            "top_source": "fpga/anvil_q3_board_top.sv",
+            "pin_qsf": "fpga/board_pins.qsf",
+            "board_sdc": "fpga/board_clocks.sdc",
+            "qip_files": [
+              "fpga/board_ip.qip"
+            ],
+            "support_sources": []
           }
         },
         {
@@ -15746,7 +15902,7 @@
       "attempt_id": 572,
       "duration_s": 896.0361849628389,
       "stdout_preview": "evidence/check-mutations/20261101T034613Z-e1e87a9e993d/receipt.json\n",
-      "receipt_count": 40,
+      "receipt_count": 39,
       "receipts": [
         {
           "path": "evidence/check-synthesis/20261101T040121Z-de3748350a15/identifier-adaptation-checker.json",
@@ -16447,7 +16603,153 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/model_provenance.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/copy-manifest.json",
+          "data": {
+            "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+            "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+            "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+            "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+            "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+            "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+            "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+            "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+            "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+            "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+            "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+            "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+            "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+            "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+            "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+            "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+            "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+            "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+            "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+            "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+            "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+            "design/ARCHITECTURE.md": "54b61fef01ea4b09c197707e634b50f0887e7b5236811c663799159122178f6c",
+            "design/SPEC.md": "3c0064d42a1c9939b37328af11fd5dcbb1557a6277a2572568226df45b54f6ed",
+            "design/model_provenance.json": "abcc1b75cee007372b0cb9d13b6e1b37dd0abe4a4857c66ea1d49f61e8011128",
+            "design/qwen2_5_3b_awq_config.json": "9366ca39ab036f807f40ff93f03d77ce910d512174150821a87a87080c2b8c65",
+            "fpga/INTEGRATION.md": "035a1ba109575d634cf0a024e2acb28a7e26bde47314026133a4f65a5050ec58",
+            "fpga/anvil_q3.qsf": "af4b3482d5f8579969a576d7b3fd535e8b219122fd825520cfa94f5c7f5a2f1d",
+            "fpga/anvil_q3.sdc": "9207cb04a8dcb1c5ad932550c606fbb67e0928d419d7039e6a346539818836c4",
+            "fpga/anvil_q3_board_top.sv": "e7f3b5d9a0f671c5c2448f375df68d5e75fa74f0559dc80d0dcae3c714142414",
+            "fpga/anvil_q3_ddr_bridge.sv": "fe61d978c7fa55beda9bdb28a49af70e22ab370dea7fd96b60ec7e817d941712",
+            "fpga/anvil_q3_fpga_shell.sv": "b02247ef0d52030cf0cd70fc9c25df64cc500560b373d840316feba536dfcdbe",
+            "fpga/anvil_q3_host.h": "fdf698ee72f4a0b445628d988e5570c6dd87649f0fc2ac06ae2fd086820bcb62",
+            "fpga/anvil_q3_host_control.sv": "9e84c8e5c40cf5ce33f2c5986fec84053fd75ff9901f09c958a07e8bedf41adf",
+            "fpga/anvil_q3_memory_map.sv": "3cfb1812a5bab5416fc39e013bc1863fbfabe31d8b6b5d983be7f82e2ba55a68",
+            "fpga/anvil_q3_reset_release.sv": "8258c52bea7d6c324d51a4998919c4d5b152269804bb94fe386672ade57dfe47",
+            "fpga/board_clocks.sdc": "e4a81b0de641cf6914ce80cbad3413282726eb8d134614810832fbb6deb466d7",
+            "fpga/board_ip.qip": "d7266a372130cdc6853f8c20d7e294b6fce0a828b786b59e1bc9e6e25b0b0118",
+            "fpga/board_manifest.example.json": "5421d71c7b82bbf6dfade06e32e4520b821b7bbe1a20fb30057da19d9b0e3e8d",
+            "fpga/board_manifest.json": "4bf78d746d711e60b547968a50198bdad3ce610e4e11324e010f788d8d66fa15",
+            "fpga/board_pins.qsf": "3d9dea57bffa211bc61274e6236d14deaca45cfd93ff6c757c0650fb826a0bd0",
+            "fpga/build.tcl": "c16779ce4417553aad80c92b821ebc08c7ab35ce40758cc5d224a119a175d352",
+            "fpga/memory_layout.py": "cb94cbea8223ae29481735aa59abfa609622a2b4daec26f1619fe939adb74781",
+            "fpga/prepare_quartus.py": "1d44c5cfce15a5e9092918d75174a3aa0c322d179f5adcf7b7cb39f04bfdd01e",
+            "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+            "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+            "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+            "rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+            "rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+            "rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+            "rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+            "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+            "rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+            "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+            "rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+            "rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+            "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+            "rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+            "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+            "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+            "rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+            "rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+            "rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+            "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+            "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+            "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+            "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+            "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+            "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+            "rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+            "tests/README.md": "c069cff3fc5b76070f37419ff06146563e22921415a06c500c7533d77a4d273e",
+            "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
+            "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
+            "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
+            "tests/baseline_discovery.py": "7b5f5830750ceb06e3efaab3f84d03d791eb2c8b49a7f473a597827ce11a802a",
+            "tests/benchmark_checks.py": "382644941387fbf52ac746b24e191987c45db946840ad020dd6ce1e31f251989",
+            "tests/benchmark_corpus.json": "40d905b7bc78f30d6e4c58de83f4aebe193e143311ca80e407502db45dea70a8",
+            "tests/benchmark_lock.json": "f6508e23809f108ffe1fccfb403386cc439d792d9951702797d8304e3b237511",
+            "tests/boundary_checks.py": "5e314b3ae3d8cff915d9f899b57d7d2c3a159c08a36294f89564272d8f3034f9",
+            "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
+            "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
+            "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
+            "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+            "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+            "tests/compiler_admission_checks.py": "6fdac7ec3bf8076580ae5bd661955b6ab847cb7c15a1f924a0a69ebf64f09cd1",
+            "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+            "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
+            "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
+            "tests/delivery_repair_checks.py": "f979e35241444238dc51633c586c1f8dc59bbfcfc55920a9eef974d9a709d0eb",
+            "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
+            "tests/execution.py": "5d855db119b25cf1682ad088a8b5de36786cba4a8b89ae5fb8f9fe75cc40de90",
+            "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
+            "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
+            "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
+            "tests/harness_checks.py": "1a1da65efd15655c6af76a79c86beba88b01065099ca34355e875eb3bef732c9",
+            "tests/host_tb.sv": "0e14de1621a499842182767f24be2ac56d380f743817cb30eca8eb4437e3381e",
+            "tests/icarus_throughput_probe.py": "e40da487c5bb332821a3601e50b085729ba82f2453b23cd719a61d45a67da3be",
+            "tests/leaf_checks.py": "1244a6f36061559f0c6303dcad1bfb7646b349661748f0f626952b547504cdfc",
+            "tests/map_checks.py": "d31737267617be8780f1d59f3c87b38d2b03d10faa49b80ac92d8886218c74a4",
+            "tests/map_tb.sv": "3d0fefcc5183fe0d488a25eeaabeada8b1e64881aa87172816be48a386ea703c",
+            "tests/math_memory_checks.py": "39d885029f3fbf955ef5e1dbd0734050336d6abb29a69442c78a0236b8906776",
+            "tests/math_memory_tb.sv": "56efd04c9a1144b0082db9ce561213f5e50a00ff93bee37e2b48d9a2199053e3",
+            "tests/mutation_checks.py": "c1b0c22b966a140bb3e7b33a259a363cb26e565041b4e318f3ef181ea00c163f",
+            "tests/mutation_repair_checks.py": "a5f52389033df85e01ef26fed19bd17a913b8eb6d9a38a93921c9946c11d33a9",
+            "tests/native_baselines.py": "93acfe1dd49c5a9ca591b8b444133380539dc794b499590b838a8f6815069c38",
+            "tests/official_slice.py": "bf74e9c43ea685a84ee397a5a452426e9c1e99b76372310438b60b8fa19d578c",
+            "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
+            "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
+            "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
+            "tests/preparation_checks.py": "2ba52dfcb8e53fe2115d1293d248740b703e045efb69d47c00c676e18ebaa42c",
+            "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
+            "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
+            "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
+            "tests/public_assets.json": "c76fe680fdcc406b498e2bb8e1ca88a45ff1233cf3e079bb6acf8db409b1c549",
+            "tests/public_assets.py": "668a21834a4a9d4977a5c4ef56f8bfd7a18c740ccbd7a1a880b9c31f03d0ff64",
+            "tests/quality_reference.py": "a38d7609d9eb137fdcf6651db0bc68b7b9843856aa75114bf8fc06828b976bbe",
+            "tests/receipt_write_checks.py": "fa64a6a2a9b4960982e0fafa0f30d4692f4fdb307e4594a1c843d2bdd01e1dbf",
+            "tests/reference.py": "63fddc7b43063a5e2a48142fedd7eedccc551cc23bc4e9d34f19a194cebfb5d5",
+            "tests/reproduce.py": "3f0afc1d9f504aba19031f5b387579edcb573d38ac4a34a1913412524b648c99",
+            "tests/reproduce_worker.py": "019cde77cc1565c8b785ba7cdddb513d2e8eee1cc4039179026622ebff80d036",
+            "tests/responder_scan_checks.py": "a51337a88421c288561bdd782831adbb955ebad269432d1d3e54b568fc9bc3b5",
+            "tests/scalar_checks.py": "8b4ce68cef9f2d8a093e0e66ec483276c970fb66f38119e2f029b7ba81e04f00",
+            "tests/scalar_tb.sv": "0cd208c6a718efe1ecfad8ad26db2b28029c389585f777c914dc75267b70150c",
+            "tests/scheduler_checks.py": "92fd8fd2c0d6591a919a90ea58a858ccba35f36fd8e284e1365b3f89b02bb546",
+            "tests/scheduler_regression.py": "ee40eb3a9b6671bbd53707bb67513f2152abb7a49f31c2bb27f5650e97e1521e",
+            "tests/scheduler_tb.sv": "1ae84d0e11b25d592ff2b4ca0e99749373a241b73d49bd3a228916517de5176d",
+            "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
+            "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
+            "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+            "tests/startup_retention_checks.py": "8b3688cd059d4602f511e26c0f08ff5b02d6c47ec97f88ff1d6b46f770ea9f08",
+            "tests/startup_scalability_checks.py": "bcb62a072b805423630f5e6049ddfeb1b7d7b7b913d496d70ab58af78b1b8a53",
+            "tests/structure_checks.py": "001d8b283cbdb619b200706e1ce355de60821da83bb86c69114dca65e4df3485",
+            "tests/synthesis_checks.py": "ff519ee54d235765e811589302ec162becb04548dc9c266608eb13c9fab28c21",
+            "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
+            "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
+            "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
+            "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
+            "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
+            "tests/top_tb.sv": "3dd76511820b07345a90979988e960f1bd6472eae96459f290b1c78e06eea9b2",
+            "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
+            "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
+            "tests/verify.py": "e2908aa2e345426614fcb990320518e40c7b7d38678b9b820b6700d61d474b6a"
+          }
+        },
+        {
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -16466,7 +16768,7 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -16504,67 +16806,77 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/boolean-schema/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.example.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "f7bb2a4c48fc411a5e08275a466e4e6d06a736f6207645b3e55b5eab55d486c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
+            "device": "10AX115N2F45E1SG",
+            "board": {
+              "manufacturer": null,
+              "model": null,
+              "revision": null,
+              "documentation_url": null
             },
-            "unmet": [
-              "schema 1 and exact Arria 10 GX target 10AX115N2F45E1SG"
-            ]
+            "ddr4": {
+              "part": null,
+              "channels": null,
+              "data_width_bits": null,
+              "capacity_bytes": null,
+              "documentation_url": null
+            },
+            "pcie": {
+              "generation": 3,
+              "lanes": 8,
+              "ip_name": null,
+              "ip_version": null,
+              "license_description": null
+            },
+            "quartus_version": null,
+            "top_module": null,
+            "top_source": null,
+            "pin_qsf": null,
+            "board_sdc": null,
+            "qip_files": [],
+            "support_sources": [],
+            "timing_exceptions": []
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-boolean/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "6e376a13742029b602cee12517aff732e517b66a0465138e5068e79e7079d1c8",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNVERIFIED claims only: physical board/device identity, schematic-backed pins, DDR4 arrangement and licensed generated IP have not been established",
+            "device": "10AX115N2F45E1SG",
+            "timing_exceptions": [],
+            "quartus_version": "17.1.0 Build 590 10/25/2017 SJ Standard Edition",
+            "board": {
+              "manufacturer": "Terasic",
+              "model": "DE10-Pro-SX",
+              "revision": "B",
+              "documentation_url": "https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1144"
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-float/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "0d094150bae5ee509090318dd02896a0f8de30a135dd645af8936c954c769d1e",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "ddr4": {
+              "part": "MT40A1G8SA-075:E",
+              "documentation_url": "https://www.micron.com/products/memory/dram-components/ddr4-sdram",
+              "channels": 2,
+              "data_width_bits": 64,
+              "capacity_bytes": 8589934592
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-negative/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "2f25165c87347d602563dac480743a6c381bbec68860bac6058c4543f3f189c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "pcie": {
+              "ip_name": "altera_pcie_a10_hip",
+              "ip_version": "17.1",
+              "license_description": "Quartus Prime Standard Edition IP Base Suite",
+              "generation": 3,
+              "lanes": 8
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
+            "top_module": "anvil_q3_board_top",
+            "top_source": "fpga/anvil_q3_board_top.sv",
+            "pin_qsf": "fpga/board_pins.qsf",
+            "board_sdc": "fpga/board_clocks.sdc",
+            "qip_files": [
+              "fpga/board_ip.qip"
+            ],
+            "support_sources": []
           }
         },
         {
@@ -31487,7 +31799,7 @@
       "attempt_id": 570,
       "duration_s": 126.49379313015379,
       "stdout_preview": "evidence/check-behavior/20261101T033003Z-0b74066c2701/receipt.json\n",
-      "receipt_count": 40,
+      "receipt_count": 39,
       "receipts": [
         {
           "path": "evidence/check-synthesis/20261101T040121Z-de3748350a15/identifier-adaptation-checker.json",
@@ -32188,7 +32500,153 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/model_provenance.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/copy-manifest.json",
+          "data": {
+            "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+            "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+            "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+            "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+            "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+            "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+            "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+            "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+            "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+            "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+            "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+            "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+            "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+            "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+            "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+            "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+            "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+            "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+            "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+            "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+            "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+            "design/ARCHITECTURE.md": "54b61fef01ea4b09c197707e634b50f0887e7b5236811c663799159122178f6c",
+            "design/SPEC.md": "3c0064d42a1c9939b37328af11fd5dcbb1557a6277a2572568226df45b54f6ed",
+            "design/model_provenance.json": "abcc1b75cee007372b0cb9d13b6e1b37dd0abe4a4857c66ea1d49f61e8011128",
+            "design/qwen2_5_3b_awq_config.json": "9366ca39ab036f807f40ff93f03d77ce910d512174150821a87a87080c2b8c65",
+            "fpga/INTEGRATION.md": "035a1ba109575d634cf0a024e2acb28a7e26bde47314026133a4f65a5050ec58",
+            "fpga/anvil_q3.qsf": "af4b3482d5f8579969a576d7b3fd535e8b219122fd825520cfa94f5c7f5a2f1d",
+            "fpga/anvil_q3.sdc": "9207cb04a8dcb1c5ad932550c606fbb67e0928d419d7039e6a346539818836c4",
+            "fpga/anvil_q3_board_top.sv": "e7f3b5d9a0f671c5c2448f375df68d5e75fa74f0559dc80d0dcae3c714142414",
+            "fpga/anvil_q3_ddr_bridge.sv": "fe61d978c7fa55beda9bdb28a49af70e22ab370dea7fd96b60ec7e817d941712",
+            "fpga/anvil_q3_fpga_shell.sv": "b02247ef0d52030cf0cd70fc9c25df64cc500560b373d840316feba536dfcdbe",
+            "fpga/anvil_q3_host.h": "fdf698ee72f4a0b445628d988e5570c6dd87649f0fc2ac06ae2fd086820bcb62",
+            "fpga/anvil_q3_host_control.sv": "9e84c8e5c40cf5ce33f2c5986fec84053fd75ff9901f09c958a07e8bedf41adf",
+            "fpga/anvil_q3_memory_map.sv": "3cfb1812a5bab5416fc39e013bc1863fbfabe31d8b6b5d983be7f82e2ba55a68",
+            "fpga/anvil_q3_reset_release.sv": "8258c52bea7d6c324d51a4998919c4d5b152269804bb94fe386672ade57dfe47",
+            "fpga/board_clocks.sdc": "e4a81b0de641cf6914ce80cbad3413282726eb8d134614810832fbb6deb466d7",
+            "fpga/board_ip.qip": "d7266a372130cdc6853f8c20d7e294b6fce0a828b786b59e1bc9e6e25b0b0118",
+            "fpga/board_manifest.example.json": "5421d71c7b82bbf6dfade06e32e4520b821b7bbe1a20fb30057da19d9b0e3e8d",
+            "fpga/board_manifest.json": "4bf78d746d711e60b547968a50198bdad3ce610e4e11324e010f788d8d66fa15",
+            "fpga/board_pins.qsf": "3d9dea57bffa211bc61274e6236d14deaca45cfd93ff6c757c0650fb826a0bd0",
+            "fpga/build.tcl": "c16779ce4417553aad80c92b821ebc08c7ab35ce40758cc5d224a119a175d352",
+            "fpga/memory_layout.py": "cb94cbea8223ae29481735aa59abfa609622a2b4daec26f1619fe939adb74781",
+            "fpga/prepare_quartus.py": "1d44c5cfce15a5e9092918d75174a3aa0c322d179f5adcf7b7cb39f04bfdd01e",
+            "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+            "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+            "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+            "rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+            "rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+            "rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+            "rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+            "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+            "rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+            "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+            "rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+            "rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+            "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+            "rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+            "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+            "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+            "rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+            "rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+            "rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+            "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+            "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+            "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+            "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+            "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+            "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+            "rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+            "tests/README.md": "c069cff3fc5b76070f37419ff06146563e22921415a06c500c7533d77a4d273e",
+            "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
+            "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
+            "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
+            "tests/baseline_discovery.py": "7b5f5830750ceb06e3efaab3f84d03d791eb2c8b49a7f473a597827ce11a802a",
+            "tests/benchmark_checks.py": "382644941387fbf52ac746b24e191987c45db946840ad020dd6ce1e31f251989",
+            "tests/benchmark_corpus.json": "40d905b7bc78f30d6e4c58de83f4aebe193e143311ca80e407502db45dea70a8",
+            "tests/benchmark_lock.json": "f6508e23809f108ffe1fccfb403386cc439d792d9951702797d8304e3b237511",
+            "tests/boundary_checks.py": "5e314b3ae3d8cff915d9f899b57d7d2c3a159c08a36294f89564272d8f3034f9",
+            "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
+            "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
+            "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
+            "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+            "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+            "tests/compiler_admission_checks.py": "6fdac7ec3bf8076580ae5bd661955b6ab847cb7c15a1f924a0a69ebf64f09cd1",
+            "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+            "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
+            "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
+            "tests/delivery_repair_checks.py": "f979e35241444238dc51633c586c1f8dc59bbfcfc55920a9eef974d9a709d0eb",
+            "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
+            "tests/execution.py": "5d855db119b25cf1682ad088a8b5de36786cba4a8b89ae5fb8f9fe75cc40de90",
+            "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
+            "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
+            "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
+            "tests/harness_checks.py": "1a1da65efd15655c6af76a79c86beba88b01065099ca34355e875eb3bef732c9",
+            "tests/host_tb.sv": "0e14de1621a499842182767f24be2ac56d380f743817cb30eca8eb4437e3381e",
+            "tests/icarus_throughput_probe.py": "e40da487c5bb332821a3601e50b085729ba82f2453b23cd719a61d45a67da3be",
+            "tests/leaf_checks.py": "1244a6f36061559f0c6303dcad1bfb7646b349661748f0f626952b547504cdfc",
+            "tests/map_checks.py": "d31737267617be8780f1d59f3c87b38d2b03d10faa49b80ac92d8886218c74a4",
+            "tests/map_tb.sv": "3d0fefcc5183fe0d488a25eeaabeada8b1e64881aa87172816be48a386ea703c",
+            "tests/math_memory_checks.py": "39d885029f3fbf955ef5e1dbd0734050336d6abb29a69442c78a0236b8906776",
+            "tests/math_memory_tb.sv": "56efd04c9a1144b0082db9ce561213f5e50a00ff93bee37e2b48d9a2199053e3",
+            "tests/mutation_checks.py": "c1b0c22b966a140bb3e7b33a259a363cb26e565041b4e318f3ef181ea00c163f",
+            "tests/mutation_repair_checks.py": "a5f52389033df85e01ef26fed19bd17a913b8eb6d9a38a93921c9946c11d33a9",
+            "tests/native_baselines.py": "93acfe1dd49c5a9ca591b8b444133380539dc794b499590b838a8f6815069c38",
+            "tests/official_slice.py": "bf74e9c43ea685a84ee397a5a452426e9c1e99b76372310438b60b8fa19d578c",
+            "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
+            "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
+            "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
+            "tests/preparation_checks.py": "2ba52dfcb8e53fe2115d1293d248740b703e045efb69d47c00c676e18ebaa42c",
+            "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
+            "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
+            "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
+            "tests/public_assets.json": "c76fe680fdcc406b498e2bb8e1ca88a45ff1233cf3e079bb6acf8db409b1c549",
+            "tests/public_assets.py": "668a21834a4a9d4977a5c4ef56f8bfd7a18c740ccbd7a1a880b9c31f03d0ff64",
+            "tests/quality_reference.py": "a38d7609d9eb137fdcf6651db0bc68b7b9843856aa75114bf8fc06828b976bbe",
+            "tests/receipt_write_checks.py": "fa64a6a2a9b4960982e0fafa0f30d4692f4fdb307e4594a1c843d2bdd01e1dbf",
+            "tests/reference.py": "63fddc7b43063a5e2a48142fedd7eedccc551cc23bc4e9d34f19a194cebfb5d5",
+            "tests/reproduce.py": "3f0afc1d9f504aba19031f5b387579edcb573d38ac4a34a1913412524b648c99",
+            "tests/reproduce_worker.py": "019cde77cc1565c8b785ba7cdddb513d2e8eee1cc4039179026622ebff80d036",
+            "tests/responder_scan_checks.py": "a51337a88421c288561bdd782831adbb955ebad269432d1d3e54b568fc9bc3b5",
+            "tests/scalar_checks.py": "8b4ce68cef9f2d8a093e0e66ec483276c970fb66f38119e2f029b7ba81e04f00",
+            "tests/scalar_tb.sv": "0cd208c6a718efe1ecfad8ad26db2b28029c389585f777c914dc75267b70150c",
+            "tests/scheduler_checks.py": "92fd8fd2c0d6591a919a90ea58a858ccba35f36fd8e284e1365b3f89b02bb546",
+            "tests/scheduler_regression.py": "ee40eb3a9b6671bbd53707bb67513f2152abb7a49f31c2bb27f5650e97e1521e",
+            "tests/scheduler_tb.sv": "1ae84d0e11b25d592ff2b4ca0e99749373a241b73d49bd3a228916517de5176d",
+            "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
+            "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
+            "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+            "tests/startup_retention_checks.py": "8b3688cd059d4602f511e26c0f08ff5b02d6c47ec97f88ff1d6b46f770ea9f08",
+            "tests/startup_scalability_checks.py": "bcb62a072b805423630f5e6049ddfeb1b7d7b7b913d496d70ab58af78b1b8a53",
+            "tests/structure_checks.py": "001d8b283cbdb619b200706e1ce355de60821da83bb86c69114dca65e4df3485",
+            "tests/synthesis_checks.py": "ff519ee54d235765e811589302ec162becb04548dc9c266608eb13c9fab28c21",
+            "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
+            "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
+            "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
+            "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
+            "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
+            "tests/top_tb.sv": "3dd76511820b07345a90979988e960f1bd6472eae96459f290b1c78e06eea9b2",
+            "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
+            "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
+            "tests/verify.py": "e2908aa2e345426614fcb990320518e40c7b7d38678b9b820b6700d61d474b6a"
+          }
+        },
+        {
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -32207,7 +32665,7 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -32245,67 +32703,77 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/boolean-schema/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.example.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "f7bb2a4c48fc411a5e08275a466e4e6d06a736f6207645b3e55b5eab55d486c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
+            "device": "10AX115N2F45E1SG",
+            "board": {
+              "manufacturer": null,
+              "model": null,
+              "revision": null,
+              "documentation_url": null
             },
-            "unmet": [
-              "schema 1 and exact Arria 10 GX target 10AX115N2F45E1SG"
-            ]
+            "ddr4": {
+              "part": null,
+              "channels": null,
+              "data_width_bits": null,
+              "capacity_bytes": null,
+              "documentation_url": null
+            },
+            "pcie": {
+              "generation": 3,
+              "lanes": 8,
+              "ip_name": null,
+              "ip_version": null,
+              "license_description": null
+            },
+            "quartus_version": null,
+            "top_module": null,
+            "top_source": null,
+            "pin_qsf": null,
+            "board_sdc": null,
+            "qip_files": [],
+            "support_sources": [],
+            "timing_exceptions": []
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-boolean/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "6e376a13742029b602cee12517aff732e517b66a0465138e5068e79e7079d1c8",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNVERIFIED claims only: physical board/device identity, schematic-backed pins, DDR4 arrangement and licensed generated IP have not been established",
+            "device": "10AX115N2F45E1SG",
+            "timing_exceptions": [],
+            "quartus_version": "17.1.0 Build 590 10/25/2017 SJ Standard Edition",
+            "board": {
+              "manufacturer": "Terasic",
+              "model": "DE10-Pro-SX",
+              "revision": "B",
+              "documentation_url": "https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1144"
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-float/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "0d094150bae5ee509090318dd02896a0f8de30a135dd645af8936c954c769d1e",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "ddr4": {
+              "part": "MT40A1G8SA-075:E",
+              "documentation_url": "https://www.micron.com/products/memory/dram-components/ddr4-sdram",
+              "channels": 2,
+              "data_width_bits": 64,
+              "capacity_bytes": 8589934592
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-negative/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "2f25165c87347d602563dac480743a6c381bbec68860bac6058c4543f3f189c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "pcie": {
+              "ip_name": "altera_pcie_a10_hip",
+              "ip_version": "17.1",
+              "license_description": "Quartus Prime Standard Edition IP Base Suite",
+              "generation": 3,
+              "lanes": 8
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
+            "top_module": "anvil_q3_board_top",
+            "top_source": "fpga/anvil_q3_board_top.sv",
+            "pin_qsf": "fpga/board_pins.qsf",
+            "board_sdc": "fpga/board_clocks.sdc",
+            "qip_files": [
+              "fpga/board_ip.qip"
+            ],
+            "support_sources": []
           }
         },
         {
@@ -47228,7 +47696,7 @@
       "attempt_id": 574,
       "duration_s": 865.5354337238241,
       "stdout_preview": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/receipt.json\n",
-      "receipt_count": 40,
+      "receipt_count": 39,
       "receipts": [
         {
           "path": "evidence/check-synthesis/20261101T040121Z-de3748350a15/identifier-adaptation-checker.json",
@@ -47929,7 +48397,153 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/model_provenance.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/copy-manifest.json",
+          "data": {
+            "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+            "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+            "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+            "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+            "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+            "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+            "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+            "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+            "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+            "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+            "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+            "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+            "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+            "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+            "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+            "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+            "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+            "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+            "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+            "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+            "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+            "design/ARCHITECTURE.md": "54b61fef01ea4b09c197707e634b50f0887e7b5236811c663799159122178f6c",
+            "design/SPEC.md": "3c0064d42a1c9939b37328af11fd5dcbb1557a6277a2572568226df45b54f6ed",
+            "design/model_provenance.json": "abcc1b75cee007372b0cb9d13b6e1b37dd0abe4a4857c66ea1d49f61e8011128",
+            "design/qwen2_5_3b_awq_config.json": "9366ca39ab036f807f40ff93f03d77ce910d512174150821a87a87080c2b8c65",
+            "fpga/INTEGRATION.md": "035a1ba109575d634cf0a024e2acb28a7e26bde47314026133a4f65a5050ec58",
+            "fpga/anvil_q3.qsf": "af4b3482d5f8579969a576d7b3fd535e8b219122fd825520cfa94f5c7f5a2f1d",
+            "fpga/anvil_q3.sdc": "9207cb04a8dcb1c5ad932550c606fbb67e0928d419d7039e6a346539818836c4",
+            "fpga/anvil_q3_board_top.sv": "e7f3b5d9a0f671c5c2448f375df68d5e75fa74f0559dc80d0dcae3c714142414",
+            "fpga/anvil_q3_ddr_bridge.sv": "fe61d978c7fa55beda9bdb28a49af70e22ab370dea7fd96b60ec7e817d941712",
+            "fpga/anvil_q3_fpga_shell.sv": "b02247ef0d52030cf0cd70fc9c25df64cc500560b373d840316feba536dfcdbe",
+            "fpga/anvil_q3_host.h": "fdf698ee72f4a0b445628d988e5570c6dd87649f0fc2ac06ae2fd086820bcb62",
+            "fpga/anvil_q3_host_control.sv": "9e84c8e5c40cf5ce33f2c5986fec84053fd75ff9901f09c958a07e8bedf41adf",
+            "fpga/anvil_q3_memory_map.sv": "3cfb1812a5bab5416fc39e013bc1863fbfabe31d8b6b5d983be7f82e2ba55a68",
+            "fpga/anvil_q3_reset_release.sv": "8258c52bea7d6c324d51a4998919c4d5b152269804bb94fe386672ade57dfe47",
+            "fpga/board_clocks.sdc": "e4a81b0de641cf6914ce80cbad3413282726eb8d134614810832fbb6deb466d7",
+            "fpga/board_ip.qip": "d7266a372130cdc6853f8c20d7e294b6fce0a828b786b59e1bc9e6e25b0b0118",
+            "fpga/board_manifest.example.json": "5421d71c7b82bbf6dfade06e32e4520b821b7bbe1a20fb30057da19d9b0e3e8d",
+            "fpga/board_manifest.json": "4bf78d746d711e60b547968a50198bdad3ce610e4e11324e010f788d8d66fa15",
+            "fpga/board_pins.qsf": "3d9dea57bffa211bc61274e6236d14deaca45cfd93ff6c757c0650fb826a0bd0",
+            "fpga/build.tcl": "c16779ce4417553aad80c92b821ebc08c7ab35ce40758cc5d224a119a175d352",
+            "fpga/memory_layout.py": "cb94cbea8223ae29481735aa59abfa609622a2b4daec26f1619fe939adb74781",
+            "fpga/prepare_quartus.py": "1d44c5cfce15a5e9092918d75174a3aa0c322d179f5adcf7b7cb39f04bfdd01e",
+            "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+            "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+            "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+            "rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+            "rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+            "rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+            "rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+            "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+            "rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+            "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+            "rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+            "rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+            "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+            "rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+            "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+            "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+            "rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+            "rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+            "rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+            "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+            "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+            "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+            "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+            "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+            "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+            "rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+            "tests/README.md": "c069cff3fc5b76070f37419ff06146563e22921415a06c500c7533d77a4d273e",
+            "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
+            "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
+            "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
+            "tests/baseline_discovery.py": "7b5f5830750ceb06e3efaab3f84d03d791eb2c8b49a7f473a597827ce11a802a",
+            "tests/benchmark_checks.py": "382644941387fbf52ac746b24e191987c45db946840ad020dd6ce1e31f251989",
+            "tests/benchmark_corpus.json": "40d905b7bc78f30d6e4c58de83f4aebe193e143311ca80e407502db45dea70a8",
+            "tests/benchmark_lock.json": "f6508e23809f108ffe1fccfb403386cc439d792d9951702797d8304e3b237511",
+            "tests/boundary_checks.py": "5e314b3ae3d8cff915d9f899b57d7d2c3a159c08a36294f89564272d8f3034f9",
+            "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
+            "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
+            "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
+            "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+            "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+            "tests/compiler_admission_checks.py": "6fdac7ec3bf8076580ae5bd661955b6ab847cb7c15a1f924a0a69ebf64f09cd1",
+            "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+            "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
+            "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
+            "tests/delivery_repair_checks.py": "f979e35241444238dc51633c586c1f8dc59bbfcfc55920a9eef974d9a709d0eb",
+            "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
+            "tests/execution.py": "5d855db119b25cf1682ad088a8b5de36786cba4a8b89ae5fb8f9fe75cc40de90",
+            "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
+            "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
+            "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
+            "tests/harness_checks.py": "1a1da65efd15655c6af76a79c86beba88b01065099ca34355e875eb3bef732c9",
+            "tests/host_tb.sv": "0e14de1621a499842182767f24be2ac56d380f743817cb30eca8eb4437e3381e",
+            "tests/icarus_throughput_probe.py": "e40da487c5bb332821a3601e50b085729ba82f2453b23cd719a61d45a67da3be",
+            "tests/leaf_checks.py": "1244a6f36061559f0c6303dcad1bfb7646b349661748f0f626952b547504cdfc",
+            "tests/map_checks.py": "d31737267617be8780f1d59f3c87b38d2b03d10faa49b80ac92d8886218c74a4",
+            "tests/map_tb.sv": "3d0fefcc5183fe0d488a25eeaabeada8b1e64881aa87172816be48a386ea703c",
+            "tests/math_memory_checks.py": "39d885029f3fbf955ef5e1dbd0734050336d6abb29a69442c78a0236b8906776",
+            "tests/math_memory_tb.sv": "56efd04c9a1144b0082db9ce561213f5e50a00ff93bee37e2b48d9a2199053e3",
+            "tests/mutation_checks.py": "c1b0c22b966a140bb3e7b33a259a363cb26e565041b4e318f3ef181ea00c163f",
+            "tests/mutation_repair_checks.py": "a5f52389033df85e01ef26fed19bd17a913b8eb6d9a38a93921c9946c11d33a9",
+            "tests/native_baselines.py": "93acfe1dd49c5a9ca591b8b444133380539dc794b499590b838a8f6815069c38",
+            "tests/official_slice.py": "bf74e9c43ea685a84ee397a5a452426e9c1e99b76372310438b60b8fa19d578c",
+            "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
+            "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
+            "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
+            "tests/preparation_checks.py": "2ba52dfcb8e53fe2115d1293d248740b703e045efb69d47c00c676e18ebaa42c",
+            "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
+            "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
+            "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
+            "tests/public_assets.json": "c76fe680fdcc406b498e2bb8e1ca88a45ff1233cf3e079bb6acf8db409b1c549",
+            "tests/public_assets.py": "668a21834a4a9d4977a5c4ef56f8bfd7a18c740ccbd7a1a880b9c31f03d0ff64",
+            "tests/quality_reference.py": "a38d7609d9eb137fdcf6651db0bc68b7b9843856aa75114bf8fc06828b976bbe",
+            "tests/receipt_write_checks.py": "fa64a6a2a9b4960982e0fafa0f30d4692f4fdb307e4594a1c843d2bdd01e1dbf",
+            "tests/reference.py": "63fddc7b43063a5e2a48142fedd7eedccc551cc23bc4e9d34f19a194cebfb5d5",
+            "tests/reproduce.py": "3f0afc1d9f504aba19031f5b387579edcb573d38ac4a34a1913412524b648c99",
+            "tests/reproduce_worker.py": "019cde77cc1565c8b785ba7cdddb513d2e8eee1cc4039179026622ebff80d036",
+            "tests/responder_scan_checks.py": "a51337a88421c288561bdd782831adbb955ebad269432d1d3e54b568fc9bc3b5",
+            "tests/scalar_checks.py": "8b4ce68cef9f2d8a093e0e66ec483276c970fb66f38119e2f029b7ba81e04f00",
+            "tests/scalar_tb.sv": "0cd208c6a718efe1ecfad8ad26db2b28029c389585f777c914dc75267b70150c",
+            "tests/scheduler_checks.py": "92fd8fd2c0d6591a919a90ea58a858ccba35f36fd8e284e1365b3f89b02bb546",
+            "tests/scheduler_regression.py": "ee40eb3a9b6671bbd53707bb67513f2152abb7a49f31c2bb27f5650e97e1521e",
+            "tests/scheduler_tb.sv": "1ae84d0e11b25d592ff2b4ca0e99749373a241b73d49bd3a228916517de5176d",
+            "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
+            "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
+            "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+            "tests/startup_retention_checks.py": "8b3688cd059d4602f511e26c0f08ff5b02d6c47ec97f88ff1d6b46f770ea9f08",
+            "tests/startup_scalability_checks.py": "bcb62a072b805423630f5e6049ddfeb1b7d7b7b913d496d70ab58af78b1b8a53",
+            "tests/structure_checks.py": "001d8b283cbdb619b200706e1ce355de60821da83bb86c69114dca65e4df3485",
+            "tests/synthesis_checks.py": "ff519ee54d235765e811589302ec162becb04548dc9c266608eb13c9fab28c21",
+            "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
+            "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
+            "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
+            "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
+            "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
+            "tests/top_tb.sv": "3dd76511820b07345a90979988e960f1bd6472eae96459f290b1c78e06eea9b2",
+            "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
+            "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
+            "tests/verify.py": "e2908aa2e345426614fcb990320518e40c7b7d38678b9b820b6700d61d474b6a"
+          }
+        },
+        {
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -47948,7 +48562,7 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -47986,67 +48600,77 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/boolean-schema/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.example.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "f7bb2a4c48fc411a5e08275a466e4e6d06a736f6207645b3e55b5eab55d486c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
+            "device": "10AX115N2F45E1SG",
+            "board": {
+              "manufacturer": null,
+              "model": null,
+              "revision": null,
+              "documentation_url": null
             },
-            "unmet": [
-              "schema 1 and exact Arria 10 GX target 10AX115N2F45E1SG"
-            ]
+            "ddr4": {
+              "part": null,
+              "channels": null,
+              "data_width_bits": null,
+              "capacity_bytes": null,
+              "documentation_url": null
+            },
+            "pcie": {
+              "generation": 3,
+              "lanes": 8,
+              "ip_name": null,
+              "ip_version": null,
+              "license_description": null
+            },
+            "quartus_version": null,
+            "top_module": null,
+            "top_source": null,
+            "pin_qsf": null,
+            "board_sdc": null,
+            "qip_files": [],
+            "support_sources": [],
+            "timing_exceptions": []
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-boolean/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "6e376a13742029b602cee12517aff732e517b66a0465138e5068e79e7079d1c8",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNVERIFIED claims only: physical board/device identity, schematic-backed pins, DDR4 arrangement and licensed generated IP have not been established",
+            "device": "10AX115N2F45E1SG",
+            "timing_exceptions": [],
+            "quartus_version": "17.1.0 Build 590 10/25/2017 SJ Standard Edition",
+            "board": {
+              "manufacturer": "Terasic",
+              "model": "DE10-Pro-SX",
+              "revision": "B",
+              "documentation_url": "https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1144"
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-float/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "0d094150bae5ee509090318dd02896a0f8de30a135dd645af8936c954c769d1e",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "ddr4": {
+              "part": "MT40A1G8SA-075:E",
+              "documentation_url": "https://www.micron.com/products/memory/dram-components/ddr4-sdram",
+              "channels": 2,
+              "data_width_bits": 64,
+              "capacity_bytes": 8589934592
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-negative/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "2f25165c87347d602563dac480743a6c381bbec68860bac6058c4543f3f189c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "pcie": {
+              "ip_name": "altera_pcie_a10_hip",
+              "ip_version": "17.1",
+              "license_description": "Quartus Prime Standard Edition IP Base Suite",
+              "generation": 3,
+              "lanes": 8
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
+            "top_module": "anvil_q3_board_top",
+            "top_source": "fpga/anvil_q3_board_top.sv",
+            "pin_qsf": "fpga/board_pins.qsf",
+            "board_sdc": "fpga/board_clocks.sdc",
+            "qip_files": [
+              "fpga/board_ip.qip"
+            ],
+            "support_sources": []
           }
         },
         {
@@ -62969,7 +63593,7 @@
       "attempt_id": 568,
       "duration_s": 9.953031871002167,
       "stdout_preview": "evidence/check-prerequisites/20261101T030402Z-1931bbd75a1e/receipt.json\n",
-      "receipt_count": 40,
+      "receipt_count": 39,
       "receipts": [
         {
           "path": "evidence/check-synthesis/20261101T040121Z-de3748350a15/identifier-adaptation-checker.json",
@@ -63670,7 +64294,153 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/model_provenance.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/copy-manifest.json",
+          "data": {
+            "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+            "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+            "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+            "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+            "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+            "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+            "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+            "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+            "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+            "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+            "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+            "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+            "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+            "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+            "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+            "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+            "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+            "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+            "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+            "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+            "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+            "design/ARCHITECTURE.md": "54b61fef01ea4b09c197707e634b50f0887e7b5236811c663799159122178f6c",
+            "design/SPEC.md": "3c0064d42a1c9939b37328af11fd5dcbb1557a6277a2572568226df45b54f6ed",
+            "design/model_provenance.json": "abcc1b75cee007372b0cb9d13b6e1b37dd0abe4a4857c66ea1d49f61e8011128",
+            "design/qwen2_5_3b_awq_config.json": "9366ca39ab036f807f40ff93f03d77ce910d512174150821a87a87080c2b8c65",
+            "fpga/INTEGRATION.md": "035a1ba109575d634cf0a024e2acb28a7e26bde47314026133a4f65a5050ec58",
+            "fpga/anvil_q3.qsf": "af4b3482d5f8579969a576d7b3fd535e8b219122fd825520cfa94f5c7f5a2f1d",
+            "fpga/anvil_q3.sdc": "9207cb04a8dcb1c5ad932550c606fbb67e0928d419d7039e6a346539818836c4",
+            "fpga/anvil_q3_board_top.sv": "e7f3b5d9a0f671c5c2448f375df68d5e75fa74f0559dc80d0dcae3c714142414",
+            "fpga/anvil_q3_ddr_bridge.sv": "fe61d978c7fa55beda9bdb28a49af70e22ab370dea7fd96b60ec7e817d941712",
+            "fpga/anvil_q3_fpga_shell.sv": "b02247ef0d52030cf0cd70fc9c25df64cc500560b373d840316feba536dfcdbe",
+            "fpga/anvil_q3_host.h": "fdf698ee72f4a0b445628d988e5570c6dd87649f0fc2ac06ae2fd086820bcb62",
+            "fpga/anvil_q3_host_control.sv": "9e84c8e5c40cf5ce33f2c5986fec84053fd75ff9901f09c958a07e8bedf41adf",
+            "fpga/anvil_q3_memory_map.sv": "3cfb1812a5bab5416fc39e013bc1863fbfabe31d8b6b5d983be7f82e2ba55a68",
+            "fpga/anvil_q3_reset_release.sv": "8258c52bea7d6c324d51a4998919c4d5b152269804bb94fe386672ade57dfe47",
+            "fpga/board_clocks.sdc": "e4a81b0de641cf6914ce80cbad3413282726eb8d134614810832fbb6deb466d7",
+            "fpga/board_ip.qip": "d7266a372130cdc6853f8c20d7e294b6fce0a828b786b59e1bc9e6e25b0b0118",
+            "fpga/board_manifest.example.json": "5421d71c7b82bbf6dfade06e32e4520b821b7bbe1a20fb30057da19d9b0e3e8d",
+            "fpga/board_manifest.json": "4bf78d746d711e60b547968a50198bdad3ce610e4e11324e010f788d8d66fa15",
+            "fpga/board_pins.qsf": "3d9dea57bffa211bc61274e6236d14deaca45cfd93ff6c757c0650fb826a0bd0",
+            "fpga/build.tcl": "c16779ce4417553aad80c92b821ebc08c7ab35ce40758cc5d224a119a175d352",
+            "fpga/memory_layout.py": "cb94cbea8223ae29481735aa59abfa609622a2b4daec26f1619fe939adb74781",
+            "fpga/prepare_quartus.py": "1d44c5cfce15a5e9092918d75174a3aa0c322d179f5adcf7b7cb39f04bfdd01e",
+            "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+            "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+            "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+            "rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+            "rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+            "rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+            "rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+            "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+            "rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+            "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+            "rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+            "rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+            "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+            "rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+            "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+            "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+            "rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+            "rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+            "rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+            "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+            "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+            "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+            "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+            "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+            "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+            "rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+            "tests/README.md": "c069cff3fc5b76070f37419ff06146563e22921415a06c500c7533d77a4d273e",
+            "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
+            "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
+            "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
+            "tests/baseline_discovery.py": "7b5f5830750ceb06e3efaab3f84d03d791eb2c8b49a7f473a597827ce11a802a",
+            "tests/benchmark_checks.py": "382644941387fbf52ac746b24e191987c45db946840ad020dd6ce1e31f251989",
+            "tests/benchmark_corpus.json": "40d905b7bc78f30d6e4c58de83f4aebe193e143311ca80e407502db45dea70a8",
+            "tests/benchmark_lock.json": "f6508e23809f108ffe1fccfb403386cc439d792d9951702797d8304e3b237511",
+            "tests/boundary_checks.py": "5e314b3ae3d8cff915d9f899b57d7d2c3a159c08a36294f89564272d8f3034f9",
+            "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
+            "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
+            "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
+            "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+            "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+            "tests/compiler_admission_checks.py": "6fdac7ec3bf8076580ae5bd661955b6ab847cb7c15a1f924a0a69ebf64f09cd1",
+            "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+            "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
+            "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
+            "tests/delivery_repair_checks.py": "f979e35241444238dc51633c586c1f8dc59bbfcfc55920a9eef974d9a709d0eb",
+            "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
+            "tests/execution.py": "5d855db119b25cf1682ad088a8b5de36786cba4a8b89ae5fb8f9fe75cc40de90",
+            "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
+            "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
+            "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
+            "tests/harness_checks.py": "1a1da65efd15655c6af76a79c86beba88b01065099ca34355e875eb3bef732c9",
+            "tests/host_tb.sv": "0e14de1621a499842182767f24be2ac56d380f743817cb30eca8eb4437e3381e",
+            "tests/icarus_throughput_probe.py": "e40da487c5bb332821a3601e50b085729ba82f2453b23cd719a61d45a67da3be",
+            "tests/leaf_checks.py": "1244a6f36061559f0c6303dcad1bfb7646b349661748f0f626952b547504cdfc",
+            "tests/map_checks.py": "d31737267617be8780f1d59f3c87b38d2b03d10faa49b80ac92d8886218c74a4",
+            "tests/map_tb.sv": "3d0fefcc5183fe0d488a25eeaabeada8b1e64881aa87172816be48a386ea703c",
+            "tests/math_memory_checks.py": "39d885029f3fbf955ef5e1dbd0734050336d6abb29a69442c78a0236b8906776",
+            "tests/math_memory_tb.sv": "56efd04c9a1144b0082db9ce561213f5e50a00ff93bee37e2b48d9a2199053e3",
+            "tests/mutation_checks.py": "c1b0c22b966a140bb3e7b33a259a363cb26e565041b4e318f3ef181ea00c163f",
+            "tests/mutation_repair_checks.py": "a5f52389033df85e01ef26fed19bd17a913b8eb6d9a38a93921c9946c11d33a9",
+            "tests/native_baselines.py": "93acfe1dd49c5a9ca591b8b444133380539dc794b499590b838a8f6815069c38",
+            "tests/official_slice.py": "bf74e9c43ea685a84ee397a5a452426e9c1e99b76372310438b60b8fa19d578c",
+            "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
+            "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
+            "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
+            "tests/preparation_checks.py": "2ba52dfcb8e53fe2115d1293d248740b703e045efb69d47c00c676e18ebaa42c",
+            "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
+            "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
+            "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
+            "tests/public_assets.json": "c76fe680fdcc406b498e2bb8e1ca88a45ff1233cf3e079bb6acf8db409b1c549",
+            "tests/public_assets.py": "668a21834a4a9d4977a5c4ef56f8bfd7a18c740ccbd7a1a880b9c31f03d0ff64",
+            "tests/quality_reference.py": "a38d7609d9eb137fdcf6651db0bc68b7b9843856aa75114bf8fc06828b976bbe",
+            "tests/receipt_write_checks.py": "fa64a6a2a9b4960982e0fafa0f30d4692f4fdb307e4594a1c843d2bdd01e1dbf",
+            "tests/reference.py": "63fddc7b43063a5e2a48142fedd7eedccc551cc23bc4e9d34f19a194cebfb5d5",
+            "tests/reproduce.py": "3f0afc1d9f504aba19031f5b387579edcb573d38ac4a34a1913412524b648c99",
+            "tests/reproduce_worker.py": "019cde77cc1565c8b785ba7cdddb513d2e8eee1cc4039179026622ebff80d036",
+            "tests/responder_scan_checks.py": "a51337a88421c288561bdd782831adbb955ebad269432d1d3e54b568fc9bc3b5",
+            "tests/scalar_checks.py": "8b4ce68cef9f2d8a093e0e66ec483276c970fb66f38119e2f029b7ba81e04f00",
+            "tests/scalar_tb.sv": "0cd208c6a718efe1ecfad8ad26db2b28029c389585f777c914dc75267b70150c",
+            "tests/scheduler_checks.py": "92fd8fd2c0d6591a919a90ea58a858ccba35f36fd8e284e1365b3f89b02bb546",
+            "tests/scheduler_regression.py": "ee40eb3a9b6671bbd53707bb67513f2152abb7a49f31c2bb27f5650e97e1521e",
+            "tests/scheduler_tb.sv": "1ae84d0e11b25d592ff2b4ca0e99749373a241b73d49bd3a228916517de5176d",
+            "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
+            "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
+            "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+            "tests/startup_retention_checks.py": "8b3688cd059d4602f511e26c0f08ff5b02d6c47ec97f88ff1d6b46f770ea9f08",
+            "tests/startup_scalability_checks.py": "bcb62a072b805423630f5e6049ddfeb1b7d7b7b913d496d70ab58af78b1b8a53",
+            "tests/structure_checks.py": "001d8b283cbdb619b200706e1ce355de60821da83bb86c69114dca65e4df3485",
+            "tests/synthesis_checks.py": "ff519ee54d235765e811589302ec162becb04548dc9c266608eb13c9fab28c21",
+            "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
+            "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
+            "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
+            "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
+            "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
+            "tests/top_tb.sv": "3dd76511820b07345a90979988e960f1bd6472eae96459f290b1c78e06eea9b2",
+            "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
+            "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
+            "tests/verify.py": "e2908aa2e345426614fcb990320518e40c7b7d38678b9b820b6700d61d474b6a"
+          }
+        },
+        {
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -63689,7 +64459,7 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -63727,67 +64497,77 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/boolean-schema/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.example.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "f7bb2a4c48fc411a5e08275a466e4e6d06a736f6207645b3e55b5eab55d486c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
+            "device": "10AX115N2F45E1SG",
+            "board": {
+              "manufacturer": null,
+              "model": null,
+              "revision": null,
+              "documentation_url": null
             },
-            "unmet": [
-              "schema 1 and exact Arria 10 GX target 10AX115N2F45E1SG"
-            ]
+            "ddr4": {
+              "part": null,
+              "channels": null,
+              "data_width_bits": null,
+              "capacity_bytes": null,
+              "documentation_url": null
+            },
+            "pcie": {
+              "generation": 3,
+              "lanes": 8,
+              "ip_name": null,
+              "ip_version": null,
+              "license_description": null
+            },
+            "quartus_version": null,
+            "top_module": null,
+            "top_source": null,
+            "pin_qsf": null,
+            "board_sdc": null,
+            "qip_files": [],
+            "support_sources": [],
+            "timing_exceptions": []
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-boolean/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "6e376a13742029b602cee12517aff732e517b66a0465138e5068e79e7079d1c8",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNVERIFIED claims only: physical board/device identity, schematic-backed pins, DDR4 arrangement and licensed generated IP have not been established",
+            "device": "10AX115N2F45E1SG",
+            "timing_exceptions": [],
+            "quartus_version": "17.1.0 Build 590 10/25/2017 SJ Standard Edition",
+            "board": {
+              "manufacturer": "Terasic",
+              "model": "DE10-Pro-SX",
+              "revision": "B",
+              "documentation_url": "https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1144"
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-float/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "0d094150bae5ee509090318dd02896a0f8de30a135dd645af8936c954c769d1e",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "ddr4": {
+              "part": "MT40A1G8SA-075:E",
+              "documentation_url": "https://www.micron.com/products/memory/dram-components/ddr4-sdram",
+              "channels": 2,
+              "data_width_bits": 64,
+              "capacity_bytes": 8589934592
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-negative/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "2f25165c87347d602563dac480743a6c381bbec68860bac6058c4543f3f189c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "pcie": {
+              "ip_name": "altera_pcie_a10_hip",
+              "ip_version": "17.1",
+              "license_description": "Quartus Prime Standard Edition IP Base Suite",
+              "generation": 3,
+              "lanes": 8
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
+            "top_module": "anvil_q3_board_top",
+            "top_source": "fpga/anvil_q3_board_top.sv",
+            "pin_qsf": "fpga/board_pins.qsf",
+            "board_sdc": "fpga/board_clocks.sdc",
+            "qip_files": [
+              "fpga/board_ip.qip"
+            ],
+            "support_sources": []
           }
         },
         {
@@ -78710,7 +79490,7 @@
       "attempt_id": 569,
       "duration_s": 1524.3488872649614,
       "stdout_preview": "83/330\nstartup parameter-results.json: 95/330\nstartup parameter-results.json: 107/330\nstartup parameter-results.json: 119/330\nstartup parameter-results.json: 131/330\nstartup parameter-results.json: 143/330\nstartup parameter-results.json: 155/330\nstartup parameter-results.json: 167/330\nstartup parameter-results.json: 179/330\nstartup parameter-results.json: 191/330\nstartup parameter-results.json: 200/330\nstartup parameter-results.json: 207/330\nstartup parameter-results.json: 215/330\nstartup parameter-results.json: 227/330\nstartup parameter-results.json: 239/330\nstartup parameter-results.json: 250/330\nstartup parameter-results.json: 259/330\nstartup parameter-results.json: 268/330\nstartup parameter-results.json: 277/330\nstartup parameter-results.json: 286/330\nstartup parameter-results.json: 295/330\nstartup parameter-results.json: 304/330\nstartup parameter-results.json: 313/330\nstartup parameter-results.json: 322/330\nstartup parameter-results.json: 330/330\nstartup leaf-parameter-results.json: 11/140\nstartup leaf-parameter-results.json: 23/140\nstartup leaf-parameter-results.json: 35/140\nstartup leaf-parameter-results.json: 47/140\nstartup leaf-parameter-results.json: 59/140\nstartup leaf-parameter-results.json: 71/140\nstartup leaf-parameter-results.json: 83/140\nstartup leaf-parameter-results.json: 95/140\nstartup leaf-parameter-results.json: 107/140\nstartup leaf-parameter-results.json: 119/140\nstartup leaf-parameter-results.json: 131/140\nstartup supplied-parameter-results.json: 11/18\n",
-      "receipt_count": 40,
+      "receipt_count": 39,
       "receipts": [
         {
           "path": "evidence/check-synthesis/20261101T040121Z-de3748350a15/identifier-adaptation-checker.json",
@@ -79411,7 +80191,153 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/model_provenance.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/copy-manifest.json",
+          "data": {
+            "anvil_q2_reference/rtl/anvil_q2_00_pkg.sv": "7183e59eaa4c14d15b8ae45f1e057b491c254987443fad06e61702fa58dfd17e",
+            "anvil_q2_reference/rtl/anvil_q2_awq_dequant.sv": "501b8239dfb1b3fd94f41bd1c60307e899bbe1fa02f14cb97df9ab2a1c6d4245",
+            "anvil_q2_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+            "anvil_q2_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+            "anvil_q2_reference/rtl/anvil_q2_cache_codec.sv": "377bc36007466c6353c8a754e0bdcb5a88354b8a31585637290e1b86a377939d",
+            "anvil_q2_reference/rtl/anvil_q2_decoder_layer.sv": "d0f37c18383e90b8631710fee1501ba36490b59ece7032f1f8a484aa6ee1e048",
+            "anvil_q2_reference/rtl/anvil_q2_divider.sv": "957bb4f8ed922e1a571a57b2bd4c4466b645860fc3dcd5c9916525cfb5b2d102",
+            "anvil_q2_reference/rtl/anvil_q2_elementwise.sv": "3ec3380f4cb69a0ab078db80521d86758e197dc37934fdadac84406af41f0a72",
+            "anvil_q2_reference/rtl/anvil_q2_exp.sv": "32ad6d5538a88e5128d2989b93a55de8ef557fb63d07fbc5636a3f9506c39a9d",
+            "anvil_q2_reference/rtl/anvil_q2_gemv_lane.sv": "aec57db1ffc7fb900a35ad9db6a6b69ce734331c9b8bf280ef23262b0aae6dfe",
+            "anvil_q2_reference/rtl/anvil_q2_gqa_attention.sv": "e76ddd7a9bfc0f443f34147969f4eec3c9c06270de2ddaad95be51d1c4e1634a",
+            "anvil_q2_reference/rtl/anvil_q2_kv_cache.sv": "b7b86add81e0adb9bfb703384b6d139ab906b67775f62ea9bc17b554a5cecb00",
+            "anvil_q2_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+            "anvil_q2_reference/rtl/anvil_q2_parameters.sv": "e1224a79ae44b712d4075fcb123c502a1adecf34c4ab932e02c8e58117b93cc7",
+            "anvil_q2_reference/rtl/anvil_q2_q1_compat.sv": "69f3c87c49c28ea6fa38ce9d373c66697020c0af1125f9b6f5f7357f9fc2fca0",
+            "anvil_q2_reference/rtl/anvil_q2_rmsnorm.sv": "7fe79879d0d969eaa5c914122a7966f0199f1e276e28a1fea190eaf2e1da5347",
+            "anvil_q2_reference/rtl/anvil_q2_rope.sv": "7789d80e73a7500efdaa4f9897e7a4d2d26d558ade19f6f4e6b4859606466401",
+            "anvil_q2_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+            "anvil_q2_reference/rtl/anvil_q2_swiglu_mlp.sv": "6676d2c1a04ec3817d0ef0e6835c967a7be2f6229401fdc14e1688091f849ebe",
+            "anvil_q2_reference/rtl/anvil_q2_top.sv": "2b4266bd1b329612f5af09d7a9253a31e337a0c03e4555e880feb326086e391c",
+            "anvil_q2_reference/rtl/anvil_q2_w4a16_gemv.sv": "bb95d51a95a4321cd74fce8d0073e428658387b0eb6d71b89414dbd07ba0f89d",
+            "design/ARCHITECTURE.md": "54b61fef01ea4b09c197707e634b50f0887e7b5236811c663799159122178f6c",
+            "design/SPEC.md": "3c0064d42a1c9939b37328af11fd5dcbb1557a6277a2572568226df45b54f6ed",
+            "design/model_provenance.json": "abcc1b75cee007372b0cb9d13b6e1b37dd0abe4a4857c66ea1d49f61e8011128",
+            "design/qwen2_5_3b_awq_config.json": "9366ca39ab036f807f40ff93f03d77ce910d512174150821a87a87080c2b8c65",
+            "fpga/INTEGRATION.md": "035a1ba109575d634cf0a024e2acb28a7e26bde47314026133a4f65a5050ec58",
+            "fpga/anvil_q3.qsf": "af4b3482d5f8579969a576d7b3fd535e8b219122fd825520cfa94f5c7f5a2f1d",
+            "fpga/anvil_q3.sdc": "9207cb04a8dcb1c5ad932550c606fbb67e0928d419d7039e6a346539818836c4",
+            "fpga/anvil_q3_board_top.sv": "e7f3b5d9a0f671c5c2448f375df68d5e75fa74f0559dc80d0dcae3c714142414",
+            "fpga/anvil_q3_ddr_bridge.sv": "fe61d978c7fa55beda9bdb28a49af70e22ab370dea7fd96b60ec7e817d941712",
+            "fpga/anvil_q3_fpga_shell.sv": "b02247ef0d52030cf0cd70fc9c25df64cc500560b373d840316feba536dfcdbe",
+            "fpga/anvil_q3_host.h": "fdf698ee72f4a0b445628d988e5570c6dd87649f0fc2ac06ae2fd086820bcb62",
+            "fpga/anvil_q3_host_control.sv": "9e84c8e5c40cf5ce33f2c5986fec84053fd75ff9901f09c958a07e8bedf41adf",
+            "fpga/anvil_q3_memory_map.sv": "3cfb1812a5bab5416fc39e013bc1863fbfabe31d8b6b5d983be7f82e2ba55a68",
+            "fpga/anvil_q3_reset_release.sv": "8258c52bea7d6c324d51a4998919c4d5b152269804bb94fe386672ade57dfe47",
+            "fpga/board_clocks.sdc": "e4a81b0de641cf6914ce80cbad3413282726eb8d134614810832fbb6deb466d7",
+            "fpga/board_ip.qip": "d7266a372130cdc6853f8c20d7e294b6fce0a828b786b59e1bc9e6e25b0b0118",
+            "fpga/board_manifest.example.json": "5421d71c7b82bbf6dfade06e32e4520b821b7bbe1a20fb30057da19d9b0e3e8d",
+            "fpga/board_manifest.json": "4bf78d746d711e60b547968a50198bdad3ce610e4e11324e010f788d8d66fa15",
+            "fpga/board_pins.qsf": "3d9dea57bffa211bc61274e6236d14deaca45cfd93ff6c757c0650fb826a0bd0",
+            "fpga/build.tcl": "c16779ce4417553aad80c92b821ebc08c7ab35ce40758cc5d224a119a175d352",
+            "fpga/memory_layout.py": "cb94cbea8223ae29481735aa59abfa609622a2b4daec26f1619fe939adb74781",
+            "fpga/prepare_quartus.py": "1d44c5cfce15a5e9092918d75174a3aa0c322d179f5adcf7b7cb39f04bfdd01e",
+            "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+            "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+            "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+            "rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+            "rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+            "rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+            "rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+            "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+            "rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+            "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+            "rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+            "rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+            "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+            "rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+            "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+            "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+            "rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+            "rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+            "rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+            "rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+            "rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+            "rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+            "rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+            "rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+            "rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+            "rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+            "tests/README.md": "c069cff3fc5b76070f37419ff06146563e22921415a06c500c7533d77a4d273e",
+            "tests/accumulator_checks.py": "eb0aad1a37b6921d13982bc286e0ee65d1a52bf9471ed2333c1fbe60bbed4966",
+            "tests/accumulator_tb.sv": "d6a48173adc93b6e7634f96d8335f6efbf26c5dca1014d9c5844d5af653c2ff5",
+            "tests/acquire_assets.py": "f99a88f0da41d7b1a2fabc44aacfd048fbf1d9a06e4425127ba4c22761becbf0",
+            "tests/baseline_discovery.py": "7b5f5830750ceb06e3efaab3f84d03d791eb2c8b49a7f473a597827ce11a802a",
+            "tests/benchmark_checks.py": "382644941387fbf52ac746b24e191987c45db946840ad020dd6ce1e31f251989",
+            "tests/benchmark_corpus.json": "40d905b7bc78f30d6e4c58de83f4aebe193e143311ca80e407502db45dea70a8",
+            "tests/benchmark_lock.json": "f6508e23809f108ffe1fccfb403386cc439d792d9951702797d8304e3b237511",
+            "tests/boundary_checks.py": "5e314b3ae3d8cff915d9f899b57d7d2c3a159c08a36294f89564272d8f3034f9",
+            "tests/bridge_tb.sv": "0b7772595e5d796f8d52417713a0e18e7a0d811cbf2fdc304c706ed0d74c53f4",
+            "tests/codec_tb.sv": "ae64ddbab6dbc2ff228bb2e8e7fcbedbba9f428e583bac2909e304c03edde9c1",
+            "tests/compatibility_checks.py": "40b390bf5f86a53f826485ce9550c30ef776c1901e7b429254d78735e1df1f52",
+            "tests/compiled_build.py": "1c1cdd3ee0502fa6a3641d6b28c6a1d9783e9d73fb5ea7713a03db68a03b0d72",
+            "tests/compiled_host_checks.py": "fd742f9f6d8b0b0412f9a62cb1a00d8bab0dec8a2f74309e0d04629726f188cd",
+            "tests/compiler_admission_checks.py": "6fdac7ec3bf8076580ae5bd661955b6ab847cb7c15a1f924a0a69ebf64f09cd1",
+            "tests/decoder_checks.py": "5e120d85783aa8fa9ddcc098a740a73f3934d689570241e4c0057bc312e51767",
+            "tests/decoder_host.cpp": "b52906eb669d57cf3cdefeff3152ee2a297d79c6ff6253d7aa9a300b12765377",
+            "tests/delivery_gate_checks.py": "6bc81f398b817e1da10d6df77a39069cab50966fd63143fd0d20315aaba7d9ac",
+            "tests/delivery_repair_checks.py": "f979e35241444238dc51633c586c1f8dc59bbfcfc55920a9eef974d9a709d0eb",
+            "tests/dot8_tb.sv": "e63f3da394ab536eed3cbcdf16248ee74dce64450d6ba791363fda99ff808714",
+            "tests/execution.py": "5d855db119b25cf1682ad088a8b5de36786cba4a8b89ae5fb8f9fe75cc40de90",
+            "tests/fpga_checks.py": "a8a16b7e250f816a024cc3e44d1a04ca5fabbef45b7e75c7c2aeca6624bb41bf",
+            "tests/frontend_probe.py": "551f6bfeed1b8ac2a28de3aae13d870746e107ed7c93e0ea6aafd1b9581dd29d",
+            "tests/hardware_checks.py": "ef01d0e70dedcc51d086b11af6e79427e9876692b79f13e0ad14b79ee76ebade",
+            "tests/harness_checks.py": "1a1da65efd15655c6af76a79c86beba88b01065099ca34355e875eb3bef732c9",
+            "tests/host_tb.sv": "0e14de1621a499842182767f24be2ac56d380f743817cb30eca8eb4437e3381e",
+            "tests/icarus_throughput_probe.py": "e40da487c5bb332821a3601e50b085729ba82f2453b23cd719a61d45a67da3be",
+            "tests/leaf_checks.py": "1244a6f36061559f0c6303dcad1bfb7646b349661748f0f626952b547504cdfc",
+            "tests/map_checks.py": "d31737267617be8780f1d59f3c87b38d2b03d10faa49b80ac92d8886218c74a4",
+            "tests/map_tb.sv": "3d0fefcc5183fe0d488a25eeaabeada8b1e64881aa87172816be48a386ea703c",
+            "tests/math_memory_checks.py": "39d885029f3fbf955ef5e1dbd0734050336d6abb29a69442c78a0236b8906776",
+            "tests/math_memory_tb.sv": "56efd04c9a1144b0082db9ce561213f5e50a00ff93bee37e2b48d9a2199053e3",
+            "tests/mutation_checks.py": "c1b0c22b966a140bb3e7b33a259a363cb26e565041b4e318f3ef181ea00c163f",
+            "tests/mutation_repair_checks.py": "a5f52389033df85e01ef26fed19bd17a913b8eb6d9a38a93921c9946c11d33a9",
+            "tests/native_baselines.py": "93acfe1dd49c5a9ca591b8b444133380539dc794b499590b838a8f6815069c38",
+            "tests/official_slice.py": "bf74e9c43ea685a84ee397a5a452426e9c1e99b76372310438b60b8fa19d578c",
+            "tests/parameters.py": "8853767aa484eb6edb546f05a7d0f3ad2350285e96dc4db05765025dc843aa43",
+            "tests/prefetch_checks.py": "82329201aea754a3bc6cbba8125b90de4ef0f8950f45c37903e34c9419c36c63",
+            "tests/prefetch_tb.sv": "8dfa25caf5c2718df38e3e86f3647419c912eeb8825c37597b901b8645dd7e3d",
+            "tests/preparation_checks.py": "2ba52dfcb8e53fe2115d1293d248740b703e045efb69d47c00c676e18ebaa42c",
+            "tests/prepare.py": "4c65a529280643dff6caaf85ed84dec61b6b7e58a90dd2a8f83b611a4c577bd7",
+            "tests/prerequisites.py": "e180670e261cabe64baa3466c2dc71c8b82d9cfd691118f5ea225c0fc62f9ed0",
+            "tests/public_asset_checks.py": "f3942b73c0c57ccad1f72bfcc04e1f07a32fac5375614823254ea1262becde5a",
+            "tests/public_assets.json": "c76fe680fdcc406b498e2bb8e1ca88a45ff1233cf3e079bb6acf8db409b1c549",
+            "tests/public_assets.py": "668a21834a4a9d4977a5c4ef56f8bfd7a18c740ccbd7a1a880b9c31f03d0ff64",
+            "tests/quality_reference.py": "a38d7609d9eb137fdcf6651db0bc68b7b9843856aa75114bf8fc06828b976bbe",
+            "tests/receipt_write_checks.py": "fa64a6a2a9b4960982e0fafa0f30d4692f4fdb307e4594a1c843d2bdd01e1dbf",
+            "tests/reference.py": "63fddc7b43063a5e2a48142fedd7eedccc551cc23bc4e9d34f19a194cebfb5d5",
+            "tests/reproduce.py": "3f0afc1d9f504aba19031f5b387579edcb573d38ac4a34a1913412524b648c99",
+            "tests/reproduce_worker.py": "019cde77cc1565c8b785ba7cdddb513d2e8eee1cc4039179026622ebff80d036",
+            "tests/responder_scan_checks.py": "a51337a88421c288561bdd782831adbb955ebad269432d1d3e54b568fc9bc3b5",
+            "tests/scalar_checks.py": "8b4ce68cef9f2d8a093e0e66ec483276c970fb66f38119e2f029b7ba81e04f00",
+            "tests/scalar_tb.sv": "0cd208c6a718efe1ecfad8ad26db2b28029c389585f777c914dc75267b70150c",
+            "tests/scheduler_checks.py": "92fd8fd2c0d6591a919a90ea58a858ccba35f36fd8e284e1365b3f89b02bb546",
+            "tests/scheduler_regression.py": "ee40eb3a9b6671bbd53707bb67513f2152abb7a49f31c2bb27f5650e97e1521e",
+            "tests/scheduler_tb.sv": "1ae84d0e11b25d592ff2b4ca0e99749373a241b73d49bd3a228916517de5176d",
+            "tests/simulation_tiering_checks.py": "17be142ed0f4df9d62a6dafd06ce51aa9c96e3d20911b823275966b4e05d371c",
+            "tests/snapshot_retention_checks.py": "a95a0d75a55fe87b97be7d22bd71be8d2285cd28eaa53e709602a35cd923a89d",
+            "tests/startup_build_checks.py": "b3fa1b6ea86f1a872311fc81a7ef1f284df1ba280ab6469b17399eaf690b99b1",
+            "tests/startup_retention_checks.py": "8b3688cd059d4602f511e26c0f08ff5b02d6c47ec97f88ff1d6b46f770ea9f08",
+            "tests/startup_scalability_checks.py": "bcb62a072b805423630f5e6049ddfeb1b7d7b7b913d496d70ab58af78b1b8a53",
+            "tests/structure_checks.py": "001d8b283cbdb619b200706e1ce355de60821da83bb86c69114dca65e4df3485",
+            "tests/synthesis_checks.py": "ff519ee54d235765e811589302ec162becb04548dc9c266608eb13c9fab28c21",
+            "tests/tensor_activation_tb.sv": "8c27aeb5a4106ffa6745b7baa1dd95b016e51f36fd9e4549e8f0451745de9af7",
+            "tests/tensor_checks.py": "d1b1b3d3d870ac3925ff880726ff38700cb5ddcd82c498e26694e317796bef9f",
+            "tests/tensor_tb.sv": "6dd752236d31a1dd6a96ab03e6a694d6a38f7efe218e425346a5f530cc60ed73",
+            "tests/throughput_checks.py": "1f8b4f39de9d22bbe03fccf5b2adf5f6e243596b6fbbaf154b1433bd38c89bba",
+            "tests/throughput_probe.py": "fe64ea2e77d5a72af80825a032b704a35b7d49b67158ebfc193df9b1933fe857",
+            "tests/top_tb.sv": "3dd76511820b07345a90979988e960f1bd6472eae96459f290b1c78e06eea9b2",
+            "tests/trace_integrity.py": "d009d6acec7529f894825fb0f8c75141c02aa7aef32454319ef5182c17c1bd89",
+            "tests/trace_io_checks.py": "b8cb9f7318f0fb342b2185e41ee087366608f810b9abfde1c423131d04f4f91d",
+            "tests/verify.py": "e2908aa2e345426614fcb990320518e40c7b7d38678b9b820b6700d61d474b6a"
+          }
+        },
+        {
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/model_provenance.json",
           "data": {
             "schema": 1,
             "model_id": "Qwen/Qwen2.5-3B-Instruct-AWQ",
@@ -79430,7 +80356,7 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/design/qwen2_5_3b_awq_config.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/design/qwen2_5_3b_awq_config.json",
           "data": {
             "architectures": [
               "Qwen2ForCausalLM"
@@ -79468,67 +80394,77 @@
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/boolean-schema/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.example.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "f7bb2a4c48fc411a5e08275a466e4e6d06a736f6207645b3e55b5eab55d486c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNIDENTIFIED: example only, not a board configuration or evidence",
+            "device": "10AX115N2F45E1SG",
+            "board": {
+              "manufacturer": null,
+              "model": null,
+              "revision": null,
+              "documentation_url": null
             },
-            "unmet": [
-              "schema 1 and exact Arria 10 GX target 10AX115N2F45E1SG"
-            ]
+            "ddr4": {
+              "part": null,
+              "channels": null,
+              "data_width_bits": null,
+              "capacity_bytes": null,
+              "documentation_url": null
+            },
+            "pcie": {
+              "generation": 3,
+              "lanes": 8,
+              "ip_name": null,
+              "ip_version": null,
+              "license_description": null
+            },
+            "quartus_version": null,
+            "top_module": null,
+            "top_source": null,
+            "pin_qsf": null,
+            "board_sdc": null,
+            "qip_files": [],
+            "support_sources": [],
+            "timing_exceptions": []
           }
         },
         {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-boolean/physical-prerequisites.json",
+          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/sources/fpga/board_manifest.json",
           "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "6e376a13742029b602cee12517aff732e517b66a0465138e5068e79e7079d1c8",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "schema": 1,
+            "status": "UNVERIFIED claims only: physical board/device identity, schematic-backed pins, DDR4 arrangement and licensed generated IP have not been established",
+            "device": "10AX115N2F45E1SG",
+            "timing_exceptions": [],
+            "quartus_version": "17.1.0 Build 590 10/25/2017 SJ Standard Edition",
+            "board": {
+              "manufacturer": "Terasic",
+              "model": "DE10-Pro-SX",
+              "revision": "B",
+              "documentation_url": "https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1144"
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-float/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "0d094150bae5ee509090318dd02896a0f8de30a135dd645af8936c954c769d1e",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "ddr4": {
+              "part": "MT40A1G8SA-075:E",
+              "documentation_url": "https://www.micron.com/products/memory/dram-components/ddr4-sdram",
+              "channels": 2,
+              "data_width_bits": 64,
+              "capacity_bytes": 8589934592
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
-          }
-        },
-        {
-          "path": "evidence/check-reproduce/20261101T042114Z-fd21f3d7597e/clean-project/evidence/reproduction/20261101T042115Z-d3ab2c72fe12/board-prerequisite-fixtures/capacity_bytes-negative/physical-prerequisites.json",
-          "data": {
-            "physical_access_and_licenses": "not established by a manifest",
-            "source_hashes": {
-              "fpga/board_manifest.json": "2f25165c87347d602563dac480743a6c381bbec68860bac6058c4543f3f189c3",
-              "fpga/fixture.qip": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.qsf": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sdc": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6",
-              "fpga/fixture.sv": "ed0d2c865862d42c469c0f2a333c5827d8c13359f4212952576a49a70e09e7a6"
+            "pcie": {
+              "ip_name": "altera_pcie_a10_hip",
+              "ip_version": "17.1",
+              "license_description": "Quartus Prime Standard Edition IP Base Suite",
+              "generation": 3,
+              "lanes": 8
             },
-            "unmet": [
-              "ddr4.capacity_bytes: positive integer required"
-            ]
+            "top_module": "anvil_q3_board_top",
+            "top_source": "fpga/anvil_q3_board_top.sv",
+            "pin_qsf": "fpga/board_pins.qsf",
+            "board_sdc": "fpga/board_clocks.sdc",
+            "qip_files": [
+              "fpga/board_ip.qip"
+            ],
+            "support_sources": []
           }
         },
         {
