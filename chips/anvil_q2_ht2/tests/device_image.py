@@ -17,6 +17,7 @@ from quantized_checkpoint import header
 
 ROOT = Path(__file__).resolve().parents[1]
 IMPLEMENTATION = ("tests/device_image.py", "tests/device_image_checks.py",
+                  "tests/device_image_config_tb.sv", "tests/top_tb.sv",
                   "tests/quantized_checkpoint.py", "tests/benchmarks.py",
                   "tests/reference.py", "design/SPEC.md")
 MODES = ("bf16", "fp16", "w4", "w2")
@@ -137,7 +138,7 @@ def assemble(root, manifest, output, mode, sequence=32768, group=128, block=16):
     descriptors = [bytes(64) for _ in range(16+16*g["NUM_LAYERS"])]
     segments, aliases = [], {}
     cursor = 4096
-    with source.open("rb") as checkpoint, memory.open("wb") as stream:
+    with memory.open("wb") as stream:
         def append(chunks, size, index, role, name):
             nonlocal cursor
             address = cursor
@@ -256,6 +257,7 @@ def main():
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     if args.command == "_build":
+        require(len(args.modes) == 1, "internal build expects exactly one mode")
         output = portable_path(ROOT, args.output)
         require(output.parent.name == "checkpoint-images" or output.name.startswith("official-image-"),
                 "weight images must use checkpoint-images/ or official-image-*")
@@ -275,6 +277,11 @@ def main():
                     "numpy-version")
         run.command(["python3", "tests/device_image_checks.py", "--fixtures",
                      run.relative(run.path / "checkpoint-images")], "independent-image-controls")
+        from device_image_checks import smoke
+        fixtures = json.loads((run.path / "checkpoint-images/fixture-results.json").read_text())
+        run.receipt["image_controls"] = fixtures
+        run.save()
+        smoke(run, fixtures["images"])
         if args.command == "build":
             base = portable_path(ROOT, args.output) if args.output else (
                 ROOT / "checkpoint-images" / f"official-image-ht2-{run.path.name}")
@@ -282,10 +289,8 @@ def main():
             require(len(set(args.modes)) == len(args.modes), "duplicate modes")
             run.receipt["images"] = []
             for mode in args.modes:
-                output = base / mode
-                # Each run root has the official-image prefix; leaf output contains only one mode.
-                output.parent.mkdir(parents=True, exist_ok=True)
-                destination = output.parent / f"official-image-{mode}-{uuid.uuid4().hex[:8]}"
+                base.mkdir(parents=True, exist_ok=True)
+                destination = base / f"official-image-{mode}-{uuid.uuid4().hex[:8]}"
                 run.command(["python3", "tests/device_image.py", "_build", "--modes", mode,
                              "--sequence", str(args.sequence), "--group", str(args.group),
                              "--cache-block", str(args.cache_block), "--output",
