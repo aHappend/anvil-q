@@ -369,6 +369,13 @@ def prerequisites(root, manifest):
                 paths[f"{group}/{index}"] = validate_asset(root, binding)
             except ValueError as exc:
                 errors.append(f"{group}/{index}: {exc}")
+    if manifest["quantized_weight_inputs"] and not any(
+            error.startswith("quantized_weight_inputs/") for error in errors):
+        from quantized_checkpoint import benchmark_image
+        try:
+            benchmark_image(root, manifest)
+        except (ValueError, KeyError) as exc:
+            errors.append(f"quantized_weight_inputs: {exc}")
     if "config" in paths:
         config = json.loads(paths["config"].read_text())
         dimensions = {"num_hidden_layers": 28, "hidden_size": 1536,
@@ -465,6 +472,18 @@ def execute(run):
     save()
     if errors:
         raise RuntimeError("benchmark prerequisites missing or invalid: " + "; ".join(errors))
+    from quantized_checkpoint import benchmark_image, check
+    from quantized_checkpoint_tests import execute as converter_self_tests
+    image = benchmark_image(ROOT, manifest)
+    run.tool("c++")
+    checker = run.path / "quantized-check"
+    run.command(["c++", "-std=c++17", "-O2", "tests/quantized_checkpoint_check.cpp",
+                 "-o", run.relative(checker)], "compile-quantized-input-checker")
+    try:
+        converter_self_tests(run, checker)
+        check(run, image, checker)
+    finally:
+        checker.unlink(missing_ok=True)
     config = json.loads(paths["config"].read_text())
     eos = config["eos_token_id"]
     eos_ids = eos if isinstance(eos, list) else [eos]

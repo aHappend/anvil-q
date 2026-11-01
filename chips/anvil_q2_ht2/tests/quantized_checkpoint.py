@@ -4,11 +4,9 @@
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 import struct
 import sys
-import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmarks import digest, portable_path, require, validate_asset
@@ -17,7 +15,8 @@ from reference import BF16, decode, encode_ratio
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = "zero-inclusive-minmax-stored-bf16-rne-v1"
 IMPLEMENTATION = ("tests/quantized_checkpoint.py",
-                  "tests/quantized_checkpoint_check.cpp", "design/SPEC.md")
+                  "tests/quantized_checkpoint_check.cpp", "tests/reference.py",
+                  "tests/benchmarks.py", "design/SPEC.md")
 
 
 def header(path):
@@ -216,6 +215,40 @@ def generate(image, group):
     (image / "manifest.json").write_text(json.dumps(result, indent=2) + "\n")
 
 
+def benchmark_image(root, manifest):
+    bindings = manifest["quantized_weight_inputs"]
+    require(len(bindings) == 7, "quantized inputs require one manifest and six byte images")
+    manifests = [binding for binding in bindings if Path(binding["path"]).name == "manifest.json"]
+    require(len(manifests) == 1, "quantized inputs require exactly one image manifest")
+    path = validate_asset(root, manifests[0])
+    require(path.parent.name.startswith("official-image-"), "invalid official image directory")
+    data = json.loads(path.read_text())
+    require(data["kind"] == "derived-official-quantized-inputs" and data["policy"] == POLICY and
+            data["source"] in manifest["checkpoint_shards"] and
+            data["config"] == manifest["assets"]["config"] and
+            data["upstream"] == manifest["model_provenance"],
+            "quantized image is not derived from the bound official inputs")
+    expected = [{"path": entry["path"], "sha256": entry["sha256"]} for entry in data["files"]]
+    actual = [entry for entry in bindings if entry != manifests[0]]
+    require(len(expected) == 6 and
+            sorted(actual, key=lambda x: x["path"]) == sorted(expected, key=lambda x: x["path"]),
+            "quantized byte images are not completely/immutably bound")
+    return path.parent
+
+
+def compare_checks(output, entries):
+    observed = [line.split() for line in output.splitlines() if line.startswith("CHECK ")]
+    require(len(observed) == len(entries), "independent checker missed tensors")
+    count = 0
+    for fields, entry in zip(observed, entries):
+        require(fields == ["CHECK", entry["source_tensor"], str(entry["bits"]),
+                           str(entry["rows"] * entry["columns"]),
+                           entry["reconstruction_sha256"]],
+                f"{entry['source_tensor']}: independent BF16 reconstruction mismatch")
+        count += entry["rows"] * entry["columns"]
+    return count
+
+
 def check(run, image, binary):
     manifest, source, config, tensors, base = source_inputs()
     data = json.loads((image / "manifest.json").read_text())
@@ -269,20 +302,12 @@ def check(run, image, binary):
     require(offsets == sizes, "image trailing bytes or truncated extents")
     _, output, _ = run.command([run.relative(binary), run.relative(table)],
                                "independent-all-weights-check")
-    observed = [line.split() for line in output.splitlines() if line.startswith("CHECK ")]
-    require(len(observed) == len(expected), "independent checker missed tensors")
-    count = 0
-    for fields, entry in zip(observed, data["tensors"]):
-        require(fields == ["CHECK", entry["source_tensor"], str(entry["bits"]),
-                           str(entry["rows"] * entry["columns"]),
-                           entry["reconstruction_sha256"]],
-                f"{entry['source_tensor']}: independent BF16 reconstruction mismatch")
-        count += entry["rows"] * entry["columns"]
+    count = compare_checks(output, data["tensors"])
     run.receipt["quantized_image"] = {
         "manifest": str((image / "manifest.json").relative_to(ROOT)),
         "manifest_sha256": digest(image / "manifest.json"),
         "compared_weights": count, "compared_tensors": len(expected),
-        "independent_checker": "exact integer/rational C++ plus OpenSSL SHA-256",
+        "independent_checker": "exact 320-bit integer/rational C++ and SHA-256",
         "files": data["files"],
     }
     run.save()
@@ -293,12 +318,15 @@ def main():
     parser.add_argument("command", choices=("generate", "check", "_generate"))
     parser.add_argument("--image", help="project-relative fresh official-image-* directory")
     parser.add_argument("--group-size", type=int, default=128)
+    parser.add_argument("--repair-of", help="retained earlier preparation receipt")
+    parser.add_argument("--require-benchmark-binding", action="store_true",
+                        help="also require the seven actual inputs in benchmark_manifest.json")
     args = parser.parse_args()
     if args.command == "_generate":
         generate(portable_path(ROOT, args.image), args.group_size)
         return 0
     from verify import Run
-    run = Run("official-quantized-" + args.command, preparation=True)
+    run = Run("official-quantized-" + args.command, preparation=True, repair_of=args.repair_of)
     run.receipt["argv"] = ["python3", "tests/quantized_checkpoint.py", *sys.argv[1:]]
     run.save()
     try:
@@ -308,7 +336,7 @@ def main():
                     "numpy-version")
         binary = run.path / "quantized-check"
         run.command(["c++", "-std=c++17", "-O2", "tests/quantized_checkpoint_check.cpp",
-                     "-lcrypto", "-o", run.relative(binary)], "compile-independent-checker")
+                     "-o", run.relative(binary)], "compile-independent-checker")
         import quantized_checkpoint_tests
         quantized_checkpoint_tests.execute(run, binary)
         image_arg = args.image or ("checkpoint-images/official-image-qwen-w4w2-" +
@@ -322,6 +350,9 @@ def main():
                         "stream-official-projections")
         else:
             require(args.image is not None, "check requires --image")
+        if args.require_benchmark_binding:
+            bound = json.loads((ROOT / "tests/benchmark_manifest.json").read_text())
+            require(benchmark_image(ROOT, bound) == image, "benchmark binds another image")
         check(run, image, binary)
         binary.unlink()
         return run.finish(True, "Official W4/W2 bytes and BF16 reconstruction independently checked; "

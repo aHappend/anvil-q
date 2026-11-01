@@ -80,6 +80,57 @@ def completed_account():
 
 
 class CorpusAndAssetChecks(unittest.TestCase):
+    def quantized_binding_fixture(self):
+        image = FIXTURES / ("official-image-bindings-" +
+                            hashlib.sha256(self.id().encode()).hexdigest()[:8])
+        image.mkdir()
+        manifest = {"model_provenance": {"revision": "synthetic-only"},
+                    "checkpoint_shards": [{"path": "synthetic.bf16", "sha256": "1"*64}],
+                    "assets": {"config": {"path": "synthetic.json", "sha256": "2"*64}}}
+        files = []
+        for width in (2, 4):
+            for suffix in ("weights.bin", "zeros.bin", "scales.bf16"):
+                path = image / f"w{width}-{suffix}"
+                path.write_bytes(b"\x00")
+                files.append({"path": str(path.relative_to(FIXTURES)), "sha256": digest(path)})
+        from quantized_checkpoint import POLICY
+        data = {"kind": "derived-official-quantized-inputs", "policy": POLICY,
+                "source": manifest["checkpoint_shards"][0],
+                "config": manifest["assets"]["config"],
+                "upstream": manifest["model_provenance"], "files": files}
+        path = image / "manifest.json"
+        path.write_text(json.dumps(data))
+        manifest["quantized_weight_inputs"] = [
+            {"path": str(path.relative_to(FIXTURES)), "sha256": digest(path)}, *files]
+        return manifest, image, data
+
+    def test_complete_quantized_image_binding(self):
+        from quantized_checkpoint import benchmark_image
+        manifest, image, _ = self.quantized_binding_fixture()
+        self.assertEqual(benchmark_image(FIXTURES, manifest), image)
+
+    def test_quantized_image_missing_byte_file(self):
+        from quantized_checkpoint import benchmark_image
+        manifest, _, _ = self.quantized_binding_fixture()
+        manifest["quantized_weight_inputs"].pop()
+        with self.assertRaisesRegex(ValueError, "six byte images"):
+            benchmark_image(FIXTURES, manifest)
+
+    def test_quantized_image_substituted_digest(self):
+        from quantized_checkpoint import benchmark_image
+        manifest, _, _ = self.quantized_binding_fixture()
+        manifest["quantized_weight_inputs"][-1] = {
+            **manifest["quantized_weight_inputs"][-1], "sha256": "3"*64}
+        with self.assertRaisesRegex(ValueError, "completely/immutably bound"):
+            benchmark_image(FIXTURES, manifest)
+
+    def test_quantized_image_wrong_official_source(self):
+        from quantized_checkpoint import benchmark_image
+        manifest, _, _ = self.quantized_binding_fixture()
+        manifest["checkpoint_shards"] = [{"path": "other.bf16", "sha256": "4"*64}]
+        with self.assertRaisesRegex(ValueError, "bound official inputs"):
+            benchmark_image(FIXTURES, manifest)
+
     def test_frozen_corpus(self):
         manifest = json.loads((ROOT / "tests/benchmark_manifest.json").read_text())
         prompts = corpus(ROOT, manifest)

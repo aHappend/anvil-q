@@ -38,7 +38,7 @@ def oracle(values, width):
 
 def execute(run, binary):
     import numpy as np
-    from quantized_checkpoint import packed, quantize
+    from quantized_checkpoint import compare_checks, packed, quantize
     rng = random.Random(211)
     fixtures = run.path / "checkpoint-images"
     fixtures.mkdir(exist_ok=False)
@@ -86,6 +86,19 @@ def execute(run, binary):
     require(len(records) == len(expected_hashes) and
             [row[-1] for row in records] == expected_hashes,
             "independent fixture reconstruction hashes mismatch")
+    entries = [{"source_tensor": fields[1], "bits": int(fields[2]), "rows": 1,
+                "columns": int(fields[3]), "reconstruction_sha256": fields[4]}
+               for fields in records]
+    require(compare_checks(stdout, entries) == compared, "fixture comparison count mismatch")
+    corrupted = [dict(entry) for entry in entries]
+    corrupted[0]["reconstruction_sha256"] = "0" * 64
+    try:
+        compare_checks(stdout, corrupted)
+    except ValueError as exc:
+        require("independent BF16 reconstruction mismatch" in str(exc),
+                "wrong reconstruction defect diagnostic")
+    else:
+        raise ValueError("incorrect BF16 reconstruction digest accepted")
     detections = []
     # Copies keep the successful control and all accepted/model inputs untouched.
     for role, filename, mask, diagnostic in (
@@ -117,6 +130,7 @@ def execute(run, binary):
     run.receipt["converter_self_tests"] = {
         "exact_python_compared_weights": compared, "cpp_checked_tensors": len(records),
         "executed_byte_defect_detections": detections,
+        "executed_reconstruction_defect_detection": True,
         "scope": "synthetic converter diagnostics only; not official model acceptance",
     }
     run.save()
