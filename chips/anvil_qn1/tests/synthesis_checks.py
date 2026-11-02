@@ -108,6 +108,116 @@ def inspect_netlist(data):
             "latches": 0, "combinational_div_mod": 0, "unresolved_blackboxes": 0}
 
 
+def connected_tensor_lanes(data):
+    """Conservative bit-level structural reachability through real cell ports."""
+    records = []
+    for name, module in data["modules"].items():
+        if "anvil_qn1_tensor_array" not in name:
+            continue
+        predecessors = {}
+        for cell in module["cells"].values():
+            directions = cell.get("port_directions", {})
+            inputs = {bit for port, bits in cell["connections"].items()
+                      if directions.get(port) == "input" and port not in
+                      ("clk", "rst_n", "flush", "ce")
+                      for bit in bits if isinstance(bit, int)}
+            outputs = {bit for port, bits in cell["connections"].items()
+                       if directions.get(port) == "output"
+                       for bit in bits if isinstance(bit, int)}
+            for bit in outputs:
+                predecessors.setdefault(bit, set()).update(inputs)
+        reachable = set(module["ports"]["out_sum"]["bits"])
+        pending = list(reachable)
+        while pending:
+            bit = pending.pop()
+            for ancestor in predecessors.get(bit, ()):
+                if ancestor not in reachable:
+                    reachable.add(ancestor)
+                    pending.append(ancestor)
+        widths = {"q": 4, "z": 4, "scale_bf16": 16,
+                  "activation_bf16": 16, "weight_bf16": 16, "lane_mask": 1}
+        for lane in range(256):
+            for port, width in widths.items():
+                bits = module["ports"][port]["bits"][lane * width:(lane + 1) * width]
+                if len(bits) != width or not all(bit in reachable for bit in bits):
+                    raise AssertionError(f"tensor lane {lane} {port} cannot reach out_sum")
+        records.append({"module": name, "reachable_output_ancestry_bits": len(reachable),
+                        "connected_lanes": 256,
+                        "method": "structural cell-port reachability, not functional equivalence"})
+    if not records:
+        raise AssertionError("tensor dataflow reachability not checked")
+    return records
+
+
+def run_synthesis_case(run, profile=3, compact=False, banks=8, queue=3,
+                       vocabulary=8, maximum=16, head_dim=8, q_heads=2):
+    sources = yosys_sources(run)
+    parameters = {"PROFILE": profile, "BANKS": banks, "QUEUE_DEPTH": queue}
+    if compact:
+        parameters.update({"COMPACT": 1, "NUM_LAYERS": 1, "HIDDEN_SIZE": 8,
+                           "INTERMEDIATE_SIZE": 8, "NUM_Q_HEADS": q_heads,
+                           "NUM_KV_HEADS": 1, "HEAD_DIM": head_dim,
+                           "VOCAB_SIZE": vocabulary, "MAX_SEQ_LEN": maximum,
+                           "GROUP_SIZE": 8})
+    hierarchy = run.path / "hierarchy.json"
+    netlist = run.path / "coarse-synthesized.json"
+    script = run.path / "synthesis.ys"
+    script.write_text(
+        "read_verilog -sv " + " ".join(sources) + "\n"
+        "chparam " + " ".join(f"-set {key} {value}" for key, value in parameters.items()) +
+        " anvil_qn1_top\n"
+        "hierarchy -check -top anvil_qn1_top\n"
+        "proc\nopt_expr\nopt_clean\ncheck -assert\n"
+        f"write_json {relative(hierarchy)}\n"
+        # Stop before Yosys's fine stage: it forcibly maps external-client RAMs.
+        "synth -top anvil_qn1_top -noshare -noalumacc -run coarse:coarse\n"
+        "hierarchy -check -top anvil_qn1_top\ncheck -assert\nstat\n"
+        f"write_json {relative(netlist)}\n"
+        "select anvil_qn1_top/native.bank_scheduler\n"
+        "flatten\nselect anvil_qn1_top\nopt -full\nscc -expect 0\n"
+        "check -assert\n")
+    output = run.execute(["yosys", "-Q", "-T", "-s", relative(script)], "yosys-coarse-synthesis")
+    before_data, before = retain_json(hierarchy)
+    before_structure = inspect_netlist(before_data)
+    before_connections = connected_tensor_lanes(before_data)
+    del before_data
+    data, artifact = retain_json(netlist)
+    structure = inspect_netlist(data)
+    connections = connected_tensor_lanes(data)
+    if not re.search(r"Found 0 SCCs", output):
+        raise AssertionError("optimized cross-hierarchy zero-SCC result missing")
+    return {"parameters": parameters, "production": not compact,
+            "hierarchy_netlist": before, "hierarchy": before_structure,
+            "hierarchy_connections": before_connections,
+            "synthesized_netlist": artifact, "synthesis": structure,
+            "synthesized_connections": connections,
+            "top_scheduler_combinational_scc": 0,
+            "scope": "Yosys coarse synthesis with unmapped memories; not physical timing"}
+
+
+def run_synthesis(run):
+    results = []
+    for profile in (1, 2, 3):
+        results.append(run.component(
+            f"synthesis-profile{profile}",
+            lambda child, profile=profile: run_synthesis_case(child, profile=profile)))
+    for index, (banks, queue, vocabulary, maximum, head_dim, q_heads) in enumerate((
+            (1, 1, 1, 1, 8, 2),
+            (8, 3, 8, 16, 8, 4),
+            (1, 16, 8, 16, 128, 4),
+            (8, 16, 8, 16, 128, 2))):
+        results.append(run.component(
+            f"synthesis-boundary{index}",
+            lambda child, banks=banks, queue=queue, vocabulary=vocabulary,
+            maximum=maximum, head_dim=head_dim, q_heads=q_heads:
+            run_synthesis_case(child, compact=True, banks=banks, queue=queue,
+                               vocabulary=vocabulary, maximum=maximum,
+                               head_dim=head_dim, q_heads=q_heads)))
+    return {"cases": results, "case_count": len(results),
+            "production_profiles": [1, 2, 3], "compact_boundaries": 4,
+            "latches": 0, "combinational_div_mod": 0, "unresolved_blackboxes": 0}
+
+
 def run_synthesis_probe(run):
     sources = yosys_sources(run)
     hierarchy = run.path / "hierarchy.json"

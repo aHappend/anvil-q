@@ -51,7 +51,8 @@ from control_checks import run_csr, run_controller
 from smoke_checks import run_startup, run_elaboration, run_smoke
 from speculation_checks import run_speculation
 from numerical_checks import run_numerical
-from synthesis_checks import run_synthesis_probe, run_controller_synthesis
+from synthesis_checks import (run_synthesis_probe, run_controller_synthesis,
+                              run_synthesis_case, run_synthesis)
 from behavior_checks import run_behavior_core
 from memory_checks import run_banked_top, run_memory_matrix
 from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
@@ -77,7 +78,7 @@ def main():
                                           "memory-matrix", "banked-boundary", "fault-case",
                                           "fault-matrix", "integrated-csr",
                                           "attention-context", "attention-context-short",
-                                          "speculative-cancel"))
+                                          "speculative-cancel", "synthesis-production"))
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
@@ -85,7 +86,10 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "speculative-cancel":
+        if args.probe == "synthesis-production":
+            run.versions(("python3", "yosys"))
+            results = run_synthesis_case(run, profile=1)
+        elif args.probe == "speculative-cancel":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_speculative_cancel_matrix(run)
         elif args.probe in ("attention-context", "attention-context-short"):
@@ -186,6 +190,9 @@ def main():
         elif args.suite == "numerical":
             run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
             results = run_numerical(run)
+        elif args.suite == "synthesis":
+            run.versions(("python3", "yosys"))
+            results = run_synthesis(run)
         else:
             raise NotImplementedError("L1 suite authoring is in progress; no passing result claimed")
         run.finish("passed", results)
