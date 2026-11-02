@@ -222,4 +222,48 @@ package anvil_q1_fp2_pkg;
   function automatic signed [10:0] max_exp(input signed [10:0] a, b);
     begin max_exp=a>b ? a : b; end
   endfunction
+
+  function automatic [31:0] uint32_to_fp32(input [31:0] x);
+    reg [4:0] high;
+    reg [31:0] shifted;
+    reg [24:0] rounded;
+    reg guard_bit, sticky_bit;
+    integer distance;
+    begin
+      high=5'(leading1024({992'd0,x}));
+      shifted=0; rounded=0; guard_bit=0; sticky_bit=0; distance=0;
+      if (high<=23) shifted=x << (23-high);
+      else begin
+        distance=integer'({1'b0,high})-23;
+        shifted=x >> distance;
+        guard_bit=|(x & (32'd1 << (distance-1)));
+        sticky_bit=|(x & ((32'd1 << (distance-1))-1));
+      end
+      rounded={1'b0,shifted[23:0]}+
+        {24'd0,guard_bit && (sticky_bit || shifted[0])};
+      if (x==0) uint32_to_fp32=0;
+      else if (rounded[24]) uint32_to_fp32={1'b0,8'(128+high),23'd0};
+      else uint32_to_fp32={1'b0,8'(127+high),rounded[22:0]};
+    end
+  endfunction
+
+  function automatic [20:0] fp32_to_bf16(input [31:0] x);
+    reg [16:0] rounded;
+    reg [4:0] flags;
+    reg lost;
+    begin
+      flags=0; lost=|x[15:0];
+      rounded={1'b0,x[31:16]}+
+        {16'd0,x[15] && ((|x[14:0]) || x[16])};
+      if (x[30:23]==255 && x[22:0]!=0) begin
+        fp32_to_bf16={!x[22],4'd0,16'h7fc0};
+      end else if (x[30:23]==255) fp32_to_bf16={5'd0,x[31:16]};
+      else begin
+        flags[0]=lost;
+        flags[2]=rounded[14:7]==255;
+        flags[1]=lost && rounded[14:7]==0;
+        fp32_to_bf16={flags,rounded[15:0]};
+      end
+    end
+  endfunction
 endpackage

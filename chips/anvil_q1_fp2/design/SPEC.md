@@ -4,10 +4,11 @@
 
 This is the design-side implementation contract, not a verification or acceptance
 report. The admitted work order remains authoritative. Implementation is in
-progress: the exact tensor, fast-rsqrt, DDR ping-pong and telemetry leaves exist;
-the optimized decoder, fused epilogue, attention and top-level integration are
-not yet complete. No numerical, performance, synthesis, timing or board result is
-claimed here.
+progress: the exact tensor, fast-rsqrt, FP32 arithmetic, fused epilogue,
+single-query tiled attention, MX quantizer, DDR ping-pong and telemetry leaves
+exist. The optimized decoder, shared GQA traversal and top-level integration
+are not yet complete. No numerical, performance, synthesis, timing or board
+result is claimed here.
 
 The immutable parent is `anvil_q1_fp_reference/rtl/*.sv`. No repository intake
 source index was supplied. `design/GENERATIONAL_HANDOFF.md` was absent at intake;
@@ -104,10 +105,19 @@ need not be reset: validity/ownership prevents stale values from becoming public
 | FP32 binary accept at k | Operand register stage 0; MULTIPLY is a static 0/1 parameter. |
 | FP32 binary k+1..k+8 | Exact significands/exponents, coarse placement, fine signed placement, sum, magnitude, leading index, RNE preparation, then valid result. II=1 with no stalls. |
 | FP32 binary stalled | Freeze all nine stages and metadata as for the tensor. |
+| Exp accept at k | Capture signed Q24 argument and special-value classification. |
+| Exp k+1..k+7 | Signed base-2 reduction, five Horner registers, then RNE packing; first valid result after k+7, II=1. |
+| Reciprocal accept at k | Synchronous reads of two adjacent normalized ROM endpoints, fraction and exponent capture. |
+| Reciprocal k+1..k+5 | Difference, interpolation product, interpolated value, RNE preparation, then valid result, II=1. |
+| MX quantizer accept at k | Capture operand/mask and masked finite magnitudes. |
+| MX quantizer k+1..k+5 | Five registered pairwise maximum levels, independently for each Group-32. |
+| MX quantizer k+6 | Capture the two E8M0 scales and delayed original operands. |
+| MX quantizer k+7 | Per-lane RNE encoding and flags. |
+| MX quantizer k+8 | Registered balanced status/count reduction and matching code/scale payload; II=1. |
 
-Command engines, when integrated, must implement the following transfer-based
-contract; their concrete compute-state latencies must be documented with their
-implementation, not guessed from continuously ready tests:
+The implemented command engines use the following transfer-based contract;
+their compute states are described below. Integration must preserve it rather
+than assuming continuously ready endpoints:
 
 | Command boundary | Contract |
 |---|---|
@@ -205,8 +215,179 @@ special values, signaling NaNs, signed zeros, overflow and gradual underflow
 follow the common status/rounding contract. Exact add cancellation returns +0;
 multiplication of finite zeros preserves the XOR sign.
 
-This deliberately shared exact implementation is not yet integrated into
-the command engines. Like the tensor, its physical cost/timing is unmeasured.
+This shared exact implementation supplies the epilogue and attention arithmetic
+boundaries. Like the tensor, its physical cost/timing is unmeasured.
+
+The package also provides `uint32_to_fp32` and `fp32_to_bf16`. Integer conversion
+uses RNE, including integers exceeding 24 significant bits. FP32-to-BF16 returns
+`{status[4:0],value[15:0]}`, preserves signed zeros and infinities, canonicalizes
+NaNs with signaling detection, and reports overflow, inexact and after-rounding
+underflow. These are implementation helpers, not independent references.
+
+## Nonlinear arithmetic support
+
+`anvil_q1_fp2_exp` has `clk,rst_n,in_valid,x[31:0]` inputs and
+`out_valid,result[31:0],status[4:0]` outputs. Its eight registered stages
+have no output backpressure. Input bubbles produce invalid zero public payloads.
+The finite supported interval is [-80,80]; attention and stable sigmoid use
+only [-80,0]. Finite inputs below -80 return zero with inexact, an intentional
+tail approximation whose impact must be included in independent error reports.
+Finite inputs above +80 return infinity with overflow/inexact, a range error,
+not a claim that exp(81) is an IEEE overflow. Infinities have their mathematical
+exp results; NaNs follow the canonical/signaling policy; either zero returns 1.
+
+Finite conversion captures x in signed Q24. Multiplication by Q30
+`1549082005` approximates log2(e); arithmetic floor extraction obtains the signed
+integer exponent and a Q30 fraction in [0,1). A degree-six Horner approximation
+to 2^fraction uses the checked-in integer coefficients
+`1073741824,744261118,257941248,59597083,10327387,1431680,165394`,
+representing RNE Q2.30 values of ln(2)^j/j!. A separate final stage rounds
+the significand ties-to-even and applies the exponent. The required <=0.0005
+relative error and monotonicity remain independent verification obligations.
+
+`anvil_q1_fp2_reciprocal` uses the same fixed-pipeline ports and six registers,
+with first valid after k+5. It is an approximate reciprocal for nonlinear
+normalization, not a correctly rounded IEEE divide primitive. Positive
+significands are normalized into [1,2), including input subnormals. Two
+1024-word synchronous ROMs supply adjacent Q1.31 values of 1/(1+i/1024).
+The source-local `endpoint` constant function generates every endpoint by
+bounded integer long division, without runtime division or a file dependency.
+Ten fraction bits select an interval; the remaining thirteen interpolate its
+endpoints in registered subtract/multiply/subtract stages. Separate RNE
+preparation and packing provide gradual output underflow and overflow.
+Finite approximate results conservatively report inexact. Zero returns signed
+infinity with divide-by-zero; infinity returns signed zero; NaNs follow the
+common canonical/signaling policy. Numerical error is not yet measured.
+
+## Group-32 quantization support
+
+`anvil_q1_fp2_mx_quantize` accepts `clk,rst_n,in_valid,bf16_data[1023:0],
+lane_mask[63:0]`; outputs are `out_valid,mx_data[511:0],scales[15:0],
+status[4:0],saturation_events[6:0]`. It has no output backpressure and its nine
+register stages produce first valid after k+8. Output payload/status/counts
+are zero when invalid or reset.
+
+Each group independently selects its largest active finite BF16 magnitude
+through five registered comparator levels. With leading exponent e and
+normalized eight-bit significand t, the minimal unconstrained scale exponent
+is e-8 when t<=224, otherwise e-7: 224/128 is the 1.75 significand of the
+maximum E4M3FN magnitude 448. The scale exponent is bounded below by -127
+(E8M0 zero). A finite BF16 group never needs a scale beyond E8M0 254. An
+empty/all-zero group uses scale byte zero. No inactive lane affects scale,
+status or saturation, and its output code is zero.
+
+Per-lane integer shifts implement RNE with ties to an even code, including
+subnormal-to-normal carries and exponent carries. Zero sign is preserved.
+Nonzero discarded bits set inexact; after-rounding subnormal inexact codes
+also set underflow. Quiet NaN maps to code 0x7f; signaling NaN additionally
+sets invalid. Infinity saturates to signed maximum finite code, increments
+saturation_events and sets overflow/inexact. Any finite-code saturation is
+also counted and inexact. Independent arithmetic checks must decode these
+codes/scales afresh and include that BF16 decoding's own flags: quantization
+is not permission to hide a later decode overflow. The module is not yet
+connected to architectural activation/KV storage or telemetry.
+
+## Fused epilogue command engine
+
+`anvil_q1_fp2_epilogue_fusion` implements the frozen leaf ports, with parameters
+`MAX_VECTOR=4864,HEAD_DIM=64,MAX_POS=32768`. MAX_VECTOR and MAX_POS must be
+positive; HEAD_DIM must be positive, even and at least two. All commands require
+1<=cmd_len<=MAX_VECTOR. RoPE additionally requires cmd_pos<MAX_POS and a length
+that is a positive whole number of heads. The length check enumerates constant
+head multiples at elaboration; it creates no runtime remainder operator.
+
+The engine accepts a complete vector before computing, using bounded internal
+synchronous data/auxiliary/residual RAM. It writes the completed vector to an
+internal result RAM and then streams it in original component order. There
+are no external intermediate SRAM transfers. `in_last` must coincide exactly
+with input index cmd_len-1, including singleton commands. A framing violation
+terminates with an error completion and no output vector.
+
+| Op | Operand routing and FP32 boundaries |
+|---:|---|
+| 0 | RMSNorm: square every x, add squares in component order starting at +0, multiply sum by reciprocal(FP32(cmd_len)), add epsilon 0x358637bd, call the named two-stage `fast_rsqrt`, multiply each x by its result, then multiply by stored in_aux gamma. Every add/multiply is an independent FP32 RNE boundary. |
+| 1 | RoPE: within each split-half head, in_aux for first-half component j is cosine and in_aux for second-half component j+D/2 is sine. Compute x*cos-y*sin and y*cos+x*sin with four FP32 products and two FP32 sums. |
+| 2 | SwiGLU: e=exp(-abs(gate)), r=reciprocal(1+e); sigmoid is r for a nonnegative gate and e*r for a negative gate. Compute (gate*sigmoid)*in_aux, with in_aux the up projection. Finite tails saturate sigmoid at the exp range limit. For negative infinity the swish factor is its limiting -0 before multiplication by up, avoiding infinity*zero. |
+| 3 | Residual: exact-RNE add of in_data and in_residual. |
+
+RoPE coefficients must come from the deterministic FP32 kind-11 table for
+`cos(pos*1000000^(-2*j/HEAD_DIM))` and the matching sine. cmd_pos labels and
+bounds that supplied table row; this streaming leaf does not fabricate a
+coefficient table or independently check trigonometry. The unfinished decoder
+must fetch the correct row and route each coefficient to the stated in_aux
+position. Arbitrary fixture-specific coefficients are not an integration option.
+
+Arithmetic status is OR-reduced across all component operations and accompanies
+each stable output and completion. Command/framing errors assert error with
+done. Arithmetic special results retain their common IEEE flags; the decoder
+must treat fatal flags as token failure. No performance is inferred from this
+buffered schedule.
+
+| Engine boundary | Implemented edge/state sequence |
+|---|---|
+| Command at k | COLLECT after k; no input transfer before this state. |
+| Bad command at k | ERROR_WAIT0 after k, ERROR_WAIT1 after k+1, FINISH with done/error after k+2. No input readiness in these states. |
+| Final input at t | READ_X after t; its synchronous RAM read occurs at t+1, LATCH_X at t+2, and the selected arithmetic issue is accepted no earlier than t+3. RMSNorm first performs its complete square/sum reduction; RoPE also reads the partner component. |
+| Stalled final input | Remain COLLECT, preserving count and memories until its actual transfer. |
+| Singleton residual | After final input t, read/latch/issue add at t+1/t+2/t+3; add result is valid after t+11, captured and written at t+12. NEXT_ELEMENT, OUT_READ and OUT_LATCH lead to first public output after t+15. |
+| Output RAM fetch | OUT_READ obtains synchronous result_q, OUT_LATCH captures payload, OUTPUT holds it. No speculative output index advance. |
+| Stalled final output | Remain OUTPUT with payload, last and status unchanged; done stays low. |
+| Final output at f | COMPLETE_WAIT after f, FINISH/done after f+1, IDLE after f+2. |
+
+## Single-query tiled online attention
+
+`anvil_q1_fp2_flash_attn` implements the frozen leaf ports and parameters
+`HEAD_DIM=64,TILE_TOKENS=16,MAX_SEQ_LEN=32768`. HEAD_DIM and MAX_SEQ_LEN are
+positive, and every TILE_TOKENS in 1..16 is legal, including 3. Commands require
+1<=cmd_len<=MAX_SEQ_LEN. There is one query load per command, exactly HEAD_DIM
+accepted BF16 components with q_last on the final component.
+
+After query loading, synchronous local K/V tile RAM accepts token-major pairs
+at II=1 in FILL. kv_last marks each complete HEAD_DIM vector, not the end of
+the whole prefix. A tile contains min(TILE_TOKENS, remaining prefix) tokens.
+No more KV is accepted while that tile is computed. Only the current tile,
+query vector, running FP32 output vector and scalar running state are stored;
+there is no full score/probability matrix or complete-history allocation.
+Each external K/V pair is accepted once, and no second prefix traversal occurs.
+
+For each token in chronological order, products and additions form the FP32
+dot in component order. Its score is multiplied by constant
+RNE_FP32(1/sqrt(HEAD_DIM)). `head_scale`, used only to elaborate that constant,
+constructs it with 128-bit constant integer quotient and bounded integer square
+root followed by RNE. Its constant quotient is not a runtime divider.
+
+The initial state is m=-infinity,l=0,o=0. The first score sets m directly and
+selects alpha=0,p=1 without evaluating infinity-infinity. Later scores select
+m'=max(m,s), form the two FP32 differences and parallel exp results, then
+update l=RNE(alpha*l+p) and every o[j]=RNE(RNE(alpha*o[j])+RNE(p*v[j])).
+The next token cannot overwrite an output component before that update
+completes. After the last token the scalar reciprocal of l is computed once;
+each final FP32 o[j]*reciprocal(l) is streamed with backpressure.
+
+Fatal arithmetic flags terminate the command with error; a nonfinite score is
+invalid for this finite online normalization path. Underflow/inexact remain
+observable and nonfatal. Status is accumulated and held stable with a stalled
+output. All tile settings use the same chronological per-token FP32 operation
+order; changing the tile partition changes intake scheduling/storage, not the
+numerical reduction order.
+
+| Attention boundary | Implemented edge/state sequence |
+|---|---|
+| Command at k | QUERY after k; only a bad command takes the two-edge error path. |
+| Final query input at q | FILL after q; no KV transfer is accepted earlier. |
+| Final KV component of a full/final tile at t | DOT_READ after t, synchronous query/key read at t+1, first dot multiply accepted at t+2. |
+| Singleton token, including TILE_TOKENS=1 | The first KV vector closes its tile and uses the empty-state special case; it is not mistaken for an empty prefix. |
+| Partial last tile | Close on processed+filled_tokens==cmd_len, without waiting for a full tile. |
+| Stalled query/KV final component | No component, tile or token count advances before transfer. |
+| Tile update complete | Reuse tile RAM only after all of its tokens have updated m,l,o. |
+| Final normalization result | Capture in NORMALIZE_WAIT and enter OUTPUT. |
+| Stalled final output | Keep payload/last/status in OUTPUT; no new query/KV acceptance or completion. |
+| Final output at f | COMPLETE_WAIT after f, FINISH/done after f+1, IDLE after f+2. |
+| Bad command at k | ERROR_WAIT0 after k, ERROR_WAIT1 after k+1, FINISH/done/error after k+2. |
+
+This leaf handles one query head. The required top-level shared GQA query
+group and broadcast/tile reuse are not yet implemented. Instantiating this leaf
+and re-reading the whole external KV prefix once per query head is prohibited.
 
 ## DDR4 application-side channel
 
@@ -322,13 +503,12 @@ controller must generate these events at real conversion handshakes.
 The following admitted requirements remain mandatory and are not implemented
 by merely instantiating the existing leaves:
 
-* Fused commands: RMSNorm gamma*x*rsqrt(mean(x*x)+0x358637bd), theta=1e6
-  split-half RoPE from deterministic kind-11 FP32 coefficients, stable monotone
-  SwiGLU up*gate*sigmoid(gate), and exact-RNE FP32 residual add.
-* Online attention: FP32 running maximum/sum/output, empty-state special case,
-  exp rescaling for each chronological tile, one final normalization, no score
-  matrix and no second KV pass. GQA must reuse a single KV traversal across
-  query heads sharing a KV head.
+* Connect the implemented fused commands to the actual projection/residual
+  graph and supply theta=1e6 coefficients from the deterministic kind-11 table.
+* Integrate online attention with a shared external KV traversal across the
+  query heads sharing each KV head, rather than sequentially rereading the prefix.
+* Wire MX quantization/decode, scale-plane ownership, real conversion ULP
+  samples, DDR stall qualification and epilogue-starvation events.
 * Actual decoder dependency graph: input norm, Q/K/V, RoPE, causal attention,
   output projection, residual, second norm, gate/up/SwiGLU/down, residual,
   final norm and output head. Optimized weights/KV use DDR, not scalar fallback.

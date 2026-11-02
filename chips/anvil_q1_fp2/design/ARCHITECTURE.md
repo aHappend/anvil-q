@@ -11,11 +11,16 @@ Implemented leaves are:
 | `rtl/anvil_q1_fp2_bfp_tensor_array.sv` | Elastic 64-lane exact signed 544-bit reduction and one FP32 rounding |
 | `rtl/anvil_q1_fp2_fast_rsqrt.sv` | Two-stage normalized magic-seed/single-Newton ROM pipeline |
 | `rtl/anvil_q1_fp2_fp32_binary.sv` | Elastic nine-stage exact-RNE FP32 add/multiply primitive |
+| `rtl/anvil_q1_fp2_exp.sv` | Eight-stage fixed-point range reduction and degree-six exp polynomial |
+| `rtl/anvil_q1_fp2_reciprocal.sv` | Six-stage normalized reciprocal ROM interpolation and FP32 rescaling |
+| `rtl/anvil_q1_fp2_mx_quantize.sv` | Nine-stage two-Group-32 scale selection and E4M3FN RNE quantization |
+| `rtl/anvil_q1_fp2_epilogue_fusion.sv` | Buffered RMSNorm/RoPE/SwiGLU/residual commands using internal vector RAM and named fast-rsqrt |
+| `rtl/anvil_q1_fp2_flash_attn.sv` | Single-query chronological online attention with bounded K/V tile RAM and one final normalization |
 | `rtl/anvil_q1_fp2_ddr_pingpong.sv` | Two descriptor/response buffers with ID ownership and ordered retirement |
 | `rtl/anvil_q1_fp2_telemetry_csr.sv` | Independent saturating live/snapshot counters and delayed CSR response |
 | `fpga/anvil_q1_fp2.sdc` | Single 10.000 ns clk constraint, no timing exceptions |
 
-The epilogue, online attention, decoder controller and top-level are outstanding.
+Shared GQA traversal, the decoder controller and top-level are outstanding.
 The named top instances required at integration are `tensor_array`,
 `epilogue_fusion`, `flash_attn` and `telemetry_csr`; the epilogue must instantiate
 `anvil_q1_fp2_fast_rsqrt`. A module-name shell is not an implemented decoder.
@@ -79,7 +84,11 @@ prove end-to-end overlap or bandwidth improvement.
 | ULP sample | Actual FP32->BF16 conversion | Telemetry event input | One event per real conversion; nonfinite sentinel explicit |
 | Live counters | Qualified datapath events | Snapshot command | Saturating, independent of CSR response stalls |
 | Snapshot counters | Atomic control write | CSR reads | Stable until next snapshot or clear |
-| Future residual/vector RAM | Decoder/epilogue | Linked optimized operations | Bounded local storage; no external fused scratchpad round-trip |
+| Epilogue input/auxiliary/residual RAM | Accepted command stream | FP32 arithmetic sequencer | All command operands stored before computation; no external fused scratchpad round-trip |
+| Epilogue result RAM | Arithmetic sequencer | Output stream | Complete result vector retained until transferred; stalled final output preserves command ownership |
+| Attention query RAM | One accepted query vector | All tokens in that command | Loaded once before tile intake |
+| Attention K/V tile RAM | Single chronological KV stream | Current tile computation | Reused only after every token of the tile updates running state |
+| Attention output RAM | Online alpha/p updates | Next token or final normalization | First token supplies explicit zero instead of reading stale state |
 | Future grouped queries | Q projection / RoPE | All GQA query heads | Must permit one chronological shared KV traversal |
 | Future KV history | Current K/V projection | Causal attention | External, sequence-owned, invalidated on reset/new-sequence |
 
@@ -91,13 +100,41 @@ integer constant function performing the required magic-seed Newton update at
 each interval midpoint. Its read and rescale registers are the only two
 architectural stages; there is no hidden iterative engine.
 
-The fused epilogue will need independent pipelined FP32 add/multiply boundaries,
-bounded vector RAM for RMSNorm reduction, and the admitted deterministic
-theta-derived RoPE coefficient source. Online attention requires stable exp
-approximation, FP32 max/sum/output rescaling and a noniterative final reciprocal.
-Those are design work still outstanding, not supplied by the rsqrt ROM.
-The exact add/multiply primitive now provides those arithmetic boundaries;
-command scheduling and vector reduction/storage still need implementation.
+The fused epilogue now sequences exact FP32 add/multiply pipelines with bounded
+internal input/auxiliary/residual/result RAM. RMSNorm performs a component-order
+square/sum reduction, mean/epsilon and fast-rsqrt, then x/factor/gamma products.
+RoPE performs split-half pairs; its in_aux stream carries cosine in the first
+half and sine in the second. The decoder must obtain those deterministic FP32
+coefficients from kind 11 for the command position. SwiGLU uses exp(-abs(gate))
+and a normalized reciprocal to avoid unstable positive exp or iterative divide.
+Residuals use the same exact-RNE add pipeline. Result buffering permits original
+vector order and stable downstream backpressure without an external round-trip.
+
+Exp uses signed Q24/base-2 reduction and registered Q30 Horner arithmetic.
+Reciprocal normalizes the entire positive finite FP32 domain and interpolates
+two adjacent Q1.31 ROM endpoints. Both ROM data and polynomial provenance live
+in synthesizable sources; no generated runtime-state files or tool install is
+needed. These approximations' numerical bounds and timing remain unverified.
+
+The attention leaf loads one BF16 query, then accepts each K/V pair once into a
+bounded TILE_TOKENS*HEAD_DIM tile. It computes chronological FP32 dot scores,
+parallel running-max exp rescaling, sum/output updates and one final reciprocal
+normalization. A tile can be partial, and TILE_TOKENS=1 or 3 uses real storage
+boundaries rather than power-of-two pointer masks. It never stores all scores
+or all KV history. See SPEC.md for exact command, framing and completion edges.
+
+The Group-32 MX quantizer selects each scale through five registered maximum
+levels, then performs per-lane ties-to-even encoding. Masks suppress metadata,
+status and code effects; scales and saturation counts remain public outputs.
+It is a precursor for activation/KV packing, not yet an integrated transport.
+FP32-to-BF16 conversion and integer-to-FP32 helpers have also been added to the
+owned package. Independent verification must not reuse these as its oracle.
+
+These are substantive leaves, but they are not yet an accelerator. The decoder
+must still join the required named hierarchy, share one KV traversal across
+each GQA query group, compose projection/epilogue dependencies, and connect
+real conversion/transport/starvation events to telemetry. No simulation or
+synthesis has been performed by Designer.
 
 ## Integration and performance accounting still required
 
