@@ -469,6 +469,8 @@ def tensor_vectors(full=True):
 
 
 def run_tensor(run, simulator="icarus", full=False):
+    if simulator == "verilator":
+        return run_tensor_cpp(run, full)
     vectors = tensor_vectors(full)
     vector_file = run.path / "tensor-vectors.txt"
     with vector_file.open("x") as output:
@@ -635,3 +637,79 @@ def run_tensor_cpp(run, full=False):
         raise AssertionError("C++ tensor comparison count")
     return {"tensor_cases": len(vectors), "simulator": "verilator-cpp",
             "raw_summary": text[-1000:]}
+
+
+def run_elementary(run):
+    import math
+    records = {}
+    for kind in ("exp", "silu"):
+        if kind == "exp":
+            values = [ref.encode(Fraction(-16 * index, 255)) for index in range(256)]
+            values += [0, 0x80000000, 0xC1800001, 0xC17FFFFF, 0x7F800000,
+                       0x7FC00001, 0x3F800000]
+            for m in range(1, 24):
+                boundary = ref.encode(-m * ref.decode(0x3F317218))
+                values.extend([boundary - 1, boundary, boundary + 1])
+            function = ref.exp32
+        else:
+            values = [ref.encode(Fraction(-32 * index, 127) + 16, 16) << 16
+                      for index in range(128)]
+            values += [0, 0x80000000, 0x00010000, 0x80010000, 0x00800000, 0x80800000,
+                       0x7F800000, 0xFF800000, 0x7FC00001]
+            function = ref.silu32
+        vector_file = run.path / f"{kind}-vectors.txt"
+        maximum_analytic_error = 0
+        with vector_file.open("x") as output:
+            for value in values:
+                try:
+                    expected, error = function(value), 0
+                    if kind == "silu":
+                        expected = ref.bf16(expected) << 16
+                    real = float(ref.decode(value))
+                    if kind == "exp":
+                        difference = abs(float(ref.decode(expected)) - math.exp(real))
+                        if difference > 3e-5:
+                            raise AssertionError(f"E analytic error {difference} at {real}")
+                    else:
+                        exact = real / (1 + math.exp(-real))
+                        rounded = float(ref.decode(ref.bf16(expected), 16))
+                        difference = abs(rounded - exact)
+                        if difference > 0.02 * max(1, abs(exact)):
+                            raise AssertionError(f"SiLU analytic error {difference} at {real}")
+                    maximum_analytic_error = max(maximum_analytic_error, difference)
+                except ref.ArithmeticFault:
+                    expected, error = 0, 1
+                output.write(f"0 {value:08x} 00000000 0 {expected:08x} {error}\n")
+        original = r"""anvil_qn1_scalar dut(.clk(clk),.rst_n(rst_n),.flush(flush),
+    .in_valid(in_valid),.in_ready(in_ready),.in_op(in_op),
+    .in_a(in_a),.in_b(in_b),.in_error(in_error),
+    .out_valid(out_valid),.out_ready(out_ready),.out_data(out_data),.out_error(out_error));"""
+        replacement = f"""anvil_qn1_{kind} dut(.clk(clk),.rst_n(rst_n),.flush(flush),
+    .in_valid(in_valid),.in_ready(in_ready),.in_data(in_a),
+    .out_valid(out_valid),.out_ready(out_ready),.out_data(out_data),.out_error(out_error));"""
+        if kind == "silu":
+            replacement = """wire [15:0] silu_output;
+  assign out_data={silu_output,16'd0};
+  anvil_qn1_silu dut(.clk(clk),.rst_n(rst_n),.flush(flush),
+    .in_valid(in_valid),.in_ready(in_ready),.in_data(in_a[31:16]),
+    .out_valid(out_valid),.out_ready(out_ready),.out_data(silu_output),.out_error(out_error));"""
+        if SCALAR_BENCH.count(original) != 1:
+            raise AssertionError("elementary transactor adaptation failed")
+        bench = run.path / f"{kind}_tb.sv"
+        bench.write_text(SCALAR_BENCH.replace(original, replacement)
+                         .replace("cycles<100", "cycles<1000")
+                         .replace('if (in_ready!==0 || out_valid!==0) $fatal(1,"SCALAR_ACCEPT");',
+                                  'if (in_ready!==0) $fatal(1,"SCALAR_ACCEPT");'))
+        binary = run.path / f"{kind}.vvp"
+        sources = [f"rtl/anvil_qn1_{name}.sv" for name in
+                   ("00_pkg", "fp32_mul", "fp32_add", "fp32_div", "fp32_sqrt",
+                    "scalar", "exp", "silu")]
+        run.execute(["iverilog", "-g2012", "-Wall", "-s", "scalar_tb", "-o",
+                     relative(binary), *sources, relative(bench)], f"{kind}-compile")
+        text = run.execute(["vvp", relative(binary), f"+vectors={relative(vector_file)}"],
+                           f"{kind}-simulation", timeout=600)
+        if text.count(f"SUMMARY scalar_cases={len(values)} stalled_outputs={len(values)}") != 1:
+            raise AssertionError(f"{kind} comparison coverage")
+        records[kind] = {"compared_values": len(values),
+                         "maximum_analytic_absolute_error": maximum_analytic_error}
+    return records
