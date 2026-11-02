@@ -76,7 +76,6 @@ module anvil_q1_fp2_decoder_control #(
   output wire ulp_valid,
   output wire [31:0] ulp_distance
 );
-  import anvil_q1_fp2_pkg::*;
   localparam MAX_VECTOR=INTERMEDIATE_SIZE>HIDDEN_SIZE ? INTERMEDIATE_SIZE : HIDDEN_SIZE;
   localparam VB=$clog2(15*MAX_VECTOR);
   localparam LB=VOCAB_SIZE>1 ? $clog2(VOCAB_SIZE) : 1;
@@ -112,7 +111,7 @@ module anvil_q1_fp2_decoder_control #(
   wire need_config=is_epilogue && (operation==0 || operation==1);
   wire [31:0] rope_column=query_component<HEAD_DIM/2 ?
     query_component*2 : (query_component-HEAD_DIM/2)*2+1;
-  wire [20:0] converted_query=fp32_to_bf16(x_value);
+  wire [20:0] converted_query=anvil_q1_fp2_pkg::fp32_to_bf16(x_value);
   wire [31:0] query_roundtrip={converted_query[15:0],16'd0};
   wire [31:0] ordered_query=x_value[31] ? ~x_value : x_value ^ 32'h80000000;
   wire [31:0] ordered_roundtrip=query_roundtrip[31] ?

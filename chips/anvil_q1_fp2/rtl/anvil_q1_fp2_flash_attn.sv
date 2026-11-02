@@ -19,7 +19,6 @@ module anvil_q1_fp2_flash_attn #(
   output wire done, error,
   output wire [4:0] status
 );
-  import anvil_q1_fp2_pkg::*;
   localparam Q_BITS=HEAD_DIM>1 ? $clog2(HEAD_DIM) : 1;
   localparam TILE_WORDS=HEAD_DIM*TILE_TOKENS;
   localparam T_BITS=TILE_WORDS>1 ? $clog2(TILE_WORDS) : 1;

@@ -27,7 +27,6 @@ module anvil_q1_fp2_kv_writer #(
   input wire response_write, response_error,
   output wire work_active, result_needed
 );
-  import anvil_q1_fp2_pkg::*;
   localparam IDLE=0, COLLECT=1, QUANTIZE=2, QUANT_WAIT=3;
   localparam WRITE0=4, ACK0=5, WRITE1=6, ACK1=7, SCALE=8, ACK_SCALE=9;
   localparam NEXT=10, COMPLETE_WAIT=11, ERROR_WAIT0=12, ERROR_WAIT1=13, FINISH=14;
@@ -38,7 +37,7 @@ module anvil_q1_fp2_kv_writer #(
   reg [511:0] packed_mx;
   reg [15:0] scales;
   reg [4:0] flags;
-  wire [20:0] converted=fp32_to_bf16(in_data);
+  wire [20:0] converted=anvil_q1_fp2_pkg::fp32_to_bf16(in_data);
   wire quant_valid;
   wire [511:0] quant_data;
   wire [15:0] quant_scales;

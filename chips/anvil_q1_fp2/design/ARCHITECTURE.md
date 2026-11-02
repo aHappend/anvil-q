@@ -34,6 +34,18 @@ the shared-query-group controller, not left as demonstration-only kernels.
 
 ## Tensor dataflow and exactness
 
+Integer-valued exponent/index expressions use explicitly extended 32-bit
+`$signed` operands rather than `integer'(...)` casts for Yosys 0.33 frontend
+compatibility. Unsigned fields are zero-extended and signed exponents are
+sign-extended; arithmetic widths, rounding rules and pipeline boundaries are
+unchanged. Independent synthesis must establish frontend acceptance.
+
+FP2 modules use explicit `anvil_q1_fp2_pkg::` function references, matching
+the immutable parent's package-qualified pattern. Wildcard package imports
+are omitted because the Yosys 0.33 frontend rejects them. This portability
+repair changes no function bodies, operand widths, signedness or pipeline state;
+fresh independent synthesis and numerical regressions remain required.
+
 The tensor accepts 64 BF16 pairs or two Group-32 MX groups in one advance.
 MX conversion precedes the exact BF16 arithmetic and contributes its own
 observable status. Masking applies to both conversion and arithmetic effects.

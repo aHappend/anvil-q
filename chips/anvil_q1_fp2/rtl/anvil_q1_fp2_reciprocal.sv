@@ -5,7 +5,6 @@ module anvil_q1_fp2_reciprocal (
   output wire [31:0] result,
   output wire [4:0] status
 );
-  import anvil_q1_fp2_pkg::*;
 
   // Q1.31 endpoint values for 1/(1+i/1024). Only constant ROM generation
   // performs long division; the runtime datapath is a linear interpolation.
@@ -35,7 +34,7 @@ module anvil_q1_fp2_reciprocal (
     end
   end
   wire [23:0] sig={x[30:23]!=0,x[22:0]};
-  wire [4:0] high=leading24(sig);
+  wire [4:0] high=anvil_q1_fp2_pkg::leading24(sig);
   wire [23:0] normalized=sig << (5'd23-high);
   wire signed [10:0] input_exponent=x[30:23]==0 ?
     $signed({6'd0,high})-11'sd149 :
@@ -62,11 +61,11 @@ module anvil_q1_fp2_reciprocal (
   reg [23:0] kept_next;
   reg guard_next, sticky_next;
   integer distance, i;
-  wire [36:0] packed_value=pack_fp32(9'd0,sign[4],zero4,normal4,
+  wire [36:0] packed_value=anvil_q1_fp2_pkg::pack_fp32(9'd0,sign[4],zero4,normal4,
     biased4,kept4,guard4,sticky4);
   always @* begin
-    distance=biased_next>0 ? integer'({1'b0,interpolated_high})-23 :
-      integer'($signed(exponent[3]))-118;
+    distance=biased_next>0 ? $signed({27'd0,interpolated_high})-23 :
+      $signed({{21{exponent[3][10]}},exponent[3]})-118;
     shifted=interpolated3 >> distance;
     kept_next=shifted[23:0];
     guard_next=distance>0 && |(interpolated3 & (32'd1 << (distance-1)));

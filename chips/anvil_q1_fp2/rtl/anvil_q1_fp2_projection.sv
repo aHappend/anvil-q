@@ -47,7 +47,6 @@ module anvil_q1_fp2_projection #(
   input wire [31:0] bias_rsp_data,
   input wire bias_rsp_error
 );
-  import anvil_q1_fp2_pkg::*;
   localparam GROUPS=(MAX_INPUT+63)/64;
   localparam GB=GROUPS>1 ? $clog2(GROUPS) : 1;
   localparam IDLE=0, COLLECT=1, QUANTIZE=2, QUANT_WAIT=3, STORE=4;
@@ -68,7 +67,7 @@ module anvil_q1_fp2_projection #(
   (* ramstyle = "M20K", nomem2reg *) reg [1023:0] activations [0:GROUPS-1];
   (* ramstyle = "M20K", nomem2reg *) reg [1023:0] weights [0:63];
   (* ramstyle = "M20K", nomem2reg *) reg [31:0] sums [0:63];
-  wire [20:0] converted=fp32_to_bf16(in_data);
+  wire [20:0] converted=anvil_q1_fp2_pkg::fp32_to_bf16(in_data);
   wire quant_valid;
   wire [511:0] quant_data;
   wire [15:0] quant_scales;
@@ -116,7 +115,7 @@ module anvil_q1_fp2_projection #(
       initial $fatal(1,"FP2 PROJECTION PARAMETER ERROR");
     end
     for (genvar n=0;n<64;n=n+1) begin: quant_decode
-      assign quant_lane[n]=mx_to_bf16(quant_data[8*n+:8],quant_scales[8*(n>>5)+:8]);
+      assign quant_lane[n]=anvil_q1_fp2_pkg::mx_to_bf16(quant_data[8*n+:8],quant_scales[8*(n>>5)+:8]);
       assign decoded_quant[16*n+:16]=n<group_width ? quant_lane[n][15:0] : 16'd0;
       assign decode_flags[63+n]=n<group_width ? quant_lane[n][20:16] : 5'd0;
     end

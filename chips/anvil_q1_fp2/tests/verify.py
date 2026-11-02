@@ -9,7 +9,6 @@ import argparse
 import datetime
 import hashlib
 import json
-import os
 from pathlib import Path
 import random
 import shutil
@@ -23,6 +22,8 @@ from reference import (  # noqa: E402
     NAN, INVALID, DIVZERO, approximation_interval, binary, bits32, f32,
     reference_selftest, tensor,
 )
+from operators import simulate_commands  # noqa: E402
+from structure import synthesize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -113,7 +114,10 @@ class Run:
 
     def version(self, tool):
         if tool not in self.versions:
-            self.command([tool, "-V" if tool == "iverilog" else "--version"], f"version-{tool}")
+            self.command(
+                [tool, "-V" if tool in ("iverilog", "vvp") else "--version"],
+                f"version-{tool}",
+            )
             self.versions.add(tool)
 
     def finish(self, error=None):
@@ -261,13 +265,17 @@ def pipeline_tb(kind, vector_path, count, seed):
         "tensor": "bfp_tensor_array", "add": "fp32_binary",
         "multiply": "fp32_binary", "rsqrt": "fast_rsqrt", "exp": "exp",
     }[kind]
-    declarations = "\n".join(f"reg [{width-1}:0] {name}=0;" for name, width in ports)
+    declarations = "\n".join(
+        f"reg [{width-1}:0] {name}=0, scanned_{name}=0;"
+        for name, width in ports
+    )
     connections = ",".join(f".{name}({name})" for name, _ in ports)
     extra = (
         ",.in_ready(in_ready),.out_ready(out_ready)" if elastic else ""
     ) + (",.alignment_events(events)" if tensor_kind else "")
     parameter = f"#(.MULTIPLY({int(kind == 'multiply')}))" if kind in ("add", "multiply") else ""
-    names = ",".join(name for name, _ in ports)
+    names = ",".join("scanned_" + name for name, _ in ports)
+    drive = "\n".join(f"{name}=scanned_{name};" for name, _ in ports)
     scan_format = " ".join(["%h"] * (len(ports) + 4)) + "\\n"
     zero_check = "{out_valid,result,status" + (",events}" if tensor_kind else "}")
     return f"""`timescale 1ns/1ps
@@ -315,6 +323,7 @@ module tb;
       if (!loaded && accepted<{count}) begin
         scan=$fscanf(file_handle,"{scan_format}",{names},lo,hi,flags,event_count);
         if (scan!={len(ports)+4}) $fatal(1,"malformed vector");
+        {drive}
         loaded=1;
       end
       out_ready=(cycle%31>=5) && rng[3:0]!=0;
@@ -343,7 +352,9 @@ module tb;
         $fatal(1,"LATENCY cycle=%0d accepted=%0d",cycle,accepted);
       if (out_valid) begin
         if ((^result) === 1'bx || (^status) === 1'bx || (^events) === 1'bx)
-          $fatal(1,"active X/Z");
+          $fatal(1,"active X/Z cycle=%0d accepted=%0d compared=%0d result=%h status=%h events=%h expected=[%h,%h]/%h",
+            cycle,accepted,compared,result,status,events,
+            expected_lo[{latency-1}],expected_hi[{latency-1}],expected_flags[{latency-1}]);
         if (ordered(result)<ordered(expected_lo[{latency-1}]) ||
             ordered(result)>ordered(expected_hi[{latency-1}]) ||
             status !== expected_flags[{latency-1}] ||
@@ -389,8 +400,18 @@ def simulate_pipeline(run, kind, records, seed, simulator):
         "rtl/anvil_q1_fp2_00_pkg.sv", f"rtl/anvil_q1_fp2_{source_name}.sv",
         str(bench.relative_to(ROOT)),
     ]
+    compile_and_run(run, directory, bench, sources[:-1], simulator, stem)
+    run.receipt["comparisons"].append({
+        "kind": kind, "seed": seed, "simulator": simulator,
+        "vectors": len(records), "result": "passed",
+    })
+
+
+def compile_and_run(run, directory, bench, sources, simulator, stem):
+    sources = [*sources, str(bench.relative_to(ROOT))]
     run.version(simulator)
     if simulator == "iverilog":
+        run.version("vvp")
         binary_path = directory / "sim.vvp"
         run.command(
             ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o",
@@ -404,38 +425,125 @@ def simulate_pipeline(run, kind, records, seed, simulator):
              "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", *sources],
             f"{stem}-compile",
         )
-        run.command([str((obj / "Vtb").relative_to(ROOT))], f"{stem}-simulate")
-        shutil.rmtree(obj)
-    run.receipt["comparisons"].append({
-        "kind": kind, "seed": seed, "simulator": simulator,
-        "vectors": len(records), "result": "passed",
-    })
+        try:
+            run.command([str((obj / "Vtb").relative_to(ROOT))], f"{stem}-simulate")
+        finally:
+            shutil.rmtree(obj)
 
 
-def arithmetic(run, seeds, compact=False):
+def arithmetic(run, seeds, compact=False, simulator=None, leaves=None):
     reference_selftest()
     for seed in seeds:
-        for kind in ("add", "multiply", "tensor", "rsqrt", "exp"):
+        for kind in leaves or ("add", "multiply", "tensor", "rsqrt", "exp"):
             records = (
                 binary_vectors(seed, 128 if compact else 4096, kind == "multiply")
                 if kind in ("add", "multiply") else
                 tensor_vectors(seed, 32 if compact else 4096) if kind == "tensor" else
                 unary_vectors(kind, seed, 64 if compact else 4096)
             )
-            simulate_pipeline(run, kind, records, seed, "iverilog" if compact else "verilator")
+            simulate_pipeline(
+                run, kind, records, seed,
+                simulator or ("iverilog" if compact else "verilator"),
+            )
+
+
+def rsqrt_startup(run):
+    """Same accepted +0 operand, with/without an earlier idle input change."""
+    run.version("iverilog")
+    run.version("vvp")
+    failures = []
+    for prechange in (False, True):
+        stem = "rsqrt-startup-" + ("transitioned-control" if prechange else "stable-zero")
+        directory = run.path / stem
+        directory.mkdir()
+        bench = directory / "tb.sv"
+        bench.write_text(f"""`timescale 1ns/1ps
+module tb;
+  reg clk=0,rst_n=0,in_valid=0;
+  reg [31:0] x=32'h{int(prechange):08x};
+  wire out_valid;
+  wire [31:0] result;
+  wire [4:0] status;
+  always #5 clk=~clk;
+  anvil_q1_fp2_fast_rsqrt dut(
+    .clk(clk),.rst_n(rst_n),.in_valid(in_valid),.x(x),
+    .out_valid(out_valid),.result(result),.status(status));
+  task reset_check;
+    if ({{out_valid,result,status}} !== 0) $fatal(1,"reset mismatch");
+  endtask
+  initial begin
+    #1; reset_check();
+    @(posedge clk); reset_check();
+    #1; reset_check();
+    @(negedge clk); reset_check(); rst_n=1; x=0; in_valid=1;
+    @(posedge clk);
+    #1;
+    if ({{out_valid,result,status}} !== 0) $fatal(1,"early result");
+    @(negedge clk); in_valid=0;
+    @(posedge clk);
+    #1;
+    $display("OBSERVED valid=%b result=%h status=%h; expected=1/7f800000/08",out_valid,result,status);
+    if ({{out_valid,result,status}} !== {{1'b1,32'h7f800000,5'h08}})
+      $fatal(1,"+0 rsqrt: expected positive infinity with divide-by-zero at k+1");
+    @(negedge clk);
+    @(posedge clk);
+    #1;
+    if ({{out_valid,result,status}} !== 0) $fatal(1,"bubble mismatch");
+    $display("SUMMARY checked=1 two-stage latency, +0, divide-by-zero, reset, invalid bubble");
+    $finish;
+  end
+endmodule
+""")
+        binary_path = directory / "sim.vvp"
+        run.command(
+            ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o",
+             str(binary_path.relative_to(ROOT)),
+             "rtl/anvil_q1_fp2_00_pkg.sv", "rtl/anvil_q1_fp2_fast_rsqrt.sv",
+             str(bench.relative_to(ROOT))],
+            stem + "-compile",
+        )
+        try:
+            run.command(["vvp", str(binary_path.relative_to(ROOT))], stem + "-simulate")
+        except RuntimeError as exc:
+            failures.append(str(exc))
+            run.receipt["comparisons"].append({"case": stem, "result": "failed"})
+        else:
+            run.receipt["comparisons"].append({"case": stem, "result": "passed"})
+    if failures:
+        raise RuntimeError("\n".join(failures))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", required=True, choices=["arithmetic"])
+    parser.add_argument("--probe", required=True,
+                        choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
+                                 "synthesis"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
+    parser.add_argument("--simulator", choices=["iverilog", "verilator"])
+    parser.add_argument("--leaf", action="append",
+                        choices=["add", "multiply", "tensor", "rsqrt", "exp"])
     args = parser.parse_args()
     run = Run(f"fp2-{args.probe}", preparation=True, repair_of=args.repair_of)
     error = None
     try:
-        arithmetic(run, [int(s) for s in args.seeds.split(",")], args.compact)
+        if args.probe == "rsqrt-startup":
+            rsqrt_startup(run)
+        elif args.probe == "synthesis":
+            synthesize(run, ROOT)
+        elif args.probe in ("epilogue", "attention"):
+            for seed in map(int, args.seeds.split(",")):
+                for tile in ((3,) if args.probe == "epilogue" or args.compact else (1, 3, 16)):
+                    simulate_commands(
+                        run, args.probe, seed,
+                        2 if args.compact else 256 if args.probe == "epilogue" else 64,
+                        args.simulator or ("iverilog" if args.compact else "verilator"),
+                        compile_and_run, tile,
+                    )
+        else:
+            arithmetic(run, [int(s) for s in args.seeds.split(",")], args.compact,
+                       args.simulator, args.leaf)
     except Exception as exc:
         error = exc
         print(str(exc), file=sys.stderr, flush=True)

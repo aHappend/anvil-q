@@ -25,7 +25,6 @@ module anvil_q1_fp2_ddr_read_stream (
   input wire response_write, response_error,
   input wire [511:0] response_data
 );
-  import anvil_q1_fp2_pkg::*;
   localparam IDLE=0, SCALE=1, WAIT_SCALE=2, DATA=3, DRAIN=4;
   localparam COMPLETE_WAIT=5, ERROR_WAIT0=6, ERROR_WAIT1=7, FINISH=8;
   reg [3:0] state;
@@ -48,7 +47,7 @@ module anvil_q1_fp2_ddr_read_stream (
   wire [7:0] mx_scale=scale_plane[8*cursor[10:5]+:8];
   wire [4:0] bf16_flags={bf16_element[14:7]==255 &&
     bf16_element[6:0]!=0 && !bf16_element[6],4'd0};
-  wire [20:0] decoded=format_mx ? mx_to_bf16(mx_element,mx_scale) :
+  wire [20:0] decoded=format_mx ? anvil_q1_fp2_pkg::mx_to_bf16(mx_element,mx_scale) :
     {bf16_flags,bf16_element};
   wire vector_last=cursor+1'b1==end_exclusive;
   wire beat_last=vector_last || (format_mx ? (&cursor[5:0]) : (&cursor[4:0]));

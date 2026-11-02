@@ -8,16 +8,15 @@ module anvil_q1_fp2_mx_quantize (
   output wire [4:0] status,
   output wire [6:0] saturation_events
 );
-  import anvil_q1_fp2_pkg::*;
   function automatic [7:0] choose_scale(input [14:0] peak);
     reg [7:0] significand;
     reg [7:0] normalized;
     integer high, exponent, power;
     begin
       significand={peak[14:7]!=0,peak[6:0]};
-      high=integer'(leading16({8'd0,significand}));
+      high=$signed({28'd0,anvil_q1_fp2_pkg::leading16({8'd0,significand})});
       normalized=significand << (7-high);
-      exponent=(peak[14:7]==0 ? -133 : integer'({1'b0,peak[14:7]})-134)+high;
+      exponent=(peak[14:7]==0 ? -133 : $signed({24'd0,peak[14:7]})-134)+high;
       power=exponent-(normalized<=224 ? 8 : 7);
       if (peak==0 || power< -127) choose_scale=0;
       else choose_scale=8'(power+127);
@@ -34,9 +33,9 @@ module anvil_q1_fp2_mx_quantize (
     integer high, base, exponent, encoded_exponent, distance;
     begin
       sig={x[14:7]!=0,x[6:0]};
-      high=integer'(leading16({8'd0,sig}));
-      base=x[14:7]==0 ? -133 : integer'({1'b0,x[14:7]})-134;
-      exponent=base+high-(integer'({1'b0,scale})-127);
+      high=$signed({28'd0,anvil_q1_fp2_pkg::leading16({8'd0,sig})});
+      base=x[14:7]==0 ? -133 : $signed({24'd0,x[14:7]})-134;
+      exponent=base+high-($signed({24'd0,scale})-127);
       code={x[15],7'd0}; flags=0; saturation=0;
       kept=0; rounded=0; guard_bit=0; sticky_bit=0; distance=0; encoded_exponent=0;
       if (x[14:7]==255) begin
@@ -46,7 +45,7 @@ module anvil_q1_fp2_mx_quantize (
         if (exponent>=-6) begin
           distance=high-3; encoded_exponent=exponent+7;
         end else begin
-          distance=(integer'({1'b0,scale})-127)-9-base;
+          distance=($signed({24'd0,scale})-127)-9-base;
           encoded_exponent=0;
         end
         if (distance>0) begin

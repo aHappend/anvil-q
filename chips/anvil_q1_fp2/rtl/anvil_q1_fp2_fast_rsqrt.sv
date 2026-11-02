@@ -5,7 +5,6 @@ module anvil_q1_fp2_fast_rsqrt (
   output wire [31:0] result,
   output wire [4:0] status
 );
-  import anvil_q1_fp2_pkg::*;
   // Q32 integer construction of one magic-seed Newton update at each bin midpoint.
   // The initializer is elaboration-time ROM data, not a run-time multiplier datapath.
   function automatic [31:0] newton_entry(input integer index);
@@ -20,7 +19,7 @@ module anvil_q1_fp2_fast_rsqrt (
       normalized_bits={1'b0,8'(127+(index>>10)),10'(index),13'h1000};
       seed_bits=32'h5f3759df-(normalized_bits>>1);
       x_q30={8'd0,1'b1,normalized_bits[22:0]} << (7+(index>>10));
-      y_q32={8'd0,1'b1,seed_bits[22:0]} << (integer'({1'b0,seed_bits[30:23]})-118);
+      y_q32={8'd0,1'b1,seed_bits[22:0]} << ($signed({24'd0,seed_bits[30:23]})-118);
       yy=y_q32*y_q32;
       xyy={64'd0,x_q30}*{32'd0,yy};
       correction_q31=32'(64'hc0000000-(xyy>>64));
@@ -47,7 +46,7 @@ module anvil_q1_fp2_fast_rsqrt (
   reg [4:0] special_status0, status1;
   reg signed [9:0] power0;
   wire [23:0] input_sig={x[30:23]!=0,x[22:0]};
-  wire [4:0] input_high=leading24(input_sig);
+  wire [4:0] input_high=anvil_q1_fp2_pkg::leading24(input_sig);
   wire [23:0] normalized_sig=input_sig << (5'd23-input_high);
   wire signed [10:0] unbiased=x[30:23]==0 ?
     $signed({6'd0,input_high})-11'sd149 : $signed({3'd0,x[30:23]})-11'sd127;
@@ -58,7 +57,7 @@ module anvil_q1_fp2_fast_rsqrt (
   reg next_special;
   reg [31:0] next_special_value;
   reg [4:0] next_special_status;
-  always @* begin
+  always_comb begin
     next_special=1; next_special_value=0; next_special_status=0;
     if (x[30:23]==255 && x[22:0]!=0) begin
       next_special_value=32'h7fc00000; next_special_status[4]=!x[22];

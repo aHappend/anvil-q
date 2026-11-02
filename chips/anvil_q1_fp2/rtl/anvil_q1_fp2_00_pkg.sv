@@ -110,9 +110,9 @@ package anvil_q1_fp2_pkg;
     integer base, high, exponent, distance;
     begin
       sig={12'd0,code[6:3]!=0,code[2:0]};
-      base=(code[6:3]==0 ? -9 : integer'({1'b0,code[6:3]})-10)
-        +integer'({1'b0,scale})-127;
-      high=integer'(leading16(sig));
+      base=(code[6:3]==0 ? -9 : $signed({28'd0,code[6:3]})-10)
+        +$signed({24'd0,scale})-127;
+      high=$signed({28'd0,leading16(sig)});
       exponent=base+high;
       value={code[7],15'd0}; flags=0;
       kept=0; rounded=0; guard_bit=0; sticky_bit=0; distance=0;
@@ -173,12 +173,12 @@ package anvil_q1_fp2_pkg;
       metadata[1]=!metadata[3] && (ai || bi) && sign_bit;
       metadata[0]=!metadata[3] && !(ai || bi) && (az || bz) && sign_bit;
       magnitude=0; shift=0; high=-11'sd512;
-      base=(a[14:7]==0 ? -133 : integer'({1'b0,a[14:7]})-134)
-        +(b[14:7]==0 ? -133 : integer'({1'b0,b[14:7]})-134);
+      base=(a[14:7]==0 ? -133 : $signed({24'd0,a[14:7]})-134)
+        +(b[14:7]==0 ? -133 : $signed({24'd0,b[14:7]})-134);
       if (!metadata[3] && !(ai || bi) && !az && !bz) begin
         magnitude=sa*sb;
         shift=9'(base+266);
-        high=11'(base+integer'(leading16(magnitude)));
+        high=11'(base+$signed({28'd0,leading16(magnitude)}));
       end
       if (!active) begin
         metadata=9'b000000001; magnitude=0; shift=0;
@@ -206,9 +206,9 @@ package anvil_q1_fp2_pkg;
     integer base;
     begin
       sig={x[30:23]!=0,x[22:0]};
-      base=x[30:23]==0 ? -149 : integer'({1'b0,x[30:23]})-150;
+      base=x[30:23]==0 ? -149 : $signed({24'd0,x[30:23]})-150;
       if (sig==0 || x[30:23]==255) fp32_high=-11'sd512;
-      else fp32_high=11'(base+integer'(leading24(sig)));
+      else fp32_high=11'(base+$signed({27'd0,leading24(sig)}));
     end
   endfunction
 
@@ -234,7 +234,7 @@ package anvil_q1_fp2_pkg;
       shifted=0; rounded=0; guard_bit=0; sticky_bit=0; distance=0;
       if (high<=23) shifted=x << (23-high);
       else begin
-        distance=integer'({1'b0,high})-23;
+        distance=$signed({27'd0,high})-23;
         shifted=x >> distance;
         guard_bit=|(x & (32'd1 << (distance-1)));
         sticky_bit=|(x & ((32'd1 << (distance-1))-1));

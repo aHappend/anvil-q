@@ -17,7 +17,6 @@ module anvil_q1_fp2_epilogue_fusion #(
   output wire [4:0] status,
   output wire done, error
 );
-  import anvil_q1_fp2_pkg::*;
   localparam ADDR_BITS=MAX_VECTOR>1 ? $clog2(MAX_VECTOR) : 1;
   localparam IDLE=0, COLLECT=1, READ_X=2, LATCH_X=3, READ_Y=4, LATCH_Y=5;
   localparam MUL_ISSUE=6, MUL_WAIT=7, ADD_ISSUE=8, ADD_WAIT=9;
@@ -125,7 +124,7 @@ module anvil_q1_fp2_epilogue_fusion #(
       SIGMOID_DENOM: begin add_a=32'h3f800000; add_b=exponential; end
       default: begin end
     endcase
-    reciprocal_x=operation==0 ? uint32_to_fp32(length) : temporary;
+    reciprocal_x=operation==0 ? anvil_q1_fp2_pkg::uint32_to_fp32(length) : temporary;
     result_write=0; result_address=index; result_value=0;
     if (rst_n && state==MUL_WAIT && mul_valid[0] &&
         (arithmetic==NORM_GAMMA || arithmetic==GATED_UP)) begin

@@ -9,7 +9,6 @@ module anvil_q1_fp2_fp32_binary #(
   output wire [31:0] result,
   output wire [4:0] status
 );
-  import anvil_q1_fp2_pkg::*;
   generate if (MULTIPLY!=0 && MULTIPLY!=1) begin: invalid_parameters
     initial $fatal(1,"FP2 BINARY PARAMETER ERROR: MULTIPLY must be 0 or 1");
   end endgenerate
@@ -34,8 +33,8 @@ module anvil_q1_fp2_fp32_binary #(
     $signed({base_a[9],base_a})+$signed({base_b[9],base_b})+11'sd298;
   wire [8:0] add_shift_a=a0[30:23]==0 ? 9'd149 : 9'({1'b0,a0[30:23]})+9'd148;
   wire [8:0] add_shift_b=b0[30:23]==0 ? 9'd149 : 9'({1'b0,b0[30:23]})+9'd148;
-  wire [8:0] input_meta_a=fp32_meta(a0), input_meta_b=fp32_meta(b0);
-  wire [8:0] add_meta=merge_meta(input_meta_a,input_meta_b);
+  wire [8:0] input_meta_a=anvil_q1_fp2_pkg::fp32_meta(a0), input_meta_b=anvil_q1_fp2_pkg::fp32_meta(b0);
+  wire [8:0] add_meta=anvil_q1_fp2_pkg::merge_meta(input_meta_a,input_meta_b);
   wire [8:0] multiply_meta={
     (input_meta_a[8] || input_meta_b[8] || product_invalid),4'd0,
     product_nan,
@@ -58,7 +57,7 @@ module anvil_q1_fp2_fp32_binary #(
   reg guard7, sticky7;
   reg [31:0] result8;
   reg [4:0] status8;
-  wire [36:0] packed_result=pack_fp32(metadata[7],sign7,zero7,normal7,
+  wire [36:0] packed_result=anvil_q1_fp2_pkg::pack_fp32(metadata[7],sign7,zero7,normal7,
     exponent7,kept7,guard7,sticky7);
   reg [575:0] shifted_magnitude;
   reg [23:0] kept_next;
@@ -69,7 +68,7 @@ module anvil_q1_fp2_fp32_binary #(
   assign result=out_valid ? result8 : 32'd0;
   assign status=out_valid ? status8 : 5'd0;
   always @* begin
-    distance=high6>=172 ? integer'({1'b0,high6})-23 : 149;
+    distance=high6>=172 ? $signed({22'd0,high6})-23 : 149;
     shifted_magnitude=magnitude6 >> distance;
     kept_next=shifted_magnitude[23:0];
     guard_next=|(magnitude6 & (576'd1 << (distance-1)));
@@ -102,7 +101,7 @@ module anvil_q1_fp2_fp32_binary #(
       $signed(coarse_b2 << fine_b2);
     sum4<=aligned_a3+aligned_b3;
     magnitude5<=sum4[575] ? -sum4 : sum4; sign5<=sum4[575];
-    magnitude6<=magnitude5; sign6<=sign5; high6<=leading576(magnitude5);
+    magnitude6<=magnitude5; sign6<=sign5; high6<=anvil_q1_fp2_pkg::leading576(magnitude5);
     exponent7<=$signed({2'd0,high6})-12'sd171;
     normal7<=high6>=172; zero7<=magnitude6==0; sign7<=sign6;
     kept7<=kept_next; guard7<=guard_next; sticky7<=sticky_next;
