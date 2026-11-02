@@ -985,17 +985,17 @@
       ]
     },
     "check:l1-portable-reproduction": {
-      "attempt_id": 21,
-      "duration_s": 183.12562249787152,
-      "stdout_preview": "L1 portable: portable.py\nl1-portable: check-0 running 30s\nl1-portable: check-0 running 60s\nl1-portable: check-0 running 90s\nl1-portable: check-0 running 120s\nl1-portable: check-0 running 150s\nl1-portable: check-0 running 180s\nevidence/l1-portable-20261102T152015322704Z/receipt.json\n",
+      "attempt_id": 29,
+      "duration_s": 198.08829379593953,
+      "stdout_preview": "L1 portable: portable.py\nl1-portable: check-0 running 30s\nl1-portable: check-0 running 60s\nl1-portable: check-0 running 90s\nl1-portable: check-0 running 120s\nl1-portable: check-0 running 150s\nl1-portable: check-0 running 180s\nevidence/l1-portable-20261102T184005340637Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-portable-20261102T152015322704Z/receipt.json",
+          "path": "evidence/l1-portable-20261102T184005340637Z/receipt.json",
           "data": {
             "suite": "l1-portable",
             "cwd": ".",
-            "start_time": "2026-11-02T15:20:15.326692+00:00",
+            "start_time": "2026-11-02T18:40:05.344611+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -1032,6 +1032,7 @@
               "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
               "design/ARCHITECTURE.md": "55536f9b84a785439d884192ae1258a0ba62f6e4bb427dafa22d6fd688ec5b28",
+              "design/GENERATIONAL_HANDOFF.md": "3b4298fbe87060cc475ba014254004a2bb8cc7a36cae1f3628da48d707a556aa",
               "design/SPEC.md": "40d08878a80e063070309a23d48a5bf429ab4509b2f65008679c3caae8573e36",
               "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
               "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
@@ -1132,14 +1133,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T15:20:15.344498+00:00",
+                "start_time": "2026-11-02T18:40:05.362215+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-portable-20261102T152015322704Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-portable-20261102T152015322704Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-portable-20261102T184005340637Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-portable-20261102T184005340637Z/version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T15:20:15.350519+00:00",
-                "elapsed_s": 0.005775369005277753
+                "end_time": "2026-11-02T18:40:05.368163+00:00",
+                "elapsed_s": 0.005716006038710475
               },
               {
                 "argv": [
@@ -1147,14 +1148,14 @@
                   "tests/portable.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T15:20:15.351345+00:00",
-                "timeout_s": 2699.9714275118895,
-                "stdout_path": "evidence/l1-portable-20261102T152015322704Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-portable-20261102T152015322704Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T18:40:05.369004+00:00",
+                "timeout_s": 2699.971703725867,
+                "stdout_path": "evidence/l1-portable-20261102T184005340637Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-portable-20261102T184005340637Z/check-0.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T15:23:18.277771+00:00",
-                "elapsed_s": 182.92620102898218
+                "end_time": "2026-11-02T18:43:23.226019+00:00",
+                "elapsed_s": 197.85681019700132
               }
             ],
             "comparisons": {},
@@ -1164,11 +1165,11 @@
                 "command": [
                   "portable.py"
                 ],
-                "receipt": "evidence/portable-20261102T152015420828Z/receipt.json"
+                "receipt": "evidence/portable-20261102T184005439614Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T15:23:18.280061+00:00"
+            "end_time": "2026-11-02T18:43:23.228598+00:00"
           }
         }
       ]
@@ -1427,17 +1428,17 @@
       ]
     },
     "check:l1-synthesis": {
-      "attempt_id": 20,
-      "duration_s": 326.7275886479765,
-      "stdout_preview": "L1 synthesis: synthesis_probe.py\nl1-synthesis: check-0 running 30s\nl1-synthesis: check-0 running 60s\nl1-synthesis: check-0 running 90s\nl1-synthesis: check-0 running 120s\nl1-synthesis: check-0 running 150s\nl1-synthesis: check-0 running 180s\nl1-synthesis: check-0 running 210s\nl1-synthesis: check-0 running 240s\nl1-synthesis: check-0 running 270s\nl1-synthesis: check-0 running 300s\nevidence/l1-synthesis-20261102T151445242720Z/receipt.json\n",
+      "attempt_id": 28,
+      "duration_s": 344.01589373499155,
+      "stdout_preview": "L1 synthesis: synthesis_probe.py\nl1-synthesis: check-0 running 30s\nl1-synthesis: check-0 running 60s\nl1-synthesis: check-0 running 90s\nl1-synthesis: check-0 running 120s\nl1-synthesis: check-0 running 150s\nl1-synthesis: check-0 running 180s\nl1-synthesis: check-0 running 210s\nl1-synthesis: check-0 running 240s\nl1-synthesis: check-0 running 270s\nl1-synthesis: check-0 running 300s\nl1-synthesis: check-0 running 330s\nevidence/l1-synthesis-20261102T183418432082Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-synthesis-20261102T151445242720Z/receipt.json",
+          "path": "evidence/l1-synthesis-20261102T183418432082Z/receipt.json",
           "data": {
             "suite": "l1-synthesis",
             "cwd": ".",
-            "start_time": "2026-11-02T15:14:45.246813+00:00",
+            "start_time": "2026-11-02T18:34:18.436128+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -1474,6 +1475,7 @@
               "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
               "design/ARCHITECTURE.md": "55536f9b84a785439d884192ae1258a0ba62f6e4bb427dafa22d6fd688ec5b28",
+              "design/GENERATIONAL_HANDOFF.md": "3b4298fbe87060cc475ba014254004a2bb8cc7a36cae1f3628da48d707a556aa",
               "design/SPEC.md": "40d08878a80e063070309a23d48a5bf429ab4509b2f65008679c3caae8573e36",
               "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
               "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
@@ -1574,14 +1576,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T15:14:45.264205+00:00",
+                "start_time": "2026-11-02T18:34:18.453894+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-synthesis-20261102T151445242720Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-synthesis-20261102T151445242720Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-synthesis-20261102T183418432082Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-synthesis-20261102T183418432082Z/version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T15:14:45.270350+00:00",
-                "elapsed_s": 0.00591156305745244
+                "end_time": "2026-11-02T18:34:18.459930+00:00",
+                "elapsed_s": 0.0058060139417648315
               },
               {
                 "argv": [
@@ -1589,14 +1591,14 @@
                   "tests/synthesis_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T15:14:45.271193+00:00",
-                "timeout_s": 2699.9715955960564,
-                "stdout_path": "evidence/l1-synthesis-20261102T151445242720Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-synthesis-20261102T151445242720Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T18:34:18.460775+00:00",
+                "timeout_s": 2699.971374076791,
+                "stdout_path": "evidence/l1-synthesis-20261102T183418432082Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-synthesis-20261102T183418432082Z/check-0.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T15:20:11.785776+00:00",
-                "elapsed_s": 326.5143741199281
+                "end_time": "2026-11-02T18:40:02.259503+00:00",
+                "elapsed_s": 343.7985191671178
               }
             ],
             "comparisons": {},
@@ -1606,11 +1608,11 @@
                 "command": [
                   "synthesis_probe.py"
                 ],
-                "receipt": "evidence/synthesis-20261102T151445344460Z/receipt.json"
+                "receipt": "evidence/synthesis-20261102T183418532026Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T15:20:11.788082+00:00"
+            "end_time": "2026-11-02T18:40:02.261823+00:00"
           }
         }
       ]
