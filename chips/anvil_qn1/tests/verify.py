@@ -57,6 +57,7 @@ from memory_checks import run_banked_top, run_memory_matrix
 from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
 from telemetry_checks import run_telemetry
 from context_checks import run_context
+from speculative_fault_checks import run_speculative_cancel_matrix
 from model import Geometry
 import reference
 
@@ -75,7 +76,8 @@ def main():
                                           "controller-synthesis", "behavior-core", "banked-top",
                                           "memory-matrix", "banked-boundary", "fault-case",
                                           "fault-matrix", "integrated-csr",
-                                          "attention-context", "attention-context-short"))
+                                          "attention-context", "attention-context-short",
+                                          "speculative-cancel"))
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
@@ -83,7 +85,10 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe in ("attention-context", "attention-context-short"):
+        if args.probe == "speculative-cancel":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_speculative_cancel_matrix(run)
+        elif args.probe in ("attention-context", "attention-context-short"):
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_context(run, positions=40960 if args.probe == "attention-context" else 64)
         elif args.probe == "integrated-csr":
