@@ -16,10 +16,15 @@ response faults the command, not a success-shaped zero.
 
 The descriptor has separate active/shadow images. Geometry validation uses
 registered products and bit-serial remainders rather than combinational
-division. Each shadow write temporarily closes the configuration interface
+division. Its reset-image constant function is declared at module scope for
+standards-compliant constant evaluation, retaining the BANKS-dependent image.
+Each shadow write temporarily closes the configuration interface
 until its derived validity is current. Thus accepting a commit needs no
 variable-latency validation: its response and activation occur after the next
 edge, matching SPEC.md.
+The registered `cfg_done` and `cfg_error` status outputs are continuously masked
+to zero during active reset, including before asynchronous register updates
+settle; the mask adds no response cycle.
 
 The intended compute organization shares registered FP32 primitives through
 handshake-driven stage controllers. FP32 remains the representation of scratch,

@@ -10,13 +10,49 @@ module anvil_q4_descriptor #(
   input wire [5:0] cfg_index,
   input wire [31:0] cfg_wdata,
   output wire cfg_ready,
-  output reg cfg_done,
-  output reg cfg_error,
+  output wire cfg_done,
+  output wire cfg_error,
   output wire cfg_busy,
   output wire [1023:0] active_words
 );
   localparam integer LEGAL_BANKS =
     BANKS == 1 || BANKS == 2 || BANKS == 4 || BANKS == 8 || BANKS == 16;
+
+  reg cfg_done_r, cfg_error_r;
+  assign cfg_done = rst_n ? cfg_done_r : 1'b0;
+  assign cfg_error = rst_n ? cfg_error_r : 1'b0;
+
+  function automatic [1023:0] reset_image;
+    reg [1023:0] image;
+    begin
+      image = 1024'd0;
+      image[0*32+:32] = 32'd1;
+      image[1*32+:32] = 32'd4;
+      image[2*32+:32] = 32'd0;
+      image[3*32+:32] = 32'd1;
+      image[4*32+:32] = 32'd0;
+      image[5*32+:32] = 32'd0;
+      image[6*32+:32] = BANKS;
+      image[7*32+:32] = 32'd28;
+      image[8*32+:32] = 32'd3584;
+      image[9*32+:32] = 32'd18944;
+      image[10*32+:32] = 32'd28;
+      image[11*32+:32] = 32'd4;
+      image[12*32+:32] = 32'd128;
+      image[13*32+:32] = 32'd152064;
+      image[14*32+:32] = 32'd32768;
+      image[15*32+:32] = 32'd128;
+      image[16*32+:32] = 32'd1;
+      image[17*32+:32] = 32'h49742400;
+      image[18*32+:32] = 32'h358637bd;
+      image[19*32+:32] = 32'd32;
+      image[20*32+:32] = 32'd1024;
+      image[21*32+:32] = 32'd1;
+      image[22*32+:32] = 32'd7;
+      image[23*32+:32] = 32'd1;
+      reset_image = image;
+    end
+  endfunction
 
   generate
     if (!LEGAL_BANKS) begin : invalid_parameters
@@ -25,44 +61,12 @@ module anvil_q4_descriptor #(
       assign cfg_busy = 1'b0;
       assign active_words = 1024'd0;
       always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin cfg_done <= 1'b0; cfg_error <= 1'b0; end
-        else begin cfg_done <= 1'b0; cfg_error <= 1'b0; end
+        if (!rst_n) begin cfg_done_r <= 1'b0; cfg_error_r <= 1'b0; end
+        else begin cfg_done_r <= 1'b0; cfg_error_r <= 1'b0; end
       end
     end else begin : legal
       localparam [2:0] IDLE = 0, DERIVE = 1, REMAINDER_INIT = 2,
         REMAINDER_STEP = 3, EVALUATE = 4, COMMIT_RESPONSE = 5, SETTLE = 6;
-
-      function automatic [1023:0] reset_image;
-        reg [1023:0] image;
-        begin
-          image = 1024'd0;
-          image[0*32+:32] = 32'd1;
-          image[1*32+:32] = 32'd4;
-          image[2*32+:32] = 32'd0;
-          image[3*32+:32] = 32'd1;
-          image[4*32+:32] = 32'd0;
-          image[5*32+:32] = 32'd0;
-          image[6*32+:32] = BANKS;
-          image[7*32+:32] = 32'd28;
-          image[8*32+:32] = 32'd3584;
-          image[9*32+:32] = 32'd18944;
-          image[10*32+:32] = 32'd28;
-          image[11*32+:32] = 32'd4;
-          image[12*32+:32] = 32'd128;
-          image[13*32+:32] = 32'd152064;
-          image[14*32+:32] = 32'd32768;
-          image[15*32+:32] = 32'd128;
-          image[16*32+:32] = 32'd1;
-          image[17*32+:32] = 32'h49742400;
-          image[18*32+:32] = 32'h358637bd;
-          image[19*32+:32] = 32'd32;
-          image[20*32+:32] = 32'd1024;
-          image[21*32+:32] = 32'd1;
-          image[22*32+:32] = 32'd7;
-          image[23*32+:32] = 32'd1;
-          reset_image = image;
-        end
-      endfunction
 
       function automatic positive_finite(input [31:0] value);
         positive_finite = !value[31] && value[30:23] != 8'hff &&
@@ -184,11 +188,11 @@ module anvil_q4_descriptor #(
           computed_queries <= 0;
           computed_page_capacity <= 0;
           successful_commits <= 0;
-          cfg_done <= 1'b0;
-          cfg_error <= 1'b0;
+          cfg_done_r <= 1'b0;
+          cfg_error_r <= 1'b0;
         end else begin
-          cfg_done <= 1'b0;
-          cfg_error <= 1'b0;
+          cfg_done_r <= 1'b0;
+          cfg_error_r <= 1'b0;
           case (state)
             IDLE: if (cfg_valid && cfg_ready) begin
               if (cfg_commit) begin
@@ -239,8 +243,8 @@ module anvil_q4_descriptor #(
             end
             COMMIT_RESPONSE: begin
               if (!cancel) begin
-                cfg_done <= 1'b1;
-                cfg_error <= !commit_valid;
+                cfg_done_r <= 1'b1;
+                cfg_error_r <= !commit_valid;
                 if (commit_valid) begin
                   active <= shadow;
                   successful_commits <= successful_commits+1'b1;
