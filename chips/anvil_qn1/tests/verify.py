@@ -47,6 +47,7 @@ from numerical_checks import run_numerical
 from synthesis_checks import run_synthesis_probe, run_controller_synthesis
 from behavior_checks import run_behavior_core
 from memory_checks import run_banked_top, run_memory_matrix
+from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
 from model import Geometry
 import reference
 
@@ -63,14 +64,22 @@ def main():
                                           "speculation", "qk-stress", "analytic",
                                           "startup-matrix", "scalar-compiled", "synthesis-frontend",
                                           "controller-synthesis", "behavior-core", "banked-top",
-                                          "memory-matrix", "banked-boundary"))
+                                          "memory-matrix", "banked-boundary", "fault-case",
+                                          "fault-matrix"))
+    parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "banked-boundary":
+        if args.probe == "fault-case":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_fault_case(run, args.fault)
+        elif args.probe == "fault-matrix":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_fault_matrix(run)
+        elif args.probe == "banked-boundary":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_banked_top(run, geometry=Geometry(q_heads=4), seed=203,
                                     banks=8, queue=16)
