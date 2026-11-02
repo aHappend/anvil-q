@@ -34,7 +34,8 @@ def cases():
                bias=False, banks=1, page_tokens=1)
 
 
-def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3):
+def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
+                driver="top_probe.cpp"):
     objects = experiment.directory / "compile-obj"
     packages = ["rtl/anvil_q3_00_pkg.sv", "rtl/anvil_q4_00_fp_pkg.sv"]
     rtl = packages + [experiment.rel(p) for p in sorted((ROOT/"rtl").glob("*.sv"))
@@ -46,9 +47,9 @@ def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3):
         f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue_depth}",
         f"-GTILE_K={tile_k}", f"-GTILE_ROWS={tile_rows}",
         "-CFLAGS", "-std=c++17", "-o", "top-sim", *rtl,
-        str(Path("../../../../tests/top_probe.cpp") if
+        str(Path("../../../../tests")/driver if
             experiment.directory.parent.name == "preparation" else
-            Path("../../../tests/top_probe.cpp")),
+            Path("../../../tests")/driver),
     ], "compile", timeout=600)
     return objects / "top-sim"
 
@@ -75,7 +76,7 @@ def execute_case(experiment, binary, options, index):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preparation", action="store_true")
-    parser.add_argument("--case", type=int)
+    parser.add_argument("--case", type=int, nargs="+")
     parser.add_argument("--repair-of", action="append", default=[])
     args = parser.parse_args()
     experiment = Experiment("system-matrix", args.preparation, args.repair_of)
@@ -87,7 +88,7 @@ def main():
         results = []
         experiment.receipt["cases"] = results
         for index, options in enumerate(cases()):
-            if args.case is not None and args.case != index:
+            if args.case is not None and index not in args.case:
                 continue
             print(f"system case={index} seed={options['seed']} hidden="
                   f"{options['heads']*options['dimension']}", flush=True)

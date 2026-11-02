@@ -11,7 +11,29 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import Experiment, ROOT
 
 
-def expand_packages(destination):
+def lower_codec_writes(text):
+    """Express indexed nonblocking writes as exact whole-vector masked writes.
+
+    The index expression and 8192-bit destination width are unchanged. This
+    avoids Yosys 0.33's pathological PROC_MUX expansion of multiple dynamic
+    part-select assignments. The standalone codec equivalence test compares
+    original and localized outputs every cycle and against integer equations.
+    """
+    def replace(match):
+        name, width, value = match.groups()
+        mask = (1 << int(width))-1
+        return (f"{name}<=({name} & ~(8192'd{mask} << (index*{width}))) | "
+                f"((8192'({value}) & 8192'd{mask}) << (index*{width}));")
+
+    result, count = re.subn(
+        r"(result_payload|result_values)\[index\*(4|8|32)\+:\2\]<=([^;]+);",
+        replace, text)
+    if count != 7:
+        raise AssertionError(f"codec frontend expected seven indexed writes, found {count}")
+    return result
+
+
+def expand_packages(destination, indexed_write_lowering=False):
     """Localize function-only packages for the Yosys 0.33 Verilog frontend.
 
     Package bodies are copied byte-for-byte. Two same-width signed port casts
@@ -37,6 +59,8 @@ def expand_packages(destination):
             raise RuntimeError(f"unsupported non-function package contents: {name}")
     output = []
     for path, text in modules:
+        if indexed_write_lowering and path.name == "anvil_q3_cache_codec.sv":
+            text = lower_codec_writes(text)
         if path.name == "anvil_q3_rmsnorm.sv":
             header = re.search(r"\)\s*;", text)
             aliases = (
@@ -124,7 +148,8 @@ def main():
     try:
         experiment.receipt["tool_version"] = experiment.run(["yosys", "-V"], "version").strip()
         frontend = experiment.directory / "frontend.sv"
-        experiment.receipt["frontend_sha256"] = expand_packages(frontend)
+        experiment.receipt["frontend_sha256"] = expand_packages(
+            frontend, indexed_write_lowering=True)
         results = []
         for banks in ([args.banks] if args.banks else [16, 1]):
             netlist = experiment.directory / f"top-{banks}.json"

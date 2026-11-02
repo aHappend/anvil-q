@@ -56,20 +56,21 @@ def make_fixture(directory, seed=17, layers=3, tokens=4, heads=3,
                  kv_heads=1, dimension=2, intermediate=5, vocabulary=17,
                  activation_format=0, bias=True, banks=16, page_tokens=1,
                  theta_value=10000, weight_format=0, activation_a8=False,
-                 asymmetric=True, group_size=3, tile_k=7, generation=1, cache_format=0):
+                 asymmetric=True, group_size=3, tile_k=7, generation=1, cache_format=0,
+                 token_ids=None):
     with localcontext() as context:
         context.prec = 70
         return _make_fixture(directory, seed, layers, tokens, heads, kv_heads,
                              dimension, intermediate, vocabulary,
                              activation_format, bias, banks, page_tokens, theta_value,
                              weight_format, activation_a8, asymmetric, group_size, tile_k,
-                             generation, cache_format)
+                             generation, cache_format, token_ids)
 
 
 def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
                   intermediate, vocabulary, activation_format, bias,
                   banks, page_tokens, theta_value, weight_format, activation_a8,
-                  asymmetric, group_size, tile_k, generation, cache_format):
+                  asymmetric, group_size, tile_k, generation, cache_format, token_ids):
     hidden = heads * dimension
     ratio = heads // kv_heads
     if heads != ratio * kv_heads or ratio not in (1, 3, 6, 7, 8):
@@ -202,8 +203,18 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
         return result
 
     history = defaultdict(list)
-    token_ids = [(2 + 3 * n) % vocabulary for n in range(tokens)]
+    token_ids = ([(2 + 3 * n) % vocabulary for n in range(tokens)]
+                 if token_ids is None else list(token_ids))
+    if len(token_ids) != tokens:
+        raise ValueError("token fixture length does not match tokens")
     for position, token in enumerate(token_ids):
+        if token is None:
+            if not position:
+                raise ValueError("first token must be explicit")
+            token = max(range(vocabulary), key=lambda n: logits[-vocabulary+n])
+            token_ids[position] = token
+        if not 0 <= token < vocabulary:
+            raise ValueError("fixture token outside vocabulary")
         # Epoch zero labels a host mapping template. The bridge binds it to
         # the first public epoch observed, without assuming an RTL counter.
         page = position // page_tokens
