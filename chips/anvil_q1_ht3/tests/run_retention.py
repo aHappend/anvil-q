@@ -1,15 +1,18 @@
 """Exercise evidence reuse and rejection without rerunning numerical failures."""
 
 import argparse
+import ast
 import json
 from pathlib import Path
 import sys
 from unittest.mock import patch
+import os
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, hashes, relative, remaining, timestamp
 from retention import find_result, inventory, validated_result
-from verify import TOOLS, dependencies
+from verify import TOOLS, child, dependencies
 
 
 def main():
@@ -21,6 +24,10 @@ def main():
     receipt = dict(argv=["python3", "tests/run_retention.py", *sys.argv[1:]],
                    cwd=".", start=timestamp(), timeout=remaining(),
                    source_sha256=hashes(), tool_version=sys.version)
+    parsed_sources = []
+    for path in sorted((ROOT / "tests").glob("*.py")):
+        ast.parse(path.read_text(), filename=relative(path))
+        parsed_sources.append(relative(path))
     versions = inventory(output, TOOLS)
     observed = []
     for script, options, failed in (
@@ -55,11 +62,41 @@ def main():
         if validated_result(ROOT / bound["result_path"], argv + ["--unrecognized"],
                             deps, versions, allow_failure=failed) is not None:
             raise AssertionError("different argv/coverage accepted")
+        with patch("retention.digest", return_value="0" * 64):
+            if validated_result(ROOT / bound["result_path"], argv, deps, versions,
+                                allow_failure=failed) is not None:
+                raise AssertionError("corrupt raw output accepted")
         observed.append(dict(argv=argv, status=result["status"], receipt=bound["receipt"],
                              source_rejection=True, tool_rejection=True,
-                             argv_rejection=True))
+                             argv_rejection=True, artifact_rejection=True))
+    previous_deadline = os.environ.get("HT3_CHECK_DEADLINE")
+    outer_deadline = time.time() + 100
+    os.environ["HT3_CHECK_DEADLINE"] = str(outer_deadline)
+
+    def synthetic_child(argv, parent, identifier, version_argv):
+        remaining_allocation = float(os.environ["HT3_CHECK_DEADLINE"]) - time.time()
+        if not 39 <= remaining_allocation <= 40:
+            raise AssertionError("child consumed reserved execution budget")
+        directory = ROOT / argv[argv.index("--output") + 1]
+        directory.mkdir()
+        with (directory / "result.json").open("x") as out:
+            json.dump(dict(status="passed", coverage_limits=["synthetic diagnostic only"]), out)
+        return ""
+
+    try:
+        with patch("verify.execute", side_effect=synthetic_child):
+            row = child("synthetic-reserve", ["tests/synthetic-not-an-rtl-run.py"], output,
+                        budget=90, reserve=60)
+        if row["status"] != "incomplete" or float(os.environ["HT3_CHECK_DEADLINE"]) != outer_deadline:
+            raise AssertionError("coverage or outer budget changed by child scheduling")
+    finally:
+        if previous_deadline is None:
+            os.environ.pop("HT3_CHECK_DEADLINE", None)
+        else:
+            os.environ["HT3_CHECK_DEADLINE"] = previous_deadline
     result = dict(status="passed", kind="retention-validator-diagnostic",
-                  comparisons=len(observed) * 4, observations=observed)
+                  comparisons=len(observed) * 5 + 2, observations=observed,
+                  synthetic_reserve_observation=row, parsed_sources=parsed_sources)
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     receipt.update(end=timestamp(), exit=0, timed_out=False,

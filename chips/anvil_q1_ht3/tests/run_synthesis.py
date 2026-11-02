@@ -1,4 +1,11 @@
-"""Actual shipped-source Yosys checks; frontend/tool failures remain failures."""
+"""Actual shipped-source Yosys checks with bounded, resumable mapped jobs.
+
+Only a phase with zero tool exit, valid structural observations and hash-checked
+complete RTLIL/JSON artifacts can be resumed. Intermediate gate phases retain
+unmapped modules; only the final ABC phase can satisfy the mapped obligation.
+Connectivity, latch/div/mod and 256-lane assertions remain active. FPGA power-up
+initialization is recorded, not mistaken for a latch or an undriven wire.
+"""
 
 import argparse
 from collections import Counter
@@ -203,6 +210,9 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             if (receipt.get("exit") != 0 or receipt.get("timed_out")
                     or receipt.get("tool_version", "").strip() != version):
                 continue
+            if any(receipt.get("source_sha256", {}).get(path) != sha
+                   for path, sha in hashes().items() if path.startswith("design/")):
+                continue
             if not all((ROOT / path).is_file() and digest(ROOT / path) == sha
                        for path, sha in record["artifact_sha256"].items()):
                 continue
@@ -328,13 +338,16 @@ def run(output, diagnostic=False, compact_only=False, job=None):
                        mapped=mapped, accounting=counts)
         except (RuntimeError, AssertionError, ValueError) as exc:
             row = dict(id=identifier, status="failed", parameters=parameters,
-                       mapped=mapped, error=str(exc))
+                       mapped=mapped, error=str(exc),
+                       timed_out=getattr(exc, "timed_out", False))
+            if hasattr(exc, "record"):
+                row["receipt"] = exc.record["stdout"].replace(".stdout.txt", ".receipt.json")
         finally:
             if deadline is None:
                 os.environ.pop("HT3_CHECK_DEADLINE", None)
             else:
                 os.environ["HT3_CHECK_DEADLINE"] = deadline
-        row["receipt"] = relative(directory / "synthesis.receipt.json")
+        row.setdefault("receipt", relative(directory / "synthesis.receipt.json"))
         rows.append(row)
     result = dict(status="passed" if all(r["status"] == "passed" for r in rows) else "failed",
                   runs=rows, diagnostic=diagnostic, compact_only=compact_only,
@@ -360,6 +373,7 @@ def main():
     result = run(output, args.diagnostic, args.compact_only, args.job)
     receipt.update(exit=0 if result["status"] == "passed" else 1,
                    timed_out=remaining() <= 0 or any(
+                       row.get("timed_out", False) for row in result["runs"]) or any(
                        json.loads(p.read_text()).get("timed_out", False)
                        for p in output.rglob("*.receipt.json")),
                    end=timestamp(),

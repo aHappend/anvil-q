@@ -185,11 +185,13 @@ def main():
                 rows.append(dict(id=identifier, status="not_implemented",
                                  requirement=requirement))
         synthesis_rows = []
-        for identifier, _, _, _ in JOBS:
+        for index, (identifier, _, _, _) in enumerate(JOBS):
+            later_reserve = sum(min(JOB_BUDGETS[name], 60)
+                                for name, _, _, _ in JOBS[index + 1:])
             synthesis_rows.append(child(
                 f"synthesis-{identifier}", ["tests/run_synthesis.py", "--job", identifier],
                 output, budget=JOB_BUDGETS[identifier], versions=versions,
-                reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
+                reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE + later_reserve))
         rows.append(dict(id="synthesis", status="passed" if all(
             row["status"] == "passed" for row in synthesis_rows) else "failed",
                          jobs=synthesis_rows))

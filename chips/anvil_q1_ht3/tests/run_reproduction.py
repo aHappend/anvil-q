@@ -3,15 +3,15 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
+import time
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
-import os
-import time
 
 
 def main():
@@ -72,7 +72,10 @@ def main():
     with (output/"result.json").open("x") as out:
         json.dump(result,out,indent=2)
     receipt.update(exit=0 if result["status"]=="passed" else 1,end=timestamp(),
-                   timed_out=remaining()<=0,result=relative(output/"result.json"))
+                   timed_out=remaining()<=0 or any(
+                       json.loads(path.read_text()).get("timed_out", False)
+                       for path in output.rglob("*.receipt.json")),
+                   result=relative(output/"result.json"))
     with (output/"receipt.json").open("x") as out:
         json.dump(receipt,out,indent=2)
     print(json.dumps(result),flush=True)

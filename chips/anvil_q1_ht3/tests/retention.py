@@ -72,6 +72,17 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
         tool_receipts.append(relative(path))
     if not tool_receipts:
         return None
+    if argv[1] == "tests/run_epilogue.py":
+        if (result.get("commands") != 104 or result.get("vectors") != 168
+                or not (directory / "observations.txt").is_file()):
+            return None
+    if argv[1] == "tests/run_unit.py":
+        if (not isinstance(result.get("compared"), int) or result["compared"] <= 0
+                or result.get("diagnostic_limit") is not None
+                or result.get("vector_offset", 0) != 0):
+            return None
+        if result.get("shards") and sum(row["compared"] for row in result["shards"]) != result["compared"]:
+            return None
     return dict(result=result, receipt=relative(receipt_path),
                 result_path=relative(result_path), tool_receipts=tool_receipts,
                 result_sha256=digest(result_path), receipt_sha256=digest(receipt_path))
