@@ -321,3 +321,183 @@ def run_scalar(run):
         raise AssertionError("scalar comparison count missing")
     return {"scalar_cases": len(vectors), "seeds": [17, 89, 203],
             "operations": ["add", "subtract", "multiply", "divide", "sqrt"]}
+
+
+TENSOR_BENCH = r"""
+module tensor_tb;
+  reg clk=0,rst_n,flush=0,in_valid=0,in_w4=0,out_ready=0;
+  always #5 clk=~clk;
+  wire in_ready,out_valid,out_error;
+  reg [1023:0] q=0,z=0;
+  reg [4095:0] scale_bf16=0,activation_bf16=0,weight_bf16=0;
+  reg [255:0] lane_mask=0;
+  reg [31:0] in_tag=0;
+  wire [31:0] out_sum,out_tag;
+  integer fd,rc,format_value,error_value,accepted=0,retired=0,cycles=0,enabled=0;
+  integer front=0,tail=0,queued=0,birth[0:2047],blocked=0;
+  reg [31:0] expected_input,expected[0:2047],tags[0:2047];
+  reg errors[0:2047];
+  reg [64:0] held_payload;
+  reg holding=0,was_enabled;
+  reg [4095:0] filename;
+  anvil_qn1_tensor_array dut(.clk(clk),.rst_n(rst_n),.flush(flush),
+    .in_valid(in_valid),.in_w4(in_w4),.in_ready(in_ready),.q(q),.z(z),
+    .scale_bf16(scale_bf16),.activation_bf16(activation_bf16),.weight_bf16(weight_bf16),
+    .lane_mask(lane_mask),.in_tag(in_tag),.out_valid(out_valid),
+    .out_sum(out_sum),.out_tag(out_tag),.out_error(out_error),.out_ready(out_ready));
+  task reset_outputs;
+    begin
+      if ({in_ready,out_valid,out_sum,out_tag,out_error}!==0) $fatal(1,"TENSOR_RESET");
+    end
+  endtask
+  task next_vector;
+    begin
+      rc=$fscanf(fd,"%d %h %h %h %h %h %h %h %h %d\n",
+        format_value,lane_mask,q,z,scale_bf16,activation_bf16,weight_bf16,
+        in_tag,expected_input,error_value);
+      in_valid=(rc==10); in_w4=format_value;
+      if (rc!=10 && rc!=0 && rc!=-1) $fatal(1,"MALFORMED_TENSOR_VECTORS");
+    end
+  endtask
+  always @(posedge clk or negedge clk) if (!rst_n) reset_outputs();
+  initial begin
+    rst_n=0; #1;reset_outputs();
+    if (!$value$plusargs("vectors=%s",filename)) $fatal(1,"NO_VECTORS");
+    fd=$fopen(filename,"r");if (!fd) $fatal(1,"OPEN_VECTORS");
+    @(negedge clk);rst_n=1;next_vector();
+    while (in_valid || queued>0 || accepted==0) begin
+      out_ready=(cycles%67<49);
+      @(posedge clk);
+      was_enabled=!out_valid || out_ready;
+      if (holding && (out_valid!==1 || {out_error,out_tag,out_sum}!==held_payload))
+        $fatal(1,"TENSOR_GLOBAL_STALL");
+      holding=out_valid && !out_ready;held_payload={out_error,out_tag,out_sum};
+      if (holding) blocked=blocked+1;
+      if (out_valid && out_ready) begin
+        if (queued==0 || out_tag!==tags[front] || out_error!==errors[front] ||
+            (!errors[front] && out_sum!==expected[front]))
+          $fatal(1,"TENSOR_COMPARE record=%0d tag=%h expected_tag=%h got=%h expected=%h error=%b expected_error=%b",
+            retired,out_tag,tags[front],out_sum,expected[front],out_error,errors[front]);
+        if ((^{out_sum,out_tag,out_error})===1'bx) $fatal(1,"ACTIVE_TENSOR_XZ");
+        front=front+1;queued=queued-1;retired=retired+1;
+      end
+      if (was_enabled) enabled=enabled+1;
+      if (in_valid && in_ready) begin
+        if (tail>=2048) $fatal(1,"SCOREBOARD_BOUND");
+        birth[tail]=enabled;expected[tail]=expected_input;tags[tail]=in_tag;
+        errors[tail]=error_value;tail=tail+1;queued=queued+1;accepted=accepted+1;
+      end
+      #1;
+      if (queued>0 && enabled-birth[front]>=48) begin
+        if (out_valid!==1 || out_tag!==tags[front])
+          $fatal(1,"TENSOR_LATENCY expected=48 got=%0d",enabled-birth[front]);
+      end else if (out_valid!==0) $fatal(1,"EARLY_TENSOR_OUTPUT");
+      cycles=cycles+1;
+      @(negedge clk);
+      if (was_enabled) next_vector();
+    end
+    if (accepted!=retired || blocked==0) $fatal(1,"TENSOR_CONSERVATION_OR_STALL_COVERAGE");
+    $fclose(fd);
+    in_valid=0;out_ready=0;
+    #2;rst_n=0;#1;reset_outputs();
+    @(negedge clk);rst_n=1;in_valid=1;
+    repeat (10) @(negedge clk);
+    #2;rst_n=0;in_valid=0;#1;reset_outputs();
+    @(negedge clk);rst_n=1;in_valid=1;
+    repeat (10) @(negedge clk);
+    flush=1;in_valid=0;#1;reset_outputs();
+    @(negedge clk);flush=0;out_ready=1;
+    repeat (60) begin @(posedge clk);#1;if (out_valid!==0) $fatal(1,"FLUSH_TENSOR_LEAK");end
+    $display("SUMMARY tensor_cases=%0d latency=48 blocked_cycles=%0d reset_during_work=1 flush_during_work=1",
+      retired,blocked);
+    $finish;
+  end
+  initial begin repeat (500000) @(posedge clk);$fatal(1,"CYCLE_BOUND");end
+endmodule
+"""
+
+
+def tensor_vectors(full=True):
+    vectors = []
+    for seed in ([17, 89, 203] if full else [17]):
+        rng = random.Random(seed)
+        for index in range(256 if full else 12):
+            w4 = index & 1
+            q = [rng.randrange(16) for _ in range(256)]
+            z = [rng.randrange(16) for _ in range(256)]
+            scales = [ref.encode(Fraction(rng.randrange(1, 129), 128), 16)
+                      for _ in range(256)]
+            weights = [ref.encode(Fraction(rng.randrange(-64, 65), 16), 16)
+                       for _ in range(256)]
+            activations = [ref.encode(Fraction(rng.randrange(-256, 257), 32), 16)
+                           for _ in range(256)]
+            mask = ((1 << 256) - 1) if index % 4 else (1 << index)
+            if index % 8 == 2:
+                mask = (1 << (index % 255 + 1)) - 1
+            if index % 16 == 3:
+                mask = 0
+            if index % 16 == 4:
+                activations = [1 + lane % 127 for lane in range(256)]
+                weights = [0x3F80] * 256
+            if index % 16 == 5:
+                activations = [0x3F80 if lane & 1 else 0xBF80 for lane in range(256)]
+                q, z, scales = [9] * 256, [8] * 256, [0x3F80] * 256
+            if index % 16 == 6:
+                activations[0], weights[0], scales[0] = 0x7F7F, 0x4000, 0x7F7F
+            if index % 16 == 7:
+                mask |= 1
+                activations[0] = 0x7F80
+            if index % 16 == 8:
+                mask &= ~1
+                activations[0], scales[0], weights[0] = 0x7FC1, 0xBF80, 0xFF80
+            if index % 16 == 9:
+                mask |= 1
+                scales[0] = 0xBF80
+            try:
+                expected = ref.tensor(q, z, scales, activations, weights, mask, w4)
+                error = 0
+            except ref.ArithmeticFault:
+                expected, error = 0, 1
+            vectors.append((w4, mask, q, z, scales, activations, weights,
+                            len(vectors) + 1, expected, error))
+        if full:
+            for lane in range(256):
+                vectors.append((lane & 1, 1 << lane, [9] * 256, [8] * 256,
+                                [0x3F80] * 256, [0x3F80] * 256, [0x3F80] * 256,
+                                len(vectors) + 1, 0x3F800000, 0))
+    return vectors
+
+
+def run_tensor(run, simulator="icarus", full=False):
+    vectors = tensor_vectors(full)
+    vector_file = run.path / "tensor-vectors.txt"
+    with vector_file.open("x") as output:
+        for w4, mask, q, z, scales, activations, weights, tag, expected, error in vectors:
+            output.write(f"{w4} {mask:x} {ref.pack(q,4):x} {ref.pack(z,4):x} "
+                         f"{ref.pack(scales,16):x} {ref.pack(activations,16):x} "
+                         f"{ref.pack(weights,16):x} {tag:x} {expected:x} {error}\n")
+    bench = run.path / "tensor_tb.sv"
+    bench.write_text(TENSOR_BENCH)
+    sources = [f"rtl/anvil_qn1_{name}.sv" for name in
+               ("00_pkg", "fp32_mul", "fp32_add", "tensor_array")]
+    if simulator == "icarus":
+        binary = run.path / "tensor.vvp"
+        run.execute(["iverilog", "-g2012", "-Wall", "-s", "tensor_tb", "-o",
+                     relative(binary), *sources, relative(bench)], "tensor-compile")
+        text = run.execute(["vvp", relative(binary), f"+vectors={relative(vector_file)}"],
+                           "tensor-simulation", timeout=600)
+    else:
+        objects = run.path / "obj-tensor"
+        run.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                     "--top-module", "tensor_tb", "--Mdir", relative(objects),
+                     "-o", "simulate", *sources, relative(bench)], "tensor-compile")
+        text = run.execute([relative(objects / "simulate"), f"+vectors={relative(vector_file)}"],
+                           "tensor-simulation")
+        for pattern in ("*.o", "*.a", "*.gch"):
+            for file in objects.glob(pattern):
+                file.unlink()
+    summary = f"SUMMARY tensor_cases={len(vectors)} latency=48"
+    if text.count(summary) != 1:
+        raise AssertionError("tensor comparisons missing")
+    return {"tensor_cases": len(vectors), "simulator": simulator,
+            "seeds": [17, 89, 203] if full else [17], "raw_summary": text[-1000:]}
