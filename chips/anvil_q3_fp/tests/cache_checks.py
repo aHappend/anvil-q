@@ -8,7 +8,7 @@ from execution import icarus, verilator
 from ieee import pack
 
 
-def check(evidence, seed=17, exhaustive=False):
+def check(evidence, seed=17, exhaustive=False, simulator="iverilog"):
     results = []
     rng = random.Random(seed)
     for mode, fp8, affine in ((0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 0, 0), (2, 0, 1)):
@@ -49,7 +49,7 @@ def check(evidence, seed=17, exhaustive=False):
             lines.append(f"{decoding} {dtype} {count} {len(inputs)} {len(outputs)} {error}\n")
             lines.extend(f"{word:08x}\n" for word in inputs + outputs)
         tb = CACHE_TB.replace("@MODE@", str(mode)).replace("@FP8@", str(fp8)).replace("@AFFINE@", str(affine))
-        runner = verilator if exhaustive else icarus
+        runner = verilator if exhaustive or simulator == "verilator" else icarus
         runner(evidence, f"cache-m{mode}-f{fp8}-a{affine}", tb,
                ["rtl/anvil_q3_fp_00_pkg.sv", "rtl/anvil_q3_fp_cache_codec.sv"],
                {"vectors.txt": "".join(lines)})

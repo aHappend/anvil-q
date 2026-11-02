@@ -72,7 +72,10 @@ module tb;
   always @(posedge clk) begin
     if (!rst_n) reset_check;
     else begin
-      if (fault) begin faults=faults+1; draining_expected=1; end
+      if (fault) begin
+        if (phase==0) $fatal(1,"ASSOCIATION unexpected fault for valid accepted tag");
+        faults=faults+1; draining_expected=1;
+      end
       if (drain_done) begin
         drains=drains+1;
         if (returned!=issued) $fatal(1,"early drain returned=%0d issued=%0d",returned,issued);

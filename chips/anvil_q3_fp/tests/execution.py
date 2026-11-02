@@ -44,6 +44,9 @@ class Evidence:
     def write(self):
         (self.path / "receipt.json").write_text(json.dumps(self.record, indent=2) + "\n")
 
+    def scope(self, name):
+        return EvidenceScope(self, name)
+
     def run(self, argv, cwd=None, timeout=3600, expect_failure=False):
         directory = Path(cwd or ROOT)
         number = len(self.record["commands"])
@@ -108,6 +111,16 @@ class Evidence:
         self.write()
 
 
+class EvidenceScope:
+    """Namespaced fixtures share the enclosing immutable execution ledger."""
+
+    def __init__(self, parent, name):
+        self.path = parent.path / name
+        self.path.mkdir()
+        self.run = parent.run
+        self.scope = lambda child: EvidenceScope(self, child)
+
+
 def icarus(evidence, name, testbench, rtl, files=None):
     directory = evidence.path / name
     directory.mkdir()
@@ -128,13 +141,15 @@ def verilator(evidence, name, testbench, rtl, files=None):
     for filename, text in (files or {}).items():
         (directory / filename).write_text(text)
     objects = directory / "compile-obj"
-    evidence.run(["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
-                  "-j", "2", "--Mdir", relative(objects), "-o", "sim",
-                  *rtl, relative(directory / "tb.sv")])
-    output = evidence.run(["./compile-obj/sim"], cwd=directory)
-    for pattern in ("*.o", "*.a", "*.gch"):
-        for path in objects.glob(pattern):
-            path.unlink()
+    try:
+        evidence.run(["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
+                      "-j", "2", "--Mdir", relative(objects), "-o", "sim",
+                      *rtl, relative(directory / "tb.sv")])
+        output = evidence.run(["./compile-obj/sim"], cwd=directory)
+    finally:
+        for pattern in ("*.o", "*.a", "*.gch"):
+            for path in objects.glob(pattern):
+                path.unlink()
     return output
 
 
@@ -149,13 +164,15 @@ def compiled(evidence, name, testbench, rtl):
     (directory / "tb.sv").write_text(testbench.replace("#0; reset_check;", "#1; reset_check;").replace(
         "reset_sample<=1; @(posedge reset_sample); reset_check;", "#1; reset_check;"))
     objects = directory / "compile-obj"
-    evidence.run(["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
-                  "-j", "2", "--Mdir", relative(objects), "-o", "sim", *rtl,
-                  relative(directory / "tb.sv")])
+    try:
+        evidence.run(["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
+                      "-j", "2", "--Mdir", relative(objects), "-o", "sim", *rtl,
+                      relative(directory / "tb.sv")])
+    finally:
+        for pattern in ("*.o", "*.a", "*.gch"):
+            for path in objects.glob(pattern):
+                path.unlink()
     binary = objects / "sim"
-    for pattern in ("*.o", "*.a", "*.gch"):
-        for path in objects.glob(pattern):
-            path.unlink()
     cache[identity] = binary
     evidence._simulators = cache
     return binary

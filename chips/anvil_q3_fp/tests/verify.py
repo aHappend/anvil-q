@@ -19,6 +19,8 @@ import tensor_checks
 import protocol_checks
 import parameter_checks
 import top_control
+import portability
+import defects
 
 
 def main():
@@ -26,25 +28,36 @@ def main():
     parser.add_argument("--suite", choices=["numerics", "protocol", "behavior", "benchmark",
                                            "synthesis", "defects", "portability"])
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control"])
+    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control", "sequence", "defect"])
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
     parser.add_argument("--dtype", choices=["bf16", "fp16"], default="bf16")
     parser.add_argument("--awq", action="store_true")
+    parser.add_argument("--parent", action="store_true")
+    parser.add_argument("--awq-transition", action="store_true")
     parser.add_argument("--tokens", type=int, choices=[1, 4], default=1)
     parser.add_argument("--cache-mode", type=int, choices=[0, 1, 2], default=0)
     parser.add_argument("--fp8", type=int, choices=[0, 1], default=0)
     parser.add_argument("--affine", type=int, choices=[0, 1], default=0)
     parser.add_argument("--layers", type=int, choices=[1, 36], default=1)
     parser.add_argument("--queue-depth", type=int, choices=[1, 3, 16], default=3)
+    parser.add_argument("--heads", type=int, default=8)
+    parser.add_argument("--head-dim", type=int, default=2)
+    parser.add_argument("--mutant", choices=[mutation[0] for mutation in defects.MUTATIONS], default="rounding")
     args = parser.parse_args()
     evidence = Evidence(args.probe or args.suite or "aggregate",
                         preparation=bool(args.probe), repair_of=args.repair_of)
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
-            if args.probe == "control":
+            if args.probe == "defect":
+                evidence.versions([["verilator", "--version"]])
+                result = defects.check(evidence, args.seed, [args.mutant])
+            elif args.probe == "sequence":
+                evidence.versions([["verilator", "--version"]])
+                result = top_control.rejected_sequence(evidence, "dtype", args.banks)
+            elif args.probe == "control":
                 evidence.versions([["verilator", "--version"]])
                 result = top_control.check(evidence, args.banks, args.cache_mode, args.fp8, args.affine)
             elif args.probe == "parameters":
@@ -56,12 +69,12 @@ def main():
                                                   args.simulator)
             elif args.probe == "tensor":
                 evidence.versions([["verilator", "--version"]])
-                result = tensor_checks.check(evidence, args.seed, args.banks)
+                result = tensor_checks.check(evidence, args.seed, args.banks, parent=args.parent)
             elif args.probe == "nonlinear":
                 evidence.versions([["verilator", "--version"]])
                 result = nonlinear.check(evidence, args.seed)
             elif args.probe == "cache":
-                result = cache_checks.check(evidence, args.seed)
+                result = cache_checks.check(evidence, args.seed, simulator=args.simulator)
             elif args.probe == "synthesis":
                 evidence.versions([["yosys", "-V"]])
                 result = synthesis.synthesize(evidence, args.banks)
@@ -69,15 +82,28 @@ def main():
                 evidence.versions([["verilator", "--version"]])
                 result = integration.smoke(evidence, args.seed, args.simulator, args.banks,
                                            args.dtype, args.awq, args.tokens, args.cache_mode,
-                                           args.fp8, args.affine, args.layers)
+                                           args.fp8, args.affine, args.layers,
+                                           heads=args.heads, head_dim=args.head_dim,
+                                           awq_transition=args.awq_transition)
+            elif args.probe in ("primitives", "dots"):
+                result = getattr(numerics, args.probe)(evidence, args.seed, simulator=args.simulator)
             else:
                 result = getattr(numerics, args.probe)(evidence, args.seed)
         else:
-            evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"],
-                               ["verilator", "--version"], ["yosys", "-V"]])
+            tools = [["python3", "--version"]]
+            if args.suite in ("numerics", "protocol", "portability", None):
+                tools += [["iverilog", "-V"], ["vvp", "-V"]]
+            if args.suite != "synthesis":
+                tools.append(["verilator", "--version"])
+            if args.suite in ("synthesis", "portability", None):
+                tools.append(["yosys", "-V"])
+            evidence.versions(tools)
             dispatch = {"numerics": campaigns.numerics_suite,
+                        "protocol": campaigns.protocol,
                         "behavior": campaigns.behavior,
-                        "synthesis": campaigns.synthesis_suite}
+                        "synthesis": campaigns.synthesis_suite,
+                        "portability": portability.check,
+                        "defects": defects.check}
             if args.suite not in dispatch:
                 raise NotImplementedError(f"Suite {args.suite or 'aggregate'} is still being authored")
             result = dispatch[args.suite](evidence, args.seed)

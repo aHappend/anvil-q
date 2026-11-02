@@ -16,25 +16,39 @@ def key_bits(key):
 def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=False, tokens=1,
           mode=0, fp8=0, affine=0, layers=1, heads=8, head_dim=2,
           intermediate=24, vocab=3, queue_depth=3, tile_k=8, tile_rows=3,
-          max_seq_len=4):
+          max_seq_len=4, awq_transition=False):
     if simulator == "iverilog" and (tokens > 1 or heads * head_dim >= 64 or layers > 1):
         portability_smoke = smoke(evidence, seed, "iverilog", banks, fmt, awq, 1)
         substantive = smoke(evidence, seed, "verilator", banks, fmt, awq, tokens,
                             mode, fp8, affine, layers, heads, head_dim, intermediate,
-                            vocab, queue_depth, tile_k, tile_rows, max_seq_len)
+                            vocab, queue_depth, tile_k, tile_rows, max_seq_len, awq_transition)
         return {"icarus_compact_smoke": portability_smoke, "requested_workload": substantive}
     config = dict(seed=seed, fmt=fmt, awq=awq, cache_mode=mode, fp8=fp8, affine=affine,
                   layers=layers, heads=heads, kv_heads=heads // 8, head_dim=head_dim,
                   hidden=heads * head_dim, intermediate=intermediate, vocab=vocab)
+    if awq_transition and (awq or tokens < 2):
+        raise ValueError("Native-to-AWQ transition requires an initially native multi-token run")
     fixture = Fixture(**config)
     fp64 = FP64Fixture(**config)
     initial = dict(fixture.memory)
+    second_image = None
+    awq_image = Fixture(**{**config, "awq": True}) if awq_transition else None
     for position in range(tokens):
+        if awq_transition and position == 1:
+            for model in (fixture, fp64):
+                model.weights = awq_image.weights
+                model.memory.update({key: value for key, value in awq_image.memory.items() if key[0] in (1, 2, 3)})
+            second_image = dict(fixture.memory)
         fixture.token(token=position % fixture.vocab, position=position)
         fp64.token(token=position % fixture.vocab, position=position)
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
-    text = f"{int(fmt == 'fp16')} {int(awq)} {tokens}\n"
+    if second_image is not None:
+        second_image = {key: value for key, value in second_image.items() if key[0] != 8 and key[0] not in (9, 10, 12, 13, 14, 15)}
+        second_image.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
+    text = f"{int(fmt == 'fp16')} {int(awq)} {tokens} {int(awq_transition)}\n"
     text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
+    if second_image is not None:
+        text += "".join(f"3 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(second_image.items()))
     text += "".join(f"1 {key_bits(key):026x} {value:08x}\n" for key, value in fixture.writes)
     text += "".join(f"2 {index:026x} {value:08x}\n"
                     for index, value in enumerate(value for token in fixture.logits for value in token))
@@ -51,6 +65,8 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
                 ",".join(f".{key}({value})" for key, value in parameters.items()) + ") dut", tb)
     name = (f"top-b{banks}-m{mode}-f{fp8}-a{affine}-l{layers}-h{fixture.h}"
             f"-{fmt}-w{int(awq)}-s{seed}-n{tokens}-q{queue_depth}-k{tile_k}-r{tile_rows}-v{vocab}")
+    if awq_transition:
+        name += "-transition"
     if simulator == "verilator":
         binary = compiled(evidence, name, tb, rtl)
         output = run_compiled(evidence, binary, name, {"vectors.txt": text})
@@ -73,7 +89,7 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
         raise AssertionError(f"Missing measured token records in {relative(output)}")
     result = {"scratch_cache_writes": len(fixture.writes), "logits": len(observed),
               "stdout": relative(output), "parameters": parameters, "seed": seed,
-              "activation": fmt, "awq": awq, "metrics_vs_fp64": metrics,
+              "activation": fmt, "awq": awq, "native_to_awq_transition": awq_transition, "metrics_vs_fp64": metrics,
               "minimum_cosine": threshold, "tokens": observations}
     (evidence.path / name / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
@@ -110,7 +126,7 @@ module tb;
   reg [102:0] key,load_key;
   reg [31:0] load_data;
   integer nmemory=0,ninitial=0,nexpected=0,nlogit=0,fd,outfile,rc,record_type,i,j,match_index,memory_index;
-  integer dtype,awq,TOKENS,token_start=0,token_requests=0,token_writes=0,stalls=0,token_stalls=0;
+  integer dtype,awq,TOKENS,transition,image_split=-1,token_start=0,token_requests=0,token_writes=0,stalls=0,token_stalls=0;
   integer low,high,middle,first_expected=0,mutable_index,hash_steps;
   integer cycle=0,accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
   integer occupied[0:B-1],queue_head[0:B-1],queue_tail[0:B-1],due[0:B-1][0:31],bank;
@@ -138,8 +154,8 @@ module tb;
     if (!fd) $fatal(1,"vector open");
     outfile=$fopen("logits.txt","w");
     if (!outfile) $fatal(1,"logit output open");
-    rc=$fscanf(fd,"%d %d %d\\n",dtype,awq,TOKENS);
-    if (rc!=3 || TOKENS<1) $fatal(1,"fixture header");
+    rc=$fscanf(fd,"%d %d %d %d\\n",dtype,awq,TOKENS,transition);
+    if (rc!=4 || TOKENS<1) $fatal(1,"fixture header");
     token_fp16=dtype; token_awq=awq;
     while (!$feof(fd)) begin
       rc=$fscanf(fd,"%d %h %h\\n",record_type,load_key,load_data);
@@ -151,6 +167,10 @@ module tb;
           used[nexpected]=0; nexpected=nexpected+1;
         end
         2: begin expected_logit[load_key]=load_data; nlogit=nlogit+1; end
+        3: begin
+          if (image_split<0) image_split=nmemory;
+          memory_key[nmemory]=load_key; memory_data[nmemory]=load_data; nmemory=nmemory+1;
+        end
         default: $fatal(1,"bad fixture record");
       endcase
     end
@@ -182,7 +202,8 @@ module tb;
         key={mem_req_kind[bank*4+:4],mem_req_layer[bank*32+:32],mem_req_proj[bank*3+:3],
           mem_req_row[bank*32+:32],mem_req_col[bank*32+:32]};
         memory_index=-1;
-        low=0; high=ninitial-1;
+        low=transition && accepted_token>1 ? image_split : 0;
+        high=transition && accepted_token==1 ? image_split-1 : ninitial-1;
         while (low<=high) begin
           middle=(low+high)>>1;
           if (memory_key[middle]==key) begin memory_index=middle; low=high+1; end
@@ -258,6 +279,7 @@ module tb;
     else begin
       token_valid=accepted_token<TOKENS;
       token_id=accepted_token%VOCAB; token_pos=accepted_token;
+      token_awq=awq || (transition && accepted_token>=1);
       new_sequence=accepted_token==0; token_phase=accepted_token>=2;
       logit_ready=cycle%13<9;
       for (bank=0;bank<B;bank=bank+1) begin

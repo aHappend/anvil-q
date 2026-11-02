@@ -17,17 +17,16 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
     initial = dict(fixture.memory)
     fixture.token()
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
-    text = "0 0 2\n"
+    text = "0 0 2 0\n"
     text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
     text += "".join(f"1 {key_bits(key):026x} {value:08x}\n" for key, value in fixture.writes)
     text += "".join(f"2 {index:026x} {value:08x}\n" for index, value in enumerate(fixture.logits[0]))
     rtl = [relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))]
     rtl += ["anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
             "anvil_q3_reference/rtl/anvil_q3_mem_port.sv"]
-    for scenario in ("cancel-fill", "cancel-logit", "memory-fault"):
+    for scenario in ("cancel-fill", "cancel-cache", "cancel-logit", "memory-fault", "cache-fault"):
         tb = TOP_TB.replace("localparam B=1;", f"localparam B={banks}, VOCAB=3;")
         tb = tb.replace(".CACHE_MODE(0)", f".CACHE_MODE({mode}),.MODE1_FP8({fp8}),.INT4_ASYM({affine})")
-        tb = replace_once(tb, "integer dtype,awq,TOKENS,", "integer dtype,awq,TOKENS,")
         tb = tb.replace("integer low,high,middle,", """
           reg injected=0,trigger=0,abort_expected=0;
           integer cancel_pulses=0,error_completions=0,restart_logits=0;
@@ -89,11 +88,16 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
         tb = replace_once(tb, "mem_rsp_valid[bank]=occupied[bank]!=0 && due[bank][queue_head[bank]]<=cycle;", """
           mem_rsp_valid[bank]=occupied[bank]!=0 && due[bank][queue_head[bank]]<=cycle;
           mem_rsp_error[bank]=mem_rsp_valid[bank] && queued_error[bank][queue_head[bank]];""")
+        if scenario in ("cancel-cache", "cache-fault"):
+            tb = replace_once(tb, "mem_req_kind[bank*4+:4]==1", """
+              mem_req_write[bank] && (mem_req_kind[bank*4+:4]==9 ||
+                mem_req_kind[bank*4+:4]==10 || mem_req_kind[bank*4+:4]>=12)""")
+        is_fault = scenario in ("memory-fault", "cache-fault")
         tb = tb.replace("@FAULT@", "queued_error[bank][queue_tail[bank]]=1; injected=1;"
-                        if scenario == "memory-fault" else "")
-        tb = tb.replace("@TRIGGER@", "1'b0" if scenario == "memory-fault" else
+                        if is_fault else "")
+        tb = tb.replace("@TRIGGER@", "1'b0" if is_fault else
                         "logit_valid" if scenario == "cancel-logit" else "trigger")
-        tb = tb.replace("@CANCELS@", "0" if scenario == "memory-fault" else "1")
+        tb = tb.replace("@CANCELS@", "0" if is_fault else "1")
         name = f"control-{scenario}-b{banks}-m{mode}-f{fp8}-a{affine}"
         executable = compiled(evidence, name, tb, rtl)
         output = run_compiled(evidence, executable, name, {"vectors.txt": text})
@@ -101,3 +105,48 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
                         "fp8": fp8, "affine": affine, "restart_logits": fixture.vocab,
                         "restart_writes": len(fixture.writes), "stdout": relative(output)})
     return results
+
+
+def rejected_sequence(evidence, case, banks=1):
+    """A valid token, a rejected command with no memory side effects, then restart."""
+    fixture = Fixture()
+    initial = dict(fixture.memory)
+    fixture.token()
+    initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
+    text = "0 0 3 0\n"
+    text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
+    text += "".join(f"1 {key_bits(key):026x} {value:08x}\n" for key, value in fixture.writes * 2)
+    text += "".join(f"2 {index:026x} {value:08x}\n"
+                    for index, value in enumerate(fixture.logits[0] * 2))
+    tb = TOP_TB.replace("localparam B=1;", f"localparam B={banks}, VOCAB=3;")
+    tb = replace_once(tb, "if (error!==1'b0) $fatal", """
+        if (completed_token==1) begin
+          if (error!==1'b1 || requests!=rejected_requests || compared_logits!=3)
+            $fatal(1,"invalid sequence command accepted or changed public memory/logits");
+        end else if (error!==1'b0) $fatal""")
+    tb = replace_once(tb, "integer dtype,awq,TOKENS,", "integer rejected_requests=0;\ninteger dtype,awq,TOKENS,")
+    tb = replace_once(tb, "accepted_token=accepted_token+1; token_start=cycle;",
+                      "accepted_token=accepted_token+1; if (accepted_token==2) rejected_requests=requests; token_start=cycle;")
+    tb = replace_once(tb, "token_id=accepted_token%VOCAB; token_pos=accepted_token;", """
+      token_id=0; token_pos=accepted_token==1 ? @POSITION@ : 0;
+      token_fp16=accepted_token==1 && @DTYPE@;""")
+    tb = replace_once(tb, "new_sequence=accepted_token==0; token_phase=accepted_token>=2;",
+                      "new_sequence=accepted_token!=1; token_phase=@PHASE@;")
+    values = {"dtype": ("1", "1'b1", "1'b0"),
+              "position": ("2", "1'b0", "1'b0"),
+              "phase-reversal": ("1", "1'b0", "accepted_token==0"),
+              "token-id": ("1", "1'b0", "1'b0")}
+    if case not in values:
+        raise ValueError(f"Unknown rejection scenario {case}")
+    position, dtype, phase = values[case]
+    tb = tb.replace("@POSITION@", position).replace("@DTYPE@", dtype).replace("@PHASE@", phase)
+    if case == "token-id":
+        tb = replace_once(tb, "token_id=0; token_pos=", "token_id=accepted_token==1 ? 3 : 0; token_pos=")
+    rtl = [relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))]
+    rtl += ["anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+            "anvil_q3_reference/rtl/anvil_q3_mem_port.sv"]
+    name = f"rejected-{case}-b{banks}"
+    executable = compiled(evidence, name, tb, rtl)
+    output = run_compiled(evidence, executable, name, {"vectors.txt": text})
+    return {"case": case, "successful_logits": 6, "rejected_commands": 1,
+            "stdout": relative(output)}

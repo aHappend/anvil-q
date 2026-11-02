@@ -121,15 +121,19 @@ def operation_vectors(seed=17, count=4096, include_awq=False):
     return pairs
 
 
-def primitives(evidence, seed=17, count=4096):
+def primitives(evidence, seed=17, count=4096, simulator="iverilog"):
     pairs = operation_vectors(seed, count, include_awq=True)
     results = {}
     for operation in ("add", "mul"):
         text = "".join(f"{a:08x} {b:08x} {value:08x} {flags:02x}\n"
                        for a, b in pairs for value, flags in [binary(operation, a, b)])
         tb = PRIMITIVE_TB.replace("@MODULE@", f"anvil_q3_fp_{operation}")
-        icarus(evidence, operation, tb,
-               [PKG, f"rtl/anvil_q3_fp_{operation}.sv"], {"vectors.txt": text})
+        rtl = [PKG, f"rtl/anvil_q3_fp_{operation}.sv"]
+        if simulator == "verilator":
+            executable = compiled(evidence, operation, tb, rtl)
+            run_compiled(evidence, executable, operation, {"vectors.txt": text})
+        else:
+            icarus(evidence, operation, tb, rtl, {"vectors.txt": text})
         results[operation] = len(pairs)
     return results
 
@@ -228,7 +232,7 @@ def iterative(evidence, seed=17, count=4096):
     return results
 
 
-def dots(evidence, seed=17, count=256):
+def dots(evidence, seed=17, count=256, simulator="iverilog"):
     rng = random.Random(seed)
     vectors = []
     for dtype, fmt in enumerate(("bf16", "fp16")):
@@ -240,6 +244,10 @@ def dots(evidence, seed=17, count=256):
                 q = [rng.randrange(16) for _ in range(8)]
                 z = [rng.randrange(16) for _ in range(8)]
                 mask = (0, 1, 0x80, 0x55, 0xaa, 0xff)[index % 6] if index < 36 else rng.randrange(256)
+                if index == 0:
+                    activations = [0x7d01 if dtype else 0x7f81] * 8
+                    weights = list(activations)
+                    scales = [0x7c00] * 8
                 value, flags = dot(activations, weights, mask, fmt,
                                    q if awq else None, z, scales)
                 packed = lambda values, width: sum(v << (width * i) for i, v in enumerate(values))
@@ -247,9 +255,12 @@ def dots(evidence, seed=17, count=256):
                                f"{packed(activations,16):032x} {packed(weights,16):032x} "
                                f"{packed(q,4):08x} {packed(z,4):08x} {packed(scales,16):032x} "
                                f"{value:08x} {flags:02x}\n")
-    icarus(evidence, "dot8", DOT_TB, [PKG, "rtl/anvil_q3_fp_mul.sv",
-           "rtl/anvil_q3_fp_add.sv", "rtl/anvil_q3_fp_dot8.sv"],
-           {"vectors.txt": "".join(vectors)})
+    rtl = [PKG, "rtl/anvil_q3_fp_mul.sv", "rtl/anvil_q3_fp_add.sv", "rtl/anvil_q3_fp_dot8.sv"]
+    if simulator == "verilator":
+        executable = compiled(evidence, "dot8", DOT_TB, rtl)
+        run_compiled(evidence, executable, "dot8", {"vectors.txt": "".join(vectors)})
+    else:
+        icarus(evidence, "dot8", DOT_TB, rtl, {"vectors.txt": "".join(vectors)})
     return {"dot8_per_format_mode": count, "dot8_total": len(vectors)}
 
 

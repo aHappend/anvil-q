@@ -4,14 +4,14 @@ from fractions import Fraction
 import random
 
 from execution import compiled, relative, run_compiled
-from ieee import binary, dot, pack
+from ieee import binary, dot, exact, pack
 
 
 SHIFTS = (0, 16, 4, 20, 8, 24, 12, 28)
 
 
 def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermediate=24,
-          head_dim=2, repeats=3):
+          head_dim=2, repeats=3, parent=False):
     results = []
     tb = TENSOR_TB
     for key, value in {"@B@": banks, "@TR@": tile_rows, "@TK@": tile_k,
@@ -20,9 +20,25 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
     rtl = ["rtl/anvil_q3_fp_00_pkg.sv", "rtl/anvil_q3_fp_add.sv", "rtl/anvil_q3_fp_mul.sv",
            "rtl/anvil_q3_fp_dot8.sv", "rtl/anvil_q3_fp_weight_prefetcher.sv",
            "rtl/anvil_q3_fp_tensor_array.sv"]
-    executable = compiled(evidence, f"tensor-b{banks}-r{tile_rows}-k{tile_k}-h{hidden}", tb, rtl)
+    if parent:
+        tb = tb.replace("anvil_q3_fp_tensor_array", "anvil_q3_tensor_array")
+        tb = tb.replace("reg [15:0] load_data", "reg [31:0] load_data")
+        tb = tb.replace("reg [15:0] activations", "reg [31:0] activations")
+        tb = tb.replace("result_row,result_sum,c_req_layer", "result_row,c_req_layer")
+        tb = tb.replace("wire [B*4-1:0] c_req_kind;", "wire [B*128-1:0] result_sum;\nwire [B*4-1:0] c_req_kind;")
+        tb = tb.replace("reg [31:0] data[0:262143],expected[0:16383];",
+                        "reg [31:0] data[0:262143];\nreg [127:0] expected[0:16383];")
+        tb = tb.replace("reg [63:0] held_payload", "reg [159:0] held_payload")
+        tb = tb.replace("result_sum[bank*32+:32]", "result_sum[bank*128+:128]")
+        rtl = [f"anvil_q3_reference/rtl/{name}.sv" for name in (
+            "anvil_q3_00_pkg", "anvil_q3_awq_dot8", "anvil_q3_add128",
+            "anvil_q3_weight_prefetcher", "anvil_q3_tensor_array")]
+    prefix = "parent-" if parent else ""
+    executable = compiled(evidence, f"{prefix}tensor-b{banks}-r{tile_rows}-k{tile_k}-h{hidden}", tb, rtl)
     for dtype, fmt in enumerate(("bf16", "fp16")):
         for awq in (0, 1):
+            if parent and not awq:
+                continue
             rng = random.Random(seed)
             memory, weights, qs, zs, scales = {}, {}, {}, {}, {}
             for projection in range(7):
@@ -61,9 +77,18 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                     rows, cols = len(weights[projection]), len(weights[projection][0])
                     activations = [pack(Fraction(rng.randrange(-127, 128), 32), fmt)[0] for _ in range(cols)]
                     lines.append(f"{projection} {cols} {rows}\n")
-                    lines += [f"{a:04x}\n" for a in activations]
+                    activation_q16 = [int(exact(a, fmt) * 65536) for a in activations]
+                    lines += [f"{a & 0xffffffff:08x}\n" for a in activation_q16] if parent else [f"{a:04x}\n" for a in activations]
                     for row in range(rows):
                         total = 0
+                        if parent:
+                            for col, activation in enumerate(activation_q16):
+                                scale = exact(scales[projection][row][col // 8], "fp16") * 65536
+                                scale_q16 = (2 * scale.numerator + scale.denominator) // (2 * scale.denominator)
+                                total += (qs[projection][row][col] - zs[projection][row][col // 8]) * scale_q16 * activation
+                            lines.append(f"{total & ((1 << 128) - 1):032x}\n")
+                            compared += 1
+                            continue
                         for base in range(0, cols, 8):
                             count = min(8, cols - base)
                             a = activations[base:base + 8] + [0] * (8 - count)
@@ -77,11 +102,30 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                             total = binary("add", total, reduced)[0]
                         lines.append(f"{total:08x}\n")
                         compared += 1
-            name = f"tensor-b{banks}-r{tile_rows}-k{tile_k}-h{hidden}-{fmt}-w{awq}-s{seed}"
+            name = f"{prefix}tensor-b{banks}-r{tile_rows}-k{tile_k}-h{hidden}-{fmt}-w{awq}-s{seed}"
             output = run_compiled(evidence, executable, name, {"vectors.txt": "".join(lines)})
+            commands = []
+            for line in output.read_text().splitlines():
+                if line.startswith("COMMAND "):
+                    command, projection, cycles, rows, requests, request_stalls = map(int, line.split()[1:])
+                    columns = intermediate if projection == 6 else hidden
+                    byte_count = requests * 4
+                    observed = byte_count * 100000000 / cycles
+                    ideal = banks * 4 * 100000000
+                    commands.append({"command": command, "projection": projection,
+                                     "command_to_done_cycles": cycles, "compared_rows": rows,
+                                     "useful_operations": rows * columns * 2,
+                                     "response_bytes": byte_count, "request_stalls": request_stalls,
+                                     "observed_bytes_per_second_at_100mhz": observed,
+                                     "ideal_bank_bytes_per_second_at_100mhz": ideal,
+                                     "bandwidth_gap_bytes_per_second": ideal - observed})
+            if len(commands) != 7 * repeats:
+                raise AssertionError(f"Missing measured tensor command records: {name}")
             results.append({"banks": banks, "tile_rows": tile_rows, "tile_k": tile_k,
                             "hidden": hidden, "intermediate": intermediate, "head_dim": head_dim,
                             "format": fmt, "awq": awq, "seed": seed,
+                            "implementation": "immutable_parent" if parent else "floating_point",
+                            "measured_commands": commands,
                             "commands": 7 * repeats, "accumulated_rows_compared": compared,
                             "stdout": relative(output)})
     return results
@@ -114,6 +158,7 @@ module tb;
   reg [31:0] response[0:B-1];
   integer due[0:B-1],cycle=0,fd,rc,nmem,ncommands,dtype,awq,ninput,noutput;
   integer command=0,loaded=0,received=0,total=0,stalls=0,simultaneous=0;
+  integer command_requests=0,command_request_stalls=0;
   integer bank,index,kind,proj,row,col,value,low,high,middle,found,latency;
   reg [B-1:0] held=0,request_held=0,activity=0;
   reg [63:0] held_payload[0:B-1];
@@ -155,6 +200,7 @@ module tb;
       end
       while (cmd_ready!==1'b1) @(negedge clk);
       cmd_proj=proj; cmd_valid=1; loaded=0; received=0; latency=0;
+      command_requests=0; command_request_stalls=0;
       @(negedge clk); cmd_valid=0;
       while (done!==1'b1 && latency<2000000) begin
         load_valid=loaded<ninput && cycle%7!=4;
@@ -170,7 +216,8 @@ module tb;
         $fatal(1,"TENSOR completion command=%0d done=%b error=%b rows=%0d/%0d inputs=%0d/%0d",
           command,done,error,received,noutput,loaded,ninput);
       for (index=0;index<noutput;index=index+1) if (!consumed[index]) $fatal(1,"missing row");
-      $display("COMMAND %0d %0d %0d %0d",command,proj,latency,received);
+      $display("COMMAND %0d %0d %0d %0d %0d %0d",
+        command,proj,latency,received,command_requests,command_request_stalls);
       @(negedge clk);
       if (done!==1'b0) $fatal(1,"tensor done not pulse");
     end
@@ -201,10 +248,12 @@ module tb;
            c_req_row[bank*32+:32],c_req_col[bank*32+:32],c_req_wdata[bank*32+:32]}!==request_payload[bank]))
           $fatal(1,"STALL tensor request");
         request_held[bank]=c_req_valid[bank] && !c_req_ready[bank];
+        if (request_held[bank]) command_request_stalls=command_request_stalls+1;
         request_payload[bank]={c_req_kind[bank*4+:4],c_req_layer[bank*32+:32],c_req_proj[bank*3+:3],
           c_req_row[bank*32+:32],c_req_col[bank*32+:32],c_req_wdata[bank*32+:32]};
         if (c_rsp_valid[bank] && c_rsp_ready[bank]) pending[bank]=0;
         if (c_req_valid[bank] && c_req_ready[bank]) begin
+          command_requests=command_requests+1;
           if (pending[bank] || c_req_write[bank] || c_req_layer[bank*32+:32]!==0)
             $fatal(1,"tensor memory protocol");
           activity[bank]=1;
