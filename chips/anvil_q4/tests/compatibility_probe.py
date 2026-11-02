@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import Experiment
 from legacy_reference import make_fixture
 from system_matrix import compile_top
+from synthesis_probe import expand_packages
 
 
 def main():
@@ -17,12 +18,19 @@ def main():
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--case", type=int, nargs="+")
     parser.add_argument("--repair-of", action="append", default=[])
+    parser.add_argument("--frontend-normalization", action="store_true")
     args = parser.parse_args()
     experiment = Experiment("compatibility", args.preparation, args.repair_of)
     error = None
     try:
         experiment.receipt["tool_version"] = experiment.run(["verilator", "--version"], "version")
-        binary = compile_top(experiment)
+        rtl_sources = None
+        if args.frontend_normalization:
+            frontend = experiment.directory/"frontend.sv"
+            experiment.receipt["frontend_sha256"] = expand_packages(
+                frontend, indexed_write_lowering=True)
+            rtl_sources = [experiment.rel(frontend)]
+        binary = compile_top(experiment, rtl_sources=rtl_sources)
         results, index = [], 0
         experiment.receipt["cases"] = results
         for seed in (17, 29, 43):

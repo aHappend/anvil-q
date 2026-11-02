@@ -31,15 +31,22 @@ def cases():
                    theta_value=theta)
     yield dict(seed=17, heads=1, kv_heads=1, dimension=2, layers=1,
                tokens=1, intermediate=1, vocabulary=1, activation_format=0,
-               bias=False, banks=1, page_tokens=1)
+               bias=False, banks=1, page_tokens=1, context_capacity=1,
+               physical_pages=1, page_base=0)
+    for seed in (17, 29, 43):
+        yield dict(seed=seed, heads=6, kv_heads=2, dimension=2, layers=3,
+                   tokens=4, intermediate=5, vocabulary=17, activation_format=0,
+                   bias=True, banks=16, page_tokens=2)
 
 
 def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
-                driver="top_probe.cpp"):
+                driver="top_probe.cpp", rtl_sources=None):
     objects = experiment.directory / "compile-obj"
     packages = ["rtl/anvil_q3_00_pkg.sv", "rtl/anvil_q4_00_fp_pkg.sv"]
     rtl = packages + [experiment.rel(p) for p in sorted((ROOT/"rtl").glob("*.sv"))
                       if experiment.rel(p) not in packages]
+    if rtl_sources is not None:
+        rtl = list(rtl_sources)
     experiment.run([
         "verilator", "--cc", "--exe", "--build", "--verilate-jobs", "1",
         "--build-jobs", "2", "-Wno-fatal",

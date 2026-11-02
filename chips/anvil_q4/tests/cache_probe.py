@@ -9,6 +9,7 @@ import datetime
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -26,6 +27,7 @@ def main():
     parser.add_argument("--mode", choices=["all", "write", "read", "order"],
                         default="all")
     parser.add_argument("--repair-of", action="append", default=[])
+    parser.add_argument("--simulator", choices=("iverilog", "verilator"), default="iverilog")
     args = parser.parse_args()
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     directory = ROOT / "evidence" / "preparation" / ("cache-recovery-" + stamp)
@@ -70,23 +72,36 @@ def main():
         return record["exit_code"] == 0
 
     try:
-        tools_ok = run(["iverilog", "-V"], "iverilog-version")
-        tools_ok &= run(["vvp", "-V"], "vvp-version")
-        binary = relative(directory / "cache.vvp")
-        compiled = tools_ok and run(
-            ["iverilog", "-g2012", "-Wall", "-s", "cache_recovery_tb", "-o",
-             binary, *sources[:5]], "compile")
+        objects = directory/"compile-obj"
+        if args.simulator == "iverilog":
+            tools_ok = run(["iverilog", "-V"], "iverilog-version")
+            tools_ok &= run(["vvp", "-V"], "vvp-version")
+            binary = relative(directory / "cache.vvp")
+            compiled = tools_ok and run(
+                ["iverilog", "-g2012", "-Wall", "-s", "cache_recovery_tb", "-o",
+                 binary, *sources[:5]], "compile")
+            simulate = ["vvp", binary]
+        else:
+            tools_ok = run(["verilator", "--version"], "verilator-version")
+            compiled = tools_ok and run(
+                ["verilator", "--binary", "--timing", "-Wno-fatal",
+                 "--top-module", "cache_recovery_tb", "--Mdir", relative(objects),
+                 "-o", "cache-sim", *sources[:5]], "compile")
+            simulate = [relative(objects/"cache-sim")]
         receipt["cases"] = []
+        receipt["fixture_sha256"] = {}
         if compiled:
             cases = list(CASES) if args.case == "all" else [args.case]
             modes = ["write", "read", "order"] if args.mode == "all" else [args.mode]
             for name in cases:
                 image = directory / (name + ".hex")
                 image.write_text("".join(f"{word:08x}\n" for word in fixture(name)))
+                receipt["fixture_sha256"][relative(image)] = hashlib.sha256(
+                    image.read_bytes()).hexdigest()
                 for mode in modes:
                     stem = name + "-" + mode
                     passed = run(
-                        ["vvp", binary, "+FIXTURE=" + relative(image),
+                        [*simulate, "+FIXTURE=" + relative(image),
                          "+MODE=" + str(["write", "read", "order"].index(mode))], stem)
                     record = receipt["commands"][-1]
                     summary = (ROOT / record["stdout_path"]).read_text()
@@ -98,6 +113,8 @@ def main():
         passed = compiled and bool(receipt["cases"]) and all(
             case["passed"] for case in receipt["cases"])
         receipt["exit_code"] = 0 if passed else 1
+        if passed and objects.is_dir():
+            shutil.rmtree(objects)
     finally:
         receipt["end_time"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
         (directory / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")

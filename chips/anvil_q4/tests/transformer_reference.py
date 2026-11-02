@@ -57,20 +57,22 @@ def make_fixture(directory, seed=17, layers=3, tokens=4, heads=3,
                  activation_format=0, bias=True, banks=16, page_tokens=1,
                  theta_value=10000, weight_format=0, activation_a8=False,
                  asymmetric=True, group_size=3, tile_k=7, generation=1, cache_format=0,
-                 token_ids=None):
+                 token_ids=None, context_capacity=None, physical_pages=None, page_base=1):
     with localcontext() as context:
         context.prec = 70
         return _make_fixture(directory, seed, layers, tokens, heads, kv_heads,
                              dimension, intermediate, vocabulary,
                              activation_format, bias, banks, page_tokens, theta_value,
                              weight_format, activation_a8, asymmetric, group_size, tile_k,
-                             generation, cache_format, token_ids)
+                             generation, cache_format, token_ids,
+                             context_capacity, physical_pages, page_base)
 
 
 def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
                   intermediate, vocabulary, activation_format, bias,
                   banks, page_tokens, theta_value, weight_format, activation_a8,
-                  asymmetric, group_size, tile_k, generation, cache_format, token_ids):
+                  asymmetric, group_size, tile_k, generation, cache_format, token_ids,
+                  context_capacity, physical_pages, page_base):
     hidden = heads * dimension
     ratio = heads // kv_heads
     if heads != ratio * kv_heads or ratio not in (1, 3, 6, 7, 8):
@@ -218,7 +220,7 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
         # Epoch zero labels a host mapping template. The bridge binds it to
         # the first public epoch observed, without assuming an RTL counter.
         page = position // page_tokens
-        image[(15, 0, 0, page, 0)] = 0x80000000 | (page + 1)
+        image[(15, 0, 0, page, 0)] = 0x80000000 | (page + page_base)
         residual = embeddings[token].copy()
         record(0, residual, "embedding")
         for layer in range(layers):
@@ -232,7 +234,7 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
             record(2, q, "query_rope")
             record(3, k, "key_rope")
             cache_k, cache_v = [], []
-            physical_row = (page + 1) * page_tokens + position % page_tokens
+            physical_row = (page + page_base) * page_tokens + position % page_tokens
             for kind, vector, target in ((9, k, cache_k), (10, v, cache_v)):
                 if not cache_format:
                     for col, value in enumerate(vector):
@@ -306,8 +308,10 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
     descriptor = [
         1, 4, activation_format, weight_format, int(activation_a8), cache_format,
         banks, layers, hidden, intermediate, heads, kv_heads,
-        dimension, vocabulary, tokens + 1, group_size, int(bias), bits(theta), 0x358637BD,
-        page_tokens, tokens + 1, int(asymmetric), ratio, 1700 + seed,
+        dimension, vocabulary, tokens+1 if context_capacity is None else context_capacity,
+        group_size, int(bias), bits(theta), 0x358637BD,
+        page_tokens, tokens+1 if physical_pages is None else physical_pages,
+        int(asymmetric), ratio, 1700 + seed,
     ] + [0] * 8
     (directory / "descriptor.txt").write_text("".join(f"{word:08x}\n" for word in descriptor))
     (directory / "memory.txt").write_text("".join(
@@ -327,6 +331,8 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
         "weight_format": weight_format, "activation_a8": activation_a8,
         "asymmetric": asymmetric, "group_size": group_size, "tile_k": tile_k,
         "cache_format": cache_format,
+        "context_capacity": descriptor[14], "physical_pages": descriptor[20],
+        "page_base": page_base,
         "stage_comparison_counts": dict(stage_counts),
         "expected_writes": sum(len(values) for values in expected.values()),
         "expected_logits": len(logits),

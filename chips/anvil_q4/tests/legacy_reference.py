@@ -266,5 +266,7 @@ def make_fixture(directory, seed=17, mode=1, cache_format=0, banks=1, tokens=4):
     (directory/"seed.txt").write_text(f"{seed}\n")
     return {"seed": seed, "mode": mode, "cache_format": cache_format, "banks": banks,
             "tokens": tokens, "layers": layers, "hidden": hidden,
+            "intermediate": intermediate, "query_heads": heads, "kv_heads": kvheads,
+            "head_dim": dimension, "vocabulary": vocabulary,
             "expected_logits": len(logits), "comparison": "exact integer bits",
             "stage_comparison_counts": dict(stage_counts)}

@@ -12,7 +12,8 @@ from transformer_reference import make_fixture
 
 
 CASES = ("invalid-token", "invalid-position", "memory-error", "cancel-idle",
-         "cancel-issuing", "cancel-waiting", "cancel-output")
+         "cancel-issuing", "cancel-waiting", "cancel-output", "cancel-verifying")
+CASES += ("normal-priority", "reset-outstanding")
 
 
 def main():

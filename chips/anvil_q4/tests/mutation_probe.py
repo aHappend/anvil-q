@@ -1,4 +1,4 @@
-"""Disposable leaf mutations; compilation failures never count as detections."""
+"""Disposable numerical/protocol mutations; compile failures never count as detections."""
 
 import argparse
 import hashlib
@@ -32,6 +32,48 @@ CASES = {
         "1: awq_shift = 4;",
         ["numerics_probe.py", "--preparation"],
         "NUMERICS_EXACT"),
+    "gqa-head": (
+        "rtl/anvil_q4_gqa_attention.sv",
+        "else begin ratio_index<=0; kv_head<=kv_head+1'b1; end",
+        "else begin ratio_index<=0; kv_head<=0; end",
+        ["system_matrix.py", "--preparation", "--case", "21"],
+        "STAGE_MISMATCH"),
+    "qkv-bias": (
+        "rtl/anvil_q4_gemv.sv",
+        "bias_enable<=!cmd_lmhead && qkv_bias && cmd_proj<3;",
+        "bias_enable<=1'b0;",
+        ["system_matrix.py", "--preparation", "--case", "0"],
+        "STAGE_MISMATCH"),
+    "descriptor-switching": (
+        "rtl/anvil_q4_top.sv",
+        "generation<=generation+1'b1;",
+        "generation<=1;",
+        ["switching_probe.py", "--preparation"],
+        "READ_BEFORE_WRITE_OR_BAD_COORDINATE"),
+    "bank-routing": (
+        "rtl/anvil_q4_bank_scheduler.sv",
+        "route_col[c] <= c_req_col[c*32+:4];",
+        "route_col[c] <= c_req_col[c*32+:4]+1'b1;",
+        ["system_matrix.py", "--preparation", "--case", "1"],
+        "PHYSICAL_BANK"),
+    "page-translation": (
+        "rtl/anvil_q4_kv_cache.sv",
+        "physical_row<=({1'b0,rdata[30:0]} << page_shift) | (position & (page_size-1));",
+        "physical_row<=(({1'b0,rdata[30:0]} << page_shift) | (position & (page_size-1)))+1'b1;",
+        ["system_matrix.py", "--preparation", "--case", "0"],
+        "UNEXPECTED_WRITE"),
+    "cache-quantization": (
+        "rtl/anvil_q4_kv_cache.sv",
+        "wire [31:0] encoded=bounded_int_rne(bounded_ratio);",
+        "wire [31:0] encoded=bounded_int_rne(bounded_ratio)+1'b1;",
+        ["system_matrix.py", "--preparation", "--case", "1"],
+        "INT8_CACHE_EXACT"),
+    "speculative-prefix": (
+        "rtl/anvil_q4_top.sv",
+        "committed<=batch_position+{30'd0,commit_length};",
+        "committed<=batch_position+{30'd0,commit_length}+1'b1;",
+        ["speculative_probe.py", "--preparation", "--accepted", "1"],
+        "COMMAND_ERROR"),
 }
 
 

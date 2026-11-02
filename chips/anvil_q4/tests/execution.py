@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parent.parent
 class Experiment:
     def __init__(self, suite, preparation=False, repair_of=()):
         self.deadline = time.monotonic() + 2700
+        if "ANVIL_CHECK_DEADLINE" in os.environ:
+            self.deadline = min(self.deadline, float(os.environ["ANVIL_CHECK_DEADLINE"]))
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         base = ROOT / "evidence"
         if preparation:
@@ -65,7 +67,9 @@ class Experiment:
                 ROOT / record["stderr_path"]).open("wb") as err:
             try:
                 with subprocess.Popen(record["argv"], cwd=cwd, stdout=out,
-                                      stderr=err, start_new_session=True) as child:
+                                      stderr=err, start_new_session=True,
+                                      env={**os.environ,
+                                           "ANVIL_CHECK_DEADLINE": str(self.deadline)}) as child:
                     child_deadline = time.monotonic() + timeout
                     while True:
                         remaining = child_deadline - time.monotonic()

@@ -20,7 +20,8 @@ def main():
     try:
         experiment.receipt["geometry"] = make_fixture(
             experiment.directory, layers=1, tokens=1, heads=1, kv_heads=1,
-            dimension=2, intermediate=1, vocabulary=1, banks=1, tile_k=1)
+            dimension=2, intermediate=1, vocabulary=1, banks=1, tile_k=1,
+            context_capacity=1, physical_pages=1, page_base=0)
         experiment.receipt["fixture_sha256"] = {
             p.name: hashlib.sha256(p.read_bytes()).hexdigest()
             for p in experiment.directory.glob("*.txt")}
