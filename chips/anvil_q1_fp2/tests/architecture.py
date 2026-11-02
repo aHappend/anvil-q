@@ -262,7 +262,7 @@ module tb;
   reg [31:0] configuration[0:{len(configuration)-1}];
   string fixture_root;
   reg [31:0] lower[0:{tokens*vocab-1}],upper[0:{tokens*vocab-1}];
-  reg [31:0] expected_lo,expected_hi;
+  reg [31:0] targets[0:{tokens*vocab-1}],expected_lo,expected_hi,expected_target;
   reg occupied[0:1];
   reg [511:0] response[0:1];
   integer delay_count[0:1],scalar_delay=0;
@@ -276,6 +276,8 @@ module tb;
   integer requests=0,read_bytes=0,write_bytes=0,two_slots=0,reordered=0;
   integer output_stalls=0,request_stalls=0,completed=0,fixture_fd,scan;
   integer csr_issued=0,csr_compared=0,csr_accept_edge=-1,csr_overlap=0;
+  integer ulp_bins[0:5],ulp_bin;
+  reg [31:0] ulp,ulp_max=0;
   reg csr_pending=0,csr_expected_error=0,csr_running=1;
   reg [31:0] csr_expected_data=0;
   function [31:0] ordered(input [31:0] value);
@@ -386,6 +388,15 @@ module tb;
           $fatal(1,"ARCH NUMERICAL token=%0d logit=%0d got=%h expected=[%h,%h]",
             position,received,logit_data,
             lower[position*{vocab}+received],upper[position*{vocab}+received]);
+        if (output_transfer) begin
+          ulp=ordered(logit_data)>ordered(targets[position*{vocab}+received]) ?
+            ordered(logit_data)-ordered(targets[position*{vocab}+received]) :
+            ordered(targets[position*{vocab}+received])-ordered(logit_data);
+          if (ulp>ulp_max) ulp_max=ulp;
+          ulp_bin=ulp==0 ? 0 : ulp==1 ? 1 : ulp<=4 ? 2 :
+            ulp<=16 ? 3 : ulp<=256 ? 4 : 5;
+          ulp_bins[ulp_bin]=ulp_bins[ulp_bin]+1;
+        end
       end
       @(posedge clk);
       if (output_transfer) begin received=received+1; compared=compared+1; end
@@ -446,6 +457,7 @@ module tb;
     end
   endtask
   initial begin
+    for (j=0;j<6;j=j+1) ulp_bins[j]=0;
     occupied[0]=0; occupied[1]=0;
     delay_count[0]=0; delay_count[1]=0;
     #1; reset_check(); @(posedge clk); reset_check();
@@ -457,9 +469,10 @@ module tb;
     fixture_fd=$fopen({{fixture_root,"/expected.txt"}},"r");
     if (!fixture_fd) $fatal(1,"expected fixture open");
     for (j=0;j<{tokens*vocab};j=j+1) begin
-      scan=$fscanf(fixture_fd,"%h %h\\n",expected_lo,expected_hi);
-      if (scan!=2) $fatal(1,"expected fixture malformed");
+      scan=$fscanf(fixture_fd,"%h %h %h\\n",expected_lo,expected_hi,expected_target);
+      if (scan!=3) $fatal(1,"expected fixture malformed");
       lower[j]=expected_lo; upper[j]=expected_hi;
+      targets[j]=expected_target;
     end
     rst_n=1;
     for (position=0;position<{tokens};position=position+1) begin
@@ -473,9 +486,13 @@ module tb;
     if (compared!={tokens*vocab} || requests==0 || write_bytes==0 || csr_compared==0 ||
         csr_issued!=csr_compared ||
         request_stalls==0) $fatal(1,"architectural coverage absent");
+    if (ulp_bins[0]+ulp_bins[1]+ulp_bins[2]+ulp_bins[3]+ulp_bins[4]+ulp_bins[5]!=compared)
+      $fatal(1,"architectural ULP distribution conservation");
     $display("SUMMARY architecture: tokens=%0d logits=%0d cycles=%0d read_bytes=%0d write_bytes=%0d two_slots=%0d reordered=%0d output_stalls=%0d csr_compared=%0d csr_memory_overlap=%0d",
       completed,compared,cycle,read_bytes,write_bytes,two_slots,reordered,output_stalls,
       csr_compared,csr_overlap);
+    $display("ULP architecture: max=%0d exact=%0d one=%0d two_to_four=%0d five_to_sixteen=%0d seventeen_to_256=%0d above_256=%0d",
+      ulp_max,ulp_bins[0],ulp_bins[1],ulp_bins[2],ulp_bins[3],ulp_bins[4],ulp_bins[5]);
     $finish;
   end
 endmodule
@@ -512,7 +529,7 @@ def simulate_architecture(run, seed, geometry, mx, simulator, compile_and_run, r
         for vector in expected:
             for value in vector:
                 low, high = approximation_interval(value, 0.02)
-                output.write(f"{low:08x} {high:08x}\n")
+                output.write(f"{low:08x} {high:08x} {bits32(value):08x}\n")
     bench = directory / "tb.sv"
     bench.write_text(top_tb(fixture, stem, run.relative, tokens,
                             500000 if simulator == "iverilog" else 10000000))

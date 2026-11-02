@@ -174,6 +174,7 @@ module tb;
   integer file_handle,scan,test,j,n,operation,length,position,input_count,output_count;
   integer edge_count=0,command_edge=-1,last_edge=-1,compared=0,outputs=0;
   integer completed=0,stalls=0,input_stalls=0,ulp_max=0;
+  integer ulp_bins[0:5],ulp_bin;
   reg [31:0] data[0:255],aux[0:255],residual[0:255];
   reg [15:0] query[0:7],keys[0:255],values[0:255];
   reg [31:0] low[0:15],high[0:15],reference_value[0:15];
@@ -229,6 +230,9 @@ module tb;
         if (ulp>ulp_max) ulp_max=ulp;
         if (out_ready) begin
           outputs=outputs+1; compared=compared+1;
+          ulp_bin=ulp==0 ? 0 : ulp==1 ? 1 : ulp<=4 ? 2 :
+            ulp<=16 ? 3 : ulp<=256 ? 4 : 5;
+          ulp_bins[ulp_bin]=ulp_bins[ulp_bin]+1;
           if (out_last) begin final_transfer=1; last_edge=edge_count; end
         end else stalls=stalls+1;
       end
@@ -251,6 +255,7 @@ module tb;
     end
   endtask
   initial begin
+    for (j=0;j<6;j=j+1) ulp_bins[j]=0;
     #1; reset_check(); @(posedge clk); reset_check();
     #1; reset_check(); @(negedge clk); reset_check(); rst_n=1;
     if (!$value$plusargs("vectors=%s",vector_file) || !$value$plusargs("seed=%d",rng))
@@ -291,8 +296,12 @@ module tb;
     end
     if (completed!={cases} || compared==0 || stalls==0)
       $fatal(1,"required comparison/completion/backpressure coverage absent");
+    if (ulp_bins[0]+ulp_bins[1]+ulp_bins[2]+ulp_bins[3]+ulp_bins[4]+ulp_bins[5]!=compared)
+      $fatal(1,"ULP distribution conservation");
     $display("SUMMARY {kind}: commands=%0d compared=%0d stalls=%0d max_ulp=%0d",
       completed,compared,stalls,ulp_max);
+    $display("ULP {kind}: exact=%0d one=%0d two_to_four=%0d five_to_sixteen=%0d seventeen_to_256=%0d above_256=%0d",
+      ulp_bins[0],ulp_bins[1],ulp_bins[2],ulp_bins[3],ulp_bins[4],ulp_bins[5]);
     $finish;
   end
 endmodule
