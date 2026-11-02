@@ -13,10 +13,14 @@ read-only provenance, not a numerical oracle.
 
 **Current implementation is incomplete.** The owned RTL now includes arithmetic,
 write conversion, native/AWQ/INT8 weight dequantization, a four-slot 256-lane
-tensor block and the seven-mode epilogue. There is not yet a connected HT3
-top, projection/decoder, tiled attention engine, extension scale/image controller
-or packed committed-cache transport. The tensor and epilogue blocks are not yet
-integrated into model execution. A standalone converter does not satisfy
+tensor block, the seven-mode epilogue, bounded tiled online attention,
+image-tagged provisional code storage, packed committed-cache readers/writers,
+a projection containing the physical tensor array, a reserved panel prefetch
+and queued DMA arbiter, and a cache controller connecting provisional storage
+to committed reads and code-preserving copies.
+There is not yet a connected HT3 top/decoder, extension scale/image controller,
+transactional prefix/branch executor or core/DDR transport. These blocks are
+not yet integrated into model execution. A standalone converter does not satisfy
 integrated store-to-subsequent-attention acceptance.
 The portable functional suite, synthesis, benchmarks, timing, hardware gates and
 product report have not run. No readiness or performance claim is made here.
@@ -203,6 +207,135 @@ product at `out_data`, and zero `out_weight`. INT8 consumers must use the
 tensor's full-FP32 weight input, not its encoded legacy input. Errors are
 carried explicitly and the owner must not consume errored payload as weights.
 
+## Connected projection and reserved weight supply
+
+`anvil_q1_ht3_projection` preserves the parent projection port order, appending
+`cmd_int8_weights`, `cmd_int8_scale_base[32:0]` and
+`cmd_int8_scale_length[31:0]`; TILE_BEATS is a trailing parameter. Its legal
+HIDDEN_SIZE, INTERMEDIATE_SIZE, GROUP_SIZE and VOCAB_SIZE match the parent.
+Illegal geometries instantiate diagnostic-only zero outputs. Group counts are
+elaboration constants derived with bounded shift/subtract, not RTL divide/modulo.
+
+The actual `u_tensor_array` is the four-slot by 64-row HT3 tensor, fed from
+synchronous architectural activation retention and registered weight columns.
+Native weights retain their encoded BF16/FP16 boundary. AWQ uses 64 parallel
+HT3 dequantizers, the inherited lane permutation, unsigned zero subtraction
+and BF16 result boundary. Signed INT8 extracts ascending low bytes and feeds
+the dequantizers' full FP32 results to the tensor's FP32 weight port. No INT8
+result is narrowed before multiplication with its encoded activation.
+Column/activation tags advance with the same five enabled registers as weight
+dequantization and freeze with its output backpressure.
+
+For N input coordinates and P=ceil(output_rows/64), weight descriptor lengths
+are 128*N*P bytes native and 64*N*P bytes AWQ/INT8. Traversal is panel, input
+column, ascending row within the fixed 64-row panel. Partial-panel rows remain
+masked, while physical descriptor panels retain all 64 rows. AWQ metadata is
+panel, input group: 64 bytes of zero metadata and 128 bytes of FP16 scale
+metadata per panel/group, preserving inherited padding and permutation.
+
+INT8 scale ports name the *projection's logical subregion* of the committed
+extension table, not the entire table. Its base is four-byte aligned and its
+exact length is output_rows*input_groups*4 bytes. Only the entire extension
+table is rounded/aligned to 64 bytes; a logical projection subregion need not
+be. Entry order is output row then input group. A captured panel-scale base,
+group counter and row-stride counter select each scale without runtime divide.
+A one-beat scale cache extracts actual little-endian FP32 bytes. Distinct
+groups and rows cannot acquire a new scale while an old dequantization is
+stalled: scales are captured by arithmetic on its accepted input edge.
+Positive finite scales, including subnormals, are checked before that group's
+columns are submitted. Table-level padding, overlap, bounds, image ownership
+and projection-0..6-only override admission still belong to the missing image
+controller and decoder.
+
+Sparse down projection preserves the parent conservative behavior. The
+BF16 threshold predicate may predict a skipped column, but a nonzero encoded
+activation, preserved pre-narrowing nonzero flag, or unproven finite weight
+image forces a real replay read. Only a genuinely zero column with a finite
+image avoids weight bytes. Metadata is still loaded and validated. A skipped
+column submits zero weights with the original activation signs; it does not
+invent an approximate nonzero result. Eligible, avoided and replay statistics
+are emitted at actual classification/read/compute events.
+
+`anvil_q1_ht3_panel_prefetch` reserves all requested return beats before issue.
+Two 128-entry synchronous low/high banks retain 128 complete columns plus
+one held output. Native reservation capacity is 256 beats; compact AWQ/INT8
+capacity is 128 beats. A burst is at most min(TILE_BEATS,128) native or
+min(TILE_BEATS,64) compact, shortened for the final extent. TILE_BEATS=1
+therefore splits native columns across separate one-beat requests without
+losing their low/high association. Issued-minus-released beats are the
+capacity measure; returned-but-unconsumed columns remain reserved. A displayed
+request survives abort until acceptance, then drains along with every earlier
+request. Held outputs also survive abort until transfer.
+
+`anvil_q1_ht3_dma_mux` directly admits the selected client's request on the
+external request-accepting edge, with a DEPTH-entry ordered ownership queue
+(default eight, legal 1..32). Round-robin arbitration locks selection during
+request backpressure. On a full queue, final incoming-response retirement
+provides same-edge replacement credit. A one-register response reservation
+captures data, owner and error together; no incoming response can transfer to
+a client on its capture edge. Invalid zero-length, unaligned, overflowing or
+multi-beat-write commands generate explicit error responses without issuing
+invalid memory traffic. Unexpected response type/last/ownership raises the
+sticky protocol fault. CHECK_RESPONSE_LAST is 0 or 1, default 1; the projection
+uses 0 because the parent projection channel has no last signal. Length and
+type ownership are still checked/count-retired, never guessed from a single
+current-command counter. Return order is the admitted ordered transport
+contract, not support for untagged out-of-order responses.
+
+### Projection and DMA cycle recurrences
+
+These formulas describe connected RTL edges, not measured timing or acceptance.
+Let E be projection command acceptance, N its input length, and assume valid
+activations whenever ready. Preflight multiply, length and validation execute
+at E+1..E+3. Activations accept at E+4..E+N+3. Panel setup is E+N+4;
+for dense traffic prefetch command is E+N+5 and metadata selection E+N+6.
+Sparse traffic selects metadata at E+N+5 without dense prefetch.
+
+For a burst-reader command accepted at A, its memory request is first
+presented for acceptance at A+1. Let R be its actual request edge and T_j
+its actual jth incoming DMA beat edge. The DMA arbiter captures each beat at
+T_j; the reader consumes it at T_j+1 with ready consumers. The projection
+retires the held assembled response at T_last+2. There is no assumption that
+issuing a metadata request bypasses older queued weight responses.
+
+For prefetch, let T be a column's final incoming DMA beat edge. With available
+output reservations and projection in STREAM, prefetch RAM writes complete
+at T+1, synchronous output fetch occurs at T+2, and the projection captures
+the column and its synchronous activation read at P=T+3. Native tensor
+input is P+1; quantized dequantization input is P+1 and tensor input P+6.
+Input bubbles, return gaps and reservation stalls delay exactly these
+acceptance/read edges. Consecutive compact resident columns can enter
+dequantization every edge; native admission is conditional on its two-beat
+memory supply. This is not an unconditional one-column-per-bus-edge claim.
+
+AWQ group setup executes META_BEGIN, ZERO_SEND/WAIT, SCALE_SEND/WAIT and a
+metadata-validation edge before STREAM. Each SEND accepts one reader command;
+each WAIT ends at the corresponding T_last+2 edge above. INT8 group setup
+executes INT8_BEGIN, then for each active row an ADDRESS edge and a WORD
+capture edge on a scale-cache hit. A miss inserts INT8_SEND command acceptance,
+INT8_WAIT through T_last+2, then WORD on the next edge. Subsequent row addresses
+advance by input_groups*4. The final group column cannot capture a successor
+column until the next group's metadata has been validated; already issued
+arithmetic continues independently with its captured scales.
+
+Sparse per-column acquisition executes SPARSE_READ, SPARSE_CLASSIFY and,
+unless the exact-zero skip is legal, WEIGHT_SEND/WAIT through T_last+2.
+The following STREAM edge submits the column, directly native or into the
+same five-stage dequantization/tag pipe. The next column returns to
+SPARSE_READ or group metadata setup. Threshold prediction is not treated
+as a memory return or a completed arithmetic transaction.
+
+Let M be a panel's final actual tensor input transfer. Tensor output is
+visible after M+24; projection captures it at M+25 and its held panel output
+first transfers at M+26. With final output ready, done is visible after that
+final transfer edge and lasts one cycle. A successor panel uses setup,
+prefetch-command and metadata-selection edges following the preceding panel
+transfer. Output stalls add their actual held interval. Abort/error cancels
+internal arithmetic, preserves any already held panel, drains the reader,
+prefetch and queued DMA obligations, and only then emits failed completion.
+No integrated model, fusion-transition or end-to-end cycle formula is claimed
+until decoder/top execution is connected.
+
 ## Standalone fused epilogue
 
 `anvil_q1_ht3_epilogue_fusion` implements the admitted exact external
@@ -357,10 +490,216 @@ Integration may overlap separate row preparation, but must preserve these
 documented converter timings or explicitly revise this implementation
 specification before independent temporal expectations are authored.
 
+## Tiled online FlashAttention implementation
+
+`anvil_q1_ht3_flash_attn` preserves the ordered parent attention ports, appending
+`cmd_kv_format[1:0]`, `kv_key_scale[31:0]` and `kv_value_scale[31:0]`. Its
+parameters are NUM_Q_HEADS, NUM_KV_HEADS, HEAD_DIM, MAX_SEQ_LEN and trailing
+TILE_TOKENS=16. The legal attention geometry matches the top; TILE_TOKENS is
+1..128, including when larger than MAX_SEQ_LEN. Invalid geometry constructs
+only zero-valued diagnostic outputs and emits `PARAMETER ERROR`.
+
+The query stream contains NUM_Q_HEADS*HEAD_DIM ascending coordinates, four
+16-bit slots per beat. `cmd_fp16` selects query encoding independently of
+the cache format. Cache formats 0/1 expand BF16/FP16; formats 2/3 interpret
+zero-filled low INT4/INT8 two's-complement codes, expand those integers exactly,
+and multiply by the captured positive finite FP32 K/V scales. Code-container,
+scale, active query, active cache and arithmetic errors are explicit. No
+probability is narrowed to BF16 or FP16.
+
+Command validation retains the parent prefix/ancestor contract: each active
+slot includes itself, references only active earlier ancestors, has distinct
+ancestor positions, includes the ancestors of its ancestors and occupies
+prefix_length+ancestor_count-1 below MAX_SEQ_LEN. Inactive ancestor rows are
+zero. GQA head mapping uses an incrementing head/within-group counter, not
+runtime division.
+
+`u_tiles`, an `anvil_q1_ht3_attn_tiles` instance, reserves exactly two
+TILE_TOKENS-by-HEAD_DIM K/V tile buffers. Each coordinate retains the raw
+16-bit words and captured FP32 K/V scales together. A tile-local four-bit
+mask marks the slots permitted to consume each token. Prefix coordinates
+are fetched once in ascending order; provisional nodes follow in ascending
+node order, omitting nodes visible to no active query. Fetching the next
+tile overlaps arithmetic on the current tile. Only one memory-side response
+is outstanding, with its buffer/coordinate reserved before request display.
+Zero-latency request/response retirement is supported.
+
+Computation retains only Q, one HEAD_DIM-by-four FP32 output accumulator,
+four running maxima/sums and one TILE_TOKENS-by-four score buffer. No retained
+array scales with MAX_SEQ_LEN. For each tile it computes separately rounded
+FP32 dot products and the FP32 1/sqrt(HEAD_DIM) scaling. A tile maximum includes
+the previous running maximum. Previously unseen slots use alpha=0 explicitly,
+rather than subtracting two infinities. Previously seen slots use
+alpha=exp(m_old-m_new). It rescales l and every o coordinate, then evaluates
+each tile-local p=exp(score-m_new), adds p to l and p*V to o. Masks precede
+maximum/sum/update participation. A tile masked for one slot therefore leaves
+that slot's running state unchanged. Final FP32 outputs are o/l in ascending
+head/coordinate order. An empty slot attention set errors rather than issuing
+0/0.
+
+The final weighted-output write releases the consumed buffer on that same
+edge. If the next buffer is already resident, the following edge performs
+its first score-memory read without a tile-handoff-only state. A fill owner
+can acquire a buffer on its release edge. Arithmetic latency and memory
+starvation remain separately counted; this is not a bandwidth-independent
+zero-stall or measured-performance claim.
+
+Abort or an error annuls further computation, but displayed memory requests
+remain stable until accepted and all accepted responses drain. Issued scalar
+transactions finish into their reserved slots and are retired during drain.
+An already valid attention output holds its data/index/slots through stalls,
+even on abort; the command fails after that held response transfers. Active
+reset cancels internal ownership. The enclosing transport must still implement
+the admitted reset epoch/drain rules for external accepted DDR traffic.
+
+### Attention no-stall and bounded-transaction cycle formulas
+
+All offsets below are **edges**, not claimed measured cycle results. Let
+D=HEAD_DIM, Q=NUM_Q_HEADS, E=accepted command, and B=final accepted query beat.
+With continuously valid input, first query acceptance is E+1 and B=E+Q*D.
+The scalar wrapper used by attention consumes an add/multiply response six
+edges after its request, an exp response 34 edges after its request, and a
+divide/sqrt response 67 edges after its request. These wrapper transaction
+offsets include operand reservation, primitive issue, held-response capture
+and controller retirement; the primitive register counts remain unchanged.
+A dependent scalar request issues one edge after retirement.
+
+Root request is B+1, reciprocal request B+69, and first tile-start acceptance
+is B+137. Later heads begin their tile fetch on the edge after the previous
+head's final output transfer, once the fetch owner is idle. All legal finite
+numeric values use the same schedule; input/scale errors take the error drain.
+
+For a tile with n retained tokens, let A be its first SCORE_READ edge and H
+the edge that writes its final weighted output coordinate and releases it.
+The exact compute-only interval is:
+
+| Cache format | H-A |
+| --- | --- |
+| Native BF16/FP16 | n*(33*D+60)+10*D+47 |
+| Quantized INT4/INT8 | n*(47*D+60)+10*D+47 |
+
+Score-coordinate read initiation intervals are 16 edges native and 23
+quantized, including two synchronous read/capture edges, dependent FP32
+multiply/add and optional dequantization. Score-token initiation intervals
+are respectively 16*D+8 and 23*D+8. The last score-store edge F is
+A+n*(score_coordinate_interval*D+8)-1. Alpha subtract/exp, l rescale and the
+whole-o rescale end at G=F+10*D+49. Each probability/value token then takes
+17*D+52 edges native or 24*D+52 quantized; H=G+n*that_interval-1.
+
+For a resident successor tile, A_next=H+1. For a nonresident successor,
+TILE_WAIT adds exactly the observed wait through publication/admission; the
+first score read follows the edge admitting that resident tile. On the final
+tile, first output transfer is H+71 and the HEAD_DIM output transfers are
+71 edges apart, so final head output transfer is H+71*D. The 71 includes
+two synchronous read/capture edges, request issue, the 67-edge scalar divide
+retirement and the held-output transfer edge. After the final head, successful
+done is visible one edge after its final output transfer, assuming all
+prefetch obligations have retired. Actual stalls extend their own wait
+intervals; no constant long-context latency is invented.
+
+For independent temporal construction of tile supply, `u_tiles` start at F0
+selects its free buffer at F0+1, scans its first source at F0+2 and displays
+the first request for acceptance at F0+3. With ready memory, same-edge returns
+and no skipped sources, coordinate requests are consecutive within a token;
+the next token starts one scan edge after the last coordinate. A full n-token
+tile publishes valid after F0+n*(D+1)+2; a partial final tile additionally
+uses one end-of-source scan edge. Each invisible provisional source scanned
+adds one edge. A memory response latency lambda adds lambda edges per
+coordinate, and each request-ready stall adds its observed held edges.
+Between tiles there is a publication edge, buffer-pick edge and source-scan
+edge; buffer-credit waits add their actual delay. On a simultaneous release
+and pick, the released credit can be reserved on that edge. These finite
+per-state recurrences, together with the compute formulas, define the
+complete attention-focused no-stall transaction without assuming memory
+service independent of the selected cache adapter.
+
+## Provisional code ownership and packed DDR adapters
+
+`anvil_q1_ht3_provisional_kv` retains the parent's command/write/read ports,
+adding format/image tags on admission, writes and reads, a write_fault input,
+and format/image response tags. Command begin reserves nonzero slot ownership,
+clears row completeness/poison state and captures one immutable format/image.
+A pruning command may only remove slots and must use that same format/image.
+Storage holds one raw 32-bit K/V code pair per coordinate, not a private FP32
+alternative. Rows become readable only after all C ascending coordinates
+retire with exact first/last markers, matching image/format and no fault.
+
+A malformed/faulted row is poisoned until a new command begins. An active
+writer error poisons its row even when a mismatched write names a different
+row. Native nonfinite values and quantized nonzero container upper bits are
+store errors. Reading an incomplete, poisoned, colliding, unowned or
+wrong-image/format row returns a held explicit error. Simultaneous read/write
+to different complete rows is allowed; a row being written or completing on
+that edge cannot be consumed by a simultaneous read.
+
+Command/write readiness has the same ownership exclusions as the parent.
+A correct final write at E establishes completeness after E, so the first
+read may accept at E+1. Read acceptance at R produces a held synchronous-RAM
+response visible after R, first transferable at R+1. A retiring response
+can be replaced by another accepted read on that edge. Flush annuls slot and
+row ownership but does not rewrite or discard an already held response; its
+consumer must drain and annul it. No RAM reset is required.
+
+`anvil_q1_ht3_kv_writer` preserves the parent writer ports, appending
+cmd_kv_format. `anvil_q1_ht3_kv_reader` preserves the parent reader ports,
+appending req_kv_format, captured req_key_scale/req_value_scale and held
+rsp_key_scale/rsp_value_scale. Their inherited fp16 ports remain for
+interface compatibility; the explicit KV format selects native cache encoding,
+not query encoding. Integration must supply the resolved cache format.
+
+For width b=16 native, b=4 INT4 or b=8 INT8, M=ceil(C*b/512) beats and
+stride=64*M bytes. Each separate K/V region has length MAX_SEQ_LEN*stride,
+base aligned to 64 bytes, and coordinate c at bits b*c of token p's record
+base+p*stride. The writer copies code bits unchanged into separate zero-cleared
+K/V records; unused record padding stays zero. It writes every K beat followed
+by every V beat, with all 64 byte enables asserted. It does not quantize,
+dequantize or interleave regions. Both adapters validate exact lengths,
+prefix/position bounds, alignment, 33-bit address limits and K/V region
+nonoverlap. Offset multiplication and address addition use distinct register
+stages; bit/beat selection uses shifts/slices, never division/modulo.
+
+Reader beat caching is tagged by both physical addresses and cache format.
+The actual DDR word is sliced into a zero-filled 16-bit code container at the
+ascending nibble/byte position. Quantized scales are captured from the
+request's layer/head table association, not looked up again after a stall;
+native formats ignore them. Scale validity and native selected-word finiteness
+are checked explicitly. FP32 dequantization/overflow checking occurs in
+attention, not external testbench arithmetic. Format/image/scale mutations
+must invalidate the cache and prefix through the integrating controller.
+
+Both adapters reserve one response obligation before request display and
+handle same-edge requests/returns. Displayed requests hold through abort
+until accepted, then accepted returns drain. Invalidate during an unfinished
+read causes an error after drain. Held client responses retain data/error/
+scales unchanged under later abort/invalidate; higher-level ownership prevents
+their reuse. A writer response does not itself advance prefix validity:
+the integrating commit controller must await every successful required row
+copy before exposing its selected branch.
+
+### Packed adapter no-stall cycles
+
+For writer command acceptance E, first input acceptance is E+4 after separate
+offset/address/check edges, and final input B=E+C+3. First DMA acceptance
+is B+2. For constant response latency lambda>=0 and DMA always ready,
+the 2*M writes accept every lambda+1 edges. Final write response is
+B+1+2*M*(lambda+1); the writer response first transfers at
+B+2+2*M*(lambda+1). At lambda=0 all DDR writes accept on consecutive edges.
+There are no pad-word cycles or response-turnaround-only scheduler states.
+Client response stalls extend held ownership; the next command cannot accept
+on the client-response retiring edge.
+
+For reader acceptance E, offset/address/check/lookup occur at E+1..E+4.
+A cache hit first transfers its response at E+6. On a miss, first key DMA
+acceptance is E+5. For K/V return latencies lambda_K and lambda_V, the client
+response first transfers at E+8+lambda_K+lambda_V. Request-ready stalls add
+their exact held edges. These bounds cover C=8, partial aligned records,
+non-power-of-two geometry and final legal token positions without clamping.
+Invalid requests return explicit errors instead of issuing out-of-bounds DMA.
+
 ### Required producer, cache and packing integration
 
-The following remains mandatory and is not implemented by the standalone
-converter:
+The following remains mandatory at the still-missing integrated controller/
+decoder boundary; standalone cache modules do not complete these obligations:
 
 * K source is FP32 after projection, bias and complete split-half RoPE.
   V source is FP32 after projection and bias. Query encoding alone uses
@@ -394,7 +733,7 @@ The graph is input norm -> Q/K/V -> Q/K RoPE -> attention -> output projection
 plus residual -> post-attention norm -> gate/up SwiGLU -> down projection
 plus residual, repeated per layer, then final norm and logits.
 
-The implemented epilogue and tensor block described above must be connected
+The implemented epilogue, attention and tensor blocks described above must be connected
 to the actual decoder/projection; their presence alone is not model execution
 or a measured fusion improvement. Private replay costs are included in the
 standalone formulas. Shared-scratch operator-boundary round trips remain

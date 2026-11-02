@@ -6,7 +6,8 @@ This is an incomplete Designer source checkpoint, not a working accelerator or
 an accepted product. The unchanged parent is
 `anvil_q1_ht2_reference/rtl/`. No prior HT3 source was present at intake.
 Arithmetic, exact pre-provisional KV conversion, weight dequantization,
-the four-slot 256-lane tensor block and the seven-mode epilogue are implemented
+the four-slot 256-lane tensor block, seven-mode epilogue, tiled online attention,
+image-tagged provisional storage and packed DDR cache adapters are implemented
 as standalone RTL so far.
 No top-level substitution or wrapper around the parent's execution datapath
 has been introduced.
@@ -32,6 +33,11 @@ has been introduced.
 | `rtl/anvil_q1_ht3_tensor_array.sv` | Four physical slots times 64 lanes, held tagged panel results |
 | `rtl/anvil_q1_ht3_dequant.sv` | Legacy AWQ boundary plus full-FP32 signed-INT8 weight stream |
 | `rtl/anvil_q1_ht3_scalar.sv` | Reserved inference arithmetic response and explicit numeric errors |
+| `rtl/anvil_q1_ht3_attn_tiles.sv` | Two bounded K/V tiles, captured scales/masks and overlapping reserved fetch |
+| `rtl/anvil_q1_ht3_flash_attn.sv` | FP32 online m/l/o rescaling, tile-local scores, four-slot/GQA attention |
+| `rtl/anvil_q1_ht3_provisional_kv.sv` | Code-only image/format-tagged row completeness and fault poisoning |
+| `rtl/anvil_q1_ht3_kv_writer.sv` | Bit-preserving INT4/INT8/native records, zero padding and transactional writes |
+| `rtl/anvil_q1_ht3_kv_reader.sv` | Actual packed-DDR code extraction, beat caching and captured K/V scales |
 
 The FP helper structure and add alignment follow parent prior art, with a
 distinct HT3 namespace; no reference file is modified. HT3 multiply has the
@@ -80,11 +86,11 @@ converter contains no provisional FP32 cache and no dequantization path.
    The epilogue currently uses conservative serial SIMD schedules; demonstrate
    required measured transition-cycle reduction and optimize those owned
    schedules if necessary before claiming the performance requirement.
-4. Implement `anvil_q1_ht3_flash_attn` with two tiles, FP32 online rescaling,
-   GQA/ancestor masks, native/quantized cache adapters and `u_flash_attn`.
+4. Integrate the implemented `anvil_q1_ht3_flash_attn` as `u_flash_attn`, with
+   its native/quantized cache adapters and image/scale ownership.
 5. Connect full-FP32 post-RoPE K and post-projection/bias V to the implemented
-   converter. Extend provisional code ownership, store completeness and
-   packed committed reads/writes. Do not retain a hidden FP32 provisional
+   converter. Connect the implemented provisional code ownership, store
+   completeness and packed committed reads/writes. Do not retain a hidden FP32 provisional
    alternative or requantize during commit.
 6. Implement extension CSR/image validation and immutable captured scale
    ownership, packed weight/cache descriptor lengths, bounds/overlap checks,
@@ -95,7 +101,41 @@ converter contains no provisional FP32 cache and no dequantization path.
 8. Document the complete integrated no-stall cycle formulas before Verifier
    freezes temporal assertions. Current formulas cover implemented leaves,
    conversion, tensor packets and standalone epilogue, not the missing
-   attention/projection/top schedules.
+   projection/top/cache-controller schedules. Attention and packed adapters now
+   have their own complete local transaction recurrences in SPEC.
+
+## Tiled attention and code-preserving cache
+
+Attention uses four scalar workers, bounded synchronous query/output storage,
+one tile-local FP32 score bank and two raw K/V tile buffers. Tile storage holds
+16-bit containers plus both FP32 scales at each coordinate; masks are retained
+per tile token. Capacity is proportional to HEAD_DIM and TILE_TOKENS, never
+MAX_SEQ_LEN. Fetch runs independently of score/online-softmax/value arithmetic.
+Each source K/V coordinate is fetched once per query-head traversal; the value
+phase reuses that tile's retained V, not a second context traversal.
+
+Online rescaling updates both l and o under a new maximum. First contribution
+ownership selects alpha=0 without infinity subtraction. Every arithmetic update
+is FP32 and separately rounded; probabilities are not narrowed. GQA uses head
+and within-group counters. Prefix/ancestor masks exclude invalid sources before
+maximum and sums. Tile release occurs on the final o-write edge, and a resident
+successor performs its first read on the following edge. Memory supply and the
+serial dependent arithmetic still determine actual throughput.
+
+The provisional bank stores only code containers and captures format/image
+ownership at command begin. A row needs an exact, complete ascending write
+packet before any read; faults poison it until new ownership begins. Flush
+invalidates ownership without dropping a held response. Commit packing copies
+those raw codes unchanged, with zero padding and separate K/V regions. The
+reader extracts codes from real returned DDR bytes and retains layer/head scales
+with its request. Attention performs the actual dequantization and reports
+overflow independently of successful finite write saturation.
+
+The cache controller that selects provisional/committed reads, associates
+extension scales, commits selected branches and advances transactional prefix
+validity is not yet implemented. The new standalone cache modules therefore
+do not demonstrate integrated store-to-subsequent-attention execution. They
+are not a functional or performance acceptance result.
 
 ## Fused operator retention and phase precision
 

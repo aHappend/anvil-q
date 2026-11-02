@@ -136,6 +136,8 @@ module anvil_q1_ht3_flash_attn #(
     wire arithmetic_bad = |(arithmetic_errors & arithmetic_mask);
     wire arithmetic_drain = run_n && state == DRAIN;
     wire [31:0] integer_key, integer_value;
+    wire [31:0] native_tile_key = expand16(tile_key, format_q == 1);
+    wire [31:0] native_tile_value = expand16(tile_value, format_q == 1);
     wire [7:0] key_magnitude = format_q == 2 ?
       (key_word_q[3] ? {4'b0, (~key_word_q[3:0] + 4'd1)} :
                        {4'b0, key_word_q[3:0]}) :
@@ -506,15 +508,15 @@ module anvil_q1_ht3_flash_attn #(
                 key_scale_q <= tile_key_scale;
                 value_scale_q <= tile_value_scale;
                 participating <= tile_slots;
-                query_q <= query_read;
-                o_q <= output_read;
+                if (phase == KEY_DEQUANT) query_q <= query_read;
+                else o_q <= output_read;
                 if (format_q[1]) state <= ISSUE;
                 else begin
                   for (s = 0; s < 4; s = s + 1) begin
                     key_q[32*s+:32] <= tile_slots[s] ?
-                      expand16(tile_key, format_q == 1) : 32'b0;
+                      native_tile_key : 32'b0;
                     value_q[32*s+:32] <= tile_slots[s] ?
-                      expand16(tile_value, format_q == 1) : 32'b0;
+                      native_tile_value : 32'b0;
                   end
                   if (phase == KEY_DEQUANT) phase <= DOT_MUL;
                   else phase <= VALUE_MUL;

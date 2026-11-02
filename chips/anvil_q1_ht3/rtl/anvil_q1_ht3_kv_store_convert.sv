@@ -14,13 +14,15 @@ module anvil_q1_ht3_kv_store_convert (
   output wire out_first, out_last,
   output wire [15:0] out_key, out_value,
   output wire out_error,
-  output wire busy
+  output wire busy,
+  input wire [31:0] in_image,
+  output wire [31:0] out_image
 );
   import anvil_q1_ht3_fp_pkg::*;
   localparam IDLE = 2'd0, NATIVE = 2'd1, QUANTIZED = 2'd2, RESPONSE = 2'd3;
   wire run_n;
   reg [1:0] state, format_q, node_q;
-  reg [31:0] layer_q, column_q;
+  reg [31:0] layer_q, column_q, image_q;
   reg first_q, last_q, canceled, native_error_q;
   reg [15:0] native_key_q, native_value_q, response_key, response_value;
   reg response_error;
@@ -61,6 +63,7 @@ module anvil_q1_ht3_kv_store_convert (
   assign out_node = out_valid ? node_q : 2'b0;
   assign out_layer = out_valid ? layer_q : 32'b0;
   assign out_column = out_valid ? column_q : 32'b0;
+  assign out_image = out_valid ? image_q : 32'b0;
   assign out_first = out_valid && first_q;
   assign out_last = out_valid && last_q;
   assign out_key = out_valid ? response_key : 16'b0;
@@ -75,6 +78,7 @@ module anvil_q1_ht3_kv_store_convert (
       node_q <= 0;
       layer_q <= 0;
       column_q <= 0;
+      image_q <= 0;
       first_q <= 0;
       last_q <= 0;
       canceled <= 0;
@@ -93,6 +97,7 @@ module anvil_q1_ht3_kv_store_convert (
           node_q <= in_node;
           layer_q <= in_layer;
           column_q <= in_column;
+          image_q <= in_image;
           first_q <= in_first;
           last_q <= in_last;
           canceled <= 0;
