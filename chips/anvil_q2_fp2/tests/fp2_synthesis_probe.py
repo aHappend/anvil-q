@@ -60,6 +60,7 @@ def structural_summary(netlist, top):
     leaves = Counter()
     hierarchy = Counter()
     state_bits = memory_bits = 0
+    functional_engines = {}
 
     def visit(name, stack):
         nonlocal state_bits, memory_bits
@@ -71,6 +72,8 @@ def structural_summary(netlist, top):
             raise AssertionError(f"unresolved/blackbox engine {name}")
         hdlname = str(attributes.get("hdlname", name)).split()[0].lstrip("\\")
         hierarchy[hdlname] += 1
+        initial_state = state_bits
+        initial_arithmetic = leaves["$add"] + leaves["$mul"] + leaves["$sub"]
         for cell_name, cell in module.get("cells", {}).items():
             kind = cell["type"]
             if kind in modules:
@@ -89,6 +92,15 @@ def structural_summary(netlist, top):
                 memory_bits += number(parameters["WIDTH"]) * number(parameters["SIZE"])
         for memory in module.get("memories", {}).values():
             memory_bits += memory["width"] * memory["size"]
+        if hdlname in (*TOPS, "anvil_q2_fp2_ping_pong_prefetch", "anvil_q2_fp2_rsqrt2"):
+            engine_state = state_bits - initial_state
+            engine_arithmetic = leaves["$add"] + leaves["$mul"] + leaves["$sub"] - initial_arithmetic
+            if engine_state == 0 or engine_arithmetic == 0:
+                raise AssertionError(f"empty functional engine {hdlname}")
+            functional_engines[hdlname] = {
+                "recursive_state_bits": engine_state,
+                "recursive_arithmetic_cells": engine_arithmetic,
+            }
 
     visit(top, ())
     if state_bits == 0:
@@ -111,11 +123,20 @@ def structural_summary(netlist, top):
         "top": top, "state_bits": state_bits, "memory_bits": memory_bits,
         "hierarchical_cell_counts": dict(sorted(leaves.items())),
         "retained_instances": dict(sorted(hierarchy.items())),
+        "functional_engines": functional_engines,
         "resource_units": "generic logical cells/bits, not target ALMs, DSPs, or watts",
     }
 
 
-def run(probe, top):
+COMPACT_TOP = {
+    "NUM_LAYERS": 1, "HIDDEN_SIZE": 48, "INTERMEDIATE_SIZE": 64,
+    "NUM_Q_HEADS": 6, "NUM_KV_HEADS": 1, "HEAD_DIM": 8,
+    "GROUP_SIZE": 8, "VOCAB_SIZE": 16, "MAX_SEQ_LEN": 3,
+    "BANKS": 1, "CACHE_BLOCK": 8, "QUEUE_DEPTH": 3,
+}
+
+
+def run(probe, top, parameters=None):
     probe.version("yosys", "-V")
     sources = sorted((ROOT / "rtl").glob("*.sv"))
     if top == "anvil_q2_fp2_top":
@@ -123,9 +144,12 @@ def run(probe, top):
     script = probe.directory / "synthesis.ys"
     netlist = probe.directory / "netlist.json"
     relative_sources = [str(path.relative_to(ROOT)) for path in sources]
+    parameters = parameters or {}
+    overrides = "".join(f" -chparam {key} {value}" for key, value in parameters.items())
+    probe.summary["parameters"] = parameters
     script.write_text(
         "read_verilog -sv " + " ".join(relative_sources) + "\n"
-        f"hierarchy -check -top {top}\n"
+        f"hierarchy -check -top {top}{overrides}\n"
         "proc\nopt_expr\nopt_clean\ncheck -assert\n"
         "memory -nomap\nopt_clean\ncheck -assert\n"
         "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor\n"
@@ -146,10 +170,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--top", choices=TOPS, default=TOPS[0])
     parser.add_argument("--repair-of")
+    parser.add_argument("--compact", action="store_true")
     args = parser.parse_args()
     probe = Probe("synthesis", args.repair_of)
     try:
-        run(probe, args.top)
+        parameters = COMPACT_TOP if args.compact and args.top == TOPS[-1] else {}
+        if args.compact and args.top == "anvil_q2_fp2_flash_attn":
+            parameters = {"HEAD_DIM": 8, "TILE_TOKENS": 3, "MAX_SEQ_LEN": 17}
+        run(probe, args.top, parameters)
         return probe.settle()
     except Exception as error:
         return probe.settle(f"{type(error).__name__}: {error}")

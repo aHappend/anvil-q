@@ -114,6 +114,41 @@ def mx_decode(payload, scale):
     return result, not finite(result, fraction_bits=7)
 
 
+def mx_magnitude(payload):
+    exponent, fraction = (payload >> 3) & 15, payload & 7
+    if exponent == 15 and fraction == 7:
+        raise ValueError("E4M3FN NaN has no finite magnitude")
+    if exponent == 0:
+        return Fraction(fraction, 512)
+    return Fraction(8 + fraction, 8) * Fraction(2) ** (exponent - 7)
+
+
+MX_MAGNITUDES = tuple(mx_magnitude(code) for code in range(127))
+
+
+def mx_encode_lane(value, scale):
+    if not finite(value, fraction_bits=7) or scale == 255:
+        return 127, True
+    magnitude = abs(exact(value, fraction_bits=7)) / Fraction(2) ** (scale - 127)
+    if magnitude > 448:
+        raise ValueError("encoding reference requires an accommodating group scale")
+    # Exhaust the mathematical finite code space. Even payload LSB resolves ties.
+    code = min(range(127), key=lambda p: (abs(MX_MAGNITUDES[p] - magnitude), p & 1))
+    return code | ((value >> 15) << 7), False
+
+
+def mx_encode_group(values, mask):
+    active = [value if mask >> lane & 1 else 0 for lane, value in enumerate(values)]
+    if any(not finite(value, fraction_bits=7) for value in active):
+        raise ValueError("nonfinite group has no valid encoding")
+    maximum = max(abs(exact(value, fraction_bits=7)) for value in active)
+    if maximum == 0:
+        scale = 127
+    else:
+        scale = next(s for s in range(255) if maximum <= 448 * Fraction(2) ** (s - 127))
+    return [mx_encode_lane(value, scale)[0] for value in active], scale
+
+
 def decimal_value(bits):
     rational = exact(bits)
     return Decimal(rational.numerator) / Decimal(rational.denominator)

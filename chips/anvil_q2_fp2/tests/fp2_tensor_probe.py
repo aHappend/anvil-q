@@ -40,6 +40,7 @@ module tb;
   reg [2047:0] read_a,read_b,weights;
   reg [127:0] read_mask;
   reg [31:0] held_data;
+  reg held_error;
   string input_path;
   wire reset_ok=({w_ready,in_ready,out_valid,out_data,out_first,out_last,out_tag,out_error} === 0);
   always @(posedge clk) if (!rst_n && reset_ok !== 1'b1) $fatal(1,"RESET posedge");
@@ -84,11 +85,12 @@ module tb;
         if(out_tag !== id || out_first !== 1'b1 || out_last !== 1'b1 ||
            (^{out_data,out_error}) === 1'bx) $fatal(1,"TENSOR_METADATA_OR_X");
         held_data=out_data;
+        held_error=out_error;
         $display("RESULT %0d %08h %0d",id,out_data,out_error);
         for(hold_cycle=0;hold_cycle<3;hold_cycle=hold_cycle+1) begin
           @(posedge clk); #1;
           if(out_valid !== 1'b1 || out_data !== held_data || out_tag !== id ||
-             out_first !== 1'b1 || out_last !== 1'b1)
+             out_first !== 1'b1 || out_last !== 1'b1 || out_error !== held_error)
             $fatal(1,"TENSOR_STALLED_PAYLOAD");
         end
         @(negedge clk); out_ready=1;

@@ -153,23 +153,39 @@ class Probe:
         self.receipt["commands"].append(record)
         with stdout.open("w") as out, stderr.open("w") as err:
             try:
-                result = subprocess.run(argv, cwd=ROOT, stdout=out, stderr=err, timeout=timeout)
-                record["exit_status"] = result.returncode
+                with subprocess.Popen(argv, cwd=ROOT, stdout=out, stderr=err) as process:
+                    deadline = time.monotonic() + timeout
+                    while True:
+                        remaining = deadline - time.monotonic()
+                        try:
+                            result_code = process.wait(timeout=max(0.01, min(30, remaining)))
+                            break
+                        except subprocess.TimeoutExpired:
+                            if time.monotonic() >= deadline:
+                                process.kill()
+                                process.wait()
+                                raise subprocess.TimeoutExpired(argv, timeout)
+                            print(json.dumps({
+                                "progress": stem, "elapsed_s": round(time.time() - record["start_unix"]),
+                                "stdout": record["stdout"],
+                            }), flush=True)
+                record["exit_status"] = result_code
             except subprocess.TimeoutExpired:
                 record["timed_out"] = True
                 record["exit_status"] = None
                 raise
             finally:
                 record["end_unix"] = time.time()
-        if result.returncode:
-            raise RuntimeError(f"tool exit {result.returncode}: {record['stderr']}")
+        if result_code:
+            raise RuntimeError(f"tool exit {result_code}: {record['stderr']}")
         return stdout
 
     def version(self, tool, flag):
         if not shutil.which(tool):
             raise FileNotFoundError(f"required tool unavailable: {tool}")
         path = self.command([tool, flag], f"version-{tool}")
-        self.versions[tool] = path.read_text().splitlines()[:3]
+        text = path.read_text() or path.with_name(f"version-{tool}.stderr.txt").read_text()
+        self.versions[tool] = text.splitlines()[:3]
 
     def compare(self, label, expected, actual, context):
         self.summary["comparisons"][label] = self.summary["comparisons"].get(label, 0) + 1
@@ -220,7 +236,7 @@ def scalar_vectors():
     return pairs
 
 
-def run_scalar(probe, simulator, compact=False):
+def run_scalar(probe, simulator, compact=False, overrides=None):
     pairs = scalar_vectors()
     if compact:
         pairs = pairs[:324]
@@ -228,7 +244,8 @@ def run_scalar(probe, simulator, compact=False):
     source.write_text(SCALAR_TB)
     inputs = probe.directory / "inputs.txt"
     inputs.write_text("".join(f"{i} {a:08x} {b:08x}\n" for i, (a, b) in enumerate(pairs)))
-    rtl = [ROOT / "rtl" / name for name in (
+    overrides = overrides or {}
+    rtl = [overrides.get(name, ROOT / "rtl" / name) for name in (
         "anvil_q2_fp2_arithmetic.sv", "anvil_q2_fp2_nonlinear.sv", "anvil_q2_fp2_coefficients.sv"
     )]
     output = simulate(probe, source, rtl, simulator, [f"+INPUT={inputs.relative_to(ROOT)}"])
@@ -293,6 +310,8 @@ def simulate(probe, source, rtl, simulator, extra=None):
         return probe.command(["vvp", str(binary), *extra], "simulation")
     objects = probe.directory / "compile-obj"
     binary = probe.directory / "simulation"
+    probe.version("g++", "--version")
+    probe.version("make", "--version")
     probe.command(
         ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
          "--unroll-count", "512", "-j", "2", "--Mdir", str(objects), "-o", str(binary),
