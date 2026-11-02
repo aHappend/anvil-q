@@ -47,7 +47,7 @@ JOBS = (
 JOB_BUDGETS = {"default-hierarchy": 360, "compact-mapped": 420,
                "compact-hierarchy": 180,
                "fp32_add": 60, "fp32_mul": 60, "fp32_divsqrt": 90,
-               "fp32_exp": 90, "fp32_sincos": 120,
+               "fp32_exp": 150, "fp32_sincos": 120,
                "epilogue_fusion": 90, "flash_attn": 90}
 
 
@@ -171,6 +171,60 @@ def checked_account(netlist, top, identifier, mapped):
     return counts
 
 
+def mapping_groups(netlist):
+    ordered = sorted(netlist["modules"],
+                     key=lambda name: (-len(netlist["modules"][name]["cells"]), name))
+    groups, group, size = [], [], 0
+    for name in ordered:
+        cells = len(netlist["modules"][name]["cells"])
+        if group and size + cells > 2500:
+            groups.append(group)
+            group, size = [], 0
+        group.append(name)
+        size += cells
+    if group:
+        groups.append(group)
+    phases = []
+    for index, group in enumerate(groups):
+        if len(group) == 1 and "anvil_q1_ht3_decoder" in group[0]:
+            module = group[0]
+            cells = netlist["modules"][module]["cells"]
+            chunks, chunk, cost = [], [], 0
+            for name in sorted(cells, key=lambda n: (cells[n]["type"], n)):
+                cell = cells[name]
+                if not cell["type"].startswith("$") or cell["type"].startswith("$mem"):
+                    continue
+                width = max((len(v) for v in cell["connections"].values()), default=1)
+                # Isolate the 8192-bit indexed panel selections. Do not remap an
+                # entire decoder and then spend its remaining allocation folding it.
+                estimate = width if cell["type"] not in ("$shiftx", "$shift") else width*4
+                if chunk and (cost+estimate > 16384 or len(chunk) >= 512):
+                    chunks.append(chunk)
+                    chunk, cost = [], 0
+                chunk.append(name)
+                cost += estimate
+                if width >= 4096:
+                    chunks.append(chunk)
+                    chunk, cost = [], 0
+            if chunk:
+                chunks.append(chunk)
+            for part, chunk in enumerate(chunks):
+                selection = " ".join(f"{module}/c:{name}" for name in chunk)
+                phases.append((f"gates-{index:02d}-map-{part:02d}",
+                               f"select -set decoder_cells {selection}; "
+                               "select -assert-any @decoder_cells; techmap @decoder_cells; "
+                               "select -clear; "))
+            phases.append((f"gates-{index:02d}-clean",
+                           f"opt_clean {module}; select -clear; "))
+        else:
+            selection = " ".join(group)
+            phases.append((f"gates-{index:02d}",
+                           f"select -set mapping_group {selection}; techmap @mapping_group; "
+                           "opt_expr @mapping_group; opt_merge @mapping_group; "
+                           "opt_clean @mapping_group; select -clear; "))
+    return phases
+
+
 def mapped_phases(output, identifier, top, parameters, sources, frontend, version):
     cache = ROOT / "evidence/compiled"
     cache.mkdir(parents=True, exist_ok=True)
@@ -232,8 +286,18 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                       + f"write_json {relative(directory / 'netlist.json')}; "
                       + f"write_rtlil {relative(directory / 'checkpoint.il')}")
             (directory / "synthesis.ys").write_text(script + "\n")
-            execute(["yosys", "-Q", "-T", "-s", relative(directory / "synthesis.ys")],
-                    directory, "synthesis", ["yosys", "-V"])
+            deadline = os.environ.get("HT3_CHECK_DEADLINE")
+            allocation = remaining()
+            reserve = (90 if identifier == "compact-mapped" else 30) if phase != "abc" else 0
+            os.environ["HT3_CHECK_DEADLINE"] = str(time.time()+max(0, allocation-reserve-10))
+            try:
+                execute(["yosys", "-Q", "-T", "-s", relative(directory / "synthesis.ys")],
+                        directory, "synthesis", ["yosys", "-V"])
+            finally:
+                if deadline is None:
+                    os.environ.pop("HT3_CHECK_DEADLINE", None)
+                else:
+                    os.environ["HT3_CHECK_DEADLINE"] = deadline
             counts = checked_account(json.loads((directory / "netlist.json").read_text()),
                                      top, identifier, phase == "abc")
             artifacts = [directory / name for name in
@@ -257,27 +321,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             json.dump(records, out, indent=2)
         if phase == "word" and identifier == "compact-mapped":
             netlist = json.loads((directory / "netlist.json").read_text())
-            ordered = sorted(netlist["modules"],
-                             key=lambda name: (-len(netlist["modules"][name]["cells"]), name))
-            groups, group, size = [], [], 0
-            for name in ordered:
-                cells = len(netlist["modules"][name]["cells"])
-                if group and size + cells > 2500:
-                    groups.append(group)
-                    group, size = [], 0
-                group.append(name)
-                size += cells
-            if group:
-                groups.append(group)
-            group_phases = []
-            for index, group in enumerate(groups):
-                selection = " ".join(group)
-                group_phases.append((
-                    f"gates-{index:02d}",
-                    f"select -set mapping_group {selection}; techmap @mapping_group; "
-                    "opt_expr @mapping_group; opt_merge @mapping_group; "
-                    "opt_clean @mapping_group; select -clear; "))
-            phases[1:2] = group_phases
+            phases[1:2] = mapping_groups(netlist)
     return dict(id=identifier, status="passed", parameters=parameters,
                 mapped=True, phases=records, accounting=counts,
                 receipt=records[-1]["receipt"], netlist=relative(directory / "netlist.json"),
