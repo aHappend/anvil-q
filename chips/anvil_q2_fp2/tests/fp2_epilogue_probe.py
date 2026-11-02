@@ -198,6 +198,12 @@ def run(probe, compact, simulator, overrides=None):
                 probe.compare("epilogue-exact", f"{reference:08x}", f"{data:08x}", context)
     probe.compare("summary-count", len(stimulus), summary, {})
     probe.compare("output-count", len(expected), len(seen), {})
+    probe.summary["coverage"] = {
+        "rms_vectors": sum(mode == 0 for mode, _, _ in stimulus),
+        "rms_lengths": sorted({len(elements) for mode, elements, _ in stimulus if mode == 0}),
+        "rope_pairs": sum(mode == 1 for mode, _, _ in stimulus),
+        "swiglu_elements": sum(mode == 2 for mode, _, _ in stimulus),
+    }
 
 
 def main():

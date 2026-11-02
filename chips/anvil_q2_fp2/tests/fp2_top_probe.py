@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fp2_probe import Probe, ROOT, simulate
-from fp2_reference import add, exact, finite, multiply, rounded, tensor, transcendental
+from fp2_reference import add, exact, finite, multiply, rounded, tensor, transcendental, ulp_distance
 
 
 TOP_TB = r"""
@@ -304,8 +304,8 @@ def embedding(row, column):
     return rounded(Fraction((row * 13 + column * 7) % 17 - 8, 16), fraction_bits=7)
 
 
-def expected_logits(token=3):
-    vector = [embedding(token, column) << 16 for column in range(48)]
+def expected_logits(token=3, embedding_fn=embedding):
+    vector = [embedding_fn(token, column) << 16 for column in range(48)]
     total = 0
     for value in vector:
         total = add(total, multiply(value, value))
@@ -313,22 +313,23 @@ def expected_logits(token=3):
     inverse = transcendental(add(mean, 0x358637BD), "rsqrt")
     normalized = [rounded(exact(multiply(value, inverse)), fraction_bits=7) for value in vector]
     return [
-        tensor(normalized + [0] * 80, [embedding(row, c) for c in range(48)] + [0] * 80,
+        tensor(normalized + [0] * 80, [embedding_fn(row, c) for c in range(48)] + [0] * 80,
                (1 << 48) - 1)[0]
         for row in range(16)
     ]
 
 
 def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0,
-        tb_template=TOP_TB, expected_results=None, extra_arguments=None):
+        tb_template=TOP_TB, expected_results=None, extra_arguments=None,
+        embedding_fn=embedding, layers=1):
     commands = commands or [(3, 0, 1, 0)]
     source = probe.directory / "tb.sv"
     source.write_text(tb_template.replace(".NUM_LAYERS(1),", (
-        f".WEIGHT_MODE({weight_mode}),.CACHE_MODE({cache_mode}),.NUM_LAYERS(1),")))
+        f".WEIGHT_MODE({weight_mode}),.CACHE_MODE({cache_mode}),.NUM_LAYERS({layers}),")))
     images = probe.directory / "checkpoint-images"
     images.mkdir()
     image = images / "embedding.hex"
-    image.write_text("".join(f"{embedding(row, c):04x}\n" for row in range(16) for c in range(48)))
+    image.write_text("".join(f"{embedding_fn(row, c):04x}\n" for row in range(16) for c in range(48)))
     command_image = images / "commands.txt"
     command_image.write_text(str(len(commands)) + "\n" +
                              "".join(" ".join(map(str, command)) + "\n" for command in commands))
@@ -338,10 +339,11 @@ def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0,
                       f"+COMMANDS={command_image.relative_to(ROOT)}", f"+SEED={seed}",
                       *(extra_arguments or [])])
     expected = (expected_results if expected_results is not None
-                else [expected_logits(command[0]) for command in commands])
+                else [expected_logits(command[0], embedding_fn) for command in commands])
     seen = set()
     summary = None
     completed = []
+    logit_bits, metrics = [], []
     with output.open() as stream:
         for line in stream:
             words = line.split()
@@ -358,6 +360,11 @@ def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0,
             reference = expected[command][index]
             error = abs(exact(actual) - exact(reference)) if finite(actual) else None
             threshold = Fraction(5, 10000) * (1 + abs(exact(reference)))
+            logit_bits.append([command, index, actual])
+            metrics.append({"ulp": ulp_distance(reference, actual),
+                            "absolute": float(error) if error is not None else None,
+                            "relative": float(error / abs(exact(reference)))
+                            if error is not None and exact(reference) else None})
             probe.compare(
                 "architectural-logit", True, error is not None and error <= threshold,
                 {"command": command, "index": index, "reference": f"{reference:08x}", "observed": f"{actual:08x}",
@@ -374,7 +381,8 @@ def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0,
     probe.summary["transactions"] = dict(zip(names, summary, strict=True))
     accounting = probe.summary["transactions"]
     probe.compare("response-conservation", summary[1] + summary[2], summary[3], {})
-    probe.compare("real-cache-writes", (4 if cache_mode == 2 else 2) * len(commands), summary[2], {})
+    probe.compare("real-cache-writes",
+                  (4 if cache_mode == 2 else 2) * len(commands) * layers, summary[2], {})
     for key in ("read_beats", "reordered_responses", "logit_stalls", "request_stalls"):
         probe.compare(key + "-observed", True, accounting[key] > 0, {})
     probe.compare("two-outstanding-observed", True, accounting["maximum_outstanding"] >= 2, {})
@@ -383,6 +391,9 @@ def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0,
     probe.summary["weight_mode"] = weight_mode
     probe.summary["cache_mode"] = cache_mode
     probe.summary["completion_cycles"] = completed
+    probe.summary["logit_bits"] = logit_bits
+    probe.summary["numerical_metrics"] = metrics
+    probe.summary["layers"] = layers
 
 
 def main():

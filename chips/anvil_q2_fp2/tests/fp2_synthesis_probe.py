@@ -53,7 +53,7 @@ def number(value):
     return int(value, 2) if isinstance(value, str) else value
 
 
-def structural_summary(netlist, top):
+def structural_summary(netlist, top, accelerated=True):
     modules = netlist["modules"]
     if top not in modules:
         raise AssertionError(f"missing top {top}")
@@ -116,6 +116,8 @@ def structural_summary(netlist, top):
         "anvil_q2_fp2_bfp_tensor_array": ("anvil_q2_fp2_ping_pong_prefetch",),
         "anvil_q2_fp2_epilogue_fusion": ("anvil_q2_fp2_rsqrt2",),
     }.get(top, ())
+    if top == "anvil_q2_fp2_top" and not accelerated:
+        expected = ("anvil_q2_fp_top",)
     for name in expected:
         if hierarchy[name] == 0:
             raise AssertionError(f"required functional hierarchy removed: {name}")
@@ -139,7 +141,7 @@ COMPACT_TOP = {
 def run(probe, top, parameters=None):
     probe.version("yosys", "-V")
     sources = sorted((ROOT / "rtl").glob("*.sv"))
-    if top == "anvil_q2_fp2_top":
+    if top in ("anvil_q2_fp2_top", "anvil_q2_fp_top"):
         sources = expand_parent(probe.directory / "parent-expanded") + sources
     script = probe.directory / "synthesis.ys"
     netlist = probe.directory / "netlist.json"
@@ -166,7 +168,8 @@ def run(probe, top, parameters=None):
         f"write_json {netlist.relative_to(ROOT)}\n"
     )
     probe.command(["yosys", "-Q", "-T", "-s", str(script.relative_to(ROOT))], "yosys")
-    summary = structural_summary(json.loads(netlist.read_text()), top)
+    summary = structural_summary(json.loads(netlist.read_text()), top,
+                                 accelerated=parameters.get("ACCEL_ENABLE", 1) == 1)
     probe.summary["synthesis"] = summary
     probe.compare("retained-state", True, summary["state_bits"] > 0, {})
     probe.compare("zero-latch-div-mod", 0, sum(

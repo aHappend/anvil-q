@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fp2_probe import Probe, ROOT, simulate
-from fp2_reference import add, exact, finite, multiply, rope_coefficients, rounded, transcendental
+from fp2_reference import add, exact, finite, multiply, rope_coefficients, rounded, transcendental, ulp_distance
 from fp2_top_probe import embedding
 
 
@@ -287,9 +287,9 @@ def with_public_pin_comparator(text):
     return text.replace("          $finish;", '          $display("PIN_COMPARISONS %0d",pin_comparisons);\n          $finish;')
 
 
-def expected_logits(token, fp_format):
+def expected_logits(token, fp_format, embedding_fn=embedding):
     fraction_bits, exponent_bits = (7, 8) if fp_format == 0 else (10, 5)
-    values = [embedding(token, column) for column in range(48)]
+    values = [embedding_fn(token, column) for column in range(48)]
     vector = [rounded(exact(value, fraction_bits=7)) for value in values]
     total = 0
     for value in vector:
@@ -303,7 +303,7 @@ def expected_logits(token, fp_format):
     for row in range(16):
         result = 0
         for column, value in enumerate(normalized):
-            weight = rounded(exact(embedding(row, column), fraction_bits=7))
+            weight = rounded(exact(embedding_fn(row, column), fraction_bits=7))
             result = add(result, multiply(value, weight))
         results.append(result)
     return results
@@ -311,10 +311,15 @@ def expected_logits(token, fp_format):
 
 def run(probe, simulator="verilator", compatibility=False, fp_format=0,
         weight_mode=0, cache_mode=0, commands=None, seed=17, binary=None, expanded_sources=None,
-        dual_reference=False):
+        dual_reference=False, embedding_fn=embedding, tb_template=PARENT_TB,
+        expected_results=None):
     commands = commands or [(3, 0, 1, 0)]
     source = probe.directory / "tb.sv"
-    text = PARENT_TB.replace("@MODULE@", "anvil_q2_fp2_top" if compatibility else "anvil_q2_fp_top")
+    text = tb_template.replace("@MODULE@", "anvil_q2_fp2_top" if compatibility else "anvil_q2_fp_top")
+    if simulator == "iverilog":
+        if len(commands) != 1:
+            commands = commands[:1]
+        text = text.replace("cycle<5000000", "cycle<500000")
     for needle, value in (("@FORMAT@", fp_format), ("@WEIGHT@", weight_mode), ("@CACHE@", cache_mode)):
         text = text.replace(needle, str(value))
     text = text.replace("@PARAMETERS@", ",.ACCEL_ENABLE(0)" if compatibility else "")
@@ -330,7 +335,7 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
     image, command_image, coefficients = (images / name for name in
                                           ("embeddings.hex", "commands.txt", "rope.hex"))
     image.write_text("".join(
-        f"{embedding(row, c) if fp_format == 0 else rounded(exact(embedding(row, c), fraction_bits=7), fraction_bits=10, exponent_bits=5):04x}\n"
+        f"{embedding_fn(row, c) if fp_format == 0 else rounded(exact(embedding_fn(row, c), fraction_bits=7), fraction_bits=10, exponent_bits=5):04x}\n"
         for row in range(16) for c in range(48)))
     command_image.write_text(str(len(commands)) + "\n" +
                              "".join(" ".join(map(str, command)) + "\n" for command in commands))
@@ -347,9 +352,11 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
         output = probe.command([str(binary), *arguments], "simulation")
     else:
         output = simulate(probe, source, rtl, simulator, arguments)
-    expected = [expected_logits(command[0], fp_format) for command in commands]
+    expected = (expected_results if expected_results is not None else
+                [expected_logits(command[0], fp_format, embedding_fn) for command in commands])
     logits, completions, summary = {}, [], None
     pin_comparisons = None
+    metrics = []
     for line in output.read_text().splitlines():
         words = line.split()
         if words[:1] == ["LOGIT"]:
@@ -360,6 +367,10 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
             reference = expected[command][index]
             error = abs(exact(value) - exact(reference)) if finite(value) else None
             threshold = Fraction(5, 10000) * (1 + abs(exact(reference)))
+            metrics.append({"ulp": ulp_distance(reference, value),
+                            "absolute": float(error) if error is not None else None,
+                            "relative": float(error / abs(exact(reference)))
+                            if error is not None and exact(reference) else None})
             probe.compare("parent-independent-logit", True, error is not None and error <= threshold,
                           {"command": command, "index": index, "observed": f"{value:08x}",
                            "reference": f"{reference:08x}", "absolute_error": float(error) if error is not None else None})
@@ -381,6 +392,7 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
          "reordered_responses", "logit_stalls", "request_stalls", "logits", "protocol_digest"), summary, strict=True))
     probe.summary["completion_cycles"] = completions
     probe.summary["logit_bits"] = [[command, index, value] for (command, index), value in sorted(logits.items())]
+    probe.summary["numerical_metrics"] = metrics
     probe.summary["configuration"] = {
         "compatibility": compatibility, "fp_format": fp_format, "weight_mode": weight_mode,
         "cache_mode": cache_mode, "seed": seed, "commands": commands}
