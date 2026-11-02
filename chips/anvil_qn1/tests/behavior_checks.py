@@ -33,7 +33,8 @@ def run_behavior_core(run):
             result = run_speculation(
                 child, prefix=prefix, geometry=geometry, seed=seed,
                 branching=branching, compiled=compiled.get(key),
-                storage_evaluations=8, continuation_fault=fault)
+                storage_evaluations=8, storage_transactions=6,
+                minimum_steps=6, continuation_fault=fault)
             if key not in compiled:
                 compiled[key] = Path(result["compiled_binary"])
             return result
@@ -48,6 +49,9 @@ def run_behavior_core(run):
             raise AssertionError("missing branching target/KV comparison")
     if {r["seed"] for r in results} != {17, 89, 203}:
         raise AssertionError("missing deterministic behavior seeds")
+    for result in results:
+        if result["geometry"]["max_sequence"] == 16 and len(result["evaluations"]) < 6:
+            raise AssertionError("behavior scenario did not compare six logical token steps")
     return {"scope": "incremental behavior core, not full behavior closure",
             "cases": results, "case_count": len(results),
             "compilations": len(compiled),

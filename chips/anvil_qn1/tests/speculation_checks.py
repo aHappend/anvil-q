@@ -147,7 +147,8 @@ def speculative_bench():
     return text
 
 
-def speculation_images(path, geometry, seed, prefix, branching=False, storage_evaluations=None):
+def speculation_images(path, geometry, seed, prefix, branching=False, storage_evaluations=None,
+                       storage_transactions=None, minimum_steps=0):
     path.mkdir(exist_ok=False)
     image = Image(geometry, seed)
     decoder = Decoder(image)
@@ -222,6 +223,16 @@ def speculation_images(path, geometry, seed, prefix, branching=False, storage_ev
     else:
         transaction(deferred, next_position, 1,
                     [(second_target + 1) % geometry.vocabulary], [4], [second_target])
+    while len(evaluations) < minimum_steps and transactions[-1]["generated"]:
+        previous = transactions[-1]
+        token = previous["generated"][-1]
+        position = previous["position"] + len(previous["generated"])
+        target = evaluate(token, position)
+        if position == geometry.max_sequence - 1:
+            transaction(token, position, 1, [], [], [])
+        else:
+            transaction(token, position, 1,
+                        [(target + 1) % geometry.vocabulary], [4], [target])
     if storage_evaluations is not None:
         if len(evaluations) > storage_evaluations:
             raise ValueError("evaluation storage is smaller than the actual fixture")
@@ -232,6 +243,15 @@ def speculation_images(path, geometry, seed, prefix, branching=False, storage_ev
                    "expected-logits": geometry.vocabulary, "eval-token": 1}
         for name, extent in extents.items():
             tables[name].extend([0] * ((storage_evaluations - len(evaluations)) * extent))
+    if storage_transactions is not None:
+        if len(transactions) > storage_transactions:
+            raise ValueError("transaction storage is smaller than the actual fixture")
+        names = ("host-token", "host-position", "host-phase", "expected-count",
+                 "expected-frames", "expected-token", "draft-count",
+                 "draft-token", "draft-parent", "expected-committed")
+        for name in names:
+            extent = 5 if name == "expected-committed" else 1
+            tables[name].extend([0] * ((storage_transactions - len(transactions)) * extent))
     for name, values in tables.items():
         with (path / f"{name}.hex").open("x") as file:
             width = 32 if name == "draft-token" else 3 if name == "draft-parent" else 8
@@ -242,19 +262,31 @@ def speculation_images(path, geometry, seed, prefix, branching=False, storage_ev
 
 
 def run_speculation(run, prefix=4, geometry=Geometry(), seed=17, branching=False,
-                    compiled=None, storage_evaluations=None, continuation_fault=None):
+                    compiled=None, storage_evaluations=None, continuation_fault=None,
+                    storage_transactions=None, minimum_steps=0):
     images = run.path / "checkpoint-images"
     evaluations, transactions = speculation_images(
-        images, geometry, seed, prefix, branching, storage_evaluations)
+        images, geometry, seed, prefix, branching, storage_evaluations,
+        storage_transactions, minimum_steps)
     bench = run.path / "speculative_tb.sv"
     text = speculative_bench()
     if continuation_fault is not None:
         text = continuation_fault_bench(text)
+    if storage_transactions is not None:
+        text = replace_once(text, "integer active_tx=0,total_frames=0,",
+                            "integer actual_transactions=0;\n"
+                            "  integer active_tx=0,total_frames=0,")
+        text = replace_once(text, "for (c=0;c<T;c=c+1) begin",
+                            'if (!$value$plusargs("transactions=%d",actual_transactions) ||\n'
+                            "        actual_transactions<1 || actual_transactions>T)\n"
+                            '      $fatal(1,"INVALID_TRANSACTION_COUNT");\n'
+                            "    for (c=0;c<actual_transactions;c=c+1) begin")
     bench.write_text(text)
     parameters = {"H": geometry.hidden, "I": geometry.intermediate,
                   "QH": geometry.q_heads, "KH": geometry.kv_heads, "D": geometry.head_dim,
                   "V": geometry.vocabulary, "M": geometry.max_sequence,
-                  "N": storage_evaluations or len(evaluations), "T": len(transactions)}
+                  "N": storage_evaluations or len(evaluations),
+                  "T": storage_transactions or len(transactions)}
     objects = run.path / "obj-speculative"
     sources = [p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
     if compiled is None:
@@ -264,10 +296,12 @@ def run_speculation(run, prefix=4, geometry=Geometry(), seed=17, branching=False
                     "speculation-compile")
         compiled = objects / "simulate"
     text = run.execute([relative(compiled), f"+images={relative(images)}",
-                        f"+continuation-fault={continuation_fault or 0}"],
+                        f"+continuation-fault={continuation_fault or 0}",
+                        f"+transactions={len(transactions)}"],
                        "speculation-simulation")
     frames = len(evaluations)
-    expected = (f"SUMMARY transactions=3 frames={frames} logits={frames*geometry.vocabulary} "
+    expected = (f"SUMMARY transactions={len(transactions)} frames={frames} "
+                f"logits={frames*geometry.vocabulary} "
                 f"key_writes={frames*geometry.kv_dimension} value_writes={frames*geometry.kv_dimension}")
     if text.count(expected) != 1:
         raise AssertionError("speculation full-frame/KV/continuation coverage missing")
@@ -315,14 +349,14 @@ def continuation_fault_bench(text):
         "      while (token_ready!==1 && guard<100) begin "
         "@(negedge clk);#1;guard=guard+1;end\n"
         "      if (token_ready!==1) $fatal(1,\"INVALID_HOST_NOT_READY\");\n"
-        "      token_id=expected_committed[(T-1)*5];\n"
-        "      token_pos=host_positions[T-1]+expected_counts[T-1];\n"
+        "      token_id=expected_committed[active_tx*5];\n"
+        "      token_pos=host_positions[active_tx]+expected_counts[active_tx];\n"
         "      token_phase=1;new_sequence=0;\n"
         "      case (fault_kind)\n"
         "        1: token_id=(token_id+1)%V;\n"
         "        2: token_pos=token_pos+1;\n"
-        "        3: begin token_pos=host_positions[T-1];token_id=host_tokens[T-1];end\n"
-        "        4: begin token_pos=M;token_id=host_tokens[T-1];end\n"
+        "        3: begin token_pos=host_positions[active_tx];token_id=host_tokens[active_tx];end\n"
+        "        4: begin token_pos=M;token_id=host_tokens[active_tx];end\n"
         "        default: $fatal(1,\"UNKNOWN_CONTINUATION_FAULT\");\n"
         "      endcase\n"
         "      token_valid=1;@(posedge clk);\n"

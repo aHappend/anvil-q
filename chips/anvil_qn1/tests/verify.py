@@ -14,14 +14,19 @@ Executable coverage:
   csr: independent pre-edge/post-edge register/event oracle on both simulators.
   controller: tree prefixes 0..4, branching, markers, malformed trees and cancellation.
   speculation: real four-draft-plus-bonus, complete frames/KV and deferred continuation.
+  behavior-core: target prefixes 0..4, branching, capacity/terminal rows,
+          second transactions, six logical steps and invalid resubmissions.
+  banked-top / memory-matrix: six-step complete direct frames/KV with banked
+          request stalls, bank/tag associations and observed response reordering.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
           coefficient comparisons and deterministic E/SiLU checks.
 
 Behavior, benchmark, defect, synthesis and reproduction suite dispatchers remain
-incomplete; no whole-product acceptance is claimed. Synthesis preparation retains
-a raw-controller structural-loop counterexample. No-argument dispatch remains
+incomplete; no whole-product acceptance is claimed. The original controller
+structural-loop counterexample is retained; the repaired controller has a fresh
+successful structural receipt. No-argument dispatch remains
 incomplete until every mandatory suite has been authored.
 """
 
@@ -41,6 +46,7 @@ from speculation_checks import run_speculation
 from numerical_checks import run_numerical
 from synthesis_checks import run_synthesis_probe, run_controller_synthesis
 from behavior_checks import run_behavior_core
+from memory_checks import run_banked_top, run_memory_matrix
 import reference
 
 
@@ -55,14 +61,21 @@ def main():
                                           "elementary", "csr", "controller", "startup", "elaboration",
                                           "speculation", "qk-stress", "analytic",
                                           "startup-matrix", "scalar-compiled", "synthesis-frontend",
-                                          "controller-synthesis", "behavior-core"))
+                                          "controller-synthesis", "behavior-core", "banked-top",
+                                          "memory-matrix"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "behavior-core":
+        if args.probe == "memory-matrix":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_memory_matrix(run)
+        elif args.probe == "banked-top":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_banked_top(run)
+        elif args.probe == "behavior-core":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_behavior_core(run)
         elif args.probe == "controller-synthesis":
