@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 import time
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +35,7 @@ class Evidence:
         self.path.mkdir(parents=True, exist_ok=False)
         self.record = {
             "schema": 1, "suite": suite, "cwd": ".", "started_at": timestamp(),
+            "argv": ["python3", *sys.argv],
             "sources": sources(), "commands": [], "repair_of": repair_of,
         }
         self.write()
@@ -89,7 +91,10 @@ class Evidence:
         self.write()
 
     def finish(self, status, **details):
-        self.record.update(status=status, ended_at=timestamp(), **details)
+        generated = {relative(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                     for path in self.path.rglob("*")
+                     if path.is_file() and (path.suffix in (".sv", ".ys") or path.name == "vectors.txt")}
+        self.record.update(status=status, ended_at=timestamp(), generated_inputs=generated, **details)
         self.write()
 
 

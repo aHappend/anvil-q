@@ -3,7 +3,9 @@
 import random
 
 from execution import icarus
-from ieee import binary, canonical, classify, convert, dot, float_bits, sqrt
+from fractions import Fraction
+
+from ieee import binary, convert, dot, pack, sqrt
 
 
 PKG = "rtl/anvil_q3_fp_00_pkg.sv"
@@ -58,18 +60,26 @@ endmodule
     return {"widen_narrow_encodings": 131072}
 
 
-def operation_vectors(seed=17, count=4096):
+def operation_vectors(seed=17, count=4096, include_awq=False):
     rng = random.Random(seed)
     pairs = [(a, b) for a in SPECIALS for b in SPECIALS]
     for fmt in ("bf16", "fp16"):
         pairs += [(convert(rng.randrange(65536), fmt, "fp32", True)[0],
                    convert(rng.randrange(65536), fmt, "fp32", True)[0]) for _ in range(count)]
     pairs += [(rng.getrandbits(32), rng.getrandbits(32)) for _ in range(count)]
+    if include_awq:
+        for fmt in ("bf16", "fp16"):
+            for _ in range(count):
+                activation = convert(rng.randrange(65536), fmt, "fp32", True)[0]
+                scale = convert(rng.randrange(0x7c00), "fp16", "fp32", True)[0]
+                delta = pack(Fraction(rng.randrange(-15, 16)))[0]
+                weight = binary("mul", delta, scale)[0]
+                pairs.append((activation, weight))
     return pairs
 
 
 def primitives(evidence, seed=17, count=4096):
-    pairs = operation_vectors(seed, count)
+    pairs = operation_vectors(seed, count, include_awq=True)
     results = {}
     for operation in ("add", "mul"):
         text = "".join(f"{a:08x} {b:08x} {value:08x} {flags:02x}\n"
@@ -91,9 +101,9 @@ module tb;
   wire [31:0] out_data;
   wire [4:0] out_flags;
   @MODULE@ dut(.*);
-  reg [31:0] a[0:20000],b[0:20000],expected[0:20000];
-  reg [4:0] flags[0:20000];
-  integer fd,rc,n=0,sent=0,received=0,cycle=0,accepted_cycle[0:20000];
+  reg [31:0] a[0:49999],b[0:49999],expected[0:49999];
+  reg [4:0] flags[0:49999];
+  integer fd,rc,n=0,sent=0,received=0,cycle=0,accepted_cycle[0:49999];
   integer stalls=0,simultaneous=0;
   reg held=0;
   reg [36:0] held_payload;

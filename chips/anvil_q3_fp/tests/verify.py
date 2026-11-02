@@ -12,6 +12,8 @@ from execution import Evidence, relative
 import numerics
 import integration
 import synthesis
+import cache_checks
+import nonlinear
 
 
 def main():
@@ -19,7 +21,7 @@ def main():
     parser.add_argument("--suite", choices=["numerics", "protocol", "behavior", "benchmark",
                                            "synthesis", "defects", "portability"])
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis"])
+    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear"])
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
@@ -32,7 +34,12 @@ def main():
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
-            if args.probe == "synthesis":
+            if args.probe == "nonlinear":
+                evidence.versions([["verilator", "--version"]])
+                result = nonlinear.check(evidence, args.seed)
+            elif args.probe == "cache":
+                result = cache_checks.check(evidence, args.seed)
+            elif args.probe == "synthesis":
                 evidence.versions([["yosys", "-V"]])
                 result = synthesis.synthesize(evidence, args.banks)
             elif args.probe == "top":
