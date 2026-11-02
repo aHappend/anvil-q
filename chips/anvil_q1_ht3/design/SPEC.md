@@ -11,11 +11,13 @@ historical benchmark fixtures or parent acceptance receipts were supplied.
 Compatibility must be derived from `anvil_q1_ht2_reference/rtl/`, which is
 read-only provenance, not a numerical oracle.
 
-**Current implementation is incomplete.** The current owned RTL consists of
-arithmetic and write-conversion foundations. There is not yet a connected HT3
-top, decoder, tensor array, fused epilogue, tiled attention engine, extension
-scale/image controller or packed committed-cache transport. A standalone
-converter does not satisfy integrated store-to-subsequent-attention acceptance.
+**Current implementation is incomplete.** The owned RTL now includes arithmetic,
+write conversion, native/AWQ/INT8 weight dequantization, a four-slot 256-lane
+tensor block and the seven-mode epilogue. There is not yet a connected HT3
+top, projection/decoder, tiled attention engine, extension scale/image controller
+or packed committed-cache transport. The tensor and epilogue blocks are not yet
+integrated into model execution. A standalone converter does not satisfy
+integrated store-to-subsequent-attention acceptance.
 The portable functional suite, synthesis, benchmarks, timing, hardware gates and
 product report have not run. No readiness or performance claim is made here.
 
@@ -113,9 +115,158 @@ continues independently of enable and holds its response until acknowledged.
 Earliest transfer is E+65 and earliest following request E+66. This is a
 transaction engine, not a globally enabled arithmetic pipeline.
 
-Required but not yet implemented primitives retain the admitted contracts:
-exp 32 enabled stages and sin/cos 64 enabled stages. These latencies must not
-be inferred from parent operator modules.
+`anvil_q1_ht3_fp32_exp` uses ports
+`clk,rst_n,enable,in_valid,in_data,out_valid,out_data`, with 32 enabled stages.
+It decodes the represented input into fixed-point Q48, derives an integer
+power of two using a Q32 reciprocal-ln2 constant, subtracts that power times
+Q48 ln2, and evaluates a degree-eight exponential polynomial in Q40.
+Each Horner multiply and coefficient addition has a separate register.
+Final binary32 packing applies the retained exponent, including gradual
+underflow. Inputs at or below -104 return zero; inputs at or above 89 return
+positive infinity. Those are safe outer bounds, not replacements for rounding
+within the representable boundary interval. NaN canonicalizes; negative
+infinity maps to zero. The internal approximation is subject to independent
+admitted error checks, not an exact-exp claim.
+
+`anvil_q1_ht3_fp32_sincos` has the same streaming control/data input and
+outputs `out_valid,out_sin,out_cos,out_error`. It has 64 enabled stages.
+Its supported finite angle domain is [-32768,32768], covering every legal
+RoPE position/frequency. Nonfinite or out-of-domain angles return canonical
+NaNs with error at the same latency. Signed zero produces signed-zero sine
+and exactly one cosine. Reduction uses a nearest quadrant, a Q48 half-pi
+constant and 48 registered Q48 CORDIC rotations. Mapping, FP32 packing and
+retiming complete the 64 stages. Payload, quadrant, sign, zero and error
+all freeze with enable.
+
+The same file provides `anvil_q1_ht3_sincos_phase`, a 64-stage internal
+primitive with unsigned 65-bit Q48 `in_phase` magnitude plus
+`in_negative,in_zero,in_error`. It must be supplied a magnitude <=32768
+and the correct zero/error flags. Its outputs match the FP32-input wrapper.
+`anvil_q1_ht3_rope_frequency` supplies unsigned Q56 frequencies. A dimension-
+specific Q56 root of theta=1e6 is raised to each constant pair index at
+elaboration; no runtime exponentiation, division or real arithmetic is used.
+The epilogue multiplies the full position by this frequency and passes a Q48
+phase directly to the CORDIC. It does not first round a large RoPE angle to
+FP32, which could otherwise lose significant phase at position 32767.
+
+`anvil_q1_ht3_scalar` reserves a held inference response for opcodes 0 add,
+1 multiply, 2 divide, 3 square root and 4 exp; other opcodes error. It captures
+operands on request E, issues to the leaf at E+1 and registers its response
+after E+5 for add/multiply, E+33 for exp, or E+66 for divide/square root.
+Earliest transfer is the following edge. Invalid active input/opcode returns
+an error response after E; output nonfinite is an inference error. The
+wrapper does not change the primitive IEEE special-value contract.
+
+## Tensor and weight stream
+
+`anvil_q1_ht3_tensor_array` uses the parent's tile-batch MAC input/output
+shape and adds trailing internal inputs `in_weight_fp32` and
+`in_weights_fp32[2047:0]`. These are internal ports, not a top-level ABI
+extension. `in_weight_fp32=0` interprets the 64 legacy 16-bit row weights
+according to `in_fp16`; `in_weight_fp32=1` consumes the 64 full FP32 row
+weights instead. Activations remain four encoded 16-bit slot values.
+All weights, masks, slots and format belong to the same accepted column.
+
+There are four physical slot generate branches, each with 64 instantiated
+`anvil_q1_ht3_mac_lane` blocks. Each lane contains a four-stage multiplier
+and four-stage accumulator, four independent FP32 accumulation contexts and
+same-edge result forwarding. Accepted columns select contexts cyclically
+0,1,2,3; bubbles do not advance the context selector. This permits one column
+per core edge without the four-stage accumulation recurrence inserting
+bubbles. Products and accumulation round separately. Final reduction is
+`((context0+context1)+context2)+context3`; it is not an implicit FMA or
+FP64 accumulator.
+
+First/last may coincide. First is mandatory on the first beat and forbidden
+thereafter; masks, slots, activation format and weight source format must
+remain identical throughout the packet. Active inputs and arithmetic overflow
+are checked; inactive lanes/slots neither consume nonfinite data nor report
+numeric errors. Output payload and tags hold under backpressure.
+
+For N consecutive accepted columns beginning at E, the last column arrives
+at B=E+N-1. Last product visibility is B+3, last accumulation is issued at
+B+4, and its context retires at B+8. Reduction requests occur at B+9,
+B+14 and B+19; the final lane result registers at B+23. The array response
+is visible after B+24 and first transferable at B+25, independent of N.
+Malformed packet input switches to a bounded bad-drain response visible
+ten edges after that malformed acceptance, with error and zero data.
+There is no new-packet admission on a response-retiring edge.
+
+`anvil_q1_ht3_dequant` provides a globally stalled five-enabled-stage
+ready/valid stream. Legacy AWQ extracts unsigned nibbles using
+`{lane[0],lane[2:1],2'b00}`, subtracts unsigned zero, expands FP16 scale,
+multiplies in FP32, and RNE-narrows to BF16. `out_data` expands that BF16
+boundary; `out_weight` carries the BF16 bits. As inherited, a zero legacy
+scale is allowed; negative nonzero and nonfinite legacy scales error.
+INT8 uses the signed low byte, a positive finite FP32 scale, full FP32
+product at `out_data`, and zero `out_weight`. INT8 consumers must use the
+tensor's full-FP32 weight input, not its encoded legacy input. Errors are
+carried explicitly and the owner must not consume errored payload as weights.
+
+## Standalone fused epilogue
+
+`anvil_q1_ht3_epilogue_fusion` implements the admitted exact external
+epilogue interface and modes 0..6. It accepts a command, validates length,
+slots and active RoPE positions, acquires exactly one ascending input stream,
+then executes the selected operations using private retained vectors.
+Input, auxiliary and gamma storage have MAX_VECTOR entries with synchronous
+read/write ports and no RAM reset. Ownership state prevents stale observation.
+Inactive slots are stored/output as zero; inactive auxiliary/gamma fields are
+not numeric-error sources. Mode 7 and malformed commands explicitly error.
+
+Modes 1/5/6 use FP32 sum of squares, division by represented vector length,
+epsilon `0x358637bd`, square root, reciprocal, and two FP32 multiplies for
+input and gamma. Gamma is expanded from the selected 16-bit format, without
+intermediate result narrowing. Mode 6 first performs residual addition in
+the private buffer. Mode 5 normalizes before split-half RoPE. RoPE overwrites
+each private pair only after both FP32 results have been calculated. Mode 3
+uses exp(-abs(g)); positive gates use g/(1+exp(-g)), negative gates use
+(g*exp(g))/(1+exp(g)), followed by multiplication by up. Large finite negative
+gates therefore do not request an overflowing exp(-g).
+
+Output replay is ascending. The FP32 stream is narrowed only for
+`out_encoded`; nonfinite active arithmetic and nonfinite narrowing output
+cause an explicit command error instead of usable output. This finite-output
+policy includes BF16/FP16 overflow. Output valid, index, slots and both payload
+encodings hold until transfer. Abort drains any issued arithmetic. If an
+output is already held, it is retained until transfer before the aborted
+command completes with error. Successful `done` pulses after the last output
+transfer; a failed/aborted command pulses done and asserts error. Error is
+sticky until the next accepted command or reset.
+
+### Epilogue no-stall transaction cycle formulas
+
+Let E be command acceptance, L the vector length, P=L/2 for RoPE modes,
+and h=L/HEAD_DIM for RoPE modes. With valid held whenever ready and all outputs
+ready, first input acceptance A is E+2 for modes 0/1/3/4/6, or E+h+2
+for modes 2/5. Length divisibility is validated by an explicit head counter,
+not combinational division/modulo. Final input acceptance is B=A+L-1.
+The following formulas give the **edge of final output transfer T**, after
+which done is visible. The final output becomes visible one edge before T.
+
+| Mode | T relative to final input B |
+| --- | --- |
+| 0 bypass | B+3*L+1 |
+| 1 RMSNorm | B+28*L+204 |
+| 2 RoPE | B+101*P+3*L+1 |
+| 3 SwiGLU | B+120*L+1 |
+| 4 residual | B+11*L+1 |
+| 5 RMSNorm then RoPE | B+101*P+28*L+204 |
+| 6 residual then RMSNorm | B+36*L+204 |
+
+These are conservative serial SIMD schedules, not claimed performance gains.
+For unambiguous derivation, a four-stage arithmetic request issued at I is
+consumed by the controller at I+4; exp at I+32; sin/cos at I+64; the reserved
+divide/sqrt response at I+65. A dependent issue occurs one edge after that
+consumption. Initial data read/load precedes issue by two edges. Residual,
+sum-of-squares, normalized-output and SwiGLU coordinate initiation intervals
+are respectively 8,12,13,117 edges. The normalization scalar tail between
+last sum issue and first normalized-coordinate issue includes three reserved
+divide/sqrt transactions and one add. RoPE pairs initiate 101 edges apart,
+including two partner reads and two writes. Output replay initiates one
+transfer every three edges. Input bubbles and held-output edges add their
+actual delays; no arithmetic stage counts depend on numeric value or slot
+population.
 
 ## Exact FP32-to-quantized KV conversion
 
@@ -243,13 +394,11 @@ The graph is input norm -> Q/K/V -> Q/K RoPE -> attention -> output projection
 plus residual -> post-attention norm -> gate/up SwiGLU -> down projection
 plus residual, repeated per layer, then final norm and logits.
 
-The epilogue's exact admitted four-slot streaming interface and modes 0..6
-remain fixed. Mode 7 errors. RMSNorm uses epsilon `0x358637bd`, FP32 statistic
-and FP32 gamma multiplication without internal BF16 narrowing. RoPE uses
-theta=1e6, split-half pairing and all legal positions. SiLU must use stable
-branches/range reduction for large negative inputs. Bounded private
-whole-vector/pair retention is permitted but must be counted; shared-scratch
-operator-boundary round trips are not fusion.
+The implemented epilogue and tensor block described above must be connected
+to the actual decoder/projection; their presence alone is not model execution
+or a measured fusion improvement. Private replay costs are included in the
+standalone formulas. Shared-scratch operator-boundary round trips remain
+forbidden.
 
 FlashAttention must preserve the parent attention ports plus KV format/scales,
 GQA, causal/ancestor masking and four-slot ownership. It uses two bounded tiles

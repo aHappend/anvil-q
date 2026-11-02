@@ -10,7 +10,9 @@ module anvil_q1_ht3_tensor_array (
   output wire [8191:0] out_data,
   output wire [63:0] out_mask,
   output wire [3:0] out_slots,
-  output wire out_error
+  output wire out_error,
+  input wire in_weight_fp32,
+  input wire [2047:0] in_weights_fp32
 );
   localparam IDLE = 3'd0, ACTIVE = 3'd1, DRAIN = 3'd2,
     BAD_DRAIN = 3'd3, RESPONSE = 3'd4;
@@ -20,13 +22,14 @@ module anvil_q1_ht3_tensor_array (
   reg [1:0] next_context;
   reg [63:0] mask_q;
   reg [3:0] slots_q;
-  reg fp16_q, failed;
+  reg fp16_q, weight_fp32_q, failed;
   reg [8191:0] result_q;
   wire [8191:0] lane_data;
   wire [255:0] lane_error;
   wire accept = in_valid && in_ready;
   wire configuration_match =
-    in_slots == slots_q && in_mask == mask_q && in_fp16 == fp16_q;
+    in_slots == slots_q && in_mask == mask_q && in_fp16 == fp16_q &&
+    in_weight_fp32 == weight_fp32_q;
   wire legal_beat = state == IDLE ? in_first && in_slots != 0 :
     state == ACTIVE && !in_first && configuration_match;
   wire beat = accept && legal_beat;
@@ -53,6 +56,7 @@ module anvil_q1_ht3_tensor_array (
         .beat_valid(beat), .active_lane(participating), .fp16(in_fp16),
         .beat_context(state == IDLE ? 2'b0 : next_context),
         .activation(in_activation[16*s+:16]), .weight(in_weights[16*row+:16]),
+        .weight_is_fp32(in_weight_fp32), .weight_native(in_weights_fp32[32*row+:32]),
         .reduce_first(reduce_first), .reduce_second(reduce_second),
         .reduce_third(reduce_third),
         .result(lane_data[32*(64*s+row)+:32]),
@@ -69,6 +73,7 @@ module anvil_q1_ht3_tensor_array (
       mask_q <= 0;
       slots_q <= 0;
       fp16_q <= 0;
+      weight_fp32_q <= 0;
       failed <= 0;
       result_q <= 0;
     end else if (run_n) begin
@@ -77,6 +82,7 @@ module anvil_q1_ht3_tensor_array (
           mask_q <= in_mask;
           slots_q <= in_slots;
           fp16_q <= in_fp16;
+          weight_fp32_q <= in_weight_fp32;
           failed <= !legal_beat;
           result_q <= 0;
           age <= 0;

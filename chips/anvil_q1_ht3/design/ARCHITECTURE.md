@@ -5,7 +5,9 @@
 This is an incomplete Designer source checkpoint, not a working accelerator or
 an accepted product. The unchanged parent is
 `anvil_q1_ht2_reference/rtl/`. No prior HT3 source was present at intake.
-Only arithmetic and exact pre-provisional KV conversion are implemented so far.
+Arithmetic, exact pre-provisional KV conversion, weight dequantization,
+the four-slot 256-lane tensor block and the seven-mode epilogue are implemented
+as standalone RTL so far.
 No top-level substitution or wrapper around the parent's execution datapath
 has been introduced.
 
@@ -22,6 +24,14 @@ has been introduced.
 | `rtl/anvil_q1_ht3_fp32_divsqrt.sv` | Bounded restoring division/square root with a reserved E+64 response |
 | `rtl/anvil_q1_ht3_kv_quantize.sv` | Bounded exact-rational RNE signed INT4/INT8 quantization and saturation |
 | `rtl/anvil_q1_ht3_kv_store_convert.sv` | Atomic K/V conversion with captured ownership and separate scales |
+| `rtl/anvil_q1_ht3_fp32_exp.sv` | 32-enabled-stage range-reduced fixed-point polynomial exponential |
+| `rtl/anvil_q1_ht3_fp32_sincos.sv` | 64-enabled-stage quadrant reduction/CORDIC, FP32 and Q48 phase inputs |
+| `rtl/anvil_q1_ht3_rope_frequency.sv` | Elaboration-constant Q56 theta=1e6 frequencies for all legal even head dimensions |
+| `rtl/anvil_q1_ht3_epilogue_fusion.sv` | Seven-mode four-slot FP32 epilogue with synchronous private retention/replay |
+| `rtl/anvil_q1_ht3_mac_lane.sv` | Four-context FP32 multiply/accumulate with recurrence forwarding |
+| `rtl/anvil_q1_ht3_tensor_array.sv` | Four physical slots times 64 lanes, held tagged panel results |
+| `rtl/anvil_q1_ht3_dequant.sv` | Legacy AWQ boundary plus full-FP32 signed-INT8 weight stream |
+| `rtl/anvil_q1_ht3_scalar.sv` | Reserved inference arithmetic response and explicit numeric errors |
 
 The FP helper structure and add alignment follow parent prior art, with a
 distinct HT3 namespace; no reference file is modified. HT3 multiply has the
@@ -60,14 +70,16 @@ converter contains no provisional FP32 cache and no dequantization path.
 
 ## Required integration still to implement
 
-1. Complete numerical primitives: range-reduced exp and sin/cos with the exact
-   admitted latencies, stable SiLU, dequantization and
-   explicit inference numerical-error propagation.
-2. Build four-slot x 64-row tensor compute with deeply registered DSP paths,
-   enough accumulation contexts, correct native/AWQ/INT8 boundaries, sparse
+1. Independently validate the implemented arithmetic/transcendental leaves,
+   standalone epilogue, tensor recurrence and dequantization; Designer has not
+   run functional simulation or synthesis.
+2. Connect the physical tensor block under the actual projection as
+   `u_tensor_array`, including full-FP32 INT8 weights, AWQ narrowing, sparse
    compatibility and source-bound 256-lane accounting.
-3. Implement `anvil_q1_ht3_epilogue_fusion`, private vector/pair retention,
-   all seven modes and a real decoder graph using `u_epilogue`.
+3. Build the real decoder graph using the implemented epilogue as `u_epilogue`.
+   The epilogue currently uses conservative serial SIMD schedules; demonstrate
+   required measured transition-cycle reduction and optimize those owned
+   schedules if necessary before claiming the performance requirement.
 4. Implement `anvil_q1_ht3_flash_attn` with two tiles, FP32 online rescaling,
    GQA/ancestor masks, native/quantized cache adapters and `u_flash_attn`.
 5. Connect full-FP32 post-RoPE K and post-projection/bias V to the implemented
@@ -81,8 +93,35 @@ converter contains no provisional FP32 cache and no dequantization path.
    source-compatible top ports/parameters, CDC-safe transport, ping-pong
    prefetch credits and first-legal-opportunity bus issue.
 8. Document the complete integrated no-stall cycle formulas before Verifier
-   freezes temporal assertions. Current formulas cover only implemented leaves
-   and conversion, not the missing vector/attention/top schedules.
+   freezes temporal assertions. Current formulas cover implemented leaves,
+   conversion, tensor packets and standalone epilogue, not the missing
+   attention/projection/top schedules.
+
+## Fused operator retention and phase precision
+
+The epilogue consumes producer data once and retains private FP32 data, the
+required auxiliary vector and 16-bit gamma coordinates. Residual/norm/RoPE
+boundaries replay that private storage, not external scratch. Four arithmetic
+workers run active slots in parallel; coordinate and pair processing is
+currently serial. RAM contents are not reset, and command ownership and length
+prevent stale reads. Failed input, arithmetic or narrowing never produces a
+successful completion.
+
+RoPE uses Q56 frequency constants and a Q48 phase input to the same pipelined
+CORDIC used by the FP32 sin/cos primitive. This avoids prematurely rounding
+large position*frequency products to FP32. That choice is specific to phase
+generation; inference vector multiply/add operations remain separately
+rounded FP32. The 48 CORDIC iterations are registered individually; exp's
+Horner multiply/add pairs are also separated. These structures are not
+STA evidence.
+
+The tensor has 256 physical multiplier/accumulator lanes, not a time-shared
+64-lane block. Four per-lane accumulation contexts rotate on accepted columns;
+tag pipelines advance through input bubbles and match both arithmetic
+latencies. Forwarding supplies a completed context on its same reuse edge.
+Reduction occurs only after the last in-flight product/accumulation retires.
+This sustains the architectural one-column-per-edge admission interval, but
+actual model utilization depends on projection/DMA integration still missing.
 
 ## Planned memory and streaming contracts
 

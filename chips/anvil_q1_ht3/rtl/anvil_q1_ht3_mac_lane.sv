@@ -2,6 +2,8 @@ module anvil_q1_ht3_mac_lane (
   input wire clk, rst_n, enable, clear, beat_valid, active_lane, fp16,
   input wire [1:0] beat_context,
   input wire [15:0] activation, weight,
+  input wire weight_is_fp32,
+  input wire [31:0] weight_native,
   input wire reduce_first, reduce_second, reduce_third,
   output wire [31:0] result,
   output wire arithmetic_error
@@ -15,7 +17,7 @@ module anvil_q1_ht3_mac_lane (
   wire product_valid, addition_valid;
   wire [31:0] product_data, addition_data;
   wire [31:0] activation_fp = expand16(activation, fp16);
-  wire [31:0] weight_fp = expand16(weight, fp16);
+  wire [31:0] weight_fp = weight_is_fp32 ? weight_native : expand16(weight, fp16);
   wire participating = clear ? active_lane : active_q;
   wire reduction_request = active_q &&
     (reduce_first || reduce_second || reduce_third);
