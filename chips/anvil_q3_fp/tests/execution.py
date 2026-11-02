@@ -123,7 +123,8 @@ def verilator(evidence, name, testbench, rtl, files=None):
     directory = evidence.path / name
     directory.mkdir()
     # Icarus supplies the event-region startup check; Verilator has no #0 region.
-    (directory / "tb.sv").write_text(testbench.replace("#0; reset_check;", "#1; reset_check;"))
+    (directory / "tb.sv").write_text(testbench.replace("#0; reset_check;", "#1; reset_check;").replace(
+        "reset_sample<=1; @(posedge reset_sample); reset_check;", "#1; reset_check;"))
     for filename, text in (files or {}).items():
         (directory / filename).write_text(text)
     objects = directory / "compile-obj"
@@ -145,7 +146,8 @@ def compiled(evidence, name, testbench, rtl):
         return cache[identity]
     directory = evidence.path / f"build-{name}-{identity[:12]}"
     directory.mkdir()
-    (directory / "tb.sv").write_text(testbench.replace("#0; reset_check;", "#1; reset_check;"))
+    (directory / "tb.sv").write_text(testbench.replace("#0; reset_check;", "#1; reset_check;").replace(
+        "reset_sample<=1; @(posedge reset_sample); reset_check;", "#1; reset_check;"))
     objects = directory / "compile-obj"
     evidence.run(["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
                   "-j", "2", "--Mdir", relative(objects), "-o", "sim", *rtl,

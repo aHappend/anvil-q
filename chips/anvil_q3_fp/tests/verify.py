@@ -16,6 +16,9 @@ import cache_checks
 import nonlinear
 import campaigns
 import tensor_checks
+import protocol_checks
+import parameter_checks
+import top_control
 
 
 def main():
@@ -23,7 +26,7 @@ def main():
     parser.add_argument("--suite", choices=["numerics", "protocol", "behavior", "benchmark",
                                            "synthesis", "defects", "portability"])
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor"])
+    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control"])
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
@@ -34,13 +37,24 @@ def main():
     parser.add_argument("--fp8", type=int, choices=[0, 1], default=0)
     parser.add_argument("--affine", type=int, choices=[0, 1], default=0)
     parser.add_argument("--layers", type=int, choices=[1, 36], default=1)
+    parser.add_argument("--queue-depth", type=int, choices=[1, 3, 16], default=3)
     args = parser.parse_args()
     evidence = Evidence(args.probe or args.suite or "aggregate",
                         preparation=bool(args.probe), repair_of=args.repair_of)
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
-            if args.probe == "tensor":
+            if args.probe == "control":
+                evidence.versions([["verilator", "--version"]])
+                result = top_control.check(evidence, args.banks, args.cache_mode, args.fp8, args.affine)
+            elif args.probe == "parameters":
+                result = parameter_checks.check(evidence, ["hidden", "group_zero", "banks_three",
+                                                         "layer_address_overflow"])
+            elif args.probe == "scheduler":
+                evidence.versions([["verilator", "--version"]])
+                result = protocol_checks.scheduler(evidence, args.banks, args.queue_depth,
+                                                  args.simulator)
+            elif args.probe == "tensor":
                 evidence.versions([["verilator", "--version"]])
                 result = tensor_checks.check(evidence, args.seed, args.banks)
             elif args.probe == "nonlinear":
