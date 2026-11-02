@@ -130,7 +130,10 @@ def run_banked_top(run, geometry=Geometry(), seed=17, cases=6, banks=8, queue=3)
     objects = run.path / "obj-banked-top"
     sources = [p.relative_to(ROOT).as_posix()
                for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
+    unrolling = (["--unroll-count", "256", "--unroll-stmts", "100000"]
+                 if banks * queue >= 128 else [])
     run.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                 *unrolling,
                  "--top-module", "top_tb",
                  *[f"-G{k}={v}" for k, v in parameters.items()],
                  "--Mdir", relative(objects), "-o", "simulate", *sources, relative(bench)],
