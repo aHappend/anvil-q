@@ -55,7 +55,9 @@ def generate(path, seed, lanes, compact):
                            if mask & (1 << token) and row_mask & (1 << row))
         else:
             expected = tile_sum(beats, mask, row_mask)
-        records = [f"{columns} {mask:x} {row_mask:x} 0 {columns} {expected:x}"]
+        records = [f"{columns} {mask:x} {row_mask:x} 0 {columns}",
+                   *(f"{(expected >> (token * 4096)) & ((1 << 4096) - 1):x}"
+                     for token in range(4))]
         for column, beat in enumerate(beats):
             records.append(f"{column:x} " + " ".join(f"{field:x}" for field in beat) +
                            f" {int(column == columns - 1):x}")
@@ -90,7 +92,8 @@ def run_tile(run, simulator, seed, compact):
         execute(run, "tile-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
                 "--top-module", "tile_tb", "-GWEIGHT_LANES=128", "-GHIDDEN_SIZE=2048",
                 "-GNUM_KV_HEADS=2", "-GHEAD_DIM=128", "--Mdir", relative(obj),
-                "-j", "2", *SOURCES], ["verilator", "--version"])
+                "-j", "2", "--output-split", "20000", "--output-split-cfuncs", "2000",
+                "-CFLAGS", "-O0", *SOURCES], ["verilator", "--version"])
         argv = [relative(obj / "Vtile_tb"), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
     output = execute(run, "tile-simulate", argv, version)

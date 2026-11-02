@@ -101,6 +101,48 @@ def weight(q, z, scale):
         return 0, 1
 
 
+def kv_encode(values, mode):
+    capacity, limit, bits, maximum_exp = (
+        (32, 127, 8, 25) if mode == 1 else (64, 7, 4, 29))
+    if not 1 <= len(values) <= capacity:
+        raise ValueError("illegal KV count")
+    maximum = max(map(abs, values))
+    exponent = 0
+    while maximum > limit * (1 << exponent):
+        exponent += 1
+    if exponent > maximum_exp:
+        raise ValueError("illegal KV exponent")
+    record = exponent << 256
+    for lane, value in enumerate(values):
+        magnitude = abs(value)
+        code = min(limit, (magnitude + ((1 << (exponent - 1)) if exponent else 0))
+                   >> exponent)
+        if value < 0:
+            code = -code
+        record |= (code & ((1 << bits) - 1)) << (bits * lane)
+    return record
+
+
+def kv_decode(record, count, mode):
+    capacity, limit, bits, maximum_exp = (
+        (32, 127, 8, 25) if mode == 1 else (64, 7, 4, 29))
+    exponent = (record >> 256) & 0xffffffff
+    if not 1 <= count <= capacity or record >> 288 or exponent > maximum_exp:
+        raise ValueError("invalid KV header/count")
+    result = []
+    for lane in range(capacity):
+        code = (record >> (bits * lane)) & ((1 << bits) - 1)
+        if code >= 1 << (bits - 1):
+            code -= 1 << bits
+        if code == -limit - 1 or (lane >= count and code):
+            raise ValueError("reserved KV code or tail padding")
+        if lane < count:
+            result.append(min((1 << 31) - 1, max(-(1 << 31), code * (1 << exponent))))
+    if not any(result) and exponent:
+        raise ValueError("noncanonical all-zero KV exponent")
+    return result
+
+
 AWQ_POSITIONS = (0, 4, 1, 5, 2, 6, 3, 7)
 
 
