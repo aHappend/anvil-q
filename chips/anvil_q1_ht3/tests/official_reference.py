@@ -173,7 +173,10 @@ def narrow_bf16(values):
     rounded = ((bits + np.uint32(0x7fff) + ((bits >> 16) & 1)) >> 16) << 16
     if not np.isfinite(fp32).all():
         raise AssertionError("nonfinite represented-image activation")
-    return rounded.astype(np.uint32).view(np.float32).astype(np.float64)
+    result = rounded.astype(np.uint32).view(np.float32).astype(np.float64)
+    if not np.isfinite(result).all():
+        raise AssertionError("nonfinite represented-image BF16 narrowing")
+    return result
 
 
 class QwenFP64:
@@ -187,7 +190,9 @@ class QwenFP64:
         self.position = 0
 
     def norm(self, x, gamma):
-        return x/np.sqrt(np.mean(x*x, dtype=np.float64)+self.c["rms_norm_eps"])*gamma
+        epsilon = (float(np.float32(self.c["rms_norm_eps"])) if self.represented
+                   else self.c["rms_norm_eps"])
+        return x/np.sqrt(np.mean(x*x, dtype=np.float64)+epsilon)*gamma
 
     def boundary(self, x):
         return narrow_bf16(x) if self.represented else x

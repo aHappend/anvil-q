@@ -8,7 +8,11 @@ from execution import ROOT, execute, hashes, relative
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    value = hashlib.sha256()
+    with path.open("rb") as stream:
+        while block := stream.read(1024*1024):
+            value.update(block)
+    return value.hexdigest()
 
 
 def normalize_argv(argv):
