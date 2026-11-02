@@ -166,7 +166,7 @@ module anvil_q1_ht3_kv #(
       .cmd_valid(cmd_valid && cmd_ready), .cmd_ready(pv_cmd_ready),
       .cmd_begin(cmd_begin), .cmd_slots(cmd_slots), .cmd_error(pv_cmd_error),
       .cmd_format(cmd_kv_format), .cmd_image(cmd_image),
-      .write_valid(store_valid && store_ready), .write_ready(pv_store_ready),
+      .write_valid(store_valid && store_ready && !cancel), .write_ready(pv_store_ready),
       .write_node(store_node), .write_layer(store_layer), .write_column(store_column),
       .write_first(store_first), .write_last(store_last),
       .write_key(store_key), .write_value(store_value), .write_error(pv_store_error),
@@ -182,7 +182,7 @@ module anvil_q1_ht3_kv #(
       .NUM_KV_HEADS(NUM_KV_HEADS), .HEAD_DIM(HEAD_DIM), .MAX_SEQ_LEN(MAX_SEQ_LEN)
     ) u_committed_reader (
       .clk(clk), .rst_n(rst_n), .abort_error(cancel),
-      .invalidate_cache(cancel || copy_state != C_IDLE || (store_valid && store_ready) ||
+      .invalidate_cache(cancel || copy_state != C_IDLE ||
         (cmd_valid && cmd_ready)),
       .req_valid(reader_request), .req_ready(reader_ready),
       .req_fp16(reading_format == 1), .req_kv_format(reading_format),
@@ -219,8 +219,8 @@ module anvil_q1_ht3_kv #(
     );
     assign cmd_ready = run_n && !cancel && idle && !store_valid && pv_cmd_ready;
     assign cmd_error = run_n && pv_cmd_error;
-    assign store_ready = run_n && !cancel && copy_state == C_IDLE &&
-      !cmd_valid && pv_store_ready;
+    assign store_ready = run_n && (cancel ||
+      (copy_state == C_IDLE && !cmd_valid && pv_store_ready));
     assign store_error = run_n && pv_store_error;
     assign copy_ready = run_n && !cancel && idle && !cmd_valid && !store_valid;
     assign read_ready = run_n && !cancel && idle && !cmd_valid && !copy_valid;

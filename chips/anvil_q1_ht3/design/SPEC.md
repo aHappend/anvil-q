@@ -461,6 +461,8 @@ the earliest next request is one edge later.
 
 `anvil_q1_ht3_kv_store_convert` accepts a complete full-FP32 K/V pair with format,
 separate K/V scales and the parent's node/layer/column/first/last tags. There is
+an additional `in_image[31:0]`/`out_image[31:0]` ownership tag, captured on
+request acceptance and held alongside format and coordinates. There is
 one reserved pair transaction. Both scalar quantizers accept on the same edge
 as the pair request, and the wrapper joins their held responses atomically.
 The output includes `out_error` and is a response channel, not permission to
@@ -723,6 +725,82 @@ decoder boundary; standalone cache modules do not complete these obligations:
   invalidation. Dequantization overflow is an inference error, distinct from
   successful finite write saturation.
 
+## Connected code-only cache controller
+
+`anvil_q1_ht3_kv` preserves the parent KV controller's ordered ports and appends
+explicit command/store/read/copy cache formats, image tags, a store-fault bit,
+and read K/V scale inputs/outputs. The inherited read_fp16/copy_fp16 inputs
+remain ABI containers; explicit cache format controls KV encoding, not query
+encoding. The controller connects `u_provisional`, `u_committed_reader` and
+`u_committed_writer` to real read and write DMA channels. No full-precision
+provisional alternative exists in this hierarchy.
+
+Command begin captures slot, format and image ownership. A retain/subset
+command cannot introduce a new slot or change image/format. Stores pass only
+their already converted 16-bit containers, original tags and fault to the
+provisional bank; a conversion fault poisons the row rather than completing
+it. Image ownership is checked for provisional and committed reads and copies.
+Quantized provisional reads return the stored codes with the captured
+layer/head K/V scales, never a retained FP32 producer value. Native reads
+return their actual stored encodings. Invalid scales are rejected on read;
+dequantization and its overflow reporting remain the attention engine's job.
+
+The controller permits one read or one copy transaction, with store/copy
+exclusions matching ownership needs. Provisional reads and writes still use
+the bank's row-collision/completeness checks. Provisional stores do not modify
+committed DDR and therefore do not unnecessarily invalidate a concurrent
+committed-read cache. Copy and image/sequence invalidation do invalidate it.
+Copy captures the selected node/layer/position and descriptor regions, reads
+every coordinate from the complete provisional row, and streams its codes
+unchanged into the actual packed writer. Failed/incomplete/image-mismatched
+rows cannot generate usable copies. No dequantize/requantize boundary is
+inserted.
+
+Separate reader, writer and provisional response reservations survive
+flush/abort long enough to drain. A flush annuls row ownership immediately,
+but cannot leave a held provisional response to be consumed by a later read
+or copy. Already displayed/accepted DDR transactions are drained by the
+adapters. A held public read/copy response retains all payload and error
+fields until transfer, even on later abort. Copy response is successful only
+after the writer's actual required responses retire successfully; it is not
+itself permission to advance the prefix. The missing execution controller
+must aggregate every selected node and layer, and publish prefix advancement
+transactionally after all copies succeed.
+
+### Cache-controller no-stall cycle formulas
+
+For a legal provisional read accepted at E, the bank request transfers at
+E+1, its synchronous response retires into the controller at E+2, and the
+held public response first transfers at E+3. An admission error is visible
+after E and first transfers at E+1. Neither accepts a replacement read on
+its response-retiring edge.
+
+A committed read accepted at E enters the packed reader at E+1. Relative
+to that packed-reader acceptance, use the adapter formulas above; the
+controller adds one final held-response transfer edge. Thus a cache hit first
+transfers publicly at E+8 and a miss at
+E+10+lambda_K+lambda_V, with request stalls and external return latencies
+counted as defined for the adapter. Actual codes and both scale tags are
+registered with the result.
+
+For a legal copy accepted at E, writer command transfers at E+1, its
+offset/address/check execute at E+2..E+4, and input readiness is observed at
+E+5. The first provisional read accepts at E+6, its response retires at
+E+7, and the first code pair enters the writer at E+8. Each subsequent
+coordinate takes three edges (read request, response capture, writer input).
+Final code-pair input is B=E+3*C+5. The packed writer's DMA/write-response
+formula applies from B; the controller's public copy response first transfers
+one edge after that writer response transfers. Copy-read faults abort the
+reserved writer and wait for its failed response rather than inventing a
+copy completion. Flush/abort completion waits for *all* previously reserved
+provisional/reader/writer responses; its bound is their remaining documented
+transaction bound plus externally imposed memory/output stalls.
+
+The FP32 producer-to-converter connection under the decoder, scale-table
+lookup ownership, branch selection and full commit/prefix executor remain
+unimplemented. Connected cache adapters alone do not satisfy the mandatory
+store-to-subsequent-attention model transaction.
+
 ## Required integrated datapath
 
 The literal decoder instances must be `u_epilogue` and `u_flash_attn`, with
@@ -733,8 +811,9 @@ The graph is input norm -> Q/K/V -> Q/K RoPE -> attention -> output projection
 plus residual -> post-attention norm -> gate/up SwiGLU -> down projection
 plus residual, repeated per layer, then final norm and logits.
 
-The implemented epilogue, attention and tensor blocks described above must be connected
-to the actual decoder/projection; their presence alone is not model execution
+The tensor is now connected under the actual HT3 projection. That projection,
+the epilogue, attention and cache controller must still be connected
+to the actual decoder/top; their presence alone is not model execution
 or a measured fusion improvement. Private replay costs are included in the
 standalone formulas. Shared-scratch operator-boundary round trips remain
 forbidden.

@@ -1,6 +1,7 @@
 module anvil_q1_ht3_epilogue_fusion #(
   parameter MAX_VECTOR = 4864,
-  parameter HEAD_DIM = 64
+  parameter HEAD_DIM = 64,
+  parameter CHECK_ENCODED = 1
 ) (
   input wire clk, rst_n, abort_error, cmd_valid,
   output wire cmd_ready,
@@ -23,7 +24,8 @@ module anvil_q1_ht3_epilogue_fusion #(
 );
   import anvil_q1_ht3_fp_pkg::*;
   localparam LEGAL = MAX_VECTOR >= 1 && MAX_VECTOR <= 4864 &&
-    HEAD_DIM >= 2 && HEAD_DIM <= 64 && (HEAD_DIM & 1) == 0;
+    HEAD_DIM >= 2 && HEAD_DIM <= 64 && (HEAD_DIM & 1) == 0 &&
+    (CHECK_ENCODED == 0 || CHECK_ENCODED == 1);
   initial begin
     if (!LEGAL) $fatal(1, "PARAMETER ERROR: HT3 epilogue geometry");
   end
@@ -132,7 +134,7 @@ module anvil_q1_ht3_epilogue_fusion #(
           if (positions_q[32*k+:32] >= 32768) position_error = 1;
           narrowed_output[16*k+:16] = narrow32(data_read[32*k+:32], fp16_q);
           if (fp32_nonfinite(data_read[32*k+:32]) ||
-              fp32_nonfinite(expand16(narrowed_output[16*k+:16], fp16_q)))
+              (CHECK_ENCODED && fp32_nonfinite(expand16(narrowed_output[16*k+:16], fp16_q))))
             output_error = 1;
         end
       end

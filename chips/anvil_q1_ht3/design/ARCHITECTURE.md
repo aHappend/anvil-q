@@ -8,7 +8,10 @@ an accepted product. The unchanged parent is
 Arithmetic, exact pre-provisional KV conversion, weight dequantization,
 the four-slot 256-lane tensor block, seven-mode epilogue, tiled online attention,
 image-tagged provisional storage and packed DDR cache adapters are implemented
-as standalone RTL so far.
+in owned RTL. The HT3 projection now connects the 256-lane tensor to native,
+AWQ and signed-INT8 weight streams, a reserved prefetch and queued DMA arbiter.
+The HT3 cache controller connects code-only provisional storage to packed
+committed reads and copies. Decoder/top model execution is still missing.
 No top-level substitution or wrapper around the parent's execution datapath
 has been introduced.
 
@@ -38,6 +41,11 @@ has been introduced.
 | `rtl/anvil_q1_ht3_provisional_kv.sv` | Code-only image/format-tagged row completeness and fault poisoning |
 | `rtl/anvil_q1_ht3_kv_writer.sv` | Bit-preserving INT4/INT8/native records, zero padding and transactional writes |
 | `rtl/anvil_q1_ht3_kv_reader.sv` | Actual packed-DDR code extraction, beat caching and captured K/V scales |
+| `rtl/anvil_q1_ht3_panel_prefetch.sv` | Reserved two-bank column supply, split native beats and abort-safe request drain |
+| `rtl/anvil_q1_ht3_dma_mux.sv` | Ordered request-owner queue, round-robin stall lock, registered tagged responses and same-edge credit reuse |
+| `rtl/anvil_q1_ht3_burst_reader.sv` | Held one/two-beat metadata/weight acquisition, including same-edge memory returns |
+| `rtl/anvil_q1_ht3_projection.sv` | Connected physical tensor, native/AWQ/full-FP32 INT8 streams, row/group scale lookup and conservative sparse replay |
+| `rtl/anvil_q1_ht3_kv.sv` | Connected code-only provisional/committed cache ownership, selected-row copies and complete response drains |
 
 The FP helper structure and add alignment follow parent prior art, with a
 distinct HT3 namespace; no reference file is modified. HT3 multiply has the
@@ -79,9 +87,10 @@ converter contains no provisional FP32 cache and no dequantization path.
 1. Independently validate the implemented arithmetic/transcendental leaves,
    standalone epilogue, tensor recurrence and dequantization; Designer has not
    run functional simulation or synthesis.
-2. Connect the physical tensor block under the actual projection as
-   `u_tensor_array`, including full-FP32 INT8 weights, AWQ narrowing, sparse
-   compatibility and source-bound 256-lane accounting.
+2. Connect the implemented projection under the actual decoder. Its
+   `u_tensor_array` already has the physical 256 lanes, full-FP32 INT8 weights,
+   AWQ narrowing and conservative sparse replay. Independent structural and
+   behavioral accounting remain pending.
 3. Build the real decoder graph using the implemented epilogue as `u_epilogue`.
    The epilogue currently uses conservative serial SIMD schedules; demonstrate
    required measured transition-cycle reduction and optimize those owned
@@ -89,8 +98,10 @@ converter contains no provisional FP32 cache and no dequantization path.
 4. Integrate the implemented `anvil_q1_ht3_flash_attn` as `u_flash_attn`, with
    its native/quantized cache adapters and image/scale ownership.
 5. Connect full-FP32 post-RoPE K and post-projection/bias V to the implemented
-   converter. Connect the implemented provisional code ownership, store
-   completeness and packed committed reads/writes. Do not retain a hidden FP32 provisional
+   converter. The new cache controller connects provisional ownership, store
+   completeness and packed committed reads/writes; connect its code stores and
+   captured image/scales to the decoder and transactional executor.
+   Do not retain a hidden FP32 provisional
    alternative or requantize during commit.
 6. Implement extension CSR/image validation and immutable captured scale
    ownership, packed weight/cache descriptor lengths, bounds/overlap checks,
@@ -101,8 +112,8 @@ converter contains no provisional FP32 cache and no dequantization path.
 8. Document the complete integrated no-stall cycle formulas before Verifier
    freezes temporal assertions. Current formulas cover implemented leaves,
    conversion, tensor packets and standalone epilogue, not the missing
-   projection/top/cache-controller schedules. Attention and packed adapters now
-   have their own complete local transaction recurrences in SPEC.
+   top/decoder schedules. Projection, queued DMA, cache controller, attention
+   and packed adapters now have their local transaction recurrences in SPEC.
 
 ## Tiled attention and code-preserving cache
 
@@ -131,11 +142,47 @@ reader extracts codes from real returned DDR bytes and retains layer/head scales
 with its request. Attention performs the actual dequantization and reports
 overflow independently of successful finite write saturation.
 
-The cache controller that selects provisional/committed reads, associates
-extension scales, commits selected branches and advances transactional prefix
-validity is not yet implemented. The new standalone cache modules therefore
-do not demonstrate integrated store-to-subsequent-attention execution. They
-are not a functional or performance acceptance result.
+The new cache controller selects provisional/committed reads and copies a
+selected complete row through the actual packed writer. It checks captured
+image/format ownership and retains supplied layer/head scales with read
+responses. It neither owns the missing extension-scale table nor advances
+transactional prefix validity. The branch/prefix executor, decoder FP32
+producer and converter-store wiring remain absent. These connected cache
+modules therefore do not demonstrate integrated store-to-subsequent-attention
+model execution and are not a functional or performance acceptance result.
+
+## Projection and DMA reservations
+
+The actual projection uses a 67-bit architectural activation bank with
+synchronous ports, 64 parallel dequantizers and `u_tensor_array`. Native
+columns preserve 16-bit encodings; AWQ retains its original unsigned
+permutation/FP16-scale/BF16 boundary. INT8 scale bytes are read from the actual
+projection subregion of the extension image in output-row/input-group order,
+with counters for row/group association and a one-beat scale cache. INT8
+results remain FP32 to the physical array. Five-stage tags track the exact
+activation/column alongside stalled dequantization.
+
+The panel supply has two low/high synchronous banks retaining 128 columns.
+It reserves complete requested beats, not merely returned beats, so pending
+DMA responses cannot overwrite unconsumed columns. Bursts are bounded to
+half the applicable capacity and TILE_BEATS; TILE_BEATS=1 may divide a native
+column into separate commands. A held bus request survives abort, all accepted
+responses drain, and a held output remains stable.
+
+The DMA arbiter queues accepted request ownership and registers each response
+with its owner and error. It can issue a next client request immediately when
+external ready and reservation credit permit, including same-edge final
+response retirement when full. It does not insert a PICK/SEND turnaround
+sequence or use a single overwritable response-length counter for multiple
+outstanding requests. This property is conditional on the eventual core/DDR
+transport supply: that transport is still missing, so no physical DMA
+turnaround, CDC, frequency or throughput result is claimed.
+
+Sparse down projection avoids a real weight read only for a genuinely zero
+activation column and a finite committed image. Nonzero threshold predictions
+replay actual weights, preserving the parent's numerical behavior and
+nonzero provenance flags. Actual byte/statistic events are retained for
+future independent matched measurements.
 
 ## Fused operator retention and phase precision
 
@@ -161,7 +208,8 @@ tag pipelines advance through input bubbles and match both arithmetic
 latencies. Forwarding supplies a completed context on its same reuse edge.
 Reduction occurs only after the last in-flight product/accumulation retires.
 This sustains the architectural one-column-per-edge admission interval, but
-actual model utilization depends on projection/DMA integration still missing.
+actual model utilization depends on decoder/top and core/DDR transport
+integration still missing.
 
 ## Planned memory and streaming contracts
 
