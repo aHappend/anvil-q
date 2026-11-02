@@ -171,9 +171,11 @@ def all_checks(ledger):
             ledger.check(f"atomic-mode{mode}-seed{seed}", run_atomic, mode, seed)
     for mode in (1, 2):
         ledger.check(f"integrated-mode{mode}", run_integrated, mode)
-        for top in ("anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):
+        for top in ("anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention",
+                    "anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):
             ledger.check(f"synthesis-{top}-mode{mode}", run_synthesis, top, mode)
-    for top in ("anvil_q3_ht2_sparse_dma", "anvil_q3_ht2_ddr_arbiter",
+    for top in ("anvil_q3_ht2_tile_batch_mac", "anvil_q3_ht2_projection",
+                "anvil_q3_ht2_sparse_dma", "anvil_q3_ht2_ddr_arbiter",
                 "anvil_q3_ht2_private_scratch"):
         ledger.check(f"synthesis-{top}", run_synthesis, top)
     for mutant in ("gqa", "sibling"):
