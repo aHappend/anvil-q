@@ -67,7 +67,8 @@ def run(probe, fixed_destination=False):
                   "controller-lowering", timeout=120)
     modules = json.loads((probe.directory / "controller.json").read_text())["modules"]
     controllers = [module for name, module in modules.items()
-                   if name.endswith("anvil_q2_fp2_controller") and not name.startswith("$abstract")]
+                   if str(module.get("attributes", {}).get("hdlname", name)).lstrip("\\") ==
+                   "anvil_q2_fp2_controller" and module.get("cells")]
     probe.compare("lowered-controller-count", 1, len(controllers), {})
     if len(controllers) != 1:
         raise AssertionError("controller selection did not elaborate exactly one concrete module")
@@ -83,10 +84,12 @@ def main():
     parser.add_argument("--fixed-destination", action="store_true")
     args = parser.parse_args()
     probe = Probe("controller-lowering", repair_of=
-                  "evidence/preparation/fp2-controller-lowering-20261102T183843Z-f735b54e/receipt.json")
+                  "evidence/preparation/fp2-controller-lowering-20261102T184512Z-8e06e803/receipt.json")
     probe.receipt["prior_probe_assessment"] = (
-        "Prior probe selected an absent unparameterized module; zero lowered processes "
-        "invalidate its completion comparison. This run asserts concrete selection and state.")
+        "The fixed-destination probe completed lowering but its checker rejected Yosys's "
+        "retained $abstract-prefixed identifier despite substantive cells. This run identifies "
+        "the exact hdlname and requires lowered state, not a name-only match. Earlier empty "
+        "selection and incorrect selection-element-count probes remain invalid and retained.")
     try:
         with SuiteDeadline():
             run(probe, args.fixed_destination)

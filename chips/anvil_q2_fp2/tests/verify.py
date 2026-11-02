@@ -29,6 +29,7 @@ import fp2_graph_probe as graph
 import fp2_mutations as mutations
 import fp2_parent_probe as parent
 import fp2_prefetch_probe as prefetch
+import fp2_protocol_probe as protocol
 import fp2_synthesis_probe as synthesis
 import fp2_telemetry_probe as telemetry
 import fp2_tensor_probe as tensor
@@ -77,6 +78,8 @@ def behavior(suite):
     run("icarus-scalar-startup", lambda p: run_scalar(p, "iverilog", compact=True))
     run("icarus-one-token", lambda p: top.run(p, "iverilog"))
     run("prefetch-ownership", prefetch.run)
+    for name, scenario, command in protocol.CASES:
+        run(name, lambda p: protocol.run(p, scenario, command))
     for bits in (1, 8, 64):
         run(f"csr-counter-width{bits}", lambda p: telemetry.run(p, bits, "iverilog"))
     for seed in SEEDS:
