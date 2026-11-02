@@ -44,9 +44,9 @@ module anvil_q2_fp2_flash_attn #(
     reg [2:0] issue_head, received_heads, head;
     reg [7:0] component;
     reg [31:0] scores [0:5], maxima [0:5], denominators [0:5];
-    (* ramstyle = "logic", nomem2reg *) reg [31:0] accumulator [0:6*D-1];
+    wire [6*32-1:0] accumulator_read;
     reg [31:0] alpha, beta, inverse;
-    reg [6*D*32-1:0] result;
+    wire [6*D*32-1:0] result;
     wire clear=flush || state==IDLE;
     assign cmd_ready=rst_n && !flush && state==IDLE;
     assign kv_ready=rst_n && !flush && state==WAIT_KV;
@@ -147,8 +147,9 @@ module anvil_q2_fp2_flash_attn #(
       beta_valid,beta_data,beta_error);
 
     wire update_issue=state==UPDATE_SEND;
+    wire [31:0] selected_accumulator=accumulator_read[head*32+:32];
     wire [31:0] old_element=(component==D) ?
-      denominators[head] : accumulator[head*D+component];
+      denominators[head] : selected_accumulator;
     wire [31:0] new_element=(component==D) ?
       32'h3f800000 : {value[16*component+:16],16'd0};
     wire old_product_valid, new_product_valid, old_product_error, new_product_error;
@@ -176,14 +177,44 @@ module anvil_q2_fp2_flash_attn #(
     wire [31:0] norm_data;
     anvil_q2_fp2_mul3 normalization_multiply(
       clk,rst_n,clear,1'b1,(state==NORM_SEND),1'b0,
-      accumulator[head*D+component],inverse,norm_valid,norm_data,norm_error);
+      selected_accumulator,inverse,norm_valid,norm_data,norm_error);
     reg [7:0] norm_component [0:2];
+    wire update_store=update_valid && (state==UPDATE_SEND || state==UPDATE_DRAIN);
+    wire norm_store=norm_valid && (state==NORM_SEND || state==NORM_DRAIN);
+    genvar bank, slot;
+    for (bank=0;bank<6;bank=bank+1) begin: head_banks
+      wire [D*32-1:0] numerator;
+      wire initialize_head=state==HEAD_START && expected_kv==0 && head==bank;
+      wire update_head=update_store && head==bank;
+      wire normalize_head=norm_store && head==bank;
+      assign accumulator_read[bank*32+:32]=numerator[component*32+:32];
+      for (slot=0;slot<D;slot=slot+1) begin: components
+        reg [31:0] accumulator, normalized;
+        assign numerator[slot*32+:32]=accumulator;
+        assign result[(bank*D+slot)*32+:32]=normalized;
+        // First-key initialization owns every word before any numerator read.
+        always @(posedge clk or negedge rst_n) begin
+          if (rst_n && !flush) begin
+            if (initialize_head) accumulator<={value[16*slot+:16],16'd0};
+            else if (update_head && update_component[6]==slot)
+              accumulator<=update_data;
+          end
+        end
+        always @(posedge clk or negedge rst_n) begin
+          if (!rst_n) normalized<=0;
+          else if (flush) normalized<=0;
+          else if (cmd_valid && cmd_ready) normalized<=0;
+          else if (normalize_head && norm_component[2]==slot)
+            normalized<=norm_data;
+        end
+      end
+    end
     integer i;
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
         state<=IDLE; failed<=0; last_key<=0; tag<=0; position<=0; expected_kv<=0;
         queries<=0; key<=0; value<=0; issue_head<=0; received_heads<=0; head<=0;
-        component<=0; alpha<=0; beta<=0; inverse<=0; result<=0;
+        component<=0; alpha<=0; beta<=0; inverse<=0;
         for (i=0;i<34;i=i+1) score_head[i]<=0;
         for (i=0;i<7;i=i+1) update_component[i]<=0;
         for (i=0;i<3;i=i+1) norm_component[i]<=0;
@@ -191,7 +222,7 @@ module anvil_q2_fp2_flash_attn #(
           scores[i]<=0; maxima[i]<=0; denominators[i]<=0;
         end
       end else if (flush) begin
-        state<=IDLE; failed<=0; result<=0;
+        state<=IDLE; failed<=0;
       end else begin
         score_head[0]<=issue_head;
         for (i=1;i<34;i=i+1) score_head[i]<=score_head[i-1];
@@ -204,10 +235,9 @@ module anvil_q2_fp2_flash_attn #(
           if (update_component[6]==D) begin
             denominators[head]<=update_data;
             state<=HEAD_NEXT;
-          end else accumulator[head*D+update_component[6]]<=update_data;
+          end
         end
         if (norm_valid && (state==NORM_SEND || state==NORM_DRAIN)) begin
-          result[(head*D+norm_component[2])*32+:32]<=norm_data;
           if (norm_error) failed<=1;
           if (norm_component[2]==D-1) begin
             if (head==5) state<=RESULT;
@@ -217,7 +247,7 @@ module anvil_q2_fp2_flash_attn #(
         case (state)
           IDLE: if (cmd_valid && cmd_ready) begin
             tag<=cmd_tag; position<=cmd_pos; expected_kv<=0; queries<=cmd_query;
-            result<=0; failed<=0;
+            failed<=0;
             if (cmd_len==0 || cmd_pos>=MAX_SEQ_LEN ||
                 cmd_len!=cmd_pos+32'd1 || (|query_error)) begin
               failed<=1; state<=RESULT;
@@ -246,7 +276,6 @@ module anvil_q2_fp2_flash_attn #(
             if (expected_kv==0) begin
               maxima[head]<=scores[head];
               denominators[head]<=32'h3f800000;
-              for (i=0;i<D;i=i+1) accumulator[head*D+i]<={value[16*i+:16],16'd0};
               state<=HEAD_NEXT;
             end else begin
               maxima[head]<=new_maximum;

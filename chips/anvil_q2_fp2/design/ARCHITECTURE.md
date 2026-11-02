@@ -251,6 +251,17 @@ additional element of that same update stream. Six heads are updated
 independently. Only the final causal token triggers reciprocal normalization.
 Tag, complete output vector and error are retained until output acceptance.
 
+Numerator and normalized-output storage has six fixed head banks, each with
+HEAD_DIM independently enabled FP32 words. Every write destination is an
+elaboration-time constant: first-key initialization writes all words of the
+selected head in parallel, and later update/normalization results enable only
+their pipelined component's word. Reads select a component within each bank
+and then select the head. This avoids HEAD_DIM variable-address initialization
+ports and a full-vector variable output write without changing storage capacity,
+arithmetic order or cycle schedule. Numerator words remain unreset behind
+first-key write-before-read ownership; normalized words clear on reset, flush
+and command acceptance, and hold through output stalls.
+
 Command length must equal position+1. Index progression and the last marker
 are checked at every KV transfer, including length one; invalid scale,
 nonfinite operand, memory error and malformed metadata yield failed
