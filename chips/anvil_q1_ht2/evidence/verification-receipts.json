@@ -866,13 +866,13 @@
       ]
     },
     "check:benchmark-workload-contract": {
-      "attempt_id": 2450,
-      "duration_s": 1713.1892665359192,
-      "stdout_preview": "progress: compile running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\n{\"status\": \"passed\", \"receipt\": \"evidence/benchmark-contract-20261102T111615Z-e832ac09/receipt.json\"}\n",
+      "attempt_id": 2617,
+      "duration_s": 1682.2993425179739,
+      "stdout_preview": "progress: compile running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\n{\"status\": \"passed\", \"receipt\": \"evidence/benchmark-contract-20261102T161752Z-0e57e01b/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/receipt.json",
+          "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -906,408 +906,408 @@
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-1-dense_reference-d6a62ad0/bridge-9e2334a8/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-dense_reference-e05d447c/bridge-e623da40/receipt.json",
                 "name": "bf16/facts-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-1-dense_reference-d6a62ad0/response.json",
-                  "sha256": "83fd1ce3af64473aebb6dd980c7989136f348535dbc737d10b957b0bcae8f67e"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-dense_reference-e05d447c/response.json",
+                  "sha256": "d07245bfa37f96bbb0363f395b15306a6da4a8d852c73cfde43456976f9879de"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-1-ht2_speculative_sparse-01b79876/bridge-1df70904/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-ht2_speculative_sparse-bee62f9d/bridge-6437b845/receipt.json",
                 "name": "bf16/facts-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-1-ht2_speculative_sparse-01b79876/response.json",
-                  "sha256": "a3a3fd1956a6616cd3935b5bdb0d3a777970887d936e38ce7b8490ffbd7dcf1e"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-ht2_speculative_sparse-bee62f9d/response.json",
+                  "sha256": "ac38ea758b63b5d32fe685f6b15b335f669a61457a4b32dfb1293de0be9dfddb"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-2-dense_reference-3832f9a6/bridge-17e485ce/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-dense_reference-2832f53a/bridge-56d5253e/receipt.json",
                 "name": "bf16/facts-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-2-dense_reference-3832f9a6/response.json",
-                  "sha256": "31e64db6fd316b790adf57e67116b1a271e5731ef60c856e399a110245a0b4aa"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-dense_reference-2832f53a/response.json",
+                  "sha256": "56b464979233276bf79a94203b217dd874fe1bb0fe66a17daf901139359c4f29"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-2-ht2_speculative_sparse-9d48be56/bridge-561ec1d4/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-ht2_speculative_sparse-8daa0ac6/bridge-c98792ab/receipt.json",
                 "name": "bf16/facts-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-facts-2-ht2_speculative_sparse-9d48be56/response.json",
-                  "sha256": "66e74e801d806d0d982822220134ea35f8509194815b8db52d4656a7914d5b92"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-ht2_speculative_sparse-8daa0ac6/response.json",
+                  "sha256": "e5a328d803c546773e8ff40433cc509f82e57c4e7a4e4c043a88eb49efe1ab1b"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-1-dense_reference-5488b933/bridge-6cc32dc6/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-dense_reference-72c4afa1/bridge-e80d2ed0/receipt.json",
                 "name": "bf16/math-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-1-dense_reference-5488b933/response.json",
-                  "sha256": "a3dad55eb21dfd570477d7293b8e8306a4164bddf714bff99e6de53a66630e0f"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-dense_reference-72c4afa1/response.json",
+                  "sha256": "5a2c62a7b71a83254ceddc2c42afd719fe399fc645a95c54e2387f79d452aec1"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-1-ht2_speculative_sparse-1583a8b9/bridge-83769f34/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-ht2_speculative_sparse-607f5d37/bridge-467c6171/receipt.json",
                 "name": "bf16/math-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-1-ht2_speculative_sparse-1583a8b9/response.json",
-                  "sha256": "d827bfe0160bcc626e1e3ca7ffc1eed7f6385700a58b5562731c46e508eeca01"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-ht2_speculative_sparse-607f5d37/response.json",
+                  "sha256": "c4f4c7edb4c5f8dfb072558e1bbc9c17a70741b18accfda7bc1222876bb10ef9"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-2-dense_reference-5da82120/bridge-efc1288a/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-dense_reference-1227c31f/bridge-443ba552/receipt.json",
                 "name": "bf16/math-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-2-dense_reference-5da82120/response.json",
-                  "sha256": "ecbeef35363e97298249aa2ed53749658a4525f809463f57f8c59847dfe22ba7"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-dense_reference-1227c31f/response.json",
+                  "sha256": "94262264bdc9fff0a21f536443c50bf79d088cf25b51e7617c144eb38fa749c5"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-2-ht2_speculative_sparse-068f8551/bridge-b76f4d22/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-ht2_speculative_sparse-2103f6c3/bridge-cd23b0e4/receipt.json",
                 "name": "bf16/math-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-math-2-ht2_speculative_sparse-068f8551/response.json",
-                  "sha256": "5bb23795e691bd7dc823834764955a9c9604f1ac263b2feee4733b4e3a482b59"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-ht2_speculative_sparse-2103f6c3/response.json",
+                  "sha256": "1f99256889032e5167a98997369b686bad83281d5fe3e0ac57daf6495a1255b0"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-1-dense_reference-beff19a5/bridge-68aac6ff/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-dense_reference-95639856/bridge-b1ff8bfb/receipt.json",
                 "name": "bf16/code-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-1-dense_reference-beff19a5/response.json",
-                  "sha256": "ee58c28590541b56c3d73488ff5c446f534102ac89268b6b9a9355c9a37cbc22"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-dense_reference-95639856/response.json",
+                  "sha256": "39f7c632587c828eda70053726d32882717f94e2addb5b2dc9ef9e6c11fee0d5"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-1-ht2_speculative_sparse-5afd4f8f/bridge-c05f0466/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-ht2_speculative_sparse-b34d84d0/bridge-3b0b445a/receipt.json",
                 "name": "bf16/code-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-1-ht2_speculative_sparse-5afd4f8f/response.json",
-                  "sha256": "3b54062a45f91f59957957436f0a72647f27e2a83d7f321f5a336e7d3d38bd74"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-ht2_speculative_sparse-b34d84d0/response.json",
+                  "sha256": "13b2c60fce746d8252c6f79a1992489e7d87744742101b01418136aba6162a3c"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-2-dense_reference-2b31a3bd/bridge-8981c1c8/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-dense_reference-3dd99637/bridge-1892976e/receipt.json",
                 "name": "bf16/code-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-2-dense_reference-2b31a3bd/response.json",
-                  "sha256": "328669e3bbf00c8421ff37cd7c27fad81b0606f551950a48c061d071eb5feb7b"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-dense_reference-3dd99637/response.json",
+                  "sha256": "e73bf27ed20549891d4e71517071333f37ae09653c702ff57338fb3ef17732ee"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-2-ht2_speculative_sparse-3206e67e/bridge-b4bdad86/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-ht2_speculative_sparse-18168d17/bridge-c9613840/receipt.json",
                 "name": "bf16/code-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-code-2-ht2_speculative_sparse-3206e67e/response.json",
-                  "sha256": "7bfe52cbd3a61a0377d452bd96ed74b2cf379bdbb1b11e3c995b63f35139ef05"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-ht2_speculative_sparse-18168d17/response.json",
+                  "sha256": "ee392e6b4bbee54038c9302ad579b744cf1064ad03ccf8f1b8ec58e8927125c0"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-1-dense_reference-6484753a/bridge-ec3af0c7/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-dense_reference-a8396e41/bridge-1d3c4ccc/receipt.json",
                 "name": "bf16/multilingual-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-1-dense_reference-6484753a/response.json",
-                  "sha256": "0b28750201fdfa7650d60d4a18f8cdc29f5bce7d7c12fcee30c484e696fdc198"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-dense_reference-a8396e41/response.json",
+                  "sha256": "c6d36bfa9b297aada21a0d82d92f8dc2a4c1d0d0038278f658950a3065e7ebb6"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-1-ht2_speculative_sparse-2a39733e/bridge-1a39b20d/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-ht2_speculative_sparse-7428f6f7/bridge-cd1e8aa3/receipt.json",
                 "name": "bf16/multilingual-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-1-ht2_speculative_sparse-2a39733e/response.json",
-                  "sha256": "03c586a7a54e5ce2f0cd834a027bb3e6d10ab50dc8d31bf1ec2f43da17f9aef0"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-ht2_speculative_sparse-7428f6f7/response.json",
+                  "sha256": "711e6193329f86afa9b2e273aa04bc2de046260ee9f62164f7d64b3a388e6015"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-2-dense_reference-5ad30429/bridge-c234fdc6/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-dense_reference-55f1a29a/bridge-6ae59985/receipt.json",
                 "name": "bf16/multilingual-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-2-dense_reference-5ad30429/response.json",
-                  "sha256": "127e645a061ff278730ebde1a1aec8f43347253871448c842d56d920ec4b9dc7"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-dense_reference-55f1a29a/response.json",
+                  "sha256": "2d3cdbfef4ad4c203eebecb64af6da2a3abf1707d8facd0a8f2ca441293c8b6a"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-2-ht2_speculative_sparse-c08d5df4/bridge-b344555a/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-ht2_speculative_sparse-edce8f68/bridge-49c93298/receipt.json",
                 "name": "bf16/multilingual-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-multilingual-2-ht2_speculative_sparse-c08d5df4/response.json",
-                  "sha256": "e1717ca2205fb3cb2332d5b8f14023cad9bf355e230e7b2085304fda9def7585"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-ht2_speculative_sparse-edce8f68/response.json",
+                  "sha256": "ad121a18d7e700709a7efc07ec65791b6dfc5648f03726dd11109d9baef44734"
                 },
                 "tokens": 5
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-1-dense_reference-65e1ec16/bridge-5a9c7959/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-dense_reference-c25eb300/bridge-eb3b8d6d/receipt.json",
                 "name": "bf16/retrieval-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-1-dense_reference-65e1ec16/response.json",
-                  "sha256": "8d386ddb62aaf418fd30920d48765b1ffbab185b003ad3f86e4086508ffd22bd"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-dense_reference-c25eb300/response.json",
+                  "sha256": "a23d6380bd4f1c7109fb874b76355593610a9498edbe3109c1a5c05c9c04b1b0"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-1-ht2_speculative_sparse-88b8ed59/bridge-03ae7cd4/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-ht2_speculative_sparse-bfe6fb7a/bridge-35047c6f/receipt.json",
                 "name": "bf16/retrieval-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-1-ht2_speculative_sparse-88b8ed59/response.json",
-                  "sha256": "66deef90b89953d83ae8babcaf413868e9f7ae34025f234f438bdfe6c8f10bc9"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-ht2_speculative_sparse-bfe6fb7a/response.json",
+                  "sha256": "0c86a21be204aa38b10ec3d230f3bf1399e668453fddba8d2959bfdca4f5f577"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-2-dense_reference-540fd66e/bridge-5f677fb5/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-dense_reference-58d55fc8/bridge-ed1fb43d/receipt.json",
                 "name": "bf16/retrieval-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-2-dense_reference-540fd66e/response.json",
-                  "sha256": "de14f459d274affbad5d3a2d2edd8b0b36c210a5bf8e1f93f472b14eeb6c73af"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-dense_reference-58d55fc8/response.json",
+                  "sha256": "c2293297c9f99e8fc86217df618bb2fa7c2a8856aad12c2b8c9fa2c9974b9575"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-2-ht2_speculative_sparse-32f1a5dd/bridge-53681d0a/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-ht2_speculative_sparse-56a3d980/bridge-59ccad19/receipt.json",
                 "name": "bf16/retrieval-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/bf16-retrieval-2-ht2_speculative_sparse-32f1a5dd/response.json",
-                  "sha256": "97dad7ae0b032609b8988e052254eb69398bda14dc392ce53ede7d8795963e4d"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-ht2_speculative_sparse-56a3d980/response.json",
+                  "sha256": "2bee1b33a763e4cc4e165c3c06550ae9077ae80c05ae3eee62750a47954d846c"
                 },
                 "tokens": 5
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-1-dense_reference-fcbde50d/bridge-756bbfbe/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-dense_reference-3b96b9a8/bridge-b27743b6/receipt.json",
                 "name": "w4/facts-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-1-dense_reference-fcbde50d/response.json",
-                  "sha256": "e61afcbec9bcb3a0416e2d233f919b31caa4ebef01784647ceed4f7cd53f496d"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-dense_reference-3b96b9a8/response.json",
+                  "sha256": "6f584f4cd089c309f8b0bfc9e13b8068159752a2aaee69b0fc3ce9db3dadfa01"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-1-ht2_speculative_sparse-e9714573/bridge-f3838b79/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-ht2_speculative_sparse-470d9c9d/bridge-76564b57/receipt.json",
                 "name": "w4/facts-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-1-ht2_speculative_sparse-e9714573/response.json",
-                  "sha256": "530f7d96435aa77a4c0dab7dde18fbebf6762d6f0f1a6a612edd96ba04c38a0d"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-ht2_speculative_sparse-470d9c9d/response.json",
+                  "sha256": "74531495cc013888b9b227b2fa6ae90d9f8e3b8de68553d019da27e9f38b4f8d"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-2-dense_reference-75b62cf7/bridge-66fb6bcc/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-dense_reference-53becb10/bridge-8bcb2298/receipt.json",
                 "name": "w4/facts-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-2-dense_reference-75b62cf7/response.json",
-                  "sha256": "68849edf10f1cfd6393485729a2f30d65c0b2c1ec7e0251bae8de1a21f698dbd"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-dense_reference-53becb10/response.json",
+                  "sha256": "766ef114c6f026cdb4922fafa064619bc217776d1c6c282aeb9b57831636566c"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-2-ht2_speculative_sparse-0b8159e0/bridge-22dc57e6/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-ht2_speculative_sparse-34caf958/bridge-91e89722/receipt.json",
                 "name": "w4/facts-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-facts-2-ht2_speculative_sparse-0b8159e0/response.json",
-                  "sha256": "93018391866b8fd59400dbf88fd9969934f2c19a99726edc79686e5d5aeb3512"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-ht2_speculative_sparse-34caf958/response.json",
+                  "sha256": "a63dc0680cd4aae85ef1d5dc00ff2aaa543b05c4344937f03eab3b9fef59d5e3"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-1-dense_reference-0ac1946b/bridge-093f976f/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-dense_reference-92e79436/bridge-86274f42/receipt.json",
                 "name": "w4/math-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-1-dense_reference-0ac1946b/response.json",
-                  "sha256": "53776e1f6ff4115d7457d58ada7c0f307b1f11963aad7e21f8f08ba29b881ef8"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-dense_reference-92e79436/response.json",
+                  "sha256": "0030dfa60b79b361d21f7734129f3b45d2fb5dc065cd0de675f013e321fd72d0"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-1-ht2_speculative_sparse-3230701a/bridge-e5fd2cea/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-ht2_speculative_sparse-0cf87dcd/bridge-f8fb2f6d/receipt.json",
                 "name": "w4/math-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-1-ht2_speculative_sparse-3230701a/response.json",
-                  "sha256": "4d9b4e0307c6b589015d308b949164441c6d2217fd51aaca088a02a4527d15ea"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-ht2_speculative_sparse-0cf87dcd/response.json",
+                  "sha256": "0b1b7fb72105e3c92739afcd96ca51a9bee6bb209827ed6dc901950d85e7227a"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-2-dense_reference-3241541b/bridge-e1c64635/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-dense_reference-091ede96/bridge-c334f0db/receipt.json",
                 "name": "w4/math-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-2-dense_reference-3241541b/response.json",
-                  "sha256": "e32bf3676683e8d7847881c7fc9c9c303db1593cf6849c8adf098035cefbf318"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-dense_reference-091ede96/response.json",
+                  "sha256": "ce99de1f7f5d9adea4ff25f3c2ef42776a8bfba3687defcc86f2becd77d2dc7a"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-2-ht2_speculative_sparse-32e04664/bridge-2a9f8e08/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-ht2_speculative_sparse-0544833a/bridge-e3dfed46/receipt.json",
                 "name": "w4/math-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-math-2-ht2_speculative_sparse-32e04664/response.json",
-                  "sha256": "063c4f0dba08c4519b88d277309765ef290d47f1b75b00d303f8d792c39e219e"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-ht2_speculative_sparse-0544833a/response.json",
+                  "sha256": "64056c6920fb74975710a85c8111acbc97889b09a441f2005a3c01470e6a385d"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-1-dense_reference-1c5d2de5/bridge-2d0ace7a/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-dense_reference-3912004d/bridge-0a13d6cd/receipt.json",
                 "name": "w4/code-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-1-dense_reference-1c5d2de5/response.json",
-                  "sha256": "d7aa2e125c087786f52773dba87f1ca70f7e5fb6cf1f9a5e7e36856444ccce85"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-dense_reference-3912004d/response.json",
+                  "sha256": "976fe24aed66f27b2cea44a6cfcc746f980ffd10be62f4b164003d197449f98f"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-1-ht2_speculative_sparse-c4c7d08e/bridge-a74be6d5/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-ht2_speculative_sparse-b5578cc7/bridge-60fb2dba/receipt.json",
                 "name": "w4/code-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-1-ht2_speculative_sparse-c4c7d08e/response.json",
-                  "sha256": "475f15893cd84382da44730f34ead31f42cffb09275d06e72861458b789c1f41"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-ht2_speculative_sparse-b5578cc7/response.json",
+                  "sha256": "381417f06258c796c4c9a85801011a24c4d5ddba1e8eb14ffa4a1ee3fefe006a"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-2-dense_reference-8fa763aa/bridge-5c7d2a93/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-dense_reference-8c1f2e27/bridge-0715e14d/receipt.json",
                 "name": "w4/code-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-2-dense_reference-8fa763aa/response.json",
-                  "sha256": "32012b7c4a760f2703c63a7b127e583e4635998f3d11bbc88bb7a8ee0efcea8d"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-dense_reference-8c1f2e27/response.json",
+                  "sha256": "802540937c948b6e49becff34c603e389b169c38fefe12a8a8016c8c3640386d"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-2-ht2_speculative_sparse-7f4cc771/bridge-26a6e9eb/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-ht2_speculative_sparse-a6bdcc8e/bridge-b7b5a4c1/receipt.json",
                 "name": "w4/code-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-code-2-ht2_speculative_sparse-7f4cc771/response.json",
-                  "sha256": "c0eee63f18249058e4a65285d9c715f68723b627999d4ab67c27e39600ef3c5e"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-ht2_speculative_sparse-a6bdcc8e/response.json",
+                  "sha256": "d0d21e601b4efd29ecdaf2d17f724dbd958a9d9b6b3d854e487f262734366c66"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-1-dense_reference-4d7112b4/bridge-a0e3338c/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-dense_reference-59c0db5b/bridge-35c22183/receipt.json",
                 "name": "w4/multilingual-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-1-dense_reference-4d7112b4/response.json",
-                  "sha256": "f4c0d39e20d76b5fbe3d0109ef5ae2144269efeb7f72d998d19ed1ccc4121a2b"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-dense_reference-59c0db5b/response.json",
+                  "sha256": "1a0c1c7424b7b49c6a6bec2c5f0e910b4656c3007c140b55e5e933b910df8535"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-1-ht2_speculative_sparse-9560d8d7/bridge-af148897/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-ht2_speculative_sparse-9fb3f1f7/bridge-f69c5679/receipt.json",
                 "name": "w4/multilingual-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-1-ht2_speculative_sparse-9560d8d7/response.json",
-                  "sha256": "a13128246e1714a383414c57d8a4aaf5b84abe4caf92aa9779dbf6c40dc365e5"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-ht2_speculative_sparse-9fb3f1f7/response.json",
+                  "sha256": "5204e9de311ba41aa53cf9f7c7a88149d5834ad2af6ae01fd9bbe514ab618fdc"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-2-dense_reference-758d251e/bridge-94a1fbf1/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-dense_reference-7c9952f0/bridge-a2f966be/receipt.json",
                 "name": "w4/multilingual-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-2-dense_reference-758d251e/response.json",
-                  "sha256": "d6ade551f66a048804602f5204f92ec39e7c41cd0095005be8cdf5b5d393da28"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-dense_reference-7c9952f0/response.json",
+                  "sha256": "ce6cf8aa61e1b9f0b760b0573569c3152c124be30453b132efb0bbef250151a7"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-2-ht2_speculative_sparse-c83ff4eb/bridge-f09b8fac/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-ht2_speculative_sparse-00325eca/bridge-a62427f5/receipt.json",
                 "name": "w4/multilingual-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-multilingual-2-ht2_speculative_sparse-c83ff4eb/response.json",
-                  "sha256": "f5a966d606f2dba92996c9cb79070c3264bb8d3298769edfa8af24d3f3bc7e0f"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-ht2_speculative_sparse-00325eca/response.json",
+                  "sha256": "4f7ecdf47377d3f703f271abc90c0b4c276e7758f85991f50e9abd467c4c428a"
                 },
                 "tokens": 5
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-1-dense_reference-ecb3f898/bridge-6996ac76/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-dense_reference-c4c1d6c4/bridge-e31f503c/receipt.json",
                 "name": "w4/retrieval-1/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-1-dense_reference-ecb3f898/response.json",
-                  "sha256": "fe7c50ea947f28514110a380c1ed5df3c273d96d848cfeebda89dc9fb08d8c14"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-dense_reference-c4c1d6c4/response.json",
+                  "sha256": "086569efb32491111ca5015a11656a1e61ce402802df1894adc0b21a96b5a6d8"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-1-ht2_speculative_sparse-31479df6/bridge-54a270f4/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-ht2_speculative_sparse-0a581026/bridge-e2c46bb6/receipt.json",
                 "name": "w4/retrieval-1/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-1-ht2_speculative_sparse-31479df6/response.json",
-                  "sha256": "2f6e2030ab188a9b6307606c5e13eab57b40d2e8ba8953aca42d89f25fcd9631"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-ht2_speculative_sparse-0a581026/response.json",
+                  "sha256": "5e2b7cb3c37206c94fe831b3f1243dfac20499a5cae516afef1983080d5c21e6"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-2-dense_reference-5504ea89/bridge-c17eae6a/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-dense_reference-c50d65c9/bridge-7493c0b0/receipt.json",
                 "name": "w4/retrieval-2/dense_reference",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-2-dense_reference-5504ea89/response.json",
-                  "sha256": "294c3a284eaff7a8d9174cdf675ed4979476c4cf58982e34a5700fd5402b1c69"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-dense_reference-c50d65c9/response.json",
+                  "sha256": "d5084051e4d4956b3d8889c34606b41f2255c8a96fd51da966781897c1aeb83b"
                 },
                 "tokens": 4
               },
               {
                 "integration_only": true,
-                "launch_receipt": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-2-ht2_speculative_sparse-f68cbb18/bridge-15272aba/receipt.json",
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-ht2_speculative_sparse-a62eec16/bridge-70e222a9/receipt.json",
                 "name": "w4/retrieval-2/ht2_speculative_sparse",
                 "response": {
-                  "path": "evidence/benchmark-contract-20261102T111615Z-e832ac09/w4-retrieval-2-ht2_speculative_sparse-f68cbb18/response.json",
-                  "sha256": "e94cc2e7c3e5558e4340862335dac936a4e5467c987b4f32928c936e8f31c2ce"
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-ht2_speculative_sparse-a62eec16/response.json",
+                  "sha256": "4158e4720c328862caa02ee6cb8c310e68a00557e589e7b43bd8a9152f3bd77f"
                 },
                 "tokens": 5
               }
             ],
             "cwd": ".",
-            "duration_s": 1712.9508209822234,
-            "end_time": "2026-11-02T11:44:48.232170+00:00",
+            "duration_s": 1682.0623973710462,
+            "end_time": "2026-11-02T16:45:54.953347+00:00",
             "exit_code": 0,
             "preparation": false,
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -1415,7 +1415,7 @@
               "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
               "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
               "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
-              "tests/benchmark_checks.py": "33810eafec3f63c454abd4703ed86814c33327d354d284ee908383249dfce63f",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
               "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
               "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
               "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
@@ -1436,7 +1436,7 @@
               "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
             },
             "source_unchanged": true,
-            "start_time": "2026-11-02T11:16:15.281344+00:00",
+            "start_time": "2026-11-02T16:17:52.890945+00:00",
             "status": "passed",
             "stderr": "stderr.txt",
             "stdout": "stdout.txt",
@@ -1449,13 +1449,13 @@
       ]
     },
     "check:clean-directory-reproduction": {
-      "attempt_id": 2451,
-      "duration_s": 377.054436187027,
-      "stdout_preview": "progress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/reproduction-20261102T114459Z-e8823336/receipt.json\"}\n",
+      "attempt_id": 2618,
+      "duration_s": 377.04902421310544,
+      "stdout_preview": "progress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/reproduction-20261102T164605Z-f9e52373/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/reproduction-20261102T114459Z-e8823336/receipt.json",
+          "path": "evidence/reproduction-20261102T164605Z-f9e52373/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -1470,19 +1470,19 @@
                 "runs": [
                   {
                     "name": "clean-behavior",
-                    "receipt": "evidence/reproduction-20261102T114459Z-e8823336/clean-behavior-e29633fd/receipt.json"
+                    "receipt": "evidence/reproduction-20261102T164605Z-f9e52373/clean-behavior-68a565e7/receipt.json"
                   },
                   {
                     "name": "clean-synthesis",
-                    "receipt": "evidence/reproduction-20261102T114459Z-e8823336/clean-synthesis-6fe6521d/receipt.json"
+                    "receipt": "evidence/reproduction-20261102T164605Z-f9e52373/clean-synthesis-be4bef87/receipt.json"
                   }
                 ],
                 "scope": "compact portable L1; external official hardware and comparator prerequisites remain required for full-model reproduction"
               }
             ],
             "cwd": ".",
-            "duration_s": 376.84309639711864,
-            "end_time": "2026-11-02T11:51:16.313096+00:00",
+            "duration_s": 376.81301219877787,
+            "end_time": "2026-11-02T16:52:21.930901+00:00",
             "exit_code": 0,
             "preparation": false,
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -1590,7 +1590,7 @@
               "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
               "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
               "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
-              "tests/benchmark_checks.py": "33810eafec3f63c454abd4703ed86814c33327d354d284ee908383249dfce63f",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
               "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
               "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
               "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
@@ -1611,7 +1611,7 @@
               "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
             },
             "source_unchanged": true,
-            "start_time": "2026-11-02T11:44:59.469998+00:00",
+            "start_time": "2026-11-02T16:46:05.117883+00:00",
             "status": "passed",
             "stderr": "stderr.txt",
             "stdout": "stdout.txt",
