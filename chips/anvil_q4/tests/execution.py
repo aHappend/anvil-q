@@ -65,8 +65,8 @@ class Experiment:
 
     def map(self, function, items, workers=2):
         """Run independent cases with bounded concurrency and ordered results."""
-        if workers not in (1, 2):
-            raise ValueError("case concurrency must be one or two")
+        if workers not in (1, 2, 3):
+            raise ValueError("case concurrency must be one, two or three")
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = [executor.submit(function, item) for item in items]
             try:

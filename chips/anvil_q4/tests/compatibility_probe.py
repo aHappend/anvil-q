@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--case", type=int, nargs="+")
     parser.add_argument("--repair-of", action="append", default=[])
     parser.add_argument("--frontend-normalization", action="store_true")
-    parser.add_argument("--workers", type=int, choices=(1, 2), default=2)
+    parser.add_argument("--workers", type=int, choices=(1, 2, 3), default=3)
     args = parser.parse_args()
     experiment = Experiment("compatibility", args.preparation, args.repair_of)
     error = None
