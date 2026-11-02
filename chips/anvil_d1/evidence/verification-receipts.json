@@ -1690,6 +1690,2443 @@
           }
         }
       ]
+    },
+    "check:compatibility": {
+      "attempt_id": 17,
+      "duration_s": 1166.477882429026,
+      "stdout_preview": "uest_stalls\": 22178, \"reset\": 5, \"tokens\": 8, \"write_bytes\": 7488, \"writes\": 1872}\nPROGRESS simulation elapsed_s=30\nCHECK domain-symbolic-logic-d1 {\"comparisons\": 14, \"cycles\": 2377915, \"domain\": 3, \"expert_bytes\": 268800, \"logit_stalls\": 256, \"logits\": 64, \"read_bytes\": 506528, \"reads\": 126632, \"reasoning_tokens\": 6, \"request_stalls\": 21196, \"reset\": 5, \"tokens\": 8, \"write_bytes\": 24992, \"writes\": 6248}\nPROGRESS simulation elapsed_s=30\nCHECK domain-symbolic-logic-dense {\"comparisons\": 14, \"cycles\": 1671108, \"domain\": 3, \"expert_bytes\": 0, \"logit_stalls\": 256, \"logits\": 64, \"read_bytes\": 159872, \"reads\": 39968, \"reasoning_tokens\": 6, \"request_stalls\": 22200, \"reset\": 5, \"tokens\": 8, \"write_bytes\": 7488, \"writes\": 1872}\nPROGRESS simulation elapsed_s=30\nCHECK domain-mixed-reasoning-d1 {\"comparisons\": 14, \"cycles\": 2377705, \"domain\": 4, \"expert_bytes\": 268800, \"logit_stalls\": 256, \"logits\": 64, \"read_bytes\": 506528, \"reads\": 126632, \"reasoning_tokens\": 6, \"request_stalls\": 21158, \"reset\": 5, \"tokens\": 8, \"write_bytes\": 24992, \"writes\": 6248}\nPROGRESS simulation elapsed_s=30\nCHECK domain-mixed-reasoning-dense {\"comparisons\": 14, \"cycles\": 1671318, \"domain\": 4, \"expert_bytes\": 0, \"logit_stalls\": 256, \"logits\": 64, \"read_bytes\": 159872, \"reads\": 39968, \"reasoning_tokens\": 6, \"request_stalls\": 22080, \"reset\": 5, \"tokens\": 8, \"write_bytes\": 7488, \"writes\": 1872}\nPROGRESS compile elapsed_s=30\nSUITE compatibility passed evidence/compatibility-20261102T195006Z-6d73d2a515da/receipt.json\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/compatibility-20261102T195006Z-6d73d2a515da/receipt.json",
+          "data": {
+            "kind": "L1 verification",
+            "start_time": "2026-11-02T19:50:06.888046+00:00",
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "compatibility"
+            ],
+            "cwd": ".",
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "timeout_s": 2699.9995140330866,
+            "source_sha256": {
+              "anvil_q3_reference/rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+              "anvil_q3_reference/rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+              "anvil_q3_reference/rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+              "anvil_q3_reference/rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+              "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+              "anvil_q3_reference/rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+              "anvil_q3_reference/rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+              "anvil_q3_reference/rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+              "anvil_q3_reference/rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+              "anvil_q3_reference/rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+              "anvil_q3_reference/rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+              "anvil_q3_reference/rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+              "anvil_q3_reference/rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+              "anvil_q3_reference/rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+              "anvil_q3_reference/rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+              "anvil_q3_reference/rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+              "anvil_q3_reference/rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+              "anvil_q3_reference/rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+              "anvil_q3_reference/rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+              "anvil_q3_reference/rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+              "anvil_q3_reference/rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+              "anvil_q3_reference/rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+              "anvil_q3_reference/rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+              "anvil_q3_reference/rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+              "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+              "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+              "design/ARCHITECTURE.md": "9ef114a21b4ff124607fbda64c3ff934c647e5808da3d14b5e08ee68a3314ea9",
+              "design/SPEC.md": "82ffa5a6a55518b26872235a77c74c46d66278de3626421474364e1e7b731422",
+              "rtl/anvil_d1_absorption.sv": "180caeba6fe9138d32c36f97a7b6a529561594923e7940c699bd97a9375d5129",
+              "rtl/anvil_d1_accumulator.sv": "e22c9f41f9eb5bed316517549acf81a9342218785b09e950e511412cb81e7013",
+              "rtl/anvil_d1_add128.sv": "119ea43776111b2f372dc7a1714d97342b0ae686b730dc42d6d2777ae9165228",
+              "rtl/anvil_d1_bank_scheduler.sv": "88d0cb55fc6d24a99745314d36c562b5a8db9bb800ee1e7ac8df4a0f34d68e11",
+              "rtl/anvil_d1_counter64.sv": "23a28f9bea2f7ecf2b5ae536cbe3720e98424af0435287151cdbf27216aee939",
+              "rtl/anvil_d1_csr_perf.sv": "54dac94094fe97c1bba031c2bcad77f48b13cf9376d59e3ce9a4a3fda4a57810",
+              "rtl/anvil_d1_decoder_layer.sv": "2683f2c8e454f675e2ca75abfd7d10b63ff07d6bd9ef862da9277db40c202afd",
+              "rtl/anvil_d1_exp.sv": "59a6f2cd88af34ed76f793505202f20f5eb3409dda48a25c51d3123271c21d17",
+              "rtl/anvil_d1_expert.sv": "34b188138081dea03fa078b774c0878a2bc5d96f65701525a64489ef05e7de16",
+              "rtl/anvil_d1_isqrt.sv": "513d9ef6c0f1deef80a7ef102728cff7c2099df07ea902fb6bc10527998081b0",
+              "rtl/anvil_d1_mem_mux.sv": "04f174456f860540190e4564e28de09d119b7fccdc87d7f95345423fc6b26bd0",
+              "rtl/anvil_d1_mem_port.sv": "89d0894d98b30f3262f284db02e1c83c90419795debbaaed15d653a5a49cfbc9",
+              "rtl/anvil_d1_mla_engine.sv": "8a3352b2fbed9c6f93a4424b23ffa3cabb80d60664441a509f8ad86ea6d07507",
+              "rtl/anvil_d1_moe_router_dma.sv": "147911c0f17be6ee6c77259799fa288d61e9e0f356c01f66251b5710093f5acd",
+              "rtl/anvil_d1_mul32.sv": "28f7ee63cdaacca0b9f8a4dad2ab0cbb69bd9ab5d4b7410d8aafd8f6a74e1be9",
+              "rtl/anvil_d1_mul96x32.sv": "4c9523caa4ce92f96f22409dff3b4d03c7341b50cfc24fdc02cd3093cc9093e7",
+              "rtl/anvil_d1_parameters.sv": "6cdffd2024644c5505123489271b8f1a9b1d1bb88ee81114ab628ac4142237ed",
+              "rtl/anvil_d1_rmsnorm.sv": "bb46643c28d31773e5a0a7d9d651080b75321c88035511da4cc24b67b6447a82",
+              "rtl/anvil_d1_rope.sv": "037e96ced0ce06071bc5d711ba4bb0e6351c55c7afcb96537293d623780b6929",
+              "rtl/anvil_d1_round_sat.sv": "a3780a5758bc6b1ceef23c384c0570cf4fd74dec3a88b9bf793e374861255b17",
+              "rtl/anvil_d1_sdiv.sv": "65c33964303dc6280c5dc0db7065b8c30ea1f988d70653eac6e7f893630b2ce4",
+              "rtl/anvil_d1_silu.sv": "29b914f16765016608dcf5346990a34afd26a756968b83a91fc3bbe1253aad2a",
+              "rtl/anvil_d1_sub_unsigned.sv": "01cae90fce53f662f15780f6954780bb17cd3e5ba94ba8f434507d3e23e54b22",
+              "rtl/anvil_d1_tensor.sv": "67fdf2d94f3f9768d02f63c7fb1b9a65cc0ed46eb5c1275bc48e177740a43d39",
+              "rtl/anvil_d1_token_io.sv": "411a34bba9a80eda1da7e306c1032af64ef86852f5cdfb555d21b79ef9c30569",
+              "rtl/anvil_d1_top.sv": "f331cd032dbef476dbf1af08b5ee81edf853e0d6e24db3587a3ff2f9e75c1cf5",
+              "rtl/anvil_d1_udiv.sv": "ca404a9a9febef0688ad5b69f9753eb366cc569a92dadd57aabe3b0302cd7f14",
+              "tests/counter.py": "8300ae781e77a4759dd92a0155d4e35e37f17b6be97ad82531017f2913764805",
+              "tests/csr.py": "4cf5a1a17383f562c0dce63143bc5cd0c65b69f376277054f87489e9afea6183",
+              "tests/defects.py": "13dfab3fdeff8c44842cb27659390a2993380a56e3532271dab26749f2576298",
+              "tests/diagnostic.py": "e13aac9e9099961c4fdc29268f8309587b364a9679a5d5a976431b0529702c5d",
+              "tests/elaboration.py": "705dd074c00044342220989cb559c0671fc2a984aa32d17c9725f92b111cdb71",
+              "tests/evidence.py": "71210345376cef03ce722ef2eec2d17d90cb3cdec18be5e22e27d009788cd1ea",
+              "tests/faults.py": "d2163eede40c3778b6e040854746f018c73eda0012a6c21e726380f96bfffc53",
+              "tests/floating.py": "8ed1b9d14e6e557af3dd3b15f03277b928462e09f97717b33e073fc8053cd695",
+              "tests/frontend.py": "49033ed27cf2b8526ac820ac4b37edf7aff5ca034769c27496f2796bdc06915a",
+              "tests/inference.py": "f835cc577ccecc50cb0a633c06fe4ffb0c26c778d890dde4c6a99d1555716869",
+              "tests/legacy.py": "755886ddb77aba1e8b35843931f082be7da2023d1187e79c1d389e37c5d557cf",
+              "tests/mla.py": "4547fd3fd926fad5050265a63d7068bb57ca5723c0253ae8f2a9320f21120448",
+              "tests/numerical.py": "2e510697988adaede8ded478a938516f6e70b5f437325edb7629d04393a1d490",
+              "tests/reference.py": "3bd6e83b886975a69adf9e33851c19fefd46a5616d2c407a0d616bc6174b8a34",
+              "tests/rms.py": "5df5adcd07f6421d7cb71039cd6f69d690aee21403ea822dc6ea343ece0419fb",
+              "tests/router.py": "7e637e3b9a3cf2844f1081f48e4e12e0e829c363a8d4a060b1d7e7229941ec2b",
+              "tests/scheduler.py": "04b34e9c15f0c19c54c151c92f5bc1d77cf2af6a200f0f922f88073dbb6105ce",
+              "tests/structure.py": "3d78cd0870efb9291d511b3f033613d950bc2c8291022f54710e94857279ae85",
+              "tests/verify.py": "1883f0ab62f76ca35d347d8424233ce8c464a5bdc0772d56b2c8f83c5a4ad745",
+              "tests/wide_mla.py": "3960722f8ed28f8adf983087fe6efc4719e2984a1679b338b46340b6dc11bc7d"
+            },
+            "children": [],
+            "repair_of": null,
+            "end_time": "2026-11-02T20:09:33.089024+00:00",
+            "status": "passed",
+            "summary": {
+              "runs": [
+                {
+                  "case": "legacy-profile1-cache0-asym0",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile1-cache0-asym0-20261102T195006Z-60f61e589129/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 882988,
+                    "tokens": 4,
+                    "writes": 1056,
+                    "reads": 24352,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 13185,
+                    "logit_stalls": 128,
+                    "read_bytes": 97408,
+                    "write_bytes": 4224,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 1,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 8,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -142149,
+                        29499,
+                        20262,
+                        -226584,
+                        8346,
+                        -44392,
+                        -259411,
+                        -31620
+                      ],
+                      [
+                        10754,
+                        -69141,
+                        30877,
+                        252253,
+                        -28557,
+                        -73671,
+                        -156171,
+                        32966
+                      ],
+                      [
+                        -177388,
+                        -109529,
+                        -79953,
+                        -49040,
+                        279240,
+                        -67044,
+                        22972,
+                        -202001
+                      ],
+                      [
+                        -263932,
+                        -187951,
+                        -173732,
+                        71510,
+                        103221,
+                        185009,
+                        226571,
+                        -221376
+                      ]
+                    ],
+                    "expected_write_comparisons": 1056,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-profile2-cache0-asym0",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile2-cache0-asym0-20261102T195055Z-8a00fd7c0715/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 882988,
+                    "tokens": 4,
+                    "writes": 1056,
+                    "reads": 24352,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 13185,
+                    "logit_stalls": 128,
+                    "read_bytes": 97408,
+                    "write_bytes": 4224,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 2,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 8,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -142149,
+                        29499,
+                        20262,
+                        -226584,
+                        8346,
+                        -44392,
+                        -259411,
+                        -31620
+                      ],
+                      [
+                        10754,
+                        -69141,
+                        30877,
+                        252253,
+                        -28557,
+                        -73671,
+                        -156171,
+                        32966
+                      ],
+                      [
+                        -177388,
+                        -109529,
+                        -79953,
+                        -49040,
+                        279240,
+                        -67044,
+                        22972,
+                        -202001
+                      ],
+                      [
+                        -263932,
+                        -187951,
+                        -173732,
+                        71510,
+                        103221,
+                        185009,
+                        226571,
+                        -221376
+                      ]
+                    ],
+                    "expected_write_comparisons": 1056,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-profile2-cache1-asym0",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile2-cache1-asym0-20261102T195144Z-8cd28d4f3a89/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 906613,
+                    "tokens": 4,
+                    "writes": 1056,
+                    "reads": 25952,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 13672,
+                    "logit_stalls": 128,
+                    "read_bytes": 103808,
+                    "write_bytes": 4224,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 2,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 8,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 1,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -141992,
+                        29761,
+                        21024,
+                        -226120,
+                        8864,
+                        -43939,
+                        -259886,
+                        -31646
+                      ],
+                      [
+                        10691,
+                        -69047,
+                        30861,
+                        252143,
+                        -27982,
+                        -73194,
+                        -155951,
+                        32740
+                      ],
+                      [
+                        -177536,
+                        -109800,
+                        -79895,
+                        -48262,
+                        279979,
+                        -66772,
+                        23555,
+                        -202479
+                      ],
+                      [
+                        -264283,
+                        -188117,
+                        -173872,
+                        71488,
+                        103103,
+                        185054,
+                        227104,
+                        -220585
+                      ]
+                    ],
+                    "expected_write_comparisons": 1056,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-profile3-cache0-asym0",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile3-cache0-asym0-20261102T195234Z-da23c375cdb4/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 835493,
+                    "tokens": 4,
+                    "writes": 936,
+                    "reads": 19984,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 11019,
+                    "logit_stalls": 128,
+                    "read_bytes": 79936,
+                    "write_bytes": 3744,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        129937,
+                        39997,
+                        103506,
+                        141219,
+                        130576,
+                        -37015,
+                        60768,
+                        -106588
+                      ],
+                      [
+                        11541,
+                        -52681,
+                        3461,
+                        192217,
+                        76262,
+                        -19505,
+                        77061,
+                        -97039
+                      ],
+                      [
+                        37840,
+                        -7601,
+                        30330,
+                        166515,
+                        176297,
+                        -26776,
+                        110906,
+                        -151868
+                      ],
+                      [
+                        75949,
+                        6586,
+                        28143,
+                        66465,
+                        -2476,
+                        38502,
+                        -13297,
+                        -84847
+                      ]
+                    ],
+                    "expected_write_comparisons": 936,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-profile3-cache1-asym0",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile3-cache1-asym0-20261102T195323Z-9c72f1c253ff/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 914978,
+                    "tokens": 4,
+                    "writes": 992,
+                    "reads": 25104,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 12007,
+                    "logit_stalls": 128,
+                    "read_bytes": 100416,
+                    "write_bytes": 3968,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 1,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        130164,
+                        39899,
+                        103433,
+                        141106,
+                        130097,
+                        -37114,
+                        60345,
+                        -106347
+                      ],
+                      [
+                        11559,
+                        -52727,
+                        3579,
+                        192159,
+                        76065,
+                        -19493,
+                        76686,
+                        -96943
+                      ],
+                      [
+                        37902,
+                        -7568,
+                        30445,
+                        166579,
+                        176365,
+                        -26809,
+                        110938,
+                        -151876
+                      ],
+                      [
+                        75787,
+                        6588,
+                        27941,
+                        66958,
+                        -2006,
+                        38470,
+                        -12778,
+                        -85279
+                      ]
+                    ],
+                    "expected_write_comparisons": 992,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-profile3-cache2-asym0",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile3-cache2-asym0-20261102T195415Z-bf758611cbdb/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 935313,
+                    "tokens": 4,
+                    "writes": 992,
+                    "reads": 25104,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 11916,
+                    "logit_stalls": 128,
+                    "read_bytes": 100416,
+                    "write_bytes": 3968,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 2,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        126203,
+                        39891,
+                        91159,
+                        147100,
+                        139744,
+                        -37898,
+                        79291,
+                        -115053
+                      ],
+                      [
+                        12853,
+                        -52206,
+                        -374,
+                        195954,
+                        81129,
+                        -21522,
+                        83610,
+                        -99829
+                      ],
+                      [
+                        44627,
+                        -5848,
+                        27365,
+                        168910,
+                        177007,
+                        -30289,
+                        116967,
+                        -152727
+                      ],
+                      [
+                        73424,
+                        5661,
+                        16930,
+                        83708,
+                        9869,
+                        33678,
+                        4276,
+                        -96782
+                      ]
+                    ],
+                    "expected_write_comparisons": 992,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-profile3-cache2-asym1",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-profile3-cache2-asym1-20261102T195507Z-f469d9443396/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 935418,
+                    "tokens": 4,
+                    "writes": 992,
+                    "reads": 25104,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 11934,
+                    "logit_stalls": 128,
+                    "read_bytes": 100416,
+                    "write_bytes": 3968,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 2,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 1,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        134918,
+                        38777,
+                        107607,
+                        136881,
+                        119902,
+                        -38082,
+                        47169,
+                        -99536
+                      ],
+                      [
+                        12785,
+                        -54704,
+                        4227,
+                        190269,
+                        69156,
+                        -20109,
+                        69703,
+                        -92714
+                      ],
+                      [
+                        35532,
+                        -9443,
+                        34718,
+                        165064,
+                        174345,
+                        -25762,
+                        103555,
+                        -148821
+                      ],
+                      [
+                        77131,
+                        7979,
+                        33275,
+                        58206,
+                        -7024,
+                        41217,
+                        -19375,
+                        -79773
+                      ]
+                    ],
+                    "expected_write_comparisons": 992,
+                    "domain": null,
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "legacy-fault-cancel-differential",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/legacy-fault-cancel-differential-20261102T195558Z-011dd6e56fb1/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "experiment": 11,
+                    "completed": 20,
+                    "fault_experiments": 12,
+                    "successful_restarts": 13,
+                    "error_completions": 10,
+                    "cancellation_completions": 6,
+                    "checked_writes": 3444,
+                    "reads": 68744,
+                    "owned_cancel_targets": 3,
+                    "logit_cancel_targets": 1,
+                    "injected_faults": 4,
+                    "held_drain_cycles": 39,
+                    "cycles": 2082998
+                  },
+                  "fixture": {
+                    "experiments": 12,
+                    "required_successful_sequences": 13,
+                    "compared_write_prefixes": true,
+                    "oracle_seed": 17,
+                    "legacy": [
+                      3,
+                      0,
+                      0
+                    ],
+                    "targets": "dense weight prefetch/cache/weight prefetch"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-math-d1",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-math-d1-20261102T195725Z-aa34175173b6/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 0,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 2377635,
+                    "writes": 6248,
+                    "reads": 126632,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 21144,
+                    "logit_stalls": 256,
+                    "read_bytes": 506528,
+                    "write_bytes": 24992,
+                    "expert_bytes": 268800
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        33933,
+                        323987,
+                        -81247,
+                        -160124,
+                        -113530,
+                        -82886,
+                        459213,
+                        -65986
+                      ],
+                      [
+                        -79820,
+                        -90212,
+                        407490,
+                        189425,
+                        -96166,
+                        -211250,
+                        -291141,
+                        62935
+                      ],
+                      [
+                        -49811,
+                        -216550,
+                        277535,
+                        416096,
+                        -157321,
+                        -233859,
+                        -318869,
+                        -40097
+                      ],
+                      [
+                        88255,
+                        -66385,
+                        181447,
+                        -118284,
+                        -2028,
+                        -154645,
+                        -208899,
+                        178969
+                      ],
+                      [
+                        33933,
+                        323987,
+                        -81247,
+                        -160124,
+                        -113530,
+                        -82886,
+                        459213,
+                        -65986
+                      ],
+                      [
+                        -79820,
+                        -90212,
+                        407490,
+                        189425,
+                        -96166,
+                        -211250,
+                        -291141,
+                        62935
+                      ],
+                      [
+                        -49811,
+                        -216550,
+                        277535,
+                        416096,
+                        -157321,
+                        -233859,
+                        -318869,
+                        -40097
+                      ],
+                      [
+                        88255,
+                        -66385,
+                        181447,
+                        -118284,
+                        -2028,
+                        -154645,
+                        -208899,
+                        178969
+                      ]
+                    ],
+                    "expected_write_comparisons": 6248,
+                    "domain": "math",
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-math-dense",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-math-dense-20261102T195820Z-f5eb2292c507/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 0,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 1671248,
+                    "writes": 1872,
+                    "reads": 39968,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 22048,
+                    "logit_stalls": 256,
+                    "read_bytes": 159872,
+                    "write_bytes": 7488,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        -310718,
+                        -154350,
+                        18315,
+                        123793,
+                        74108,
+                        95732,
+                        94513,
+                        22379
+                      ],
+                      [
+                        186969,
+                        35378,
+                        190413,
+                        63668,
+                        -8926,
+                        -42724,
+                        -121085,
+                        -616
+                      ],
+                      [
+                        -55508,
+                        -84844,
+                        17115,
+                        189564,
+                        34889,
+                        755,
+                        23195,
+                        -69931
+                      ],
+                      [
+                        78241,
+                        -49586,
+                        13709,
+                        39258,
+                        -135737,
+                        -52170,
+                        -42539,
+                        108748
+                      ],
+                      [
+                        -310718,
+                        -154350,
+                        18315,
+                        123793,
+                        74108,
+                        95732,
+                        94513,
+                        22379
+                      ],
+                      [
+                        186969,
+                        35378,
+                        190413,
+                        63668,
+                        -8926,
+                        -42724,
+                        -121085,
+                        -616
+                      ],
+                      [
+                        -55508,
+                        -84844,
+                        17115,
+                        189564,
+                        34889,
+                        755,
+                        23195,
+                        -69931
+                      ],
+                      [
+                        78241,
+                        -49586,
+                        13709,
+                        39258,
+                        -135737,
+                        -52170,
+                        -42539,
+                        108748
+                      ]
+                    ],
+                    "expected_write_comparisons": 1872,
+                    "domain": "math",
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-coding-d1",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-coding-d1-20261102T195938Z-1469374d62fd/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 1,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 2377775,
+                    "writes": 6248,
+                    "reads": 126632,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 21118,
+                    "logit_stalls": 256,
+                    "read_bytes": 506528,
+                    "write_bytes": 24992,
+                    "expert_bytes": 268800
+                  },
+                  "fixture": {
+                    "seed": 18,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        44095,
+                        174781,
+                        209744,
+                        -37456,
+                        54463,
+                        -85103,
+                        447490,
+                        -9333
+                      ],
+                      [
+                        -46670,
+                        78412,
+                        198682,
+                        -144565,
+                        179122,
+                        -23343,
+                        194382,
+                        14876
+                      ],
+                      [
+                        261151,
+                        130325,
+                        99845,
+                        559874,
+                        31860,
+                        34892,
+                        -173249,
+                        -60448
+                      ],
+                      [
+                        148250,
+                        261770,
+                        -50591,
+                        -231095,
+                        204566,
+                        144046,
+                        -58483,
+                        294388
+                      ],
+                      [
+                        44095,
+                        174781,
+                        209744,
+                        -37456,
+                        54463,
+                        -85103,
+                        447490,
+                        -9333
+                      ],
+                      [
+                        -46670,
+                        78412,
+                        198682,
+                        -144565,
+                        179122,
+                        -23343,
+                        194382,
+                        14876
+                      ],
+                      [
+                        261151,
+                        130325,
+                        99845,
+                        559874,
+                        31860,
+                        34892,
+                        -173249,
+                        -60448
+                      ],
+                      [
+                        148250,
+                        261770,
+                        -50591,
+                        -231095,
+                        204566,
+                        144046,
+                        -58483,
+                        294388
+                      ]
+                    ],
+                    "expected_write_comparisons": 6248,
+                    "domain": "coding",
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-coding-dense",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-coding-dense-20261102T200036Z-014ec978a27d/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 1,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 1671108,
+                    "writes": 1872,
+                    "reads": 39968,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 22198,
+                    "logit_stalls": 256,
+                    "read_bytes": 159872,
+                    "write_bytes": 7488,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 18,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        -42835,
+                        1590,
+                        26708,
+                        53811,
+                        28730,
+                        40297,
+                        189288,
+                        93889
+                      ],
+                      [
+                        -99925,
+                        38749,
+                        170306,
+                        118121,
+                        -94070,
+                        -55811,
+                        -58164,
+                        -113943
+                      ],
+                      [
+                        -204092,
+                        141359,
+                        118491,
+                        266400,
+                        -6780,
+                        -215995,
+                        -132489,
+                        -111668
+                      ],
+                      [
+                        -105121,
+                        94283,
+                        -133778,
+                        22309,
+                        14252,
+                        -221278,
+                        99932,
+                        284920
+                      ],
+                      [
+                        -42835,
+                        1590,
+                        26708,
+                        53811,
+                        28730,
+                        40297,
+                        189288,
+                        93889
+                      ],
+                      [
+                        -99925,
+                        38749,
+                        170306,
+                        118121,
+                        -94070,
+                        -55811,
+                        -58164,
+                        -113943
+                      ],
+                      [
+                        -204092,
+                        141359,
+                        118491,
+                        266400,
+                        -6780,
+                        -215995,
+                        -132489,
+                        -111668
+                      ],
+                      [
+                        -105121,
+                        94283,
+                        -133778,
+                        22309,
+                        14252,
+                        -221278,
+                        99932,
+                        284920
+                      ]
+                    ],
+                    "expected_write_comparisons": 1872,
+                    "domain": "coding",
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-science-d1",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-science-d1-20261102T200152Z-b98814173b7a/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 2,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 2377635,
+                    "writes": 6248,
+                    "reads": 126632,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 21140,
+                    "logit_stalls": 256,
+                    "read_bytes": 506528,
+                    "write_bytes": 24992,
+                    "expert_bytes": 268800
+                  },
+                  "fixture": {
+                    "seed": 19,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        -260850,
+                        -168039,
+                        -254391,
+                        11639,
+                        240394,
+                        164223,
+                        560787,
+                        -112444
+                      ],
+                      [
+                        -248960,
+                        -40984,
+                        558260,
+                        7736,
+                        14166,
+                        343631,
+                        -111204,
+                        56172
+                      ],
+                      [
+                        -227899,
+                        -275212,
+                        38663,
+                        677183,
+                        247579,
+                        211002,
+                        195139,
+                        -61220
+                      ],
+                      [
+                        5850,
+                        -503896,
+                        22654,
+                        143535,
+                        -236052,
+                        -273109,
+                        15994,
+                        452855
+                      ],
+                      [
+                        -260850,
+                        -168039,
+                        -254391,
+                        11639,
+                        240394,
+                        164223,
+                        560787,
+                        -112444
+                      ],
+                      [
+                        -248960,
+                        -40984,
+                        558260,
+                        7736,
+                        14166,
+                        343631,
+                        -111204,
+                        56172
+                      ],
+                      [
+                        -227899,
+                        -275212,
+                        38663,
+                        677183,
+                        247579,
+                        211002,
+                        195139,
+                        -61220
+                      ],
+                      [
+                        5850,
+                        -503896,
+                        22654,
+                        143535,
+                        -236052,
+                        -273109,
+                        15994,
+                        452855
+                      ]
+                    ],
+                    "expected_write_comparisons": 6248,
+                    "domain": "science",
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-science-dense",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-science-dense-20261102T200247Z-a01255bd0cec/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 2,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 1671038,
+                    "writes": 1872,
+                    "reads": 39968,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 22178,
+                    "logit_stalls": 256,
+                    "read_bytes": 159872,
+                    "write_bytes": 7488,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 19,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        266539,
+                        197109,
+                        -106223,
+                        86944,
+                        98711,
+                        112394,
+                        110766,
+                        -28841
+                      ],
+                      [
+                        277704,
+                        214734,
+                        93884,
+                        -2423,
+                        129257,
+                        146122,
+                        -46082,
+                        -111386
+                      ],
+                      [
+                        205796,
+                        -28779,
+                        -141572,
+                        308501,
+                        124148,
+                        44433,
+                        15512,
+                        -308024
+                      ],
+                      [
+                        133629,
+                        107759,
+                        -117789,
+                        -49909,
+                        -78009,
+                        201924,
+                        -157529,
+                        274835
+                      ],
+                      [
+                        266539,
+                        197109,
+                        -106223,
+                        86944,
+                        98711,
+                        112394,
+                        110766,
+                        -28841
+                      ],
+                      [
+                        277704,
+                        214734,
+                        93884,
+                        -2423,
+                        129257,
+                        146122,
+                        -46082,
+                        -111386
+                      ],
+                      [
+                        205796,
+                        -28779,
+                        -141572,
+                        308501,
+                        124148,
+                        44433,
+                        15512,
+                        -308024
+                      ],
+                      [
+                        133629,
+                        107759,
+                        -117789,
+                        -49909,
+                        -78009,
+                        201924,
+                        -157529,
+                        274835
+                      ]
+                    ],
+                    "expected_write_comparisons": 1872,
+                    "domain": "science",
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-symbolic-logic-d1",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-symbolic-logic-d1-20261102T200359Z-36764c39c8d1/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 3,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 2377915,
+                    "writes": 6248,
+                    "reads": 126632,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 21196,
+                    "logit_stalls": 256,
+                    "read_bytes": 506528,
+                    "write_bytes": 24992,
+                    "expert_bytes": 268800
+                  },
+                  "fixture": {
+                    "seed": 20,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        -120192,
+                        53053,
+                        -51718,
+                        -71643,
+                        -108528,
+                        -253029,
+                        121818,
+                        -194030
+                      ],
+                      [
+                        -53844,
+                        -75014,
+                        262988,
+                        -176362,
+                        190954,
+                        -106468,
+                        -45395,
+                        -268606
+                      ],
+                      [
+                        63119,
+                        259932,
+                        -166061,
+                        231480,
+                        -337652,
+                        129701,
+                        61247,
+                        92864
+                      ],
+                      [
+                        -45196,
+                        81286,
+                        -152672,
+                        140880,
+                        -258121,
+                        206657,
+                        -15048,
+                        407772
+                      ],
+                      [
+                        -120192,
+                        53053,
+                        -51718,
+                        -71643,
+                        -108528,
+                        -253029,
+                        121818,
+                        -194030
+                      ],
+                      [
+                        -53844,
+                        -75014,
+                        262988,
+                        -176362,
+                        190954,
+                        -106468,
+                        -45395,
+                        -268606
+                      ],
+                      [
+                        63119,
+                        259932,
+                        -166061,
+                        231480,
+                        -337652,
+                        129701,
+                        61247,
+                        92864
+                      ],
+                      [
+                        -45196,
+                        81286,
+                        -152672,
+                        140880,
+                        -258121,
+                        206657,
+                        -15048,
+                        407772
+                      ]
+                    ],
+                    "expected_write_comparisons": 6248,
+                    "domain": "symbolic-logic",
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-symbolic-logic-dense",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-symbolic-logic-dense-20261102T200501Z-b5e88bd90972/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 3,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 1671108,
+                    "writes": 1872,
+                    "reads": 39968,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 22200,
+                    "logit_stalls": 256,
+                    "read_bytes": 159872,
+                    "write_bytes": 7488,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 20,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        -56805,
+                        -96507,
+                        34703,
+                        -180506,
+                        -33711,
+                        -136828,
+                        204633,
+                        32673
+                      ],
+                      [
+                        186305,
+                        -38315,
+                        432070,
+                        -284625,
+                        -206827,
+                        -84324,
+                        -292535,
+                        -102326
+                      ],
+                      [
+                        -262175,
+                        -162277,
+                        -38488,
+                        331808,
+                        -47007,
+                        45808,
+                        31207,
+                        249794
+                      ],
+                      [
+                        -141226,
+                        -215621,
+                        86378,
+                        208999,
+                        -35232,
+                        7601,
+                        -17087,
+                        494760
+                      ],
+                      [
+                        -56805,
+                        -96507,
+                        34703,
+                        -180506,
+                        -33711,
+                        -136828,
+                        204633,
+                        32673
+                      ],
+                      [
+                        186305,
+                        -38315,
+                        432070,
+                        -284625,
+                        -206827,
+                        -84324,
+                        -292535,
+                        -102326
+                      ],
+                      [
+                        -262175,
+                        -162277,
+                        -38488,
+                        331808,
+                        -47007,
+                        45808,
+                        31207,
+                        249794
+                      ],
+                      [
+                        -141226,
+                        -215621,
+                        86378,
+                        208999,
+                        -35232,
+                        7601,
+                        -17087,
+                        494760
+                      ]
+                    ],
+                    "expected_write_comparisons": 1872,
+                    "domain": "symbolic-logic",
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-mixed-reasoning-d1",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-mixed-reasoning-d1-20261102T200619Z-a6b876f312e7/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 4,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 2377705,
+                    "writes": 6248,
+                    "reads": 126632,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 21158,
+                    "logit_stalls": 256,
+                    "read_bytes": 506528,
+                    "write_bytes": 24992,
+                    "expert_bytes": 268800
+                  },
+                  "fixture": {
+                    "seed": 21,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        181158,
+                        -109473,
+                        25638,
+                        -183040,
+                        206414,
+                        196562,
+                        404583,
+                        171686
+                      ],
+                      [
+                        81404,
+                        143540,
+                        443099,
+                        -123409,
+                        12367,
+                        -133117,
+                        -85966,
+                        -36227
+                      ],
+                      [
+                        -43109,
+                        181783,
+                        191371,
+                        458147,
+                        174747,
+                        -15328,
+                        -178041,
+                        -47029
+                      ],
+                      [
+                        44791,
+                        -388638,
+                        -44951,
+                        -214243,
+                        80611,
+                        -13283,
+                        -179120,
+                        529390
+                      ],
+                      [
+                        181158,
+                        -109473,
+                        25638,
+                        -183040,
+                        206414,
+                        196562,
+                        404583,
+                        171686
+                      ],
+                      [
+                        81404,
+                        143540,
+                        443099,
+                        -123409,
+                        12367,
+                        -133117,
+                        -85966,
+                        -36227
+                      ],
+                      [
+                        -43109,
+                        181783,
+                        191371,
+                        458147,
+                        174747,
+                        -15328,
+                        -178041,
+                        -47029
+                      ],
+                      [
+                        44791,
+                        -388638,
+                        -44951,
+                        -214243,
+                        80611,
+                        -13283,
+                        -179120,
+                        529390
+                      ]
+                    ],
+                    "expected_write_comparisons": 6248,
+                    "domain": "mixed-reasoning",
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "domain-mixed-reasoning-dense",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/domain-mixed-reasoning-dense-20261102T200719Z-b783d9203fd0/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "domain": 4,
+                    "tokens": 8,
+                    "reasoning_tokens": 6,
+                    "comparisons": 14,
+                    "cycles": 1671318,
+                    "writes": 1872,
+                    "reads": 39968,
+                    "logits": 64,
+                    "reset": 5,
+                    "request_stalls": 22080,
+                    "logit_stalls": 256,
+                    "read_bytes": 159872,
+                    "write_bytes": 7488,
+                    "expert_bytes": 0
+                  },
+                  "fixture": {
+                    "seed": 21,
+                    "parameters": {
+                      "MODEL_MODE": 1,
+                      "PROFILE": 3,
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 8,
+                      "NUM_KV_HEADS": 1,
+                      "HEAD_DIM": 2,
+                      "GROUP_SIZE": 8,
+                      "AWQ_BITS": 4,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "CACHE_MODE": 0,
+                      "CACHE_BLOCK": 2,
+                      "INT4_ASYM": 0,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      6,
+                      2,
+                      3,
+                      7
+                    ],
+                    "sequences": 2,
+                    "expected_logits": [
+                      [
+                        -74003,
+                        3706,
+                        -153020,
+                        17295,
+                        222009,
+                        -155761,
+                        81385,
+                        -98430
+                      ],
+                      [
+                        -21064,
+                        -146091,
+                        489385,
+                        159383,
+                        15193,
+                        102276,
+                        -110249,
+                        -139247
+                      ],
+                      [
+                        -98690,
+                        21863,
+                        234583,
+                        342441,
+                        105554,
+                        -22756,
+                        -130709,
+                        -137966
+                      ],
+                      [
+                        -4329,
+                        64956,
+                        -26033,
+                        173160,
+                        153957,
+                        53709,
+                        15226,
+                        236745
+                      ],
+                      [
+                        -74003,
+                        3706,
+                        -153020,
+                        17295,
+                        222009,
+                        -155761,
+                        81385,
+                        -98430
+                      ],
+                      [
+                        -21064,
+                        -146091,
+                        489385,
+                        159383,
+                        15193,
+                        102276,
+                        -110249,
+                        -139247
+                      ],
+                      [
+                        -98690,
+                        21863,
+                        234583,
+                        342441,
+                        105554,
+                        -22756,
+                        -130709,
+                        -137966
+                      ],
+                      [
+                        -4329,
+                        64956,
+                        -26033,
+                        173160,
+                        153957,
+                        53709,
+                        15226,
+                        236745
+                      ]
+                    ],
+                    "expected_write_comparisons": 1872,
+                    "domain": "mixed-reasoning",
+                    "architecture": "dense FP16/AWQ GQA",
+                    "numerical_model": "legacy.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "frontend-semantic-differential",
+                  "status": "passed",
+                  "receipt": "evidence/compatibility-20261102T195006Z-6d73d2a515da/frontend-semantic-differential-20261102T200837Z-7d342d486dec/receipt.json",
+                  "actual": {
+                    "cycles": 935418,
+                    "tokens": 4,
+                    "writes": 992,
+                    "reads": 25104,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 11934,
+                    "logit_stalls": 128,
+                    "read_bytes": 100416,
+                    "write_bytes": 3968,
+                    "expert_bytes": 0
+                  }
+                }
+              ],
+              "legacy_configurations": 7,
+              "domains": 5,
+              "sequences_per_architecture_per_domain": 2
+            }
+          }
+        }
+      ]
+    },
+    "check:defects": {
+      "attempt_id": 18,
+      "duration_s": 234.50091270403937,
+      "stdout_preview": "PROGRESS compile elapsed_s=30\nDEFECT_DETECTED absorption_head NUMERICAL_WRITE_MISMATCH\nDEFECT_DETECTED missing_rotary_score MLA_NUMERICAL_WRITE_MISMATCH\nDEFECT_DETECTED topk_cutoff_tie ROUTER_WRONG_WINNER\nDEFECT_DETECTED dropped_shared ROUTER_NUMERICAL_WRITE_MISMATCH\nDEFECT_DETECTED stale_prefetch_consumption ROUTER_NUMERICAL_WRITE_MISMATCH\nDEFECT_DETECTED telemetry_increment CSR_POST_EDGE_MISMATCH\nPROGRESS compile elapsed_s=30\nDEFECT_DETECTED negative_half_rounding NUMERICAL_round\nSUITE defects passed evidence/defects-20261102T200937Z-9cc19d5cfe14/receipt.json\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/defects-20261102T200937Z-9cc19d5cfe14/receipt.json",
+          "data": {
+            "kind": "L1 verification",
+            "start_time": "2026-11-02T20:09:37.053562+00:00",
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "defects"
+            ],
+            "cwd": ".",
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "timeout_s": 2699.9995012190193,
+            "source_sha256": {
+              "anvil_q3_reference/rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+              "anvil_q3_reference/rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+              "anvil_q3_reference/rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+              "anvil_q3_reference/rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+              "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+              "anvil_q3_reference/rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+              "anvil_q3_reference/rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+              "anvil_q3_reference/rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+              "anvil_q3_reference/rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+              "anvil_q3_reference/rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+              "anvil_q3_reference/rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+              "anvil_q3_reference/rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+              "anvil_q3_reference/rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+              "anvil_q3_reference/rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+              "anvil_q3_reference/rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+              "anvil_q3_reference/rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+              "anvil_q3_reference/rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+              "anvil_q3_reference/rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+              "anvil_q3_reference/rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+              "anvil_q3_reference/rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+              "anvil_q3_reference/rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+              "anvil_q3_reference/rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+              "anvil_q3_reference/rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+              "anvil_q3_reference/rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+              "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+              "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+              "design/ARCHITECTURE.md": "9ef114a21b4ff124607fbda64c3ff934c647e5808da3d14b5e08ee68a3314ea9",
+              "design/SPEC.md": "82ffa5a6a55518b26872235a77c74c46d66278de3626421474364e1e7b731422",
+              "rtl/anvil_d1_absorption.sv": "180caeba6fe9138d32c36f97a7b6a529561594923e7940c699bd97a9375d5129",
+              "rtl/anvil_d1_accumulator.sv": "e22c9f41f9eb5bed316517549acf81a9342218785b09e950e511412cb81e7013",
+              "rtl/anvil_d1_add128.sv": "119ea43776111b2f372dc7a1714d97342b0ae686b730dc42d6d2777ae9165228",
+              "rtl/anvil_d1_bank_scheduler.sv": "88d0cb55fc6d24a99745314d36c562b5a8db9bb800ee1e7ac8df4a0f34d68e11",
+              "rtl/anvil_d1_counter64.sv": "23a28f9bea2f7ecf2b5ae536cbe3720e98424af0435287151cdbf27216aee939",
+              "rtl/anvil_d1_csr_perf.sv": "54dac94094fe97c1bba031c2bcad77f48b13cf9376d59e3ce9a4a3fda4a57810",
+              "rtl/anvil_d1_decoder_layer.sv": "2683f2c8e454f675e2ca75abfd7d10b63ff07d6bd9ef862da9277db40c202afd",
+              "rtl/anvil_d1_exp.sv": "59a6f2cd88af34ed76f793505202f20f5eb3409dda48a25c51d3123271c21d17",
+              "rtl/anvil_d1_expert.sv": "34b188138081dea03fa078b774c0878a2bc5d96f65701525a64489ef05e7de16",
+              "rtl/anvil_d1_isqrt.sv": "513d9ef6c0f1deef80a7ef102728cff7c2099df07ea902fb6bc10527998081b0",
+              "rtl/anvil_d1_mem_mux.sv": "04f174456f860540190e4564e28de09d119b7fccdc87d7f95345423fc6b26bd0",
+              "rtl/anvil_d1_mem_port.sv": "89d0894d98b30f3262f284db02e1c83c90419795debbaaed15d653a5a49cfbc9",
+              "rtl/anvil_d1_mla_engine.sv": "8a3352b2fbed9c6f93a4424b23ffa3cabb80d60664441a509f8ad86ea6d07507",
+              "rtl/anvil_d1_moe_router_dma.sv": "147911c0f17be6ee6c77259799fa288d61e9e0f356c01f66251b5710093f5acd",
+              "rtl/anvil_d1_mul32.sv": "28f7ee63cdaacca0b9f8a4dad2ab0cbb69bd9ab5d4b7410d8aafd8f6a74e1be9",
+              "rtl/anvil_d1_mul96x32.sv": "4c9523caa4ce92f96f22409dff3b4d03c7341b50cfc24fdc02cd3093cc9093e7",
+              "rtl/anvil_d1_parameters.sv": "6cdffd2024644c5505123489271b8f1a9b1d1bb88ee81114ab628ac4142237ed",
+              "rtl/anvil_d1_rmsnorm.sv": "bb46643c28d31773e5a0a7d9d651080b75321c88035511da4cc24b67b6447a82",
+              "rtl/anvil_d1_rope.sv": "037e96ced0ce06071bc5d711ba4bb0e6351c55c7afcb96537293d623780b6929",
+              "rtl/anvil_d1_round_sat.sv": "a3780a5758bc6b1ceef23c384c0570cf4fd74dec3a88b9bf793e374861255b17",
+              "rtl/anvil_d1_sdiv.sv": "65c33964303dc6280c5dc0db7065b8c30ea1f988d70653eac6e7f893630b2ce4",
+              "rtl/anvil_d1_silu.sv": "29b914f16765016608dcf5346990a34afd26a756968b83a91fc3bbe1253aad2a",
+              "rtl/anvil_d1_sub_unsigned.sv": "01cae90fce53f662f15780f6954780bb17cd3e5ba94ba8f434507d3e23e54b22",
+              "rtl/anvil_d1_tensor.sv": "67fdf2d94f3f9768d02f63c7fb1b9a65cc0ed46eb5c1275bc48e177740a43d39",
+              "rtl/anvil_d1_token_io.sv": "411a34bba9a80eda1da7e306c1032af64ef86852f5cdfb555d21b79ef9c30569",
+              "rtl/anvil_d1_top.sv": "f331cd032dbef476dbf1af08b5ee81edf853e0d6e24db3587a3ff2f9e75c1cf5",
+              "rtl/anvil_d1_udiv.sv": "ca404a9a9febef0688ad5b69f9753eb366cc569a92dadd57aabe3b0302cd7f14",
+              "tests/counter.py": "8300ae781e77a4759dd92a0155d4e35e37f17b6be97ad82531017f2913764805",
+              "tests/csr.py": "4cf5a1a17383f562c0dce63143bc5cd0c65b69f376277054f87489e9afea6183",
+              "tests/defects.py": "13dfab3fdeff8c44842cb27659390a2993380a56e3532271dab26749f2576298",
+              "tests/diagnostic.py": "e13aac9e9099961c4fdc29268f8309587b364a9679a5d5a976431b0529702c5d",
+              "tests/elaboration.py": "705dd074c00044342220989cb559c0671fc2a984aa32d17c9725f92b111cdb71",
+              "tests/evidence.py": "71210345376cef03ce722ef2eec2d17d90cb3cdec18be5e22e27d009788cd1ea",
+              "tests/faults.py": "d2163eede40c3778b6e040854746f018c73eda0012a6c21e726380f96bfffc53",
+              "tests/floating.py": "8ed1b9d14e6e557af3dd3b15f03277b928462e09f97717b33e073fc8053cd695",
+              "tests/frontend.py": "49033ed27cf2b8526ac820ac4b37edf7aff5ca034769c27496f2796bdc06915a",
+              "tests/inference.py": "f835cc577ccecc50cb0a633c06fe4ffb0c26c778d890dde4c6a99d1555716869",
+              "tests/legacy.py": "755886ddb77aba1e8b35843931f082be7da2023d1187e79c1d389e37c5d557cf",
+              "tests/mla.py": "4547fd3fd926fad5050265a63d7068bb57ca5723c0253ae8f2a9320f21120448",
+              "tests/numerical.py": "2e510697988adaede8ded478a938516f6e70b5f437325edb7629d04393a1d490",
+              "tests/reference.py": "3bd6e83b886975a69adf9e33851c19fefd46a5616d2c407a0d616bc6174b8a34",
+              "tests/rms.py": "5df5adcd07f6421d7cb71039cd6f69d690aee21403ea822dc6ea343ece0419fb",
+              "tests/router.py": "7e637e3b9a3cf2844f1081f48e4e12e0e829c363a8d4a060b1d7e7229941ec2b",
+              "tests/scheduler.py": "04b34e9c15f0c19c54c151c92f5bc1d77cf2af6a200f0f922f88073dbb6105ce",
+              "tests/structure.py": "3d78cd0870efb9291d511b3f033613d950bc2c8291022f54710e94857279ae85",
+              "tests/verify.py": "1883f0ab62f76ca35d347d8424233ce8c464a5bdc0772d56b2c8f83c5a4ad745",
+              "tests/wide_mla.py": "3960722f8ed28f8adf983087fe6efc4719e2984a1679b338b46340b6dc11bc7d"
+            },
+            "children": [],
+            "repair_of": null,
+            "end_time": "2026-11-02T20:13:31.278678+00:00",
+            "status": "passed",
+            "summary": {
+              "runs": [
+                {
+                  "kind": "positive",
+                  "bench": "csr",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-positive-csr-20261102T200937Z-16aae9083b35/receipt.json"
+                },
+                {
+                  "kind": "positive",
+                  "bench": "mla",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-positive-mla-20261102T200943Z-8b9b907a3691/receipt.json"
+                },
+                {
+                  "kind": "positive",
+                  "bench": "native",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-positive-native-20261102T200957Z-6484743386ab/receipt.json"
+                },
+                {
+                  "kind": "positive",
+                  "bench": "numerical",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-positive-numerical-20261102T201022Z-3c21082c5d13/receipt.json"
+                },
+                {
+                  "kind": "positive",
+                  "bench": "router",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-positive-router-20261102T201104Z-a329467b29e5/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "absorption_head",
+                  "mismatch": "NUMERICAL_WRITE_MISMATCH",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-absorption_head-20261102T201120Z-560a3ec51a0d/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "missing_rotary_score",
+                  "mismatch": "MLA_NUMERICAL_WRITE_MISMATCH",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-missing_rotary_score-20261102T201141Z-0ce378111a48/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "topk_cutoff_tie",
+                  "mismatch": "ROUTER_WRONG_WINNER",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-topk_cutoff_tie-20261102T201155Z-edede383ee72/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "dropped_shared",
+                  "mismatch": "ROUTER_NUMERICAL_WRITE_MISMATCH",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-dropped_shared-20261102T201210Z-f9e8e18be518/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "stale_prefetch_consumption",
+                  "mismatch": "ROUTER_NUMERICAL_WRITE_MISMATCH",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-stale_prefetch_consumption-20261102T201226Z-b5106300d4c2/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "telemetry_increment",
+                  "mismatch": "CSR_POST_EDGE_MISMATCH",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-telemetry_increment-20261102T201241Z-eb594ad89f0d/receipt.json"
+                },
+                {
+                  "kind": "detected",
+                  "name": "negative_half_rounding",
+                  "mismatch": "NUMERICAL_round",
+                  "receipt": "evidence/defects-20261102T200937Z-9cc19d5cfe14/defect-negative_half_rounding-20261102T201249Z-5a9567d829d3/receipt.json"
+                }
+              ],
+              "detected_mutants": 7
+            }
+          }
+        }
+      ]
     }
   }
 }
