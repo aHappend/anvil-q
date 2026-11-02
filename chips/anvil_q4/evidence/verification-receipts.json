@@ -1613,17 +1613,17 @@
       ]
     },
     "check:l1-system": {
-      "attempt_id": 16,
-      "duration_s": 2066.213274652837,
-      "stdout_preview": "0s\nl1-system: check-0 running 840s\nl1-system: check-0 running 870s\nl1-system: check-0 running 900s\nl1-system: check-0 running 930s\nl1-system: check-0 running 960s\nl1-system: check-0 running 990s\nl1-system: check-0 running 1020s\nl1-system: check-0 running 1050s\nl1-system: check-0 running 1080s\nl1-system: check-0 running 1110s\nl1-system: check-0 running 1140s\nl1-system: check-0 running 1170s\nl1-system: check-0 running 1200s\nl1-system: check-0 running 1230s\nl1-system: check-0 running 1260s\nl1-system: check-0 running 1290s\nl1-system: check-0 running 1320s\nl1-system: check-0 running 1350s\nl1-system: check-0 running 1380s\nl1-system: check-0 running 1410s\nl1-system: check-0 running 1440s\nl1-system: check-0 running 1470s\nl1-system: check-0 running 1500s\nl1-system: check-0 running 1530s\nl1-system: check-0 running 1560s\nl1-system: check-0 running 1590s\nl1-system: check-0 running 1620s\nl1-system: check-0 running 1650s\nl1-system: check-0 running 1680s\nl1-system: check-0 running 1710s\nL1 system: cache_probe.py\nL1 system: protocol_probe.py\nl1-system: check-2 running 30s\nl1-system: check-2 running 60s\nL1 system: speculative_probe.py\nl1-system: check-3 running 30s\nl1-system: check-3 running 60s\nl1-system: check-3 running 90s\nL1 system: scheduler_probe.py\nl1-system: check-4 running 30s\nl1-system: check-4 running 60s\nl1-system: check-4 running 90s\nL1 system: full_shape_probe.py\nl1-system: check-5 running 30s\nl1-system: check-5 running 60s\nevidence/l1-system-20261102T133645861691Z/receipt.json\n",
+      "attempt_id": 24,
+      "duration_s": 2097.4358036839403,
+      "stdout_preview": "\nl1-system: check-0 running 840s\nl1-system: check-0 running 870s\nl1-system: check-0 running 900s\nl1-system: check-0 running 930s\nl1-system: check-0 running 960s\nl1-system: check-0 running 990s\nl1-system: check-0 running 1020s\nl1-system: check-0 running 1050s\nl1-system: check-0 running 1080s\nl1-system: check-0 running 1110s\nl1-system: check-0 running 1140s\nl1-system: check-0 running 1170s\nl1-system: check-0 running 1200s\nl1-system: check-0 running 1230s\nl1-system: check-0 running 1260s\nl1-system: check-0 running 1290s\nl1-system: check-0 running 1320s\nl1-system: check-0 running 1350s\nl1-system: check-0 running 1380s\nl1-system: check-0 running 1410s\nl1-system: check-0 running 1440s\nl1-system: check-0 running 1470s\nl1-system: check-0 running 1500s\nl1-system: check-0 running 1530s\nl1-system: check-0 running 1560s\nl1-system: check-0 running 1590s\nl1-system: check-0 running 1620s\nl1-system: check-0 running 1650s\nl1-system: check-0 running 1680s\nl1-system: check-0 running 1710s\nl1-system: check-0 running 1740s\nL1 system: cache_probe.py\nL1 system: protocol_probe.py\nl1-system: check-2 running 30s\nl1-system: check-2 running 60s\nL1 system: speculative_probe.py\nl1-system: check-3 running 30s\nl1-system: check-3 running 60s\nL1 system: scheduler_probe.py\nl1-system: check-4 running 30s\nl1-system: check-4 running 60s\nl1-system: check-4 running 90s\nL1 system: full_shape_probe.py\nl1-system: check-5 running 30s\nl1-system: check-5 running 60s\nevidence/l1-system-20261102T165657537030Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-system-20261102T133645861691Z/receipt.json",
+          "path": "evidence/l1-system-20261102T165657537030Z/receipt.json",
           "data": {
             "suite": "l1-system",
             "cwd": ".",
-            "start_time": "2026-11-02T13:36:45.865699+00:00",
+            "start_time": "2026-11-02T16:56:57.541176+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -1660,6 +1660,7 @@
               "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
               "design/ARCHITECTURE.md": "55536f9b84a785439d884192ae1258a0ba62f6e4bb427dafa22d6fd688ec5b28",
+              "design/GENERATIONAL_HANDOFF.md": "3b4298fbe87060cc475ba014254004a2bb8cc7a36cae1f3628da48d707a556aa",
               "design/SPEC.md": "40d08878a80e063070309a23d48a5bf429ab4509b2f65008679c3caae8573e36",
               "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
               "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
@@ -1760,14 +1761,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:36:45.883190+00:00",
+                "start_time": "2026-11-02T16:56:57.558831+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T13:36:45.889003+00:00",
-                "elapsed_s": 0.005580357043072581
+                "end_time": "2026-11-02T16:56:57.569165+00:00",
+                "elapsed_s": 0.010108134942129254
               },
               {
                 "argv": [
@@ -1775,14 +1776,14 @@
                   "tests/system_matrix.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:36:45.889826+00:00",
-                "timeout_s": 2699.971934318077,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T16:56:57.570075+00:00",
+                "timeout_s": 2699.9670231700875,
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/check-0.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:05:26.040303+00:00",
-                "elapsed_s": 1720.1502675150987
+                "end_time": "2026-11-02T17:26:10.429475+00:00",
+                "elapsed_s": 1752.8592025130056
               },
               {
                 "argv": [
@@ -1792,14 +1793,14 @@
                   "verilator"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:05:26.044055+00:00",
-                "timeout_s": 979.8177495971322,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/check-1.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/check-1.stderr.txt",
+                "start_time": "2026-11-02T17:26:10.434057+00:00",
+                "timeout_s": 947.1030769930221,
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/check-1.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/check-1.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:05:41.447383+00:00",
-                "elapsed_s": 15.40303375502117
+                "end_time": "2026-11-02T17:26:23.734477+00:00",
+                "elapsed_s": 13.300161133054644
               },
               {
                 "argv": [
@@ -1807,14 +1808,14 @@
                   "tests/protocol_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:05:41.450375+00:00",
-                "timeout_s": 964.4114193150308,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/check-2.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/check-2.stderr.txt",
+                "start_time": "2026-11-02T17:26:23.736935+00:00",
+                "timeout_s": 933.800181491999,
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/check-2.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/check-2.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:06:42.019337+00:00",
-                "elapsed_s": 60.56867730990052
+                "end_time": "2026-11-02T17:27:31.227207+00:00",
+                "elapsed_s": 67.49004854704253
               },
               {
                 "argv": [
@@ -1822,14 +1823,14 @@
                   "tests/speculative_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:06:42.021527+00:00",
-                "timeout_s": 903.8402651150245,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/check-3.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/check-3.stderr.txt",
+                "start_time": "2026-11-02T17:27:31.229911+00:00",
+                "timeout_s": 866.307238467969,
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/check-3.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/check-3.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:08:12.439362+00:00",
-                "elapsed_s": 90.41754245501943
+                "end_time": "2026-11-02T17:29:00.727950+00:00",
+                "elapsed_s": 89.4977396139875
               },
               {
                 "argv": [
@@ -1837,14 +1838,14 @@
                   "tests/scheduler_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:08:12.441666+00:00",
-                "timeout_s": 813.4201432389673,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/check-4.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/check-4.stderr.txt",
+                "start_time": "2026-11-02T17:29:00.730452+00:00",
+                "timeout_s": 776.8066914391238,
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/check-4.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/check-4.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:09:54.738896+00:00",
-                "elapsed_s": 102.2969648889266
+                "end_time": "2026-11-02T17:30:38.767525+00:00",
+                "elapsed_s": 98.03689945209771
               },
               {
                 "argv": [
@@ -1852,14 +1853,14 @@
                   "tests/full_shape_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:09:54.741240+00:00",
-                "timeout_s": 711.1205436980817,
-                "stdout_path": "evidence/l1-system-20261102T133645861691Z/check-5.stdout.txt",
-                "stderr_path": "evidence/l1-system-20261102T133645861691Z/check-5.stderr.txt",
+                "start_time": "2026-11-02T17:30:38.770242+00:00",
+                "timeout_s": 678.7668924720492,
+                "stdout_path": "evidence/l1-system-20261102T165657537030Z/check-5.stdout.txt",
+                "stderr_path": "evidence/l1-system-20261102T165657537030Z/check-5.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:11:11.903043+00:00",
-                "elapsed_s": 77.1615904790815
+                "end_time": "2026-11-02T17:31:54.778967+00:00",
+                "elapsed_s": 76.00845779199153
               }
             ],
             "comparisons": {},
@@ -1869,7 +1870,7 @@
                 "command": [
                   "system_matrix.py"
                 ],
-                "receipt": "evidence/system-matrix-20261102T133645967943Z/receipt.json"
+                "receipt": "evidence/system-matrix-20261102T165657648178Z/receipt.json"
               },
               {
                 "command": [
@@ -1877,35 +1878,35 @@
                   "--simulator",
                   "verilator"
                 ],
-                "receipt": "evidence/preparation/cache-recovery-20261102T140526120254Z/receipt.json"
+                "receipt": "evidence/preparation/cache-recovery-20261102T172610510683Z/receipt.json"
               },
               {
                 "command": [
                   "protocol_probe.py"
                 ],
-                "receipt": "evidence/protocol-20261102T140541528060Z/receipt.json"
+                "receipt": "evidence/protocol-20261102T172623814121Z/receipt.json"
               },
               {
                 "command": [
                   "speculative_probe.py"
                 ],
-                "receipt": "evidence/speculative-20261102T140642097997Z/receipt.json"
+                "receipt": "evidence/speculative-20261102T172731307527Z/receipt.json"
               },
               {
                 "command": [
                   "scheduler_probe.py"
                 ],
-                "receipt": "evidence/scheduler-20261102T140812513075Z/receipt.json"
+                "receipt": "evidence/scheduler-20261102T172900801902Z/receipt.json"
               },
               {
                 "command": [
                   "full_shape_probe.py"
                 ],
-                "receipt": "evidence/full-shape-20261102T140954818178Z/receipt.json"
+                "receipt": "evidence/full-shape-20261102T173038847636Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T14:11:11.905354+00:00"
+            "end_time": "2026-11-02T17:31:54.781324+00:00"
           }
         }
       ]
