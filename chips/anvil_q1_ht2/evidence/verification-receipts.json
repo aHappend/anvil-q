@@ -2,13 +2,13 @@
   "chip": "Anvil-Q1-HT2",
   "passed_checks": {
     "check:behavior": {
-      "attempt_id": 14,
-      "duration_s": 2003.5054158670828,
-      "stdout_preview": "top-mode2\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-simulate running\nprogress: behavior singleton-functional\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: behavior gqa-seed43\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: behavior medium-seed89\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: behavior compatibility-0\nprogress: behavior compatibility-2\nprogress: behavior compatibility-entry-alias\n{\"status\": \"passed\", \"receipt\": \"evidence/behavior-20261031T201910Z-fc7fcf16/receipt.json\"}\n",
+      "attempt_id": 2447,
+      "duration_s": 2006.4568319378886,
+      "stdout_preview": "ning\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-simulate running\nprogress: behavior singleton-functional\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: behavior gqa-seed43\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: behavior medium-seed89\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: behavior compatibility-0\nprogress: behavior compatibility-2\nprogress: compatibility-candidate-compile running\nprogress: behavior compatibility-entry-alias\n{\"status\": \"passed\", \"receipt\": \"evidence/behavior-20261102T103517Z-7f0af9c0/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/behavior-20261031T201910Z-fc7fcf16/receipt.json",
+          "path": "evidence/behavior-20261102T103517Z-7f0af9c0/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -21,7 +21,7 @@
                 "compared": "15",
                 "csr": "15",
                 "name": "top-startup-0-17-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/startup-d852d121/top-startup-0-17-iverilog-simulate-1d4f1f53/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/startup-73934492/top-startup-0-17-iverilog-simulate-6d60efde/receipt.json",
                 "simulator": "iverilog",
                 "startup_only": "1"
               },
@@ -29,7 +29,7 @@
                 "compared": "764744",
                 "exhaustive_per_format": "65536",
                 "name": "conversions-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/conversions-iverilog-3de65e07/conversions-iverilog-simulate-cf7f4042/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/conversions-iverilog-47c4bac5/conversions-iverilog-simulate-75b59359/receipt.json",
                 "rows": "191186",
                 "simulator": "iverilog"
               },
@@ -39,7 +39,7 @@
                 "mul16": "45732",
                 "mul32": "45732",
                 "name": "pipelines-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/pipelines-iverilog-8c2aba93/pipelines-iverilog-simulate-cbb64a30/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/pipelines-iverilog-a94ada2c/pipelines-iverilog-simulate-7e86d68b/receipt.json",
                 "simulator": "iverilog"
               },
               {
@@ -47,7 +47,7 @@
                 "dma_transactions": "225",
                 "errors": "41",
                 "name": "sparse-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/sparse-iverilog-27538b76/sparse-iverilog-simulate-d2cdbd2b/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/sparse-iverilog-b74783e2/sparse-iverilog-simulate-3892a6ab/receipt.json",
                 "simulator": "iverilog",
                 "skipped": "1184"
               },
@@ -55,13 +55,13 @@
                 "compared": "19699",
                 "exhaustive_tree_assignments": "19692",
                 "name": "verifier-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/verifier-iverilog-65d91350/verifier-iverilog-simulate-04888f0c/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/verifier-iverilog-acffaada/verifier-iverilog-simulate-a5e866d3/receipt.json",
                 "simulator": "iverilog"
               },
               {
                 "compared": "533",
                 "name": "masks-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/masks-iverilog-e9daaf86/masks-iverilog-simulate-3e304d41/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/masks-iverilog-e00301cd/masks-iverilog-simulate-e98c4e94/receipt.json",
                 "simulator": "iverilog",
                 "trees_and_sequence_boundaries": "533"
               },
@@ -70,7 +70,7 @@
                 "lanes": "8",
                 "name": "awq-iverilog",
                 "q_values": "16",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/dequant-iverilog-1545f124/awq-iverilog-simulate-00152a95/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/dequant-iverilog-dbe9e878/awq-iverilog-simulate-19ce1678/receipt.json",
                 "scale_classes": "14",
                 "simulator": "iverilog",
                 "zero_values": "16"
@@ -81,27 +81,27 @@
                 "completed_dots": "14",
                 "live_paths": "256",
                 "name": "mac-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/mac-iverilog-091e1b55/mac-iverilog-simulate-151948ca/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/mac-iverilog-9d0bb8aa/mac-iverilog-simulate-0ab28bcc/receipt.json",
                 "simulator": "iverilog"
               },
               {
                 "compared": "3980",
                 "name": "divsqrt-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/divsqrt-iverilog-9f304c88/divsqrt-iverilog-simulate-33c27c8a/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/divsqrt-iverilog-95fab15c/divsqrt-iverilog-simulate-2c55ccf9/receipt.json",
                 "requests": "3980",
                 "simulator": "iverilog"
               },
               {
                 "compared": "1629",
                 "name": "exp-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/exp-iverilog-a42ebedb/exp-iverilog-simulate-cdfb939e/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/exp-iverilog-22672a9b/exp-iverilog-simulate-77826467/receipt.json",
                 "requests": "1629",
                 "simulator": "iverilog"
               },
               {
                 "compared": "294",
                 "name": "sincos-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/sincos-iverilog-6cc97f54/sincos-iverilog-simulate-96d6f0b0/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/sincos-iverilog-3d8317b5/sincos-iverilog-simulate-3d6e5673/receipt.json",
                 "requests": "294",
                 "simulator": "iverilog"
               },
@@ -110,7 +110,7 @@
                 "inputs": "96",
                 "name": "rmsnorm-8-iverilog",
                 "outputs": "96",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/rmsnorm-iverilog-db70b620/rmsnorm-8-iverilog-simulate-0f77a41c/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/rmsnorm-iverilog-48d9e80b/rmsnorm-8-iverilog-simulate-a369d178/receipt.json",
                 "simulator": "iverilog",
                 "stalled_comparisons": "36"
               },
@@ -119,7 +119,7 @@
                 "inputs": "96",
                 "name": "swiglu-8-iverilog",
                 "outputs": "96",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/swiglu-iverilog-9f3486bd/swiglu-8-iverilog-simulate-647fdd52/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/swiglu-iverilog-262868d7/swiglu-8-iverilog-simulate-91f2522c/receipt.json",
                 "simulator": "iverilog",
                 "stalled_comparisons": "72"
               },
@@ -128,7 +128,7 @@
                 "csr": "75",
                 "low_word_wraps": "16",
                 "name": "control-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/control-iverilog-9bf59bae/control-iverilog-simulate-5c4e1917/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/control-iverilog-847c000a/control-iverilog-simulate-98422c1e/receipt.json",
                 "simulator": "iverilog"
               },
               {
@@ -136,7 +136,7 @@
                 "delivered": "80",
                 "full_observations": "1472",
                 "name": "cdc-mailbox-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/mailbox-iverilog-b1a27525/cdc-mailbox-iverilog-simulate-85b11714/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/mailbox-iverilog-ea8a3494/cdc-mailbox-iverilog-simulate-c2dbeabc/receipt.json",
                 "simulator": "iverilog",
                 "stalls": "312"
               },
@@ -145,7 +145,7 @@
                 "delivered": "1200",
                 "full_observations": "1625",
                 "name": "cdc-response_fifo-iverilog",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/response_fifo-iverilog-ab64f990/cdc-response_fifo-iverilog-simulate-55b7ee3a/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/response_fifo-iverilog-7a3d1548/cdc-response_fifo-iverilog-simulate-1f6ae0fd/receipt.json",
                 "simulator": "iverilog",
                 "stalls": "2284"
               },
@@ -153,7 +153,7 @@
                 "compared": "764744",
                 "exhaustive_per_format": "65536",
                 "name": "conversions-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/conversions-verilator-1eb70e70/conversions-verilator-simulate-e811e9c4/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/conversions-verilator-025f32ff/conversions-verilator-simulate-cfa2fe82/receipt.json",
                 "rows": "191186",
                 "simulator": "verilator"
               },
@@ -163,7 +163,7 @@
                 "mul16": "45732",
                 "mul32": "45732",
                 "name": "pipelines-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/pipelines-verilator-2fe74d60/pipelines-verilator-simulate-181b5d89/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/pipelines-verilator-67906ad6/pipelines-verilator-simulate-a48a1031/receipt.json",
                 "simulator": "verilator"
               },
               {
@@ -171,7 +171,7 @@
                 "dma_transactions": "225",
                 "errors": "41",
                 "name": "sparse-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/sparse-verilator-52dc8c3f/sparse-verilator-simulate-03761e51/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/sparse-verilator-baae5861/sparse-verilator-simulate-e1bef2d4/receipt.json",
                 "simulator": "verilator",
                 "skipped": "1184"
               },
@@ -179,13 +179,13 @@
                 "compared": "19699",
                 "exhaustive_tree_assignments": "19692",
                 "name": "verifier-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/verifier-verilator-0e5e07d8/verifier-verilator-simulate-40baf6c6/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/verifier-verilator-0ad09092/verifier-verilator-simulate-5a503456/receipt.json",
                 "simulator": "verilator"
               },
               {
                 "compared": "533",
                 "name": "masks-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/masks-verilator-6b775277/masks-verilator-simulate-d002d4c8/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/masks-verilator-90725f8a/masks-verilator-simulate-2366419f/receipt.json",
                 "simulator": "verilator",
                 "trees_and_sequence_boundaries": "533"
               },
@@ -194,7 +194,7 @@
                 "lanes": "8",
                 "name": "awq-verilator",
                 "q_values": "16",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/dequant-verilator-7e3a6469/awq-verilator-simulate-d493c062/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/dequant-verilator-5f4f042e/awq-verilator-simulate-dd4c03ac/receipt.json",
                 "scale_classes": "14",
                 "simulator": "verilator",
                 "zero_values": "16"
@@ -205,27 +205,27 @@
                 "completed_dots": "14",
                 "live_paths": "256",
                 "name": "mac-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/mac-verilator-a81a52de/mac-verilator-simulate-6fc32255/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/mac-verilator-a40867f6/mac-verilator-simulate-44720990/receipt.json",
                 "simulator": "verilator"
               },
               {
                 "compared": "3980",
                 "name": "divsqrt-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/divsqrt-verilator-ffdfb5a2/divsqrt-verilator-simulate-53ea2e7e/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/divsqrt-verilator-1fc96a3a/divsqrt-verilator-simulate-a2cd48d2/receipt.json",
                 "requests": "3980",
                 "simulator": "verilator"
               },
               {
                 "compared": "1629",
                 "name": "exp-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/exp-verilator-636aeae9/exp-verilator-simulate-9fa1851e/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/exp-verilator-192dca2a/exp-verilator-simulate-384889e9/receipt.json",
                 "requests": "1629",
                 "simulator": "verilator"
               },
               {
                 "compared": "294",
                 "name": "sincos-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/sincos-verilator-56accc58/sincos-verilator-simulate-e8022ecf/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/sincos-verilator-3ed9f57f/sincos-verilator-simulate-0637cd1a/receipt.json",
                 "requests": "294",
                 "simulator": "verilator"
               },
@@ -234,7 +234,7 @@
                 "inputs": "96",
                 "name": "rmsnorm-8-verilator",
                 "outputs": "96",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/rmsnorm-verilator-41e7a048/rmsnorm-8-verilator-simulate-37f86a54/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/rmsnorm-verilator-04af1f75/rmsnorm-8-verilator-simulate-0bc316e8/receipt.json",
                 "simulator": "verilator",
                 "stalled_comparisons": "36"
               },
@@ -243,7 +243,7 @@
                 "inputs": "96",
                 "name": "swiglu-8-verilator",
                 "outputs": "96",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/swiglu-verilator-2b9439a9/swiglu-8-verilator-simulate-0b18d367/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/swiglu-verilator-905eecc3/swiglu-8-verilator-simulate-6205c5b0/receipt.json",
                 "simulator": "verilator",
                 "stalled_comparisons": "72"
               },
@@ -252,7 +252,7 @@
                 "csr": "75",
                 "low_word_wraps": "16",
                 "name": "control-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/control-verilator-66be3e50/control-verilator-simulate-d5b81993/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/control-verilator-dc150048/control-verilator-simulate-199345ff/receipt.json",
                 "simulator": "verilator"
               },
               {
@@ -260,7 +260,7 @@
                 "delivered": "80",
                 "full_observations": "1472",
                 "name": "cdc-mailbox-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/mailbox-verilator-046b2c69/cdc-mailbox-verilator-simulate-c04e75a2/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/mailbox-verilator-6f136d1e/cdc-mailbox-verilator-simulate-bfa2906e/receipt.json",
                 "simulator": "verilator",
                 "stalls": "312"
               },
@@ -269,7 +269,7 @@
                 "delivered": "1200",
                 "full_observations": "1625",
                 "name": "cdc-response_fifo-verilator",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/response_fifo-verilator-ded97ca7/cdc-response_fifo-verilator-simulate-25e3e253/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/response_fifo-verilator-1d477b5c/cdc-response_fifo-verilator-simulate-26130743/receipt.json",
                 "simulator": "verilator",
                 "stalls": "2284"
               },
@@ -281,7 +281,7 @@
                     "parameters": {
                       "NUM_LAYERS": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-layers-diagnostic-86d71929/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-layers-diagnostic-a643dfdd/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -289,7 +289,7 @@
                     "parameters": {
                       "NUM_LAYERS": 25
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-layers-diagnostic-d73908a9/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-layers-diagnostic-512ff9bf/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -297,7 +297,7 @@
                     "parameters": {
                       "HIDDEN_SIZE": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/hidden-zero-diagnostic-8a88bd8f/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/hidden-zero-diagnostic-fb934b31/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -305,7 +305,7 @@
                     "parameters": {
                       "HIDDEN_SIZE": 904
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/hidden-too-large-diagnostic-081b2fd1/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/hidden-too-large-diagnostic-a0a74971/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -313,7 +313,7 @@
                     "parameters": {
                       "HIDDEN_SIZE": 9
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/hidden-alignment-diagnostic-d1e2ed89/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/hidden-alignment-diagnostic-716b60a0/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -321,7 +321,7 @@
                     "parameters": {
                       "INTERMEDIATE_SIZE": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/intermediate-zero-diagnostic-6b78bf07/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/intermediate-zero-diagnostic-ae35813e/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -329,7 +329,7 @@
                     "parameters": {
                       "INTERMEDIATE_SIZE": 4872
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/intermediate-too-large-diagnostic-a08b31be/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/intermediate-too-large-diagnostic-726477f0/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -337,7 +337,7 @@
                     "parameters": {
                       "INTERMEDIATE_SIZE": 9
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/intermediate-alignment-diagnostic-f5a363b3/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/intermediate-alignment-diagnostic-786c8cdc/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -345,7 +345,7 @@
                     "parameters": {
                       "NUM_Q_HEADS": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-query-heads-diagnostic-f080c768/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-query-heads-diagnostic-5a3b2a94/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -353,7 +353,7 @@
                     "parameters": {
                       "NUM_Q_HEADS": 15
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-query-heads-diagnostic-274a217e/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-query-heads-diagnostic-45c25ed9/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -361,7 +361,7 @@
                     "parameters": {
                       "NUM_KV_HEADS": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-kv-heads-diagnostic-396b94a8/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-kv-heads-diagnostic-2017551f/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -369,7 +369,7 @@
                     "parameters": {
                       "NUM_KV_HEADS": 3
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-kv-heads-diagnostic-c4217dad/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-kv-heads-diagnostic-871192e1/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -377,7 +377,7 @@
                     "parameters": {
                       "HEAD_DIM": 7
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/odd-head-dimension-diagnostic-54b1e162/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/odd-head-dimension-diagnostic-0f9a45df/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -385,7 +385,7 @@
                     "parameters": {
                       "HEAD_DIM": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/head-too-small-diagnostic-b6d297da/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/head-too-small-diagnostic-8d218996/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -393,7 +393,7 @@
                     "parameters": {
                       "HEAD_DIM": 66
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/head-too-large-diagnostic-aa17f2d3/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/head-too-large-diagnostic-c824286f/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -401,7 +401,7 @@
                     "parameters": {
                       "NUM_Q_HEADS": 2
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/query-hidden-mismatch-diagnostic-a1696049/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/query-hidden-mismatch-diagnostic-8572adb5/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -411,7 +411,7 @@
                       "NUM_KV_HEADS": 2,
                       "NUM_Q_HEADS": 3
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/gqa-indivisible-diagnostic-092fe516/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/gqa-indivisible-diagnostic-d1295fad/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -420,7 +420,7 @@
                       "HEAD_DIM": 4,
                       "NUM_Q_HEADS": 2
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/kv-width-alignment-diagnostic-8736390d/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/kv-width-alignment-diagnostic-6e5bfcac/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -428,7 +428,7 @@
                     "parameters": {
                       "GROUP_SIZE": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-group-diagnostic-5a416ce5/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-group-diagnostic-2dbc6c1e/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -436,7 +436,7 @@
                     "parameters": {
                       "GROUP_SIZE": 9
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/group-too-large-diagnostic-9737773a/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/group-too-large-diagnostic-6608df85/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -445,7 +445,7 @@
                       "GROUP_SIZE": 3,
                       "INTERMEDIATE_SIZE": 24
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/group-hidden-divisibility-diagnostic-e1ed8a3b/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/group-hidden-divisibility-diagnostic-3e7a6181/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -456,7 +456,7 @@
                       "INTERMEDIATE_SIZE": 8,
                       "NUM_Q_HEADS": 3
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/group-intermediate-divisibility-diagnostic-827cf201/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/group-intermediate-divisibility-diagnostic-7eda706f/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -464,7 +464,7 @@
                     "parameters": {
                       "VOCAB_SIZE": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-vocabulary-diagnostic-91d537ca/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-vocabulary-diagnostic-77b6546e/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -472,7 +472,7 @@
                     "parameters": {
                       "VOCAB_SIZE": 151937
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-vocabulary-diagnostic-594cf696/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-vocabulary-diagnostic-6d48ae19/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -480,7 +480,7 @@
                     "parameters": {
                       "MAX_SEQ_LEN": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-sequence-diagnostic-ec8ed3fb/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-sequence-diagnostic-4778c530/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -488,7 +488,7 @@
                     "parameters": {
                       "MAX_SEQ_LEN": 32769
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-sequence-diagnostic-ed466fee/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-sequence-diagnostic-b1ed863e/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -496,7 +496,7 @@
                     "parameters": {
                       "AWQ_BITS": 3
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/awq-width-diagnostic-ab490f28/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/awq-width-diagnostic-081d80ee/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -504,7 +504,7 @@
                     "parameters": {
                       "LANES": 32
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/array-lanes-diagnostic-00176fba/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/array-lanes-diagnostic-3b002b17/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -512,7 +512,7 @@
                     "parameters": {
                       "BANKS": 4
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/array-banks-diagnostic-8b984fd7/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/array-banks-diagnostic-7fabe6d1/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -520,7 +520,7 @@
                     "parameters": {
                       "LANES_PER_BANK": 4
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/array-bank-lanes-diagnostic-2409b593/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/array-bank-lanes-diagnostic-1ed41015/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -528,7 +528,7 @@
                     "parameters": {
                       "DDR_WIDTH": 256
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/ddr-width-diagnostic-f2354fab/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/ddr-width-diagnostic-c53da94a/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -536,7 +536,7 @@
                     "parameters": {
                       "TILE_BEATS": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-tile-diagnostic-3185f665/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-tile-diagnostic-84cc25cf/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -544,7 +544,7 @@
                     "parameters": {
                       "TILE_BEATS": 257
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-tile-diagnostic-b54b4b13/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-tile-diagnostic-2ba68c3d/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -552,7 +552,7 @@
                     "parameters": {
                       "KV_WINDOW": 0
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/zero-window-diagnostic-fd48d5ea/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/zero-window-diagnostic-8f70da31/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -560,7 +560,7 @@
                     "parameters": {
                       "KV_WINDOW": 129
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/excess-window-diagnostic-d1f43bbc/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/excess-window-diagnostic-5d16c09e/receipt.json"
                   },
                   {
                     "expected_rejection_observed": true,
@@ -569,7 +569,7 @@
                       "KV_WINDOW": 2,
                       "MAX_SEQ_LEN": 1
                     },
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/illegal-parameters-6cbfce9b/window-exceeds-sequence-diagnostic-bc0c7307/receipt.json"
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/illegal-parameters-a2dbfe52/window-exceeds-sequence-diagnostic-0473d7fb/receipt.json"
                   }
                 ],
                 "name": "illegal-parameters"
@@ -581,7 +581,7 @@
                 "logits": "7",
                 "name": "top-0-17-verilator",
                 "read_beats": "1134",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compact-top-mode0-51c8d479/top-0-17-verilator-simulate-4e90895b/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compact-top-mode0-753a2906/top-0-17-verilator-simulate-b00da63c/receipt.json",
                 "simulator": "verilator",
                 "write_beats": "14"
               },
@@ -592,7 +592,7 @@
                 "logits": "7",
                 "name": "top-1-17-verilator",
                 "read_beats": "1134",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compact-top-mode1-78ceab93/top-1-17-verilator-simulate-7e050369/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compact-top-mode1-2fa5eee4/top-1-17-verilator-simulate-77264308/receipt.json",
                 "simulator": "verilator",
                 "write_beats": "14"
               },
@@ -603,7 +603,7 @@
                 "logits": "7",
                 "name": "top-2-17-verilator",
                 "read_beats": "1806",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compact-top-mode2-ce044c29/top-2-17-verilator-simulate-ec5a0201/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compact-top-mode2-447510a3/top-2-17-verilator-simulate-f60ff2e8/receipt.json",
                 "simulator": "verilator",
                 "write_beats": "14"
               },
@@ -614,7 +614,7 @@
                 "logits": "1",
                 "name": "top-0-17-verilator",
                 "read_beats": "276",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/singleton-functional-dac74010/top-0-17-verilator-simulate-7689cfa8/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/singleton-functional-209eaa9d/top-0-17-verilator-simulate-d05670c5/receipt.json",
                 "simulator": "verilator",
                 "write_beats": "2"
               },
@@ -625,7 +625,7 @@
                 "logits": "31",
                 "name": "top-0-43-verilator",
                 "read_beats": "6622",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/gqa-seed43-07d336db/top-0-43-verilator-simulate-45df914d/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/gqa-seed43-9db3d4be/top-0-43-verilator-simulate-ea66af20/receipt.json",
                 "simulator": "verilator",
                 "write_beats": "28"
               },
@@ -636,7 +636,7 @@
                 "logits": "257",
                 "name": "top-0-89-verilator",
                 "read_beats": "9786",
-                "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/medium-seed89-3b4c8415/top-0-89-verilator-simulate-090eee43/receipt.json",
+                "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/medium-seed89-508620fa/top-0-89-verilator-simulate-ec579a49/receipt.json",
                 "simulator": "verilator",
                 "write_beats": "20"
               },
@@ -650,7 +650,7 @@
                     "name": "compatibility-parent",
                     "outputs": "16",
                     "read_beats": "214",
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compatibility-0-23cfe7d7/compatibility-parent-simulate-311964d5/receipt.json",
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compatibility-0-c89e9219/compatibility-parent-simulate-b4201262/receipt.json",
                     "simulator": "verilator",
                     "write_beats": "16"
                   },
@@ -659,7 +659,7 @@
                     "name": "compatibility-candidate",
                     "outputs": "16",
                     "read_beats": "214",
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compatibility-0-23cfe7d7/compatibility-candidate-simulate-fb1d3786/receipt.json",
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compatibility-0-c89e9219/compatibility-candidate-simulate-71d63dec/receipt.json",
                     "simulator": "verilator",
                     "write_beats": "16"
                   }
@@ -678,7 +678,7 @@
                     "name": "compatibility-parent",
                     "outputs": "16",
                     "read_beats": "522",
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compatibility-2-e9d729e9/compatibility-parent-simulate-8aa9027b/receipt.json",
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compatibility-2-df718a09/compatibility-parent-simulate-b45dca30/receipt.json",
                     "simulator": "verilator",
                     "write_beats": "16"
                   },
@@ -687,7 +687,7 @@
                     "name": "compatibility-candidate",
                     "outputs": "16",
                     "read_beats": "522",
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compatibility-2-e9d729e9/compatibility-candidate-simulate-b5ebbd37/receipt.json",
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compatibility-2-df718a09/compatibility-candidate-simulate-24db300c/receipt.json",
                     "simulator": "verilator",
                     "write_beats": "16"
                   }
@@ -705,7 +705,7 @@
                     "name": "logical-parent",
                     "outputs": "16",
                     "reads": "4696",
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compatibility-entry-alias-f3010975/logical-parent-simulate-87bbd607/receipt.json",
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compatibility-entry-alias-f6b867ee/logical-parent-simulate-e070da91/receipt.json",
                     "simulator": "verilator",
                     "writes": "304"
                   },
@@ -714,7 +714,7 @@
                     "name": "logical-candidate",
                     "outputs": "16",
                     "reads": "4696",
-                    "receipt": "evidence/behavior-20261031T201910Z-fc7fcf16/compatibility-entry-alias-f3010975/logical-candidate-simulate-41050d5d/receipt.json",
+                    "receipt": "evidence/behavior-20261102T103517Z-7f0af9c0/compatibility-entry-alias-f6b867ee/logical-candidate-simulate-ef439a17/receipt.json",
                     "simulator": "verilator",
                     "writes": "304"
                   }
@@ -723,8 +723,8 @@
               }
             ],
             "cwd": ".",
-            "duration_s": 2003.2753842549864,
-            "end_time": "2026-10-31T20:52:33.596780+00:00",
+            "duration_s": 2006.2115073360037,
+            "end_time": "2026-11-02T11:08:44.118648+00:00",
             "exit_code": 0,
             "preparation": false,
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -761,6 +761,7 @@
               "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
               "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
               "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
               "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
               "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
               "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
@@ -852,7 +853,7 @@
               "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
             },
             "source_unchanged": true,
-            "start_time": "2026-10-31T20:19:10.321401+00:00",
+            "start_time": "2026-11-02T10:35:17.907153+00:00",
             "status": "passed",
             "stderr": "stderr.txt",
             "stdout": "stdout.txt",
@@ -1621,13 +1622,13 @@
       ]
     },
     "check:defect-sensitivity": {
-      "attempt_id": 15,
-      "duration_s": 201.50558729306795,
-      "stdout_preview": "progress: mac-verilator-compile running\nprogress: mac-verilator-compile running\n{\"status\": \"passed\", \"receipt\": \"evidence/mutations-20261031T205237Z-4f8a994c/receipt.json\"}\n",
+      "attempt_id": 2448,
+      "duration_s": 201.87244342290796,
+      "stdout_preview": "progress: mac-verilator-compile running\nprogress: mac-verilator-compile running\n{\"status\": \"passed\", \"receipt\": \"evidence/mutations-20261102T110855Z-0d6e4b10/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/mutations-20261031T205237Z-4f8a994c/receipt.json",
+          "path": "evidence/mutations-20261102T110855Z-0d6e4b10/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -1640,19 +1641,19 @@
                 "after_sha256": "5f8f6cadb266815dd6b34ab03d45c9d5d82b78c89da3db3bdbc8423bb0bc8431",
                 "before_sha256": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
                 "compile_failure_counts_as_detection": false,
-                "copied_source": "evidence/mutations-20261031T205237Z-4f8a994c/multiply-rounding-e0a30099/rtl/anvil_q1_ht2_fp16_mul.sv",
+                "copied_source": "evidence/mutations-20261102T110855Z-0d6e4b10/multiply-rounding-1670e3ce/rtl/anvil_q1_ht2_fp16_mul.sv",
                 "detected": true,
                 "exit_code": -6,
                 "expected_assertion": "MUL16",
                 "name": "multiply-rounding",
-                "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/multiply-rounding-e0a30099/pipelines-verilator-simulate-56757e8e/receipt.json",
+                "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/multiply-rounding-1670e3ce/pipelines-verilator-simulate-52ec509c/receipt.json",
                 "unmutated_comparison": {
                   "add32": "45724",
                   "compared": "189012",
                   "mul16": "45732",
                   "mul32": "45732",
                   "name": "pipelines-verilator",
-                  "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/multiply-rounding-e0a30099/baseline-73c7bb00/pipelines-verilator-simulate-5eb79782/receipt.json",
+                  "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/multiply-rounding-1670e3ce/baseline-6d7cd7b4/pipelines-verilator-simulate-1e8e3319/receipt.json",
                   "simulator": "verilator"
                 }
               },
@@ -1660,18 +1661,18 @@
                 "after_sha256": "c9393a9ee20d50a2ce40c0db0f72270a081051f42ca9b5dfc4cfc0247fbb8359",
                 "before_sha256": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
                 "compile_failure_counts_as_detection": false,
-                "copied_source": "evidence/mutations-20261031T205237Z-4f8a994c/awq-lane-order-37c9f3d1/rtl/anvil_q1_ht2_dequant.sv",
+                "copied_source": "evidence/mutations-20261102T110855Z-0d6e4b10/awq-lane-order-59e0f494/rtl/anvil_q1_ht2_dequant.sv",
                 "detected": true,
                 "exit_code": -6,
                 "expected_assertion": "AWQ",
                 "name": "awq-lane-order",
-                "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/awq-lane-order-37c9f3d1/awq-verilator-simulate-ab85b5dc/receipt.json",
+                "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/awq-lane-order-59e0f494/awq-verilator-simulate-f6cb27f8/receipt.json",
                 "unmutated_comparison": {
                   "compared": "28672",
                   "lanes": "8",
                   "name": "awq-verilator",
                   "q_values": "16",
-                  "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/awq-lane-order-37c9f3d1/baseline-00d675db/awq-verilator-simulate-33cd9071/receipt.json",
+                  "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/awq-lane-order-59e0f494/baseline-bbe83dea/awq-verilator-simulate-2f76c617/receipt.json",
                   "scale_classes": "14",
                   "simulator": "verilator",
                   "zero_values": "16"
@@ -1681,19 +1682,19 @@
                 "after_sha256": "52dc6990a6068926960706caf7aaa686286bf0be5cafde05458e8a48692c3fa1",
                 "before_sha256": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
                 "compile_failure_counts_as_detection": false,
-                "copied_source": "evidence/mutations-20261031T205237Z-4f8a994c/slot-broadcast-bcf958b4/rtl/anvil_q1_ht2_tile_batch_mac.sv",
+                "copied_source": "evidence/mutations-20261102T110855Z-0d6e4b10/slot-broadcast-cdc7d1c1/rtl/anvil_q1_ht2_tile_batch_mac.sv",
                 "detected": true,
                 "exit_code": -6,
                 "expected_assertion": "MAC_NUMERIC",
                 "name": "slot-broadcast",
-                "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/slot-broadcast-bcf958b4/mac-verilator-simulate-cb4f959e/receipt.json",
+                "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/slot-broadcast-cdc7d1c1/mac-verilator-simulate-bc64a382/receipt.json",
                 "unmutated_comparison": {
                   "accepted_beats": "130",
                   "compared": "331776",
                   "completed_dots": "14",
                   "live_paths": "256",
                   "name": "mac-verilator",
-                  "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/slot-broadcast-bcf958b4/baseline-6d0c3452/mac-verilator-simulate-d18f3a73/receipt.json",
+                  "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/slot-broadcast-cdc7d1c1/baseline-203f387b/mac-verilator-simulate-3d419862/receipt.json",
                   "simulator": "verilator"
                 }
               },
@@ -1701,7 +1702,7 @@
                 "after_sha256": "c66e89f2270754190db600994dfc0e3f918154a0e09235e4ef4dbe6955163665",
                 "before_sha256": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
                 "compile_failure_counts_as_detection": false,
-                "copied_source": "evidence/mutations-20261031T205237Z-4f8a994c/sparse-cross-slot-3f4f8c06/rtl/anvil_q1_ht2_sparse_dma.sv",
+                "copied_source": "evidence/mutations-20261102T110855Z-0d6e4b10/sparse-cross-slot-84d12238/rtl/anvil_q1_ht2_sparse_dma.sv",
                 "detected": true,
                 "exit_code": -6,
                 "expected_assertion": [
@@ -1709,13 +1710,13 @@
                   "DMA_REQUEST"
                 ],
                 "name": "sparse-cross-slot",
-                "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/sparse-cross-slot-3f4f8c06/sparse-verilator-simulate-a941e0a5/receipt.json",
+                "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/sparse-cross-slot-84d12238/sparse-verilator-simulate-c55c782a/receipt.json",
                 "unmutated_comparison": {
                   "compared": "1450",
                   "dma_transactions": "225",
                   "errors": "41",
                   "name": "sparse-verilator",
-                  "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/sparse-cross-slot-3f4f8c06/baseline-e60463f5/sparse-verilator-simulate-ab844e85/receipt.json",
+                  "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/sparse-cross-slot-84d12238/baseline-a6df8eab/sparse-verilator-simulate-99ce8771/receipt.json",
                   "simulator": "verilator",
                   "skipped": "1184"
                 }
@@ -1724,16 +1725,16 @@
                 "after_sha256": "00bcd7ea1a9738178d509d6c6c3f923d66b82c08c9fc07155f66d5c08ae3c495",
                 "before_sha256": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
                 "compile_failure_counts_as_detection": false,
-                "copied_source": "evidence/mutations-20261031T205237Z-4f8a994c/causal-sibling-leakage-1b70f22a/rtl/anvil_q1_ht2_tree_mask.sv",
+                "copied_source": "evidence/mutations-20261102T110855Z-0d6e4b10/causal-sibling-leakage-027e4306/rtl/anvil_q1_ht2_tree_mask.sv",
                 "detected": true,
                 "exit_code": -6,
                 "expected_assertion": "CAUSAL_MASK",
                 "name": "causal-sibling-leakage",
-                "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/causal-sibling-leakage-1b70f22a/masks-verilator-simulate-eefdc0f5/receipt.json",
+                "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/causal-sibling-leakage-027e4306/masks-verilator-simulate-3232d1b1/receipt.json",
                 "unmutated_comparison": {
                   "compared": "533",
                   "name": "masks-verilator",
-                  "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/causal-sibling-leakage-1b70f22a/baseline-447cb501/masks-verilator-simulate-3e61c755/receipt.json",
+                  "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/causal-sibling-leakage-027e4306/baseline-d1f315d2/masks-verilator-simulate-475ba4cf/receipt.json",
                   "simulator": "verilator",
                   "trees_and_sequence_boundaries": "533"
                 }
@@ -1742,24 +1743,24 @@
                 "after_sha256": "f6ce83b98d3ca12bbea58bad0fcad0401b86b5ffa319d720104ec9a4e10dd4b2",
                 "before_sha256": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
                 "compile_failure_counts_as_detection": false,
-                "copied_source": "evidence/mutations-20261031T205237Z-4f8a994c/speculative-mismatch-6e0f681e/rtl/anvil_q1_ht2_spec_verifier.sv",
+                "copied_source": "evidence/mutations-20261102T110855Z-0d6e4b10/speculative-mismatch-985f7f96/rtl/anvil_q1_ht2_spec_verifier.sv",
                 "detected": true,
                 "exit_code": -6,
                 "expected_assertion": "TREE_WALK",
                 "name": "speculative-mismatch",
-                "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/speculative-mismatch-6e0f681e/verifier-verilator-simulate-5adc784d/receipt.json",
+                "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/speculative-mismatch-985f7f96/verifier-verilator-simulate-79bd2aca/receipt.json",
                 "unmutated_comparison": {
                   "compared": "19699",
                   "exhaustive_tree_assignments": "19692",
                   "name": "verifier-verilator",
-                  "receipt": "evidence/mutations-20261031T205237Z-4f8a994c/speculative-mismatch-6e0f681e/baseline-9a4ba31f/verifier-verilator-simulate-e989792c/receipt.json",
+                  "receipt": "evidence/mutations-20261102T110855Z-0d6e4b10/speculative-mismatch-985f7f96/baseline-aecaf451/verifier-verilator-simulate-40b72bbb/receipt.json",
                   "simulator": "verilator"
                 }
               }
             ],
             "cwd": ".",
-            "duration_s": 201.26943073002622,
-            "end_time": "2026-10-31T20:55:58.861095+00:00",
+            "duration_s": 201.64066445897333,
+            "end_time": "2026-11-02T11:12:17.220452+00:00",
             "exit_code": 0,
             "preparation": false,
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -1796,6 +1797,7 @@
               "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
               "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
               "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
               "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
               "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
               "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
@@ -1887,7 +1889,7 @@
               "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
             },
             "source_unchanged": true,
-            "start_time": "2026-10-31T20:52:37.591539+00:00",
+            "start_time": "2026-11-02T11:08:55.579785+00:00",
             "status": "passed",
             "stderr": "stderr.txt",
             "stdout": "stdout.txt",
@@ -1900,13 +1902,13 @@
       ]
     },
     "check:synthesis": {
-      "attempt_id": 16,
-      "duration_s": 209.46086345403455,
-      "stdout_preview": "progress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/synthesis-20261031T205603Z-f378376c/receipt.json\"}\n",
+      "attempt_id": 2449,
+      "duration_s": 215.43687860295177,
+      "stdout_preview": "progress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/synthesis-20261102T111228Z-728d257b/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/synthesis-20261031T205603Z-f378376c/receipt.json",
+          "path": "evidence/synthesis-20261102T111228Z-728d257b/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -1944,8 +1946,8 @@
                   "$xor": 2
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp16_mul-f9d937f2/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp16_mul-synthesis-313a5663/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp16_mul-498433fe/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp16_mul-synthesis-4a02cb9a/receipt.json",
                 "registered_cells": 10,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp16_mul",
@@ -1982,8 +1984,8 @@
                   "$sub": 8
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_add-afc8d2db/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_add-synthesis-106eaa83/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_add-3ef98a9a/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_add-synthesis-169d3258/receipt.json",
                 "registered_cells": 17,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_add",
@@ -2018,8 +2020,8 @@
                   "$xor": 2
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_mul-04c53fa2/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_mul-synthesis-513ad500/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_mul-4fd774c0/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_mul-synthesis-0b482513/receipt.json",
                 "registered_cells": 9,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_mul",
@@ -2056,8 +2058,8 @@
                   "$xor": 3
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_divsqrt-1f90cf25/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_divsqrt-synthesis-78a0e5b1/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_divsqrt-b52594fe/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_divsqrt-synthesis-4f7b837e/receipt.json",
                 "registered_cells": 14,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_divsqrt",
@@ -2103,8 +2105,8 @@
                   "$xor": 2
                 },
                 "memory_bits": 464,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_exp-14295164/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_exp-synthesis-9b2c95ad/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_exp-033b01e7/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_exp-synthesis-2ef701f3/receipt.json",
                 "registered_cells": 38,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_exp",
@@ -2151,8 +2153,8 @@
                   "$xor": 3
                 },
                 "memory_bits": 976,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_sincos-55277990/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_fp32_sincos-synthesis-d3055a7d/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_sincos-502658b6/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_sincos-synthesis-b6aeb57d/receipt.json",
                 "registered_cells": 66,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_sincos",
@@ -2197,8 +2199,8 @@
                   "$xor": 512
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_tile_batch_mac-dfd48f87/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_tile_batch_mac-synthesis-aecf436b/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_tile_batch_mac-fdcb17ab/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_tile_batch_mac-synthesis-adbe151b/receipt.json",
                 "registered_cells": 9228,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_tile_batch_mac",
@@ -2225,8 +2227,8 @@
                   "$reduce_bool": 2
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_sparse_dma-8a66981c/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_sparse_dma-synthesis-d2d7a7e6/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_sparse_dma-1a3180dd/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_sparse_dma-synthesis-4e9aa57c/receipt.json",
                 "registered_cells": 9,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_sparse_dma",
@@ -2261,8 +2263,8 @@
                   "$shiftx": 3
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_spec_verifier-49c26a38/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_spec_verifier-synthesis-81816685/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_spec_verifier-0231f52e/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_spec_verifier-synthesis-b3910778/receipt.json",
                 "registered_cells": 11,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_spec_verifier",
@@ -2350,8 +2352,8 @@
                   "$xor": 974
                 },
                 "memory_bits": 19007744,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_top-6e2939f8/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht2_top-synthesis-681ac2f7/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_top-6b3a2bda/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_top-synthesis-2b20fc80/receipt.json",
                 "registered_cells": 15010,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_top",
@@ -2421,8 +2423,8 @@
                   "$xor": 384
                 },
                 "memory_bits": 29212160,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht_top-0ef84d38/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_ht_top-synthesis-cb3cf179/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht_top-8d2af4ed/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht_top-synthesis-b471954a/receipt.json",
                 "registered_cells": 2414,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht_top",
@@ -2476,8 +2478,8 @@
                   "$xor": 384
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_top-d04010ff/netlist.json",
-                "receipt": "evidence/synthesis-20261031T205603Z-f378376c/anvil_q1_top-synthesis-32b268db/receipt.json",
+                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_top-fb17c444/netlist.json",
+                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_top-synthesis-dcdded56/receipt.json",
                 "registered_cells": 1469,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_top",
@@ -2486,8 +2488,8 @@
               }
             ],
             "cwd": ".",
-            "duration_s": 209.06471731583588,
-            "end_time": "2026-10-31T20:59:32.091082+00:00",
+            "duration_s": 215.15020791208372,
+            "end_time": "2026-11-02T11:16:03.988371+00:00",
             "exit_code": 0,
             "preparation": false,
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -2524,6 +2526,7 @@
               "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
               "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
               "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
               "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
               "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
               "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
@@ -2615,7 +2618,7 @@
               "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
             },
             "source_unchanged": true,
-            "start_time": "2026-10-31T20:56:03.026372+00:00",
+            "start_time": "2026-11-02T11:12:28.838183+00:00",
             "status": "passed",
             "stderr": "stderr.txt",
             "stdout": "stdout.txt",
