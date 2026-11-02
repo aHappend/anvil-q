@@ -11,6 +11,9 @@ import os
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECK_BUDGET_S = 2700
+COMMAND_BUDGET_S = 600
+DEADLINE_ENV = "ANVIL_L1_MONOTONIC_DEADLINE"
 
 
 def timestamp():
@@ -31,6 +34,10 @@ def sources():
 
 class Evidence:
     def __init__(self, suite, preparation=False, repair_of=None):
+        start = time.monotonic()
+        self.deadline = min(start + CHECK_BUDGET_S,
+                            float(os.environ.get(DEADLINE_ENV, start + CHECK_BUDGET_S)))
+        self._simulators = {}
         base = ROOT / "evidence" / ("preparation" if preparation else "")
         self.path = base / f"{suite}-{timestamp()}"
         self.path.mkdir(parents=True, exist_ok=False)
@@ -38,6 +45,7 @@ class Evidence:
             "schema": 1, "suite": suite, "cwd": ".", "started_at": timestamp(),
             "argv": ["python3", *sys.argv],
             "sources": sources(), "commands": [], "repair_of": repair_of,
+            "check_budget_s": CHECK_BUDGET_S,
         }
         self.write()
 
@@ -47,7 +55,11 @@ class Evidence:
     def scope(self, name):
         return EvidenceScope(self, name)
 
-    def run(self, argv, cwd=None, timeout=3600, expect_failure=False):
+    def run(self, argv, cwd=None, timeout=COMMAND_BUDGET_S, expect_failure=False):
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Whole-check 2700-second budget exhausted")
+        timeout = min(timeout, COMMAND_BUDGET_S, remaining)
         directory = Path(cwd or ROOT)
         number = len(self.record["commands"])
         stdout = self.path / f"command-{number:03d}.stdout.txt"
@@ -62,7 +74,9 @@ class Evidence:
         start = time.monotonic()
         try:
             with stdout.open("w") as out, stderr.open("w") as err:
-                process = subprocess.Popen(command["argv"], cwd=directory, stdout=out, stderr=err)
+                environment = dict(os.environ, **{DEADLINE_ENV: str(self.deadline)})
+                process = subprocess.Popen(command["argv"], cwd=directory, stdout=out, stderr=err,
+                                           env=environment)
                 try:
                     deadline = start + timeout
                     while True:
@@ -104,6 +118,8 @@ class Evidence:
         self.write()
 
     def finish(self, status, **details):
+        if status == "passed" and time.monotonic() > self.deadline:
+            raise TimeoutError("Whole-check 2700-second budget exhausted")
         generated = {relative(path): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in self.path.rglob("*")
                      if path.is_file() and (path.suffix in (".sv", ".ys") or path.name == "vectors.txt")}
@@ -118,6 +134,7 @@ class EvidenceScope:
         self.path = parent.path / name
         self.path.mkdir()
         self.run = parent.run
+        self._simulators = parent._simulators
         self.scope = lambda child: EvidenceScope(self, child)
 
 

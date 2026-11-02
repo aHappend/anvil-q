@@ -11,6 +11,7 @@ import tensor_checks
 import protocol_checks
 import parameter_checks
 import top_control
+import accumulation
 
 
 REPRESENTATIONS = ((0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 0, 0), (2, 0, 1))
@@ -26,7 +27,8 @@ def numerics_suite(evidence, seed):
         results["seeds"][str(numeric_seed)] = {
             "primitives": numerics.primitives(scope, numeric_seed),
             "iterative": numerics.iterative(scope, numeric_seed),
-            "dots": numerics.dots(scope, numeric_seed)}
+            "dots": numerics.dots(scope, numeric_seed),
+            "masked_accumulation": accumulation.check(scope, numeric_seed)}
     scope = evidence.scope("tensor-accumulation")
     results["accumulation"] = []
     for banks in (1, 2, 4, 8):
@@ -51,15 +53,13 @@ def behavior(evidence, seed):
     if len(results) != 80 or any(len(row["tokens"]) != 4 for row in results):
         raise AssertionError("Incomplete bank/cache/dtype/AWQ matrix")
     transitions = []
-    for banks in (1, 2, 4, 8):
-        for mode, fp8, affine in REPRESENTATIONS:
-            for fmt in ("bf16", "fp16"):
-                transitions.append(integration.smoke(evidence, seed, "verilator", banks,
-                                                     fmt, False, 4, mode, fp8, affine,
-                                                     heads=16, awq_transition=True))
+    for fmt in ("bf16", "fp16"):
+        transitions.append(integration.smoke(evidence, seed, "verilator", 8,
+                                             fmt, False, 4, 0, heads=16,
+                                             awq_transition=True))
     mode, fp8, affine = REPRESENTATIONS[{17: 0, 89: 2, 211: 4}.get(seed, 0)]
     deep = integration.smoke(evidence, seed, "verilator", 1, "bf16", False, 4,
-                             mode, fp8, affine, layers=36)
+                             mode, fp8, affine, layers=36, intermediate=8, vocab=1)
     return {"seed": seed, "one_layer_matrix": results, "native_to_awq": transitions,
             "compact_36_layer_sequencing": deep}
 

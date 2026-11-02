@@ -21,6 +21,8 @@ import parameter_checks
 import top_control
 import portability
 import defects
+import accumulation
+import attention_checks
 
 
 def main():
@@ -28,7 +30,7 @@ def main():
     parser.add_argument("--suite", choices=["numerics", "protocol", "behavior", "benchmark",
                                            "synthesis", "defects", "portability"])
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control", "sequence", "defect"])
+    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control", "sequence", "defect", "accumulation", "attention"])
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
@@ -51,7 +53,14 @@ def main():
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
-            if args.probe == "defect":
+            if args.probe == "attention":
+                evidence.versions([["verilator", "--version"]])
+                result = attention_checks.check(evidence, args.head_dim, args.cache_mode,
+                                                args.fp8, args.affine, args.dtype, args.tokens)
+            elif args.probe == "accumulation":
+                evidence.versions([["verilator", "--version"]])
+                result = accumulation.check(evidence, args.seed)
+            elif args.probe == "defect":
                 evidence.versions([["verilator", "--version"]])
                 result = defects.check(evidence, args.seed, [args.mutant])
             elif args.probe == "sequence":

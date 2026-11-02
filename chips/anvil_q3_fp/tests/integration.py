@@ -80,17 +80,25 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
     for token_metrics in metrics:
         if token_metrics["cosine"] < threshold:
             raise AssertionError(f"FP64 cosine {token_metrics['cosine']} below {threshold}: {name}")
-    observations = []
+    observations, traffic = [], []
     for line in output.read_text().splitlines():
         if line.startswith("TOKEN "):
             observations.append(dict(zip(("position", "cycles", "requests", "writes", "stalls"),
                                          map(int, line.split()[1:]))))
+        elif line.startswith("TRAFFIC "):
+            kind, projection, row, first, last, reads, writes, stalls = map(int, line.split()[1:])
+            traffic.append({"kind": kind, "projection": projection, "scratch_slot": row,
+                            "first_accepted_request_cycle": first,
+                            "last_response_cycle": last,
+                            "accepted_reads": reads, "accepted_writes": writes,
+                            "request_stalls": stalls})
     if len(observations) != tokens:
         raise AssertionError(f"Missing measured token records in {relative(output)}")
     result = {"scratch_cache_writes": len(fixture.writes), "logits": len(observed),
               "stdout": relative(output), "parameters": parameters, "seed": seed,
               "activation": fmt, "awq": awq, "native_to_awq_transition": awq_transition, "metrics_vs_fp64": metrics,
               "minimum_cosine": threshold, "tokens": observations}
+    result["public_transaction_traffic"] = traffic
     (evidence.path / name / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
 
@@ -129,6 +137,9 @@ module tb;
   integer dtype,awq,TOKENS,transition,image_split=-1,token_start=0,token_requests=0,token_writes=0,stalls=0,token_stalls=0;
   integer low,high,middle,first_expected=0,mutable_index,hash_steps;
   integer cycle=0,accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
+  integer traffic_first[0:4095],traffic_last[0:4095],traffic_reads[0:4095];
+  integer traffic_writes[0:4095],traffic_stalls[0:4095],traffic_index;
+  integer queued_traffic[0:B-1][0:31];
   integer occupied[0:B-1],queue_head[0:B-1],queue_tail[0:B-1],due[0:B-1][0:31],bank;
   reg [31:0] queued_data[0:B-1][0:31];
   reg [63:0] queued_tag[0:B-1][0:31];
@@ -146,6 +157,10 @@ module tb;
   endtask
   initial begin
     rst_n=0;
+    for (i=0;i<4096;i=i+1) begin
+      traffic_first[i]=-1; traffic_last[i]=-1; traffic_reads[i]=0;
+      traffic_writes[i]=0; traffic_stalls[i]=0;
+    end
     for (i=0;i<65536;i=i+1) mutable_used[i]=0;
     for (bank=0;bank<B;bank=bank+1) begin occupied[bank]=0; queue_head[bank]=0; queue_tail[bank]=0; end
     #0; reset_check;
@@ -190,15 +205,23 @@ module tb;
             mem_req_wdata[bank*32+:32],mem_req_tag[bank*64+:64]}!==request_payload[bank] ||
             mem_req_valid[bank]!==1'b1)) $fatal(1,"STALL memory request changed bank=%0d",bank);
         held_request[bank]=mem_req_valid[bank] && !mem_req_ready[bank];
+        traffic_index=(mem_req_kind[bank*4+:4]<<8)+(mem_req_proj[bank*3+:3]<<5)+
+          (mem_req_kind[bank*4+:4]==8 ? mem_req_row[bank*32+:32] : 0);
+        if (held_request[bank]) traffic_stalls[traffic_index]=traffic_stalls[traffic_index]+1;
         if (held_request[bank]) stalls=stalls+1;
         request_payload[bank]={mem_req_write[bank],mem_req_kind[bank*4+:4],mem_req_layer[bank*32+:32],
             mem_req_proj[bank*3+:3],mem_req_row[bank*32+:32],mem_req_col[bank*32+:32],
             mem_req_wdata[bank*32+:32],mem_req_tag[bank*64+:64]};
         if (mem_rsp_valid[bank] && mem_rsp_ready[bank]) begin
+          traffic_last[queued_traffic[bank][queue_head[bank]]]=cycle;
           queue_head[bank]=(queue_head[bank]+1)&31; occupied[bank]=occupied[bank]-1;
         end
         if (mem_req_valid[bank] && mem_req_ready[bank]) begin
         if (occupied[bank]==32) $fatal(1,"scoreboard overflow");
+        queued_traffic[bank][queue_tail[bank]]=traffic_index;
+        if (traffic_first[traffic_index]<0) traffic_first[traffic_index]=cycle;
+        if (mem_req_write[bank]) traffic_writes[traffic_index]=traffic_writes[traffic_index]+1;
+        else traffic_reads[traffic_index]=traffic_reads[traffic_index]+1;
         key={mem_req_kind[bank*4+:4],mem_req_layer[bank*32+:32],mem_req_proj[bank*3+:3],
           mem_req_row[bank*32+:32],mem_req_col[bank*32+:32]};
         memory_index=-1;
@@ -264,6 +287,10 @@ module tb;
           $fatal(1,"INCOMPLETE writes=%0d/%0d logits=%0d/%0d outstanding=%0d",
             compared_writes,nexpected,compared_logits,nlogit,occupied[0]);
         for (bank=0;bank<B;bank=bank+1) if (occupied[bank]!=0) $fatal(1,"outstanding memory at done");
+        for (i=0;i<4096;i=i+1) if (traffic_first[i]>=0)
+          $display("TRAFFIC %0d %0d %0d %0d %0d %0d %0d %0d",
+            i>>8,(i>>5)&7,i&31,traffic_first[i],traffic_last[i],
+            traffic_reads[i],traffic_writes[i],traffic_stalls[i]);
         $display("COMPARED top writes=%0d logits=%0d requests=%0d cycles=%0d",
           compared_writes,compared_logits,requests,cycle);
         $fclose(outfile);

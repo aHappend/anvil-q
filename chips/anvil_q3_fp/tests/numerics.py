@@ -254,14 +254,20 @@ def dots(evidence, seed=17, count=256, simulator="iverilog"):
                 vectors.append(f"{dtype:x} {awq:x} {mask:02x} "
                                f"{packed(activations,16):032x} {packed(weights,16):032x} "
                                f"{packed(q,4):08x} {packed(z,4):08x} {packed(scales,16):032x} "
-                               f"{value:08x} {flags:02x}\n")
+                               f"{value:08x} {flags:02x} 0\n")
+    for dtype, fmt in enumerate(("bf16", "fp16")):
+        one = pack(Fraction(1), fmt)[0]
+        for invalid_scale in (0xbc00, 0x7c00, 0x7c01):
+            vectors.append(f"{dtype:x} 1 01 {one:032x} {0:032x} 00000001 00000000 "
+                           f"{invalid_scale:032x} 00000000 00 1\n")
     rtl = [PKG, "rtl/anvil_q3_fp_mul.sv", "rtl/anvil_q3_fp_add.sv", "rtl/anvil_q3_fp_dot8.sv"]
     if simulator == "verilator":
         executable = compiled(evidence, "dot8", DOT_TB, rtl)
         run_compiled(evidence, executable, "dot8", {"vectors.txt": "".join(vectors)})
     else:
         icarus(evidence, "dot8", DOT_TB, rtl, {"vectors.txt": "".join(vectors)})
-    return {"dot8_per_format_mode": count, "dot8_total": len(vectors)}
+    return {"dot8_per_format_mode": count, "dot8_total": len(vectors),
+            "invalid_awq_scale_commands": 6}
 
 
 DOT_TB = """
@@ -276,7 +282,7 @@ module tb;
   wire [31:0] out_dot;
   wire [4:0] out_flags;
   anvil_q3_fp_dot8 dut(.*);
-  reg dtype[0:4095],awq[0:4095];
+  reg dtype[0:4095],awq[0:4095],expected_error[0:4095];
   reg [7:0] mask[0:4095];
   reg [127:0] act[0:4095],weight[0:4095],scale[0:4095];
   reg [31:0] q[0:4095],z[0:4095],expected[0:4095];
@@ -298,9 +304,9 @@ module tb;
     fd=$fopen("vectors.txt","r");
     if (!fd) $fatal(1,"vector open");
     while (!$feof(fd)) begin
-      rc=$fscanf(fd,"%h %h %h %h %h %h %h %h %h %h\\n",
-        dtype[n],awq[n],mask[n],act[n],weight[n],q[n],z[n],scale[n],expected[n],flags[n]);
-      if (rc!=10) $fatal(1,"malformed dot vector");
+      rc=$fscanf(fd,"%h %h %h %h %h %h %h %h %h %h %h\\n",
+        dtype[n],awq[n],mask[n],act[n],weight[n],q[n],z[n],scale[n],expected[n],flags[n],expected_error[n]);
+      if (rc!=11) $fatal(1,"malformed dot vector");
       n=n+1;
     end
     @(negedge clk); rst_n=1;
@@ -314,7 +320,8 @@ module tb;
       held_payload={out_error,out_flags,out_dot};
       if (held) stalls=stalls+1;
       if (out_valid && out_ready) begin
-        if (received>=sent || {out_error,out_flags,out_dot}!=={1'b0,flags[received],expected[received]})
+        if (received>=sent || out_error!==expected_error[received] ||
+            (!expected_error[received] && {out_flags,out_dot}!=={flags[received],expected[received]}))
           $fatal(1,"DOT index=%0d fp16=%b awq=%b mask=%h expected=%h/%h got=%b/%h/%h",
             received,dtype[received],awq[received],mask[received],
             flags[received],expected[received],out_error,out_flags,out_dot);
@@ -364,6 +371,7 @@ module tb;
     @CONNECTION@,.ready(ready),.done(done),.error(error),.flags(flags));
   integer fd,rc,n=0,latency;
   reg [31:0] expected;
+  reg [31:0] scanned_a,scanned_b;
   reg [4:0] expected_flags;
   task reset_check;
     begin
@@ -382,8 +390,9 @@ module tb;
     while (!$feof(fd)) begin
       @(negedge clk);
       while (ready!==1'b1) @(negedge clk);
-      rc=$fscanf(fd,"%h %h %h %h\\n",a,b,expected,expected_flags);
+      rc=$fscanf(fd,"%h %h %h %h\\n",scanned_a,scanned_b,expected,expected_flags);
       if (rc!=4) $fatal(1,"malformed iterative vector");
+      a=scanned_a; b=scanned_b;
       start=1;
       @(negedge clk); start=0;
       latency=0;
