@@ -918,6 +918,12 @@ def behavior_suite(run):
             for mode in range(3):
                 integration(run, seed=seed, banks=banks, mode=mode, tokens=3,
                             stress=True, intermediate=24, tile_rows=8)
+        integration(run, seed=seed, banks=16, mode=2, tokens=3, hidden=32,
+                    intermediate=32, tile_rows=8, kv_heads=2, stress=True,
+                    prefix="integrated-boundaries-",
+                    overrides=dict(TILE_K=128, TILE_SLOTS=2, QUEUE_DEPTH=1,
+                                   BURST_BEATS=1, KV_RESIDENT_GROUPS=1))
+    integration(run, banks=16, context=1, prefix="singleton-context-")
     integration(run, layers=36, banks=16)
 
 
@@ -1083,6 +1089,7 @@ def main():
                                            "arithmetic", "image-map", "kv", "kv-context", "tiles", "tiles-compact", "tiles-raw",
                                            "production-tensor",
                                            "ddr-faults", "importer", "parent", "parameters",
+                                           "reproduce",
                                            "benchmark-components", "benchmark-stream", "benchmark-cell", "cache-reuse", "synthesis",
                                            "synthesis-compact", "frontend",
                                                                               "frontend-variants", "frontend-parts"))
@@ -1150,6 +1157,10 @@ def main():
             run.tool("iverilog")
             run.tool("vvp")
             parameter_rejections(run)
+            run.finish()
+            return 0
+        if args.probe == "reproduce":
+            reproduce_suite(run)
             run.finish()
             return 0
         if args.probe == "mutation":
