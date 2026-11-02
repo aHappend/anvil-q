@@ -49,7 +49,7 @@ class Run:
         self.path = ROOT / self.relative
         self.path.mkdir(parents=True, exist_ok=False)
         self.receipt = {
-            "argv": [sys.executable if sys.argv[0] == "-c" else "python3", *sys.argv],
+            "argv": ["python3", *sys.orig_argv[1:]],
             "cwd": ".", "started_at": now(), "repair_of": repair_of,
             "source_sha256": {}, "commands": [], "comparisons": [],
         }
