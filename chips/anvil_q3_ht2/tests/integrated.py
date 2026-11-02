@@ -87,15 +87,26 @@ def run_integrated(run, mode, diagnostic=False):
         result = execute(run, "integrated-simulate", [
             relative(obj / "Vintegrated_tb"), f"+vectors={relative(vectors)}",
             f"+model={relative(model)}", *(["+diagnostic"] if diagnostic else [])],
-            ["verilator", "--version"], expect=-6 if diagnostic else 0)
+            ["verilator", "--version"])
     finally:
         cleanup_build(obj)
     raw = (result / "stdout.txt").read_text()
     if diagnostic:
-        if "integrated public progress diagnostic" not in raw or "RESULT " in raw:
+        observations = [json.loads(line.removeprefix("DIAGNOSTIC "))
+                        for line in raw.splitlines() if line.startswith("DIAGNOSTIC ")]
+        progress = [json.loads(line.removeprefix("PROGRESS "))
+                    for line in raw.splitlines() if line.startswith("PROGRESS ")]
+        if len(observations) != 1 or not progress or "RESULT " in raw or (
+                observations[0]["evaluated_tokens"] < 1):
             raise AssertionError("bounded diagnostic did not reach its public observation")
+        receipt = json.loads((result / "receipt.json").read_text())
         summary = {"diagnostic_only": True, "functional_result": "incomplete",
-                   "mode": mode, "receipt": relative(result / "receipt.json")}
+                   "mode": mode, "observed": observations[0],
+                   "progress": progress,
+                   "simulation_duration_s": receipt["duration_s"],
+                   "cycles_per_second_including_host_load":
+                       observations[0]["cycles"] / receipt["duration_s"],
+                   "receipt": relative(result / "receipt.json")}
         (run / "diagnostic-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
         return summary
     observed = [json.loads(line.removeprefix("RESULT ")) for line in

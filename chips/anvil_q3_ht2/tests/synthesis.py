@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from receipts import execute, new_run, relative
 
 
-def run_synthesis(run, top, mode=1):
+def run_synthesis(run, top, mode=1, parameters=None):
     inputs = {
         "anvil_q3_ht2_sparse_dma": ["rtl/anvil_q3_ht2_sparse_dma.sv"],
         "anvil_q3_ht2_ddr_arbiter": ["rtl/anvil_q3_ht2_ddr_arbiter.sv"],
@@ -30,6 +30,8 @@ def run_synthesis(run, top, mode=1):
     script.write_text("\n".join([
         f"read_verilog -sv {' '.join(inputs)}",
         *([f"chparam -set CACHE_MODE {mode} {top}"] if cached else []),
+        *[f"chparam -set {name} {value} {top}"
+          for name, value in (parameters or {}).items()],
         f"hierarchy -check -top {top}", "proc", "opt_expr", "opt_clean",
         "check -assert", "memory -nomap", "opt_clean", "check -assert",
         "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor",
@@ -53,7 +55,8 @@ def run_synthesis(run, top, mode=1):
             if cell["type"] == "$mem_v2":
                 memory_bits += int(cell["parameters"]["WIDTH"], 2) * int(
                     cell["parameters"]["SIZE"], 2)
-    if top == "anvil_q3_ht2_sparse_dma" and memory_bits < 11008 * 68:
+    if top == "anvil_q3_ht2_sparse_dma" and memory_bits < (
+            (parameters or {}).get("MAX_COLUMNS", 11008) * 68):
         raise AssertionError("production scan banks were not retained as live memory")
     if top == "anvil_q3_ht2_private_scratch":
         memories = {name: cell for module in data["modules"].values()
@@ -84,6 +87,7 @@ def run_synthesis(run, top, mode=1):
             if not any(isinstance(bit, int) for bit in engines[0]["connections"][port]):
                 raise AssertionError(f"atomic engine connection is constant: {port}")
     summary = {"top": top, "cache_mode": mode if cached else None,
+               "parameters": parameters or {},
                "cell_types": dict(cells), "sequential_cells": state,
                "memory_bits": memory_bits, "latches": 0, "div_mod": 0,
                "receipt": relative(result / "receipt.json")}
