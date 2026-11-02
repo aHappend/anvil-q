@@ -306,6 +306,18 @@ the corresponding gamma, delayed by nine registers. Input bubbles cannot
 misalign gamma because this pass reads the already collected vector. The
 result RAM's square contents are dead before normalized outputs overwrite
 them; no additional vector RAM or external intermediate transfer is required.
+RoPE reads each split-half pair, then issues its two rotations on consecutive
+edges through both multipliers. The adder consumes rounded products while later
+pairs are being read and issued. Eighteen address/subtraction tag registers
+preserve first/second-half destination ownership across both arithmetic stages.
+SwiGLU streams exp, denominator add, reciprocal and negative-sigmoid multiply
+at initiation interval one, storing selected sigmoid values in result RAM.
+Fifteen exp-delay registers, nine reciprocal-delay registers and a 32-stage
+sign tag preserve the operand pairing. The positive branch bypasses the
+negative-sigmoid product and its flags. After that pass fully drains, a second
+stream reads gate/sigmoid/up and cascades the existing two multipliers at
+initiation interval one. Sigmoid locations are read before result overwrites.
+Residual add likewise streams one collected component per edge.
 The engine writes the completed vector to that internal result RAM and then
 streams it in original component order. There
 are no external intermediate SRAM transfers. `in_last` must coincide exactly
@@ -336,13 +348,17 @@ buffered schedule.
 |---|---|
 | Command at k | COLLECT after k; no input transfer before this state. |
 | Bad command at k | ERROR_WAIT0 after k, ERROR_WAIT1 after k+1, FINISH with done/error after k+2. No input readiness in these states. |
-| Final input at t, operations 1..3 | READ_X after t; its synchronous RAM read occurs at t+1, LATCH_X at t+2, and the selected arithmetic issue is accepted no earlier than t+3. RoPE also reads the partner component. |
+| Final RoPE input at t | READ_X after t; read/latch first-half x/cos at t+1/t+2 and partner y/sin at t+3/t+4. Issue first/second rotations at t+5/t+6. Later pairs issue every six edges without waiting for arithmetic results. |
+| RoPE pair completion | For a rotation issued at p, accept its rounded products in the adder at p+9 and write its destination at p+18. The final write, not the final issue, enters OUT_READ. HEAD_DIM=2 uses the same first/second issue and drain sequence; no pair-index wrap shortcut. |
 | Final RMSNorm input at t, length n | RMS_SQUARE after t; read component zero at t+1, accept its square at t+2, write its rounded result at t+11. Consecutive squares issue every edge; the final write at t+n+10 enters READ_X for ordered reduction. No public output is yet valid. |
 | RMSNorm singleton reduction | For n=1, write its square at t+11, read/latch that square at t+12/t+13, accept +0+square at t+14 and capture the rounded sum at t+23. Mean, epsilon and fast-rsqrt follow their existing issue/wait boundaries. |
 | RMSNorm normalization | After fast-rsqrt capture at r, read component zero at r+1, accept x*factor at r+2 and accept the rounded product*gamma at r+11. Write its result at r+20; consecutive results write every edge. Only the final write enters OUT_READ, so aggregate status is fixed before public output. |
 | RMSNorm pass ownership | Read counters stop at n; only registered read-valid cycles issue multipliers. Result-write counters advance only on the corresponding multiplier's out_valid. n=1 and non-power-of-two n use these same comparisons, never binary wrap. Reset invalidates all pipeline validity and counters. |
 | Stalled final input | Remain COLLECT, preserving count and memories until its actual transfer. |
-| Singleton residual | After final input t, read/latch/issue add at t+1/t+2/t+3; add result is valid after t+11, captured and written at t+12. NEXT_ELEMENT, OUT_READ and OUT_LATCH lead to first public output after t+15. |
+| SwiGLU sigmoid pass | After final input t, read component zero at t+1, accept exp at t+2, denominator add at t+10, reciprocal at t+19 and negative-branch product at t+25. Write the selected sigmoid at t+34. Each subsequent component follows one edge later; final write at t+n+33 starts the product pass. Positive components use the delayed reciprocal and exclude the unused product's flags. |
+| SwiGLU product pass | After final sigmoid write r, read gate/sigmoid/up at r+1, accept gate*sigmoid at r+2 and its rounded product*up at r+11. Write at r+20; consecutive results write every edge. Singleton n=1 follows both passes, with first public output after t+56. |
+| Stream pass ownership | SwiGLU and residual read counters stop at n, including n=1 and non-power-of-two lengths. Only registered read-valid cycles issue the first operator. Completion counts final operator valid results; each pass drains before changing ownership. Reset invalidates every arithmetic pipeline and read-valid tag. |
+| Singleton residual | After final input t, read at t+1 and accept add at t+2; add result is valid after t+10, captured and written at t+11. OUT_READ and OUT_LATCH lead to first public output after t+13. Longer residual vectors issue/write consecutive components every edge. |
 | Output RAM fetch | OUT_READ obtains synchronous result_q, OUT_LATCH captures payload, OUTPUT holds it. No speculative output index advance. |
 | Stalled final output | Remain OUTPUT with payload, last and status unchanged; done stays low. |
 | Final output at f | COMPLETE_WAIT after f, FINISH/done after f+1, IDLE after f+2. |

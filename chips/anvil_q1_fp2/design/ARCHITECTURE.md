@@ -152,12 +152,32 @@ schedule implicated by
 (FP2 cold/warm 44295/44293 cycles versus parent 31274/31275). These retained
 numbers describe the failed pre-repair design, not performance of this repair;
 the independent Verifier must rerun the unchanged comparison.
-RoPE performs split-half pairs; its in_aux stream carries cosine in the first
-half and sine in the second. The decoder must obtain those deterministic FP32
-coefficients from kind 11 for the command position. SwiGLU uses exp(-abs(gate))
-and a normalized reciprocal to avoid unstable positive exp or iterative divide.
-Residuals use the same exact-RNE add pipeline. Result buffering permits original
-vector order and stable downstream backpressure without an external round-trip.
+RoPE now reads a split-half pair and issues its two rotations on consecutive
+edges through the existing two multipliers. Rounded products feed the adder
+while later pairs are being loaded. Address/subtraction tags follow the full
+18-edge issue-to-write path, keeping both halves and successive heads distinct.
+Its in_aux stream still carries cosine in the first half and sine in the
+second, supplied by the decoder's deterministic kind-11 table.
+
+SwiGLU now streams exp(-abs(gate)), denominator add, reciprocal and the
+negative-branch product at initiation interval one. Matching exp, reciprocal
+and sign delays select the original stable sigmoid branch; the positive branch
+does not inherit flags from its unused negative-branch multiplication. This
+first pass stores sigmoids in existing result RAM. After draining, a second
+pass reads gate/sigmoid/up and streams the two original rounded multiplication
+boundaries. Read ownership precedes in-place output overwrites. Residual add
+also streams collected components through the existing adder. No arithmetic
+units, public ports, external intermediate transfers or coefficient rules
+change. All passes drain before exposing aggregate status and ordered,
+backpressure-stable results.
+
+These changes address retained numerical-pass performance failures:
+`evidence/preparation/fp2-rope-benchmark-20261102T183648Z-e792c676/receipt.json`
+(FP2 cold/warm 27550/27551 versus parent 17407/17407) and
+`evidence/preparation/fp2-swiglu-benchmark-20261102T183647Z-93e28716/receipt.json`
+(FP2 298881/298883 versus parent 273088/273086).
+Those are pre-repair measurements, not verified speedups of the new schedules.
+Independent numerical, transfer, benchmark and physical checks remain required.
 
 Exp uses signed Q24/base-2 reduction and registered Q30 Horner arithmetic.
 Reciprocal normalizes the entire positive finite FP32 domain and interpolates

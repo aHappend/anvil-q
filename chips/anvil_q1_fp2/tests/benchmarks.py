@@ -4,6 +4,295 @@ from decimal import Decimal, localcontext
 import math
 
 from reference import approximation_interval, bits32, f32
+from architecture import bf16, quantize_group
+import random
+
+
+def projection_benchmark(run, root, compile_and_run, mx, seed=17):
+    """Execute matched 896-by-128 K projections and count accepted transport bytes."""
+    hidden, outputs = 896, 128
+    stem = f"benchmark-gemv-{'mx' if mx else 'bf16'}-{seed}"
+    directory = run.path / stem
+    directory.mkdir()
+    rng = random.Random(seed)
+    activations = [bf16(rng.randint(-7, 7) / 16) for _ in range(hidden)]
+    weights = [[bf16(rng.randint(-7, 7) / 1024) for _ in range(outputs)]
+               for _ in range(hidden)]
+    beats, scales, decoded = [], [], []
+    for row in weights:
+        if mx:
+            codes, row_scales, decoded_row = [], [], []
+            from reference import mx_decode
+            for first in range(0, outputs, 32):
+                group, scale = quantize_group(row[first:first + 32])
+                codes.extend(group)
+                row_scales.append(scale)
+                decoded_row.extend(mx_decode(code, scale)[0] for code in group)
+            scales.append(sum(scale << (8 * i) for i, scale in enumerate(row_scales)))
+            width, bits = 64, 8
+        else:
+            codes, decoded_row, width, bits = row, row, 32, 16
+        decoded.append(decoded_row)
+        beats.extend(sum(code << (bits * i) for i, code in
+                         enumerate(codes[first:first + width]))
+                     for first in range(0, outputs, width))
+    if mx:
+        decoded_x = []
+        for first in range(0, hidden, 32):
+            codes, scale = quantize_group(activations[first:first + 32])
+            decoded_x.extend(mx_decode(code, scale)[0] for code in codes)
+    else:
+        decoded_x = activations
+    expected = [bits32(sum(f32(x << 16) * f32(decoded[i][j] << 16)
+                          for i, x in enumerate(decoded_x))) for j in range(outputs)]
+    for name, words, digits in (
+        ("activations.hex", activations, 4),
+        ("weights.hex", [word for row in decoded for word in row], 4),
+        ("beats.hex", beats, 128), ("scales.hex", scales or [0], 128),
+        ("expected.hex", expected, 8),
+    ):
+        with (directory / name).open("x") as output:
+            output.write("".join(f"{word:0{digits}x}\n" for word in words))
+    bench = directory / "tb.sv"
+    bench.write_text(f"""`timescale 1ns/1ps
+module tb;
+  reg clk=0,rst_n=0,cmd=0;
+  always #5 clk=~clk;
+  wire pready,pdone,perror,mem_req_valid,mem_req_write,mem_rsp_ready;
+  wire [3:0] mem_req_kind;
+  wire [2:0] mem_req_proj;
+  wire [31:0] mem_req_layer,mem_req_row,mem_req_col,mem_req_wdata;
+  reg mem_req_ready=0,mem_rsp_valid=0;
+  reg [31:0] mem_rsp_rdata=0;
+  anvil_q1_fp_gemv parent(
+    .clk(clk),.rst_n(rst_n),.cmd_valid(cmd),.cmd_ready(pready),
+    .cmd_layer(32'd0),.cmd_pos(32'd0),.cmd_proj(3'd1),.cmd_precision(2'd1),
+    .done(pdone),.error(perror),.mem_req_valid(mem_req_valid),
+    .mem_req_ready(mem_req_ready),.mem_req_write(mem_req_write),
+    .mem_req_kind(mem_req_kind),.mem_req_layer(mem_req_layer),.mem_req_proj(mem_req_proj),
+    .mem_req_row(mem_req_row),.mem_req_col(mem_req_col),.mem_req_wdata(mem_req_wdata),
+    .mem_rsp_valid(mem_rsp_valid),.mem_rsp_ready(mem_rsp_ready),
+    .mem_rsp_rdata(mem_rsp_rdata),.mem_rsp_error(1'b0));
+  wire fready,in_ready,out_valid,out_last,fdone,ferror;
+  wire [31:0] out_data,out_index;
+  wire [4:0] status;
+  reg in_valid=0,in_last=0,out_ready=0;
+  reg [31:0] in_data=0;
+  wire tensor_valid,tensor_ready,tensor_result_valid;
+  wire [1023:0] tensor_a,tensor_b;
+  wire [63:0] tensor_mask;
+  wire [31:0] tensor_acc,tensor_result;
+  wire [4:0] tensor_status;
+  wire fetch_valid,fetch_ready,fetch_scale,response_valid,response_ready;
+  wire [3:0] fetch_kind;
+  wire [2:0] fetch_proj;
+  wire [31:0] fetch_layer,fetch_row,fetch_col,fetch_tag,response_tag;
+  wire [511:0] response_data;
+  wire response_write,response_error,work_active,result_needed;
+  wire bias_req_valid,bias_rsp_ready;
+  wire [31:0] bias_layer,bias_col;
+  wire [2:0] bias_proj;
+  reg bias_rsp_valid=0;
+  anvil_q1_fp2_projection #(.MAX_INPUT(896),.MAX_OUTPUT(128)) fp2(
+    .clk(clk),.rst_n(rst_n),.cmd_valid(cmd),.cmd_ready(fready),
+    .cmd_format_mx(1'b{int(mx)}),.cmd_head(1'b0),.cmd_layer(32'd0),
+    .cmd_inputs(32'd896),.cmd_outputs(32'd128),.cmd_proj(3'd1),
+    .in_valid(in_valid),.in_ready(in_ready),.in_data(in_data),.in_last(in_last),
+    .out_valid(out_valid),.out_ready(out_ready),.out_data(out_data),.out_index(out_index),
+    .out_last(out_last),.done(fdone),.error(ferror),.status(status),
+    .ulp_valid(),.ulp_distance(),
+    .tensor_valid(tensor_valid),.tensor_ready(tensor_ready),.tensor_a(tensor_a),
+    .tensor_b(tensor_b),.tensor_mask(tensor_mask),.tensor_acc(tensor_acc),
+    .tensor_result_valid(tensor_result_valid),.tensor_result(tensor_result),
+    .tensor_status(tensor_status),.fetch_valid(fetch_valid),.fetch_ready(fetch_ready),
+    .fetch_scale(fetch_scale),.fetch_kind(fetch_kind),.fetch_layer(fetch_layer),
+    .fetch_proj(fetch_proj),.fetch_row(fetch_row),.fetch_col(fetch_col),.fetch_tag(fetch_tag),
+    .response_valid(response_valid),.response_ready(response_ready),
+    .response_tag(response_tag),.response_write(response_write),.response_error(response_error),
+    .response_data(response_data),.work_active(work_active),.result_needed(result_needed),
+    .bias_req_valid(bias_req_valid),.bias_req_ready(!bias_rsp_valid),
+    .bias_layer(bias_layer),.bias_col(bias_col),.bias_proj(bias_proj),
+    .bias_rsp_valid(bias_rsp_valid),.bias_rsp_ready(bias_rsp_ready),
+    .bias_rsp_data(32'd0),.bias_rsp_error(1'b0));
+  anvil_q1_fp2_bfp_tensor_array tensor_array(
+    .clk(clk),.rst_n(rst_n),.in_valid(tensor_valid),.in_ready(tensor_ready),
+    .out_valid(tensor_result_valid),.out_ready(1'b1),.format_mx(1'b0),
+    .a(tensor_a),.b(tensor_b),.a_scale(16'h7f7f),.b_scale(16'h7f7f),
+    .lane_mask(tensor_mask),.acc_in(tensor_acc),.result(tensor_result),
+    .status(tensor_status),.alignment_events());
+  wire ddr_req_valid,ddr_req_write,ddr_req_id,ddr_req_scale,ddr_rsp_ready;
+  wire [3:0] ddr_req_kind;
+  wire [2:0] ddr_req_proj;
+  wire [31:0] ddr_req_layer,ddr_req_row,ddr_req_col;
+  wire [511:0] ddr_req_wdata;
+  wire [63:0] ddr_req_wstrb;
+  reg ddr_req_ready=0,ddr_rsp_valid=0,ddr_rsp_id=0;
+  reg [511:0] ddr_rsp_rdata=0;
+  anvil_q1_fp2_ddr_pingpong transport(
+    .clk(clk),.rst_n(rst_n),.cmd_valid(fetch_valid),.cmd_ready(fetch_ready),
+    .cmd_write(1'b0),.cmd_scale(fetch_scale),.cmd_kind(fetch_kind),.cmd_layer(fetch_layer),
+    .cmd_proj(fetch_proj),.cmd_row(fetch_row),.cmd_col(fetch_col),.cmd_tag(fetch_tag),
+    .cmd_wdata(512'd0),.cmd_wstrb(64'd0),.out_valid(response_valid),
+    .out_ready(response_ready),.out_tag(response_tag),.out_write(response_write),
+    .out_error(response_error),.out_data(response_data),.work_active(work_active),
+    .result_needed(result_needed),.stall_event(),.ddr_req_valid(ddr_req_valid),
+    .ddr_req_ready(ddr_req_ready),.ddr_req_write(ddr_req_write),.ddr_req_id(ddr_req_id),
+    .ddr_req_scale(ddr_req_scale),.ddr_req_kind(ddr_req_kind),
+    .ddr_req_layer(ddr_req_layer),.ddr_req_proj(ddr_req_proj),
+    .ddr_req_row(ddr_req_row),.ddr_req_col(ddr_req_col),.ddr_req_wdata(ddr_req_wdata),
+    .ddr_req_wstrb(ddr_req_wstrb),.ddr_rsp_valid(ddr_rsp_valid),
+    .ddr_rsp_ready(ddr_rsp_ready),.ddr_rsp_id(ddr_rsp_id),
+    .ddr_rsp_error(1'b0),.ddr_rsp_rdata(ddr_rsp_rdata));
+  reg [15:0] x[0:895],w[0:114687];
+  reg [511:0] packed_weights[0:{len(beats)-1}],scale_plane[0:{max(1,len(scales))-1}];
+  reg [31:0] expected[0:127],pending_data=0,held_data=0;
+  reg [511:0] responses[0:1];
+  reg pending=0,owned[0:1],held=0,held_last=0;
+  reg [31:0] held_index=0;
+  reg [4:0] held_status=0;
+  integer delay_count[0:1],remaining=0;
+  integer cycle=0,start_edge,run_index,tx=0,prx=0,frx=0,j;
+  integer pcycles[0:1],fcycles[0:1],pbytes[0:1],fbytes[0:1],metadata[0:1];
+  reg pa,sa,da,ra,ia,oa,ba,bs;
+  task tick;
+    integer chosen;
+    begin
+      cycle=cycle+1;
+      if (cycle>8000000) $fatal(1,"GEMV cycle watchdog");
+      mem_req_ready=!pending && !mem_rsp_valid && cycle%17>=3;
+      ddr_req_ready=cycle%17>=3; out_ready=cycle%17>=3;
+      in_valid=tx<896 && !cmd;
+      in_last=tx==895;
+      if (in_valid) in_data={{x[tx],16'd0}};
+      if (pending && remaining==0 && !mem_rsp_valid) begin
+        mem_rsp_valid=1; mem_rsp_rdata=pending_data;
+      end
+      if (!ddr_rsp_valid) begin
+        chosen=-1;
+        if (owned[1] && delay_count[1]==0) chosen=1;
+        else if (owned[0] && delay_count[0]==0) chosen=0;
+        if (chosen>=0) begin ddr_rsp_valid=1; ddr_rsp_id=chosen;
+          ddr_rsp_rdata=responses[chosen]; end
+      end
+      #1;
+      if ((^{{pdone,perror,fdone,ferror,in_ready,out_valid,mem_req_valid,
+          mem_rsp_ready,ddr_req_valid,ddr_rsp_ready,bias_req_valid,bias_rsp_ready}})===1'bx ||
+          perror || ferror) $fatal(1,"GEMV control/error");
+      pa=mem_req_valid && mem_req_ready; sa=mem_rsp_valid && mem_rsp_ready;
+      da=ddr_req_valid && ddr_req_ready; ra=ddr_rsp_valid && ddr_rsp_ready;
+      ia=in_valid && in_ready; oa=out_valid && out_ready;
+      ba=bias_req_valid && !bias_rsp_valid; bs=bias_rsp_valid && bias_rsp_ready;
+      if (held && {{out_valid,out_data,out_index,out_last,status}} !==
+          {{1'b1,held_data,held_index,held_last,held_status}})
+        $fatal(1,"GEMV output stability");
+      held=out_valid && !out_ready;
+      held_data=out_data; held_index=out_index; held_last=out_last; held_status=status;
+      if (out_valid) begin
+        if (frx>=128 || out_index!==frx || out_data!==expected[frx] ||
+            out_last !== (frx==127) || |status[4:2])
+          $fatal(1,"FP2 GEMV numerical/index got=%h expected=%h at=%0d",out_data,expected[frx],frx);
+      end
+      if (pa) begin
+        if (mem_req_layer!=0 || (mem_req_kind!=8 && mem_req_proj!=1))
+          $fatal(1,"parent GEMV identity");
+        if (mem_req_write) begin
+          if (mem_req_kind!=8 || mem_req_row!=3 || mem_req_col!==prx ||
+              prx>=128 || mem_req_wdata!==expected[prx])
+            $fatal(1,"parent GEMV numerical/order");
+          prx=prx+1; pending_data=0;
+        end else if (mem_req_kind==8 && mem_req_row==1 && mem_req_col<896)
+          pending_data={{x[mem_req_col],16'd0}};
+        else if (mem_req_kind==12 && mem_req_row<896 && mem_req_col<128)
+          pending_data={{16'd0,w[mem_req_row*128+mem_req_col]}};
+        else if (mem_req_kind==4 && mem_req_row==0 && mem_req_col<128)
+          pending_data=0;
+        else $fatal(1,"parent GEMV request");
+        pbytes[run_index]=pbytes[run_index]+64;
+      end
+      if (ba) begin
+        if (bias_layer!=0 || bias_proj!=1 || bias_col>=128) $fatal(1,"bias identity");
+        fbytes[run_index]=fbytes[run_index]+64;
+      end
+      if (pdone && !pcycles[run_index]) begin
+        if (prx!=128) $fatal(1,"parent GEMV missing output");
+        pcycles[run_index]=cycle-start_edge;
+      end
+      if (fdone && !fcycles[run_index]) begin
+        if (frx!=128) $fatal(1,"FP2 GEMV missing output");
+        fcycles[run_index]=cycle-start_edge;
+      end
+      @(posedge clk);
+      if (ia) tx=tx+1;
+      if (oa) frx=frx+1;
+      if (sa) pending=0;
+      if (pa) begin pending=1; remaining=2; end
+      if (ra) owned[ddr_rsp_id]=0;
+      if (da) begin
+        if (owned[ddr_req_id] || ddr_req_write || ddr_req_kind!=12 ||
+            ddr_req_layer!=0 || ddr_req_proj!=1 || ddr_req_row>=896 ||
+            ddr_req_col>=128 || ddr_req_wstrb!==0)
+          $fatal(1,"GEMV DDR identity/ownership");
+        owned[ddr_req_id]=1; delay_count[ddr_req_id]=2;
+        if (ddr_req_scale) begin
+          if (!{int(mx)} || ddr_req_col!=0) $fatal(1,"GEMV scale address");
+          responses[ddr_req_id]=scale_plane[ddr_req_row];
+          metadata[run_index]=metadata[run_index]+64;
+        end else responses[ddr_req_id]=
+          packed_weights[ddr_req_row*{outputs//(64 if mx else 32)}+
+                         (ddr_req_col>>{6 if mx else 5})];
+        fbytes[run_index]=fbytes[run_index]+64;
+      end
+      #1;
+      if (sa) mem_rsp_valid=0;
+      if (ra) ddr_rsp_valid=0;
+      if (bs) bias_rsp_valid=0;
+      if (ba) bias_rsp_valid=1;
+      if (pending && remaining>0) remaining=remaining-1;
+      for (j=0;j<2;j=j+1)
+        if (owned[j] && delay_count[j]>0) delay_count[j]=delay_count[j]-1;
+      @(negedge clk);
+    end
+  endtask
+  initial begin
+    $readmemh("{run.relative / stem / 'activations.hex'}",x);
+    $readmemh("{run.relative / stem / 'weights.hex'}",w);
+    $readmemh("{run.relative / stem / 'beats.hex'}",packed_weights);
+    $readmemh("{run.relative / stem / 'scales.hex'}",scale_plane);
+    $readmemh("{run.relative / stem / 'expected.hex'}",expected);
+    owned[0]=0; owned[1]=0; delay_count[0]=0; delay_count[1]=0;
+    repeat(2) @(posedge clk); @(negedge clk); rst_n=1; #1;
+    for (run_index=0;run_index<2;run_index=run_index+1) begin
+      tx=0; prx=0; frx=0; pcycles[run_index]=0; fcycles[run_index]=0;
+      pbytes[run_index]=0; fbytes[run_index]=0; metadata[run_index]=0;
+      if (!pready || !fready) $fatal(1,"GEMV not idle");
+      cmd=1; start_edge=cycle+1; tick(); cmd=0;
+      while (!pcycles[run_index] || !fcycles[run_index]) tick();
+      $display("MEASUREMENT gemv-{ 'mx' if mx else 'bf16'} run=%0d parent_cycles=%0d fp2_cycles=%0d parent_bytes=%0d fp2_bytes=%0d scale_bytes=%0d components=128",
+        run_index,pcycles[run_index],fcycles[run_index],
+        pbytes[run_index],fbytes[run_index],metadata[run_index]);
+      if (fcycles[run_index]>=pcycles[run_index])
+        $fatal(1,"PERFORMANCE GEMV requires strictly fewer cold/warm FP2 cycles");
+      if ({int(mx)} && 2*fbytes[run_index]>pbytes[run_index])
+        $fatal(1,"TRAFFIC MX requires at least fifty percent actual parent-relative reduction");
+      tick(); tick();
+    end
+    $display("SUMMARY GEMV: compared=512 speedup=passed");
+    $finish;
+  end
+endmodule
+""")
+    sources = [str(path.relative_to(root)) for pattern in (
+        "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
+    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    run.receipt["comparisons"].append({
+        "kind": "gemv-benchmark", "format": "mx" if mx else "bf16",
+        "seed": seed, "inputs": hidden, "outputs": outputs,
+        "components": outputs * 4, "result": "passed",
+        "mx_dense_payload_bytes": hidden * outputs if mx else None,
+        "equivalent_bf16_payload_bytes": hidden * outputs * 2,
+        "mx_unpadded_scale_bytes": hidden * outputs // 32 if mx else None,
+        "transport": "uncached 64-byte parent scalar adapter; FP2 ping-pong DDR",
+    })
 
 
 def rms_benchmark(run, root, compile_and_run, hidden=896):
