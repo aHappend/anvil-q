@@ -11,7 +11,7 @@ historical benchmark fixtures or parent acceptance receipts were supplied.
 Compatibility must be derived from `anvil_q1_ht2_reference/rtl/`, which is
 read-only provenance, not a numerical oracle.
 
-**Current implementation is incomplete.** The owned RTL now includes arithmetic,
+The owned RTL includes arithmetic,
 write conversion, native/AWQ/INT8 weight dequantization, a four-slot 256-lane
 tensor block, the seven-mode epilogue, bounded tiled online attention,
 image-tagged provisional code storage, packed committed-cache readers/writers,
@@ -22,11 +22,13 @@ the actual projection, `u_epilogue`, `u_flash_attn` and pre-provisional FP32
 store converter in the Qwen graph. The new execution controller connects that
 decoder to branch selection, transactional copies, committed-cache reads and
 held external results. Queued core/DDR transport, asynchronous FIFOs and the
-loader are also saved.
-The external HT3 top and extension CSR/descriptor/image-commit controller are
-still absent. These source hierarchies therefore are not a complete accelerator.
+loader are connected under the exact external `anvil_q1_ht3_top`. The HT3
+control/descriptor hierarchy implements the inherited CSR ABI, extension
+format/table mutation, descriptor bounds/overlap checks, represented-image
+numeric validation and positive-finite scale/padding checks before image commit.
 The portable functional suite, synthesis, benchmarks, timing, hardware gates and
-product report have not run. No readiness or performance claim is made here.
+product report have not run. This is a Designer implementation handoff, not
+functional acceptance, achieved timing or a performance claim.
 
 Designer owns `rtl/*.sv` and `design/*.md`. Independent Verifier owns `tests/*`.
 The shared runtime runs the mandatory `python3 tests/verify.py` command, native
@@ -64,7 +66,7 @@ synchronizers and inadvertently change the documented startup table.
 
 ## Frozen external integration contract
 
-The future top is `anvil_q1_ht3_top`, with the exact ordered external ports,
+The top is `anvil_q1_ht3_top`, with the exact ordered external ports,
 directions, widths and signedness of `anvil_q1_ht2_top`. In particular,
 `logit_data` is a signed 32-bit **container of FP32 bits**, not an integer
 conversion. Existing token, loader, CSR, Avalon, four-slot batch, commit and
@@ -247,8 +249,8 @@ groups and rows cannot acquire a new scale while an old dequantization is
 stalled: scales are captured by arithmetic on its accepted input edge.
 Positive finite scales, including subnormals, are checked before that group's
 columns are submitted. Table-level padding, overlap, bounds, image ownership
-and projection-0..6-only override admission still belong to the missing image
-controller. The connected decoder now selects each projection's subregion
+and projection-0..6-only override admission belong to `u_descriptors` and
+`u_control`. The connected decoder selects each projection's subregion
 and captures the command's extension base/length/image ownership.
 
 Sparse down projection preserves the parent conservative behavior. The
@@ -338,7 +340,7 @@ transfer. Output stalls add their actual held interval. Abort/error cancels
 internal arithmetic, preserves any already held panel, drains the reader,
 prefetch and queued DMA obligations, and only then emits failed completion.
 The decoder/execution recurrences below compose these local schedules.
-External top/CSR/image initialization remains unimplemented.
+Top/CSR/image initialization and its edge recurrence are specified below.
 
 ## Standalone fused epilogue
 
@@ -831,8 +833,8 @@ plus residual, repeated per layer, then final norm and logits.
 The tensor is connected under the actual HT3 projection, which is connected
 to `anvil_q1_ht3_decoder`. That decoder literally instantiates `u_epilogue`
 and `u_flash_attn`; the execution controller connects their cache traffic
-to provisional and committed storage. The external top/image controller
-is still missing. Connected source alone is not model execution or a measured
+to provisional and committed storage under the external top/image controller.
+Connected source alone is not model execution or a measured
 fusion improvement. Private replay costs are included in the formulas.
 Shared-scratch operator-boundary round trips remain forbidden.
 
@@ -1157,5 +1159,6 @@ the shared environment. Matched actual HT2/HT3 runs must measure per-eligible-
 path >60% transition-cycle reduction and actual total cycles/TPM, with simulated
 and physical results labeled separately.
 
-No acceptance evidence exists yet. The required implementation work remaining
-is listed in `design/ARCHITECTURE.md`; none of these obligations is waived.
+No functional acceptance evidence exists yet. All independent verification,
+synthesis, benchmark, timing, hardware and report obligations remain pending;
+none is waived by the Designer handoff or static elaboration.

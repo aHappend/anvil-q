@@ -2,8 +2,8 @@
 
 ## Current checkpoint
 
-This is an incomplete Designer source checkpoint, not a working accelerator or
-an accepted product. The unchanged parent is
+This is a connected Designer implementation handoff, not a functionally
+verified or accepted product. The unchanged parent is
 `anvil_q1_ht2_reference/rtl/`. No prior HT3 source was present at intake.
 Arithmetic, exact pre-provisional KV conversion, weight dequantization,
 the four-slot 256-lane tensor block, seven-mode epilogue, tiled online attention,
@@ -14,8 +14,8 @@ The HT3 cache controller connects code-only provisional storage to packed
 committed reads and copies. The new decoder connects the Qwen projection,
 fused epilogue, attention and FP32 store converter. The execution controller
 connects branch/correction processing, selected-node copies and transactional
-prefix/result publication. Queued CDC transport and the loader are saved.
-The external top and extension CSR/descriptor/image validation are still missing.
+prefix/result publication. Queued CDC transport and the loader connect through
+the external top, inherited CSR control and extension-aware image controller.
 No top-level substitution or wrapper around the parent's execution datapath
 has been introduced.
 
@@ -59,6 +59,10 @@ has been introduced.
 | `rtl/anvil_q1_ht3_mailbox.sv` | Held bundled-data request/acknowledgment crossing for loader ownership and responses |
 | `rtl/anvil_q1_ht3_transport.sv` | Queued Avalon issue, full-response reservations and reset-surviving physical debt drain |
 | `rtl/anvil_q1_ht3_image_loader.sv` | Inherited DDR-clock loader ABI using HT3 mailboxes, real write responses and ownership release |
+| `rtl/anvil_q1_ht3_counter_cdc.sv` | Request/acknowledgment snapshot of physical DDR bytes |
+| `rtl/anvil_q1_ht3_control.sv` | Inherited CSR/counter ABI and idle-only format/scale-table extension control |
+| `rtl/anvil_q1_ht3_descriptors.sv` | Synchronous descriptor RAM, bounds/overlap/format validation, finite model inputs and positive-finite extension scales/zero padding |
+| `rtl/anvil_q1_ht3_top.sv` | Exact ordered external ABI, diagnostic-safe legal hierarchy, admission and complete execution/loader/DMA/CDC wiring |
 
 The FP helper structure and add alignment follow parent prior art, with a
 distinct HT3 namespace; no reference file is modified. HT3 multiply has the
@@ -95,24 +99,34 @@ Native formats ignore extension scales. Quantized formats preserve FP32 until
 the integer threshold conversion and output zero-filled code containers. The
 converter contains no provisional FP32 cache and no dequantization path.
 
-## Required integration still to implement
+## External integration and remaining acceptance
 
-1. Implement extension CSR/image validation and immutable captured scale
-   ownership, packed weight/cache descriptor lengths, bounds/overlap checks,
-   padding validation, idle-only mutation and image/prefix invalidation.
-2. Implement the exact ordered external `anvil_q1_ht3_top` ports/parameters
-   and legacy control/status behavior, connecting the saved execution,
-   descriptor/image controller, loader, queued DMA and transport hierarchies.
-   Resolve native cache-format compatibility consistently at that top boundary.
-3. Finish top/CSR/image initialization cycle documentation. SPEC now includes
-   decoder acquisition, fused rows, integrated conversion, execution,
-   descriptor arbitration, CDC and loader cycle recurrences.
-4. Hand the completed sources to independent Verifier immediately. All
-   numerical/protocol, quantized-store-to-later-attention, parameter,
-   compatibility, benchmark/performance, mutation and synthesis obligations
-   remain unperformed. The current epilogue uses conservative serial SIMD
-   schedules; >60% measured transition-cycle reduction remains required,
-   not inferred from module naming or the removal of scratch accesses.
+`u_control` owns legacy mode/sparse policy, extension format and scale-table
+registers. `u_descriptors` owns installation, immutable image validation and
+the generation tag. An accepted loader acquisition or image/format/table
+mutation invalidates execution prefix and provisional ownership. No command
+can enter between mutation and that invalidation because CSR/loader ownership
+also gates top-level admission. A pending result or outstanding DMA excludes
+mutations; accepted transactions drain before another owner can reuse memory.
+
+Descriptors are synchronous RAM with a single control-side read/write owner
+and a separate registered lookup response. Their mathematical layouts and
+lengths select elaboration constants, not a runtime divider or multiplier.
+Installation scans existing regions for overlap before changing a descriptor.
+Image commit checks every slot/identity/length/bound, each active model
+halfword, the extension's overlap with every occupied region, all positive
+finite scale entries and zero table padding. Scale-table changes require
+recommit; captured decoder/array/cache scales cannot change under backpressure.
+The legacy all-zero extension uses the parent's FP16 cache boundary when
+legacy FP16 is selected; explicit nonzero cache formats use their own encoding.
+The internal cache format is always captured independently of query encoding.
+
+SPEC contains the complete top/CSR/image initialization and execution edge
+recurrences. All independent numerical/protocol, quantized-store-to-later-
+attention, parameter, compatibility, benchmark/performance, mutation,
+synthesis, timing and hardware obligations remain unperformed. The current
+epilogue uses conservative serial SIMD schedules; >60% measured transition-
+cycle reduction remains required, not inferred from naming or scratch removal.
 
 ## Tiled attention and code-preserving cache
 
@@ -179,8 +193,7 @@ outstanding requests. The saved core/DDR transport now uses a command FIFO,
 response FIFO, complete-return reservation and persistent physical debt
 ledger. It replaces its bus-stage request on the accepting edge for resident,
 credited same-kind traffic. No physical DMA turnaround, CDC, frequency or
-throughput result is claimed; external top wiring and independent checks
-are still pending.
+throughput result is claimed; independent checks remain pending.
 
 Sparse down projection avoids a real weight read only for a genuinely zero
 activation column and a finite committed image. Nonzero threshold predictions
@@ -212,8 +225,8 @@ tag pipelines advance through input bubbles and match both arithmetic
 latencies. Forwarding supplies a completed context on its same reuse edge.
 Reduction occurs only after the last in-flight product/accumulation retires.
 This sustains the architectural one-column-per-edge admission interval, but
-actual model utilization depends on the full top/image integration and
-independent execution/performance measurements still missing.
+actual model utilization depends on independent execution/performance
+measurements, which remain pending.
 
 ## Planned memory and streaming contracts
 
