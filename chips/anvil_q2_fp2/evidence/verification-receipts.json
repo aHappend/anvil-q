@@ -9899,13 +9899,13 @@
       ]
     },
     "check:numerics": {
-      "attempt_id": 11,
-      "duration_s": 290.81220596982166,
-      "stdout_preview": " 44108, \"exp-error\": 13217, \"exp-4ulp\": 13217, \"rsqrt-error\": 27940, \"rsqrt-4ulp\": 27940, \"exp-invalid\": 28046, \"reciprocal-error\": 11110, \"reciprocal-4ulp\": 11110, \"exp-cutoff\": 2845, \"exp-cutoff-error\": 2845, \"summary-count\": 1, \"observation-count\": 1}, \"mismatch_count\": 0}, {\"case\": \"128-lane-balanced-trees\", \"status\": \"passed\", \"receipt\": \"evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/receipt.json\", \"comparisons\": {\"balanced-tree-bits\": 10134, \"tensor-error\": 10137, \"summary-count\": 1, \"observed-tile-count\": 1}, \"mismatch_count\": 0}, {\"case\": \"full-fused-numerics\", \"status\": \"passed\", \"receipt\": \"evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/receipt.json\", \"comparisons\": {\"epilogue-error\": 55466, \"epilogue-pair\": 55466, \"epilogue-exact\": 10032, \"theta-coefficient-cosine\": 10000, \"theta-coefficient-sine\": 10000, \"analytic-rope-rotation-bound\": 10000, \"swiglu-bound\": 10000, \"rms-bound\": 35434, \"summary-count\": 1, \"output-count\": 1}, \"mismatch_count\": 0}, {\"case\": \"full-128-component-six-head-attention\", \"status\": \"passed\", \"receipt\": \"evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/receipt.json\", \"comparisons\": {\"attention-error\": 600, \"attention-cycle-bound\": 600, \"stable-softmax-bound\": 76800, \"summary\": 1, \"attention-head-result-count\": 1}, \"mismatch_count\": 0}], \"status\": \"passed\", \"error\": null}\n",
-      "receipt_count": 8,
+      "attempt_id": 18,
+      "duration_s": 1107.6009191230405,
+      "stdout_preview": "51Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/receipt.json\", \"comparisons\": {\"attention-error\": 150, \"attention-cycle-bound\": 150, \"stable-softmax-bound\": 19200, \"summary\": 1, \"attention-head-result-count\": 1}, \"mismatch_count\": 0}, {\"case\": \"full-128-component-six-head-attention-25-49\", \"status\": \"passed\", \"receipt\": \"evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/receipt.json\", \"comparisons\": {\"attention-error\": 150, \"attention-cycle-bound\": 150, \"stable-softmax-bound\": 19200, \"summary\": 1, \"attention-head-result-count\": 1}, \"mismatch_count\": 0}, {\"case\": \"full-128-component-six-head-attention-50-74\", \"status\": \"passed\", \"receipt\": \"evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/receipt.json\", \"comparisons\": {\"attention-error\": 150, \"attention-cycle-bound\": 150, \"stable-softmax-bound\": 19200, \"summary\": 1, \"attention-head-result-count\": 1}, \"mismatch_count\": 0}, {\"case\": \"full-128-component-six-head-attention-75-99\", \"status\": \"passed\", \"receipt\": \"evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/receipt.json\", \"comparisons\": {\"attention-error\": 150, \"attention-cycle-bound\": 150, \"stable-softmax-bound\": 19200, \"summary\": 1, \"attention-head-result-count\": 1}, \"mismatch_count\": 0}], \"status\": \"passed\", \"error\": null}\n",
+      "receipt_count": 11,
       "receipts": [
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -9915,7 +9915,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649129.9816825,
+            "start_unix": 1793654931.2618868,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -9939,7 +9939,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -9954,7 +9954,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -9963,7 +9963,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -9983,7 +9983,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -9993,13 +9993,13 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649129.9935753,
+                "start_unix": 1793654931.2738302,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/version-iverilog.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/version-iverilog.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/version-iverilog.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/version-iverilog.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.0275042
+                "end_unix": 1793654931.2914221
               },
               {
                 "argv": [
@@ -10007,13 +10007,13 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.027889,
+                "start_unix": 1793654931.291817,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/version-vvp.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/version-vvp.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/version-vvp.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/version-vvp.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.0373695
+                "end_unix": 1793654931.3009436
               },
               {
                 "argv": [
@@ -10023,36 +10023,36 @@
                   "-s",
                   "tb",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/simulation.vvp",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/simulation.vvp",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_mx_encode.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.0375855,
+                "start_unix": 1793654931.3011396,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.0553434
+                "end_unix": 1793654931.334404
               },
               {
                 "argv": [
                   "vvp",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/simulation.vvp"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/simulation.vvp"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.0557213,
+                "start_unix": 1793654931.3349128,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.3721147
+                "end_unix": 1793654931.8011441
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649130.6753914,
+            "end_unix": 1793654932.0996873,
             "exit_status": 0,
             "tool_versions": {
               "iverilog": [
@@ -10066,15 +10066,15 @@
                 "Copyright (c) 2001-2021 Stephen Williams (steve@icarus.com)"
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/tb.sv": "beeebc38e7b8be2c27e95cba27fe61e690edff2b96115d0c4106c714bc70a255",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-bf16-all-storage-patterns-20261102T195209Z-82f4c79c/simulation.vvp": "932841392c77da071653c16cf6d7ca03970850d32e5cb01745154ce3422b4312"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/tb.sv": "beeebc38e7b8be2c27e95cba27fe61e690edff2b96115d0c4106c714bc70a255",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-bf16-all-storage-patterns-20261102T212851Z-696312b0/simulation.vvp": "bc347db5b666fa5bdf45219524bd1022dc2348f9be11a5e6da3ebf7f6060858b"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -10084,7 +10084,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649130.677005,
+            "start_unix": 1793654932.1013863,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -10108,7 +10108,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -10123,7 +10123,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -10132,7 +10132,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -10152,7 +10152,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -10162,13 +10162,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.6888084,
+                "start_unix": 1793654932.1133955,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/version-verilator.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/version-verilator.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.8048592
+                "end_unix": 1793654932.2294366
               },
               {
                 "argv": [
@@ -10176,13 +10176,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.8052106,
+                "start_unix": 1793654932.2301688,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/version-g++.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/version-g++.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.8109462
+                "end_unix": 1793654932.2401865
               },
               {
                 "argv": [
@@ -10190,13 +10190,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.8111436,
+                "start_unix": 1793654932.2403991,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/version-make.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/version-make.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/version-make.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/version-make.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649130.8164878
+                "end_unix": 1793654932.2458372
               },
               {
                 "argv": [
@@ -10211,39 +10211,39 @@
                   "-j",
                   "2",
                   "--Mdir",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/compile-obj",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/compile-obj",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/simulation",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/simulation",
                   "--unroll-stmts",
                   "65536",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_mx_decode.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649130.816645,
+                "start_unix": 1793654932.2459867,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649137.797417
+                "end_unix": 1793654938.976704
               },
               {
                 "argv": [
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/simulation"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/simulation"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649137.7983563,
+                "start_unix": 1793654938.977602,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649138.0652032
+                "end_unix": 1793654939.1939194
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649139.5709555,
+            "end_unix": 1793654940.7558572,
             "exit_status": 0,
             "tool_versions": {
               "verilator": [
@@ -10260,15 +10260,15 @@
                 "Copyright (C) 1988-2020 Free Software Foundation, Inc."
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/tb.sv": "9b577139e9ff95ba0d65794dd0f66242640a384d5436db8ab8841c6a2eb94a3a",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-all-e4m3fn-scale-pairs-20261102T195210Z-5d78fc0d/simulation": "19c1d54e54dde2e9f360d5f859b7dca7e41586ca3f787ca9093872a445d58ea6"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/tb.sv": "9b577139e9ff95ba0d65794dd0f66242640a384d5436db8ab8841c6a2eb94a3a",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-all-e4m3fn-scale-pairs-20261102T212852Z-5a7a8a04/simulation": "7e9d04b8a9d93dc413723c9f9cbc4d505949935287983b06da1c9820b7b83357"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -10278,7 +10278,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649139.5729105,
+            "start_unix": 1793654940.7579908,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -10302,7 +10302,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -10317,7 +10317,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -10326,7 +10326,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -10346,7 +10346,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -10356,13 +10356,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649151.9929066,
+                "start_unix": 1793654956.6621356,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/version-verilator.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/version-verilator.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649152.1090744
+                "end_unix": 1793654956.7784004
               },
               {
                 "argv": [
@@ -10370,13 +10370,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649152.1093314,
+                "start_unix": 1793654956.7789106,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/version-g++.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/version-g++.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649152.1145766
+                "end_unix": 1793654956.784471
               },
               {
                 "argv": [
@@ -10384,13 +10384,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649152.1147,
+                "start_unix": 1793654956.7847023,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/version-make.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/version-make.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/version-make.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/version-make.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649152.119724
+                "end_unix": 1793654956.7902718
               },
               {
                 "argv": [
@@ -10405,40 +10405,40 @@
                   "-j",
                   "2",
                   "--Mdir",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/compile-obj",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/compile-obj",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/simulation",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/simulation",
                   "--unroll-stmts",
                   "65536",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_mx_encode.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649152.1198144,
+                "start_unix": 1793654956.7904189,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649158.9995363
+                "end_unix": 1793654964.521974
               },
               {
                 "argv": [
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/simulation",
-                  "+INPUT=evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/checkpoint-images/groups.txt"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/checkpoint-images/groups.txt"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649159.000582,
+                "start_unix": 1793654964.5230575,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649159.1673641
+                "end_unix": 1793654964.6897652
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649160.922276,
+            "end_unix": 1793654966.4162076,
             "exit_status": 0,
             "tool_versions": {
               "verilator": [
@@ -10455,15 +10455,15 @@
                 "Copyright (C) 1988-2020 Free Software Foundation, Inc."
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/tb.sv": "56456ed30ec666effca7ff0f7bb37530ad4c94e670023cc8c132412f94f5343b",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-group32-independent-encoding-20261102T195219Z-4ef4e495/simulation": "dd47c124a38288a262976c76b3badbe29853005c7b196b45274f8aa5da4e7a22"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/tb.sv": "56456ed30ec666effca7ff0f7bb37530ad4c94e670023cc8c132412f94f5343b",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-group32-independent-encoding-20261102T212900Z-6bdab1e3/simulation": "5ba49ece11a5c51d0105b6a7a6191c54d7346320615d0dfc25b87a5aa3a159c8"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -10473,7 +10473,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649160.9240582,
+            "start_unix": 1793654966.4178526,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -10497,7 +10497,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -10512,7 +10512,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -10521,7 +10521,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -10541,7 +10541,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -10551,13 +10551,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649161.1671517,
+                "start_unix": 1793654966.638377,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/version-verilator.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/version-verilator.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649161.283348
+                "end_unix": 1793654966.7540956
               },
               {
                 "argv": [
@@ -10565,13 +10565,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649161.2846472,
+                "start_unix": 1793654966.7556627,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/version-g++.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/version-g++.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649161.2903507
+                "end_unix": 1793654966.7611067
               },
               {
                 "argv": [
@@ -10579,13 +10579,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649161.290531,
+                "start_unix": 1793654966.7613366,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/version-make.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/version-make.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/version-make.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/version-make.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649161.2960389
+                "end_unix": 1793654966.7666895
               },
               {
                 "argv": [
@@ -10600,42 +10600,42 @@
                   "-j",
                   "2",
                   "--Mdir",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/compile-obj",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/compile-obj",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/simulation",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/simulation",
                   "--unroll-stmts",
                   "65536",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_arithmetic.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_nonlinear.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_coefficients.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649161.2961626,
+                "start_unix": 1793654966.7668896,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649167.9278333
+                "end_unix": 1793654973.2487812
               },
               {
                 "argv": [
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/simulation",
-                  "+INPUT=evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/inputs.txt"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/inputs.txt"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649167.928984,
+                "start_unix": 1793654973.2499926,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649169.849459
+                "end_unix": 1793654975.1709857
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649175.0066485,
+            "end_unix": 1793654980.8792703,
             "exit_status": 0,
             "tool_versions": {
               "verilator": [
@@ -10652,15 +10652,15 @@
                 "Copyright (C) 1988-2020 Free Software Foundation, Inc."
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/tb.sv": "c43f1ce407bce189e1451f36c1b4129b41eff0c5b13bcc060097576223c8d193",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-fp32-and-transcendentals-20261102T195240Z-a90e6d8e/simulation": "293a859c4d2941f609b0fa18c4e681b503b0f83b199d85849272410b2ff5a076"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/tb.sv": "c43f1ce407bce189e1451f36c1b4129b41eff0c5b13bcc060097576223c8d193",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-fp32-and-transcendentals-20261102T212926Z-74700e9a/simulation": "57742fbe75163deb941c556a2ca881da92952e75ce388e6e391a4923e14a92ff"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -10670,7 +10670,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649175.0079827,
+            "start_unix": 1793654980.880507,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -10694,7 +10694,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -10709,7 +10709,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -10718,7 +10718,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -10738,7 +10738,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -10748,13 +10748,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649201.7386472,
+                "start_unix": 1793655007.8192537,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/version-verilator.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/version-verilator.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649201.854542
+                "end_unix": 1793655007.9353213
               },
               {
                 "argv": [
@@ -10762,13 +10762,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649201.8549883,
+                "start_unix": 1793655007.9360058,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/version-g++.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/version-g++.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649201.8604045
+                "end_unix": 1793655007.9412527
               },
               {
                 "argv": [
@@ -10776,13 +10776,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649201.8605242,
+                "start_unix": 1793655007.941375,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/version-make.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/version-make.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/version-make.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/version-make.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649201.8655746
+                "end_unix": 1793655007.9461796
               },
               {
                 "argv": [
@@ -10797,43 +10797,43 @@
                   "-j",
                   "2",
                   "--Mdir",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/compile-obj",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/compile-obj",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/simulation",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/simulation",
                   "--unroll-stmts",
                   "65536",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_arithmetic.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_mx_decode.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_ping_pong_prefetch.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_bfp_tensor_array.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649201.865662,
+                "start_unix": 1793655007.9462636,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649245.2130997
+                "end_unix": 1793655050.792523
               },
               {
                 "argv": [
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/simulation",
-                  "+INPUT=evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/checkpoint-images/tiles.txt"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/checkpoint-images/tiles.txt"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649245.2197316,
+                "start_unix": 1793655050.7996106,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649280.8493237
+                "end_unix": 1793655083.8730907
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649281.0002828,
+            "end_unix": 1793655084.0508413,
             "exit_status": 0,
             "tool_versions": {
               "verilator": [
@@ -10850,15 +10850,15 @@
                 "Copyright (C) 1988-2020 Free Software Foundation, Inc."
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/tb.sv": "c51d4f7542b9171106da81a4888f8700b330f5fc0e3038983f1f7a2e1e8c2db7",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-128-lane-balanced-trees-20261102T195255Z-ecb7468f/simulation": "5d7298da77a83d3a9a34020f5116254622351fa1e28771448a38b968107b107a"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/tb.sv": "c51d4f7542b9171106da81a4888f8700b330f5fc0e3038983f1f7a2e1e8c2db7",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-128-lane-balanced-trees-20261102T212940Z-eef93990/simulation": "b48e4a59a86eb44a9ebdff69d3bfba4ebfb6f2c8dc381cbf7309bc6d31db4562"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -10868,7 +10868,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649281.0041776,
+            "start_unix": 1793655084.0556688,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -10892,7 +10892,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -10907,7 +10907,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -10916,7 +10916,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -10936,7 +10936,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -10946,13 +10946,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649287.675954,
+                "start_unix": 1793655092.3685145,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/version-verilator.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/version-verilator.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649287.791849
+                "end_unix": 1793655092.4844286
               },
               {
                 "argv": [
@@ -10960,13 +10960,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649287.7935765,
+                "start_unix": 1793655092.4860418,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/version-g++.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/version-g++.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649287.7991683
+                "end_unix": 1793655092.4960358
               },
               {
                 "argv": [
@@ -10974,13 +10974,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649287.799291,
+                "start_unix": 1793655092.4963074,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/version-make.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/version-make.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/version-make.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/version-make.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649287.8041463
+                "end_unix": 1793655092.5017536
               },
               {
                 "argv": [
@@ -10995,43 +10995,43 @@
                   "-j",
                   "2",
                   "--Mdir",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/compile-obj",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/compile-obj",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/simulation",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/simulation",
                   "--unroll-stmts",
                   "65536",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_arithmetic.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_nonlinear.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_coefficients.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_epilogue_fusion.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649287.8042412,
+                "start_unix": 1793655092.501917,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649299.8993149
+                "end_unix": 1793655104.4479342
               },
               {
                 "argv": [
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/simulation",
-                  "+INPUT=evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/inputs.txt"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/inputs.txt"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649299.9007244,
+                "start_unix": 1793655104.449128,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649302.9736793
+                "end_unix": 1793655107.2202656
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649307.1071105,
+            "end_unix": 1793655111.8862848,
             "exit_status": 0,
             "tool_versions": {
               "verilator": [
@@ -11048,15 +11048,15 @@
                 "Copyright (C) 1988-2020 Free Software Foundation, Inc."
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/tb.sv": "405f564ffd1896d045157b5f1d9ef42790dd130d73c38c8419c498ed40811ae5",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-fused-numerics-20261102T195441Z-e3c2c494/simulation": "c7a238a8b9fc8f503c19dd1f9e1c74d5ed912d5d479cd37914ebc3fc7a034f01"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/tb.sv": "405f564ffd1896d045157b5f1d9ef42790dd130d73c38c8419c498ed40811ae5",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-fused-numerics-20261102T213124Z-81071af2/simulation": "373f7d3901a38614c456233f8cda9e6e4989fb011dbe4a9ea23ae42d7bde9569"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -11066,7 +11066,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649307.1086583,
+            "start_unix": 1793655111.887954,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -11090,7 +11090,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -11105,7 +11105,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -11114,7 +11114,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -11134,7 +11134,7 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [
@@ -11144,13 +11144,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649320.23521,
+                "start_unix": 1793655117.8251536,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/version-verilator.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/version-verilator.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649320.3507028
+                "end_unix": 1793655117.9412217
               },
               {
                 "argv": [
@@ -11158,13 +11158,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649320.3517134,
+                "start_unix": 1793655117.9428697,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/version-g++.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/version-g++.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649320.3566113
+                "end_unix": 1793655117.948147
               },
               {
                 "argv": [
@@ -11172,13 +11172,13 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649320.356736,
+                "start_unix": 1793655117.9483445,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/version-make.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/version-make.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/version-make.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/version-make.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649320.3614879
+                "end_unix": 1793655117.9533305
               },
               {
                 "argv": [
@@ -11193,9 +11193,9 @@
                   "-j",
                   "2",
                   "--Mdir",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/compile-obj",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/compile-obj",
                   "-o",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/simulation",
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
                   "--unroll-stmts",
                   "65536",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_arithmetic.sv",
@@ -11203,34 +11203,34 @@
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_coefficients.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_mx_decode.sv",
                   "/data/sufeng/anvil-q2-fp2-line/workspace/project/rtl/anvil_q2_fp2_flash_attn.sv",
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/tb.sv"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/tb.sv"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649320.361582,
+                "start_unix": 1793655117.9534824,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/compile.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/compile.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/compile.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/compile.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649370.9252453
+                "end_unix": 1793655175.0770514
               },
               {
                 "argv": [
-                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/simulation",
-                  "+INPUT=evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/checkpoint-images/attention.txt"
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/checkpoint-images/attention.txt"
                 ],
                 "cwd": ".",
-                "start_unix": 1793649370.929599,
+                "start_unix": 1793655175.0841768,
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/simulation.stdout.txt",
-                "stderr": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/simulation.stderr.txt",
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation.stderr.txt",
                 "timed_out": false,
                 "exit_status": 0,
-                "end_unix": 1793649418.5849068
+                "end_unix": 1793655385.8538241
               }
             ],
             "repair_of": null,
-            "end_unix": 1793649420.5632892,
+            "end_unix": 1793655386.415339,
             "exit_status": 0,
             "tool_versions": {
               "verilator": [
@@ -11247,15 +11247,15 @@
                 "Copyright (C) 1988-2020 Free Software Foundation, Inc."
               ]
             },
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/summary.json",
             "artifact_sha256": {
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/tb.sv": "b92322b269827d89f532fd6a80de95ffd94cdd465d44130679b0bbf36d330b27",
-              "evidence/fp2-numerics-20261102T195209Z-47038eb0/fp2-full-128-component-six-head-attention-20261102T195507Z-36497f52/simulation": "b6ba50d59bd39f4a3877f138b8a766e5c2db308f1c57599882744a7cad0baf59"
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/tb.sv": "b92322b269827d89f532fd6a80de95ffd94cdd465d44130679b0bbf36d330b27",
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation": "bc855387e24a263c92b79e99be21d459e3c972b48b3e221c788f55de8b4db415"
             }
           }
         },
         {
-          "path": "evidence/fp2-numerics-20261102T195209Z-47038eb0/receipt.json",
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/receipt.json",
           "data": {
             "kind": "independent-verification-suite",
             "argv": [
@@ -11265,7 +11265,7 @@
               "numerics"
             ],
             "cwd": ".",
-            "start_unix": 1793649129.968082,
+            "start_unix": 1793655386.422014,
             "source_sha256": {
               "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
               "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
@@ -11289,7 +11289,7 @@
               "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
               "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
               "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
-              "design/ARCHITECTURE.md": "b17bedc1e492eb3fde7e25c36e7f1195d5c7c58fa515b8fc6fd299802e676bc9",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
               "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
               "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
               "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
@@ -11304,7 +11304,7 @@
               "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
               "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
               "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
-              "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
               "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
               "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
               "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
@@ -11313,7 +11313,7 @@
               "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
               "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
               "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
-              "tests/fp2_attention_probe.py": "a47e73186dcc07b5320ce641da0b8008ec428e40ba822062e081602854482c62",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
               "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
               "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
               "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
@@ -11333,17 +11333,413 @@
               "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
               "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
               "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
-              "tests/verify.py": "5fdd59123ce14aa6d968d72c312f42decdb5b2a3b43496df42cd83481699ab4a"
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
+            },
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "commands": [
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "start_unix": 1793655391.8979495,
+                "timeout_s": 600,
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/version-verilator.stderr.txt",
+                "timed_out": false,
+                "exit_status": 0,
+                "end_unix": 1793655392.0138621
+              },
+              {
+                "argv": [
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/checkpoint-images/attention.txt"
+                ],
+                "cwd": ".",
+                "start_unix": 1793655392.020191,
+                "timeout_s": 600,
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/simulation.stderr.txt",
+                "timed_out": false,
+                "exit_status": 0,
+                "end_unix": 1793655609.2023895
+              }
+            ],
+            "repair_of": null,
+            "reused_executable": {
+              "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+              "sha256": "bc855387e24a263c92b79e99be21d459e3c972b48b3e221c788f55de8b4db415",
+              "compilation_receipt": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/receipt.json",
+              "binding_sha256": "e533eb36e70aa702eac1b358be51461a61c4936db46a05a4a69fd693b08e4c6f"
+            },
+            "end_unix": 1793655609.6894937,
+            "exit_status": 0,
+            "tool_versions": {
+              "verilator": [
+                "Verilator 5.020 2024-01-01 rev (Debian 5.020-1)"
+              ]
+            },
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/summary.json",
+            "artifact_sha256": {
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-25-49-20261102T213626Z-ab2cfe8e/tb.sv": "b92322b269827d89f532fd6a80de95ffd94cdd465d44130679b0bbf36d330b27"
+            }
+          }
+        },
+        {
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/receipt.json",
+          "data": {
+            "kind": "independent-verification-suite",
+            "argv": [
+              "/usr/bin/python3",
+              "tests/verify.py",
+              "--suite",
+              "numerics"
+            ],
+            "cwd": ".",
+            "start_unix": 1793655609.6908593,
+            "source_sha256": {
+              "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_00_pkg.sv": "5efc1d67409f5a65c304567ae3034917d3f19fa335ec7bff2bec68055420afd4",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_add.sv": "d845a9c893faff0217b014b6c9415db991bdb351631757d367d991cc2660fc49",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_decoder_layer.sv": "43d9ec8eac7298b56f3818a844493f8297511a191d4bf5253dc20267275d99ce",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_dot_lane.sv": "efa04a999a128bac3099873162288f8c5479ff7ab2aa82ed5ef1c1dde9470f28",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gemv_bank.sv": "3c1d1566ec6c680c8ad6244bf08a3fb96119db744689f7a3014fa0b9ceb580ab",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gqa_attention.sv": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_scalar.sv": "aeb685afba59a17cbe5857c5e2a6fee6c5bd4ab7938d8711d71a9f1732d6b252",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+              "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
+              "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
+              "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
+              "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
+              "fpga/README.md": "a1cf956c56ec1d05a4f7cd6076a5cf30378ee8b27c5b92f6fc2e0ec7ccc17ad4",
+              "fpga/anvil_q2_fp2.qsf": "c938ec00ba1def7b883cc6800d90f44f2ba1a9ee384188f789c492d8ff021414",
+              "fpga/anvil_q2_fp2.sdc": "118a53ae9874fe288ca7f2da72e9df7535f9ba4e1b87e504a850caf0df43d049",
+              "fpga/anvil_q2_fp2_sources.tcl": "608d4a32c0b89de9409f6ef7cf4b29ae69cabd462f0be9bea5ded1ff63f21c2d",
+              "fpga/generate_fp2_coefficients.py": "7463f37c8b8197d6f441c69c40a96441e431e27d74900bf5cd1ec9d9a7c8d865",
+              "rtl/anvil_q2_fp2_arithmetic.sv": "f109c04b4e02186ce47b72bc3a7636d8c86fdc41135afa6cb77bde2d32fbfa8e",
+              "rtl/anvil_q2_fp2_bfp_tensor_array.sv": "cde55602fadcb8d7bf15a6e8311b6aba9de102faf8c8ba6b58975a116fa2814e",
+              "rtl/anvil_q2_fp2_coefficients.sv": "ab271211a3313e3460bf143ef3d13c6770ea291379a26b27094d02d795b7c117",
+              "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
+              "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
+              "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
+              "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
+              "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
+              "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
+              "rtl/anvil_q2_fp2_nonlinear.sv": "acdbf0188964699d2e932fa17ea2bda443f8d83a32fff6cc1f02a1afc52bcf25",
+              "rtl/anvil_q2_fp2_ping_pong_prefetch.sv": "6fb3ccd00242a8058120fdd5ddce86ac6d50de8c95481c46cd00b4803d4df71d",
+              "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
+              "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
+              "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
+              "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
+              "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
+              "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
+              "tests/fp2_defect_probe.py": "2bf5a65883319878abe1b08dac616d07e81f4555ff93333e5972ab30301df3d5",
+              "tests/fp2_epilogue_probe.py": "df706dc2ea2c42c991ced216c25b390d790fda3826811bc2ffc134095e41b111",
+              "tests/fp2_format_probe.py": "8d4cc48d7bedce16865d745aa4c7febb1f4f4dc12e03c9331365441f44ead4f4",
+              "tests/fp2_gemv_probe.py": "6075c0a1f290b04fe44ffa5687d0f0f8a4ca9b1ae0dcd13d479e945073dbf7aa",
+              "tests/fp2_graph_probe.py": "522e70c11bcc184da7ca0fbb681c6fdc34207daf8ca7df2b33806e3549c19c76",
+              "tests/fp2_kv_traffic_probe.py": "cb932367d54c023acef4d193a2a0cf2a83b3386c7582be510baa873fe0bb9b20",
+              "tests/fp2_mutations.py": "6c78defb50669b7fd7604b98ecf2f9212495dd5591fea36349cf4c38f30f67eb",
+              "tests/fp2_parent_probe.py": "ccc8e3a1a4cc11f708dc45097b86532557c8080113db77ae2750d7b2250cb5c3",
+              "tests/fp2_prefetch_probe.py": "1515e86cf245dcc6123200011a40fe4f453a248986100454de6395a49e942038",
+              "tests/fp2_probe.py": "ee10428997068ff6bd90cbae8b263f135e77c90c5cf524f769dc614ae1a3eb99",
+              "tests/fp2_protocol_probe.py": "0f8a8bc3e771ce5361aafc05378c84d1fccaf2d4c7d882a342e65ca062be51ca",
+              "tests/fp2_reference.py": "5c3b4468bc3f58fcea5237d02cf989c6d757b60db715e82a9c6e2c008b25e955",
+              "tests/fp2_synthesis_probe.py": "e73b7ef506c6ee057c33ba35ab8f5391c6d404512fd8b353e0f643bea4467bf6",
+              "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
+              "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
+              "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
+            },
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "commands": [
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "start_unix": 1793655615.5810752,
+                "timeout_s": 600,
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/version-verilator.stderr.txt",
+                "timed_out": false,
+                "exit_status": 0,
+                "end_unix": 1793655615.696934
+              },
+              {
+                "argv": [
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/checkpoint-images/attention.txt"
+                ],
+                "cwd": ".",
+                "start_unix": 1793655615.7022297,
+                "timeout_s": 600,
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/simulation.stderr.txt",
+                "timed_out": false,
+                "exit_status": 0,
+                "end_unix": 1793655826.3212025
+              }
+            ],
+            "repair_of": null,
+            "reused_executable": {
+              "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+              "sha256": "bc855387e24a263c92b79e99be21d459e3c972b48b3e221c788f55de8b4db415",
+              "compilation_receipt": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/receipt.json",
+              "binding_sha256": "e533eb36e70aa702eac1b358be51461a61c4936db46a05a4a69fd693b08e4c6f"
+            },
+            "end_unix": 1793655826.8673313,
+            "exit_status": 0,
+            "tool_versions": {
+              "verilator": [
+                "Verilator 5.020 2024-01-01 rev (Debian 5.020-1)"
+              ]
+            },
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/summary.json",
+            "artifact_sha256": {
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-50-74-20261102T214009Z-015393f0/tb.sv": "b92322b269827d89f532fd6a80de95ffd94cdd465d44130679b0bbf36d330b27"
+            }
+          }
+        },
+        {
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/receipt.json",
+          "data": {
+            "kind": "independent-verification-suite",
+            "argv": [
+              "/usr/bin/python3",
+              "tests/verify.py",
+              "--suite",
+              "numerics"
+            ],
+            "cwd": ".",
+            "start_unix": 1793655826.8686736,
+            "source_sha256": {
+              "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_00_pkg.sv": "5efc1d67409f5a65c304567ae3034917d3f19fa335ec7bff2bec68055420afd4",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_add.sv": "d845a9c893faff0217b014b6c9415db991bdb351631757d367d991cc2660fc49",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_decoder_layer.sv": "43d9ec8eac7298b56f3818a844493f8297511a191d4bf5253dc20267275d99ce",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_dot_lane.sv": "efa04a999a128bac3099873162288f8c5479ff7ab2aa82ed5ef1c1dde9470f28",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gemv_bank.sv": "3c1d1566ec6c680c8ad6244bf08a3fb96119db744689f7a3014fa0b9ceb580ab",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gqa_attention.sv": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_scalar.sv": "aeb685afba59a17cbe5857c5e2a6fee6c5bd4ab7938d8711d71a9f1732d6b252",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+              "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
+              "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
+              "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
+              "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
+              "fpga/README.md": "a1cf956c56ec1d05a4f7cd6076a5cf30378ee8b27c5b92f6fc2e0ec7ccc17ad4",
+              "fpga/anvil_q2_fp2.qsf": "c938ec00ba1def7b883cc6800d90f44f2ba1a9ee384188f789c492d8ff021414",
+              "fpga/anvil_q2_fp2.sdc": "118a53ae9874fe288ca7f2da72e9df7535f9ba4e1b87e504a850caf0df43d049",
+              "fpga/anvil_q2_fp2_sources.tcl": "608d4a32c0b89de9409f6ef7cf4b29ae69cabd462f0be9bea5ded1ff63f21c2d",
+              "fpga/generate_fp2_coefficients.py": "7463f37c8b8197d6f441c69c40a96441e431e27d74900bf5cd1ec9d9a7c8d865",
+              "rtl/anvil_q2_fp2_arithmetic.sv": "f109c04b4e02186ce47b72bc3a7636d8c86fdc41135afa6cb77bde2d32fbfa8e",
+              "rtl/anvil_q2_fp2_bfp_tensor_array.sv": "cde55602fadcb8d7bf15a6e8311b6aba9de102faf8c8ba6b58975a116fa2814e",
+              "rtl/anvil_q2_fp2_coefficients.sv": "ab271211a3313e3460bf143ef3d13c6770ea291379a26b27094d02d795b7c117",
+              "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
+              "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
+              "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
+              "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
+              "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
+              "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
+              "rtl/anvil_q2_fp2_nonlinear.sv": "acdbf0188964699d2e932fa17ea2bda443f8d83a32fff6cc1f02a1afc52bcf25",
+              "rtl/anvil_q2_fp2_ping_pong_prefetch.sv": "6fb3ccd00242a8058120fdd5ddce86ac6d50de8c95481c46cd00b4803d4df71d",
+              "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
+              "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
+              "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
+              "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
+              "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
+              "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
+              "tests/fp2_defect_probe.py": "2bf5a65883319878abe1b08dac616d07e81f4555ff93333e5972ab30301df3d5",
+              "tests/fp2_epilogue_probe.py": "df706dc2ea2c42c991ced216c25b390d790fda3826811bc2ffc134095e41b111",
+              "tests/fp2_format_probe.py": "8d4cc48d7bedce16865d745aa4c7febb1f4f4dc12e03c9331365441f44ead4f4",
+              "tests/fp2_gemv_probe.py": "6075c0a1f290b04fe44ffa5687d0f0f8a4ca9b1ae0dcd13d479e945073dbf7aa",
+              "tests/fp2_graph_probe.py": "522e70c11bcc184da7ca0fbb681c6fdc34207daf8ca7df2b33806e3549c19c76",
+              "tests/fp2_kv_traffic_probe.py": "cb932367d54c023acef4d193a2a0cf2a83b3386c7582be510baa873fe0bb9b20",
+              "tests/fp2_mutations.py": "6c78defb50669b7fd7604b98ecf2f9212495dd5591fea36349cf4c38f30f67eb",
+              "tests/fp2_parent_probe.py": "ccc8e3a1a4cc11f708dc45097b86532557c8080113db77ae2750d7b2250cb5c3",
+              "tests/fp2_prefetch_probe.py": "1515e86cf245dcc6123200011a40fe4f453a248986100454de6395a49e942038",
+              "tests/fp2_probe.py": "ee10428997068ff6bd90cbae8b263f135e77c90c5cf524f769dc614ae1a3eb99",
+              "tests/fp2_protocol_probe.py": "0f8a8bc3e771ce5361aafc05378c84d1fccaf2d4c7d882a342e65ca062be51ca",
+              "tests/fp2_reference.py": "5c3b4468bc3f58fcea5237d02cf989c6d757b60db715e82a9c6e2c008b25e955",
+              "tests/fp2_synthesis_probe.py": "e73b7ef506c6ee057c33ba35ab8f5391c6d404512fd8b353e0f643bea4467bf6",
+              "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
+              "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
+              "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
+            },
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "commands": [
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "start_unix": 1793655832.0022492,
+                "timeout_s": 600,
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/version-verilator.stderr.txt",
+                "timed_out": false,
+                "exit_status": 0,
+                "end_unix": 1793655832.1180396
+              },
+              {
+                "argv": [
+                  "/data/sufeng/anvil-q2-fp2-line/workspace/project/evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+                  "+INPUT=evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/checkpoint-images/attention.txt"
+                ],
+                "cwd": ".",
+                "start_unix": 1793655832.1220782,
+                "timeout_s": 600,
+                "stdout": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/simulation.stdout.txt",
+                "stderr": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/simulation.stderr.txt",
+                "timed_out": false,
+                "exit_status": 0,
+                "end_unix": 1793656038.094798
+              }
+            ],
+            "repair_of": null,
+            "reused_executable": {
+              "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/simulation",
+              "sha256": "bc855387e24a263c92b79e99be21d459e3c972b48b3e221c788f55de8b4db415",
+              "compilation_receipt": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-0-24-20261102T213151Z-99c145d3/receipt.json",
+              "binding_sha256": "e533eb36e70aa702eac1b358be51461a61c4936db46a05a4a69fd693b08e4c6f"
+            },
+            "end_unix": 1793656038.6233547,
+            "exit_status": 0,
+            "tool_versions": {
+              "verilator": [
+                "Verilator 5.020 2024-01-01 rev (Debian 5.020-1)"
+              ]
+            },
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/summary.json",
+            "artifact_sha256": {
+              "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/fp2-full-128-component-six-head-attention-75-99-20261102T214346Z-930ce92c/tb.sv": "b92322b269827d89f532fd6a80de95ffd94cdd465d44130679b0bbf36d330b27"
+            }
+          }
+        },
+        {
+          "path": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/receipt.json",
+          "data": {
+            "kind": "independent-verification-suite",
+            "argv": [
+              "/usr/bin/python3",
+              "tests/verify.py",
+              "--suite",
+              "numerics"
+            ],
+            "cwd": ".",
+            "start_unix": 1793654931.2483463,
+            "source_sha256": {
+              "anvil_q2_fp_reference/rtl/anvil_q2_bank_scheduler.sv": "d3577da6369d6df5723dd2b756b6bbcf2d6c8b957169a83158ac858417fdb91b",
+              "anvil_q2_fp_reference/rtl/anvil_q2_bus_mux.sv": "aa9c8e17ee2e8dac0f8da2bec2c8212886135277554094a66b1ae2d892c85889",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_00_pkg.sv": "5efc1d67409f5a65c304567ae3034917d3f19fa335ec7bff2bec68055420afd4",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_add.sv": "d845a9c893faff0217b014b6c9415db991bdb351631757d367d991cc2660fc49",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_awq_dequant.sv": "81e3dd8a083aeffcfce1e639628b01b61dafd9a783ab9cb5a9d7b2ae1aef6088",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_cache_codec.sv": "7f58026ba96a04b660071fdc9a6f89fda07d3caba660f5c93a367936431ba2d2",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_decoder_layer.sv": "43d9ec8eac7298b56f3818a844493f8297511a191d4bf5253dc20267275d99ce",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_dot_lane.sv": "efa04a999a128bac3099873162288f8c5479ff7ab2aa82ed5ef1c1dde9470f28",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_elementwise.sv": "787be4a278d11e7b0261d63fb89a959329c6e21a62246b2831e6b81169540a31",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_exp.sv": "720d780995ece9d9beacb5c132f04e75705f56cf999bbe4d15f0805a991ada9e",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gemv.sv": "f32dcaec14fbc94c0aa0d5a606523219aa7385e0c92028cb7b45b6eb176461c2",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gemv_bank.sv": "3c1d1566ec6c680c8ad6244bf08a3fb96119db744689f7a3014fa0b9ceb580ab",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_gqa_attention.sv": "57efcd7438cfd5b3ff597c3a7a4cc2ac496f44d8d21f46574f0e6dc00cd1d181",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_kv_cache.sv": "f978b6f0af03aeb39ad13bcd80258995065fef480ee78978bd1c690b374d4c00",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_parameters.sv": "bdc956b09e0f8fde971e558132c3e9b339a643d595a87090ea48a9fc6adc8880",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_rmsnorm.sv": "521519515f2e2b25035cfdcc83730b2cdb69e232ef7fb3f48c601a72da2f5d83",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_rope.sv": "e65e0e1a3fc9e6a62c57af4e37a201568262e296177f284313d1cd576d7fc37c",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_scalar.sv": "aeb685afba59a17cbe5857c5e2a6fee6c5bd4ab7938d8711d71a9f1732d6b252",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_swiglu_mlp.sv": "9fc157453a3e38042b40bc52c5e4ce6606ee7e99bd61e75423f3c5bf1ec4b77b",
+              "anvil_q2_fp_reference/rtl/anvil_q2_fp_top.sv": "98bb808167eb6f0bfadc129e3a8ab76662f9cf1537c01eb9db39a0b206e48db5",
+              "anvil_q2_fp_reference/rtl/anvil_q2_mem_port.sv": "8396e77769eb6dd95b3bc6d13bf295bd95c3eb63781b8e78b0045bbb21556638",
+              "anvil_q2_fp_reference/rtl/anvil_q2_scalar_arbiter.sv": "e0ece761eb1fe1f3e752d0dbd031ca7bd5a8a3477f545a7e2d2106f529df4782",
+              "design/ARCHITECTURE.md": "014a7080439e4605177a71b2da43ed0fd577961110d3e8cd2c80f2e41eb1d8c8",
+              "design/GENERATIONAL_HANDOFF.md": "e045eb6468997c235db79412cab32fd035394cb34a04bab7c3b62bf1651f3134",
+              "design/INTERFACES.md": "2d3ddd5d84a496080349c9a90432a3a18a54555ec01188caa8f5a04d34c5ac79",
+              "design/SPEC.md": "d72d77e65cab16a9106cdbf248acc2f1f4a43f46bf8245ebb37097486c0aa1f5",
+              "fpga/README.md": "a1cf956c56ec1d05a4f7cd6076a5cf30378ee8b27c5b92f6fc2e0ec7ccc17ad4",
+              "fpga/anvil_q2_fp2.qsf": "c938ec00ba1def7b883cc6800d90f44f2ba1a9ee384188f789c492d8ff021414",
+              "fpga/anvil_q2_fp2.sdc": "118a53ae9874fe288ca7f2da72e9df7535f9ba4e1b87e504a850caf0df43d049",
+              "fpga/anvil_q2_fp2_sources.tcl": "608d4a32c0b89de9409f6ef7cf4b29ae69cabd462f0be9bea5ded1ff63f21c2d",
+              "fpga/generate_fp2_coefficients.py": "7463f37c8b8197d6f441c69c40a96441e431e27d74900bf5cd1ec9d9a7c8d865",
+              "rtl/anvil_q2_fp2_arithmetic.sv": "f109c04b4e02186ce47b72bc3a7636d8c86fdc41135afa6cb77bde2d32fbfa8e",
+              "rtl/anvil_q2_fp2_bfp_tensor_array.sv": "cde55602fadcb8d7bf15a6e8311b6aba9de102faf8c8ba6b58975a116fa2814e",
+              "rtl/anvil_q2_fp2_coefficients.sv": "ab271211a3313e3460bf143ef3d13c6770ea291379a26b27094d02d795b7c117",
+              "rtl/anvil_q2_fp2_controller.sv": "f52f9f6401bf486defbf84b48fe63367eaaf9868ff658a64c519a30501c624d6",
+              "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
+              "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
+              "rtl/anvil_q2_fp2_flash_attn.sv": "e2ef6784d6c9ab7fc73d8938fe536f8e26f5c84dca1c54a8528897491eefe080",
+              "rtl/anvil_q2_fp2_gemv_stream.sv": "1c8fc506d6d3858e25e3e70f48653f2af0a8bc7232dc1df048258ec795c6cc13",
+              "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
+              "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
+              "rtl/anvil_q2_fp2_nonlinear.sv": "acdbf0188964699d2e932fa17ea2bda443f8d83a32fff6cc1f02a1afc52bcf25",
+              "rtl/anvil_q2_fp2_ping_pong_prefetch.sv": "6fb3ccd00242a8058120fdd5ddce86ac6d50de8c95481c46cd00b4803d4df71d",
+              "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d",
+              "rtl/anvil_q2_fp2_top.sv": "bb19e2efeb875aab832619bfa9607c38dc1c23b53c1eec9d6677ec5e55f2ebbd",
+              "rtl/anvil_q2_fp2_vector_store.sv": "d99f2756fc8e07b0ed1b2ecd77962fc4a4b15f41e5ded420b6bccc0cf3856bb1",
+              "tests/fp2_attention_probe.py": "8eaffa992b3b035c17bf27a641991073f50bc6b6ddab7965e882a48bf1a1444d",
+              "tests/fp2_benchmark_probe.py": "815cfe47cd2f5529ba5a2689efdacf0df798d9a1263d10448fb146f736dccdb0",
+              "tests/fp2_configuration_probe.py": "1bdcb84306759ea48f0e00c4a65656acbce0c3b6a1d8480de32e19a126dd9c95",
+              "tests/fp2_controller_probe.py": "68ae5723062b6519c3d0d303d08cf1386d7421097434bd272f56c0de58310352",
+              "tests/fp2_defect_probe.py": "2bf5a65883319878abe1b08dac616d07e81f4555ff93333e5972ab30301df3d5",
+              "tests/fp2_epilogue_probe.py": "df706dc2ea2c42c991ced216c25b390d790fda3826811bc2ffc134095e41b111",
+              "tests/fp2_format_probe.py": "8d4cc48d7bedce16865d745aa4c7febb1f4f4dc12e03c9331365441f44ead4f4",
+              "tests/fp2_gemv_probe.py": "6075c0a1f290b04fe44ffa5687d0f0f8a4ca9b1ae0dcd13d479e945073dbf7aa",
+              "tests/fp2_graph_probe.py": "522e70c11bcc184da7ca0fbb681c6fdc34207daf8ca7df2b33806e3549c19c76",
+              "tests/fp2_kv_traffic_probe.py": "cb932367d54c023acef4d193a2a0cf2a83b3386c7582be510baa873fe0bb9b20",
+              "tests/fp2_mutations.py": "6c78defb50669b7fd7604b98ecf2f9212495dd5591fea36349cf4c38f30f67eb",
+              "tests/fp2_parent_probe.py": "ccc8e3a1a4cc11f708dc45097b86532557c8080113db77ae2750d7b2250cb5c3",
+              "tests/fp2_prefetch_probe.py": "1515e86cf245dcc6123200011a40fe4f453a248986100454de6395a49e942038",
+              "tests/fp2_probe.py": "ee10428997068ff6bd90cbae8b263f135e77c90c5cf524f769dc614ae1a3eb99",
+              "tests/fp2_protocol_probe.py": "0f8a8bc3e771ce5361aafc05378c84d1fccaf2d4c7d882a342e65ca062be51ca",
+              "tests/fp2_reference.py": "5c3b4468bc3f58fcea5237d02cf989c6d757b60db715e82a9c6e2c008b25e955",
+              "tests/fp2_synthesis_probe.py": "e73b7ef506c6ee057c33ba35ab8f5391c6d404512fd8b353e0f643bea4467bf6",
+              "tests/fp2_telemetry_probe.py": "bb46c4f08ea018c7926dbcbcc2f4f0ffb8e13542df9f97ee6c161bbe849e571d",
+              "tests/fp2_tensor_probe.py": "16fbeaf7474daf1b47f4969d5b9a95aa3ab7c7f8bcd33f441320de977f4c6f0f",
+              "tests/fp2_top_probe.py": "52214f162915f198269e3162f15683e6d3c7a37f069a1f6f749350b71f94159e",
+              "tests/verify.py": "e3aa0310743ddc61731140d91f83a1d884ffa3f73f0a393ec7e6ee2f6a6ed0c7"
             },
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
             "commands": [],
             "repair_of": null,
             "aggregate_deadline_s": 2700,
             "command_deadline_s": 600,
-            "end_unix": 1793649420.5682795,
+            "end_unix": 1793656038.6250353,
             "exit_status": 0,
             "tool_versions": {},
-            "summary": "evidence/fp2-numerics-20261102T195209Z-47038eb0/summary.json",
+            "summary": "evidence/fp2-numerics-20261102T212851Z-a5c26c9a/summary.json",
             "artifact_sha256": {}
           }
         }
