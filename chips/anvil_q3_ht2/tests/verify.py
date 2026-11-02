@@ -16,8 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from receipts import ROOT, execute, hashes, new_run, relative, sources, utc
 from arithmetic import run_arithmetic
-from integrated import run_integrated
+from integrated_fast import run_fast_integration
 from kv_atomic import run_atomic
+from parameters import run_parameters
 from sparse import run_sparse
 from speculative import run_spec
 from synthesis import run_synthesis
@@ -94,7 +95,7 @@ def compact_reproduction(ledger):
                  "anvil_q3_ht2_sparse_dma", parameters={"MAX_COLUMNS": 17})
 
 
-def clean_reproduction(run):
+def copy_public_sources(run):
     tree = run / "clean-source"
     tree.mkdir()
     captured = sources()
@@ -108,6 +109,11 @@ def clean_reproduction(run):
     if actual != expected:
         raise AssertionError("clean reproduction source copy differs")
     (run / "copied-inputs.json").write_text(json.dumps(expected, indent=2) + "\n")
+    return tree, expected
+
+
+def clean_reproduction(run):
+    tree, expected = copy_public_sources(run)
     launch = run / "unrelated-launch"
     launch.mkdir()
     entry = os.path.relpath(tree / "tests/verify.py", launch)
@@ -147,6 +153,18 @@ def require_complete_coverage(ledger):
             rows.get("performance", {}).get("whole_ffn_reduction", -1) >= 0.4,
         "measured_effective_bandwidth_at_least_3_4":
             rows.get("performance", {}).get("effective_bandwidth_ratio", -1) >= 3.4,
+        "production_arithmetic_beats_each_seed": all(
+            rows.get(f"tile-seed{seed}", {}).get("observed", {}).get("inputs", 0) >= 1024
+            for seed in SEEDS),
+        "consecutive_dense_beats_each_seed": all(
+            rows.get(f"tile-seed{seed}", {}).get("observed", {}).get(
+                "max_consecutive_beats", 0) >= 64 for seed in SEEDS),
+        "complete_nonzero_36_layer_chain_and_branch_each_seed_and_mode": all(
+            rows.get(f"integrated-mode{mode}-seed{seed}", {}).get(
+                "nonzero_projection_comparisons", 0) > 0 and
+            rows.get(f"integrated-mode{mode}-seed{seed}", {}).get(
+                "compared_tree_shapes", []) == ["chain", "branch"]
+            for mode in (1, 2) for seed in SEEDS),
     }
     ledger.data["coverage_requirements"] = requirements
     ledger.save()
@@ -156,7 +174,8 @@ def require_complete_coverage(ledger):
 
 
 def all_checks(ledger):
-    ledger.check("integration-profile", run_integrated, 1, True)
+    ledger.check("integration-profile", run_fast_integration, 1, True)
+    ledger.check("parameter-boundaries", run_parameters)
     ledger.check("arithmetic-portability", run_arithmetic, "iverilog", 17, True)
     ledger.check("tile-portability", run_tile, "iverilog", 17, True)
     ledger.check("aligned-ddr-portability", run_sparse, "iverilog", 17, True)
@@ -170,7 +189,7 @@ def all_checks(ledger):
             ledger.check(f"greedy-mode{mode}-seed{seed}", run_spec, mode, seed)
             ledger.check(f"atomic-mode{mode}-seed{seed}", run_atomic, mode, seed)
     for mode in (1, 2):
-        ledger.check(f"integrated-mode{mode}", run_integrated, mode)
+        ledger.check(f"integrated-mode{mode}", run_fast_integration, mode)
         for top in ("anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention",
                     "anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):
             ledger.check(f"synthesis-{top}-mode{mode}", run_synthesis, top, mode)
