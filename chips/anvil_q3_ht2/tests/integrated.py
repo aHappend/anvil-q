@@ -53,7 +53,9 @@ def generate(run):
     half_array(0x80000000, [0x3c00] * (vocabulary * hidden))
     head = [0xbc00, 0xb800, 0, 0x3c00, 0x3800, 0x3400, 0xb400, 0]
     half_array(0xc0000000, [weight for weight in head for _ in range(hidden)])
-    model = run / "model-lines.txt"
+    images = run / "checkpoint-images"
+    images.mkdir()
+    model = images / "model-lines.txt"
     model.write_text(str(len(image)) + "\n" + "\n".join(
         f"{address:x} {int.from_bytes(data,'little'):x}"
         for address, data in sorted(image.items())) + "\n")
@@ -72,7 +74,7 @@ def generate(run):
     return model, vectors, len(image), len(qreads)
 
 
-def run_integrated(run, mode):
+def run_integrated(run, mode, diagnostic=False):
     model, vectors, model_lines, qreads = generate(run)
     sources = [relative(path) for folder in ("anvil_q3_ht_reference/rtl", "rtl")
                for path in sorted((ROOT / folder).glob("*.sv"))]
@@ -84,11 +86,20 @@ def run_integrated(run, mode):
     try:
         result = execute(run, "integrated-simulate", [
             relative(obj / "Vintegrated_tb"), f"+vectors={relative(vectors)}",
-            f"+model={relative(model)}"], ["verilator", "--version"])
+            f"+model={relative(model)}", *(["+diagnostic"] if diagnostic else [])],
+            ["verilator", "--version"], expect=-6 if diagnostic else 0)
     finally:
         cleanup_build(obj)
+    raw = (result / "stdout.txt").read_text()
+    if diagnostic:
+        if "integrated public progress diagnostic" not in raw or "RESULT " in raw:
+            raise AssertionError("bounded diagnostic did not reach its public observation")
+        summary = {"diagnostic_only": True, "functional_result": "incomplete",
+                   "mode": mode, "receipt": relative(result / "receipt.json")}
+        (run / "diagnostic-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+        return summary
     observed = [json.loads(line.removeprefix("RESULT ")) for line in
-                (result / "stdout.txt").read_text().splitlines() if line.startswith("RESULT ")]
+                raw.splitlines() if line.startswith("RESULT ")]
     if len(observed) != 1 or observed[0]["model_lines"] != model_lines or (
             observed[0]["qweight_reads"] != 3 * qreads or
             observed[0]["evaluated_tokens"] != 9 or observed[0]["committed_tokens"] != 3):
@@ -105,11 +116,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=int, choices=(1, 2), default=1)
     parser.add_argument("--repair-of")
+    parser.add_argument("--diagnostic", action="store_true")
     args = parser.parse_args()
     run = new_run("integrated", preparation=True, repair_of=args.repair_of)
     print(f"integrated evidence: {relative(run)}", flush=True)
     try:
-        print(json.dumps(run_integrated(run, args.mode), sort_keys=True))
+        print(json.dumps(run_integrated(run, args.mode, args.diagnostic), sort_keys=True))
     except (RuntimeError, AssertionError, OSError) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1)

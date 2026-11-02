@@ -10,6 +10,7 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DEADLINE = float(os.environ.get("HT2_L1_DEADLINE", time.monotonic() + 2700))
 
 
 def utc():
@@ -54,7 +55,7 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     location = run / f"{name}-{timestamp}"
     location.mkdir(exist_ok=False)
-    deadline = float(os.environ.get("HT2_L1_DEADLINE", time.monotonic() + 2700))
+    deadline = DEADLINE
     limit = 600 if Path(str(argv[0])).name == "vvp" else 2700
     remaining = min(limit, deadline - time.monotonic())
     if remaining <= 0:
