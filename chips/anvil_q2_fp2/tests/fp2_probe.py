@@ -390,15 +390,21 @@ def simulate(probe, source, rtl, simulator, extra=None):
     cached = _executables.get(key)
     if cached and cached[0].is_file():
         binary, executable_hash, receipt = cached
-        if hashlib.sha256(binary.read_bytes()).hexdigest() != executable_hash:
-            raise AssertionError("source-bound executable changed")
-        probe.receipt["reused_executable"] = {
-            "path": str(binary.relative_to(ROOT)), "sha256": executable_hash,
-            "compilation_receipt": receipt, "binding_sha256": key,
+        observed_hash = hashlib.sha256(binary.read_bytes()).hexdigest()
+        if observed_hash == executable_hash:
+            probe.receipt["reused_executable"] = {
+                "path": str(binary.relative_to(ROOT)), "sha256": executable_hash,
+                "compilation_receipt": receipt, "binding_sha256": key,
+            }
+            return probe.command(
+                (["vvp", str(binary)] if simulator == "iverilog" else [str(binary)]) + extra,
+                "simulation")
+        probe.receipt["invalidated_executable"] = {
+            "path": str(binary.relative_to(ROOT)), "expected_sha256": executable_hash,
+            "observed_sha256": observed_hash, "compilation_receipt": receipt,
+            "action": "regenerate in this fresh run; preserve the earlier artifact and receipt",
         }
-        return probe.command(
-            (["vvp", str(binary)] if simulator == "iverilog" else [str(binary)]) + extra,
-            "simulation")
+        del _executables[key]
     if simulator == "iverilog":
         probe.version("vvp", "-V")
         binary = probe.directory / "simulation.vvp"

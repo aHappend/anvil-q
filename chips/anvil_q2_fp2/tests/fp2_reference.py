@@ -207,7 +207,7 @@ def rope(x, y, cosine, sine):
     return first, second
 
 
-def rope_coefficients(position, pair_index, head_dim):
+def rope_coefficients(position, pair_index, head_dim, mathematical=False):
     """Derive trigonometric coefficients without using the shipped generator."""
     with localcontext() as context:
         context.prec = 100
@@ -229,5 +229,7 @@ def rope_coefficients(position, pair_index, head_dim):
             sine += sine_term
             cosine += cosine_term
             if abs(sine_term) < Decimal("1e-95") and abs(cosine_term) < Decimal("1e-95"):
+                if mathematical:
+                    return Fraction(cosine), Fraction(sine)
                 return rounded(Fraction(cosine)), rounded(Fraction(sine))
         raise ArithmeticError("trigonometric reference did not converge")

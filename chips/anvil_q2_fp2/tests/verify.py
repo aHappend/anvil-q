@@ -53,7 +53,8 @@ class Suite:
         self.probe.receipt["command_deadline_s"] = 600
 
     def execute(self, name, operation):
-        child = Probe(name, output_parent=self.probe.directory, preparation=False)
+        child = Probe(name, output_parent=self.probe.directory,
+                      preparation=self.probe.receipt["kind"] == "independent-verification-preparation")
         error = None
         try:
             operation(child)
@@ -252,14 +253,19 @@ def main():
                                    benchmark_checks, delivery), strict=True))
     exit_status = 0
     for name in (args.suite,) if args.suite else SUITES:
-        suite = Suite(name)
+        suite = None
         error = None
         try:
             with SuiteDeadline():
+                suite = Suite(name)
                 (delivery_smokes if args.delivery_child else operations[name])(suite)
         except Exception as failure:
             error = f"{type(failure).__name__}: {failure}"
-        exit_status |= suite.probe.settle(error)
+        if suite is None:
+            print(json.dumps({"suite": name, "status": "failed", "error": error}), flush=True)
+            exit_status = 1
+        else:
+            exit_status |= suite.probe.settle(error)
     return exit_status
 
 

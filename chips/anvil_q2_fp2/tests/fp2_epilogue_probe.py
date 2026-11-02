@@ -115,7 +115,7 @@ endmodule
 """
 
 
-def cases(compact):
+def cases(compact, rotations=None):
     rng = random.Random(203)
     count = 32 if compact else 10000
     for index in range(count):
@@ -125,6 +125,8 @@ def cases(compact):
         dimension = (8, 32, 128)[index % 3]
         pair = index % (dimension // 2)
         cosine, sine = rope_coefficients(position, pair, dimension)
+        if rotations is not None:
+            rotations[index] = (position, pair, dimension)
         yield 1, [(x, y, 0x3F800000, cosine, sine)], [rope(x, y, cosine, sine)]
     for index in range(count):
         gate = rounded(Fraction(rng.randrange(-6400, 6401), 64))
@@ -149,7 +151,8 @@ def cases(compact):
 
 
 def run(probe, compact, simulator, overrides=None):
-    stimulus = list(cases(compact))
+    rotations = {}
+    stimulus = list(cases(compact, rotations))
     source = probe.directory / "tb.sv"
     source.write_text(EPILOGUE_TB)
     inputs = probe.directory / "inputs.txt"
@@ -196,6 +199,21 @@ def run(probe, compact, simulator, overrides=None):
                 )
             else:
                 probe.compare("epilogue-exact", f"{reference:08x}", f"{data:08x}", context)
+            if mode == 1:
+                position, pair_index, dimension = rotations[tag]
+                cosine, sine = rope_coefficients(position, pair_index, dimension, mathematical=True)
+                x, y, _, supplied_cosine, supplied_sine = stimulus[tag][1][0]
+                probe.compare("theta-coefficient-cosine", rounded(cosine), supplied_cosine, context)
+                probe.compare("theta-coefficient-sine", rounded(sine), supplied_sine, context)
+                analytic_first = exact(x) * cosine - exact(y) * sine
+                analytic_second = exact(y) * cosine + exact(x) * sine
+                limit = Fraction(3, 1000000) * (1 + max(abs(exact(x)), abs(exact(y))))
+                probe.compare("analytic-rope-rotation-bound", True,
+                              finite(data) and finite(pair) and
+                              abs(exact(data) - analytic_first) <= limit and
+                              abs(exact(pair) - analytic_second) <= limit,
+                              {**context, "position": position, "dimension": dimension,
+                               "threshold": float(limit)})
     probe.compare("summary-count", len(stimulus), summary, {})
     probe.compare("output-count", len(expected), len(seen), {})
     probe.summary["coverage"] = {

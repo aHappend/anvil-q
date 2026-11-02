@@ -130,6 +130,12 @@ def vectors(compact):
     yield [0x8000] * 128, [0x3F80] * 128, 0
     yield [0x8000] * 128, [0x3F80] * 128, (1 << 128) - 1
     yield [0x3F80, 0xBF80] * 64, [0x3F80] * 128, (1 << 128) - 1
+    yield [0x3F80, 0x3380] + [0] * 126, [0x3F80] * 128, 3
+    yield [0x3F80, 0x3400, 0x3380] + [0] * 125, [0x3F80] * 128, 7
+    yield [1] * 128, [0x3F80] * 128, (1 << 128) - 1
+    yield [0x7F7F] + [0] * 127, [0x7F7F] + [0] * 127, 1
+    yield [0x7FC0] + [0] * 127, [0x3F80] * 128, 1
+    yield [0x7F80] + [0] * 127, [0x3F80] * 128, 1
 
 
 def packed(values):
@@ -167,7 +173,8 @@ def run(probe, compact, simulator, overrides=None):
                 raise AssertionError(f"duplicate/out-of-range tile {index}")
             seen.add(index)
             value, failed = expected[index]
-            probe.compare("balanced-tree-bits", f"{value:08x}", f"{data:08x}", {"index": index})
+            if not failed:
+                probe.compare("balanced-tree-bits", f"{value:08x}", f"{data:08x}", {"index": index})
             probe.compare("tensor-error", int(failed), error, {"index": index})
     probe.compare("summary-count", len(cases), summary, {})
     probe.compare("observed-tile-count", len(cases), len(seen), {})
@@ -175,6 +182,8 @@ def run(probe, compact, simulator, overrides=None):
         "independent_random_finite_tiles": 128 if compact else 10000,
         "directed_single_lane_extreme_exponents": 128,
         "physical_lanes": 128, "groups": 4,
+        "directed_even_and_odd_rne_ties": 2,
+        "required_error_transactions": sum(failed for _, failed in expected),
         "stalled_outputs_per_tile": 3, "registered_stages": 38,
     }
 

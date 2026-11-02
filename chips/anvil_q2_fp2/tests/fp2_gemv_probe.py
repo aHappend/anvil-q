@@ -70,7 +70,7 @@ module tb;
   integer fd,n,i,lane,cycle=0,shape,mode,rows,slot,selected,active_response=-1;
   integer outstanding,payload_reads,scale_reads,response_count,tiles,lanes_used,overlap;
   integer weights_complete,weights_consumed,maximum_owned,weight_beats;
-  integer underflow_cycles,bubble_cycles;
+  integer underflow_cycles,bubble_cycles,start_cycle;
   reg [31:0] random_state=89;
   reg [31:0] lengths[0:5];
   reg held_req=0,held_row=0,accepted_rsp,accepted_activation;
@@ -111,6 +111,7 @@ module tb;
       tiles=0; lanes_used=0; overlap=0; weight_beats=0;
       weights_complete=0; weights_consumed=0; maximum_owned=0;
       underflow_cycles=0; bubble_cycles=0;
+      start_cycle=cycle;
       cmd_inputs=lengths[shape]; cmd_mx=mode; cmd_valid=1;
       @(posedge clk); if(cmd_ready !== 1'b1) $fatal(1,"COMMAND_NOT_READY");
       @(negedge clk); cmd_valid=0;
@@ -199,9 +200,9 @@ module tb;
       end
       if(rows!=3 || outstanding!=0 || rsp_valid || tiles==0 ||
          payload_reads+scale_reads!=response_count) $fatal(1,"INCOMPLETE_STREAM");
-      $display("STREAM %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
+      $display("STREAM %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
         mode,cmd_inputs,payload_reads,scale_reads,response_count,tiles,lanes_used,
-        overlap,maximum_owned,underflow_cycles,bubble_cycles);
+        overlap,maximum_owned,underflow_cycles,bubble_cycles,cycle-start_cycle);
       @(posedge clk); @(negedge clk); act_data_valid=0;
     end
     $display("SUMMARY 12"); $finish;
@@ -256,12 +257,13 @@ def run(probe):
             probe.compare("streamed-row-error", 0, failed, {"mode": mode, "length": length})
         elif words[:1] == ["STREAM"]:
             mode, length, *data = map(int, words[1:])
-            if (mode, length) in streams or len(data) != 9:
+            if (mode, length) in streams or len(data) != 10:
                 raise AssertionError("duplicate/malformed stream accounting")
             streams[mode, length] = dict(zip(
                 ("payload_beats", "scale_beats", "responses", "tiles", "active_lanes",
                  "overlap", "maximum_completed_weights_owned", "underflow_cycles", "bubble_cycles"),
-                data, strict=True))
+                data[:9], strict=True))
+            streams[mode, length]["cycles"] = data[9]
         elif words[:1] == ["SUMMARY"]:
             summaries.append(int(words[1]))
     probe.compare("stream-summary", [12], summaries, {})
@@ -274,6 +276,13 @@ def run(probe):
                       {"mode": mode, "length": length})
         probe.compare("stream-response-conservation", data["payload_beats"] + data["scale_beats"],
                       data["responses"], {"mode": mode, "length": length})
+        probe.compare("stream-observed-cycles", True, data["cycles"] > 0,
+                      {"mode": mode, "length": length})
+        data["physical_lane_utilization_per_accepted_tile"] = data["active_lanes"] / (128 * data["tiles"])
+        data["observed_values_per_clock"] = data["active_lanes"] / data["cycles"]
+        data["observed_payload_bytes_per_clock"] = 64 * data["payload_beats"] / data["cycles"]
+        data["observed_total_read_bytes_per_clock"] = 64 * (
+            data["payload_beats"] + data["scale_beats"]) / data["cycles"]
     density = []
     for length in (1536, 8960):
         native, mx = streams[0, length], streams[1, length]
