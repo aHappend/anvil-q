@@ -120,8 +120,14 @@ def numerics(suite):
         suite.probe.compare(key + "-coverage", True, fused.summary["coverage"][key] >= threshold, {})
     suite.probe.compare("full-rms-dimensions", True,
                         {1536, 8960}.issubset(fused.summary["coverage"]["rms_lengths"]), {})
-    run("full-128-component-six-head-attention",
-        lambda p: attention.run(p, False, "verilator", 128, 3))
+    attention_cases = 0
+    for start in range(0, 100, 25):
+        shard = run(f"full-128-component-six-head-attention-{start}-{start + 24}",
+                    lambda p, start=start: attention.run(
+                        p, False, "verilator", 128, 3, case_start=start, case_count=25))
+        attention_cases += (shard.summary["attention_fixture_range"]["stop"] -
+                            shard.summary["attention_fixture_range"]["start"])
+    suite.probe.compare("six-head-attention-transaction-coverage", 100, attention_cases, {})
 
 
 def defects(suite):

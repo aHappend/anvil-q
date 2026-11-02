@@ -147,9 +147,12 @@ def attention_reference(query, keys, values, dimension):
     return outputs
 
 
-def cases(compact, dimension):
+def cases(compact, dimension, case_start=0, case_count=None):
     rng = random.Random(17)
     count = 6 if compact else 100
+    case_stop = count if case_count is None else case_start + case_count
+    if not 0 <= case_start < case_stop <= count:
+        raise ValueError("attention case range outside the declared fixture matrix")
     groups = (dimension + 31) // 32
     for number in range(count):
         length = (1, 2, 3, 4, 7, 17)[number % 6]
@@ -181,11 +184,17 @@ def cases(compact, dimension):
                 bus.append((0, int(packed(key), 16), int(packed(value), 16), 0, 0))
             keys.append(key)
             values.append(value)
-        yield query, bus, attention_reference(query, keys, values, dimension)
+        if case_start <= number < case_stop:
+            yield query, bus, attention_reference(query, keys, values, dimension)
 
 
-def run(probe, compact, simulator, dimension, tile, overrides=None):
-    stimulus = list(cases(compact, dimension))
+def run(probe, compact, simulator, dimension, tile, overrides=None,
+        case_start=0, case_count=None):
+    stimulus = list(cases(compact, dimension, case_start, case_count))
+    probe.summary["attention_fixture_range"] = {
+        "start": case_start, "stop": case_start + len(stimulus),
+        "head_dim": dimension, "tile_tokens": tile,
+    }
     source = probe.directory / "tb.sv"
     source.write_text(ATTENTION_TB.replace("@DIM@", str(dimension)).replace("@TILE@", str(tile)))
     images = probe.directory / "checkpoint-images"
