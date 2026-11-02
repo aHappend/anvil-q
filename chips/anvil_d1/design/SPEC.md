@@ -5,11 +5,10 @@
 The admitted work order defines the product. This document fixes implementation
 details within that contract; it does not waive any acceptance check.
 
-The current source increment implements native arithmetic primitives, native
-RMSNorm, exponential/SiLU, hardware absorption and the telemetry CSR block.
-The accelerator integration, MLA, expert execution and router/DMA remain to
-be implemented. This is
-not a completed accelerator or a ready verification handoff. No functional,
+The design sources implement the native inference path, hardware absorption,
+two-pass MLA, shared/routed experts, retained prefetch, legacy selection and
+telemetry integration. They are handed to independent verification, not
+certified by their implementation or by static elaboration. No functional,
 synthesis, timing, board or model-quality result is claimed.
 
 `anvil_q3_reference/rtl/` is an immutable dependency, not a passing baseline.
@@ -20,7 +19,7 @@ come from the shared runtime.
 
 ## Product and configuration
 
-The eventual top is `anvil_d1_top`, with `MODEL_MODE=0` selecting native D1 and
+The top is `anvil_d1_top`, with `MODEL_MODE=0` selecting native D1 and
 `MODEL_MODE=1` selecting the actual immutable `anvil_q3_top`. Every parent port
 and parameter meaning is retained in legacy mode. Native mode adds only the
 specified CSR top ports, not test or debug ports.
@@ -52,8 +51,7 @@ produce a `PARAMETER ERROR` diagnostic, not silently select a smaller design.
 Diagnostic-only port widths use minimum legal widths before rejection.
 Constant elaboration arithmetic does not authorize runtime division hardware.
 
-`anvil_d1_parameters` is the native geometry/address guard and must be
-instantiated by the future native top. Its products check per-object byte or
+`anvil_d1_parameters` is instantiated by the native top. Its products check per-object byte or
 component extents using 128-bit elaboration arithmetic. The externally supplied
 memory address is the documented (kind,layer,proj,row,col) tuple, not a 32-bit
 flattening of all model layers/experts. The guard does not change legal
@@ -364,6 +362,173 @@ scratch and kind-15/proj-7 scratch are distinct objects; explicit integration
 copies, not address aliasing, are required when crossing these namespaces.
 Layer is the model layer except global objects use zero. Field overflow faults.
 
+### Connected inference and scratch lifetimes
+
+The top retains the parent's banked request/response ports, unsigned token
+and logit indices, signed 32-bit logit data, and 64-bit tags. The added CSR
+ports are the only top-interface extension. In legacy mode all parent
+parameters, including PROFILE, HEAD_DIM, CACHE_MODE, AWQ_BITS and INT4_ASYM,
+are forwarded without reinterpretation. Parameter defaults select the parent
+geometry in that mode. Native parameters do not change the immutable parent.
+Integrations that do not access CSRs must tie csr_valid, csr_write, csr_addr,
+csr_wdata and csr_wstrb low and tie csr_rsp_ready to a defined value.
+
+Native embedding and vocabulary projection share kind-0, layer-0, proj-0
+weights: row is token/vocabulary index and col is hidden component. These
+are native Q16.16 words, not packed FP16. Embedding copies them into kind-8
+hidden slot 0. Vocabulary projection computes R_16 of the exact dot against
+kind-8 final-normalized slot 14; there is no vocabulary bias. Token IDs are
+host-provided 32-bit indices, not byte strings. The accelerator neither
+tokenizes text nor claims a tokenizer/checkpoint adapter.
+
+| Boundary | Producer / consumer memory object |
+|---|---|
+| Embedding / layer input | kind 8, layer 0, proj 0, row 0 |
+| Norm0 / MLA input | kind 8, layer 0, proj 0, row 1 |
+| MLA output | kind 15, model layer, proj 7, row 3 |
+| Attention residual / norm1 input | kind 8, layer 0, proj 0, row 7 |
+| Norm1 / router and expert input | kind 8, layer 0, proj 0, row 8 |
+| Expert intermediate | kind 15, model layer, proj 7, row 8, col 0..I-1 |
+| Non-dense expert output | same expert-work object, col I..I+H-1 |
+| Mixture or dense output | kind 15, model layer, proj 7, row 4 |
+| Second residual / next layer | kind 8 hidden slot 0 |
+| Final norm / vocabulary input | kind 8, layer 0, proj 0, row 14 |
+
+The decoder explicitly reads the branch's kind-15 output and the appropriate
+kind-8 residual, saturates their sum, and writes the next kind-8 tensor.
+No memory provider may alias the two namespaces to implement this crossing.
+D1 scratch IDs 0,1,2 remain reserved names; the integrated hidden/norm path
+uses the explicitly listed parent scratch objects, not implicit mirrors.
+Router affinity results temporarily occupy expert-work columns 0..E-1 and
+are loaded before expert execution reuses that storage.
+
+### Tensor, rotary and MLA schedules
+
+`anvil_d1_tensor` streams one exact dot at a time. Each term reads an input
+word and either one 32-bit weight or three acknowledged little-word-first
+96-bit words. Its normal multiplier is the four-stage mul32; its absorbed
+multiplier is the eight-stage mul96x32. It separately launches the four-stage
+accumulator, then R_16 or R_32 after the last term. An optional bias initializes
+the accumulator with bias*2^16. Native MLA and affinity commands disable
+this option. Head-reduction mode walks rank components with an explicit
+counter, advances the absorbed head field at rank-1, and rounds only after
+all heads. B projection therefore never separately rounds head outputs.
+
+`anvil_d1_rope` reads x,y,cos,sin for one adjacent pair before either result
+is written. It computes x*cos and y*sin, launches a separate four-stage
+subtractor and R_16, writes x', then computes x*sin and y*cos through a
+separate four-stage adder and R_16 and writes y'. Retaining x and y makes
+in-place query rotation safe. Pair columns advance by two, including a
+single-pair rope dimension of two.
+
+MLA first commands absorption, then D projection directly into the current
+token's latent cache. KR projects into query-rope scratch temporarily and
+rotates into that token's decoupled-key cache columns. For every head, A
+projection writes query-latent scratch and QR projection/rotation writes
+query-rope scratch. These queries are then loaded into synchronous on-chip
+storage. No historical cache read occurs before all current cache writes
+are acknowledged.
+
+Each history pass visits token positions 0..position, loads exactly rank+rope
+cache words into the one-token buffer, and evaluates all heads from that
+buffer. Pass one retains per-head architectural-score maxima. Pass two
+recomputes those scores, exponentiates their widened maximum differences,
+and accumulates exact Z and signed N[head,rank]. It neither stores per-token
+probabilities nor allocates a sequence-length on-chip array.
+
+| Engine boundary | Pre-edge action and post-edge result |
+|---|---|
+| RAM address R0 | Register query/cache/numerator address |
+| RAM read R1 | Synchronous memory output registers update |
+| RAM consume R2 or later | Earliest arithmetic acceptance using that word |
+| Score product M0..M3 | Four-stage product, consumed at M4 |
+| Score accumulation | Separate launch after product capture; four carry stages |
+| Score division | Signed-wrapper schedule above, followed by registered sat32 score |
+| Exponential | Separate acceptance after the registered score is available |
+| Z update | Separate add128, no combinational exponential-plus-wide-add |
+| N update | RAM read, mul32, product capture, separate add128, synchronous RAM write |
+| Context magnitude | Separate register after the synchronous numerator read |
+| Context division | Following eligible edge accepts prepared magnitude and Z |
+| Context rounding | Capture quotient/remainder, add exact half-test increment through add128 |
+| Context sign/boundary | Separate R_0 stage after rounded magnitude registration |
+| Context write | Acknowledged kind-15/proj-7 row-7 word |
+| Final B write Ef | Tensor completion forwarded; MLA done visible post-Ef |
+
+Numerator storage is initialized by first-token accumulation selecting zero,
+not by reading an uninitialized RAM. Maxima and denominators reset at command
+acceptance. Query and cache validity follows complete acknowledged loads.
+The B tensor consumes the flattened head/rank context from scratch row 7 and
+writes MLAout row 3. All engine latency beyond primitive schedules is
+dimension-, FSM- and service-dependent.
+
+### Router, expert tiles and concurrency
+
+The router tensor evaluates every affinity from normalized hidden and kind-15
+router weights. It loads all architectural scores, computes every full-softmax
+probability, and scans ascending expert IDs once for each winner. A selected
+bit prevents duplicates; replacement only on strictly greater score preserves
+lower-ID ties. The selected-probability sum and floor-normalized weights are
+registered. Remaining units, strictly fewer than TOP_K, are added one at a
+time to winners in order.
+
+After normalization, the two-client router starts prefetch and the first
+shared expert independently. Client 1 reads the actual first gate tile of
+each winner, skipping only rows/columns outside legal partial tiles. Each
+winner has TILE_ROWS*TILE_K storage with TILE_K row stride and a completion
+valid bit. Client 0 executes both shared experts regardless of client-1
+request/response stalls. Routed execution waits for complete first tiles,
+then supplies each retained gate word over a separate synchronous tile-read
+handshake. Those gate words are never reread from DDR by the expert.
+
+The expert has two additional bounded compute-tile banks. Cache tags include
+projection, output-row block and input-column block. On a miss, the alternate
+bank is invalidated and filled through acknowledged reads before its tag
+becomes valid. Partial final rows/columns are skipped, not read as padding.
+Registered RAM reads supply weights on hits. This folded implementation may
+refetch compute tiles evicted by the gate/up/down access pattern; all such
+traffic is counted. Neither bandwidth savings nor throughput is inferred from
+the theoretical active-expert fraction.
+
+For each intermediate row the expert computes gate affine, SiLU, up affine,
+then gate/up product. Each affine initializes its exact accumulator from a
+native bias, uses separate mul32 and add stages, and rounds once with R_16.
+The product has its own mul32 and R_16. After all intermediate writes, down
+projection reads those products and writes every hidden output. Dense expert
+127 writes MoEout directly. Non-dense experts write expert-work outputs;
+the router reads them, multiplies by coefficient one in Q0.24 for shared
+experts or the selected routed coefficient, and adds into synchronous signed
+128-bit mixture RAM. Only the completed mixture receives R_24.
+
+Command acceptance clears tile-valid ownership and telemetry. Flush annuls
+tile ownership and arithmetic, not DDR contents. No old tile can be exposed
+until that command has filled and validated it again. Speculative read
+errors fault the command; acknowledged data is never replaced with zeros.
+
+### Scheduling, faults and cancellation
+
+Seven native scheduler clients are decoder normalization, MLA, shared/routed
+execution, routed prefetch, residual operations, final normalization and token
+I/O. The scheduler uses the immutable parent ownership/tag/reorder machinery.
+The native boundary wrapper additionally masks request valid and the ready
+fed back to that machinery on flush. Thus a held but not accepted request
+cannot transfer on cancellation; an already accepted request remains owned
+and drains. Response ready stays active during drain.
+
+Top accepts a token only in armed idle with no scheduler ownership. New
+sequences require position zero, increment the weight/cache epoch, flush
+local valid state and wait for scheduler drain. Subsequent tokens require
+contiguous positions and cannot transition decode back to prefill. A bad
+token, leaf error or malformed/stale response invalidates the sequence and
+enters flush/drain before error completion. Cancellation has combinational
+priority over token acceptance, requests and logits and then drains ownership.
+Idle cancellation emits cancel_done without inventing token done. Active
+cancellation emits the parent-style failed token completion with cancel_done.
+
+Token I/O registers each vocabulary dot and holds its logit until accepted.
+Indices increase from zero through VOCAB_SIZE-1. Top enters COMPLETE only
+on the final logit handshake, not on presentation. No new token is accepted
+on that edge. The completion state lasts one cycle.
+
 ## Telemetry CSR ABI
 
 CSR requests are registered responses with no combinational bypass. Full byte
@@ -403,17 +568,27 @@ Global cycles count every armed clock. Domain cycles count the token-active
 interval including acceptance and completion edges. Tokens count accepted
 tokens, including tokens that later fail; errors count token_error events.
 Global and domain reasoning token increments use token_accept AND
-reasoning_active. Top-level delimiter comparison must include begin and
+reasoning_active. Top-level delimiter comparison includes begin and
 exclude end, with end taking priority if configured delimiters are equal.
-Top resets reasoning state on new sequence, cancel or error. Configuration
+Top resets reasoning state on new sequence, cancel or error. Reasoning cycles
+are attributed only while a reasoning token is active (including acceptance),
+not idle time between tokens. Configuration
 writes on a simultaneous token acceptance are rejected as busy.
 
-Domain attribution uses the domain_id event input, which top must connect to
+Domain attribution uses the domain_id event input, which top connects to
 the block's configured domain_select output. Internal configuration outputs
 also expose think_begin_token and think_end_token to top; they are not added
-top ports. Byte events are per-cycle unsigned increments. Engine totals must
-be aggregated once at completion, not also counted as transaction increments.
-Shared/prefetch/overlap counters use actual active event levels.
+top ports. Byte events are per-cycle unsigned increments. Public accepted transactions contribute cache, expert and other bytes exactly
+once. Dense-equivalent engine totals contribute once at MLA/MoE completion,
+not as additional real-traffic increments. Legal per-command geometry bounds
+each dense-equivalent total below 2^32; the 64-bit leaf interfaces remain
+unchanged. Shared/prefetch counter increments are recovered as delayed
+increases of the per-command live totals; simultaneous increases retain the
+actual overlap relation. Their resets at a new engine command are not events.
+Shared arithmetic includes its primitive launch/wait/round stages. Prefetch
+active means an accepted outstanding request or actual transfer, not merely
+a stalled request presentation. Global CSR counters do not double count
+these cycles at command completion.
 
 Atomic ratio operands and host calculations:
 cache reduction = 1-(cache_read_bytes+cache_write_bytes)/cache_dense_equiv_bytes;
@@ -428,6 +603,18 @@ Required tools are Python 3, Icarus/vvp, Verilator and Yosys for independent
 portable L1. No tool version or test success is presumed before execution.
 Quartus 17.1 and Arria 10 board checks are shared-runtime gates, not L1 scripts.
 No tools are installed by this design increment.
+
+The native scheduler and legacy mode depend on the supplied
+`anvil_q3_reference/rtl/*.sv`. Include its package before its other modules.
+No checkpoint dump, agent session, runtime metadata or previous receipt is a
+source dependency. A fast static reproduction command from the project root:
+
+```
+iverilog -g2012 -t null -s anvil_d1_top \
+  anvil_q3_reference/rtl/anvil_q3_00_pkg.sv \
+  $(find anvil_q3_reference/rtl -maxdepth 1 -name '*.sv' ! -name anvil_q3_00_pkg.sv | sort) \
+  rtl/*.sv
+```
 
 Once independently implemented by Verifier, reproduction from the project root:
 
@@ -458,9 +645,13 @@ the shared runtime produces and independently reviews it after acceptance.
 | Exact native RMSNorm | rtl/anvil_d1_rmsnorm.sv | Independent verification pending |
 | Exact exponential / stable SiLU | rtl/anvil_d1_exp.sv, rtl/anvil_d1_silu.sv | Independent verification pending |
 | Hardware exact A/B construction | rtl/anvil_d1_absorption.sv | Independent verification pending |
-| Native geometry guard | rtl/anvil_d1_parameters.sv | Not yet integrated; diagnostic execution pending |
+| Native geometry guard | rtl/anvil_d1_parameters.sv, rtl/anvil_d1_top.sv | Diagnostic execution pending |
 | Saturating atomic telemetry | rtl/anvil_d1_csr_perf.sv | Independent verification pending |
-| Full native inference, MLA/MoE, legacy top | Not implemented in this increment | Not ready |
+| Two-pass MLA and direct rational context | rtl/anvil_d1_mla_engine.sv | Independent verification pending |
+| Projections and rotary pairs | rtl/anvil_d1_tensor.sv, rtl/anvil_d1_rope.sv | Independent verification pending |
+| Shared/routed SwiGLU, retained DMA tiles | rtl/anvil_d1_expert.sv, rtl/anvil_d1_moe_router_dma.sv | Independent verification pending |
+| Residuals, embedding and every logit | rtl/anvil_d1_decoder_layer.sv, rtl/anvil_d1_token_io.sv | Independent verification pending |
+| Native ownership drain and legacy selection | rtl/anvil_d1_bank_scheduler.sv, rtl/anvil_d1_top.sv | Independent verification pending |
 | 88.75% MHA cache reduction | Geometry calculation above | Mathematical, not measured |
 | 100 MHz timing / physical PPA / HIL | Shared-runtime gates | Not executed |
 | Historical parent PPA | Missing GENERATIONAL_HANDOFF.md | Unavailable |

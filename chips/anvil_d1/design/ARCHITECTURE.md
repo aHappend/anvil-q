@@ -1,18 +1,18 @@
 # Anvil-D1 architecture
 
-## Implementation increment
+## Implementation and evidence boundary
 
-The current increment is the arithmetic/normalization/activation/absorption/CSR
-foundation. There
-is deliberately no placeholder `anvil_d1_top` returning canned results.
-The remaining native pipeline is an implementation obligation, not a claimed
-feature of these partial sources.
+`anvil_d1_top` connects embedding, every decoder layer, final normalization,
+vocabulary projection and CSRs. Each native decoder instantiates the named MLA
+and router/DMA engines. Legacy mode instantiates the immutable parent directly.
+No expected answers, verification oracle, checkpoint adapter or synthetic
+affinity input replaces a native datapath.
 
 Target: Intel Arria 10 GX 10AX115N2F45E1SG, synchronous 100 MHz or faster.
 No timing closure, resource utilization or board result has yet been obtained.
 The historical `GENERATIONAL_HANDOFF.md` input is absent.
 
-## Intended connected datapath
+## Connected datapath
 
 ```
 token -> embedding -> hidden
@@ -35,12 +35,11 @@ accepted events/completion deltas -> saturating live CSR counters
                                   -> atomic snapshot -> host ratio calculation
 ```
 
-The eventual native decoder must instantiate the literal MLA and router/DMA
-modules. Top must instantiate that decoder and the CSR block. Legacy mode
-must instantiate the actual immutable parent, not reimplement its arithmetic.
-The accepted parent scheduler and interfaces are prior art; new native
-cancellation must suppress new external requests while retaining ownership
-until drain. Reusing an unmodified parent block cannot waive that requirement.
+The native scheduler wrapper reuses the parent ownership/tag/reorder engine
+but gates both external request valid and the ready fed back into that engine
+on flush. This closes the parent's request-annul boundary for native
+cancellation without changing legacy behavior. Accepted ownership drains;
+unaccepted held requests are annulled.
 
 ## Arithmetic allocation and lifetime
 
@@ -95,6 +94,91 @@ Expert data uses bounded first tiles plus compute ping-pong tiles, not a full
 expert cache. Any future inferred RAM must have explicit initialization-valid
 ownership; reset does not clear DDR or authorize an uninitialized read.
 
+| Native storage | Maximum declared payload | Lifetime / initialization |
+|---|---:|---|
+| Loaded queries | 16*(512+64)*32 = 294912 bits | All query words acknowledged before history |
+| One compressed token | (512+64)*32 = 18432 bits | All causal-token words loaded before any head |
+| Context numerators | 16*512*128 = 1048576 bits | First causal token selects zero as prior sum |
+| Per-head max/Z | 16*(32+64) = 1536 bits | Reset at each MLA command |
+| Winning first tiles | 6*8*128*32 = 196608 bits | Per-winner valid after acknowledged fill |
+| Expert compute banks | 2*8*128*32 = 65536 bits | Projection/row/column tags validate complete fills |
+| Mixture numerators | 2048*128 = 262144 bits | First shared expert selects zero as prior sum |
+
+These are architectural declarations, not synthesized resource results.
+Large storage uses synchronous read/write processes without asynchronous RAM
+reset; command/epoch ownership protects initialization. No production absorbed
+matrix or sequence-length cache is allocated in FPGA registers.
+
+### MLA dataflow and reuse
+
+Hardware absorption completes once per layer/weight epoch. Its matrix words
+are streamed from DDR by the shared tensor engine rather than retained as a
+production on-chip matrix. The tensor's B mode explicitly advances the head
+field when its rank counter wraps and retains a single exact accumulator
+across all heads before R_32.
+
+D writes the new latent directly into cache. KR temporarily uses rope scratch,
+then rotates into the new token's key-cache suffix. Query A and QR/RoPE tensors
+occupy their documented scratch objects and are loaded into query RAM. Two
+history passes each read every compressed scalar once across all heads. The
+first finds architectural-score maxima. The second accumulates exponentials
+and exact exponential-weighted latent numerators from the same one-token
+buffer. Direct rational context division/half-tie rounding is separate from
+diagnostic probability quantization.
+
+The theoretical production cache traffic for a command at causal length L is
+`2304*(2*L+1)` bytes: two full causal reads plus one current-token write.
+The explicit MHA denominator is `20480*(2*L+1)`. These formulas are analytical
+targets for independently counted public transactions, not measured savings.
+The baseline counter adds one full dense vector at the first accepted scalar
+of each corresponding cache traversal. Raw weights, absorbed writes and
+scratch accesses are classified separately.
+
+### Shared/routed work and retained tiles
+
+The affinity tensor uses normalized hidden, not externally supplied scores.
+Full-softmax probabilities and stable Top-K scans precede coefficient
+normalization. A three-way mux gives client 0 to affinity, expert execution
+or mixture work. Client 1 has a separate memory port and prefetch FSM.
+Neither FSM's readiness depends on the other's memory service.
+
+First gate tiles have fixed TILE_K row stride and skip invalid final
+rows/columns. Routed expert execution reads the retained winning tile using
+a registered tile-response slot. Later tiles use two alternating compute
+banks tagged by projection and row/column block. The folded scalar MAC
+schedule can evict/refetch compute tiles; actual parameter-byte counters
+include every such read rather than claiming ideal active-parameter traffic.
+
+Each shared/routed expert runs complete biased gate/up/down SwiGLU. Shared
+outputs receive coefficient one; selected routed outputs receive their exact
+normalized Q0.24 coefficients. A synchronous signed-128 mixture RAM prevents
+premature per-expert summation rounding. Dense-first layers use expert 127,
+the dense intermediate width and no extra mixture boundary.
+
+### Integration and command ownership
+
+| Scheduler client | Owner |
+|---:|---|
+| 0 | Reused native per-layer normalization |
+| 1 | MLA absorption/projection/rotation/history subcontrollers |
+| 2 | Router affinity, expert tensor or mixture controller |
+| 3 | Winning routed weight prefetch |
+| 4 | Decoder residual reads/writes |
+| 5 | Final native normalization |
+| 6 | Native embedding and vocabulary projection |
+
+Kind-8 hidden/norm slots and D1 kind-15 output/work slots are distinct.
+The decoder reads each residual/branch pair explicitly and writes the next
+parent-compatible hidden slot. SPEC.md records exact slots and their lifetimes.
+Subcontroller muxes only change ownership after completion and never change
+the route of an outstanding transaction. Fault or cancellation transfers
+accepted external ownership to scheduler drain before any new token.
+
+There is a single active token. New sequences invalidate local epoch/tile
+validity, and failed or cancelled tokens invalidate sequence continuity.
+Every vocabulary logit is registered and can stall independently of memory.
+Final-logit acceptance, not first presentation, produces token completion.
+
 RMSNorm streams its source twice: once for S and once for x/gamma output.
 It stores no H-wide vector and uses parent-compatible kind-8 scratch slots
 documented in SPEC.md. Gamma reads and output writes are acknowledged.
@@ -116,14 +200,12 @@ comparison and domain attribution. It does not infer reasoning from text.
 Per-domain cycle attribution uses the token-active interval; global cycles
 measure armed elapsed time. All ratio calculations remain host-side.
 
-## Remaining work before a ready design handoff
+## Independent handoff
 
-Connect the implemented hardware absorption and native arithmetic/activation
-blocks to reusable tensor execution, two-pass MLA, router/dual-client retained
-prefetch, expert SwiGLU,
-decoder residual sequencing, embedding/projection, parameter guards, native
-bank scheduling/cancellation, legacy top selection and telemetry aggregation.
-Finish exact schedules and integration documentation for those modules.
-Then perform at most a fast static syntax/elaboration check and hand off to
-Verifier for all independent simulation, numerical, mutation and synthesis
-work. Do not treat this partial increment as satisfying those obligations.
+Designer performs only fast static syntax/elaboration. Independent Verifier
+owns numerical/reference fixtures, functional simulation, mutation sensitivity,
+compatibility, synthesis and clean-copy reproduction. All five admitted L1
+commands remain required; current timing lint, Quartus STA and physical HIL
+remain shared-runtime gates. No generic or historical result certifies them.
+The runtime-generated independently reviewed product PDF follows engineering
+acceptance and is not an input to any of these checks.
