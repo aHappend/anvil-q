@@ -323,19 +323,22 @@ def main():
     parser.add_argument("--singleton", action="store_true")
     parser.add_argument("--repair-of")
     args = parser.parse_args()
-    evidence = Evidence("router-"+args.sim+("-singleton" if args.singleton else "-64"), args.repair_of)
-    try:
-        geometry = dict(experts=1, topk=1, hidden=8, tile_k=8, tile_rows=1) if args.singleton else {}
-        summary = router_bench(evidence, **geometry)
-        summary["observations"] = simulate(evidence, "router.sv", args.sim)
-        evidence.finish("passed", **summary)
-        print(summary["observations"].strip())
-    except Exception as exc:
-        evidence.finish("failed", error=str(exc))
-        print(str(exc), file=sys.stderr)
-        print(rel(evidence.path / "receipt.json"), file=sys.stderr)
-        return 1
-    print(rel(evidence.path / "receipt.json"))
+    runs = ([("icarus", True), ("verilator", False)] if args.sim == "icarus" and not args.singleton
+            else [(args.sim, args.singleton)])
+    for simulator, singleton in runs:
+        evidence = Evidence("router-"+simulator+("-singleton" if singleton else "-64"), args.repair_of)
+        try:
+            geometry = dict(experts=1, topk=1, hidden=8, tile_k=8, tile_rows=1) if singleton else {}
+            summary = router_bench(evidence, **geometry)
+            summary["observations"] = simulate(evidence, "router.sv", simulator)
+            evidence.finish("passed", **summary)
+            print(summary["observations"].strip())
+        except Exception as exc:
+            evidence.finish("failed", error=str(exc))
+            print(str(exc), file=sys.stderr)
+            print(rel(evidence.path / "receipt.json"), file=sys.stderr)
+            return 1
+        print(rel(evidence.path / "receipt.json"))
     return 0
 
 

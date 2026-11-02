@@ -325,20 +325,21 @@ def main():
     parser.add_argument("--tokens", type=int, choices=range(1, 5), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
-    if args.sim == "icarus":
-        args.tokens = 1
-    evidence = Evidence(f"{args.case}-{args.sim}-seed{args.seed}", args.repair_of)
-    try:
-        native_bench(evidence, args.seed, args.tokens)
-        text = simulate(evidence, "native.sv", args.sim)
-        evidence.finish("passed", observations=text)
-        print(text.strip())
-    except Exception as exc:
-        evidence.finish("failed", error=str(exc))
-        print(str(exc), file=sys.stderr)
-        print(rel(evidence.path / "receipt.json"), file=sys.stderr)
-        return 1
-    print(rel(evidence.path / "receipt.json"))
+    runs = ([("icarus", 1), ("verilator", args.tokens)] if args.sim == "icarus" and args.tokens > 1
+            else [(args.sim, args.tokens)])
+    for simulator, tokens in runs:
+        evidence = Evidence(f"{args.case}-{simulator}-seed{args.seed}", args.repair_of)
+        try:
+            native_bench(evidence, args.seed, tokens)
+            text = simulate(evidence, "native.sv", simulator)
+            evidence.finish("passed", observations=text)
+            print(text.strip())
+        except Exception as exc:
+            evidence.finish("failed", error=str(exc))
+            print(str(exc), file=sys.stderr)
+            print(rel(evidence.path / "receipt.json"), file=sys.stderr)
+            return 1
+        print(rel(evidence.path / "receipt.json"))
     return 0
 
 

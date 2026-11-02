@@ -31,7 +31,14 @@ def matrix():
         ("banks4_queue16", COMPACT | dict(BANKS=4, QUEUE_DEPTH=16)),
         ("banks8_queue1", COMPACT | dict(BANKS=8, QUEUE_DEPTH=1)),
         ("topk_equals_experts", COMPACT | dict(ROUTED_EXPERTS=6)),
-        ("maximum_geometry", {}),
+        ("production_defaults", {}),
+        ("maximum_geometry", dict(
+            NUM_LAYERS=36, HIDDEN_SIZE=2048, INTERMEDIATE_SIZE=11008,
+            NUM_Q_HEADS=16, KV_LORA_RANK=512, QK_NOPE_HEAD_DIM=128,
+            QK_ROPE_HEAD_DIM=64, V_HEAD_DIM=128, ROUTED_EXPERTS=64, TOP_K=6,
+            SHARED_EXPERTS=2, MOE_INTERMEDIATE_SIZE=1408, FIRST_DENSE_LAYERS=36,
+            VOCAB_SIZE=151936, MAX_SEQ_LEN=32768, BANKS=8, QUEUE_DEPTH=16,
+            TILE_K=128, TILE_ROWS=8)),
     ]
     illegal_values = {
         "MODEL_MODE": [-1, 2], "NUM_LAYERS": [0, 37],

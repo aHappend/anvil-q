@@ -48,7 +48,7 @@ def constructions():
              keys=[[0, 0], [0, 0]], kr=[0, 0]),
         dict(name="rotary_score", qa=[0, 0, 0],
              history=[[0, 1 << 30, 1]], current=[1, -(1 << 30), -1],
-             qr=[65536, -32768], keys=[[0, 0]], kr=[3, 2]),
+             qr=[65536, -32768], keys=[[0, 0]], kr=[8, 0]),
         dict(name="score_saturation", qa=[(1 << 31)-1, -(1 << 31), 0],
              history=[[(1 << 31)-1, -(1 << 31), 3]],
              current=[-(1 << 31), (1 << 31)-1, -9],
@@ -137,6 +137,9 @@ def make_fixture(case, nope=2):
     if case["name"] == "renormalized_probability":
         if not any(c["expected"] != c["forbidden_renormalized_probability"] for c in contexts):
             raise AssertionError("missing renormalized probability discriminator")
+    if case["name"] == "rotary_score":
+        if scores[-1] == 0 or contexts[1]["expected"] == 0:
+            raise AssertionError("rotary score must distinguish omitted rotary arithmetic in the output")
     return fixture, dict(name=case["name"], position=pos, nope=nope, input=x,
                          qa=qa, qr=qr, score_scale=scale,
                          score_numerators=numerators,
