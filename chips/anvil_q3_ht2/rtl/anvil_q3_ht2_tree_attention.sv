@@ -64,7 +64,7 @@ module anvil_q3_ht2_tree_attention #(
   end else begin: datapath
     localparam IDLE=0, WALK_CAPTURE=1, WALK_UPDATE=2, START=3,
       RUN=4, COMPLETE=5, ABORT_PULSE=6, ABORT_WAIT=7,
-      CANCEL_WAIT=8, FAULTED=9;
+      CANCEL_WAIT=8, FAULTED=9, CACHE_INVALIDATE=10, CACHE_WAIT=11;
     reg [3:0] state;
     reg failed, scratch_outstanding, commit_ack;
     reg [31:0] transaction_id, epoch, layer, base_pos, position;
@@ -89,8 +89,10 @@ module anvil_q3_ht2_tree_attention #(
     wire signed [31:0] kv_data;
     wire reader_ready, reader_valid, reader_error, reader_idle, reader_fault, reader_drained;
     wire signed [31:0] reader_data;
-    wire reader_flush=flush || state==ABORT_PULSE || command_fire;
+    wire reader_flush=flush || state==ABORT_PULSE || state==CACHE_INVALIDATE;
     wire kernel_flush=flush || failed || state==CANCEL_WAIT;
+    wire kernel_start_valid=running && state==START &&
+      reader_idle && reader_drained && !scratch_outstanding;
     wire scratch_fire=scratch_req_valid && scratch_req_ready;
     wire scratch_expected=scratch_outstanding || scratch_fire;
     wire scratch_response_fire=scratch_rsp_valid && scratch_rsp_ready;
@@ -141,7 +143,7 @@ module anvil_q3_ht2_tree_attention #(
       .NUM_KV_HEADS(NUM_KV_HEADS),.HEAD_DIM(HEAD_DIM),.MAX_SEQ_LEN(MAX_SEQ_LEN)
     ) q16_attention_kernel (
       .clk(clk),.rst_n(rst_n),.flush(kernel_flush),
-      .cmd_valid(running && state==START),.cmd_ready(kernel_ready),
+      .cmd_valid(kernel_start_valid),.cmd_ready(kernel_ready),
       .cmd_epoch(epoch),.cmd_layer(layer),.cmd_pos(position),.cmd_phase(1'b1),
       .done(kernel_done),.error(kernel_error),
       .mem_req_valid(kernel_mem_valid),.mem_req_write(kernel_mem_write),
@@ -216,8 +218,11 @@ module anvil_q3_ht2_tree_attention #(
                 {32'd0,cmd_positions[cmd_node*32+:32]}>
                   {32'd0,cmd_base_pos}+64'd3) begin
               failed<=1; state<=ABORT_PULSE;
-            end else state<=WALK_CAPTURE;
+            end else state<=CACHE_INVALIDATE;
           end
+          CACHE_INVALIDATE: state<=CACHE_WAIT;
+          CACHE_WAIT: if (reader_idle && reader_drained && !scratch_outstanding)
+            state<=WALK_CAPTURE;
           WALK_CAPTURE: begin
             captured_parent<=parents[walk_node*3+:3];
             captured_position<=positions[walk_node*32+:32];
@@ -239,7 +244,7 @@ module anvil_q3_ht2_tree_attention #(
               walk_position<=walk_position-1'b1; state<=WALK_CAPTURE;
             end
           end
-          START: if (kernel_ready) state<=RUN;
+          START: if (kernel_start_valid && kernel_ready) state<=RUN;
           RUN: if (kernel_done) state<=COMPLETE;
           COMPLETE: begin
             if (failed) state<=FAULTED;

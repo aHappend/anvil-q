@@ -401,6 +401,20 @@ Its synchronous bounded resident cache tags epoch, transaction and address,
 uses explicit replacement wrap for residency one or non-power-of-two sizes,
 and never substitutes residency for long-context capacity.
 
+Per-command cache invalidation is driven only by a registered
+`CACHE_INVALIDATE` state after command acceptance, never combinationally by
+`cmd_valid && cmd_ready`. `CACHE_WAIT` then waits for reader idle and drain
+completion before the ancestry walk. Kernel command validity and its transfer
+transition both require reader recovery and no outstanding scratch return.
+
+| Edge/boundary | Pre-edge transfer and post-edge state |
+| --- | --- |
+| Legal command accepted at E | Existing idle/readiness guards select exactly one command; post E enters `CACHE_INVALIDATE`, retracting command readiness and asserting reader flush. |
+| E+1, absent cancellation/fault | Reader invalidates resident validity and enters drain; wrapper enters `CACHE_WAIT`. No kernel, scratch or KV request starts. |
+| Reader recovery | A subsequent edge lets the reader leave drain; only an edge sampling both reader idle and drained lets the wrapper enter `WALK_CAPTURE`. |
+| Residency 1 or 3 | The same invalidation/recovery sequence applies; existing bounded replacement wrap and synchronous records remain unchanged. |
+| Reset, flush or fault during startup | Reset has highest priority, then external flush, then fault; cancellation/abort drains retain accepted-read and scratch ownership and cannot launch the kernel. |
+
 Record returns are ownership checked and decoded through the unchanged parent
 symmetric codec before scalar use. Thus attention sees quantized reconstruction,
 not pre-quantization staging values. Returned data is a held valid/error response.

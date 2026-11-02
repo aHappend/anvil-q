@@ -143,6 +143,59 @@ def kv_decode(record, count, mode):
     return result
 
 
+def saturate_q16(value):
+    return min((1 << 31) - 1, max(-(1 << 31), value))
+
+
+def trunc_div(numerator, denominator):
+    if denominator <= 0:
+        raise ValueError("nonpositive reference denominator")
+    return (-1 if numerator < 0 else 1) * (abs(numerator) // denominator)
+
+
+def nearest_div(numerator, denominator):
+    """Signed scalar division rounded to nearest, with ties away from zero."""
+    if denominator <= 0:
+        raise ValueError("nonpositive reference denominator")
+    magnitude = Fraction(abs(numerator), denominator)
+    integral, remainder = divmod(magnitude.numerator, magnitude.denominator)
+    rounded = integral + (2 * remainder >= magnitude.denominator)
+    return -rounded if numerator < 0 else rounded
+
+
+def exp_q24(argument):
+    """Parent scalar exponential: Q16 input, six-term Q24 range polynomial."""
+    if argument < -(16 << 16):
+        return 0
+    if argument >= 0:
+        return 1 << 24
+    shifts, residue = divmod(-argument << 8, 11629080)
+    term = 1 << 24
+    polynomial = term
+    for order in range(1, 7):
+        magnitude = ((abs(term) * residue) >> 24) // order
+        term = -magnitude if term >= 0 else magnitude
+        polynomial += term
+    return max(0, polynomial) >> shifts
+
+
+def causal_context(query, keys, values, dimension):
+    """Independent scalar attention over an already selected causal sequence."""
+    from math import isqrt
+
+    if not keys or len(keys) != len(values):
+        raise ValueError("empty or mismatched attention context")
+    denominator = isqrt(dimension << 32)
+    scores = [nearest_div(sum(a * b for a, b in zip(query, key)), denominator)
+              for key in keys]
+    maximum = max(scores)
+    weights = [exp_q24(score - maximum) for score in scores]
+    total = sum(weights)
+    return [saturate_q16(nearest_div(sum(weight * value[component]
+                                      for weight, value in zip(weights, values)), total))
+            for component in range(dimension)]
+
+
 AWQ_POSITIONS = (0, 4, 1, 5, 2, 6, 3, 7)
 
 

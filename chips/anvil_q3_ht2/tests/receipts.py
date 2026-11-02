@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
@@ -53,7 +54,13 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     location = run / f"{name}-{timestamp}"
     location.mkdir(exist_ok=False)
-    version = subprocess.run(version_argv, cwd=ROOT, capture_output=True, text=True)
+    deadline = float(os.environ.get("HT2_L1_DEADLINE", time.monotonic() + 2700))
+    limit = 600 if Path(str(argv[0])).name == "vvp" else 2700
+    remaining = min(limit, deadline - time.monotonic())
+    if remaining <= 0:
+        raise RuntimeError(f"{name}: shared check execution budget exhausted")
+    version = subprocess.run(version_argv, cwd=ROOT, capture_output=True, text=True,
+                             timeout=remaining)
     (location / "version.stdout.txt").write_text(version.stdout)
     (location / "version.stderr.txt").write_text(version.stderr)
     inputs = []
@@ -71,7 +78,7 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
         "tool_version_argv": version_argv,
         "tool_version_exit_code": version.returncode,
         "tool_version": (version.stdout + version.stderr).splitlines()[0],
-        "started_at": utc(), "timeout_s": None, "timed_out": False,
+        "started_at": utc(), "timeout_s": remaining, "timed_out": False,
         "stdout_path": str((location / "stdout.txt").relative_to(ROOT)),
         "stderr_path": str((location / "stderr.txt").relative_to(ROOT)),
     }
@@ -83,7 +90,19 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
         process = subprocess.Popen(argv, cwd=cwd, stdout=stdout, stderr=stderr)
         while True:
             try:
-                exit_code = process.wait(timeout=30)
+                left = min(remaining - (time.monotonic() - started),
+                           deadline - time.monotonic())
+                if left <= 0:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+                    exit_code = process.returncode
+                    receipt["timed_out"] = True
+                    break
+                exit_code = process.wait(timeout=min(30, left))
                 break
             except subprocess.TimeoutExpired:
                 print(f"{name}: tool execution active ({int(time.monotonic() - started)}s)",
@@ -91,6 +110,9 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     receipt.update(finished_at=utc(), duration_s=time.monotonic() - started,
                    exit_code=exit_code)
     (location / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    if receipt["timed_out"]:
+        raise RuntimeError(f"{name}: execution budget timeout; "
+                           f"see {location.relative_to(ROOT)}/receipt.json")
     if version.returncode != 0:
         raise RuntimeError(f"{name}: version command failed ({version.returncode})")
     if hashes(inputs) != input_hashes:

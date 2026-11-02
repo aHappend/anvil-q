@@ -312,7 +312,14 @@ unchanged parent symmetric codec to reconstruct INT8/INT4 data before scalar
 use. A synchronous tagged resident cache has explicit replacement wrap for
 residency one, three and other legal sizes. The wrapper invalidates residency
 at each attention command, so a reused request ID cannot expose overwritten
-shadow data from an earlier tree. Long-context records still come from DDR,
+shadow data from an earlier tree. Acceptance first enters registered
+`CACHE_INVALIDATE`, which pulses reader flush on the following edge;
+`CACHE_WAIT` holds startup until the reader is idle and drained. The ancestry
+walk follows recovery, and kernel launch also checks reader recovery and
+scratch ownership. This breaks the command-ready/reader-flush combinational
+feedback without removing readiness guards. External cancellation and faults
+retain the existing abort/drain priority and accepted-response ownership.
+Long-context records still come from DDR,
 not from an idealized all-context on-chip array.
 
 `anvil_q3_ht2_spec_verifier` validates four-slot graphs, generates evaluation
