@@ -5,8 +5,8 @@ Target: Intel Arria 10 GX `10AX115N2F45E1SG`, clock period at most 10 ns.
 
 ## Status and provenance
 
-This is a design contract, not an acceptance report. Implementation is in
-progress. The admitted work order remains authoritative, including its complete
+This is a design contract, not an acceptance report. The integrated RTL is
+submitted for independent verification. The admitted work order remains authoritative, including its complete
 coverage matrix and thresholds. No functional, synthesis, timing, board,
 speedup, resource or model-quality result is established by this document.
 The supplied `anvil_q2_fp_reference/rtl/*.sv` files are immutable.
@@ -92,6 +92,12 @@ ACCEL_ENABLE=0 uses a literal parent instance. FP_FORMAT=1, WEIGHT_MODE=1 or
 CACHE_MODE=1 retains the parent FP16, AWQ or int8-cache meaning. Accelerated
 BF16 uses FP_FORMAT=0 and weight/cache modes 0=native or 2=MXFP8.
 Mode 2 with ACCEL_ENABLE=0 is rejected.
+Mode 2 mixed with FP16, AWQ or the legacy int8 cache is also rejected:
+neither the accelerated BF16 graph nor the unchanged parent defines that
+combination. Existing legal parent configurations are not reinterpreted.
+The exact parameter/port tables and tensor-layout conversion are in
+`INTERFACES.md`; the connected graph and storage lifetimes are in
+`ARCHITECTURE.md`.
 
 ## Numerical rules
 

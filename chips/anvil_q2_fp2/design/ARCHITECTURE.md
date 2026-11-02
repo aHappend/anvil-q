@@ -2,14 +2,91 @@
 
 ## Current source handoff status
 
-The saved sources implement arithmetic leaves, MX encoding/decoding, the
-two-owned-slot weight prefetch, the 128-lane tensor stream, CSR telemetry,
-two-stage nonlinear units, fused epilogues, a six-query online attention
-engine and a tagged DDR transport. The accelerated token graph controller
-and compatibility top integration are not yet implemented. The new engines
-are therefore not yet an integrated accelerator. This increment is not a
-completed design handoff and establishes no functional verification result.
-See `SPEC.md` for the unchanged full acceptance contract.
+`anvil_q2_fp2_top` now connects the accelerated token graph, tagged DDR
+transport, tensor stream, fused epilogues, six-query attention and telemetry.
+Its compatibility generate branch literally instantiates the immutable parent.
+Device, source-manifest and clock integration are in `fpga/`. This is a
+design handoff for independent verification, not a functional, timing,
+performance or delivery acceptance claim. See `SPEC.md` for the unchanged
+full acceptance contract and `INTERFACES.md` for the concrete memory ABI.
+
+## Integrated token graph
+
+The default generate branch is accelerated; it does not call the parent
+for an accelerated token. The controller loads the BF16 token embedding
+and FP32 position-specific RoPE coefficients. For each layer it executes:
+
+1. RMSNorm of the current FP32 residual state with kind-5 BF16 gamma.
+2. Q, K and V tensor GEMVs, adding their BF16 biases in FP32.
+3. Split-half Q/K RoPE, native or MX KV cache commit, and one causal
+   six-query attention transaction per KV head.
+4. Output-projection GEMV fused directly with the attention residual add.
+5. RMSNorm with kind-6 gamma, gate and up GEMVs joined by SwiGLU, and
+   down-projection GEMV fused with the MLP residual add.
+
+After the final layer, kind-7 RMSNorm feeds the tied BF16 embedding matrix
+as an output-row-major tensor GEMV. Its FP32 row results pass through the
+epilogue to ordered, backpressured logits. Embeddings and tied output
+weights are native BF16 in either accelerated weight mode; mode 2 compresses
+the seven decoder projection matrices. No accelerated request uses the
+parent's kind-8 architectural scratch SRAM.
+
+The controller retains one FP32 row pipeline register between the tensor
+row accumulator, optional bias add and selected epilogue. Q/K first halves
+are the necessary split-half join, not a second tensor-result SRAM. Gate
+results are the real branch join with the later up result. The up result
+feeds SwiGLU directly and is not stored separately. Output/down results
+feed residual addition directly. RMS uses only its bounded local replay.
+Every rounding boundary into tensor/query/KV storage uses BF16 RNE and
+rejects nonfinite/overflow results.
+
+| Owned storage | Capacity | Producer, consumer and release |
+| --- | --- | --- |
+| Residual state | HIDDEN_SIZE FP32 | Embedding/residual epilogue; RMS replay input and next residual join; overwritten only after its old value is read |
+| Hidden operands | HIDDEN_SIZE BF16, 128 banks | RMS or normalized attention; Q/K/V, gate/up or output GEMV; phase changes only after the preceding GEMV's final result retires |
+| FFN operands | INTERMEDIATE_SIZE BF16, 128 banks | SwiGLU; down GEMV; separate from still-live normalized gate/up input |
+| Q | HIDDEN_SIZE BF16 | RoPE pairs; six-head attention command assembly |
+| K and V | NUM_KV_HEADS*HEAD_DIM BF16 each | RoPE/pass epilogue; current-position cache encoder/commit |
+| Gate branch | INTERMEDIATE_SIZE FP32 | Gate GEMV; up/SwiGLU join at the same row index |
+| RoPE join | HEAD_DIM/2 FP32 | First half of one Q or K head; second half's epilogue; reused only after all pairs of that head retire |
+| Bias cache | HIDDEN_SIZE BF16 | Accounted kind-4 reads; one Q/K/V projection at a time |
+| RoPE coefficients | HEAD_DIM FP32 | Accounted kind-11 reads for this token; all layer/head rotations |
+| DDR/weight/activation staging | Fixed beat/tile/queue bounds | Owned descriptors, returned beats, two tensor weight slots and one activation tile |
+
+`anvil_q2_fp2_scalar_store` has synchronous reads and writes in a dedicated
+non-reset memory process. The 128-bank vector store returns one full tile
+after a registered read. It never asynchronously multiplexes an entire
+8960-element activation vector. Validity, phase ownership and complete
+write-before-read initialization protect unreset memory contents. The
+controller reads a scalar in a separate FSM state before consuming it.
+Reset/cancel does not require a multi-thousand-entry clearing loop.
+
+## GEMV prefetch and row ordering
+
+`anvil_q2_fp2_gemv_stream` independently advances weight loading, activation
+tile issue and row reduction. Weight loading continues while a previous row
+waits in its fused epilogue, until the two actual tensor slots backpressure
+it. Both slots can therefore be live; this is not a controller that waits
+for a row to retire before filling its successor.
+
+The frontend queues multiple payload reads through the DDR transport without
+waiting for each response. BF16 tiles assemble four tensor beats; MX tiles
+assemble two, with two real Group-32 scales per beat. A row-local 64-byte
+scale cache is fetched through kind 3 and reused for up to 2048 reduction
+elements. Crossing that boundary fetches the next scale beat; changing
+output row invalidates the cache. An absent tail payload beat is generated
+locally as zero rather than reading a nonexistent tile segment. Padding
+lanes and unused scale bytes are masked, while every active scale is checked.
+
+Independent monotonically advancing tile ordinals identify weight fill,
+activation issue and tensor result order. Row/column cursors wrap explicitly;
+no combinational division computes them. Each row accumulates successive
+tile partial sums with the four-stage FP32 adder in increasing input-column
+order. Feedback waits for the prior addition before accepting another
+partial. The first tile initializes the sum without an extra zero add.
+The last result is retained until the controller accepts it, after which
+the next row may retire. Request/response tag, row-marker or arithmetic
+faults remain failed transactions.
 
 ## Tensor dataflow and ownership
 
@@ -131,8 +208,8 @@ retirement. A registered cleanup cycle clears arithmetic valids before the
 next transaction; it does not form a combinational output-valid/flush loop.
 
 RoPE uses four parallel three-stage products followed by the two four-stage
-add/subtract branches. Actual theta-dependent FP32 coefficients must be
-supplied by the future graph controller; the epilogue does not synthesize
+add/subtract branches. The graph supplies actual theta-dependent FP32
+coefficients from accounted kind-11 reads; the epilogue does not synthesize
 identity coefficients. SwiGLU uses exp9, denominator add4, reciprocal2,
 a three-stage negative/nonnegative sign-product slot, gate mul3 and up mul3.
 The captured gate and up operands cannot change while the result is stalled.
@@ -161,8 +238,10 @@ through a 128-position balanced FP32 dot tree (out-of-head lanes are +0).
 Three-stage score scaling uses the correctly rounded constant
 1/sqrt(HEAD_DIM). Head metadata follows all 34 score stages.
 KV decoding and score computation never request a second external copy
-for another query. The future graph controller is responsible for making
-the actual single payload/scale transfer sequence and its accounting visible.
+for another query. The controller reads each causal key/value payload and
+its scales once per KV head and broadcasts that one stream internally.
+Accepted external reads, including padded beats and metadata, are observable
+on the actual DDR boundary.
 
 For the first token, each head initializes its numerator directly from v,
 its denominator to 1 and maximum to its own score. Later tokens compute
@@ -228,25 +307,76 @@ same-edge increments. Simultaneous clear/snapshot selects an all-zero snapshot.
 Feature/status reports accelerated capabilities and activity; it is not a
 claim that runtime verification or physical acceptance has passed.
 
-## Remaining integration obligations
+## Cache publication, cancellation and compatibility
 
-The graph controller must retain only true graph/branch state, feed GEMV row
-results directly into the selected epilogue, accumulate multi-tile rows in
-ascending column order and preserve Qwen bias placement. RMS replay and branch
-joins need bounded owned register storage. Attention must consume one KV
-stream for all six query heads with no sequence-sized score/probability SRAM.
+Native cache commit writes BF16 beats with exact byte strobes; MX commit
+encodes each real Group-32, writes E4M3FN payload beats and then writes
+the physically transferred E8M0 scale beat. Partial groups exclude padding
+from their maximum and use zero padding. Every write has an acknowledged
+tagged response. The controller starts attention only after all K/V heads'
+payload and metadata writes have acknowledged. No uncommitted current
+position can be read by a later command.
 
-The compatibility branch must instantiate the unmodified parent literally.
-The graph must connect the tagged DDR engine to real work, account for
-metadata fetches and wait for cancellation draining. It must
-translate parent projection coordinates explicitly to output-row-major
-logical tensors; this transpose mapping will be documented with the
-implemented graph controller rather than guessed here.
+New-sequence and monotonic-position/phase tracking are local controller
+state. A new sequence begins at position zero and rewrites every causal
+cache entry before it can become visible; stale later positions are never
+read. Cancellation or an active protocol/numerical fault invalidates this
+sequence. Local pipelines and prefetch are flushed, the DDR engine retains
+all accepted requests, and the controller waits for its drain-done pulse.
+Only then does cancellation acknowledge and, for an active token, report
+failed completion. A held cancel cannot repeatedly capture a different
+active-token status. CSR processing remains independent throughout.
 
-`fpga/anvil_q2_fp2.sdc` provides the required 10 ns clock baseline without
-false-path or multicycle exceptions. Device assignments and the complete
-source manifest remain an integration obligation. A constraint file alone
-does not establish STA closure.
+`ACCEL_ENABLE=0` and supported legacy FP16/AWQ/int8-cache selections use the
+literal `anvil_q2_fp_top` instance with unchanged parent parameters, ports
+and implementation. The wide DDR interface is inactive there. The narrow
+interface is inactive in the accelerated branch. A mode-2 request is never
+reinterpreted as a legacy numerical format; unsupported mixed-format
+configurations reach a diagnostic-only generate branch.
+
+## Telemetry interpretation and host tuning
+
+Counters use actual pre-edge bus/stream handshakes and controller ownership.
+KV bytes include all accepted native/MX KV read and write beats, including
+metadata and physical padding, at 64 bytes per beat. DDR read/write counters
+separately permit read-traffic accounting. One accepted key/value token
+stream has G groups in K and G in V, each reused five more times, so the
+reuse event increments by 10*G. It does not increment for merely entering
+an attention state or for an unaccepted KV item.
+
+Weight underflow requires an available activation and no published matching
+weight tile, tracked by actual completed-tile and paired-tile counts.
+Tensor bubbles count active, not-yet-issued tile work without a paired
+transfer; idle and arithmetic-drain-only periods are excluded. Saturation
+events remain zero because this implementation rejects overflow instead of
+saturating. A snapshot provides coherent counters for host analysis.
+
+Host recommendations must distinguish high request-stall fraction
+(bridge/DDR service), underflow with low request stall (prefetch/service
+latency or short transfers), tensor bubbles without underflow
+(activation/control backpressure), and epilogue output stalls (downstream
+consumption). Compare accepted bytes and complete cycles before suggesting
+native/MX storage or queue tuning. Recommendations do not change arithmetic,
+acceptance tolerances or modes while a token is active. The independent
+five-domain benchmark must derive and report concrete recommendations from
+its measured counters, not from this qualitative guide.
+
+## Target integration and remaining acceptance
+
+`fpga/anvil_q2_fp2.qsf` selects the exact Arria 10 device and top.
+`fpga/anvil_q2_fp2_sources.tcl` includes all new RTL and the immutable
+parent, with the parent package first. `fpga/anvil_q2_fp2.sdc` supplies the
+10 ns clock without false-path or multicycle exceptions. See
+`fpga/README.md` for portable compilation, bridge responsibilities and reset
+sequencing. These files are a core integration, not a newly invented DDR
+PHY or PCIe endpoint.
+
+Independent functional/numerical, mutation, synthesis, benchmark and delivery
+checks remain mandatory, followed by native timing and board gates.
+No clock constraint, static elaboration result, requested performance target
+or named instance establishes those results. No parent physical baseline
+was supplied. Missing historical evidence remains a prerequisite for
+parent-relative throughput/ALM claims, not permission to fabricate one.
 
 ## Claim-to-evidence guide
 
