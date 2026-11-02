@@ -51,7 +51,6 @@ def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
         "verilator", "--cc", "--exe", "--build", "--verilate-jobs", "1",
         "--build-jobs", "2", "-Wno-fatal",
         "-fno-dfg", "-fno-gate",
-        "--threads", "4",
         "--top-module", "anvil_q4_top", "--Mdir", experiment.rel(objects),
         f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue_depth}",
         f"-GTILE_K={tile_k}", f"-GTILE_ROWS={tile_rows}",
@@ -71,6 +70,7 @@ def execute_case(experiment, binary, options, index, profile=False):
     directory = experiment.directory / f"case-{index}-{identity}"
     directory.mkdir()
     geometry = make_fixture(directory, **options)
+    geometry["case_index"] = index
     (directory/"seed.txt").write_text(str(options["seed"])+"\n")
     geometry["fixture_sha256"] = {
         p.name: hashlib.sha256(p.read_bytes()).hexdigest()
@@ -101,6 +101,7 @@ def main():
     parser.add_argument("--repair-of", action="append", default=[])
     parser.add_argument("--profile", action="store_true",
                         help="retain a bounded gprof diagnostic for explicitly selected cases")
+    parser.add_argument("--workers", type=int, choices=(1, 2), default=2)
     args = parser.parse_args()
     if args.profile and (not args.preparation or not args.case):
         parser.error("--profile requires --preparation and --case")
@@ -115,13 +116,20 @@ def main():
         binary = compile_top(experiment, profile=args.profile)
         results = []
         experiment.receipt["cases"] = results
-        for index, options in enumerate(cases()):
-            if args.case is not None and index not in args.case:
-                continue
+        selected = [(index, options) for index, options in enumerate(cases())
+                    if args.case is None or index in args.case]
+        experiment.receipt["case_workers"] = args.workers
+
+        def execute(item):
+            index, options = item
             print(f"system case={index} seed={options['seed']} hidden="
                   f"{options['heads']*options['dimension']}", flush=True)
-            results.append(execute_case(experiment, binary, options, index, args.profile))
-            experiment.save()
+            return execute_case(experiment, binary, options, index, args.profile)
+
+        for result in experiment.map(execute, selected, args.workers):
+            experiment.append_result("cases", result)
+        if len(results) != len(selected):
+            raise AssertionError("missing selected system cases")
         if not results:
             raise AssertionError("no system cases executed")
         experiment.prune_objects(binary.parent)

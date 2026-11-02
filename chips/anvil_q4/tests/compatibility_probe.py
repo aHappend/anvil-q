@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--case", type=int, nargs="+")
     parser.add_argument("--repair-of", action="append", default=[])
     parser.add_argument("--frontend-normalization", action="store_true")
+    parser.add_argument("--workers", type=int, choices=(1, 2), default=2)
     args = parser.parse_args()
     experiment = Experiment("compatibility", args.preparation, args.repair_of)
     error = None
@@ -33,6 +34,7 @@ def main():
         binary = compile_top(experiment, rtl_sources=rtl_sources)
         results, index = [], 0
         experiment.receipt["cases"] = results
+        selected = []
         for seed in (17, 29, 43):
             for mode, caches in ((1, (0,)), (2, (0, 1)), (3, (0, 1, 2, 3))):
                 for cache_format in caches:
@@ -42,22 +44,32 @@ def main():
                         continue
                     options = dict(seed=seed, mode=mode, cache_format=cache_format,
                                    banks=(1, 2, 4, 8)[case % 4])
-                    identity = hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()[:12]
-                    directory = experiment.directory / f"case-{case}-{identity}"
-                    directory.mkdir()
-                    geometry = make_fixture(directory, **options)
-                    geometry["fixture_sha256"] = {
-                        p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                        for p in directory.glob("*.txt")}
-                    print(f"compatibility case={case} seed={seed} mode={mode} "
-                          f"cache={cache_format}", flush=True)
-                    output = experiment.run([experiment.rel(binary), experiment.rel(directory)],
-                                            f"simulation-{case}")
-                    if "SUMMARY top tokens=4 logits=68 " not in output:
-                        raise AssertionError("missing exact legacy comparisons")
-                    geometry["summary"] = output[output.index("SUMMARY"):].splitlines()[0]
-                    results.append(geometry)
-                    experiment.save()
+                    selected.append((case, options))
+        experiment.receipt["case_workers"] = args.workers
+
+        def execute(item):
+            case, options = item
+            identity = hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()[:12]
+            directory = experiment.directory / f"case-{case}-{identity}"
+            directory.mkdir()
+            geometry = make_fixture(directory, **options)
+            geometry["case_index"] = case
+            geometry["fixture_sha256"] = {
+                p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in directory.glob("*.txt")}
+            print(f"compatibility case={case} seed={options['seed']} mode={options['mode']} "
+                  f"cache={options['cache_format']}", flush=True)
+            output = experiment.run([experiment.rel(binary), experiment.rel(directory)],
+                                    f"simulation-{case}")
+            if "SUMMARY top tokens=4 logits=68 " not in output:
+                raise AssertionError("missing exact legacy comparisons")
+            geometry["summary"] = output[output.index("SUMMARY"):].splitlines()[0]
+            return geometry
+
+        for geometry in experiment.map(execute, selected, args.workers):
+            experiment.append_result("cases", geometry)
+        if len(results) != len(selected):
+            raise AssertionError("missing selected compatibility cases")
         if not results:
             raise AssertionError("no compatibility case executed")
         experiment.prune_objects(binary.parent)

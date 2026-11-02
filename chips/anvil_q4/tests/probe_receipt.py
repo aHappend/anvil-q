@@ -26,9 +26,9 @@ def main():
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     directory = root / "evidence" / "preparation" / (args.label + "-" + stamp)
     directory.mkdir(parents=True, exist_ok=False)
-    source_paths = sorted(p for pattern in ("rtl/*.sv", "design/*.md", "tests/*.py",
-                                            "tests/*.sv")
-                          for p in root.glob(pattern))
+    source_paths = sorted(p for pattern in ("rtl/*.sv", "design/*.md", "tests/*",
+                                            "anvil_q3_reference/rtl/*.sv")
+                          for p in root.glob(pattern) if p.is_file())
     relative = lambda p: p.relative_to(root).as_posix()
     receipt = {
         "argv": command, "cwd": ".", "timeout_s": 600,
