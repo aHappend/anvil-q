@@ -10,6 +10,7 @@ from fractions import Fraction
 import random
 
 from ieee_reference import decode, evaluate, nearest_integer, rounded
+from cache_reference import encode_head, MARKER
 
 
 PI = Decimal("3.141592653589793238462643383279502884197169399375105820974944592307816406286")
@@ -24,6 +25,17 @@ def decimal_bits(bits):
 
 def bits(value):
     return rounded(Fraction(value))[0]
+
+
+def fp_operation(operation, a, b=Decimal(0)):
+    return decimal_bits(evaluate(operation, bits(a), bits(b))[0])
+
+
+def dot(left, right):
+    accumulator = Decimal(0)
+    for a, b in zip(left, right):
+        accumulator = fp_operation(0, accumulator, fp_operation(2, a, b))
+    return accumulator
 
 
 def sincos(angle):
@@ -44,19 +56,20 @@ def make_fixture(directory, seed=17, layers=3, tokens=4, heads=3,
                  kv_heads=1, dimension=2, intermediate=5, vocabulary=17,
                  activation_format=0, bias=True, banks=16, page_tokens=1,
                  theta_value=10000, weight_format=0, activation_a8=False,
-                 asymmetric=True, group_size=3, tile_k=7):
+                 asymmetric=True, group_size=3, tile_k=7, generation=1, cache_format=0):
     with localcontext() as context:
         context.prec = 70
         return _make_fixture(directory, seed, layers, tokens, heads, kv_heads,
                              dimension, intermediate, vocabulary,
                              activation_format, bias, banks, page_tokens, theta_value,
-                             weight_format, activation_a8, asymmetric, group_size, tile_k)
+                             weight_format, activation_a8, asymmetric, group_size, tile_k,
+                             generation, cache_format)
 
 
 def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
                   intermediate, vocabulary, activation_format, bias,
                   banks, page_tokens, theta_value, weight_format, activation_a8,
-                  asymmetric, group_size, tile_k):
+                  asymmetric, group_size, tile_k, generation, cache_format):
     hidden = heads * dimension
     ratio = heads // kv_heads
     if heads != ratio * kv_heads or ratio not in (1, 3, 6, 7, 8):
@@ -144,8 +157,10 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
     theta = Decimal(theta_value)
 
     def norm(vector, gamma):
-        root = (sum(x * x for x in vector) / len(vector) + epsilon).sqrt()
-        return [g * x / root for x, g in zip(vector, gamma)]
+        mean = fp_operation(3, dot(vector, vector), Decimal(len(vector)))
+        root = fp_operation(4, fp_operation(0, mean, epsilon))
+        return [fp_operation(3, fp_operation(2, g, x), root)
+                for x, g in zip(vector, gamma)]
 
     def gemv(vector, layer, proj):
         if activation_a8:
@@ -162,10 +177,10 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
                     value = evaluate(7, value)[0]
                     quantized.append(decimal_bits(evaluate(5, value)[0]))
             vector = quantized
-        result = [sum(w * x for w, x in zip(row, vector))
-                  for row in weights[layer, proj]]
+        result = [dot(row, vector) for row in weights[layer, proj]]
         if proj < 3 and bias:
-            result = [x + offset for x, offset in zip(result, biases[layer, proj])]
+            result = [fp_operation(0, x, offset)
+                      for x, offset in zip(result, biases[layer, proj])]
         return result
 
     def rotate(vector, position):
@@ -176,12 +191,14 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
             for d in range(half):
                 angle = Decimal(position) * (-Decimal(2 * d) / dimension * theta.ln()).exp()
                 sine, cosine = sincos(angle)
-                # Generation one is the first successful descriptor activation.
-                image[(11, 1, 0, position, 2 * d)] = bits(cosine)
-                image[(11, 1, 0, position, 2 * d + 1)] = bits(sine)
+                image[(11, generation, 0, position, 2 * d)] = bits(cosine)
+                image[(11, generation, 0, position, 2 * d + 1)] = bits(sine)
+                cosine, sine = decimal_bits(bits(cosine)), decimal_bits(bits(sine))
                 x, y = vector[base + d], vector[base + half + d]
-                result[base + d] = x * cosine - y * sine
-                result[base + half + d] = x * sine + y * cosine
+                result[base + d] = fp_operation(
+                    1, fp_operation(2, x, cosine), fp_operation(2, y, sine))
+                result[base + half + d] = fp_operation(
+                    0, fp_operation(2, x, sine), fp_operation(2, y, cosine))
         return result
 
     history = defaultdict(list)
@@ -206,51 +223,77 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
             cache_k, cache_v = [], []
             physical_row = (page + 1) * page_tokens + position % page_tokens
             for kind, vector, target in ((9, k, cache_k), (10, v, cache_v)):
-                for col, value in enumerate(vector):
-                    encoding = evaluate(7, bits(value))[0]
-                    widened = decimal_bits(evaluate(5, encoding)[0])
-                    target.append(widened)
-                    expected[(kind, layer, 0, physical_row, col)].append(widened)
-                    stage_counts["cache"] += 1
+                if not cache_format:
+                    for col, value in enumerate(vector):
+                        encoding = evaluate(7, bits(value))[0]
+                        widened = decimal_bits(evaluate(5, encoding)[0])
+                        target.append(widened)
+                        expected[(kind, layer, 0, physical_row, col)].append(widened)
+                        stage_counts["cache"] += 1
+                else:
+                    words = [0]*((kd+3)//4)
+                    for head in range(kv_heads):
+                        inputs = [bits(value) for value in
+                                  vector[head*dimension:(head+1)*dimension]]
+                        scale, codes, decoded = encode_head(inputs)
+                        target.extend(decimal_bits(value) for value in decoded)
+                        for d, (code, value) in enumerate(zip(codes, decoded)):
+                            col = head*dimension+d
+                            if scale == MARKER:
+                                expected[kind+3, layer, 1, physical_row, col].append(value)
+                                stage_counts["cache_escape"] += 1
+                            words[col//4] |= code << (8*(col % 4))
+                            if col % 4 == 3 or d+1 == dimension:
+                                expected[kind+3, layer, 0, physical_row, col//4].append(
+                                    words[col//4])
+                                stage_counts["cache_payload"] += 1
+                        expected[14, layer, kind-9, physical_row, head].append(scale)
+                        stage_counts["cache_metadata"] += 1
             history[layer].append((cache_k, cache_v))
             attention = []
+            inverse_scale = fp_operation(3, Decimal(1), fp_operation(4, Decimal(dimension)))
             for head in range(heads):
                 kv_head = head // ratio
                 scores = [
-                    sum(q[head * dimension + d] * ck[kv_head * dimension + d]
-                        for d in range(dimension)) / Decimal(dimension).sqrt()
+                    fp_operation(2, dot(q[head*dimension:(head+1)*dimension],
+                                        ck[kv_head*dimension:(kv_head+1)*dimension]),
+                                 inverse_scale)
                     for ck, cv in history[layer]
                 ]
                 maximum = max(scores)
-                exponentials = [(score - maximum).exp() for score in scores]
-                probabilities = [e / sum(exponentials) for e in exponentials]
+                exponentials = [decimal_bits(bits(fp_operation(1, score, maximum).exp()))
+                                for score in scores]
+                total = Decimal(0)
+                for value in exponentials:
+                    total = fp_operation(0, total, value)
+                probabilities = [fp_operation(3, e, total) for e in exponentials]
                 attention.extend([
-                    sum(p * cv[kv_head * dimension + d]
-                        for p, (ck, cv) in zip(probabilities, history[layer]))
+                    dot(probabilities, [cv[kv_head*dimension+d] for ck, cv in history[layer]])
                     for d in range(dimension)
                 ])
             record(5, attention, "gqa")
             projected = gemv(attention, layer, 3)
             record(6, projected, "attention_output")
-            post = [x + y for x, y in zip(residual, projected)]
+            post = [fp_operation(0, x, y) for x, y in zip(residual, projected)]
             record(7, post, "attention_residual")
             normalized = norm(post, gammas[layer, 6])
             record(8, normalized, "ffn_norm")
             gate, up = gemv(normalized, layer, 4), gemv(normalized, layer, 5)
             record(9, gate, "gate")
             record(10, up, "up")
-            product = [g / (1 + (-g).exp()) * u for g, u in zip(gate, up)]
+            product = [fp_operation(2, decimal_bits(bits(g/(1+(-g).exp()))), u)
+                       for g, u in zip(gate, up)]
             record(11, product, "swiglu")
             down = gemv(product, layer, 6)
             record(12, down, "down")
-            residual = [x + y for x, y in zip(post, down)]
+            residual = [fp_operation(0, x, y) for x, y in zip(post, down)]
             record(0, residual, "ffn_residual")
         final = norm(residual, final_gamma)
         record(14, final, "final_norm")
-        logits.extend(sum(w * x for w, x in zip(row, final)) for row in lmhead)
+        logits.extend(dot(row, final) for row in lmhead)
 
     descriptor = [
-        1, 4, activation_format, weight_format, int(activation_a8), 0,
+        1, 4, activation_format, weight_format, int(activation_a8), cache_format,
         banks, layers, hidden, intermediate, heads, kv_heads,
         dimension, vocabulary, tokens + 1, group_size, int(bias), bits(theta), 0x358637BD,
         page_tokens, tokens + 1, int(asymmetric), ratio, 1700 + seed,
@@ -272,10 +315,14 @@ def _make_fixture(directory, seed, layers, tokens, heads, kv_heads, dimension,
         "page_tokens": page_tokens, "theta": theta_value,
         "weight_format": weight_format, "activation_a8": activation_a8,
         "asymmetric": asymmetric, "group_size": group_size, "tile_k": tile_k,
+        "cache_format": cache_format,
         "stage_comparison_counts": dict(stage_counts),
         "expected_writes": sum(len(values) for values in expected.values()),
-        "expected_logits": len(logits), "reference": "70-digit mathematical Decimal",
+        "expected_logits": len(logits),
+        "reference": "independent rational IEEE FP32 reductions and 70-digit nonlinear math",
         "stage_tolerance": "2e-4+2e-4*abs(reference)",
         "logit_tolerance": "2e-3+2e-3*abs(reference)", "cosine_minimum": 0.9999,
-        "scope": "compact native/W4/W8 external weights with BF16 cache",
+        "scope": "compact native/W4/W8 external weights and declared cache format",
+        "cache_comparison": "bit-exact independent RNE of public source scratch; "
+                            "mathematical cache trajectory retained for stage/logit references",
     }

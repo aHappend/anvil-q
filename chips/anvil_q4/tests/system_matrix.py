@@ -19,7 +19,8 @@ def cases():
                        activation_format=index % 2, bias=index % 2 == 0,
                        banks=(1, 2, 4, 8, 16)[index], page_tokens=2 if index % 2 else 1,
                        weight_format=(0, 1, 2, 1, 2)[index],
-                       activation_a8=index >= 3, asymmetric=index % 2 == 0)
+                       activation_a8=index >= 3, asymmetric=index % 2 == 0,
+                       cache_format=index % 2)
         yield dict(seed=seed, heads=4, kv_heads=4, dimension=16,
                    layers=3, tokens=4, intermediate=7, vocabulary=17,
                    activation_format=1, bias=False, banks=16, page_tokens=32)
