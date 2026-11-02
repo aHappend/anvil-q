@@ -7,9 +7,10 @@ decode/multiply/add helpers, Q16/FP boundary converters, the per-lane stripe
 controller, the four-bank tile MAC, private scratch, causal tree attention and
 its quantized KV reader, the greedy verifier and atomic KV commit engine,
 the batched projection/resident metadata loader and shared embedding/output-head
-token I/O.
+token I/O, and the connected batched decoder with scalar image/scratch transport,
+scratch arbitration and quantized shadow-record staging.
 They do not constitute an integrated
-accelerator. The parent RTL is read-only; tests and FPGA integration are not
+public accelerator. The parent RTL is read-only; tests and FPGA integration are not
 authored by this increment.
 
 The DMA has four synchronous 16-bit activation banks and one 4-bit keep-mask
@@ -89,9 +90,9 @@ normalization/rounding. FPGA mapping and actual timing/resource suitability
 are still unproven and require the unchanged independent hardware gates.
 
 Four-stage conversion helpers express the Q16-to-FP16 and FP32-to-Q16
-boundaries. The projection scheduler now connects them to common scratch reads
-and four-candidate result writes. The enclosing scalar decoder remains
-unimplemented; no numerical equivalence is inferred from authored connections.
+boundaries. The projection scheduler connects them to common scratch reads
+and four-candidate result writes. The enclosing scalar decoder is now connected;
+no numerical equivalence is inferred from authored connections.
 
 ## Shared projection and resident image metadata
 
@@ -165,7 +166,64 @@ The successful completion edge supplies four argmax IDs for the decoder's
 prefix/leaf cache. KV publication remains the verifier/commit engine's
 responsibility, not token I/O's.
 
-## Full-product connection plan (integration not implemented)
+## Batched scalar decoder and private memory integration
+
+`anvil_q3_ht2_decoder` is a complete internal evaluation scheduler. It connects
+one shared projection module, one shared embedding/output head, parent scalar
+normalization/RoPE/residual/SiLU kernels, the quantized KV staging module, literal
+`tree_attention`, scratch arbitration and literal `private_scratch`.
+It is not yet the public top: sequence ownership, ordinary-token publication,
+verifier dispatch and physical DDR arbitration remain outside this module.
+
+The scheduler completes each scalar operation for every active node before
+advancing to the next shared projection. Q/K/V, O and gate/up/down each walk
+weights once for the full active mask. Actual normalized scratch activations
+drive Q16-to-FP16 conversion; actual computed SiLU/up products drive down-proj
+scanning. Layer order and residual destinations follow the parent slot layout.
+All active nodes' rotated K and V are encoded and written to shadow backing
+before the first attention command in a layer. Final normalization writes
+slot 14 before the shared FP16 head computes complete target logits.
+
+The three-client scalar adapter retains the parent kernel request protocol
+without the parent's large combinational all-image mapper. It handles only
+normalization, RoPE and scratch kinds actually used by these kernels. Registered
+row ordinal/product, column addition and image-base states bound address depth;
+allocated line bounds are checked before issuance. Separate 16-way word and
+two-way half selection precede the scalar response. Its one-line cache is
+invalidated on each evaluation and all cancellation/faults.
+
+The five-client scratch arbiter accepts one upstream request into registered
+offer storage, then transfers it to the single physical private-scratch port.
+Owner/node/mask are checked on every physical response and remain reserved
+until transfer. Cancellation of an upstream-accepted but physically unaccepted
+offer generates one internal error response rather than silently dropping the
+producer's outstanding bit. Physical accepted accesses drain to their original
+producer. Public responses/requests are suppressed during flush itself.
+Private scratch validity is cleared only at a drained new-evaluation boundary;
+flush does not discard a physical response beneath a waiting producer.
+
+Quantized staging gathers exact partial-group lengths from scratch slots 3/4,
+zeros tail values and uses the unchanged INT8/INT4 codec. Node interleaving is
+allowed by the sink, but each node is staged in layer/key-value/head/group order.
+The sink's stage-ready reassertion retires a validated and accepted shadow write;
+a settle edge prevents the ready sampled on the original record handshake from
+being mistaken for this retirement. The final record uses the same retirement
+barrier. This deliberately prevents early attention from reading unfinished
+shadow records. No existing committed count is advanced by the decoder.
+
+Six physical read clients expose qweight, metadata, bias, embedding/head,
+normalization/RoPE image and quantized tree-KV traffic. Six accepted-beat
+counters retain their distinct categories for complete-transaction accounting;
+the enclosing atomic engine's write/copy traffic must be included separately.
+Private scratch is on-chip storage rather than fabricated DDR response data.
+The public top must route every client through the actual shared Avalon path.
+
+Detailed pre-edge ownership, reset, cancellation, singleton/partial-group
+and non-power-of-two-client rules are in SPEC.md's decoder boundary table.
+Functional, numerical, mutation, synthesis and current-target evidence remain
+entirely pending independent execution.
+
+## Full-product connection plan (public integration not implemented)
 
 `anvil_q3_ht2_top` will own mode-exclusive legacy and HT2 command dispatch.
 The unchanged literal `legacy_core` retains parent behavior. HT2 decoder scheduling
@@ -180,9 +238,9 @@ per output and the fixed final tree. Surrounding parent scalar paths stay
 Q16.16; projection conversion helpers are connected internally but still need
 decoder/top wiring.
 
-The batched scalar decoder and public integration remain to be implemented.
-Ordered vocabulary logits are authored in token I/O but not yet connected to
-the complete decoder/verifier. The new leaves below do not replace that work. Image and
+The batched scalar decoder is now implemented; public integration remains.
+Ordered vocabulary logits are connected to the decoder's internal output but
+not yet to the verifier/public dispatch. The modules below do not replace that work. Image and
 complete integrated extents still require production parameter validation.
 
 ## Private scratch, causal attention and atomic KV
@@ -202,7 +260,7 @@ visibility mask before starting a literal unchanged `anvil_q3_ht_attention`
 scalar kernel. Query/context accesses use slots 2/5 in the selected node's
 scratch bank. The kernel's initial commit command only receives a local private
 readiness acknowledgement; it cannot write KV or expose a new committed token.
-The scheduler must wait for validated shadow staging before attention begins.
+The decoder waits for validated shadow staging before attention begins.
 Parent dot, softmax, context rounding and h>>3 GQA mapping are retained.
 
 The literal `causal_kv_reader` chooses committed backing below the prefix count
@@ -297,10 +355,9 @@ and raw outputs are retained at
 This was a syntax/elaboration check only. No functional simulation, reference
 comparison, mutation, synthesis, timing or hardware experiment ran.
 
-The next owned implementation work is the batched scalar decoder scheduler,
-scalar image/scratch arbitration, private quantized shadow staging, connection
-of projection/token I/O to tree attention and the verifier,
-public top/DDR integration and FPGA bridge
+The next owned implementation work is connection
+of the decoder's staging/logits to the verifier, ordinary-token atomic priming,
+sequence/mode control, public top/shared DDR integration and FPGA bridge
 configuration. Tests remain exclusively Verifier-owned. The complete design is
 not ready for independent verification handoff or engineering acceptance.
 
