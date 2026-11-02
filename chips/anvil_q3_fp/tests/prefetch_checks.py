@@ -222,7 +222,8 @@ module tb;
         end
         if (c_rsp_valid[b] && c_rsp_ready[b]) pending[b]=0;
         if (c_req_valid[b] && c_req_ready[b]) begin
-          if (sent[b]==2) second_request_seen[b]=1;
+          if (c_req_kind[b*4+:4]==1 && c_req_row[b*32+:32]>=input_base[b][1])
+            second_request_seen[b]=1;
           if (pending[b] || c_req_write[b] || c_req_layer[b*32+:32]!=0 ||
               c_req_proj[b*3+:3]!=projection) $fatal(1,"prefetch request protocol");
           key={c_req_kind[b*4+:4],c_req_row[b*32+:32],c_req_col[b*32+:32]};
