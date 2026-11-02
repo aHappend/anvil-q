@@ -1,6 +1,6 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-11-02T18:57:32.914809+00:00",
+  "timestamp_utc": "2026-11-02T19:05:32.927751+00:00",
   "root": "/data/sufeng/anvil-d1-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
@@ -10,7 +10,7 @@
     "rtl/anvil_d1_absorption.sv": "180caeba6fe9138d32c36f97a7b6a529561594923e7940c699bd97a9375d5129",
     "rtl/anvil_d1_accumulator.sv": "e22c9f41f9eb5bed316517549acf81a9342218785b09e950e511412cb81e7013",
     "rtl/anvil_d1_add128.sv": "119ea43776111b2f372dc7a1714d97342b0ae686b730dc42d6d2777ae9165228",
-    "rtl/anvil_d1_bank_scheduler.sv": "9f03d30e2bce5a769adff24be1d32f2b8a70e95f28f28b89ac3986623274f470",
+    "rtl/anvil_d1_bank_scheduler.sv": "88d0cb55fc6d24a99745314d36c562b5a8db9bb800ee1e7ac8df4a0f34d68e11",
     "rtl/anvil_d1_counter64.sv": "23a28f9bea2f7ecf2b5ae536cbe3720e98424af0435287151cdbf27216aee939",
     "rtl/anvil_d1_csr_perf.sv": "54dac94094fe97c1bba031c2bcad77f48b13cf9376d59e3ce9a4a3fda4a57810",
     "rtl/anvil_d1_decoder_layer.sv": "2683f2c8e454f675e2ca75abfd7d10b63ff07d6bd9ef862da9277db40c202afd",

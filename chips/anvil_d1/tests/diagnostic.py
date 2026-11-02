@@ -45,16 +45,17 @@ def native_bench(evidence, seed, tokens):
     hexfile(image / "counts.hex", counts, 8)
     hexfile(image / "expected-writes.hex", expected_writes, 8)
     hexfile(image / "logits.hex", [v & 0xffffffff for seq in expected_logits for v in seq], 8)
-    (evidence.path / "fixture.json").write_text(json.dumps(dict(
+    frozen = dict(
         seed=seed, geometry=vars(fixture.shape), tokens=tokens,
         expected_logits=expected_logits, routing=fixture.routing,
-        memory_slots=len(keys), expected_writes=len(expected_writes)), indent=2) + "\n")
+        memory_slots=len(keys), expected_writes=len(expected_writes))
+    (evidence.path / "fixture.json").write_text(json.dumps(frozen, indent=2) + "\n")
     bench = NATIVE_BENCH.replace("@SLOTS@", str(len(keys)))
     bench = bench.replace("@WRITES@", str(len(expected_writes)))
     bench = bench.replace("@TOKENS@", str(tokens))
     bench = bench.replace("@CYCLES@", str(500000 if tokens == 1 else 10000000))
     (evidence.path / "native.sv").write_text(bench)
-    return fixture
+    return frozen
 
 
 NATIVE_BENCH = r"""
@@ -334,9 +335,9 @@ def main():
     for simulator, tokens in runs:
         evidence = Evidence(f"{args.case}-{simulator}-seed{args.seed}", args.repair_of)
         try:
-            native_bench(evidence, args.seed, tokens)
+            frozen = native_bench(evidence, args.seed, tokens)
             text = simulate(evidence, "native.sv", simulator)
-            evidence.finish("passed", observations=text)
+            evidence.finish("passed", fixture=frozen, observations=text)
             print(text.strip())
         except Exception as exc:
             evidence.finish("failed", error=str(exc))
