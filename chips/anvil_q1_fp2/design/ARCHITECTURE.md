@@ -138,6 +138,20 @@ architectural stages; there is no hidden iterative engine.
 The fused epilogue now sequences exact FP32 add/multiply pipelines with bounded
 internal input/auxiliary/residual/result RAM. RMSNorm performs a component-order
 square/sum reduction, mean/epsilon and fast-rsqrt, then x/factor/gamma products.
+Independent squares now stream through the first multiplier at initiation
+interval one and use result RAM as temporary storage. The sum remains serial
+in its original FP32 rounding order. Normalization cascades both existing
+multiplier pipelines at initiation interval one, with nine gamma-delay
+registers preserving component ownership across the first pipeline. Rounded
+squares are no longer live when normalized results overwrite the same RAM.
+Each pass drains its last valid result before changing RAM ownership; public
+outputs still wait for complete status accumulation and retain the original
+backpressure and completion schedule. This repairs the serialized RMSNorm
+schedule implicated by
+`evidence/preparation/fp2-rms-benchmark-20261102T174913Z-7dcd504b/receipt.json`
+(FP2 cold/warm 44295/44293 cycles versus parent 31274/31275). These retained
+numbers describe the failed pre-repair design, not performance of this repair;
+the independent Verifier must rerun the unchanged comparison.
 RoPE performs split-half pairs; its in_aux stream carries cosine in the first
 half and sine in the second. The decoder must obtain those deterministic FP32
 coefficients from kind 11 for the command position. SwiGLU uses exp(-abs(gate))

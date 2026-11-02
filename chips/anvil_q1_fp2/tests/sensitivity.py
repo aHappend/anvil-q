@@ -40,6 +40,9 @@ class Variant:
     def command(self, argv, stem, **kwargs):
         return self.parent.command(argv, self.prefix + "-" + stem, **kwargs)
 
+    def check_deadline(self):
+        return self.parent.check_deadline()
+
 
 def sensitivity(run, root, compile_and_run, simulate_pipeline, tensor_vectors,
                 unary_vectors, simulate_commands, simulate_ddr, simulate_csr):

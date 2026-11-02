@@ -24,6 +24,7 @@ module anvil_q1_fp2_epilogue_fusion #(
   localparam EXP_ISSUE=14, EXP_WAIT=15, NEXT_ELEMENT=16;
   localparam OUT_READ=17, OUT_LATCH=18, OUTPUT=19, COMPLETE_WAIT=20;
   localparam ERROR_WAIT0=21, ERROR_WAIT1=22, FINISH=23;
+  localparam RMS_SQUARE=24, RMS_NORMALIZE=25;
   localparam SQUARE=0, REDUCE=1, MEAN=2, EPSILON=3, NORM_X=4, NORM_GAMMA=5;
   localparam ROTATE_X=6, ROTATE_Y=7, RESIDUAL=8, SIGMOID_DENOM=9;
   localparam SIGMOID_NEG=10, SWISH=11, GATED_UP=12;
@@ -35,6 +36,10 @@ module anvil_q1_fp2_epilogue_fusion #(
   reg [31:0] x_value, aux_value, residual_value, y_value, sine_value;
   reg [31:0] sum, norm_factor, temporary, exponential, inverse;
   reg [31:0] product0, product1;
+  reg [31:0] rms_read_count, rms_completed;
+  reg rms_read_valid;
+  reg [31:0] gamma_pipe [0:8];
+  integer gamma_stage;
   reg [31:0] payload;
   reg [4:0] flags;
   (* ramstyle = "M20K", nomem2reg *) reg [31:0] data_mem [0:MAX_VECTOR-1];
@@ -42,7 +47,13 @@ module anvil_q1_fp2_epilogue_fusion #(
   (* ramstyle = "M20K", nomem2reg *) reg [31:0] residual_mem [0:MAX_VECTOR-1];
   (* ramstyle = "M20K", nomem2reg *) reg [31:0] result_mem [0:MAX_VECTOR-1];
   reg [31:0] data_q, aux_q, residual_q, result_q;
-  wire [31:0] read_address=(state==READ_Y || state==LATCH_Y) ? partner : index;
+  wire rms_stream=state==RMS_SQUARE || state==RMS_NORMALIZE;
+  wire [31:0] read_address=rms_stream ?
+    (rms_read_count<length ? rms_read_count : 32'd0) :
+    ((state==READ_Y || state==LATCH_Y) ? partner : index);
+  wire [31:0] result_read_address=operation==0 && !normalization_pass ?
+    index : output_index;
+  wire rms_mul_issue=rms_stream && rms_read_valid;
   reg result_write;
   reg [31:0] result_address, result_value;
   reg [31:0] mul_a0, mul_b0, mul_a1, mul_b1, add_a, add_b, reciprocal_x;
@@ -64,12 +75,13 @@ module anvil_q1_fp2_epilogue_fusion #(
     initial $fatal(1,"FP2 EPILOGUE PARAMETER ERROR");
   end endgenerate
   anvil_q1_fp2_fp32_binary #(.MULTIPLY(1)) multiply0(
-    .clk(clk),.rst_n(rst_n),.in_valid(state==MUL_ISSUE),.in_ready(mul_ready[0]),
+    .clk(clk),.rst_n(rst_n),.in_valid(state==MUL_ISSUE || rms_mul_issue),.in_ready(mul_ready[0]),
     .out_ready(1'b1),.a(mul_a0),.b(mul_b0),.out_valid(mul_valid[0]),
     .result(mul_result[0]),.status(mul_status[0]));
   anvil_q1_fp2_fp32_binary #(.MULTIPLY(1)) multiply1(
     .clk(clk),.rst_n(rst_n),
-    .in_valid(state==MUL_ISSUE && (arithmetic==ROTATE_X || arithmetic==ROTATE_Y)),
+    .in_valid((state==MUL_ISSUE && (arithmetic==ROTATE_X || arithmetic==ROTATE_Y)) ||
+      (state==RMS_NORMALIZE && mul_valid[0])),
     .in_ready(mul_ready[1]),.out_ready(1'b1),.a(mul_a1),.b(mul_b1),
     .out_valid(mul_valid[1]),.result(mul_result[1]),.status(mul_status[1]));
   anvil_q1_fp2_fp32_binary #(.MULTIPLY(0)) add(
@@ -115,6 +127,11 @@ module anvil_q1_fp2_epilogue_fusion #(
       GATED_UP: begin mul_a0=temporary; mul_b0=aux_value; end
       default: begin end
     endcase
+    if (state==RMS_SQUARE) begin mul_a0=data_q; mul_b0=data_q; end
+    if (state==RMS_NORMALIZE) begin
+      mul_a0=data_q; mul_b0=norm_factor;
+      mul_a1=mul_result[0]; mul_b1=gamma_pipe[8];
+    end
     add_a=product0; add_b=product1;
     case (arithmetic)
       REDUCE: begin add_a=sum; add_b=temporary; end
@@ -135,6 +152,12 @@ module anvil_q1_fp2_epilogue_fusion #(
       result_write=1; result_value=add_result;
       if (arithmetic==ROTATE_Y) result_address=partner;
     end
+    if (rst_n && state==RMS_SQUARE && mul_valid[0]) begin
+      result_write=1; result_address=rms_completed; result_value=mul_result[0];
+    end
+    if (rst_n && state==RMS_NORMALIZE && mul_valid[1]) begin
+      result_write=1; result_address=rms_completed; result_value=mul_result[1];
+    end
   end
   always @(posedge clk) begin
     if (rst_n && in_valid && in_ready) begin
@@ -146,7 +169,19 @@ module anvil_q1_fp2_epilogue_fusion #(
     aux_q<=aux_mem[read_address[ADDR_BITS-1:0]];
     residual_q<=residual_mem[read_address[ADDR_BITS-1:0]];
     if (result_write) result_mem[result_address[ADDR_BITS-1:0]]<=result_value;
-    result_q<=result_mem[output_index[ADDR_BITS-1:0]];
+    result_q<=result_mem[result_read_address[ADDR_BITS-1:0]];
+  end
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      rms_read_valid<=0;
+      for (gamma_stage=0;gamma_stage<9;gamma_stage=gamma_stage+1)
+        gamma_pipe[gamma_stage]<=0;
+    end else begin
+      rms_read_valid<=rms_stream && rms_read_count<length;
+      gamma_pipe[0]<=rms_read_valid ? aux_q : 32'd0;
+      for (gamma_stage=1;gamma_stage<9;gamma_stage=gamma_stage+1)
+        gamma_pipe[gamma_stage]<=gamma_pipe[gamma_stage-1];
+    end
   end
   always @(posedge clk) begin
     if (!rst_n) begin
@@ -156,11 +191,13 @@ module anvil_q1_fp2_epilogue_fusion #(
       x_value<=0; aux_value<=0; residual_value<=0; y_value<=0; sine_value<=0;
       sum<=0; norm_factor<=0; temporary<=0; exponential<=0; inverse<=0;
       product0<=0; product1<=0;
+      rms_read_count<=0; rms_completed<=0;
     end else case (state)
       IDLE: if (cmd_valid) begin
         operation<=cmd_op; length<=cmd_len; received<=0; index<=0;
         partner<=HEAD_DIM/2; head_base<=0; pair_index<=0; output_index<=0;
         flags<=0; failed<=0; sum<=0; normalization_pass<=0;
+        rms_read_count<=0; rms_completed<=0;
         if (cmd_len==0 || cmd_len>MAX_VECTOR ||
             (cmd_op==1 && (cmd_pos>=MAX_POS || !rope_length_valid(cmd_len)))) begin
           failed<=1; state<=ERROR_WAIT0;
@@ -168,7 +205,11 @@ module anvil_q1_fp2_epilogue_fusion #(
       end
       COLLECT: if (in_valid) begin
         if (in_last!=(received+1==length)) begin failed<=1; state<=ERROR_WAIT0; end
-        else if (in_last) begin index<=0; state<=READ_X; end
+        else if (in_last) begin
+          index<=0;
+          if (operation==0) state<=RMS_SQUARE;
+          else state<=READ_X;
+        end
         else received<=received+1;
       end
       READ_X: state<=LATCH_X;
@@ -176,9 +217,7 @@ module anvil_q1_fp2_epilogue_fusion #(
         x_value<=data_q; aux_value<=aux_q; residual_value<=residual_q;
         case (operation)
           0: begin
-            if (normalization_pass) arithmetic<=NORM_X;
-            else arithmetic<=SQUARE;
-            state<=MUL_ISSUE;
+            temporary<=result_q; arithmetic<=REDUCE; state<=ADD_ISSUE;
           end
           1: state<=READ_Y;
           2: state<=EXP_ISSUE;
@@ -232,7 +271,25 @@ module anvil_q1_fp2_epilogue_fusion #(
       RSQRT_ISSUE: state<=RSQRT_WAIT;
       RSQRT_WAIT: if (rsqrt_valid) begin
         flags<=flags | rsqrt_status; norm_factor<=rsqrt_result;
-        normalization_pass<=1; index<=0; state<=READ_X;
+        normalization_pass<=1; index<=0;
+        rms_read_count<=0; rms_completed<=0; state<=RMS_NORMALIZE;
+      end
+      RMS_SQUARE: begin
+        if (rms_read_count<length) rms_read_count<=rms_read_count+1;
+        if (mul_valid[0]) begin
+          flags<=flags | mul_status[0];
+          rms_completed<=rms_completed+1;
+          if (rms_completed+1==length) begin index<=0; state<=READ_X; end
+        end
+      end
+      RMS_NORMALIZE: begin
+        if (rms_read_count<length) rms_read_count<=rms_read_count+1;
+        flags<=flags | (mul_valid[0] ? mul_status[0] : 5'd0) |
+          (mul_valid[1] ? mul_status[1] : 5'd0);
+        if (mul_valid[1]) begin
+          rms_completed<=rms_completed+1;
+          if (rms_completed+1==length) begin output_index<=0; state<=OUT_READ; end
+        end
       end
       EXP_ISSUE: state<=EXP_WAIT;
       EXP_WAIT: if (exp_valid) begin

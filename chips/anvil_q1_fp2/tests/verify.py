@@ -5,9 +5,11 @@ import argparse
 import datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 import random
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -23,7 +25,7 @@ from structure import synthesize  # noqa: E402
 from protocols import simulate_csr, simulate_ddr  # noqa: E402
 from architecture import GEOMETRIES, simulate_architecture  # noqa: E402
 from sensitivity import sensitivity  # noqa: E402
-from benchmarks import rms_benchmark  # noqa: E402
+from benchmarks import rms_benchmark, stream_operator_benchmark  # noqa: E402
 from errors import simulate_errors  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +46,11 @@ def source_paths():
 
 class Run:
     def __init__(self, stem, preparation=False, repair_of=None):
+        started = time.monotonic()
+        self.deadline = min(
+            started + 2700,
+            float(os.environ.get("ANVIL_VERIFY_DEADLINE", started + 2700)),
+        )
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         relative = Path("evidence/preparation" if preparation else "evidence")
         self.relative = relative / f"{stem}-{stamp}-{uuid.uuid4().hex[:8]}"
@@ -52,9 +59,11 @@ class Run:
         self.receipt = {
             "argv": ["python3", *sys.orig_argv[1:]],
             "cwd": ".", "started_at": now(), "repair_of": repair_of,
+            "aggregate_budget_s": 2700, "interpreted_process_limit_s": 600,
             "source_sha256": {}, "commands": [], "comparisons": [],
         }
         for source in source_paths():
+            self.check_deadline()
             relative_source = source.relative_to(ROOT)
             self.receipt["source_sha256"][str(relative_source)] = hashlib.sha256(
                 source.read_bytes()
@@ -65,7 +74,16 @@ class Run:
         self.versions = set()
         self.build_cache = {}
 
-    def command(self, argv, stem, timeout=3600, expect=0, cwd="."):
+    def check_deadline(self):
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("shared 2700-second verification deadline exhausted")
+        return remaining
+
+    def command(self, argv, stem, timeout=2700, expect=0, cwd="."):
+        timeout = min(timeout, self.check_deadline())
+        if Path(str(argv[0])).name == "vvp":
+            timeout = min(timeout, 600)
         command = {
             "argv": list(map(str, argv)), "cwd": str(cwd),
             "started_at": now(), "timeout_s": timeout,
@@ -79,22 +97,33 @@ class Run:
             ).open("x") as stderr:
                 process = subprocess.Popen(
                     command["argv"], cwd=ROOT / cwd, stdout=stdout, stderr=stderr,
+                    start_new_session=True,
+                    env={**os.environ, "ANVIL_VERIFY_DEADLINE": str(self.deadline)},
                 )
+                command["process_scope"] = {"leader_pid": process.pid}
                 command["timed_out"] = False
                 while True:
                     try:
-                        command["exit_code"] = process.wait(timeout=30)
+                        command["exit_code"] = process.wait(
+                            timeout=max(0.001, min(30, timeout - (time.monotonic() - started)))
+                        )
                         break
                     except subprocess.TimeoutExpired:
                         print(f"progress: {stem}, {time.monotonic()-started:.0f}s", flush=True)
-                        if time.monotonic() - started > timeout:
+                        if time.monotonic() - started >= timeout:
                             command["timed_out"] = True
-                            process.terminate()
+                            os.killpg(process.pid, signal.SIGTERM)
                             try:
                                 process.wait(timeout=10)
                             except subprocess.TimeoutExpired:
-                                process.kill()
+                                os.killpg(process.pid, signal.SIGKILL)
                                 process.wait()
+                            else:
+                                # The compiler driver may exit before its children.
+                                try:
+                                    os.killpg(process.pid, signal.SIGKILL)
+                                except ProcessLookupError:
+                                    pass
                             command["exit_code"] = process.returncode
                             break
         except OSError as exc:
@@ -423,6 +452,7 @@ def simulate_pipeline(run, kind, records, seed, simulator):
 
 
 def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(), cache=False):
+    run.check_deadline()
     overrides = getattr(run, "source_overrides", {})
     sources = [*(overrides.get(source, source) for source in sources),
                str(bench.relative_to(ROOT))]
@@ -583,7 +613,8 @@ def main():
     selector.add_argument("--probe",
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
                                  "synthesis", "csr", "ddr", "architecture", "sensitivity",
-                                 "portable-inner", "rms-benchmark", "top-errors"])
+                                 "portable-inner", "rms-benchmark", "rope-benchmark",
+                                 "swiglu-benchmark", "top-errors"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
@@ -602,6 +633,11 @@ def main():
             portable(run)
         elif selected == "rms-benchmark":
             rms_benchmark(run, ROOT, compile_and_run)
+        elif selected in ("rope-benchmark", "swiglu-benchmark"):
+            stream_operator_benchmark(
+                run, ROOT, compile_and_run,
+                "rope" if selected == "rope-benchmark" else "swiglu-residual",
+            )
         elif selected == "top-errors":
             simulate_errors(run, ROOT, compile_and_run, args.simulator or "iverilog")
         elif selected == "portable-inner":
