@@ -54,6 +54,7 @@ def dependencies(script):
         "tests/run_epilogue.py": ["tests/reference.py", "tests/epilogue_tb.sv"],
         "tests/run_attention.py": ["tests/reference.py", "tests/attention_tb.sv"],
         "tests/run_attention_restart.py": ["tests/attention_restart_tb.sv"],
+        "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
     }
     if script not in owned:
         return list(hashes())

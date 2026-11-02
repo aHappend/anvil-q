@@ -13,6 +13,7 @@ import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
 from yosys_frontend import materialize
+from retention import digest
 
 
 COMPACT = {
@@ -154,6 +155,93 @@ def checked_account(netlist, top, identifier, mapped):
     return counts
 
 
+def mapped_phases(output, identifier, top, parameters, sources, frontend, version):
+    cache = ROOT / "evidence/compiled"
+    cache.mkdir(parents=True, exist_ok=True)
+    parameter_cmd = ("chparam " + " ".join(f"-set {p} {v}" for p, v in parameters.items())
+                     + f" {top}; " if parameters else "")
+    phases = [
+        ("word", f"read_verilog -sv {sources}; {parameter_cmd}"
+         f"hierarchy -check -top {top}; proc; opt_expr; opt_clean; check -assert -noinit; "
+         "memory -nomap; opt_clean; opt -fast; wreduce; alumacc; opt_clean; "),
+        ("gates", "techmap; opt_expr; opt_merge; opt_clean; "),
+        ("abc", "abc -fast; opt_clean; "),
+    ]
+    predecessor = None
+    predecessor_digest = None
+    records = []
+    for phase, commands in phases:
+        commands += ("check -assert -noinit; select -assert-none "
+                     "t:$dlatch t:$adlatch t:$_DLATCH_* t:$div t:$mod t:$divfloor t:$modfloor; ")
+        semantic = commands
+        for entry in frontend["transformations"]:
+            semantic = semantic.replace(entry["output"], f"<source>/{Path(entry['output']).name}")
+        identity = dict(schema=1, job=identifier, top=top, parameters=parameters,
+                        phase=phase, commands=semantic, predecessor_sha256=predecessor_digest,
+                        source_sha256=frontend["source_sha256"], tool_version=version,
+                        frontend_sha256=hashes()["tests/yosys_frontend.py"])
+        key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
+        retained = None
+        for candidate in sorted(cache.glob(f"synthesis-{phase}-{key}-*")):
+            binding = candidate / "binding.json"
+            if not binding.is_file():
+                continue
+            record = json.loads(binding.read_text())
+            phase_receipt = candidate / "synthesis.receipt.json"
+            if record.get("identity") != identity or not phase_receipt.is_file():
+                continue
+            receipt = json.loads(phase_receipt.read_text())
+            if (receipt.get("exit") != 0 or receipt.get("timed_out")
+                    or receipt.get("tool_version", "").strip() != version):
+                continue
+            if not all((ROOT / path).is_file() and digest(ROOT / path) == sha
+                       for path, sha in record["artifact_sha256"].items()):
+                continue
+            if any(receipt.get("artifact_sha256", {}).get(receipt[k]) !=
+                   digest(ROOT / receipt[k]) for k in ("stdout", "stderr")):
+                continue
+            counts = checked_account(json.loads((candidate / "netlist.json").read_text()),
+                                     top, identifier, phase != "word")
+            retained = (candidate, counts)
+            break
+        if retained is None:
+            directory = cache / f"synthesis-{phase}-{key}-{uuid.uuid4().hex[:12]}"
+            directory.mkdir()
+            read_checkpoint = f"read_rtlil {relative(predecessor)}; " if predecessor else ""
+            script = (read_checkpoint + commands
+                      + f"tee -o {relative(directory / 'statistics.json')} stat -json; "
+                      + f"write_json {relative(directory / 'netlist.json')}; "
+                      + f"write_rtlil {relative(directory / 'checkpoint.il')}")
+            (directory / "synthesis.ys").write_text(script + "\n")
+            execute(["yosys", "-Q", "-T", "-s", relative(directory / "synthesis.ys")],
+                    directory, "synthesis", ["yosys", "-V"])
+            counts = checked_account(json.loads((directory / "netlist.json").read_text()),
+                                     top, identifier, phase != "word")
+            artifacts = [directory / name for name in
+                         ("synthesis.ys", "statistics.json", "netlist.json", "checkpoint.il")]
+            if not all(path.is_file() for path in artifacts):
+                raise AssertionError(f"incomplete synthesis phase {phase}")
+            with (directory / "binding.json").open("x") as out:
+                json.dump(dict(identity=identity, status="passed",
+                               artifact_sha256={relative(path): digest(path) for path in artifacts},
+                               receipt=relative(directory / "synthesis.receipt.json")), out, indent=2)
+            reused = False
+        else:
+            directory, counts = retained
+            reused = True
+        predecessor = directory / "checkpoint.il"
+        predecessor_digest = digest(predecessor)
+        records.append(dict(phase=phase, status="passed", reused=reused,
+                            binding=relative(directory / "binding.json"),
+                            receipt=relative(directory / "synthesis.receipt.json")))
+        with (output / f"{phase}-progress.json").open("x") as out:
+            json.dump(records, out, indent=2)
+    return dict(id=identifier, status="passed", parameters=parameters,
+                mapped=True, phases=records, accounting=counts,
+                receipt=records[-1]["receipt"], netlist=relative(directory / "netlist.json"),
+                statistics=relative(directory / "statistics.json"))
+
+
 def run(output, diagnostic=False, compact_only=False, job=None):
     sources = " ".join(materialize(output))
     frontend = json.loads((output / "frontend.json").read_text())
@@ -194,6 +282,10 @@ def run(output, diagnostic=False, compact_only=False, job=None):
         os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + min(
             remaining(), JOB_BUDGETS[identifier]))
         try:
+            if mapped:
+                rows.append(mapped_phases(directory, identifier, top, parameters,
+                                          sources, frontend, version))
+                continue
             execute(["yosys", "-Q", "-T", "-s", relative(script_path)], directory,
                     "synthesis", ["yosys", "-V"])
             if not netlist_path.is_file() or not stat_path.is_file():

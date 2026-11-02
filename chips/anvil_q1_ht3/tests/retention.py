@@ -15,7 +15,7 @@ def normalize_argv(argv):
     argv = list(argv)
     if "--output" in argv:
         index = argv.index("--output")
-        argv[index + 1] = "<fresh-output>"
+        del argv[index:index + 2]
     return argv
 
 
