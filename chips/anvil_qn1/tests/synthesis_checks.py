@@ -120,17 +120,20 @@ def run_synthesis_probe(run):
         "-set HEAD_DIM 8 -set VOCAB_SIZE 8 -set MAX_SEQ_LEN 16 "
         "-set GROUP_SIZE 8 -set BANKS 1 -set QUEUE_DEPTH 3 anvil_qn1_top\n"
         "hierarchy -check -top anvil_qn1_top\n"
-        "proc\nopt_expr\nopt_clean\ncheck -assert -noinit\n"
+        "proc\nopt_expr\nopt_clean\ncheck -assert\n"
         f"write_json {relative(hierarchy)}\n"
-        "memory -nomap\nopt_clean\ncheck -assert -noinit\nstat\n"
-        f"write_json {relative(netlist)}\n")
+        "memory -nomap\nopt_clean\ncheck -assert\nstat\n"
+        f"write_json {relative(netlist)}\n"
+        "select anvil_qn1_top/native.bank_scheduler\n"
+        "flatten\nselect anvil_qn1_top\nscc -expect 0\n")
     run.execute(["yosys", "-Q", "-T", "-s", relative(script)], "yosys-compact-structural")
     _, before = retain_json(hierarchy)
     data, after = retain_json(netlist)
     structural = inspect_netlist(data)
     run.execute(["yosys", "-Q", "-T", "-p", "help synth"], "yosys-synth-help")
     return {"geometry": "compact H8/D8/Q2/K1/B1/QD3", "hierarchy": before,
-            "structural_netlist": after, "structural": structural}
+            "structural_netlist": after, "structural": structural,
+            "top_scheduler_combinational_scc": 0}
 
 
 def run_controller_synthesis(run):
