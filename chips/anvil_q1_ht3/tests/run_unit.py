@@ -13,13 +13,15 @@ from reference import primitive_vectors, quantizer_vectors
 from execution import ROOT, clean_objects, execute, hashes, relative, remaining
 
 
-def run(suite, simulator, seed, output, limit=None):
+def run(suite, simulator, seed, output, limit=None, offset=0):
     vectors = output / "vectors.txt"
     rows = (primitive_vectors(seed, compact=simulator == "icarus")
             if suite == "primitive" else quantizer_vectors(seed))
     count = 0
     with vectors.open("x") as out:
-        for row in rows:
+        for ordinal, row in enumerate(rows):
+            if ordinal < offset:
+                continue
             if limit is not None and count == limit:
                 break
             if suite == "primitive":
@@ -61,13 +63,14 @@ def run(suite, simulator, seed, output, limit=None):
     summary = re.search(rf"SUMMARY {suite} comparisons=(\d+)\b", text)
     if not summary or int(summary[1]) != count:
         raise AssertionError(f"missing complete summary: expected {count}; {text[-2000:]}")
-    if suite == "quantizer" and limit is None:
+    if suite == "quantizer" and (limit is None or offset == 0):
         errors = re.search(r"errors=(\d+)\b", text)
         if not errors or int(errors[1]) == 0:
             raise AssertionError("missing invalid-input error comparisons")
     result = {"suite": suite, "simulator": simulator, "seed": seed,
               "compared": count, "vector_sha256": hashlib.sha256(vectors.read_bytes()).hexdigest(),
               "status": "passed", "raw_summary": summary[0], "diagnostic_limit": limit}
+    result["vector_offset"] = offset
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     return result
@@ -81,6 +84,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--limit", type=int, help="bounded diagnostic prefix, not full coverage")
     parser.add_argument("--repair-of", help="project-relative immutable prior diagnostic receipt")
+    parser.add_argument("--offset", type=int, default=0)
     args = parser.parse_args()
     output = ROOT / args.output
     if output.exists():
@@ -95,7 +99,23 @@ def main():
     if args.repair_of:
         receipt["repair_of"] = args.repair_of
     try:
-        result = run(args.suite, args.simulator, args.seed, output, args.limit)
+        if args.suite == "quantizer" and args.simulator == "icarus" and args.limit is None:
+            rows = list(quantizer_vectors(args.seed))
+            results = []
+            for offset in range(0, len(rows), 12000):
+                shard = output / f"part-{offset:05d}-{hashlib.sha256(str(offset).encode()).hexdigest()[:8]}"
+                shard.mkdir()
+                results.append(run(args.suite, args.simulator, args.seed, shard,
+                                   min(12000, len(rows)-offset), offset))
+            if sum(r["compared"] for r in results) != len(rows):
+                raise AssertionError("split quantizer omitted comparisons")
+            result = dict(status="passed", suite=args.suite, simulator=args.simulator,
+                          seed=args.seed, compared=len(rows), shards=results,
+                          maximum_shard_cycle_bound=12000*28+8)
+            with (output / "result.json").open("x") as out:
+                json.dump(result, out, indent=2)
+        else:
+            result = run(args.suite, args.simulator, args.seed, output, args.limit, args.offset)
         (output / "driver.stdout.txt").write_text(json.dumps(result) + "\n")
         (output / "driver.stderr.txt").write_text("")
         receipt["exit"] = 0
@@ -107,7 +127,7 @@ def main():
         print(f"{type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
     receipt["end"] = datetime.now(timezone.utc).isoformat()
     receipt["timed_out"] = any(json.loads(p.read_text()).get("timed_out", False)
-                               for p in output.glob("*.receipt.json"))
+                               for p in output.rglob("*.receipt.json"))
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
         out.write("\n")

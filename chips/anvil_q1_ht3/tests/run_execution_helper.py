@@ -32,8 +32,10 @@ def main():
         os.environ["HT3_CHECK_DEADLINE"] = str(time.time()-1)
         try:
             execute(argv,directory,"expired",["python3","--version"])
-        except RuntimeError:
-            pass
+        except RuntimeError as exc:
+            if not getattr(exc, "timed_out", False) or exc.record["exit"] is not None:
+                raise AssertionError("timeout propagation lost the child execution outcome") from exc
+            comparisons += 1
         else:
             raise AssertionError("expired budget incorrectly reported command success")
     finally:

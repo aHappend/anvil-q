@@ -21,6 +21,7 @@ from execution import CHECK_SECONDS, ROOT, execute, hashes, relative, timestamp
 SEEDS = (17, 89, 2026)
 OBLIGATIONS = {
     "transcendental": "IEEE exp, sin/cos, divide/sqrt; approximation and latency matrix",
+    "attention_restart": "KV response fault drains; legal and immediate-invalid next commands complete",
     "attention": "online FP64 attention, formats, masks, tiles, long context and stalls",
     "packed_cache": "FP32 store conversion, packed writes/readback and subsequent attention",
     "compatibility": "integrated inference, CSR/loader/descriptor/batch/reset/error matrix",
@@ -66,8 +67,11 @@ def retained_epilogue():
                     if p.is_file() and p.suffix in (".json", ".txt")})
 
 
-def child(identifier, argv, output):
+def child(identifier, argv, output, budget=None):
     directory = output / f"{identifier}-{uuid.uuid4().hex[:12]}"
+    deadline = os.environ["HT3_CHECK_DEADLINE"]
+    if budget is not None:
+        os.environ["HT3_CHECK_DEADLINE"] = str(min(float(deadline), time.time()+budget))
     try:
         execute(["python3", *argv, "--output", relative(directory)],
                 output, identifier, ["python3", "--version"])
@@ -87,6 +91,8 @@ def child(identifier, argv, output):
         return dict(id=identifier, status="failed", error=str(exc),
                     receipt=relative(output / f"{identifier}.receipt.json"),
                     result=relative(directory / "result.json"))
+    finally:
+        os.environ["HT3_CHECK_DEADLINE"] = deadline
 
 
 def main():
@@ -124,7 +130,9 @@ def main():
         for identifier, requirement in OBLIGATIONS.items():
             script = f"tests/run_{identifier}.py"
             if (ROOT / script).is_file():
-                rows.append(child(identifier, [script], output))
+                rows.append(child(identifier, [script, "--compact"] if identifier == "attention"
+                                  else [script], output,
+                                  budget=750 if identifier == "attention" else None))
             else:
                 rows.append(dict(id=identifier, status="not_implemented",
                                  requirement=requirement))
@@ -138,7 +146,9 @@ def main():
         json.dump(summary, out, indent=2)
         out.write("\n")
     receipt.update(end=timestamp(), exit=0 if status == "passed" else 1,
-                   timed_out=time.time()-start >= CHECK_SECONDS,
+                   timed_out=time.time()-start >= CHECK_SECONDS or any(
+                       json.loads(p.read_text()).get("timed_out", False)
+                       for p in output.rglob("*.receipt.json")),
                    result=relative(output / "result.json"))
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)

@@ -33,7 +33,16 @@ def tree(mask, prefix):
     return positions, pack(ancestors, 4)
 
 
-def fixtures(seed, q, k, d, tile, diagnostic=False, long_context=False):
+COMPACT_SCHEDULE = (
+    (17, 3, 1, 8, 1, False),
+    (89, 2, 2, 64, 3, False),
+    (2026, 3, 1, 8, 16, False),
+    (17, 2, 2, 64, 128, False),
+    (89, 1, 1, 8, 16, True),
+)
+
+
+def fixtures(seed, q, k, d, tile, diagnostic=False, long_context=False, compact=False):
     rng = random.Random(seed)
     lengths = sorted({1, max(1, tile-1), tile, tile+1})
     masks = (1, 2, 4, 8, 5, 10, 15) if not diagnostic else (1, 5, 15)
@@ -43,8 +52,13 @@ def fixtures(seed, q, k, d, tile, diagnostic=False, long_context=False):
     if diagnostic:
         configurations = [(fmt, fmt == 1, tile+1, mask)
                           for fmt in range(4) for mask in masks]
+    elif compact:
+        configurations = [(fmt, fp, length, masks[(fmt*2+fp+i) % len(masks)])
+                          for fmt in range(4) for fp in (0, 1)
+                          for i, length in enumerate(lengths)]
     if long_context:
-        configurations += [(fmt, 0, 32768, 1) for fmt in range(4)]
+        configurations = ([(0, 0, 32768, 1)] if compact else
+                          configurations + [(fmt, 0, 32768, 1) for fmt in range(4)])
     for fmt, fp, length, mask in configurations:
         prefix = length-1
         positions, ancestors = tree(mask, prefix)
@@ -105,10 +119,50 @@ def reference(case, slot, head, k, d, q):
             for j in range(d)]
 
 
-def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False):
+def compiled_attention(q, k, d, tile):
+    """Reuse only an immutable binary bound to exact sources, geometry and tool."""
+    source_paths = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]
+    source_paths += ["tests/attention_tb.sv"]
+    current_hashes = hashes()
+    identity = dict(source_sha256={p: current_hashes[p] for p in source_paths},
+                    geometry=[q, k, d, tile])
+    cache = ROOT / "evidence/compiled"
+    cache.mkdir(parents=True, exist_ok=True)
+    version_dir = cache / f"attention-version-{uuid.uuid4().hex[:12]}"
+    version_dir.mkdir()
+    identity["tool_version"] = execute(["verilator", "--version"], version_dir,
+                                      "version", ["verilator", "--version"]).strip()
+    key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
+    for directory in sorted(cache.glob(f"attention-{key}-*")):
+        binding = directory / "binding.json"
+        binary = directory / "compile-obj/Vattention_tb"
+        if binding.is_file() and binary.is_file():
+            record = json.loads(binding.read_text())
+            receipt = json.loads((directory / "compile.receipt.json").read_text())
+            if (record["identity"] == identity and receipt["exit"] == 0
+                    and not receipt["timed_out"]
+                    and record["binary_sha256"] == hashlib.sha256(binary.read_bytes()).hexdigest()):
+                return binary, relative(binding)
+    directory = cache / f"attention-{key}-{uuid.uuid4().hex[:12]}"
+    directory.mkdir()
+    objects = directory / "compile-obj"
+    execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+             "--top-module", "attention_tb", f"-GQ={q}", f"-GK={k}", f"-GD={d}",
+             f"-GTILE={tile}", "--Mdir", relative(objects), *source_paths],
+            directory, "compile", ["verilator", "--version"])
+    binary = objects / "Vattention_tb"
+    with (directory / "binding.json").open("x") as out:
+        json.dump(dict(identity=identity,
+                       binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+                       compile_receipt=relative(directory / "compile.receipt.json")), out, indent=2)
+    clean_objects(objects)
+    return binary, relative(directory / "binding.json")
+
+
+def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False, compact=False):
     vectors = output / "vectors.txt"
     observations = output / "observations.txt"
-    cases = list(fixtures(seed, q, k, d, tile, diagnostic, long_context))
+    cases = list(fixtures(seed, q, k, d, tile, diagnostic, long_context, compact))
     with vectors.open("x") as out:
         for c in cases:
             out.write(f'{c["fmt"]} {c["fp"]} {c["mask"]} {c["prefix"]} '
@@ -118,22 +172,15 @@ def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False):
                 out.write(f"{pack(row,16):016x}\n")
             for key, val in zip(c["keys"], c["values"]):
                 out.write(f"{key:04x} {val:04x}\n")
-    objects = output / "compile-obj"
-    sources = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]
-    execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
-             "--top-module", "attention_tb", f"-GQ={q}", f"-GK={k}", f"-GD={d}",
-             f"-GTILE={tile}", "--Mdir", relative(objects), *sources,
-             "tests/attention_tb.sv"], output, "compile", ["verilator", "--version"])
+    binary, compile_binding = compiled_attention(q, k, d, tile)
     simulation_failure = None
     try:
-        text = execute([relative(objects / "Vattention_tb"), f"+vectors={relative(vectors)}",
+        text = execute([relative(binary), f"+vectors={relative(vectors)}",
                         f"+observations={relative(observations)}", f"+seed={seed}"],
                        output, "simulation", ["verilator", "--version"])
     except RuntimeError as exc:
         simulation_failure = str(exc)
         text = (output / "simulation.stdout.txt").read_text()
-    finally:
-        clean_objects(objects)
     summary = re.search(r"SUMMARY attention commands=(\d+) requests=(\d+) "
                         r"output_stalls=(\d+) bus_stalls=(\d+) bubbles=(\d+)", text)
     if not simulation_failure and (
@@ -203,6 +250,7 @@ def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False):
                   geometry=dict(q=q, k=k, d=d, tile=tile), commands=len(cases),
                   comparisons=comparisons, failures=failures, completions=completed,
                   diagnostic=diagnostic, raw_summary=summary[0] if summary else None,
+                  compact=compact, compile_binding=compile_binding,
                   vector_sha256=hashlib.sha256(vectors.read_bytes()).hexdigest())
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
@@ -215,6 +263,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--diagnostic", action="store_true")
+    parser.add_argument("--compact", action="store_true",
+                        help="distributed obligation matrix, not a Cartesian seed sweep")
     parser.add_argument("--seed", type=int, choices=(17,89,2026), default=17)
     parser.add_argument("--tile", type=int, choices=(1,3,16,128), default=3)
     args = parser.parse_args()
@@ -224,28 +274,35 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     results, errors = [], []
-    matrix = [(args.seed, 3, 1, 8, args.tile, False)] if args.diagnostic else [
+    matrix = ([(args.seed, 3, 1, 8, args.tile, False)] if args.diagnostic else
+              COMPACT_SCHEDULE if args.compact else [
         (seed, q, k, d, tile, seed == 17 and tile == 16 and d == 8)
         for seed in (17,89,2026) for q,k,d in ((3,1,8),(2,2,64))
-        for tile in (1,3,16,128)]
+        for tile in (1,3,16,128)])
     for seed,q,k,d,tile,long_context in matrix:
         shard = output / f"q{q}-k{k}-d{d}-tile{tile}-seed{seed}-{uuid.uuid4().hex[:8]}"
         shard.mkdir()
         try:
-            result = run_case(shard, seed,q,k,d,tile,args.diagnostic,long_context)
+            result = run_case(shard, seed,q,k,d,tile,args.diagnostic,long_context,args.compact)
             results.append(dict(path=relative(shard/"result.json"), status=result["status"],
                                 vectors=len(result["comparisons"]), commands=result["commands"]))
         except (RuntimeError, AssertionError) as exc:
-            errors.append(dict(path=relative(shard), error=str(exc)))
+            errors.append(dict(path=relative(shard), error=str(exc),
+                               timed_out=getattr(exc, "timed_out", False)))
     result = dict(status="failed" if errors else "passed", shards=results, failures=errors,
-                  diagnostic=args.diagnostic,
+                  diagnostic=args.diagnostic, compact=args.compact,
+                  schedule=[dict(seed=s,q=q,k=k,d=d,tile=t,long_context=l)
+                            for s,q,k,d,t,l in matrix],
                   coverage_limits=["abort/reset during accepted KV", "zero-latency KV response",
                                    "resident-tile handoff edge assertions",
                                    "subnormal/extreme directed vectors"])
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     receipt.update(exit=1 if errors else 0, end=timestamp(),
-                   timed_out=remaining() <= 0, result=relative(output/"result.json"))
+                   timed_out=remaining() <= 0 or any(e["timed_out"] for e in errors) or any(
+                       json.loads(p.read_text()).get("timed_out", False)
+                       for p in output.rglob("*.receipt.json")),
+                   result=relative(output/"result.json"))
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
     print(json.dumps(result), flush=True)

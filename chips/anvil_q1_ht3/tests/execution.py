@@ -16,6 +16,13 @@ INTERPRETED_SECONDS = 600
 DEFAULT_DEADLINE = time.time() + CHECK_SECONDS
 
 
+class ExecutionFailure(RuntimeError):
+    def __init__(self, message, record):
+        super().__init__(message)
+        self.timed_out = record["timed_out"]
+        self.record = record
+
+
 def relative(path, root=ROOT):
     return Path(path).resolve().relative_to(root.resolve()).as_posix()
 
@@ -134,6 +141,6 @@ def execute(argv, output, stem, version_argv, root=ROOT):
     if Path(argv[0]).parent.name == "compile-obj" and exit_code is not None:
         clean_objects(root / Path(argv[0]).parent)
     if timed_out or exit_code != 0:
-        raise RuntimeError(f"{stem}: exit={exit_code}, timed_out={timed_out}; "
-                           f"{relative(receipt)}")
+        raise ExecutionFailure(f"{stem}: exit={exit_code}, timed_out={timed_out}; "
+                               f"{relative(receipt)}", record)
     return stdout.read_text()
