@@ -2,9 +2,12 @@
 
 import argparse
 from collections import Counter
+import hashlib
 import json
 from pathlib import Path
 import sys
+import os
+import time
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -18,6 +21,87 @@ COMPACT = {
     "GROUP_SIZE": 1, "VOCAB_SIZE": 1, "MAX_SEQ_LEN": 1,
     "TILE_BEATS": 1, "KV_WINDOW": 1, "FLASH_TILE": 3,
 }
+JOBS = (
+    ("default-hierarchy", "anvil_q1_ht3_top", {}, False),
+    ("compact-mapped", "anvil_q1_ht3_top", COMPACT, True),
+    ("fp32_add", "anvil_q1_ht3_fp32_add", {}, True),
+    ("fp32_mul", "anvil_q1_ht3_fp32_mul", {}, True),
+    ("fp32_divsqrt", "anvil_q1_ht3_fp32_divsqrt", {}, True),
+    ("fp32_exp", "anvil_q1_ht3_fp32_exp", {}, True),
+    ("fp32_sincos", "anvil_q1_ht3_fp32_sincos", {}, True),
+    ("epilogue_fusion", "anvil_q1_ht3_epilogue_fusion",
+     {"MAX_VECTOR": 8, "HEAD_DIM": 8}, False),
+    ("flash_attn", "anvil_q1_ht3_flash_attn",
+     {"NUM_Q_HEADS": 1, "NUM_KV_HEADS": 1, "HEAD_DIM": 8,
+      "MAX_SEQ_LEN": 1, "TILE_TOKENS": 3}, False),
+)
+JOB_BUDGETS = {"default-hierarchy": 360, "compact-mapped": 420,
+               "fp32_add": 60, "fp32_mul": 60, "fp32_divsqrt": 90,
+               "fp32_exp": 90, "fp32_sincos": 120,
+               "epilogue_fusion": 90, "flash_attn": 90}
+
+
+def semantic_script(script, frontend, directory):
+    for entry in frontend["transformations"]:
+        script = script.replace(entry["output"], f"<source>/{Path(entry['output']).name}")
+    for name in ("statistics.json", "netlist.json"):
+        script = script.replace(relative(directory / name), f"<output>/{name}")
+    return script
+
+
+def retained_job(identifier, top, parameters, mapped, script, frontend, version):
+    candidates = list((ROOT / "evidence/l1").glob("run-*/synthesis*/result.json"))
+    candidates += list((ROOT / "evidence/preparation").glob("*/shard-*/result.json"))
+    current = hashes()
+    for result_path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
+        previous = json.loads(result_path.read_text())
+        for row in previous.get("runs", []):
+            if (row.get("id") != identifier or row.get("status") != "passed"
+                    or row.get("parameters") != parameters or row.get("mapped") != mapped):
+                continue
+            receipt_path = ROOT / row["receipt"]
+            receipt_path.resolve().relative_to(ROOT)
+            if not receipt_path.is_file():
+                continue
+            receipt = json.loads(receipt_path.read_text())
+            directory = receipt_path.parent
+            old_frontend_path = directory.parent / "frontend.json"
+            if (receipt.get("exit") != 0 or receipt.get("timed_out")
+                    or receipt.get("tool_version", "").strip() != version
+                    or receipt.get("tool_version_exit") != 0
+                    or not old_frontend_path.is_file()):
+                continue
+            old_frontend = json.loads(old_frontend_path.read_text())
+            if old_frontend.get("source_sha256") != frontend["source_sha256"]:
+                continue
+            transformation = lambda f: [{k: v for k, v in r.items() if k != "output"}
+                                        for r in f["transformations"]]
+            if transformation(old_frontend) != transformation(frontend):
+                continue
+            if any(receipt.get("source_sha256", {}).get(p) != current[p]
+                   for p in frontend["source_sha256"]):
+                continue
+            old_script = directory / "synthesis.ys"
+            if not old_script.is_file() or semantic_script(
+                    old_script.read_text().strip(), old_frontend, directory) != script:
+                continue
+            artifacts = [directory / name for name in
+                         ("netlist.json", "statistics.json", "synthesis.stdout.txt",
+                          "synthesis.stderr.txt", "synthesis.ys")]
+            if not all(path.is_file() for path in artifacts):
+                continue
+            if any(receipt.get("artifact_sha256", {}).get(receipt[key]) !=
+                   hashlib.sha256((ROOT / receipt[key]).read_bytes()).hexdigest()
+                   for key in ("stdout", "stderr")):
+                continue
+            counts = checked_account(json.loads(artifacts[0].read_text()), top,
+                                     identifier, mapped)
+            return dict(id=identifier, status="passed", parameters=parameters,
+                        mapped=mapped, accounting=counts, receipt=relative(receipt_path),
+                        reused=True, revalidated_by="exact command/frontend/tool/source; raw netlist",
+                        artifact_sha256={relative(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                                         for path in [*artifacts, receipt_path, result_path]})
+    return None
 
 
 def account(netlist, top):
@@ -40,16 +124,41 @@ def account(netlist, top):
     return dict(cells=dict(cells), hierarchy=dict(hierarchy))
 
 
+def checked_account(netlist, top, identifier, mapped):
+    counts = account(netlist, top)
+    if not counts["cells"]:
+        raise AssertionError("empty synthesis hierarchy")
+    if identifier in ("default-hierarchy", "compact-mapped"):
+        lane_count = sum(count for name, count in counts["hierarchy"].items()
+                         if "anvil_q1_ht3_mac_lane" in name)
+        if lane_count != 256:
+            raise AssertionError(f"physical MAC lanes={lane_count}, expected 256")
+        for module in ("tensor_array", "epilogue_fusion", "flash_attn",
+                       "panel_prefetch", "transport"):
+            if not any(f"anvil_q1_ht3_{module}" in name for name in counts["hierarchy"]):
+                raise AssertionError(f"missing substantive {module} hierarchy")
+        counts["physical_mac_lanes"] = lane_count
+    sequential = sum(count for kind, count in counts["cells"].items()
+                     if any(term in kind.lower() for term in ("dff", "mem")))
+    if sequential == 0:
+        raise AssertionError("synthesis removed all compute/ownership storage")
+    if mapped:
+        if not any(kind.startswith("$_") for kind in counts["cells"]):
+            raise AssertionError("mapped synthesis contains no generic gate cells")
+        unresolved = {kind: count for kind, count in counts["cells"].items()
+                      if kind.startswith("$") and not kind.startswith("$_")
+                      and not kind.startswith("$mem") and kind not in netlist["modules"]}
+        if unresolved:
+            raise AssertionError(f"unmapped nonmemory logic: {unresolved}")
+    counts["sequential_cells"] = sequential
+    return counts
+
+
 def run(output, diagnostic=False, compact_only=False, job=None):
     sources = " ".join(materialize(output))
-    jobs = [("default-hierarchy", "anvil_q1_ht3_top", {}, False),
-            ("compact-mapped", "anvil_q1_ht3_top", COMPACT, True)]
-    jobs += [(name, f"anvil_q1_ht3_{name}", params, mapped) for name, params, mapped in (
-        ("fp32_add", {}, True), ("fp32_mul", {}, True), ("fp32_divsqrt", {}, True),
-        ("fp32_exp", {}, True), ("fp32_sincos", {}, True),
-        ("epilogue_fusion", {"MAX_VECTOR": 8, "HEAD_DIM": 8}, False),
-        ("flash_attn", {"NUM_Q_HEADS": 1, "NUM_KV_HEADS": 1, "HEAD_DIM": 8,
-                        "MAX_SEQ_LEN": 1, "TILE_TOKENS": 3}, False))]
+    frontend = json.loads((output / "frontend.json").read_text())
+    version = execute(["yosys", "-V"], output, "version", ["yosys", "-V"]).strip()
+    jobs = list(JOBS)
     if job:
         jobs = [entry for entry in jobs if entry[0] == job]
         if not jobs:
@@ -70,34 +179,37 @@ def run(output, diagnostic=False, compact_only=False, job=None):
                   f"hierarchy -check -top {top}; proc; opt_expr; opt_clean; "
                   "check -noinit; memory -nomap; opt_clean; "
                   "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor; "
-                  + ("techmap; opt; abc; opt_clean; check -noinit; "
+                  + ("opt_expr; opt_merge; wreduce; alumacc; opt_clean; "
+                     "techmap; opt_expr; opt_merge; opt_clean; abc; opt_clean; check -noinit; "
                      "select -assert-none t:$_DLATCH_* t:$div t:$mod; " if mapped else "")
                   + f"tee -o {relative(stat_path)} stat -json; write_json {relative(netlist_path)}")
         script_path = directory / "synthesis.ys"
         script_path.write_text(script+"\n")
+        cached = retained_job(identifier, top, parameters, mapped,
+                              semantic_script(script, frontend, directory), frontend, version)
+        if cached is not None:
+            rows.append(cached)
+            continue
+        deadline = os.environ.get("HT3_CHECK_DEADLINE")
+        os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + min(
+            remaining(), JOB_BUDGETS[identifier]))
         try:
             execute(["yosys", "-Q", "-T", "-s", relative(script_path)], directory,
                     "synthesis", ["yosys", "-V"])
             if not netlist_path.is_file() or not stat_path.is_file():
                 raise AssertionError("Yosys zero exit without complete netlist/statistics")
             netlist = json.loads(netlist_path.read_text())
-            counts = account(netlist, top)
-            if identifier == "default-hierarchy":
-                lane_count = sum(count for name, count in counts["hierarchy"].items()
-                                 if "anvil_q1_ht3_mac_lane" in name)
-                if lane_count != 256:
-                    raise AssertionError(f"default physical MAC lanes={lane_count}, expected 256")
-                for module in ("tensor_array", "epilogue_fusion", "flash_attn",
-                               "panel_prefetch", "transport"):
-                    if not any(f"anvil_q1_ht3_{module}" in name for name in counts["hierarchy"]):
-                        raise AssertionError(f"missing substantive {module} hierarchy")
-            if not counts["cells"]:
-                raise AssertionError("empty synthesis hierarchy")
+            counts = checked_account(netlist, top, identifier, mapped)
             row = dict(id=identifier, status="passed", parameters=parameters,
                        mapped=mapped, accounting=counts)
         except (RuntimeError, AssertionError, ValueError) as exc:
             row = dict(id=identifier, status="failed", parameters=parameters,
                        mapped=mapped, error=str(exc))
+        finally:
+            if deadline is None:
+                os.environ.pop("HT3_CHECK_DEADLINE", None)
+            else:
+                os.environ["HT3_CHECK_DEADLINE"] = deadline
         row["receipt"] = relative(directory / "synthesis.receipt.json")
         rows.append(row)
     result = dict(status="passed" if all(r["status"] == "passed" for r in rows) else "failed",

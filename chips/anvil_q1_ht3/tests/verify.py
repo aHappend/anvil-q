@@ -16,6 +16,8 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import CHECK_SECONDS, ROOT, execute, hashes, relative, timestamp
+from retention import find_result, inventory
+from run_synthesis import JOBS, JOB_BUDGETS
 
 
 SEEDS = (17, 89, 2026)
@@ -32,6 +34,30 @@ OBLIGATIONS = {
     "synthesis": "default hierarchy/256 lanes, compact mapping, new modules and zero latches",
     "reproduction": "fresh declared-source compact behavior and Yosys synthesis",
 }
+
+TOOLS = {"python3": ["python3", "--version"], "iverilog": ["iverilog", "-V"],
+         "verilator": ["verilator", "--version"], "yosys": ["yosys", "-V"]}
+REPRODUCTION_RESERVE = 360
+SETTLEMENT_RESERVE = 30
+SUITE_BUDGETS = {"attention": 750, "parameters": 260, "attention_restart": 60,
+                 "transcendental": 180, "packed_cache": 180, "compatibility": 240,
+                 "mutations": 240, "benchmarks": 300, "performance": 180}
+
+
+def dependencies(script):
+    sources = [relative(p) for pattern in ("rtl/*.sv", "design/*.md")
+               for p in sorted(ROOT.glob(pattern))]
+    shared = ["tests/execution.py"]
+    owned = {
+        "tests/run_unit.py": ["tests/reference.py", "tests/primitive_tb.sv",
+                              "tests/quantizer_tb.sv"],
+        "tests/run_epilogue.py": ["tests/reference.py", "tests/epilogue_tb.sv"],
+        "tests/run_attention.py": ["tests/reference.py", "tests/attention_tb.sv"],
+        "tests/run_attention_restart.py": ["tests/attention_restart_tb.sv"],
+    }
+    if script not in owned:
+        return list(hashes())
+    return sources + shared + [script] + owned[script]
 
 
 def retained_epilogue():
@@ -67,11 +93,22 @@ def retained_epilogue():
                     if p.is_file() and p.suffix in (".json", ".txt")})
 
 
-def child(identifier, argv, output, budget=None):
+def child(identifier, argv, output, budget=None, versions=None, reserve=0):
+    if versions is not None:
+        cached = find_result(["python3", *argv], dependencies(argv[0]), versions,
+                             allow_failure=identifier.startswith("epilogue-seed"))
+        if cached is not None:
+            result = cached.pop("result")
+            return dict(id=identifier, status=("incomplete" if result.get("coverage_limits")
+                                              else result["status"]), reused=True,
+                        coverage_limits=result.get("coverage_limits", []),
+                        failures=result.get("failures", []), **cached)
     directory = output / f"{identifier}-{uuid.uuid4().hex[:12]}"
     deadline = os.environ["HT3_CHECK_DEADLINE"]
+    allocation = max(0, float(deadline) - time.time() - reserve)
     if budget is not None:
-        os.environ["HT3_CHECK_DEADLINE"] = str(min(float(deadline), time.time()+budget))
+        allocation = min(allocation, budget)
+    os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + allocation)
     try:
         execute(["python3", *argv, "--output", relative(directory)],
                 output, identifier, ["python3", "--version"])
@@ -111,31 +148,52 @@ def main():
                    tool_version=sys.version)
     rows = []
     try:
+        versions = inventory(output, TOOLS)
         old = retained_epilogue()
         if old is not None:
             rows.append(old)
         for suite in ("primitive", "quantizer"):
             rows.append(child(f"{suite}-icarus-seed17",
                               ["tests/run_unit.py", "--suite", suite,
-                               "--simulator", "icarus", "--seed", "17"], output))
+                               "--simulator", "icarus", "--seed", "17"], output,
+                              budget=120, versions=versions,
+                              reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
             for seed in SEEDS:
                 rows.append(child(f"{suite}-verilator-seed{seed}",
                                   ["tests/run_unit.py", "--suite", suite,
-                                   "--simulator", "verilator", "--seed", str(seed)], output))
+                                   "--simulator", "verilator", "--seed", str(seed)], output,
+                                  budget=90, versions=versions,
+                                  reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
         for seed in SEEDS:
             if seed == 17 and old is not None:
                 continue
             rows.append(child(f"epilogue-seed{seed}",
-                              ["tests/run_epilogue.py", "--seed", str(seed)], output))
+                              ["tests/run_epilogue.py", "--seed", str(seed)], output,
+                              budget=90, versions=versions,
+                              reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
         for identifier, requirement in OBLIGATIONS.items():
+            if identifier in ("synthesis", "reproduction"):
+                continue
             script = f"tests/run_{identifier}.py"
             if (ROOT / script).is_file():
                 rows.append(child(identifier, [script, "--compact"] if identifier == "attention"
                                   else [script], output,
-                                  budget=750 if identifier == "attention" else None))
+                                  budget=SUITE_BUDGETS[identifier], versions=versions,
+                                  reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
             else:
                 rows.append(dict(id=identifier, status="not_implemented",
                                  requirement=requirement))
+        synthesis_rows = []
+        for identifier, _, _, _ in JOBS:
+            synthesis_rows.append(child(
+                f"synthesis-{identifier}", ["tests/run_synthesis.py", "--job", identifier],
+                output, budget=JOB_BUDGETS[identifier], versions=versions,
+                reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
+        rows.append(dict(id="synthesis", status="passed" if all(
+            row["status"] == "passed" for row in synthesis_rows) else "failed",
+                         jobs=synthesis_rows))
+        rows.append(child("reproduction", ["tests/run_reproduction.py"], output,
+                          budget=REPRODUCTION_RESERVE, reserve=SETTLEMENT_RESERVE))
     except (OSError, ValueError, AssertionError) as exc:
         rows.append(dict(id="aggregate", status="failed",
                          error=f"{type(exc).__name__}: {exc}"))
