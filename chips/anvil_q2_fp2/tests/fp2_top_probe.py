@@ -319,10 +319,11 @@ def expected_logits(token=3):
     ]
 
 
-def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0):
+def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0,
+        tb_template=TOP_TB, expected_results=None, extra_arguments=None):
     commands = commands or [(3, 0, 1, 0)]
     source = probe.directory / "tb.sv"
-    source.write_text(TOP_TB.replace(".NUM_LAYERS(1),", (
+    source.write_text(tb_template.replace(".NUM_LAYERS(1),", (
         f".WEIGHT_MODE({weight_mode}),.CACHE_MODE({cache_mode}),.NUM_LAYERS(1),")))
     images = probe.directory / "checkpoint-images"
     images.mkdir()
@@ -334,8 +335,10 @@ def run(probe, simulator, commands=None, seed=17, weight_mode=0, cache_mode=0):
     rtl = sorted((ROOT / "anvil_q2_fp_reference/rtl").glob("*.sv"))
     rtl += sorted((ROOT / "rtl").glob("*.sv"))
     output = simulate(probe, source, rtl, simulator, [f"+IMAGE={image.relative_to(ROOT)}",
-                      f"+COMMANDS={command_image.relative_to(ROOT)}", f"+SEED={seed}"])
-    expected = [expected_logits(command[0]) for command in commands]
+                      f"+COMMANDS={command_image.relative_to(ROOT)}", f"+SEED={seed}",
+                      *(extra_arguments or [])])
+    expected = (expected_results if expected_results is not None
+                else [expected_logits(command[0]) for command in commands])
     seen = set()
     summary = None
     completed = []
