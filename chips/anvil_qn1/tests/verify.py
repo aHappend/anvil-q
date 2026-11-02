@@ -28,6 +28,8 @@ from execution import Run
 from leaf_checks import run_qk, run_scalar, run_tensor, run_tensor_cpp, run_elementary
 from integration import run_top
 from control_checks import run_csr, run_controller
+from smoke_checks import run_startup, run_elaboration, run_smoke
+from speculation_checks import run_speculation
 import reference
 
 
@@ -39,14 +41,24 @@ def main():
     parser.add_argument("--probe", choices=("qk-compact", "qk-production", "scalar",
                                           "top-compact", "top-compiled", "top-continuation",
                                           "tensor-compact", "tensor-full", "tensor-cpp", "tensor-sv",
-                                          "elementary", "csr", "controller"))
+                                          "elementary", "csr", "controller", "startup", "elaboration",
+                                          "speculation"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "controller":
+        if args.probe == "speculation":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_speculation(run)
+        elif args.probe == "startup":
+            run.versions(("python3", "iverilog", "vvp"))
+            results = run_startup(run)
+        elif args.probe == "elaboration":
+            run.versions(("python3", "iverilog", "vvp"))
+            results = run_elaboration(run)
+        elif args.probe == "controller":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_controller(run)
         elif args.probe == "csr":
@@ -70,8 +82,9 @@ def main():
             compiled = args.probe != "top-compact"
             run.versions(("python3", "verilator", "g++", "make") if compiled else
                          ("python3", "iverilog", "vvp"))
-            results = run_top(run, "verilator" if compiled else "icarus",
-                              cases=6 if args.probe == "top-continuation" else 1)
+            results = (run_top(run, "verilator",
+                               cases=6 if args.probe == "top-continuation" else 1)
+                       if compiled else run_startup(run))
         elif args.probe == "scalar":
             run.versions(("python3", "iverilog", "vvp"))
             results = run_scalar(run)
@@ -81,6 +94,9 @@ def main():
         elif args.probe == "qk-production":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_qk(run, "verilator", 128, True)
+        elif args.suite == "smoke":
+            run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+            results = run_smoke(run)
         else:
             raise NotImplementedError("L1 suite authoring is in progress; no passing result claimed")
         run.finish("passed", results)

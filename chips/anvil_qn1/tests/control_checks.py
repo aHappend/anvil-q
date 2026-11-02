@@ -441,7 +441,7 @@ int main(int argc,char**argv) {
         dut.verify_valid||dut.verify_rsp_ready||dut.event_draft_nodes||
         dut.event_verified_nodes||dut.event_accepted_nodes||dut.event_rejected_nodes),
         name+" reset status");
-      for(auto v:dut.commit_tokens) require(v==0,name+" reset payload");
+      for(unsigned i=0;i<5;++i) require(dut.commit_tokens[i]==0,name+" reset payload");
       edge();dut.clk=0;dut.rst_n=1;dut.eval();
       dut.mode_valid=1;dut.mode_value=c.mode;edge();dut.mode_valid=0;
       require(dut.think_active==c.mode,name+" idle mode write");
@@ -584,7 +584,8 @@ def run_controller(run):
     driver.write_text(CONTROLLER_DRIVER)
     objects = run.path / "obj-controller"
     run.execute(["verilator", "--cc", "--exe", "--build", "-Wno-fatal", "-j", "2",
-                 "--top-module", "anvil_qn1_dual_think_ctrl", "--Mdir", relative(objects),
+                 "--top-module", "anvil_qn1_dual_think_ctrl", "-GMAX_SEQ_LEN=16",
+                 "--Mdir", relative(objects),
                  "-o", "simulate", "rtl/anvil_qn1_dual_think_ctrl.sv",
                  "../controller_driver.cpp"], "controller-compile")
     text = run.execute([relative(objects / "simulate"), relative(vector_file)],

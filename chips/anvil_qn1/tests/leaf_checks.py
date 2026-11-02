@@ -300,7 +300,7 @@ def scalar_vectors():
     return vectors
 
 
-def run_scalar(run):
+def run_scalar(run, simulator="icarus"):
     vectors = scalar_vectors()
     vector_file = run.path / "scalar-vectors.txt"
     with vector_file.open("x") as output:
@@ -309,17 +309,24 @@ def run_scalar(run):
                          f"{expected:08x} {error}\n")
     bench = run.path / "scalar_tb.sv"
     bench.write_text(SCALAR_BENCH)
-    binary = run.path / "scalar.vvp"
     sources = [f"rtl/anvil_qn1_{name}.sv" for name in
                ("00_pkg", "fp32_mul", "fp32_add", "fp32_div", "fp32_sqrt", "scalar")]
-    run.execute(["iverilog", "-g2012", "-Wall", "-s", "scalar_tb", "-o",
-                 relative(binary), *sources, relative(bench)], "scalar-compile")
-    text = run.execute(["vvp", relative(binary), f"+vectors={relative(vector_file)}"],
-                       "scalar-simulation", timeout=600)
+    if simulator == "icarus":
+        binary = run.path / "scalar.vvp"
+        run.execute(["iverilog", "-g2012", "-Wall", "-s", "scalar_tb", "-o",
+                     relative(binary), *sources, relative(bench)], "scalar-compile")
+        argv = ["vvp", relative(binary), f"+vectors={relative(vector_file)}"]
+    else:
+        objects = run.path / "obj-scalar"
+        run.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                     "--top-module", "scalar_tb", "--Mdir", relative(objects),
+                     "-o", "simulate", *sources, relative(bench)], "scalar-compile")
+        argv = [relative(objects / "simulate"), f"+vectors={relative(vector_file)}"]
+    text = run.execute(argv, "scalar-simulation", timeout=600 if simulator == "icarus" else 2700)
     summary = f"SUMMARY scalar_cases={len(vectors)} stalled_outputs={len(vectors)}"
     if text.count(summary) != 1:
         raise AssertionError("scalar comparison count missing")
-    return {"scalar_cases": len(vectors), "seeds": [17, 89, 203],
+    return {"scalar_cases": len(vectors), "seeds": [17, 89, 203], "simulator": simulator,
             "operations": ["add", "subtract", "multiply", "divide", "sqrt"]}
 
 

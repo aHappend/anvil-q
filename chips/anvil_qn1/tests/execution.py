@@ -45,6 +45,7 @@ class Run:
         self.start = datetime.datetime.now(datetime.timezone.utc).isoformat()
         self.monotonic_start = time.monotonic()
         self.commands = []
+        self.components = []
         self.hashes = {}
         snapshot = self.path / "source"
         for file in source_files():
@@ -54,6 +55,24 @@ class Run:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(file, target)
         self.repair_of = repair_of
+
+    def component(self, stem, operation):
+        child = Run(stem, preparation="preparation" in self.path.parts)
+        child.monotonic_start = self.monotonic_start
+        child.tool_versions = getattr(self, "tool_versions", {})
+        if child.hashes != self.hashes:
+            raise RuntimeError("sources changed during an active verification suite")
+        try:
+            results = operation(child)
+            child.finish("passed", results)
+        except Exception as error:
+            child.finish("failed", error=f"{type(error).__name__}: {error}")
+            self.components.append({"receipt": relative(child.path / "receipt.json"),
+                                    "status": "failed"})
+            raise
+        self.components.append({"receipt": relative(child.path / "receipt.json"),
+                                "status": "passed"})
+        return results
 
     def execute(self, argv, name, timeout=2700, cwd=ROOT, expected_exit=0):
         stdout = self.path / f"{name}.stdout.txt"
@@ -110,10 +129,7 @@ class Run:
         self.tool_versions = versions
 
     def finish(self, status, results=None, error=None):
-        artifacts = {}
-        for file in self.path.rglob("*"):
-            if file.is_file() and "source" not in file.relative_to(self.path).parts:
-                artifacts[file.relative_to(self.path).as_posix()] = hashlib.sha256(file.read_bytes()).hexdigest()
+        transient = {}
         for folder in self.path.glob("obj-*"):
             if folder.is_dir():
                 for pattern in ("*.o", "*.a", "*.gch"):
@@ -122,16 +138,23 @@ class Run:
         image_directory = self.path / "checkpoint-images"
         if image_directory.is_dir():
             for file in image_directory.glob("*.hex"):
+                transient[file.relative_to(self.path).as_posix()] = hashlib.sha256(file.read_bytes()).hexdigest()
                 file.unlink()
             image_directory.rmdir()
+        artifacts = {}
+        for file in self.path.rglob("*"):
+            if file.is_file() and "source" not in file.relative_to(self.path).parts:
+                artifacts[file.relative_to(self.path).as_posix()] = hashlib.sha256(file.read_bytes()).hexdigest()
         receipt = {"kind": "independent-l1-preparation" if "preparation" in self.path.parts
                    else "independent-l1",
                    "start": self.start,
                    "end": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                    "status": status, "source_sha256": self.hashes,
                    "tool_versions": getattr(self, "tool_versions", {}),
-                   "commands": self.commands, "results": results, "error": error,
+                   "commands": self.commands, "components": self.components,
+                   "results": results, "error": error,
                    "repair_of": self.repair_of, "artifact_sha256": artifacts}
+        receipt["transient_image_sha256"] = transient
         path = self.path / "receipt.json"
         with path.open("x") as output:
             json.dump(receipt, output, indent=2)
