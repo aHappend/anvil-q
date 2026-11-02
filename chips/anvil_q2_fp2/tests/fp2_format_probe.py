@@ -160,12 +160,23 @@ def run_encode(probe, compact=False, simulator="verilator"):
         maximum = max((abs(exact(values[lane], fraction_bits=7)) for lane in active), default=0)
         if maximum:
             squared = []
+            reconstruction_overflow = False
             for lane in active:
                 decoded, failed = mx_decode((payload >> (8 * lane)) & 255, scale)
-                if failed:
-                    raise AssertionError("encoder emitted a nonfinite reconstruction")
+                _, expected_failed = mx_decode(codes[lane], expected_scale)
+                probe.compare("reconstruction-classification", int(expected_failed), int(failed),
+                              {"index": index, "lane": lane})
+                if expected_failed:
+                    reconstruction_overflow = True
+                    continue
                 squared.append((exact(decoded, fraction_bits=7) -
                                 exact(values[lane], fraction_bits=7)) ** 2)
+            if reconstruction_overflow:
+                # Correctly encoded extreme BF16 can round to a decoded overflow;
+                # these directed classification cases are not compression-error samples.
+                probe.summary["directed_reconstruction_overflow_groups"] = (
+                    probe.summary.get("directed_reconstruction_overflow_groups", 0) + 1)
+                continue
             normalized_squared = sum(squared) / (len(active) * maximum ** 2)
             probe.compare("group-reconstruction-bound", True,
                           normalized_squared <= Fraction(65, 1000) ** 2,
@@ -182,8 +193,9 @@ def main():
     parser.add_argument("--kind", choices=("storage", "encode"), required=True)
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--simulator", choices=("iverilog", "verilator"), default="verilator")
+    parser.add_argument("--repair-of")
     args = parser.parse_args()
-    probe = Probe(args.kind)
+    probe = Probe(args.kind, args.repair_of)
     try:
         if args.kind == "storage":
             run_storage(probe, args.simulator)

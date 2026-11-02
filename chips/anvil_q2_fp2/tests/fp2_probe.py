@@ -121,12 +121,15 @@ def hashes():
 
 
 class Probe:
-    def __init__(self, kind, repair_of=None):
+    def __init__(self, kind, repair_of=None, output_parent=None, preparation=True):
         name = f"fp2-{kind}-{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-{uuid.uuid4().hex[:8]}"
-        self.directory = ROOT / "evidence" / "preparation" / name
+        parent = output_parent or (ROOT / "evidence" / "preparation" if preparation
+                                   else ROOT / "evidence")
+        self.directory = parent / name
         self.directory.mkdir(parents=True, exist_ok=False)
         self.receipt = {
-            "kind": "independent-public-pin-numerical-preparation",
+            "kind": "independent-verification-preparation" if preparation
+                    else "independent-verification-suite",
             "argv": [sys.executable, *sys.argv],
             "cwd": ".",
             "start_unix": time.time(),
@@ -233,6 +236,23 @@ def scalar_vectors():
             a = (exponent << 23) | offset
             if a:
                 pairs.append((a, 0x3F800000))
+    # Positive rsqrt inputs span all finite exponent bins, mantissa endpoints,
+    # and randomly chosen LUT-boundary neighborhoods.
+    for index in range(10000):
+        exponent = index % 255
+        fraction = randomizer.getrandbits(23)
+        if index % 4 == 0:
+            fraction = min(0x7FFFFF, (randomizer.randrange(1024) << 13) +
+                           randomizer.choice((0, 1, 4095, 4096, 8191)))
+        value = (exponent << 23) | fraction
+        pairs.append((max(1, value), 0x3F800000))
+    from fractions import Fraction
+    from fp2_reference import rounded
+    for index in range(10000):
+        pairs.append((rounded(Fraction(-randomizer.randrange(80000001), 1000000)),
+                      0x3F800000))
+        pairs.append((rounded(Fraction(randomizer.randrange(1000000, 32768000001), 1000000)),
+                      0x3F800000))
     return pairs
 
 
@@ -327,10 +347,10 @@ def simulate(probe, source, rtl, simulator, extra=None):
                     path.unlink()
 
 
-def run_mx(probe):
+def run_mx(probe, simulator="iverilog"):
     source = probe.directory / "tb.sv"
     source.write_text(MX_TB)
-    output = simulate(probe, source, [ROOT / "rtl/anvil_q2_fp2_mx_decode.sv"], "iverilog")
+    output = simulate(probe, source, [ROOT / "rtl/anvil_q2_fp2_mx_decode.sv"], simulator)
     seen = set()
     summary = None
     with output.open() as stream:

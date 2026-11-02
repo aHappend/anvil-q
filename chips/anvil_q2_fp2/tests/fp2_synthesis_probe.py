@@ -148,7 +148,7 @@ def run(probe, top, parameters=None):
     overrides = "".join(f" -chparam {key} {value}" for key, value in parameters.items())
     probe.summary["parameters"] = parameters
     script.write_text(
-        "read_verilog -sv " + " ".join(relative_sources) + "\n"
+        "read_verilog -sv -defer " + " ".join(relative_sources) + "\n"
         f"hierarchy -check -top {top}{overrides}\n"
         "proc\nopt_expr\nopt_clean\ncheck -assert\n"
         "memory -nomap\nopt_clean\ncheck -assert\n"
