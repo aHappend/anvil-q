@@ -34,12 +34,36 @@ def key_bits(key):
     return (kind << 99) | (layer << 67) | (projection << 64) | (row << 32) | column
 
 
+def table_capacity(population, minimum=2048):
+    """Bucket populations so incidental fixture sizes do not force new builds."""
+    return max(minimum, 1 << (max(1, population) - 1).bit_length())
+
+
+def compact_tables(testbench, image_count, writes):
+    mutable_population = len({key for key, _ in writes})
+    capacities = (table_capacity(image_count), table_capacity(len(writes)),
+                  table_capacity(2 * mutable_population))
+    for placeholder, capacity in zip(
+            ("@IMAGE_CAPACITY@", "@WRITE_CAPACITY@", "@MUTABLE_CAPACITY@"), capacities):
+        testbench = testbench.replace(placeholder, str(capacity))
+    return testbench, {
+        "immutable_population": image_count, "immutable_capacity": capacities[0],
+        "expected_write_population": len(writes), "expected_write_capacity": capacities[1],
+        "mutable_population": mutable_population, "mutable_capacity": capacities[2]}
+
+
 @reuse_current_execution
 def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=False, tokens=1,
           mode=0, fp8=0, affine=0, layers=1, heads=8, head_dim=2,
           intermediate=24, vocab=3, queue_depth=3, tile_k=8, tile_rows=3,
           max_seq_len=4, awq_transition=False):
-    if simulator == "iverilog" and (tokens > 1 or heads * head_dim >= 64 or layers > 1):
+    hidden = heads * head_dim
+    coefficients = 2 * hidden * hidden + 2 * hidden * (heads // 8) * head_dim + 3 * hidden * intermediate
+    estimated_cycles = tokens * layers * (
+        64 * coefficients + 1024 * heads * head_dim * (head_dim + 1) * (tokens + 1))
+    estimated_cycles += 256 * vocab * hidden + 16000
+    if simulator == "iverilog" and (tokens > 1 or hidden >= 64 or layers > 1 or
+                                     estimated_cycles > 500000):
         portability_smoke = smoke(evidence, seed, "iverilog", banks, fmt, awq, 1)
         substantive = smoke(evidence, seed, "verilator", banks, fmt, awq, tokens,
                             mode, fp8, affine, layers, heads, head_dim, intermediate,
@@ -68,7 +92,13 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
     if second_image is not None:
         second_image = {key: value for key, value in second_image.items() if key[0] != 8 and key[0] not in (9, 10, 12, 13, 14, 15)}
         second_image.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
-    text = f"{int(fmt == 'fp16')} {int(awq)} {tokens} {int(awq_transition)}\n"
+    projection_coefficients = (2 * fixture.h * fixture.h + 2 * fixture.h * heads // 8 * head_dim +
+                               3 * fixture.h * intermediate)
+    progress_bound = (500000 if simulator == "iverilog" else
+                      max(20000000, tokens * layers *
+                          (64 * projection_coefficients +
+                           1024 * heads * head_dim * (head_dim + 1) * (tokens + 1)) + 1000000))
+    text = f"{int(fmt == 'fp16')} {int(awq)} {tokens} {int(awq_transition)} {progress_bound}\n"
     text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
     if second_image is not None:
         text += "".join(f"3 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(second_image.items()))
@@ -94,19 +124,7 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
     if awq_transition:
         name += "-transition"
     image_count = len(initial) + (len(second_image) if second_image is not None else 0)
-    memory_capacity = max(262144, image_count)
-    write_capacity = max(262144, len(fixture.writes))
-    tb = tb.replace("memory_key[0:262143],expected_key[0:262143]",
-                    f"memory_key[0:{memory_capacity - 1}],expected_key[0:{write_capacity - 1}]")
-    tb = tb.replace("memory_data[0:262143],expected_data[0:262143]",
-                    f"memory_data[0:{memory_capacity - 1}],expected_data[0:{write_capacity - 1}]")
-    tb = tb.replace("used[0:262143]", f"used[0:{write_capacity - 1}]")
-    projection_coefficients = (2 * fixture.h * fixture.h + 2 * fixture.h * heads // 8 * head_dim +
-                               3 * fixture.h * intermediate)
-    progress_bound = max(20000000, tokens * layers *
-                         (64 * projection_coefficients +
-                          1024 * heads * head_dim * (head_dim + 1) * (tokens + 1)) + 1000000)
-    tb = tb.replace("cycle>20000000", f"cycle>64'd{progress_bound}")
+    tb, tables = compact_tables(tb, image_count, fixture.writes)
     if simulator == "verilator":
         binary = compiled(evidence, name, tb, rtl)
         output = run_compiled(evidence, binary, name, {"vectors.txt": text})
@@ -138,6 +156,7 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
               "stdout": relative(output), "parameters": {**parameters, "BANKS": banks}, "seed": seed,
               "activation": fmt, "awq": awq, "native_to_awq_transition": awq_transition, "metrics_vs_fp64": metrics,
               "minimum_cosine": threshold, "tokens": observations}
+    result["oracle_tables"] = dict(tables, cycle_progress_bound=progress_bound, simulator=simulator)
     result["public_transaction_traffic"] = traffic
     result["negative_gate_elements"] = sum(bool(value & 0x8000) for key, value in fixture.writes
                                            if key[0] == 8 and key[3] == 9)
@@ -168,18 +187,21 @@ module tb;
     .NUM_Q_HEADS(8),.NUM_KV_HEADS(1),.HEAD_DIM(2),.GROUP_SIZE(8),
     .VOCAB_SIZE(3),.MAX_SEQ_LEN(4),.BANKS(B),.CACHE_MODE(0),
     .QUEUE_DEPTH(3),.TILE_K(8),.TILE_ROWS(3)) dut(.*);
-  reg [102:0] memory_key[0:262143],expected_key[0:262143];
-  reg [31:0] memory_data[0:262143],expected_data[0:262143],expected_logit[0:255];
-  reg [102:0] mutable_key[0:65535];
-  reg [31:0] mutable_data[0:65535];
-  reg mutable_used[0:65535];
-  reg used[0:262143];
+  localparam IMAGE_CAPACITY=@IMAGE_CAPACITY@, WRITE_CAPACITY=@WRITE_CAPACITY@;
+  localparam MUTABLE_CAPACITY=@MUTABLE_CAPACITY@;
+  reg [102:0] memory_key[0:IMAGE_CAPACITY-1],expected_key[0:WRITE_CAPACITY-1];
+  reg [31:0] memory_data[0:IMAGE_CAPACITY-1],expected_data[0:WRITE_CAPACITY-1],expected_logit[0:255];
+  reg [102:0] mutable_key[0:MUTABLE_CAPACITY-1];
+  reg [31:0] mutable_data[0:MUTABLE_CAPACITY-1];
+  reg mutable_used[0:MUTABLE_CAPACITY-1];
+  reg used[0:WRITE_CAPACITY-1];
   reg [102:0] key,load_key;
   reg [31:0] load_data;
   integer nmemory=0,ninitial=0,nexpected=0,nlogit=0,fd,outfile,rc,record_type,i,j,match_index,memory_index;
   integer dtype,awq,TOKENS,transition,image_split=-1,token_start=0,token_requests=0,token_writes=0,stalls=0,token_stalls=0;
   integer low,high,middle,first_expected=0,mutable_index,hash_steps;
   longint unsigned cycle=0;
+  longint unsigned progress_bound;
   integer accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
   integer traffic_first[0:4095],traffic_last[0:4095],traffic_reads[0:4095];
   integer traffic_writes[0:4095],traffic_stalls[0:4095],traffic_index;
@@ -209,7 +231,7 @@ module tb;
       traffic_writes[i]=0; traffic_stalls[i]=0;
       traffic_padding[i]=0;
     end
-    for (i=0;i<65536;i=i+1) mutable_used[i]=0;
+    for (i=0;i<MUTABLE_CAPACITY;i=i+1) mutable_used[i]=0;
     for (bank=0;bank<B;bank=bank+1) begin occupied[bank]=0; queue_head[bank]=0; queue_tail[bank]=0; end
     #0; reset_check;
     #1; reset_check;
@@ -217,8 +239,8 @@ module tb;
     if (!fd) $fatal(1,"vector open");
     outfile=$fopen("logits.txt","w");
     if (!outfile) $fatal(1,"logit output open");
-    rc=$fscanf(fd,"%d %d %d %d\\n",dtype,awq,TOKENS,transition);
-    if (rc!=4 || TOKENS<1) $fatal(1,"fixture header");
+    rc=$fscanf(fd,"%d %d %d %d %d\\n",dtype,awq,TOKENS,transition,progress_bound);
+    if (rc!=5 || TOKENS<1 || progress_bound<1) $fatal(1,"fixture header");
     token_fp16=dtype; token_awq=awq;
     while (!$feof(fd)) begin
       rc=$fscanf(fd,"%d %h %h\\n",record_type,load_key,load_data);
@@ -313,12 +335,12 @@ module tb;
           else high=middle-1;
         end
         mutable_index=(key[31:0]*97+key[63:32]*193+key[98:67]*389+
-          key[102:99]*769+key[66:64]*1543)&65535;
+          key[102:99]*769+key[66:64]*1543)&(MUTABLE_CAPACITY-1);
         hash_steps=0;
-        while (mutable_used[mutable_index] && mutable_key[mutable_index]!=key && hash_steps<65536) begin
-          mutable_index=(mutable_index+1)&65535; hash_steps=hash_steps+1;
+        while (mutable_used[mutable_index] && mutable_key[mutable_index]!=key && hash_steps<MUTABLE_CAPACITY) begin
+          mutable_index=(mutable_index+1)&(MUTABLE_CAPACITY-1); hash_steps=hash_steps+1;
         end
-        if (hash_steps==65536) $fatal(1,"memory oracle hash capacity");
+        if (hash_steps==MUTABLE_CAPACITY) $fatal(1,"memory oracle hash capacity");
         if (mem_req_write[bank]) begin
           match_index=-1;
           j=first_expected;
@@ -378,7 +400,7 @@ module tb;
         end
       end
       cycle=cycle+1;
-      if (cycle>20000000) $fatal(1,"TOP progress bound writes=%0d requests=%0d",compared_writes,requests);
+      if (cycle>=progress_bound) $fatal(1,"TOP progress bound writes=%0d requests=%0d",compared_writes,requests);
     end
   end
   always @(negedge clk) begin

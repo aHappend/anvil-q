@@ -1,7 +1,7 @@
 """Public top cancellation/fault/drain/restart checks, without internal probes."""
 
 from execution import ROOT, compiled, relative, run_compiled
-from integration import TOP_TB, key_bits
+from integration import TOP_TB, compact_tables, key_bits
 from model import Fixture
 
 
@@ -17,7 +17,7 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
     initial = dict(fixture.memory)
     fixture.token(token=1)
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
-    text = "0 0 2 0\n"
+    text = "0 0 2 0 20000000\n"
     text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
     text += "".join(f"1 {key_bits(key):026x} {value:08x}\n" for key, value in fixture.writes)
     text += "".join(f"2 {index:026x} {value:08x}\n" for index, value in enumerate(fixture.logits[0]))
@@ -113,6 +113,7 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
                         "logit_valid" if scenario == "cancel-logit" else
                         held_projection if scenario == "cancel-result-hold" else "trigger")
         tb = tb.replace("@CANCELS@", "0" if is_fault else "1")
+        tb, _ = compact_tables(tb, len(initial), fixture.writes)
         name = f"control-{scenario}-b{banks}-m{mode}-f{fp8}-a{affine}"
         executable = compiled(evidence, name, tb, rtl)
         output = run_compiled(evidence, executable, name, {"vectors.txt": text})
@@ -128,7 +129,7 @@ def rejected_sequence(evidence, case, banks=1):
     initial = dict(fixture.memory)
     fixture.token()
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
-    text = "0 0 3 0\n"
+    text = "0 0 3 0 20000000\n"
     text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
     text += "".join(f"1 {key_bits(key):026x} {value:08x}\n" for key, value in fixture.writes * 2)
     text += "".join(f"2 {index:026x} {value:08x}\n"
@@ -157,6 +158,7 @@ def rejected_sequence(evidence, case, banks=1):
     tb = tb.replace("@POSITION@", position).replace("@DTYPE@", dtype).replace("@PHASE@", phase)
     if case == "token-id":
         tb = replace_once(tb, "token_id=0; token_pos=", "token_id=accepted_token==1 ? 3 : 0; token_pos=")
+    tb, _ = compact_tables(tb, len(initial), fixture.writes * 2)
     rtl = [relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))]
     rtl += ["anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
             "anvil_q3_reference/rtl/anvil_q3_mem_port.sv"]
