@@ -53,7 +53,8 @@ def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
         "--top-module", "anvil_q4_top", "--Mdir", experiment.rel(objects),
         f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue_depth}",
         f"-GTILE_K={tile_k}", f"-GTILE_ROWS={tile_rows}",
-        "-CFLAGS", "-std=c++17", "-o", "top-sim", *rtl,
+        "-CFLAGS", "-std=c++17", "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
+        "-o", "top-sim", *rtl,
         str(Path("../../../../tests")/driver if
             experiment.directory.parent.name == "preparation" else
             Path("../../../tests")/driver),

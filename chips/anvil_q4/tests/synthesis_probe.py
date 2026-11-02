@@ -28,13 +28,46 @@ def lower_codec_writes(text):
     result, count = re.subn(
         r"(result_payload|result_values)\[index\*(4|8|32)\+:\2\]<=([^;]+);",
         replace, text)
+    if count == 0:
+        validate_constant_word_writes(text, {
+            "result_values": ("saturated_reconstruction",),
+            "result_payload": ("next_payload",),
+        }, "CAP")
+        return text
     if count != 7:
         raise AssertionError(f"codec frontend expected seven indexed writes, found {count}")
     return result
 
 
+def validate_constant_word_writes(text, buffers, capacity):
+    """Recognize the register-backed constant-word implementation, unchanged."""
+    if not re.search(r"for \(genvar w=0;w<"+capacity+
+                     r";w=w\+1\) begin: workspace_word", text):
+        raise AssertionError("missing constant-word cache workspace")
+    if "always @(posedge clk or negedge rst_n)" not in text:
+        raise AssertionError("missing asynchronous-reset cache workspace")
+    for name, values in buffers.items():
+        assignments = re.findall(r"\b"+name+r"\[([^]]+)\]\s*<=([^;]+);", text)
+        if not assignments or any(index != "w*32+:32" for index, _ in assignments):
+            raise AssertionError(f"unexpected cache write geometry: {name}")
+        if not any(value.strip() == "0" for _, value in assignments):
+            raise AssertionError(f"missing cache workspace reset: {name}")
+        for value in values:
+            if sum(rhs.strip() == value for _, rhs in assignments) != 1:
+                raise AssertionError(f"missing/duplicate constant-word write: {name}={value}")
+        if re.search(r"\b"+name+r"\s*<=", text):
+            raise AssertionError(f"mixed whole-vector cache writer: {name}")
+
+
 def lower_legacy_cache_writes(text):
     """Apply the same exact indexed-write lowering to the packed cache buffers."""
+    anchors = ("values[lane*32+:32]<=rdata;", "payload[word_index*32+:32]<=rdata;")
+    if not any(anchor in text for anchor in anchors):
+        validate_constant_word_writes(text, {
+            "values": ("rdata",),
+            "payload": ("encoded[w*32+:32]", "rdata"),
+        }, "STORAGE")
+        return text
     for name, index in (("values", "lane"), ("payload", "word_index")):
         before = f"{name}[{index}*32+:32]<=rdata;"
         after = (f"{name}<=({name} & ~(8192'd4294967295 << ({index}*32))) | "
@@ -160,7 +193,7 @@ def structural(netlist, top_name="anvil_q4_top"):
         }.get(hdlname, ())
         for buffer in buffers:
             bits = set(module.get("netnames", {}).get(buffer, {}).get("bits", [])) & q_bits
-            if len(bits) < 32:
+            if len(bits) != 8192:
                 raise AssertionError(f"missing register-backed cache storage: {hdlname}.{buffer}")
             registered_buffer_bits += len(bits)
         if hdlname in required:
