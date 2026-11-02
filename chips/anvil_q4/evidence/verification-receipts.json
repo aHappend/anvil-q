@@ -794,17 +794,17 @@
       ]
     },
     "check:l1-five-domain-benchmarks": {
-      "attempt_id": 18,
-      "duration_s": 1090.716712276917,
-      "stdout_preview": "L1 benchmarks: benchmarks.py\nl1-benchmarks: check-0 running 30s\nl1-benchmarks: check-0 running 60s\nl1-benchmarks: check-0 running 90s\nl1-benchmarks: check-0 running 120s\nl1-benchmarks: check-0 running 150s\nl1-benchmarks: check-0 running 180s\nl1-benchmarks: check-0 running 210s\nl1-benchmarks: check-0 running 240s\nl1-benchmarks: check-0 running 270s\nl1-benchmarks: check-0 running 300s\nl1-benchmarks: check-0 running 330s\nl1-benchmarks: check-0 running 360s\nl1-benchmarks: check-0 running 390s\nl1-benchmarks: check-0 running 420s\nl1-benchmarks: check-0 running 450s\nl1-benchmarks: check-0 running 480s\nl1-benchmarks: check-0 running 510s\nl1-benchmarks: check-0 running 540s\nl1-benchmarks: check-0 running 570s\nl1-benchmarks: check-0 running 600s\nl1-benchmarks: check-0 running 630s\nl1-benchmarks: check-0 running 660s\nl1-benchmarks: check-0 running 690s\nl1-benchmarks: check-0 running 720s\nl1-benchmarks: check-0 running 750s\nl1-benchmarks: check-0 running 780s\nl1-benchmarks: check-0 running 810s\nl1-benchmarks: check-0 running 840s\nl1-benchmarks: check-0 running 870s\nl1-benchmarks: check-0 running 900s\nl1-benchmarks: check-0 running 930s\nl1-benchmarks: check-0 running 960s\nl1-benchmarks: check-0 running 990s\nl1-benchmarks: check-0 running 1020s\nl1-benchmarks: check-0 running 1050s\nl1-benchmarks: check-0 running 1080s\nevidence/l1-benchmarks-20261102T144824176431Z/receipt.json\n",
+      "attempt_id": 26,
+      "duration_s": 1090.4031975001562,
+      "stdout_preview": "L1 benchmarks: benchmarks.py\nl1-benchmarks: check-0 running 30s\nl1-benchmarks: check-0 running 60s\nl1-benchmarks: check-0 running 90s\nl1-benchmarks: check-0 running 120s\nl1-benchmarks: check-0 running 150s\nl1-benchmarks: check-0 running 180s\nl1-benchmarks: check-0 running 210s\nl1-benchmarks: check-0 running 240s\nl1-benchmarks: check-0 running 270s\nl1-benchmarks: check-0 running 300s\nl1-benchmarks: check-0 running 330s\nl1-benchmarks: check-0 running 360s\nl1-benchmarks: check-0 running 390s\nl1-benchmarks: check-0 running 420s\nl1-benchmarks: check-0 running 450s\nl1-benchmarks: check-0 running 480s\nl1-benchmarks: check-0 running 510s\nl1-benchmarks: check-0 running 540s\nl1-benchmarks: check-0 running 570s\nl1-benchmarks: check-0 running 600s\nl1-benchmarks: check-0 running 630s\nl1-benchmarks: check-0 running 660s\nl1-benchmarks: check-0 running 690s\nl1-benchmarks: check-0 running 720s\nl1-benchmarks: check-0 running 750s\nl1-benchmarks: check-0 running 780s\nl1-benchmarks: check-0 running 810s\nl1-benchmarks: check-0 running 840s\nl1-benchmarks: check-0 running 870s\nl1-benchmarks: check-0 running 900s\nl1-benchmarks: check-0 running 930s\nl1-benchmarks: check-0 running 960s\nl1-benchmarks: check-0 running 990s\nl1-benchmarks: check-0 running 1020s\nl1-benchmarks: check-0 running 1050s\nl1-benchmarks: check-0 running 1080s\nevidence/l1-benchmarks-20261102T180755868128Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-benchmarks-20261102T144824176431Z/receipt.json",
+          "path": "evidence/l1-benchmarks-20261102T180755868128Z/receipt.json",
           "data": {
             "suite": "l1-benchmarks",
             "cwd": ".",
-            "start_time": "2026-11-02T14:48:24.180416+00:00",
+            "start_time": "2026-11-02T18:07:55.870648+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -841,6 +841,7 @@
               "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
               "design/ARCHITECTURE.md": "55536f9b84a785439d884192ae1258a0ba62f6e4bb427dafa22d6fd688ec5b28",
+              "design/GENERATIONAL_HANDOFF.md": "3b4298fbe87060cc475ba014254004a2bb8cc7a36cae1f3628da48d707a556aa",
               "design/SPEC.md": "40d08878a80e063070309a23d48a5bf429ab4509b2f65008679c3caae8573e36",
               "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
               "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
@@ -941,14 +942,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:48:24.198333+00:00",
+                "start_time": "2026-11-02T18:07:55.881151+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-benchmarks-20261102T144824176431Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-benchmarks-20261102T144824176431Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-benchmarks-20261102T180755868128Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-benchmarks-20261102T180755868128Z/version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T14:48:24.204592+00:00",
-                "elapsed_s": 0.006007403135299683
+                "end_time": "2026-11-02T18:07:55.890901+00:00",
+                "elapsed_s": 0.009614535141736269
               },
               {
                 "argv": [
@@ -956,14 +957,14 @@
                   "tests/benchmarks.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T14:48:24.205400+00:00",
-                "timeout_s": 2699.9711017759982,
-                "stdout_path": "evidence/l1-benchmarks-20261102T144824176431Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-benchmarks-20261102T144824176431Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T18:07:55.891387+00:00",
+                "timeout_s": 2699.9767797889654,
+                "stdout_path": "evidence/l1-benchmarks-20261102T180755868128Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-benchmarks-20261102T180755868128Z/check-0.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T15:06:34.704176+00:00",
-                "elapsed_s": 1090.4985440159217
+                "end_time": "2026-11-02T18:26:06.086168+00:00",
+                "elapsed_s": 1090.1946790500078
               }
             ],
             "comparisons": {},
@@ -973,11 +974,11 @@
                 "command": [
                   "benchmarks.py"
                 ],
-                "receipt": "evidence/benchmarks-20261102T144824262348Z/receipt.json"
+                "receipt": "evidence/benchmarks-20261102T180755970830Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T15:06:34.708151+00:00"
+            "end_time": "2026-11-02T18:26:06.091622+00:00"
           }
         }
       ]
