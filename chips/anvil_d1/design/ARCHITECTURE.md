@@ -74,6 +74,15 @@ Exponential range reduction and all six Taylor divisions use registered
 integer dividers. SiLU uses the stable sign-dependent sigmoid numerator and
 a widened -abs(x), then a separate mul32 and R_24 boundary. The exact normal
 and shortcut schedules are in SPEC.md; no simulator has yet checked them.
+The exponential's two 32-bit multiplier operands use explicitly signed
+wire aliases rather than casts directly on module ports, avoiding the
+Yosys 0.33 AST-to-wire signedness assertion. These aliases preserve all
+operand bits and add no arithmetic, narrowing or pipeline stages; independent
+frontend and functional checks of this repair remain required.
+SiLU likewise connects its 33-bit negative-absolute exponential argument and
+32-bit sigmoid multiplier operand through explicitly signed wire aliases.
+This applies the same frontend compatibility repair without changing operand
+bits, widths, numerical boundaries, state transitions or pipeline timing.
 
 Hardware absorption streams UK/QN pairs for A and O/UV pairs for B. It keeps
 one pair of raw weights, one registered product, one 128-bit accumulator and

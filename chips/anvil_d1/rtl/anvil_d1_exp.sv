@@ -18,6 +18,8 @@ module anvil_d1_exp (
   reg [24:0] result;
   wire [32:0] negative_x;
   wire [31:0] negative_term;
+  wire signed [31:0] multiplier_term=negative_term;
+  wire signed [31:0] multiplier_remainder=reduction_remainder;
   wire unused_x_borrow, unused_term_borrow;
   wire reduce_ready, reduce_valid, reduce_error;
   wire [31:0] reduce_q, reduce_r;
@@ -46,7 +48,7 @@ module anvil_d1_exp (
   anvil_d1_mul32 multiplier (
     .clk(clk),.rst_n(rst_n),.flush(flush),
     .in_valid(state==MULTIPLY),.in_ready(multiply_ready),
-    .in_a($signed(negative_term)),.in_b($signed(reduction_remainder)),
+    .in_a(multiplier_term),.in_b(multiplier_remainder),
     .out_valid(multiply_valid),.out_ready(1'b1),.out_product(product)
   );
   anvil_d1_sdiv #(.NUM_W(64),.DEN_W(32)) divider (

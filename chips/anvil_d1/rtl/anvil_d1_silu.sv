@@ -18,6 +18,8 @@ module anvil_d1_silu (
   reg signed [31:0] result;
   wire [32:0] negated_x, negative_absolute;
   wire [32:0] absolute=x[31] ? negated_x : {1'b0,x};
+  wire signed [32:0] exponential_argument=negative_absolute;
+  wire signed [31:0] multiplier_sigmoid=sigmoid;
   wire unused_x_borrow, unused_abs_borrow;
   wire exp_ready, exp_valid, exp_error;
   wire [24:0] exp_result;
@@ -36,7 +38,7 @@ module anvil_d1_silu (
   );
   anvil_d1_exp exponential_unit (
     .clk(clk),.rst_n(rst_n),.flush(flush),
-    .in_valid(state==EXPONENTIAL),.in_ready(exp_ready),.in_x($signed(negative_absolute)),
+    .in_valid(state==EXPONENTIAL),.in_ready(exp_ready),.in_x(exponential_argument),
     .out_valid(exp_valid),.out_ready(1'b1),.out_error(exp_error),.out_value(exp_result)
   );
   anvil_d1_udiv #(.NUM_W(49),.DEN_W(26)) divider (
@@ -50,7 +52,7 @@ module anvil_d1_silu (
   anvil_d1_mul32 multiplier (
     .clk(clk),.rst_n(rst_n),.flush(flush),
     .in_valid(state==MULTIPLY),.in_ready(multiply_ready),
-    .in_a(x),.in_b($signed(sigmoid)),
+    .in_a(x),.in_b(multiplier_sigmoid),
     .out_valid(multiply_valid),.out_ready(1'b1),.out_product(multiply_result)
   );
   anvil_d1_round_sat #(.SHIFT(24)) boundary (
