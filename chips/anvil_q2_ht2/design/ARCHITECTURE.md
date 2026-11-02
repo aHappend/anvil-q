@@ -290,6 +290,31 @@ legacy tiled layout and byte-exact flags. Roles/layouts are frozen in SPEC.md.
 After all checks, one descriptor per cycle copies into an inactive committed
 RAM bank. The last copy edge switches the bank, committed mode and cache
 base/extent atomically. Failed/cancelled validation never switches banks.
+Shadow and committed descriptors use sixteen fixed 32-bit RAM banks, preserving
+the little-endian 64-byte layout. Each bank has one synchronous read port and
+one fixed-width write port in a reset-free clocked process. The shadow read
+port is shared by configuration readback, descriptor validation and copy
+prefetch; reset validity masks are applied after the registered RAM output.
+The last validation `NEXT` edge prefetches descriptor zero, and each nonfinal
+`COPY` edge writes the prefetched descriptor while reading its successor.
+No copy stage or configuration response cycle is added.
+
+| Event sampled before edge n | State immediately after edge n |
+|---|---|
+| Aligned shadow configuration read accepted | Response valid with selected registered word; unwritten words read zero |
+| Held configuration response | Word, validity mask and payload stay unchanged; no new shadow read |
+| Validation `LOAD` | Registered descriptor available to `CHECK_SEND` |
+| Final validation `NEXT` | Descriptor zero prefetched; enter `COPY` |
+| Nonfinal `COPY` | Current descriptor written to inactive bank; next descriptor prefetched |
+| Final `COPY`, including one remaining entry | Last descriptor written; bank/mode/cache extent published together |
+| Reset | Public outputs zero; word-validity masks cleared, RAM contents unreset |
+| Annul/invalidate on a copy edge | No committed write or prefetch; no publication |
+
+Configuration writes and shadow reads cannot coincide: configuration offers
+are serialized and blocked throughout validation. Descriptor response reads
+use the committed banks, independently of the shadow port; validation blocks
+new descriptor requests. Minimum legal one-layer geometry still has 32
+descriptor entries; no power-of-two entry-count wrap is assumed.
 The native controller retains an error response for a cancelled accepted
 configuration request so the adapter can drain it; cancellation does not
 silently strand that owner. Descriptor responses are independently annulled.

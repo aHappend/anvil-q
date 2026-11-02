@@ -70,10 +70,12 @@ module anvil_q2_ht2_native_configuration #(
     reg shadow_weight;
     reg [1:0] shadow_cache;
     reg [5:0] validated_mode, committed_mode;
-    (* ramstyle = "M20K", nomem2reg *) reg [511:0] shadow [0:ENTRIES-1];
-    (* ramstyle = "M20K", nomem2reg *) reg [511:0] committed [0:2*ENTRIES-1];
     reg [15:0] initialized [0:ENTRIES-1];
-    reg [511:0] descriptor, embedding_descriptor, descriptor_data;
+    wire [511:0] descriptor;
+    reg [511:0] shadow_read_data, embedding_descriptor, descriptor_data;
+    reg [15:0] shadow_read_mask;
+    reg response_descriptor;
+    reg [3:0] response_word;
     reg descriptor_valid, descriptor_error;
     reg [8:0] index;
     reg [1:0] part, region_count;
@@ -113,6 +115,15 @@ module anvil_q2_ht2_native_configuration #(
     wire [33:0] configured_end={1'b0,shadow_base}+{1'b0,shadow_length};
     wire [AW-1:0] read_address=AW'((active_bank ? ENTRIES : 0)+desc_req_index);
     wire [AW-1:0] write_address=AW'((active_bank ? 0 : ENTRIES)+index);
+    wire cfg_descriptor_read=cfg_transfer && !cfg_write &&
+      cfg_addr[1:0]==0 && descriptor_address;
+    wire copy_prefetch=available && !validation_abort &&
+      ((state==NEXT && index+9'd1==ENTRIES) ||
+       (state==COPY && index+9'd1<ENTRIES));
+    wire shadow_read=cfg_descriptor_read ||
+      (available && state==LOAD) || copy_prefetch;
+    wire [8:0] shadow_read_address=cfg_descriptor_read ? cfg_index :
+      (state==NEXT ? 9'd0 : (state==COPY ? index+9'd1 : index));
     wire check_ready, check_valid, check_error;
     wire [1:0] check_regions;
     wire [98:0] check_bases;
@@ -138,7 +149,9 @@ module anvil_q2_ht2_native_configuration #(
 
     assign cfg_ready=available && !busy && !response_valid;
     assign cfg_rsp_valid=rst_n && response_valid;
-    assign cfg_rdata=cfg_rsp_valid ? response_data : 32'd0;
+    assign descriptor=visible_descriptor(shadow_read_data,shadow_read_mask);
+    assign cfg_rdata=cfg_rsp_valid ?
+      (response_descriptor ? descriptor[32*response_word+:32] : response_data) : 32'd0;
     assign cfg_error=cfg_rsp_valid && response_error;
     assign validating=rst_n && busy;
     assign model_loaded=available && loaded && committed_mode==ht2_mode;
@@ -151,16 +164,25 @@ module anvil_q2_ht2_native_configuration #(
     assign desc_rsp_data=desc_rsp_valid && !descriptor_error ? descriptor_data : 512'd0;
     assign desc_rsp_error=desc_rsp_valid && descriptor_error;
 
+    for (genvar word_bank=0;word_bank<16;word_bank=word_bank+1) begin: descriptor_words
+      (* ramstyle = "M20K", nomem2reg *) reg [31:0] shadow [0:ENTRIES-1];
+      (* ramstyle = "M20K", nomem2reg *) reg [31:0] committed [0:2*ENTRIES-1];
+      always @(posedge clk) begin
+        if (cfg_transfer && cfg_write && can_write && cfg_addr[1:0]==0 &&
+            descriptor_address && cfg_addr[5:2]==word_bank)
+          shadow[cfg_index]<=cfg_wdata;
+        if (shadow_read)
+          shadow_read_data[32*word_bank+:32]<=shadow[shadow_read_address];
+        if (available && state==COPY && !validation_abort)
+          committed[write_address]<=descriptor[32*word_bank+:32];
+        if (descriptor_transfer && desc_req_index<ENTRIES)
+          descriptor_data[32*word_bank+:32]<=committed[read_address];
+      end
+    end
+
     always @(posedge clk) begin
-      if (cfg_transfer && cfg_write && can_write && cfg_addr[1:0]==0 &&
-          descriptor_address)
-        shadow[cfg_index][cfg_addr[5:2]*32+:32]<=cfg_wdata;
-      if (available && state==LOAD)
-        descriptor<=visible_descriptor(shadow[index],initialized[index]);
-      if (available && state==COPY && !validation_abort)
-        committed[write_address]<=visible_descriptor(shadow[index],initialized[index]);
-      if (descriptor_transfer && desc_req_index<ENTRIES)
-        descriptor_data<=committed[read_address];
+      if (shadow_read)
+        shadow_read_mask<=initialized[shadow_read_address];
       if (available && state==START) begin
         range_base[0]<=shadow_base; range_end[0]<=configured_end;
         range_owner[0]<=11'h7ff;
@@ -179,6 +201,7 @@ module anvil_q2_ht2_native_configuration #(
       if (!rst_n) begin
         state<=IDLE; loaded<=0; active_bank<=0; changed<=0;
         response_valid<=0; response_error<=0; response_data<=0;
+        response_descriptor<=0; response_word<=0;
         shadow_base<=0; shadow_length<=0; committed_base<=0; committed_length<=0;
         shadow_weight<=0; shadow_cache<=0; validated_mode<=0; committed_mode<=0;
         embedding_descriptor<=0; descriptor_valid<=0; descriptor_error<=0;
@@ -203,6 +226,7 @@ module anvil_q2_ht2_native_configuration #(
         end else if (!annul) case (state)
           IDLE: if (cfg_transfer) begin
             response_valid<=1; response_error<=0; response_data<=0;
+            response_descriptor<=cfg_descriptor_read; response_word<=cfg_addr[5:2];
             if (cfg_addr[1:0]!=0) response_error<=1;
             else if (cfg_write) begin
               if (!can_write || !native_mode) response_error<=1;
@@ -230,9 +254,7 @@ module anvil_q2_ht2_native_configuration #(
                   else shadow_length[32]<=cfg_wdata[0];
                 default: response_error<=1;
               endcase
-            end else if (descriptor_address)
-              response_data<=initialized[cfg_index][cfg_addr[5:2]] ?
-                shadow[cfg_index][cfg_addr[5:2]*32+:32] : 32'd0;
+            end else if (descriptor_address) begin end
             else case (cfg_addr)
               16'h0000: response_data<=32'h41513248;
               16'h0004: response_data<=32'h02050002;
