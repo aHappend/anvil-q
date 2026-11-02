@@ -63,6 +63,7 @@ class Run:
             "argv": ["python3", *sys.orig_argv[1:]],
             "cwd": ".", "started_at": now(), "repair_of": repair_of,
             "aggregate_budget_s": 2700, "interpreted_process_limit_s": 600,
+            "python_version": sys.version,
             "source_sha256": {}, "commands": [], "comparisons": [],
         }
         for source in source_paths():
@@ -502,7 +503,13 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
     sources = [*(overrides.get(source, source) for source in sources),
                str(bench.relative_to(ROOT))]
     run.version(simulator)
+    flags = (
+        ["-g2012", "-Wall", "-s", "tb"] if simulator == "iverilog" else
+        ["--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
+         "-j", "2", "-CFLAGS", "-O3"]
+    )
     digest = hashlib.sha256(simulator.encode())
+    digest.update(json.dumps(flags).encode())
     for source in sources:
         digest.update((ROOT / source).read_bytes())
     cache_key = digest.hexdigest()
@@ -522,16 +529,17 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
         run.version("vvp")
         binary_path = directory / "sim.vvp"
         run.command(
-            ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o",
+            ["iverilog", *flags, "-o",
              str(binary_path.relative_to(ROOT)), *sources], f"{stem}-compile",
         )
         run.command(["vvp", str(binary_path.relative_to(ROOT)), *arguments], f"{stem}-simulate")
     else:
+        run.version("g++")
+        run.version("make")
         obj = directory / "compile-obj"
         try:
             run.command(
-                ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
-                 "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", "-CFLAGS", "-O1", *sources],
+                ["verilator", *flags, "--Mdir", str(obj.relative_to(ROOT)), *sources],
                 f"{stem}-compile",
             )
             if cache:

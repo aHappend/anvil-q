@@ -32,8 +32,8 @@ def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0)
     with (directory / "rope.hex").open("x") as output:
         output.write("".join(f"{word:08x}\n" for word in coefficients))
     maximum = max(hidden, intermediate)
-    tokens = min(3, sequence)
-    commands = (tokens + 3) * (3 if enable == 0 else 1) + 1
+    tokens = sequence
+    commands = (tokens + 3 + int(sequence > 1)) * (3 if enable == 0 else 1) + 1
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
 module tb;
@@ -185,6 +185,8 @@ module tb;
             error[model]!==parent_errors[command_index])
           $fatal(1,"COMPATIBILITY memory/error/output semantics mismatch command=%0d",command_index);
         completion_count=completion_count+1; finished=1;
+        $display("PROGRESS compatibility model=%0d command=%0d cycles=%0d requests=%0d logits=%0d error=%b",
+          model,command_index,cycle,requests,received,error[model]);
       end
       if (ra) begin
         kind=reqk[model*4+:4]; layer=reql[model*32+:32];
@@ -251,6 +253,7 @@ module tb;
         for (position=0;position<{tokens};position=position+1)
           command(position%{vocab},position,position==0,mode[1:0]);
         command(0,0,1,mode[1:0]);
+        {"command(0,1,0,mode[1:0]^2'd1);" if sequence > 1 else ""}
         fault=1; command(0,0,1,mode[1:0]); fault=0;
         command(0,{sequence},0,mode[1:0]);
       end
@@ -275,6 +278,8 @@ endmodule
         "precisions": [0, 1, 2] if enable == 0 else [0],
         "checks": ["bit-exact logits", "memory transaction hash/count", "error semantics",
                    "fresh sequences", "continuations", "fault termination", "invalid position",
+                   "maximum legal compact position",
+                   *(["precision change rejection"] if sequence > 1 else []),
                    "precision 3 rejection" if enable == 0 else "invalid token rejection",
                    "output stalls", "request/response stalls"],
         "result": "passed",
