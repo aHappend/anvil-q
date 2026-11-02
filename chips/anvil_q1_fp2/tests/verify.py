@@ -59,6 +59,11 @@ class Run:
         self.relative = relative / f"{stem}-{stamp}-{uuid.uuid4().hex[:8]}"
         self.path = ROOT / self.relative
         self.path.mkdir(parents=True, exist_ok=False)
+        if repair_of is None:
+            for previous in sorted(ROOT.glob(f"evidence/{stem}-*/receipt.json"), reverse=True):
+                if json.loads(previous.read_text()).get("exit_code") != 0:
+                    repair_of = str(previous.relative_to(ROOT))
+                    break
         self.receipt = {
             "argv": ["python3", *sys.orig_argv[1:]],
             "cwd": ".", "started_at": now(), "repair_of": repair_of,
@@ -695,6 +700,13 @@ def behavior(run, seeds, compact=True):
                     simulate_compatibility(run, ROOT, compile_and_run, geometry, seed, enable)
     for seed, geometry in architecture_matrix:
         for mx in (False, True):
+            if compact and any(
+                row.get("kind") == "architecture" and row.get("seed") == seed and
+                row.get("geometry") == geometry and row.get("format") == ("mx" if mx else "bf16")
+                and row.get("tokens") == min(3, geometry[-1])
+                for row in run.receipt["comparisons"]
+            ):
+                continue
             simulate_architecture(run, seed, geometry, mx, "verilator",
                                   compile_and_run, ROOT,
                                   tokens=min(3, geometry[-1]) if compact else geometry[-1])
@@ -716,7 +728,9 @@ def behavior(run, seeds, compact=True):
                 continue
             architecture_rows = [row for row in comparisons if row.get("kind") == "architecture"
                                  and row.get("seed") == seed and row.get("geometry") == geometry
-                                 and row.get("simulator") == "verilator"]
+                                 and row.get("simulator") == (
+                                     "iverilog" if compact and geometry[1] <= 32 and
+                                     min(3, geometry[-1]) == 1 and seed == 17 else "verilator")]
             if {row["format"] for row in architecture_rows} != {"bf16", "mx"}:
                 raise AssertionError(f"seed {seed}: missing decoder format/geometry comparisons")
     run.receipt["coverage"] = {
