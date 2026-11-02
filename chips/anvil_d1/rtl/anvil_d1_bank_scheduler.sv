@@ -31,9 +31,12 @@ module anvil_d1_bank_scheduler #(
   wire [SB*32-1:0] raw_layer, raw_row, raw_col, raw_wdata;
   wire [SB*3-1:0] raw_proj;
   wire [SB*64-1:0] raw_tag;
+  wire raw_drain_done, raw_fault;
   wire request_enable=rst_n && !flush;
+  assign drain_done=rst_n && raw_drain_done;
+  assign fault=rst_n && raw_fault;
   anvil_q3_bank_scheduler #(.BANKS(BANKS),.CLIENTS(CLIENTS),.QUEUE_DEPTH(QUEUE_DEPTH)) scheduler (
-    .clk(clk),.rst_n(rst_n),.flush(flush),.idle(idle),.drain_done(drain_done),.fault(fault),
+    .clk(clk),.rst_n(rst_n),.flush(flush),.idle(idle),.drain_done(raw_drain_done),.fault(raw_fault),
     .c_req_valid(c_req_valid),.c_req_ready(c_req_ready),.c_req_write(c_req_write),
     .c_req_kind(c_req_kind),.c_req_layer(c_req_layer),.c_req_proj(c_req_proj),
     .c_req_row(c_req_row),.c_req_col(c_req_col),.c_req_wdata(c_req_wdata),

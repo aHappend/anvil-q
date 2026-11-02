@@ -513,6 +513,10 @@ The native boundary wrapper additionally masks request valid and the ready
 fed back to that machinery on flush. Thus a held but not accepted request
 cannot transfer on cancellation; an already accepted request remains owned
 and drains. Response ready stays active during drain.
+The native wrapper forces `drain_done` and `fault` low throughout active reset,
+including time-zero observation before parent register initialization. After
+reset release it exposes the parent's registered statuses directly, without
+additional latency or flush masking.
 
 Top accepts a token only in armed idle with no scheduler ownership. New
 sequences require position zero, increment the weight/cache epoch, flush

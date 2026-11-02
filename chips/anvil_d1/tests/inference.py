@@ -139,7 +139,7 @@ def inference_bench(evidence, seed=17, tokens=4, sequences=1, shape=Shape(),
     bench = bench.replace("reads=reads+1;", """reads=reads+1; read_bytes=read_bytes+4;
             if (mem_req_kind[b*4+:4]==15 && mem_req_proj[b*3+:3]==5)
               expert_bytes_observed=expert_bytes_observed+4;""")
-    if domain is not None and legacy is None:
+    if domain is not None:
         bench = benchmark_csr(bench, domain, count)
     bench = bench.replace('    $finish;', """    $display("METRICS read_bytes=%0d write_bytes=%0d expert_bytes=%0d",
       read_bytes,write_bytes,expert_bytes_observed);

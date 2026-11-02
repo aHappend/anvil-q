@@ -40,6 +40,10 @@ but gates both external request valid and the ready fed back into that engine
 on flush. This closes the parent's request-annul boundary for native
 cancellation without changing legacy behavior. Accepted ownership drains;
 unaccepted held requests are annulled.
+The wrapper also reset-masks the parent's registered `drain_done` and `fault`
+outputs, including at time zero before reset events initialize parent state.
+No status pipeline stage is added; with reset released, both pulses pass
+through unchanged, including during flush and drain.
 
 ## Arithmetic allocation and lifetime
 

@@ -1,7 +1,7 @@
 """Portable self-contained L1 verification for Anvil-D1.
 
 Run python3 tests/verify.py, or --suite behavior|compatibility|defects|synthesis|portable.
-Dependencies: Python3 standard library, Icarus/vvp, Verilator with a C++ compiler
+Dependencies: Python3.10+ standard library, Icarus/vvp, Verilator with a C++ compiler
 and make, Yosys. No installation, checkpoint download or local hardware access.
 Each suite has a shared 2700-second budget starting before fixture generation;
 vvp is restricted to compact <=500000-cycle smoke and a 600-second child budget.
@@ -44,7 +44,7 @@ from defects import sensitivity
 from diagnostic import native_bench, simulate
 from elaboration import MINIMUM, elaborate
 from evidence import Evidence, ROOT, begin_suite, check_deadline, rel
-from faults import faults_bench, reset_bench
+from faults import faults_bench, reset_bench, sequence_bench
 from floating import characterize
 from frontend import adapted_sources
 from inference import DOMAINS, inference_bench
@@ -144,6 +144,7 @@ def behavior(suite):
     suite.experiment("counter-saturation", counter_bench, "counter")
     suite.experiment("fault-cancel-recovery", faults_bench, "native")
     suite.experiment("reset-mid-work-restart", reset_bench, "native")
+    suite.experiment("sequence-legality-and-restarts", sequence_bench, "native")
     suite.experiment("bank-tag-reorder-ieee", scheduler_bench, "scheduler", "icarus")
     for banks, queue in ((1, 1), (4, 16), (8, 1)):
         suite.experiment(f"bank-tag-b{banks}-q{queue}", scheduler_bench, "scheduler",

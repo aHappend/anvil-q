@@ -143,6 +143,63 @@ def reset_bench(evidence):
     return dict(reset_mid_work=1, required_successful_restarts=1, checked_prefix=True)
 
 
+def sequence_bench(evidence):
+    from inference import inference_bench
+    inference_bench(evidence, seed=17, tokens=2)
+    path = evidence.path/"native.sv"
+    text = path.read_text()
+    opening = "    for (position=0;position<TOKENS;position=position+1) begin"
+    prefix = r"""
+    for (sequence_experiment=0;sequence_experiment<3;sequence_experiment=sequence_experiment+1) begin
+      while (!token_ready) @(negedge clk);
+      for (i=0;i<SLOTS;i=i+1) consumed[i]=0;
+      completed=0;accepted=0;compared_logits=0;writes=0;reads=0;
+"""
+    text = replace_once(text, opening, prefix+"\n"+opening)
+    closing = r"""
+    repeat(3) @(negedge clk);
+    if (writes!==WRITES || compared_logits!==TOKENS*8 || completed!==TOKENS)
+      $fatal(1,"SEQUENCE_POSITIVE_CONTROL_MISSING");
+    for(i=0;i<SLOTS;i=i+1)
+      if(consumed[i]!==counts[i]) $fatal(1,"SEQUENCE_MISSING_WRITE");
+    good_tokens=good_tokens+completed;
+    saved_writes=writes;saved_reads=reads;saved_logits=compared_logits;
+    rejecting=1;
+    @(negedge clk); while (!token_ready) @(negedge clk);
+    token_valid=1;new_sequence=0;token_id=4;
+    token_pos=sequence_experiment==0 ? 3 : sequence_experiment==1 ? 2 : 5;
+    token_phase=sequence_experiment!=1;
+    @(posedge clk); if(token_ready!==1) $fatal(1,"SEQUENCE_INVALID_NOT_ACCEPTED");
+    @(negedge clk);token_valid=0;
+    while(rejected_commands<=sequence_experiment) @(negedge clk);
+    if(writes!=saved_writes || reads!=saved_reads || compared_logits!=saved_logits)
+      $fatal(1,"REJECTED_SEQUENCE_COMMAND_MODIFIED_MEMORY_OR_LOGITS");
+    rejecting=0;
+    end
+    if (good_tokens!=6 || rejected_commands!=3) $fatal(1,"SEQUENCE_MISSING_COVERAGE");
+    $display("SUMMARY good_tokens=%0d rejected_commands=%0d noncontiguous_positions=1 decode_to_prefill_rejections=1 out_of_range_positions=1",
+      good_tokens,rejected_commands);
+    $finish;
+  end
+  reg rejecting=0;
+  integer sequence_experiment=0,rejected_commands=0,good_tokens=0;
+  integer saved_reads=0,saved_writes=0,saved_logits=0;
+"""
+    begin = text.index("    repeat(3) @(negedge clk);", text.index(prefix))
+    end = text.index("\n  always @(negedge clk)", begin)
+    text = text[:begin]+closing+text[end:]
+    text = replace_once(text, "      if (done) begin", """      if (done && rejecting) begin
+        if(error!==1 || pending || mem_req_valid || logit_valid)
+          $fatal(1,"SEQUENCE_ERROR_COMPLETION_MISMATCH");
+        rejected_commands=rejected_commands+1;
+      end
+      if (done && !rejecting) begin""")
+    path.write_text(text)
+    return dict(successful_tokens=6, noncontiguous_positions=1,
+                decode_to_prefill_rejections=1, out_of_range_positions=1,
+                successful_restart_after_each_error=True)
+
+
 STIMULUS = r"""
     pending_error=0;
     for (experiment=0;experiment<12;experiment=experiment+1) begin
@@ -283,10 +340,12 @@ def main():
     parser.add_argument("--repair-of")
     parser.add_argument("--legacy-profile", type=int, choices=(1, 2, 3))
     parser.add_argument("--reset-only", action="store_true")
+    parser.add_argument("--sequence-only", action="store_true")
     args = parser.parse_args()
     evidence = Evidence("native-faults-verilator", args.repair_of)
     try:
-        summary = (reset_bench(evidence) if args.reset_only else faults_bench(
+        summary = (sequence_bench(evidence) if args.sequence_only else
+                   reset_bench(evidence) if args.reset_only else faults_bench(
             evidence, legacy=None if args.legacy_profile is None else (args.legacy_profile, 0, 0)))
         summary["observations"] = simulate(evidence, "native.sv", "verilator")
         evidence.finish("passed", **summary)

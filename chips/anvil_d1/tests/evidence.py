@@ -47,6 +47,10 @@ def sources():
 
 class Evidence:
     def __init__(self, stem, repair_of=None, preparation=True):
+        global SUITE_DEADLINE
+        if SUITE_DEADLINE is None:
+            SUITE_DEADLINE = time.monotonic()+2700
+        self.deadline = time.monotonic()+min(2700, remaining())
         suffix = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:12]
         base = ROOT / "evidence" / "preparation" if preparation else ROOT / "evidence"
         self.path = (SUITE_PATH or base) / (stem + "-" + suffix)
@@ -54,6 +58,7 @@ class Evidence:
         self.record = dict(kind="L1 verification" if SUITE_PATH or not preparation else "verifier preparation",
                            start_time=now(), argv=["python3", *sys.argv], cwd=rel(Path.cwd()),
                            python_version=sys.version,
+                           timeout_s=min(2700, remaining()),
                            source_sha256={rel(p): hashlib.sha256(p.read_bytes()).hexdigest()
                                           for p in sources()},
                            children=[], repair_of=repair_of)
@@ -71,7 +76,7 @@ class Evidence:
         version_stderr = self.path / (name + ".version.stderr.txt")
         child = dict(argv=[str(x) for x in argv], cwd=rel(cwd), start_time=now(),
                      timeout_s=min(600 if Path(str(argv[0])).name == "vvp" else 2700,
-                                   remaining()),
+                                   remaining(), max(0, self.deadline-time.monotonic())),
                      timed_out=False, stdout=rel(stdout), stderr=rel(stderr),
                      tool_version_argv=version_argv, tool_version_stdout=rel(version_stdout),
                      tool_version_stderr=rel(version_stderr),
@@ -89,10 +94,11 @@ class Evidence:
         try:
             with version_stdout.open("w") as out, version_stderr.open("w") as err:
                 version = subprocess.run(version_argv, cwd=cwd, stdout=out, stderr=err,
-                                         check=False, timeout=max(0.001, min(30, remaining())))
+                                         check=False, timeout=max(0.001, min(
+                                             30, remaining(), self.deadline-time.monotonic())))
             child["tool_version_exit_code"] = version.returncode
             check_deadline()
-            deadline = min(start + child["timeout_s"], time.monotonic()+remaining())
+            deadline = min(start + child["timeout_s"], time.monotonic()+remaining(), self.deadline)
             with stdout.open("w") as out, stderr.open("w") as err:
                 process = subprocess.Popen(child["argv"], cwd=cwd, stdout=out, stderr=err)
                 while True:
@@ -145,5 +151,10 @@ class Evidence:
         return stdout
 
     def finish(self, status, **summary):
+        if status == "passed" and time.monotonic() > self.deadline:
+            self.record.update(end_time=now(), status="failed",
+                               summary=dict(timed_out=True, error="aggregate execution deadline expired"))
+            self.save()
+            raise TimeoutError(f"aggregate deadline expired: {rel(self.path/'receipt.json')}")
         self.record.update(end_time=now(), status=status, summary=summary)
         self.save()
