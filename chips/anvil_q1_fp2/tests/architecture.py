@@ -452,7 +452,7 @@ module tb;
     #1; reset_check(); @(negedge clk); reset_check();
     if (!$value$plusargs("fixture=%s",fixture_root) || !$value$plusargs("seed=%d",rng))
       $fatal(1,"missing fixture/seed arguments");
-    $readmemh({{fixture_root,"/memory.hex"}},memory);
+    $readmemh({{fixture_root,"/checkpoint-images/memory.hex"}},memory);
     $readmemh({{fixture_root,"/configuration.hex"}},configuration);
     fixture_fd=$fopen({{fixture_root,"/expected.txt"}},"r");
     if (!fixture_fd) $fatal(1,"expected fixture open");
@@ -491,9 +491,23 @@ def simulate_architecture(run, seed, geometry, mx, simulator, compile_and_run, r
     directory.mkdir()
     fixture = Fixture(geometry, seed, mx)
     fixture.output_path = directory
-    with (directory / "memory.hex").open("x") as output:
+    images = directory / "checkpoint-images"
+    images.mkdir()
+    with (images / "memory.hex").open("x") as output:
         output.write("".join(f"{beat:0128x}\n" for beat in fixture.beats))
     expected = fixture.expected_tokens(tokens)
+    quantization_drift = None
+    if mx:
+        original_expected = Fixture(geometry, seed, False).expected_tokens(tokens)
+        differences = [abs(quantized - original)
+                       for quantized_row, original_row in zip(expected, original_expected)
+                       for quantized, original in zip(quantized_row, original_row)]
+        quantization_drift = {
+            "compared_logits": len(differences),
+            "maximum_absolute": max(differences),
+            "mean_absolute": sum(differences) / len(differences),
+            "reference": "independent decoded-MX mathematical model versus original BF16 model",
+        }
     with (directory / "expected.txt").open("x") as output:
         for vector in expected:
             for value in vector:
@@ -512,4 +526,5 @@ def simulate_architecture(run, seed, geometry, mx, simulator, compile_and_run, r
         "kind": "architecture", "seed": seed, "geometry": geometry,
         "format": "mx" if mx else "bf16", "tokens": tokens,
         "logits": tokens * geometry[-2], "simulator": simulator, "result": "passed",
+        "quantization_drift": quantization_drift,
     })

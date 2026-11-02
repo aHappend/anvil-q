@@ -2,11 +2,12 @@
 
 from decimal import Decimal, localcontext
 import math
-
-from reference import approximation_interval, bits32, f32
-from architecture import bf16, quantize_group
 import random
 import re
+from fractions import Fraction
+
+from reference import approximation_interval, bits32, f32, as_fraction, mx_decode, round_dyadic
+from architecture import bf16, quantize_group
 
 
 def measured_cycles(run, stem, domain):
@@ -36,6 +37,8 @@ def projection_benchmark(run, root, compile_and_run, mx, seed=17):
     stem = f"benchmark-gemv-{'mx' if mx else 'bf16'}-{seed}"
     directory = run.path / stem
     directory.mkdir()
+    images = directory / "checkpoint-images"
+    images.mkdir()
     rng = random.Random(seed)
     activations = [bf16(rng.randint(-7, 7) / 16) for _ in range(hidden)]
     weights = [[bf16(rng.randint(-7, 7) / 1024) for _ in range(outputs)]
@@ -44,7 +47,6 @@ def projection_benchmark(run, root, compile_and_run, mx, seed=17):
     for row in weights:
         if mx:
             codes, row_scales, decoded_row = [], [], []
-            from reference import mx_decode
             for first in range(0, outputs, 32):
                 group, scale = quantize_group(row[first:first + 32])
                 codes.extend(group)
@@ -65,15 +67,22 @@ def projection_benchmark(run, root, compile_and_run, mx, seed=17):
             decoded_x.extend(mx_decode(code, scale)[0] for code in codes)
     else:
         decoded_x = activations
-    expected = [bits32(sum(f32(x << 16) * f32(decoded[i][j] << 16)
-                          for i, x in enumerate(decoded_x))) for j in range(outputs)]
+    expected = []
+    for j in range(outputs):
+        total = sum((as_fraction(x, 7) * as_fraction(decoded[i][j], 7)
+                     for i, x in enumerate(decoded_x)), Fraction(0))
+        if total.denominator & (total.denominator - 1):
+            raise AssertionError("generated GEMV reference is not dyadic")
+        expected.append(round_dyadic(
+            total.numerator, -(total.denominator.bit_length() - 1),
+        )[0])
     for name, words, digits in (
         ("activations.hex", activations, 4),
         ("weights.hex", [word for row in decoded for word in row], 4),
         ("beats.hex", beats, 128), ("scales.hex", scales or [0], 128),
         ("expected.hex", expected, 8),
     ):
-        with (directory / name).open("x") as output:
+        with (images / name).open("x") as output:
             output.write("".join(f"{word:0{digits}x}\n" for word in words))
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
@@ -276,11 +285,11 @@ module tb;
     end
   endtask
   initial begin
-    $readmemh("{run.relative / stem / 'activations.hex'}",x);
-    $readmemh("{run.relative / stem / 'weights.hex'}",w);
-    $readmemh("{run.relative / stem / 'beats.hex'}",packed_weights);
-    $readmemh("{run.relative / stem / 'scales.hex'}",scale_plane);
-    $readmemh("{run.relative / stem / 'expected.hex'}",expected);
+    $readmemh("{run.relative / stem / 'checkpoint-images' / 'activations.hex'}",x);
+    $readmemh("{run.relative / stem / 'checkpoint-images' / 'weights.hex'}",w);
+    $readmemh("{run.relative / stem / 'checkpoint-images' / 'beats.hex'}",packed_weights);
+    $readmemh("{run.relative / stem / 'checkpoint-images' / 'scales.hex'}",scale_plane);
+    $readmemh("{run.relative / stem / 'checkpoint-images' / 'expected.hex'}",expected);
     owned[0]=0; owned[1]=0; delay_count[0]=0; delay_count[1]=0;
     repeat(2) @(posedge clk); @(negedge clk); rst_n=1; #1;
     for (run_index=0;run_index<2;run_index=run_index+1) begin

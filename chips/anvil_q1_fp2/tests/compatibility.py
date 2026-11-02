@@ -13,6 +13,8 @@ def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0)
     stem = f"compatibility-h{hidden}-enable{enable}-{seed}"
     directory = run.path / stem
     directory.mkdir()
+    images = directory / "checkpoint-images"
+    images.mkdir()
     rng = random.Random(seed)
     words = []
     for precision in range(3):
@@ -20,7 +22,7 @@ def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0)
             value = rng.choice((-7, -5, -3, -1, 1, 3, 5, 7)) / 64
             words.append(bf16(value) if precision == 1 else
                          int.from_bytes(struct.pack(">e", value), "big"))
-    with (directory / "values.hex").open("x") as output:
+    with (images / "values.hex").open("x") as output:
         output.write("".join(f"{word:04x}\n" for word in words))
     coefficients = []
     for native in (False, True):
@@ -240,7 +242,7 @@ module tb;
   initial begin
     if (!$value$plusargs("fixture=%s",fixture_root) ||
         !$value$plusargs("seed=%d",seed_value)) $fatal(1,"compatibility missing arguments");
-    $readmemh({{fixture_root,"/values.hex"}},values);
+    $readmemh({{fixture_root,"/checkpoint-images/values.hex"}},values);
     $readmemh({{fixture_root,"/rope.hex"}},coefficients);
     for (model=0;model<2;model=model+1) begin
       rst_n=0; valid=0; rspv=0; reqr=0; pending=0; held=0;
