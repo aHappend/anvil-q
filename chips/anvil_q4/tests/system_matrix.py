@@ -50,6 +50,7 @@ def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
     experiment.run([
         "verilator", "--cc", "--exe", "--build", "--verilate-jobs", "1",
         "--build-jobs", "2", "-Wno-fatal",
+        "-fno-dfg", "-fno-gate",
         "--top-module", "anvil_q4_top", "--Mdir", experiment.rel(objects),
         f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue_depth}",
         f"-GTILE_K={tile_k}", f"-GTILE_ROWS={tile_rows}",
