@@ -329,6 +329,26 @@ namespaces, and all legacy traffic uses additive bank routing. Helper rounding
 functions used by compatibility controllers are evaluated outside sequential
 processes and only their outputs are captured.
 
+The legacy codec and cache keep their complete 8192-bit packed workspace
+interfaces and register storage. Reads use constant 32-bit leaves and explicit
+eight-level binary word-selection trees. Packed INT8/INT4 extraction shifts
+only the selected 32-bit word by its byte/nibble offset. Result and cache-buffer
+writes have constant word destinations and localized word/lane enables;
+unselected words and neighboring packed lanes retain their bits. Padding
+validation checks each constant input word, shifting only the one boundary word,
+rather than shifting an entire 8192-bit input. Reset still clears every workspace
+bit; flush/invalidate retain workspace contents as before while suppressing
+updates. No state-machine cycle, public port, quantization equation, block limit,
+metadata ordering or compatibility memory meaning changes.
+
+This source optimization targets the large dynamic packed-vector selection/write
+networks identified during native mapping. It is not proof of the sole cause
+of the retained 3600-second Quartus map timeout or a claim of improved PPA.
+The separate Q4 attention `scores[0:131071]` remains a 32-bit synchronous
+read/write array with its `M20K`/`nomem2reg` hints and a dedicated non-asynchronously
+reset storage process. Source inspection does not establish actual M20K inference;
+source-current native mapping and resource reports are still required.
+
 ## Capacity and performance accounting
 
 For an Op-by-Kp projection the useful work is Op*Kp multiplications and the same
@@ -391,3 +411,15 @@ payload/metadata writes and decoded reads, including mixed shared words,
 subnormal boundaries, nonfinite/signed-zero heads, malformed traffic, all bank
 counts, stalls/errors and speculative rollback. All eight L1 checks and native
 timing/board gates remain mandatory; no pass is claimed here.
+
+For the localized legacy workspace repair, retain the original native failure
+at `.vulcan/engineering/run-0001/quartus-sta.json` as runtime-owned evidence,
+not a portable product input. It reports map timeout and unavailable successful
+synthesis, not negative setup slack. Existing functional regressions and fresh
+shared-runtime map/fit/STA/HIL must cover the changed source. The Verifier-owned
+`tests/synthesis_probe.py` frontend currently requires seven old indexed codec
+writes and two old indexed cache writes as textual anchors. Those obsolete
+frontend adapters need a source-aware mechanical update by their owner before
+source-current regressions; numerical, cycle, storage and hierarchy assertions
+remain mandatory. No verification sources were changed by Designer.
+Native interface false paths remain an unresolved timing-coverage issue.

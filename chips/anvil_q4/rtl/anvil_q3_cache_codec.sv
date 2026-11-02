@@ -30,14 +30,28 @@ module anvil_q3_cache_codec (
   reg signed [33:0] rounded_minimum, rounded_maximum;
   reg signed [33:0] decoded_minimum, decoded_maximum;
   reg any_nonzero;
-  wire signed [31:0] sample=source_values[index*32+:32];
+  wire [31:0] value_tree [1:511];
+  wire [31:0] payload_tree [1:511];
+  wire [31:0] payload_word_index=CACHE_MODE==2 ? index>>3 :
+    CACHE_MODE==1 ? index>>2 : index;
+  wire signed [31:0] sample=index<CAP ? value_tree[1] : 32'bx;
   wire [32:0] magnitude=sample[31] ? -{sample[31],sample} : {1'b0,sample};
   wire [63:0] threshold={32'd0,32'(LIMIT)}<<exponent;
   wire signed [33:0] encoded_round=round32(sample,exponent);
   wire signed [33:0] encoded_affine=encoded_round+{{30{zero_code[3]}},zero_code};
-  wire [8191:0] shifted_payload=source_payload >> (index*BITS);
-  wire [31:0] payload_lane=CACHE_MODE==2 ? {28'd0,shifted_payload[3:0]} :
-    CACHE_MODE==1 ? {24'd0,shifted_payload[7:0]} : shifted_payload[31:0];
+  wire [31:0] payload_word=payload_word_index<CAP ? payload_tree[1] : 32'bx;
+  wire [31:0] shifted_word=payload_word >>
+    (CACHE_MODE==2 ? {index[2:0],2'b00} :
+     CACHE_MODE==1 ? {index[1:0],3'b000} : 5'd0);
+  wire [31:0] payload_lane=CACHE_MODE==2 ? {28'd0,shifted_word[3:0]} :
+    CACHE_MODE==1 ? {24'd0,shifted_word[7:0]} : shifted_word;
+  wire [31:0] payload_bits=effective_cap*BITS;
+  wire [CAP-1:0] padding_nonzero;
+  wire [3:0] encoded_nibble=encoded_affine>7 ? 4'h7 :
+    encoded_affine<(INT4_ASYM ? -34'sd8 : -34'sd7) ?
+    (INT4_ASYM ? 4'h8 : 4'h9) : encoded_affine[3:0];
+  wire [7:0] encoded_byte=encoded_round>127 ? 8'h7f :
+    encoded_round< -127 ? 8'h81 : encoded_round[7:0];
   wire signed [8:0] signed_code=CACHE_MODE==2 ?
     $signed({{5{payload_lane[3]}},payload_lane[3:0]}) :
     $signed({payload_lane[7],payload_lane[7:0]});
@@ -59,6 +73,10 @@ module anvil_q3_cache_codec (
      (!(CACHE_MODE==2 && INT4_ASYM) && metadata_in[11:8]!=0));
   wire invalid_code=(CACHE_MODE==1 && signed_code== -9'sd128) ||
     (CACHE_MODE==2 && !INT4_ASYM && signed_code== -9'sd8);
+  wire reject_start=effective_cap==0 || effective_cap>CAP ||
+    count==0 || count>effective_cap || (decode && invalid_header) ||
+    (decode && CACHE_MODE==0 && metadata_in!=0) ||
+    (decode && (|padding_nonzero));
 
   function automatic signed [33:0] round32(
     input reg signed [31:0] value,
@@ -92,11 +110,56 @@ module anvil_q3_cache_codec (
   wire [33:0] next_rounded_maximum=round32(maximum_value,exponent);
   wire [31:0] saturated_reconstruction=saturate66(reconstruction);
 
+  // Constant word slices keep selection and write steering local to 32 bits.
+  generate
+    for (genvar w=0;w<CAP;w=w+1) begin: workspace_word
+      assign value_tree[CAP+w]=source_values[w*32+:32];
+      assign payload_tree[CAP+w]=source_payload[w*32+:32];
+      assign padding_nonzero[w]=payload_bits<=w*32 ?
+        |payload_in[w*32+:32] : payload_bits<w*32+32 ?
+        |(payload_in[w*32+:32]>>payload_bits[4:0]) : 1'b0;
+      wire [31:0] next_payload;
+      for (genvar n=0;n<8;n=n+1) begin: nibble
+        assign next_payload[n*4+:4]=CACHE_MODE==2 ?
+          (index[2:0]==n ? encoded_nibble : result_payload[w*32+n*4+:4]) :
+          (index[1:0]==(n>>1) ? encoded_byte[(n&1)*4+:4] :
+           result_payload[w*32+n*4+:4]);
+      end
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          result_values[w*32+:32]<=0;
+          result_payload[w*32+:32]<=0;
+        end else if (!flush) begin
+          if (state==IDLE && start) begin
+            result_values[w*32+:32]<=!reject_start && CACHE_MODE==0 && decode ?
+              payload_in[w*32+:32] : 32'd0;
+            result_payload[w*32+:32]<=!reject_start && CACHE_MODE==0 && !decode ?
+              values_in[w*32+:32] : 32'd0;
+          end else begin
+            if (state==DECODE && index<length && index==w)
+              result_values[w*32+:32]<=saturated_reconstruction;
+            if (state==ENCODE &&
+                (CACHE_MODE==2 ? index>>3 : index>>2)==w)
+              result_payload[w*32+:32]<=next_payload;
+          end
+        end
+      end
+    end
+    for (genvar level=0;level<8;level=level+1) begin: select_level
+      for (genvar node=(1<<level);node<(1<<(level+1));node=node+1) begin: select_node
+        assign value_tree[node]=index[7-level] ?
+          value_tree[node*2+1] : value_tree[node*2];
+        assign payload_tree[node]=payload_word_index[7-level] ?
+          payload_tree[node*2+1] : payload_tree[node*2];
+      end
+    end
+  endgenerate
+
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       state<=IDLE; failed<=0; decode_op<=0; length<=0; index<=0;
       exponent<=0; zero_code<=0; source_values<=0; source_payload<=0;
-      result_values<=0; result_payload<=0; result_metadata<=0;
+      result_metadata<=0;
       maximum<=0; minimum_value<=0; maximum_value<=0;
       rounded_minimum<=0; rounded_maximum<=0;
       decoded_minimum<=0; decoded_maximum<=0; any_nonzero<=0;
@@ -107,20 +170,15 @@ module anvil_q3_cache_codec (
         failed<=0; decode_op<=decode; length<=count; index<=0;
         exponent<=0; zero_code<=0; maximum<=0;
         source_values<=values_in; source_payload<=payload_in;
-        result_values<=0; result_payload<=0; result_metadata<=0;
+        result_metadata<=0;
         minimum_value<=32'sh7fffffff; maximum_value<=32'sh80000000;
         decoded_minimum<=34'sd2147483647;
         decoded_maximum<= -34'sd2147483648;
         any_nonzero<=0;
-        if (effective_cap==0 || effective_cap>CAP ||
-            count==0 || count>effective_cap || (decode && invalid_header) ||
-            (decode && CACHE_MODE==0 && metadata_in!=0) ||
-            (decode && (payload_in>>(effective_cap*BITS))!=0)) begin
+        if (reject_start) begin
           failed<=1;
           state<=COMPLETE;
         end else if (CACHE_MODE==0) begin
-          if (decode) result_values<=payload_in;
-          else result_payload<=values_in;
           state<=COMPLETE;
         end else if (decode) begin
           exponent<=metadata_in[5:0];
@@ -167,23 +225,12 @@ module anvil_q3_cache_codec (
         end
       end
       ENCODE: begin
-        if (CACHE_MODE==2) begin
-          if (encoded_affine>7) result_payload[index*4+:4]<=4'h7;
-          else if (encoded_affine<(INT4_ASYM ? -34'sd8 : -34'sd7))
-            result_payload[index*4+:4]<=INT4_ASYM ? 4'h8 : 4'h9;
-          else result_payload[index*4+:4]<=encoded_affine[3:0];
-        end else begin
-          if (encoded_round>127) result_payload[index*8+:8]<=8'h7f;
-          else if (encoded_round< -127) result_payload[index*8+:8]<=8'h81;
-          else result_payload[index*8+:8]<=encoded_round[7:0];
-        end
         if (index+1==length) state<=COMPLETE;
         else index<=index+1'b1;
       end
       DECODE: begin
         if (index<length) begin
           if (invalid_code) failed<=1;
-          result_values[index*32+:32]<=saturated_reconstruction;
           if (centered_code<decoded_minimum) decoded_minimum<=centered_code;
           if (centered_code>decoded_maximum) decoded_maximum<=centered_code;
           if (centered_code!=0) any_nonzero<=1;

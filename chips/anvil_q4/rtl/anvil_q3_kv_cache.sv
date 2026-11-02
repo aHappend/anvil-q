@@ -65,7 +65,45 @@ module anvil_q3_kv_cache (
   wire codec_ready, codec_done, codec_error;
   wire [STORAGE*32-1:0] decoded, encoded;
   wire [31:0] encoded_metadata;
+  wire [31:0] payload_tree [1:511];
+  wire [31:0] decoded_tree [1:511];
+  wire [31:0] selected_payload=word_index<STORAGE ? payload_tree[1] : 32'bx;
+  wire [31:0] selected_decoded=selected_lane<STORAGE ? decoded_tree[1] : 32'bx;
   integer i;
+
+  generate
+    for (genvar w=0;w<STORAGE;w=w+1) begin: workspace_word
+      assign payload_tree[STORAGE+w]=payload[w*32+:32];
+      assign decoded_tree[STORAGE+w]=decoded[w*32+:32];
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          values[w*32+:32]<=0;
+          payload[w*32+:32]<=0;
+        end else if (!invalidate && !flush &&
+            !(!failed && (fault || (codec_done && codec_error)))) begin
+          if ((state==IDLE && cmd_valid) || state==ADVANCE) begin
+            values[w*32+:32]<=0;
+            payload[w*32+:32]<=0;
+          end else begin
+            if (state==SCRATCH_RESPONSE && complete && lane==w)
+              values[w*32+:32]<=rdata;
+            if (state==ENCODE_WAIT && codec_done)
+              payload[w*32+:32]<=encoded[w*32+:32];
+            else if (state==PAYLOAD_RESPONSE && complete && word_index==w)
+              payload[w*32+:32]<=rdata;
+          end
+        end
+      end
+    end
+    for (genvar level=0;level<8;level=level+1) begin: select_level
+      for (genvar node=(1<<level);node<(1<<(level+1));node=node+1) begin: select_node
+        assign payload_tree[node]=word_index[7-level] ?
+          payload_tree[node*2+1] : payload_tree[node*2];
+        assign decoded_tree[node]=selected_lane[7-level] ?
+          decoded_tree[node*2+1] : decoded_tree[node*2];
+      end
+    end
+  endgenerate
 
   assign cmd_ready=rst_n && !flush && state==IDLE;
   assign done=rst_n && !flush && state==COMPLETE;
@@ -84,7 +122,7 @@ module anvil_q3_kv_cache (
       CACHE_MODE==0 ? head_base+block_start :
       payload_access ? (block_base+block_index)*32'(WORDS)+word_index : block_base+block_index),
     .wdata(state==METADATA_WRITE ? metadata :
-      state==PAYLOAD_WRITE ? payload[word_index*32+:32] : 32'd0),
+      state==PAYLOAD_WRITE ? selected_payload : 32'd0),
     .rdata(rdata),.mem_req_valid(mem_req_valid),.mem_req_ready(mem_req_ready),
     .mem_req_write(mem_req_write),.mem_req_kind(mem_req_kind),
     .mem_req_layer(mem_req_layer),.mem_req_proj(mem_req_proj),
@@ -106,7 +144,7 @@ module anvil_q3_kv_cache (
       state<=IDLE; failed<=0; value_cache<=0; reading<=0;
       layer<=0; position<=0; head<=0; head_base<=0; block_base<=0; block_start<=0;
       block_index<=0; lane<=0; word_index<=0; length<=0; selected_lane<=0;
-      decoding<=0; values<=0; payload<=0; metadata<=0; result<=0;
+      decoding<=0; metadata<=0; result<=0;
       for (i=0;i<SL;i=i+1) begin committed[i]<=0; prefill_count[i]<=0; end
     end else if (invalidate) begin
       state<=IDLE; failed<=0; decoding<=0; result<=0;
@@ -125,7 +163,7 @@ module anvil_q3_kv_cache (
         IDLE: if (cmd_valid) begin
           failed<=0; result<=0; layer<=cmd_layer; position<=cmd_pos;
           head<=0; head_base<=0; block_base<=0; block_start<=0; block_index<=0;
-          lane<=0; word_index<=0; values<=0; payload<=0; metadata<=0; selected_lane<=0;
+          lane<=0; word_index<=0; metadata<=0; selected_lane<=0;
           length<=HEAD_DIM<CAP ? HEAD_DIM : CAP;
           value_cache<=cmd_op==2; reading<=cmd_op!=0;
           if (cmd_layer>=NUM_LAYERS || cmd_pos>=MAX_SEQ_LEN || cmd_op>2) begin
@@ -158,13 +196,12 @@ module anvil_q3_kv_cache (
         end
         SCRATCH_READ: if (issue) state<=SCRATCH_RESPONSE;
         SCRATCH_RESPONSE: if (complete) begin
-          values[lane*32+:32]<=rdata;
           if (lane+1<length) begin lane<=lane+1'b1; state<=SCRATCH_READ; end
           else state<=ENCODE;
         end
         ENCODE: if (codec_ready) state<=ENCODE_WAIT;
         ENCODE_WAIT: if (codec_done) begin
-          payload<=encoded; metadata<=encoded_metadata; word_index<=0;
+          metadata<=encoded_metadata; word_index<=0;
           state<=PAYLOAD_WRITE;
         end
         PAYLOAD_WRITE: if (issue) state<=PAYLOAD_ACK;
@@ -176,7 +213,7 @@ module anvil_q3_kv_cache (
         METADATA_WRITE: if (issue) state<=METADATA_ACK;
         METADATA_ACK: if (complete) state<=ADVANCE;
         ADVANCE: begin
-          lane<=0; word_index<=0; values<=0; payload<=0; metadata<=0;
+          lane<=0; word_index<=0; metadata<=0;
           if (block_index+1<BLOCKS) begin
             block_index<=block_index+1'b1; block_start<=block_start+CAP;
             length<=HEAD_DIM-(block_start+CAP)<CAP ? HEAD_DIM-(block_start+CAP) : CAP;
@@ -195,12 +232,11 @@ module anvil_q3_kv_cache (
         METADATA_RESPONSE: if (complete) begin metadata<=rdata; state<=PAYLOAD_READ; end
         PAYLOAD_READ: if (issue) state<=PAYLOAD_RESPONSE;
         PAYLOAD_RESPONSE: if (complete) begin
-          payload[word_index*32+:32]<=rdata;
           if (word_index+1<WORDS) begin word_index<=word_index+1'b1; state<=PAYLOAD_READ; end
           else state<=DECODE;
         end
         DECODE: if (codec_ready) state<=DECODE_WAIT;
-        DECODE_WAIT: if (codec_done) begin result<=decoded[selected_lane*32+:32]; state<=COMPLETE; end
+        DECODE_WAIT: if (codec_done) begin result<=selected_decoded; state<=COMPLETE; end
         COMPLETE: if (failed) state<=FAULTED; else state<=IDLE;
         FAULTED: state<=FAULTED;
         default: begin failed<=1; state<=COMPLETE; end
