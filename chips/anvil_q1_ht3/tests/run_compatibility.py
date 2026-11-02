@@ -212,8 +212,8 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False):
                 raise AssertionError("duplicate or missing cycle measurement")
             cycles.append(dict(token=int(parts[1]), cycles=int(parts[2]),
                                ddr_read_beats=int(parts[3]), ddr_write_beats=int(parts[4]),
-                               simulated_tpm=60*200000000/int(parts[2]),
-                               timing_basis="simulated 200 MHz core / 100 MHz DDR; not STA"))
+                               simulated_tpm=60*100000000/int(parts[2]),
+                               timing_basis="simulated 100 MHz core / 50 MHz DDR; not STA"))
         else:
             raise AssertionError("unrecognized inference observation")
     if len(cycles) != len(expected):

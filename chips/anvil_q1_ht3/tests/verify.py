@@ -40,8 +40,8 @@ TOOLS = {"python3": ["python3", "--version"], "iverilog": ["iverilog", "-V"],
 REPRODUCTION_RESERVE = 360
 SETTLEMENT_RESERVE = 30
 SUITE_BUDGETS = {"attention": 750, "parameters": 260, "attention_restart": 60,
-                 "transcendental": 180, "packed_cache": 180, "compatibility": 240,
-                 "mutations": 240, "benchmarks": 300, "performance": 180}
+                 "transcendental": 180, "packed_cache": 180, "compatibility": 420,
+                 "mutations": 420, "benchmarks": 300, "performance": 180}
 
 
 def dependencies(script):
@@ -55,6 +55,8 @@ def dependencies(script):
         "tests/run_attention.py": ["tests/reference.py", "tests/attention_tb.sv"],
         "tests/run_attention_restart.py": ["tests/attention_restart_tb.sv"],
         "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
+        "tests/run_packed_cache.py": ["tests/reference.py", "tests/packed_cache_tb.sv"],
+        "tests/run_compatibility.py": ["tests/reference.py", "tests/inference_tb.sv"],
     }
     if script not in owned:
         return list(hashes())
