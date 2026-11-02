@@ -140,3 +140,54 @@ def ordered_bits(bits):
 
 def ulp_distance(a, b):
     return abs(ordered_bits(a) - ordered_bits(b))
+
+
+def rms(values, gamma):
+    total = 0
+    for value in values:
+        total = add(total, multiply(value, value))
+    mean = multiply(total, rounded(Fraction(1, len(values))))
+    inverse = transcendental(add(mean, 0x358637BD), "rsqrt")
+    return [multiply(multiply(value, inverse), weight)
+            for value, weight in zip(values, gamma, strict=True)]
+
+
+def swiglu(gate, up):
+    magnitude = gate & 0x7FFFFFFF
+    exponential = 0 if magnitude > 0x42A00000 else transcendental(magnitude | 0x80000000, "exp")
+    denominator = add(0x3F800000, exponential)
+    inverse = rounded(1 / exact(denominator))
+    sigmoid = multiply(exponential, inverse) if gate >> 31 else inverse
+    return multiply(multiply(gate, sigmoid), up)
+
+
+def rope(x, y, cosine, sine):
+    first = add(multiply(x, cosine), multiply(y, sine) ^ 0x80000000)
+    second = add(multiply(y, cosine), multiply(x, sine))
+    return first, second
+
+
+def rope_coefficients(position, pair_index, head_dim):
+    """Derive trigonometric coefficients without using the shipped generator."""
+    with localcontext() as context:
+        context.prec = 100
+        pi = Decimal(
+            "3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679"
+        )
+        angle = Decimal(position) * (
+            -Decimal(2 * pair_index) * Decimal(1000000).ln() / Decimal(head_dim)
+        ).exp()
+        reduced = angle % (2 * pi)
+        if reduced > pi:
+            reduced -= 2 * pi
+        square = reduced * reduced
+        sine_term, cosine_term = reduced, Decimal(1)
+        sine, cosine = sine_term, cosine_term
+        for n in range(1, 200):
+            sine_term *= -square / Decimal((2 * n) * (2 * n + 1))
+            cosine_term *= -square / Decimal((2 * n - 1) * (2 * n))
+            sine += sine_term
+            cosine += cosine_term
+            if abs(sine_term) < Decimal("1e-95") and abs(cosine_term) < Decimal("1e-95"):
+                return rounded(Fraction(cosine)), rounded(Fraction(sine))
+        raise ArithmeticError("trigonometric reference did not converge")

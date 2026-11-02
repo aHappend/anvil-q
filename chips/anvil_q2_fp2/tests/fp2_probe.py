@@ -39,7 +39,7 @@ module tb;
   anvil_q2_fp2_exp9 exp_dut(clk,rst_n,flush,enable,in_valid,in_error,a,ve,de,ee);
   anvil_q2_fp2_reciprocal2 recip_dut(clk,rst_n,flush,enable,in_valid,in_error,a,vc,dc,ec);
   integer fd, n, id, cycle=0, count=0, k;
-  reg [1023:0] input_path;
+  string input_path;
   always @(posedge clk) begin
     if (!rst_n && {va,vm,vr,ve,vc,rr,da,dm,dr,de,dc,ea,em,er,ee,ec} !== 0)
       $fatal(1,"RESET_OUTPUT_X_OR_NONZERO posedge");
@@ -112,7 +112,11 @@ endmodule
 
 
 def hashes():
-    paths = sorted(ROOT.glob("rtl/*.sv")) + sorted(ROOT.glob("tests/*.py"))
+    paths = []
+    for pattern in ("rtl/*.sv", "tests/*.py", "design/*.md", "fpga/*",
+                    "anvil_q2_fp_reference/rtl/*.sv"):
+        paths.extend(path for path in ROOT.glob(pattern) if path.is_file())
+    paths.sort()
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
@@ -127,6 +131,7 @@ class Probe:
             "cwd": ".",
             "start_unix": time.time(),
             "source_sha256": hashes(),
+            "python_version": sys.version,
             "commands": [],
             "repair_of": repair_of,
         }
@@ -185,6 +190,11 @@ class Probe:
             exit_status=int(self.summary["status"] != "passed"),
             tool_versions=self.versions,
             summary=str(path.relative_to(ROOT)),
+            artifact_sha256={
+                str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in self.directory.iterdir()
+                if p.is_file() and p.suffix not in (".json", ".txt")
+            },
         )
         receipt = self.directory / "receipt.json"
         receipt.write_text(json.dumps(self.receipt, indent=2) + "\n")
@@ -221,7 +231,7 @@ def run_scalar(probe, simulator, compact=False):
     rtl = [ROOT / "rtl" / name for name in (
         "anvil_q2_fp2_arithmetic.sv", "anvil_q2_fp2_nonlinear.sv", "anvil_q2_fp2_coefficients.sv"
     )]
-    output = simulate(probe, source, rtl, simulator, [f"+INPUT={inputs}"])
+    output = simulate(probe, source, rtl, simulator, [f"+INPUT={inputs.relative_to(ROOT)}"])
     seen = set()
     summary = None
     with output.open() as stream:
