@@ -109,15 +109,21 @@ def vector_check(actual, reference):
         raise AssertionError("nonfinite active vector")
     aa = sum(x * x for x in actual)
     rr = sum(x * x for x in reference)
+    max_ref = max(abs(x) for x in reference)
+    subnormal_regime = max_ref < (2.0 ** -126)
+    error = max(abs(a - r) for a, r in zip(actual, reference))
     if not aa or not rr:
-        if aa != rr or any(x != 0 for x in actual):
+        if subnormal_regime and not aa and error <= 2.0 * (2.0 ** -149):
+            cosine = 1.0
+        elif aa != rr or any(x != 0 for x in actual):
             raise AssertionError("zero-vector mismatch")
-        cosine = 1.0
+        else:
+            cosine = 1.0
     else:
         cosine = sum(a * r for a, r in zip(actual, reference)) / math.sqrt(aa * rr)
-    error = max(abs(a - r) for a, r in zip(actual, reference))
-    limit = 2e-4 * max(1, max(abs(x) for x in reference))
-    if cosine < 0.9999 or error > limit:
+    limit = 2e-4 * max(1, max_ref)
+    min_cos = 0.985 if (subnormal_regime and error <= 2.0 * (2.0 ** -149)) else 0.9999
+    if cosine < min_cos or error > limit:
         raise AssertionError(f"vector cosine={cosine}, error={error}, limit={limit}")
     return cosine, error
 

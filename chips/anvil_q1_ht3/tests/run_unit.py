@@ -6,53 +6,11 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import subprocess
 import sys
-import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reference import primitive_vectors, quantizer_vectors
-
-
-ROOT = Path(__file__).resolve().parent.parent
-
-
-def relative(path):
-    return str(Path(path).relative_to(ROOT))
-
-
-def hashes():
-    return {relative(p): hashlib.sha256(p.read_bytes()).hexdigest()
-            for pattern in ("rtl/*.sv", "design/*.md", "tests/*",
-                            "anvil_q1_ht2_reference/rtl/*.sv")
-            for p in sorted(ROOT.glob(pattern)) if p.is_file()}
-
-
-def execute(argv, output, stem, version_argv):
-    stdout = output / f"{stem}.stdout.txt"
-    stderr = output / f"{stem}.stderr.txt"
-    record = {
-        "argv": argv, "cwd": ".", "start": datetime.now(timezone.utc).isoformat(),
-        "source_sha256": hashes(), "stdout": relative(stdout),
-        "stderr": relative(stderr), "timeout": None,
-    }
-    version = subprocess.run(version_argv, cwd=ROOT, capture_output=True, text=True)
-    record["tool_version_argv"] = version_argv
-    record["tool_version_exit"] = version.returncode
-    record["tool_version"] = version.stdout + version.stderr
-    start = time.monotonic()
-    with stdout.open("w") as out, stderr.open("w") as err:
-        result = subprocess.run(argv, cwd=ROOT, stdout=out, stderr=err)
-    record.update(exit=result.returncode, timed_out=False,
-                  end=datetime.now(timezone.utc).isoformat(),
-                  duration_s=time.monotonic() - start)
-    with (output / f"{stem}.receipt.json").open("x") as out:
-        json.dump(record, out, indent=2)
-        out.write("\n")
-    if result.returncode:
-        raise RuntimeError(f"{stem} exit={result.returncode}; {relative(stdout)}; "
-                           f"{relative(stderr)}")
-    return stdout.read_text()
+from execution import ROOT, execute, hashes, relative, remaining
 
 
 def run(suite, simulator, seed, output, limit=None):
@@ -126,7 +84,7 @@ def main():
     output.mkdir(parents=True)
     receipt = {"kind": "independent-unit-preparation",
                "argv": ["python3", "tests/run_unit.py", *sys.argv[1:]], "cwd": ".",
-               "start": datetime.now(timezone.utc).isoformat(), "timeout": None,
+               "start": datetime.now(timezone.utc).isoformat(), "timeout": remaining(),
                "source_sha256": hashes(), "tool_version": sys.version,
                "stdout": relative(output / "driver.stdout.txt"),
                "stderr": relative(output / "driver.stderr.txt")}
@@ -144,6 +102,8 @@ def main():
         receipt["exit"] = 1
         print(f"{type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
     receipt["end"] = datetime.now(timezone.utc).isoformat()
+    receipt["timed_out"] = any(json.loads(p.read_text()).get("timed_out", False)
+                               for p in output.glob("*.receipt.json"))
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
         out.write("\n")

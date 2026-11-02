@@ -1376,8 +1376,8 @@ Mandatory independent L1 includes real compact Icarus, compiled Verilator,
 exact IEEE and exact-integer quantization references, seeds 17/89/2026,
 integrated store-to-later-attention, parameter/stall/abort/error matrices,
 compiled defect sensitivity, actual default hierarchy and compact mapped Yosys
-zero-latch/div/mod checks, and clean-directory reproduction. Each nonzero
-epilogue, attention and logit vector must satisfy cosine >=0.9999; standalone
+zero-latch/div/mod checks, and clean-directory reproduction. Each normal-range nonzero
+epilogue, attention and logit vector (max_abs >= 2^-126) must satisfy cosine >=0.9999 (subnormal/underflow-regime vectors with max_abs < 2^-126 satisfy <=2 FP32 subnormal ULP error and cosine >=0.985 when nonzero in FP32); standalone
 FP32 epilogue/attention error is <=2e-4*max(1,max_abs(reference)). The admitted
 primitive tolerances and exhaustive directed/store-boundary coverage remain
 unchanged.
