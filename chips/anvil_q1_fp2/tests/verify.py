@@ -25,8 +25,11 @@ from structure import synthesize  # noqa: E402
 from protocols import simulate_csr, simulate_ddr  # noqa: E402
 from architecture import GEOMETRIES, simulate_architecture  # noqa: E402
 from sensitivity import sensitivity  # noqa: E402
-from benchmarks import rms_benchmark, stream_operator_benchmark, projection_benchmark  # noqa: E402
+from benchmarks import (  # noqa: E402
+    rms_benchmark, stream_operator_benchmark, projection_benchmark, attention_benchmark,
+)
 from errors import simulate_errors  # noqa: E402
+from compatibility import simulate_compatibility  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -614,7 +617,8 @@ def main():
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
                                  "synthesis", "csr", "ddr", "architecture", "sensitivity",
                                  "portable-inner", "rms-benchmark", "rope-benchmark",
-                                 "swiglu-benchmark", "gemv-benchmark", "top-errors"])
+                                 "swiglu-benchmark", "gemv-benchmark", "attention-benchmark",
+                                 "compatibility", "top-errors"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
@@ -637,6 +641,14 @@ def main():
             for mx in (False, True):
                 projection_benchmark(run, ROOT, compile_and_run, mx,
                                      int(args.seeds.split(",")[0]))
+        elif selected == "attention-benchmark":
+            attention_benchmark(run, ROOT, compile_and_run, int(args.seeds.split(",")[0]))
+        elif selected == "compatibility":
+            geometry = GEOMETRIES[("minimum", "nonpower", "multihead").index(
+                args.geometry or "minimum")]
+            for enable in (0, 1):
+                simulate_compatibility(run, ROOT, compile_and_run, geometry,
+                                       int(args.seeds.split(",")[0]), enable)
         elif selected in ("rope-benchmark", "swiglu-benchmark"):
             stream_operator_benchmark(
                 run, ROOT, compile_and_run,

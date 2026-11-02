@@ -6,6 +6,28 @@ import math
 from reference import approximation_interval, bits32, f32
 from architecture import bf16, quantize_group
 import random
+import re
+
+
+def measured_cycles(run, stem, domain):
+    log = run.path / f"{stem}-simulate.stdout.txt"
+    rows = []
+    for line in log.read_text().splitlines():
+        if line.startswith("MEASUREMENT "):
+            fields = {key: int(value) for key, value in
+                      re.findall(r"([a-z_]+)=(\d+)", line)}
+            if not {"run", "parent_cycles", "fp2_cycles"} <= fields.keys():
+                raise AssertionError(f"{domain}: incomplete cycle measurement")
+            rows.append(fields)
+    if len(rows) != 2 or [row["run"] for row in rows] != [0, 1]:
+        raise AssertionError(f"{domain}: missing distinct cold and warm measurements")
+    if any(row["fp2_cycles"] >= row["parent_cycles"] for row in rows):
+        raise AssertionError(f"{domain}: non-improving measured cycles")
+    run.receipt.setdefault("benchmarks", []).append({
+        "domain": domain, "measurements": rows,
+        "raw_stdout": str(run.relative / log.name),
+    })
+    return rows
 
 
 def projection_benchmark(run, root, compile_and_run, mx, seed=17):
@@ -284,6 +306,7 @@ endmodule
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
     compile_and_run(run, directory, bench, sources, "verilator", stem)
+    measured_cycles(run, stem, "tensor-mx" if mx else "tensor-bf16")
     run.receipt["comparisons"].append({
         "kind": "gemv-benchmark", "format": "mx" if mx else "bf16",
         "seed": seed, "inputs": hidden, "outputs": outputs,
@@ -295,7 +318,224 @@ endmodule
     })
 
 
-def rms_benchmark(run, root, compile_and_run, hidden=896):
+def attention_benchmark(run, root, compile_and_run, seed=17):
+    """One production-width query, causal prefix 17; real parent two-pass traffic."""
+    stem = f"benchmark-attention-{seed}"
+    directory = run.path / stem
+    directory.mkdir()
+    rng = random.Random(seed)
+    query = [bf16(rng.randint(-7, 7) / 8) for _ in range(64)]
+    keys = [[bf16(rng.randint(-7, 7) / 8) for _ in range(64)] for _ in range(17)]
+    values = [[bf16(rng.randint(-7, 7) / 8) for _ in range(64)] for _ in range(17)]
+    with localcontext() as context:
+        context.prec = 70
+        q = [Decimal.from_float(f32(word << 16)) for word in query]
+        scores = [sum(left * Decimal.from_float(f32(right << 16))
+                      for left, right in zip(q, key)) / Decimal(64).sqrt() for key in keys]
+        maximum = max(scores)
+        p = [(score - maximum).exp() for score in scores]
+        denominator = sum(p)
+        expected = [float(sum(probability * Decimal.from_float(f32(row[j] << 16))
+                              for probability, row in zip(p, values)) / denominator)
+                    for j in range(64)]
+    for name, words in (
+        ("query.hex", query), ("keys.hex", [word for row in keys for word in row]),
+        ("values.hex", [word for row in values for word in row]),
+    ):
+        with (directory / name).open("x") as output:
+            output.write("".join(f"{word:04x}\n" for word in words))
+    with (directory / "expected.txt").open("x") as output:
+        for value in expected:
+            lo, hi = approximation_interval(value, 0.003)
+            output.write(f"{lo:08x} {hi:08x}\n")
+    bench = directory / "tb.sv"
+    bench.write_text(f"""`timescale 1ns/1ps
+module tb;
+  reg clk=0,rst_n=0,cmd=0;
+  always #5 clk=~clk;
+  wire pready,pdone,perror,mem_req_valid,mem_req_write,mem_rsp_ready;
+  wire [3:0] mem_req_kind;
+  wire [2:0] mem_req_proj;
+  wire [31:0] mem_req_layer,mem_req_row,mem_req_col,mem_req_wdata;
+  reg mem_req_ready=0,mem_rsp_valid=0;
+  reg [31:0] mem_rsp_rdata=0;
+  anvil_q1_fp_gqa_attention #(.HIDDEN_SIZE(64),.NUM_Q_HEADS(1),
+    .NUM_KV_HEADS(1),.HEAD_DIM(64),.MAX_SEQ_LEN(17)) parent(
+    .clk(clk),.rst_n(rst_n),.cmd_valid(cmd),.cmd_ready(pready),
+    .cmd_layer(32'd0),.cmd_pos(32'd16),.cmd_precision(2'd1),
+    .done(pdone),.error(perror),.mem_req_valid(mem_req_valid),
+    .mem_req_ready(mem_req_ready),.mem_req_write(mem_req_write),
+    .mem_req_kind(mem_req_kind),.mem_req_layer(mem_req_layer),.mem_req_proj(mem_req_proj),
+    .mem_req_row(mem_req_row),.mem_req_col(mem_req_col),.mem_req_wdata(mem_req_wdata),
+    .mem_rsp_valid(mem_rsp_valid),.mem_rsp_ready(mem_rsp_ready),
+    .mem_rsp_rdata(mem_rsp_rdata),.mem_rsp_error(1'b0));
+  wire fready,q_ready,kv_ready,out_valid,out_last,fdone,ferror;
+  wire [31:0] out_data;
+  wire [4:0] status;
+  reg q_valid=0,kv_valid=0,out_ready=0;
+  reg [15:0] q_data=0,k_data=0,v_data=0;
+  reg q_last=0,kv_last=0;
+  anvil_q1_fp2_flash_attn #(.HEAD_DIM(64),.TILE_TOKENS(16),.MAX_SEQ_LEN(17)) fp2(
+    .clk(clk),.rst_n(rst_n),.cmd_valid(cmd),.cmd_ready(fready),.cmd_len(32'd17),
+    .q_valid(q_valid),.q_ready(q_ready),.q_data(q_data),.q_last(q_last),
+    .kv_valid(kv_valid),.kv_ready(kv_ready),.k_data(k_data),.v_data(v_data),
+    .kv_last(kv_last),.out_ready(out_ready),.out_valid(out_valid),.out_data(out_data),
+    .out_last(out_last),.done(fdone),.error(ferror),.status(status));
+  reg [15:0] q[0:63],k[0:1087],v[0:1087];
+  reg [31:0] lower[0:63],upper[0:63],s0,s1,pending_data=0;
+  reg [511:0] qbeat=0,kbeat=0,vbeat=0;
+  reg pending=0,qbuffer=0,kvbuffer=0,held=0,held_last=0;
+  reg [31:0] held_data=0;
+  reg [4:0] held_status=0;
+  integer qload=0,kvload=0,remaining=0,cycle=0,start_edge,run_index,j,fd,scan;
+  integer qtx=0,kvtx=0,prx=0,frx=0,kvread=0;
+  integer pcycles[0:1],fcycles[0:1],pbytes[0:1],fbytes[0:1];
+  reg pa,sa,qa,ka,oa;
+  function [31:0] ordered(input [31:0] word);
+    ordered=word[31] ? ~word : word^32'h80000000;
+  endfunction
+  task compare(input [31:0] word,input integer index);
+    if (index>=64 || (^word)===1'bx || ordered(word)<ordered(lower[index]) ||
+        ordered(word)>ordered(upper[index]))
+      $fatal(1,"ATTENTION numerical index=%0d value=%h bounds=[%h,%h]",
+        index,word,lower[index],upper[index]);
+  endtask
+  task tick;
+    begin
+      cycle=cycle+1;
+      if (cycle>8000000) $fatal(1,"attention benchmark cycle watchdog");
+      mem_req_ready=!pending && !mem_rsp_valid && cycle%17>=3;
+      out_ready=cycle%17>=3;
+      // Each buffer loads only after a modeled physical beat request and response.
+      if (!cmd && qtx<64 && !qbuffer && qload==0 && cycle%17>=3) begin
+        qload=3; fbytes[run_index]=fbytes[run_index]+64;
+      end
+      if (qload==1) begin
+        for (j=0;j<32;j=j+1) qbeat[16*j+:16]=q[qtx+j];
+        qbuffer=1;
+      end
+      if (qtx==64 && kvtx<1088 && !kvbuffer && kvload==0 && cycle%17>=3) begin
+        kvload=5; fbytes[run_index]=fbytes[run_index]+128;
+        kvread=kvread+32;
+      end
+      if (kvload==1) begin
+        for (j=0;j<32;j=j+1) begin
+          kbeat[16*j+:16]=k[kvtx+j]; vbeat[16*j+:16]=v[kvtx+j];
+        end
+        kvbuffer=1;
+      end
+      q_valid=qbuffer && qtx<64; q_data=qbeat[16*(qtx%32)+:16]; q_last=qtx==63;
+      kv_valid=kvbuffer && kvtx<1088;
+      k_data=kbeat[16*(kvtx%32)+:16]; v_data=vbeat[16*(kvtx%32)+:16];
+      kv_last=kvtx%64==63;
+      if (pending && remaining==0 && !mem_rsp_valid) begin
+        mem_rsp_valid=1; mem_rsp_rdata=pending_data;
+      end
+      #1;
+      if ((^{{pdone,perror,fdone,ferror,q_ready,kv_ready,out_valid,
+          mem_req_valid,mem_rsp_ready}})===1'bx || perror || ferror)
+        $fatal(1,"attention benchmark control/error");
+      pa=mem_req_valid && mem_req_ready; sa=mem_rsp_valid && mem_rsp_ready;
+      qa=q_valid && q_ready; ka=kv_valid && kv_ready; oa=out_valid && out_ready;
+      if (held && {{out_valid,out_data,out_last,status}} !==
+          {{1'b1,held_data,held_last,held_status}}) $fatal(1,"attention output stability");
+      held=out_valid && !out_ready; held_data=out_data; held_last=out_last; held_status=status;
+      if (out_valid) begin
+        compare(out_data,frx);
+        if (out_last !== (frx==63) || |status[4:2]) $fatal(1,"attention output metadata");
+      end
+      if (pa) begin
+        if (mem_req_layer!=0 || mem_req_proj!=0 || mem_req_col>=64)
+          $fatal(1,"parent attention identity");
+        if (mem_req_write) begin
+          if (mem_req_kind==9 && mem_req_row==16) begin
+            if (mem_req_wdata!=={{k[1024+mem_req_col],16'd0}})
+              $fatal(1,"parent K caching");
+          end else if (mem_req_kind==10 && mem_req_row==16) begin
+            if (mem_req_wdata!=={{v[1024+mem_req_col],16'd0}})
+              $fatal(1,"parent V caching");
+          end else if (mem_req_kind==8 && mem_req_row==5 && mem_req_col===prx) begin
+            compare(mem_req_wdata,prx); prx=prx+1;
+          end else $fatal(1,"parent attention write identity");
+          pending_data=0;
+        end else if (mem_req_kind==8 && mem_req_row==2)
+          pending_data={{q[mem_req_col],16'd0}};
+        else if (mem_req_kind==8 && mem_req_row==3)
+          pending_data={{k[1024+mem_req_col],16'd0}};
+        else if (mem_req_kind==8 && mem_req_row==4)
+          pending_data={{v[1024+mem_req_col],16'd0}};
+        else if (mem_req_kind==9 && mem_req_row<17)
+          pending_data={{k[mem_req_row*64+mem_req_col],16'd0}};
+        else if (mem_req_kind==10 && mem_req_row<17)
+          pending_data={{v[mem_req_row*64+mem_req_col],16'd0}};
+        else $fatal(1,"parent attention read identity");
+        pbytes[run_index]=pbytes[run_index]+64;
+      end
+      if (pdone && !pcycles[run_index]) begin
+        if (prx!=64) $fatal(1,"parent attention output count");
+        pcycles[run_index]=cycle-start_edge;
+      end
+      if (fdone && !fcycles[run_index]) begin
+        if (frx!=64 || kvtx!=1088 || qtx!=64 || kvread!=1088)
+          $fatal(1,"single-pass attention conservation");
+        fcycles[run_index]=cycle-start_edge;
+      end
+      @(posedge clk);
+      if (qa) begin qtx=qtx+1; if (qtx%32==0) qbuffer=0; end
+      if (ka) begin kvtx=kvtx+1; if (kvtx%32==0) kvbuffer=0; end
+      if (oa) frx=frx+1;
+      if (sa) pending=0;
+      if (pa) begin pending=1; remaining=2; end
+      #1;
+      if (sa) mem_rsp_valid=0;
+      if (pending && remaining>0) remaining=remaining-1;
+      if (qload>0) qload=qload-1;
+      if (kvload>0) kvload=kvload-1;
+      @(negedge clk);
+    end
+  endtask
+  initial begin
+    $readmemh("{run.relative / stem / 'query.hex'}",q);
+    $readmemh("{run.relative / stem / 'keys.hex'}",k);
+    $readmemh("{run.relative / stem / 'values.hex'}",v);
+    fd=$fopen("{run.relative / stem / 'expected.txt'}","r");
+    if (!fd) $fatal(1,"attention fixture open");
+    for (j=0;j<64;j=j+1) begin
+      scan=$fscanf(fd,"%h %h\\n",s0,s1);
+      if (scan!=2) $fatal(1,"attention fixture malformed");
+      lower[j]=s0; upper[j]=s1;
+    end
+    repeat(2) @(posedge clk); @(negedge clk); rst_n=1; #1;
+    for (run_index=0;run_index<2;run_index=run_index+1) begin
+      qtx=0; kvtx=0; prx=0; frx=0; kvread=0;
+      pcycles[run_index]=0; fcycles[run_index]=0;
+      pbytes[run_index]=0; fbytes[run_index]=0;
+      if (!pready || !fready) $fatal(1,"attention not idle");
+      cmd=1; start_edge=cycle+1; tick(); cmd=0;
+      while (!pcycles[run_index] || !fcycles[run_index]) tick();
+      $display("MEASUREMENT attention run=%0d parent_cycles=%0d fp2_cycles=%0d parent_bytes=%0d fp2_bytes=%0d components=64 prefix=17",
+        run_index,pcycles[run_index],fcycles[run_index],pbytes[run_index],fbytes[run_index]);
+      if (fcycles[run_index]>=pcycles[run_index])
+        $fatal(1,"PERFORMANCE attention requires strictly fewer cold/warm FP2 cycles");
+      tick(); tick();
+    end
+    $display("SUMMARY attention: compared=256 single_pass=passed speedup=passed");
+    $finish;
+  end
+endmodule
+""")
+    sources = [str(path.relative_to(root)) for pattern in (
+        "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
+    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    measured_cycles(run, stem, "attention")
+    run.receipt["comparisons"].append({
+        "kind": "attention-benchmark", "seed": seed, "head_dim": 64,
+        "prefix": 17, "components": 256, "result": "passed",
+        "transport": "uncached 64-byte parent scalar adapter; single-pass packed BF16 beat buffers",
+    })
+
+
+def rms_benchmark(run, root, compile_and_run, hidden=896, seed=None):
     """Parent scalar transport: one uncached 64-byte beat per logical request.
 
     Both paths have the same 512-bit physical bandwidth available. The fused
@@ -305,12 +545,13 @@ def rms_benchmark(run, root, compile_and_run, hidden=896):
     Cold includes complete input intake; warm reruns without reinitializing RTL.
     This diagnostic measures RMSNorm only, not the five-domain aggregate.
     """
-    stem = f"benchmark-rmsnorm-h{hidden}"
+    stem = f"benchmark-rmsnorm-h{hidden}" + (f"-{seed}" if seed is not None else "")
     directory = run.path / stem
     directory.mkdir()
     with localcontext() as context:
         context.prec = 70
-        x = [Decimal((i % 31) - 15) / 16 for i in range(hidden)]
+        offset = random.Random(seed).randrange(31) if seed is not None else 0
+        x = [Decimal(((i + offset) % 31) - 15) / 16 for i in range(hidden)]
         gamma = [1 + Decimal(i % 7) / 32 for i in range(hidden)]
         denominator = (sum(value * value for value in x) / hidden +
                        Decimal.from_float(9.999999974752427e-7)).sqrt()
@@ -461,24 +702,26 @@ endmodule
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
     compile_and_run(run, directory, bench, sources, "verilator", stem)
+    measured_cycles(run, stem, "rmsnorm")
     run.receipt["comparisons"].append({
         "kind": "rmsnorm-benchmark", "hidden": hidden,
         "components": hidden * 4, "result": "passed",
     })
 
 
-def stream_operator_benchmark(run, root, compile_and_run, kind):
+def stream_operator_benchmark(run, root, compile_and_run, kind, seed=None):
     """Matched cold/warm command workloads with real parent scratchpad traffic."""
     rope = kind == "rope"
     first_length = 896 if rope else 4864
     second_length = 128 if rope else 896
     total = first_length + second_length
-    stem = "benchmark-" + kind
+    stem = "benchmark-" + kind + (f"-{seed}" if seed is not None else "")
     directory = run.path / stem
     directory.mkdir()
     data, aux, residual, references = [], [], [], []
+    offset = random.Random(seed).randrange(31) if seed is not None else 0
     for phase, length in enumerate((first_length, second_length)):
-        x = [f32(bits32(((i % 31) - 15) / 16)) for i in range(length)]
+        x = [f32(bits32((((i + offset) % 31) - 15) / 16)) for i in range(length)]
         a = [f32(bits32(1 + (i % 7) / 32)) for i in range(length)]
         r = [f32(bits32(((i % 11) - 5) / 32)) for i in range(length)]
         if rope:
@@ -688,6 +931,7 @@ endmodule
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
     compile_and_run(run, directory, bench, sources, "verilator", stem)
+    measured_cycles(run, stem, kind)
     run.receipt["comparisons"].append({
         "kind": kind + "-benchmark", "components": total * 4, "result": "passed",
     })
