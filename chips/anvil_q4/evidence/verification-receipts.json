@@ -1170,17 +1170,17 @@
       ]
     },
     "check:l1-smoke": {
-      "attempt_id": 14,
-      "duration_s": 15.507359945913777,
-      "stdout_preview": "L1 smoke: startup_probe.py\nL1 smoke: parameter_probe.py\nL1 smoke: descriptor_probe.py\nL1 smoke: top_smoke.py\nevidence/l1-smoke-20261102T133245549883Z/receipt.json\n",
+      "attempt_id": 22,
+      "duration_s": 15.51961123291403,
+      "stdout_preview": "L1 smoke: startup_probe.py\nL1 smoke: parameter_probe.py\nL1 smoke: descriptor_probe.py\nL1 smoke: top_smoke.py\nevidence/l1-smoke-20261102T165252459506Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-smoke-20261102T133245549883Z/receipt.json",
+          "path": "evidence/l1-smoke-20261102T165252459506Z/receipt.json",
           "data": {
             "suite": "l1-smoke",
             "cwd": ".",
-            "start_time": "2026-11-02T13:32:45.553887+00:00",
+            "start_time": "2026-11-02T16:52:52.463526+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -1217,6 +1217,7 @@
               "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
               "design/ARCHITECTURE.md": "55536f9b84a785439d884192ae1258a0ba62f6e4bb427dafa22d6fd688ec5b28",
+              "design/GENERATIONAL_HANDOFF.md": "3b4298fbe87060cc475ba014254004a2bb8cc7a36cae1f3628da48d707a556aa",
               "design/SPEC.md": "40d08878a80e063070309a23d48a5bf429ab4509b2f65008679c3caae8573e36",
               "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
               "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
@@ -1317,14 +1318,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:32:45.572032+00:00",
+                "start_time": "2026-11-02T16:52:52.481361+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-smoke-20261102T133245549883Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T133245549883Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-smoke-20261102T165252459506Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T165252459506Z/version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T13:32:45.577881+00:00",
-                "elapsed_s": 0.005614039953798056
+                "end_time": "2026-11-02T16:52:52.487455+00:00",
+                "elapsed_s": 0.005841139936819673
               },
               {
                 "argv": [
@@ -1332,14 +1333,14 @@
                   "tests/startup_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:32:45.578724+00:00",
-                "timeout_s": 2699.97123115696,
-                "stdout_path": "evidence/l1-smoke-20261102T133245549883Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T133245549883Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T16:52:52.488284+00:00",
+                "timeout_s": 2699.9712934321724,
+                "stdout_path": "evidence/l1-smoke-20261102T165252459506Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T165252459506Z/check-0.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T13:32:47.098345+00:00",
-                "elapsed_s": 1.5193997051101178
+                "end_time": "2026-11-02T16:52:54.057119+00:00",
+                "elapsed_s": 1.5686204221565276
               },
               {
                 "argv": [
@@ -1347,14 +1348,14 @@
                   "tests/parameter_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:32:47.100415+00:00",
-                "timeout_s": 2698.4495652050246,
-                "stdout_path": "evidence/l1-smoke-20261102T133245549883Z/check-1.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T133245549883Z/check-1.stderr.txt",
+                "start_time": "2026-11-02T16:52:54.059474+00:00",
+                "timeout_s": 2698.400134628173,
+                "stdout_path": "evidence/l1-smoke-20261102T165252459506Z/check-1.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T165252459506Z/check-1.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T13:32:57.041143+00:00",
-                "elapsed_s": 9.94044933700934
+                "end_time": "2026-11-02T16:53:03.949268+00:00",
+                "elapsed_s": 9.889513454865664
               },
               {
                 "argv": [
@@ -1362,14 +1363,14 @@
                   "tests/descriptor_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:32:57.043790+00:00",
-                "timeout_s": 2688.5062016919255,
-                "stdout_path": "evidence/l1-smoke-20261102T133245549883Z/check-2.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T133245549883Z/check-2.stderr.txt",
+                "start_time": "2026-11-02T16:53:03.952128+00:00",
+                "timeout_s": 2688.50749080698,
+                "stdout_path": "evidence/l1-smoke-20261102T165252459506Z/check-2.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T165252459506Z/check-2.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T13:32:57.560926+00:00",
-                "elapsed_s": 0.5168573600240052
+                "end_time": "2026-11-02T16:53:04.469720+00:00",
+                "elapsed_s": 0.5173165742307901
               },
               {
                 "argv": [
@@ -1377,14 +1378,14 @@
                   "tests/top_smoke.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T13:32:57.562932+00:00",
-                "timeout_s": 2687.9870486201253,
-                "stdout_path": "evidence/l1-smoke-20261102T133245549883Z/check-3.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T133245549883Z/check-3.stderr.txt",
+                "start_time": "2026-11-02T16:53:04.473092+00:00",
+                "timeout_s": 2687.986695307074,
+                "stdout_path": "evidence/l1-smoke-20261102T165252459506Z/check-3.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T165252459506Z/check-3.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T13:33:00.887173+00:00",
-                "elapsed_s": 3.323963528033346
+                "end_time": "2026-11-02T16:53:07.798680+00:00",
+                "elapsed_s": 3.3253165970090777
               }
             ],
             "comparisons": {},
@@ -1394,29 +1395,29 @@
                 "command": [
                   "startup_probe.py"
                 ],
-                "receipt": "evidence/startup-20261102T133245648370Z/receipt.json"
+                "receipt": "evidence/startup-20261102T165252558484Z/receipt.json"
               },
               {
                 "command": [
                   "parameter_probe.py"
                 ],
-                "receipt": "evidence/parameters-20261102T133247169469Z/receipt.json"
+                "receipt": "evidence/parameters-20261102T165254128908Z/receipt.json"
               },
               {
                 "command": [
                   "descriptor_probe.py"
                 ],
-                "receipt": "evidence/descriptor-20261102T133257119169Z/receipt.json"
+                "receipt": "evidence/descriptor-20261102T165304028519Z/receipt.json"
               },
               {
                 "command": [
                   "top_smoke.py"
                 ],
-                "receipt": "evidence/token-smoke-20261102T133257638618Z/receipt.json"
+                "receipt": "evidence/token-smoke-20261102T165304551270Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T13:33:00.889148+00:00"
+            "end_time": "2026-11-02T16:53:07.800802+00:00"
           }
         }
       ]
