@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from execution import Run
-from leaf_checks import run_qk, run_scalar, run_tensor
+from leaf_checks import run_qk, run_scalar, run_tensor, run_tensor_cpp
 from integration import run_top
 import reference
 
@@ -20,14 +20,17 @@ def main():
     parser.add_argument("--domain", choices=("gsm8k", "humaneval", "mmlu", "boolq", "hellaswag"))
     parser.add_argument("--probe", choices=("qk-compact", "qk-production", "scalar",
                                           "top-compact", "top-compiled", "top-continuation",
-                                          "tensor-compact", "tensor-full"))
+                                          "tensor-compact", "tensor-full", "tensor-cpp"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe in ("tensor-compact", "tensor-full"):
+        if args.probe == "tensor-cpp":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_tensor_cpp(run)
+        elif args.probe in ("tensor-compact", "tensor-full"):
             compiled = args.probe == "tensor-full"
             run.versions(("python3", "verilator", "g++", "make") if compiled else
                          ("python3", "iverilog", "vvp"))
