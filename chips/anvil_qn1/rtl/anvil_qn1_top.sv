@@ -94,7 +94,7 @@ module anvil_qn1_top #(
     wire root_publication=result_transfer &&
       (state==SINGLE_WAIT || (state==ACTIVE && backend_root));
     wire observed_valid=active && root_publication && !input_precommitted;
-    wire host_request_bad=token_transfer &&
+    wire host_request_invalid=
       (token_id>=VOCAB_SIZE || token_pos>=MAX_SEQ_LEN ||
        (new_sequence ? token_pos!=0 :
         (!sequence_valid || exhausted || token_pos!=next_position ||
@@ -117,8 +117,9 @@ module anvil_qn1_top #(
       ((state!=SINGLE_WAIT && (state!=ACTIVE || !backend_owned)) ||
        dreq_row>evaluating_position ||
        (dreq_row!=evaluating_position && (!sequence_valid || dreq_row>staged_extent)));
+    // Idle admission cannot gate memory readiness used to detect bank faults.
     wire logic_fault=decoder_error || ctrl_error || commit_fault || backend_fault ||
-      cache_fault || host_request_bad;
+      cache_fault;
     wire detected_fault=logic_fault || bank_fault;
     wire publication_ready=active && !detected_fault && state==ACTIVE &&
       !backend_owned && decoder_ready && bank_drained;
@@ -279,15 +280,20 @@ module anvil_qn1_top #(
           end
           case (state)
             IDLE: if (token_transfer) begin
-              host_token<=token_id; host_position<=token_pos; host_phase<=token_phase;
-              input_precommitted<=!new_sequence && pending_final;
-              draft_owned<=0; backend_owned<=0; owned_draft_count<=0;
-              if (new_sequence) begin
-                sequence_valid<=0; exhausted<=0; decode_started<=0;
-                pending_final<=0; committed_extent<=0; staged_extent<=0;
+              if (host_request_invalid) begin
+                state<=FAULT_DRAIN; sequence_valid<=0; exhausted<=0;
+                pending_final<=0; backend_owned<=0; draft_owned<=0;
+              end else begin
+                host_token<=token_id; host_position<=token_pos; host_phase<=token_phase;
+                input_precommitted<=!new_sequence && pending_final;
+                draft_owned<=0; backend_owned<=0; owned_draft_count<=0;
+                if (new_sequence) begin
+                  sequence_valid<=0; exhausted<=0; decode_started<=0;
+                  pending_final<=0; committed_extent<=0; staged_extent<=0;
+                end
+                if (!token_phase || token_pos==MAX_SEQ_LEN-1) state<=SINGLE_START;
+                else state<=CTRL_START;
               end
-              if (!token_phase || token_pos==MAX_SEQ_LEN-1) state<=SINGLE_START;
-              else state<=CTRL_START;
             end
             CTRL_START: if (ctrl_ready) state<=ACTIVE;
             SINGLE_START: if (decoder_start_valid && decoder_ready) state<=SINGLE_WAIT;

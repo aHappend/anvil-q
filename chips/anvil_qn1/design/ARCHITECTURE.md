@@ -139,6 +139,27 @@ same-edge request/response transfer. Completed scalar responses move into a
 held client response register; bank completion order need not be issue order.
 Client tags are returned without reinterpretation.
 
+Host admission is separated from active memory fault gating at the registered
+top-level IDLE boundary. Token ID, position, sequence state and deferred-final
+continuation checks are sampled only on an idle token handshake. An invalid
+accepted input enters FAULT_DRAIN and invalidates sequence ownership without
+starting the controller or decoder. The admission predicate does not feed
+`logic_fault`, external request visibility or scheduler request readiness.
+Bank faults still suppress token readiness and unpublished logits/commits
+immediately; decoder/controller/cache faults still gate both external request
+visibility and the scheduler's matching ready input. Thus the scheduler sees
+exactly the external request transfers for same-edge response association and
+accepted-request drain accounting, without a bank-fault-to-token-handshake
+feedback path.
+
+This boundary repair addresses the retained optimized structural failure at
+`evidence/preparation/synthesis-frontend-20261102T220233Z-d2c903d3/receipt.json`
+and the matching Verilator feedback diagnostic in
+`evidence/preparation/fault-case01-20261102T214435Z-ee0716b6/fault-top-compile.stderr.txt`.
+The scheduler implementation is unchanged. Independent structural, fault-matrix
+and affected public-protocol reruns, plus refreshed native timing lint, are
+required; earlier source-bound passing runs do not certify this repair.
+
 External tags come from a configuration-initialized, nonwrapping serial
 counter which survives host reset. Reset annuls ownership without reusing a
 pre-reset tag; late pre-reset responses therefore cannot match new work.
