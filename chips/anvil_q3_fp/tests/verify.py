@@ -89,7 +89,8 @@ def main():
                 result = execution_checks.check(evidence, args.seed)
             elif args.probe == "prefetch":
                 evidence.versions([["verilator", "--version"]])
-                result = prefetch_checks.check(evidence, args.banks)
+                result = prefetch_checks.check(evidence, args.banks, row_count=1 if args.compact else 3,
+                                               input_counts=(128, 1) if args.compact else (128, 125))
             elif args.probe == "attention":
                 evidence.versions([["verilator", "--version"]])
                 result = attention_checks.check(evidence, args.head_dim, args.cache_mode,

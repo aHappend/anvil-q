@@ -88,6 +88,8 @@ def protocol(evidence, seed):
     results["default_prefetch_overlap"] = []
     for banks in (1, 2, 4, 8):
         results["default_prefetch_overlap"] += prefetch_checks.check(evidence, banks, [0])
+        results["default_prefetch_overlap"] += prefetch_checks.check(
+            evidence, banks, [0], row_count=1, input_counts=(128, 1))
     return results
 
 

@@ -7,7 +7,7 @@ from ieee import dot, pack
 from tensor_checks import SHIFTS
 
 
-def check(evidence, banks=8, projections=range(7)):
+def check(evidence, banks=8, projections=range(7), row_count=3, input_counts=(128, 125)):
     results = []
     tb = PREFETCH_TB.replace("@B@", str(banks))
     binary = compiled(evidence, f"prefetch-b{banks}", tb,
@@ -28,10 +28,11 @@ def check(evidence, banks=8, projections=range(7)):
                     return (row + group) & 15
                 for tile in range(2):
                     for bank in range(banks):
-                        output_base = bank * 3 if tile == 0 else noutput - (bank + 1) * 3
-                        input_base, count = (0, 128) if tile == 0 else (ninput - 125, 125)
-                        descriptors.append((bank, tile + 1, output_base, input_base, 3, count))
-                        for row in range(output_base, output_base + 3):
+                        output_base = bank * row_count if tile == 0 else noutput - (bank + 1) * row_count
+                        count = input_counts[tile]
+                        input_base = 0 if tile == 0 else ninput - count
+                        descriptors.append((bank, tile + 1, output_base, input_base, row_count, count))
+                        for row in range(output_base, output_base + row_count):
                             for col in range(input_base, input_base + count):
                                 if awq:
                                     base = row & ~7
@@ -62,7 +63,7 @@ def check(evidence, banks=8, projections=range(7)):
                                 expected.append((bank, tile + 1, row, input_base + offset,
                                                  (1 << valid) - 1, int(offset == 0),
                                                  int(offset + 8 >= count),
-                                                 int(row == output_base + 2 and offset + 8 >= count),
+                                                 int(row == output_base + row_count - 1 and offset + 8 >= count),
                                                  qs if awq else 0, zs if awq else 0,
                                                  scales if awq else 0, weights if not awq else 0,
                                                  dot_value, dot_flags))
@@ -73,7 +74,7 @@ def check(evidence, banks=8, projections=range(7)):
                 lines += [f"{b} {epoch} {row} {col} {mask:02x} {first} {last} {final} "
                           f"{qs:08x} {zs:08x} {scale:032x} {weight_bits:032x} {dot_value:08x} {dot_flags:02x}\n"
                           for b, epoch, row, col, mask, first, last, final, qs, zs, scale, weight_bits, dot_value, dot_flags in expected]
-                name = f"prefetch-b{banks}-p{projection}-{fmt}-w{awq}"
+                name = f"prefetch-b{banks}-p{projection}-{fmt}-w{awq}-r{row_count}-c{input_counts[1]}"
                 output = run_compiled(evidence, binary, name, {"vectors.txt": "".join(lines)})
                 summary = [line for line in output.read_text().splitlines()
                            if line.startswith("COMPARED prefetch ")]
@@ -83,8 +84,8 @@ def check(evidence, banks=8, projections=range(7)):
                                 for key, value in [field.split("=")]}
                 results.append({"banks": banks, "projection": projection, "input_shape": ninput,
                                 "output_shape": noutput, "format": fmt, "awq": awq,
-                                "sampled_tiles_per_bank": 2, "tile_rows": 3,
-                                "sampled_input_counts": [128, 125], "compared_beats": len(expected),
+                                "sampled_tiles_per_bank": 2, "descriptor_rows": row_count,
+                                "sampled_input_counts": list(input_counts), "compared_beats": len(expected),
                                 "compared_dot_results": len(expected),
                                 "observations": observations,
                                 "stdout": relative(output)})
@@ -97,7 +98,8 @@ module tb;
   reg clk=0;
   always #5 clk=~clk;
   reg rst_n,flush=0;
-  reg [B-1:0] desc_valid=0,desc_fp16=0,desc_awq=0,beat_ready=0,c_req_ready=0,c_rsp_valid=0,c_rsp_error=0;
+  reg [B-1:0] desc_valid=0,desc_fp16=0,desc_awq=0,c_req_ready=0,c_rsp_valid=0,c_rsp_error=0;
+  wire [B-1:0] beat_ready;
   wire [B-1:0] desc_ready,fault,beat_valid,beat_row_first,beat_row_last,beat_tile_last;
   wire [B-1:0] c_req_valid,c_req_write,c_rsp_ready;
   reg [B*32-1:0] desc_epoch=0,desc_layer=0,desc_output_base=0,desc_input_base=0;
@@ -113,6 +115,7 @@ module tb;
   wire [B*32-1:0] dot_result;
   wire [B*5-1:0] dot_flags;
   reg [B-1:0] compute_enable=0,dot_out_ready=0;
+  assign beat_ready=compute_enable & dot_ready;
   reg dot_started=0;
   genvar g;
   generate for (g=0;g<B;g=g+1) begin: compute
@@ -133,6 +136,7 @@ module tb;
   reg [31:0] output_base[0:B-1][0:1],input_base[0:B-1][0:1];
   reg [31:0] rows[0:B-1][0:1],inputs[0:B-1][0:1];
   reg pending[0:B-1];
+  reg second_request_seen[0:B-1];
   reg [B-1:0] held=0;
   integer sent[0:B-1],received[0:B-1],due[0:B-1],counts[0:B-1];
   integer reduced[0:B-1],dot_total=0,dot_concurrent=0;
@@ -154,7 +158,12 @@ module tb;
   endtask
   initial begin
     rst_n=0;
-    for (b=0;b<B;b=b+1) begin pending[b]=0; sent[b]=0; received[b]=0; counts[b]=0; reduced[b]=0; end
+    for (b=0;b<B;b=b+1) begin
+      if ((beat_valid[b] && beat_ready[b]) !==
+          (beat_valid[b] && compute_enable[b] && dot_ready[b]))
+        $fatal(1,"prefetch/compute transfer disagreement");
+      pending[b]=0; second_request_seen[b]=0; sent[b]=0; received[b]=0; counts[b]=0; reduced[b]=0;
+    end
     #0; reset_check;
     #1; reset_check;
     fd=$fopen("vectors.txt","r");
@@ -205,13 +214,15 @@ module tb;
         if (held[b]) stalls=stalls+1;
         if (desc_valid[b] && desc_ready[b]) sent[b]=sent[b]+1;
         if (beat_valid[b] && beat_ready[b]) begin
+          if (second_request_seen[b] && pending[b] && beat_epoch[b*32+:32]==1)
+            overlap=overlap+1;
           if (received[b]>=counts[b] || payload!==expected[b][received[b]])
             $fatal(1,"PREFETCH bank=%0d beat=%0d expected=%h got=%h",b,received[b],expected[b][received[b]],payload);
           received[b]=received[b]+1; total=total+1;
         end
         if (c_rsp_valid[b] && c_rsp_ready[b]) pending[b]=0;
         if (c_req_valid[b] && c_req_ready[b]) begin
-          if (beat_valid[b] && beat_ready[b] && beat_epoch[b*32+:32]==1) overlap=overlap+1;
+          if (sent[b]==2) second_request_seen[b]=1;
           if (pending[b] || c_req_write[b] || c_req_layer[b*32+:32]!=0 ||
               c_req_proj[b*3+:3]!=projection) $fatal(1,"prefetch request protocol");
           key={c_req_kind[b*4+:4],c_req_row[b*32+:32],c_req_col[b*32+:32]};
@@ -228,7 +239,8 @@ module tb;
       end
       if (total==nexpected && dot_total==nexpected) begin
         if (overlap==0 || all_banks==0 || stalls==0 || dot_concurrent==0)
-          $fatal(1,"prefetch missing actual overlap/concurrent/stall events");
+          $fatal(1,"prefetch missing actual events overlap=%0d concurrent=%0d stalls=%0d compute=%0d",
+            overlap,all_banks,stalls,dot_concurrent);
         for (b=0;b<B;b=b+1) if (pending[b] || sent[b]!=2 || received[b]!=counts[b])
           $fatal(1,"prefetch transaction conservation");
         $display("COMPARED prefetch beats=%0d overlap=%0d concurrent=%0d stalls=%0d cycles=%0d dot_results=%0d concurrent_compute=%0d",
@@ -248,8 +260,7 @@ module tb;
       desc_input_base[b*32+:32]=input_base[b][t]; desc_valid_rows[b*32+:32]=rows[b][t];
       desc_valid_inputs[b*32+:32]=inputs[b][t]; desc_fp16[b]=dtype; desc_awq[b]=awq;
       desc_proj[b*3+:3]=projection;
-      compute_enable[b]=sent[b]==2 && (cycle+b)%7<3;
-      beat_ready[b]=compute_enable[b] && dot_ready[b];
+      compute_enable[b]=sent[b]==2 && second_request_seen[b] && (pending[b] || (cycle+b)%7<3);
       dot_out_ready[b]=dot_started && (cycle+b)%9<6;
       c_req_ready[b]=!pending[b] && (cycle+b)%7<5;
       c_rsp_valid[b]=pending[b] && due[b]<=cycle;
