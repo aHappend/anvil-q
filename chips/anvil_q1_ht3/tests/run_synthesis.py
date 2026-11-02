@@ -396,7 +396,9 @@ def run(output, diagnostic=False, compact_only=False, job=None):
                 os.environ.pop("HT3_CHECK_DEADLINE", None)
             else:
                 os.environ["HT3_CHECK_DEADLINE"] = deadline
-        row.setdefault("receipt", relative(directory / "synthesis.receipt.json"))
+        if (directory / "synthesis.receipt.json").is_file():
+            row.setdefault("receipt", relative(directory / "synthesis.receipt.json"))
+        row["directory"] = relative(directory)
         rows.append(row)
     result = dict(status="passed" if all(r["status"] == "passed" for r in rows) else "failed",
                   runs=rows, diagnostic=diagnostic, compact_only=compact_only,
