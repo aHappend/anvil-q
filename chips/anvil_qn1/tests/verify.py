@@ -31,6 +31,7 @@ from control_checks import run_csr, run_controller
 from smoke_checks import run_startup, run_elaboration, run_smoke
 from speculation_checks import run_speculation
 from numerical_checks import run_numerical
+from synthesis_checks import run_synthesis_probe
 import reference
 
 
@@ -44,14 +45,17 @@ def main():
                                           "tensor-compact", "tensor-full", "tensor-cpp", "tensor-sv",
                                           "elementary", "csr", "controller", "startup", "elaboration",
                                           "speculation", "qk-stress", "analytic",
-                                          "startup-matrix", "scalar-compiled"))
+                                          "startup-matrix", "scalar-compiled", "synthesis-frontend"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "startup-matrix":
+        if args.probe == "synthesis-frontend":
+            run.versions(("python3", "yosys"))
+            results = run_synthesis_probe(run)
+        elif args.probe == "startup-matrix":
             run.versions(("python3", "iverilog", "vvp"))
             results = [run_startup(run, banks=b, queue=q)
                        for b in (1, 8) for q in (1, 3, 16)]
