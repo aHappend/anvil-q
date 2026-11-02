@@ -7399,13 +7399,13 @@
       ]
     },
     "check:l1-model-benchmark-matrix": {
-      "attempt_id": 1622,
-      "duration_s": 9.08781845215708,
-      "stdout_preview": "{\"exit_code\": 1, \"reason\": \"RuntimeError: benchmark prerequisites missing or invalid: generational_handoff: design/GENERATIONAL_HANDOFF.md: missing immutable SHA-256; observations: no immutable inputs supplied\", \"receipt\": \"evidence/l1/benchmarks-20261102T171908Z-a2e4791c/receipt.json\"}\n",
+      "attempt_id": 1634,
+      "duration_s": 9.88573644286953,
+      "stdout_preview": "{\"exit_code\": 1, \"reason\": \"RuntimeError: benchmark prerequisites missing or invalid: observations: no immutable inputs supplied\", \"receipt\": \"evidence/l1/benchmarks-20261102T211144Z-dd4eef72/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/receipt.json",
+          "path": "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/receipt.json",
           "data": {
             "schema": 1,
             "kind": "l1",
@@ -7415,7 +7415,7 @@
               "benchmarks"
             ],
             "cwd": ".",
-            "start_time": "2026-11-02T17:19:08.348156+00:00",
+            "start_time": "2026-11-02T21:11:44.143353+00:00",
             "source_hashes": {
               "rtl/anvil_q2_ht2_00_fp_pkg.sv": "c754bf1868de1fe61d06733f1992e23c7883abd2a4e044a52429eda0b32f6dc3",
               "rtl/anvil_q2_ht2_activation_store.sv": "c8cf308a6893da395b846499a740dffedfda3b346f9e0ff0b02cd1a08976b0e6",
@@ -7434,7 +7434,7 @@
               "rtl/anvil_q2_ht2_metadata_tile.sv": "9b2372e35a0dd32ddf841d82ae05628ec4ffa8b6e89a04f8d389bd307dfdf9d7",
               "rtl/anvil_q2_ht2_mode_control.sv": "49d8e81529454af2f236f108ce0f688100367c3673c628ae8195ce04cb848eab",
               "rtl/anvil_q2_ht2_model_sequencer.sv": "3835eb209fea80f628298bc801ce5b7d46c77af9d54b9f91a25a68115b8b0988",
-              "rtl/anvil_q2_ht2_native_configuration.sv": "29473c49a72a405b3729bd217bbb964342874912963fdba340e3c4a0da4527fd",
+              "rtl/anvil_q2_ht2_native_configuration.sv": "8690bbed5f58284c67d0259f6a4b4e6ecb655af65415c1a0860dfc489606a0df",
               "rtl/anvil_q2_ht2_native_kv_codec.sv": "a2b32f8469238f0410d3a1d0c99f884ecdfa18581fa72df705d8d1e5c60422a6",
               "rtl/anvil_q2_ht2_native_kv_store.sv": "385603ffc68424007c2343d14503fe40f85e2473bda1a9a4e3caf1461783ce98",
               "rtl/anvil_q2_ht2_native_tile_reader.sv": "d03d8655af96d480459c02ac84f728644ef99352fc4c6c03f2a99fa160d4cf52",
@@ -7480,15 +7480,15 @@
               "anvil_q2_ht_reference/rtl/anvil_q2_ht_tile_buffers.sv": "d09c1241dfe565788cad472aca0532ece30fae3b8f5336868f318320f63cc640",
               "anvil_q2_ht_reference/rtl/anvil_q2_ht_top.sv": "03617cbcd59b05ff5d4b4a5b720b364a777fb091fc39e59d0be57c5429c4735f",
               "anvil_q2_ht_reference/rtl/anvil_q2_ht_vector_store.sv": "cc47adeb90beccdabebadc3167e6eb7ab43e7949c7d6ba56cb4921c8353184ce",
-              "design/ARCHITECTURE.md": "22bde05c5b84c1ce3aee8cc0692df4a9c226502f2aa41b47f6a5c5aa1ccaca4d",
-              "design/GENERATIONAL_HANDOFF.md": "5363006c2786d5fc6afd53e18fd295ba3d1e6dba25fb90e5fc8a43b1b3a51880",
+              "design/ARCHITECTURE.md": "e794829b1268615dbae3568ae19afe566438eee47df66264166789bf2430a933",
+              "design/GENERATIONAL_HANDOFF.md": "e536aecd27c2ee75637a65839eb5ed3e73e1720740141ed96531b9465b3e254e",
               "design/SPEC.md": "b75e36e851b0fedcc4d671f61efb2f1b124775458dd3b5d28fc49ccbf9b92fad",
-              "tests/METHOD.md": "204624b769b37ea5e65b11c5b4c0cb080e0c3acc5a515cdefc3dd1e46ba631bf",
+              "tests/METHOD.md": "5fda51c1a4e17378d9989eb57328d423b8d68cba69373a3bc0ba0edc528bea26",
               "tests/activation_startup_tb.sv": "5ea74cc5ad54913a12425ee6a80cb0fd6b3c4335bfdf58e0599e46ebdcba34cb",
               "tests/activation_tb.sv": "7aff691b5cd287708e7a7ef9a93a2bcdad85e311c94ba5bead7e2c3e0c377946",
               "tests/benchmark_checks.py": "59371ac8354120c5313533a6c6462d43ca8e7183d0e5c03f444e76c372bd73a5",
               "tests/benchmark_corpus.json": "f6f7cfabe0b59e3b43aa750de867cb954f393a2018fcec0424eb77f41232bacb",
-              "tests/benchmark_manifest.json": "2fa89e40ad6096813e40efbd69bc752b5a6e65491173b9c6667898447d352834",
+              "tests/benchmark_manifest.json": "e54412c16923c63ad98cdcd5890910073e579d1d511e373f7f6789148799036c",
               "tests/benchmarks.py": "d6f10a5314bfb3aa661a3b0649bbc38b123b5b155e961316ca3ad78a7ef18751",
               "tests/codec_tb.sv": "40d14d84491876c005b4c850685bb41774a083ca7e93930cdc24acf7a01b7ee3",
               "tests/device_image.py": "9c8976ce94627406e94d7eb89d03f56eeddd8e28e58c393a237d325bdfd35ff3",
@@ -7509,7 +7509,9 @@
               "tests/reference.py": "42539436fd529e6f6fcc3914f9f0e16823ca28b7755aaef79e3193ca2f473ea9",
               "tests/reproduction.py": "6dcb7194612d63ce2a9e5dee7c4c49da8201e592cc1a9b20ed357211e08bf737",
               "tests/scalar_tb.sv": "87f8b708be9565c191d0a15f41decc1ffb3258d648461b4fc2e8d8c54861fefa",
-              "tests/synthesis.py": "6c05f44c739cbf7502a8fae0498fa1af33e74aadcf400ca846807a0404d511c8",
+              "tests/synthesis.py": "c6bc27a43584439f72415309d22c8d872e6f7f940dc325acb7461731eb10191d",
+              "tests/synthesis_checks.py": "cc6414212a0c9df8734a7b3063b26d2c1e1f3b0629fd317ff4a05424088e5536",
+              "tests/synthesis_configuration_tb.sv": "d2499e17b3724ebaa08b8b76b9955c8dbe3d3f5f284758e4faf231de0cffc24b",
               "tests/top_tb.sv": "f1454894bff75a38b2e645a9f6bad2f1e93174cd7b233e3f1186ec80e757b0bc",
               "tests/tree_tb.sv": "93f6c84c0ec32387344e6db8d34b27bc6977ee2120ea3e8cf7c258428350ef6f",
               "tests/verify.py": "a02e1afce53fe327723769a1f277c220a0f6c8a4ccfb14a86c7693069d0ca65d"
@@ -7521,47 +7523,46 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T17:19:08.366997+00:00",
+                "start_time": "2026-11-02T21:11:44.162398+00:00",
                 "timeout_s": 60,
-                "stdout": "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/000-version-python3.stdout.txt",
-                "stderr": "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/000-version-python3.stderr.txt",
+                "stdout": "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/000-version-python3.stdout.txt",
+                "stderr": "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/000-version-python3.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.006188147002831101,
-                "end_time": "2026-11-02T17:19:08.373099+00:00"
+                "duration_s": 0.005641837138682604,
+                "end_time": "2026-11-02T21:11:44.167956+00:00"
               },
               {
                 "argv": [
                   "python3",
                   "tests/benchmark_checks.py",
                   "--fixtures",
-                  "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/accounting-fixtures-912c4536"
+                  "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/accounting-fixtures-77c03306"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T17:19:08.373931+00:00",
+                "start_time": "2026-11-02T21:11:44.168803+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/001-benchmark-accounting-self-tests.stdout.txt",
-                "stderr": "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/001-benchmark-accounting-self-tests.stderr.txt",
+                "stdout": "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/001-benchmark-accounting-self-tests.stdout.txt",
+                "stderr": "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/001-benchmark-accounting-self-tests.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.8674171608872712,
-                "end_time": "2026-11-02T17:19:09.241278+00:00"
+                "duration_s": 0.8676180818583816,
+                "end_time": "2026-11-02T21:11:45.036354+00:00"
               }
             ],
             "repair_of": null,
-            "benchmark_accounting_self_tests": "test_aggregate_is_token_weighted_not_mean_of_tpm (__main__.AccountingChecks.test_aggregate_is_token_weighted_not_mean_of_tpm) ... ok\ntest_baseline_requires_committed_tokens_and_same_boundary (__main__.AccountingChecks.test_baseline_requires_committed_tokens_and_same_boundary) ... ok\ntest_complete_comparisons_and_actual_traffic (__main__.AccountingChecks.test_complete_comparisons_and_actual_traffic) ... ok\ntest_completed_prompt_retains_greedy_identity (__main__.AccountingChecks.test_completed_prompt_retains_greedy_identity) ... ok\ntest_cross_width_and_sparse_greedy_equivalence (__main__.AccountingChecks.test_cross_width_and_sparse_greedy_equivalence) ... ok\ntest_decode_overhead_is_included (__main__.AccountingChecks.test_decode_overhead_is_included) ... ok\ntest_duplicate_and_partial_vectors_are_rejected (__main__.AccountingChecks.test_duplicate_and_partial_vectors_are_rejected) ... ok\ntest_early_or_missing_layer_publication_is_detected (__main__.AccountingChecks.test_early_or_missing_layer_publication_is_detected) ... ok\ntest_empty_aggregate_is_not_success (__main__.AccountingChecks.test_empty_aggregate_is_not_success) ... ok\ntest_eos_marker_and_greedy_mismatch_are_rejected (__main__.AccountingChecks.test_eos_marker_and_greedy_mismatch_are_rejected) ... ok\ntest_exact_performance_thresholds (__main__.AccountingChecks.test_exact_performance_thresholds) ... ok\ntest_final_commit_is_measured_endpoint (__main__.AccountingChecks.test_final_commit_is_measured_endpoint) ... ok\ntest_metadata_omission_is_detected (__main__.AccountingChecks.test_metadata_omission_is_detected) ... ok\ntest_negative_or_boolean_beats_rejected (__main__.AccountingChecks.test_negative_or_boolean_beats_rejected) ... ok\ntest_numerical_defect_is_detected (__main__.AccountingChecks.test_numerical_defect_is_detected) ... ok\ntest_pointer_defect_is_detected (__main__.AccountingChecks.test_pointer_defect_is_detected) ... ok\ntest_quantization_error_separately_reported (__main__.AccountingChecks.test_quantization_error_separately_reported) ... ok\ntest_self_consistent_but_different_greedy_exports_rejected (__main__.AccountingChecks.test_self_consistent_but_different_greedy_exports_rejected) ... ok\ntest_short_non_eos_generation_is_rejected (__main__.AccountingChecks.test_short_non_eos_generation_is_rejected) ... ok\ntest_missing_observations_cannot_pass_after_accounting_success (__main__.BenchmarkExecutionChecks.test_missing_observations_cannot_pass_after_accounting_success) ... ok\ntest_missing_parent_handoff_cannot_pass_after_accounting_success (__main__.BenchmarkExecutionChecks.test_missing_parent_handoff_cannot_pass_after_accounting_success) ... ok\ntest_complete_quantized_image_binding (__main__.CorpusAndAssetChecks.test_complete_quantized_image_binding) ... ok\ntest_draft_deterministic_and_target_independent (__main__.CorpusAndAssetChecks.test_draft_deterministic_and_target_independent) ... ok\ntest_draft_legal_widths_and_singleton_vocab (__main__.CorpusAndAssetChecks.test_draft_legal_widths_and_singleton_vocab) ... ok\ntest_frozen_corpus (__main__.CorpusAndAssetChecks.test_frozen_corpus) ... ok\ntest_immutable_asset_and_tamper (__main__.CorpusAndAssetChecks.test_immutable_asset_and_tamper) ... ok\ntest_matrix_has_no_omissions (__main__.CorpusAndAssetChecks.test_matrix_has_no_omissions) ... ok\ntest_missing_asset_reports_hash_and_file (__main__.CorpusAndAssetChecks.test_missing_asset_reports_hash_and_file) ... ok\ntest_missing_groups_are_all_reported (__main__.CorpusAndAssetChecks.test_missing_groups_are_all_reported) ... ok\ntest_null_hash_not_wildcard (__main__.CorpusAndAssetChecks.test_null_hash_not_wildcard) ... ok\ntest_path_escape_and_runtime_metadata_rejected (__main__.CorpusAndAssetChecks.test_path_escape_and_runtime_metadata_rejected) ... ok\ntest_quantized_image_missing_byte_file (__main__.CorpusAndAssetChecks.test_quantized_image_missing_byte_file) ... ok\ntest_quantized_image_substituted_digest (__main__.CorpusAndAssetChecks.test_quantized_image_substituted_digest) ... ok\ntest_quantized_image_wrong_official_source (__main__.CorpusAndAssetChecks.test_quantized_image_wrong_official_source) ... ok\ntest_symlink_escape_rejected (__main__.CorpusAndAssetChecks.test_symlink_escape_rejected) ... ok\ntest_complete_stream (__main__.ExportChecks.test_complete_stream) ... ok\ntest_duplicate_prompt_rejected (__main__.ExportChecks.test_duplicate_prompt_rejected) ... ok\ntest_empty_export_rejected (__main__.ExportChecks.test_empty_export_rejected) ... ok\ntest_orphan_record_rejected (__main__.ExportChecks.test_orphan_record_rejected) ... ok\ntest_overlapping_prompts_rejected (__main__.ExportChecks.test_overlapping_prompts_rejected) ... ok\ntest_stale_header_rejected (__main__.ExportChecks.test_stale_header_rejected) ... ok\ntest_truncated_export_rejected (__main__.ExportChecks.test_truncated_export_rejected) ... ok\ntest_unknown_record_rejected (__main__.ExportChecks.test_unknown_record_rejected) ... ok\ntest_argmax_ties_choose_smallest_id (__main__.NumericalAndTreeChecks.test_argmax_ties_choose_smallest_id) ... ok\ntest_bit_input_is_not_host_float_or_boolean (__main__.NumericalAndTreeChecks.test_bit_input_is_not_host_float_or_boolean) ... ok\ntest_branch_and_duplicate_choose_correct_path (__main__.NumericalAndTreeChecks.test_branch_and_duplicate_choose_correct_path) ... ok\ntest_exact_metrics_and_zero_vector_convention (__main__.NumericalAndTreeChecks.test_exact_metrics_and_zero_vector_convention) ... ok\ntest_invalid_parent_rejected (__main__.NumericalAndTreeChecks.test_invalid_parent_rejected) ... ok\ntest_nonfinite_and_empty_are_rejected (__main__.NumericalAndTreeChecks.test_nonfinite_and_empty_are_rejected) ... ok\ntest_sign_error_is_not_hidden_by_normalization (__main__.NumericalAndTreeChecks.test_sign_error_is_not_hidden_by_normalization) ... ok\n\n----------------------------------------------------------------------\nRan 50 tests in 0.641s\n\nOK\n{\"scope\": \"accounting-unit-tests-only; no production observations\", \"tests\": 50, \"failures\": 0, \"errors\": 0}",
+            "benchmark_accounting_self_tests": "test_aggregate_is_token_weighted_not_mean_of_tpm (__main__.AccountingChecks.test_aggregate_is_token_weighted_not_mean_of_tpm) ... ok\ntest_baseline_requires_committed_tokens_and_same_boundary (__main__.AccountingChecks.test_baseline_requires_committed_tokens_and_same_boundary) ... ok\ntest_complete_comparisons_and_actual_traffic (__main__.AccountingChecks.test_complete_comparisons_and_actual_traffic) ... ok\ntest_completed_prompt_retains_greedy_identity (__main__.AccountingChecks.test_completed_prompt_retains_greedy_identity) ... ok\ntest_cross_width_and_sparse_greedy_equivalence (__main__.AccountingChecks.test_cross_width_and_sparse_greedy_equivalence) ... ok\ntest_decode_overhead_is_included (__main__.AccountingChecks.test_decode_overhead_is_included) ... ok\ntest_duplicate_and_partial_vectors_are_rejected (__main__.AccountingChecks.test_duplicate_and_partial_vectors_are_rejected) ... ok\ntest_early_or_missing_layer_publication_is_detected (__main__.AccountingChecks.test_early_or_missing_layer_publication_is_detected) ... ok\ntest_empty_aggregate_is_not_success (__main__.AccountingChecks.test_empty_aggregate_is_not_success) ... ok\ntest_eos_marker_and_greedy_mismatch_are_rejected (__main__.AccountingChecks.test_eos_marker_and_greedy_mismatch_are_rejected) ... ok\ntest_exact_performance_thresholds (__main__.AccountingChecks.test_exact_performance_thresholds) ... ok\ntest_final_commit_is_measured_endpoint (__main__.AccountingChecks.test_final_commit_is_measured_endpoint) ... ok\ntest_metadata_omission_is_detected (__main__.AccountingChecks.test_metadata_omission_is_detected) ... ok\ntest_negative_or_boolean_beats_rejected (__main__.AccountingChecks.test_negative_or_boolean_beats_rejected) ... ok\ntest_numerical_defect_is_detected (__main__.AccountingChecks.test_numerical_defect_is_detected) ... ok\ntest_pointer_defect_is_detected (__main__.AccountingChecks.test_pointer_defect_is_detected) ... ok\ntest_quantization_error_separately_reported (__main__.AccountingChecks.test_quantization_error_separately_reported) ... ok\ntest_self_consistent_but_different_greedy_exports_rejected (__main__.AccountingChecks.test_self_consistent_but_different_greedy_exports_rejected) ... ok\ntest_short_non_eos_generation_is_rejected (__main__.AccountingChecks.test_short_non_eos_generation_is_rejected) ... ok\ntest_missing_observations_cannot_pass_after_accounting_success (__main__.BenchmarkExecutionChecks.test_missing_observations_cannot_pass_after_accounting_success) ... ok\ntest_missing_parent_handoff_cannot_pass_after_accounting_success (__main__.BenchmarkExecutionChecks.test_missing_parent_handoff_cannot_pass_after_accounting_success) ... ok\ntest_complete_quantized_image_binding (__main__.CorpusAndAssetChecks.test_complete_quantized_image_binding) ... ok\ntest_draft_deterministic_and_target_independent (__main__.CorpusAndAssetChecks.test_draft_deterministic_and_target_independent) ... ok\ntest_draft_legal_widths_and_singleton_vocab (__main__.CorpusAndAssetChecks.test_draft_legal_widths_and_singleton_vocab) ... ok\ntest_frozen_corpus (__main__.CorpusAndAssetChecks.test_frozen_corpus) ... ok\ntest_immutable_asset_and_tamper (__main__.CorpusAndAssetChecks.test_immutable_asset_and_tamper) ... ok\ntest_matrix_has_no_omissions (__main__.CorpusAndAssetChecks.test_matrix_has_no_omissions) ... ok\ntest_missing_asset_reports_hash_and_file (__main__.CorpusAndAssetChecks.test_missing_asset_reports_hash_and_file) ... ok\ntest_missing_groups_are_all_reported (__main__.CorpusAndAssetChecks.test_missing_groups_are_all_reported) ... ok\ntest_null_hash_not_wildcard (__main__.CorpusAndAssetChecks.test_null_hash_not_wildcard) ... ok\ntest_path_escape_and_runtime_metadata_rejected (__main__.CorpusAndAssetChecks.test_path_escape_and_runtime_metadata_rejected) ... ok\ntest_quantized_image_missing_byte_file (__main__.CorpusAndAssetChecks.test_quantized_image_missing_byte_file) ... ok\ntest_quantized_image_substituted_digest (__main__.CorpusAndAssetChecks.test_quantized_image_substituted_digest) ... ok\ntest_quantized_image_wrong_official_source (__main__.CorpusAndAssetChecks.test_quantized_image_wrong_official_source) ... ok\ntest_symlink_escape_rejected (__main__.CorpusAndAssetChecks.test_symlink_escape_rejected) ... ok\ntest_complete_stream (__main__.ExportChecks.test_complete_stream) ... ok\ntest_duplicate_prompt_rejected (__main__.ExportChecks.test_duplicate_prompt_rejected) ... ok\ntest_empty_export_rejected (__main__.ExportChecks.test_empty_export_rejected) ... ok\ntest_orphan_record_rejected (__main__.ExportChecks.test_orphan_record_rejected) ... ok\ntest_overlapping_prompts_rejected (__main__.ExportChecks.test_overlapping_prompts_rejected) ... ok\ntest_stale_header_rejected (__main__.ExportChecks.test_stale_header_rejected) ... ok\ntest_truncated_export_rejected (__main__.ExportChecks.test_truncated_export_rejected) ... ok\ntest_unknown_record_rejected (__main__.ExportChecks.test_unknown_record_rejected) ... ok\ntest_argmax_ties_choose_smallest_id (__main__.NumericalAndTreeChecks.test_argmax_ties_choose_smallest_id) ... ok\ntest_bit_input_is_not_host_float_or_boolean (__main__.NumericalAndTreeChecks.test_bit_input_is_not_host_float_or_boolean) ... ok\ntest_branch_and_duplicate_choose_correct_path (__main__.NumericalAndTreeChecks.test_branch_and_duplicate_choose_correct_path) ... ok\ntest_exact_metrics_and_zero_vector_convention (__main__.NumericalAndTreeChecks.test_exact_metrics_and_zero_vector_convention) ... ok\ntest_invalid_parent_rejected (__main__.NumericalAndTreeChecks.test_invalid_parent_rejected) ... ok\ntest_nonfinite_and_empty_are_rejected (__main__.NumericalAndTreeChecks.test_nonfinite_and_empty_are_rejected) ... ok\ntest_sign_error_is_not_hidden_by_normalization (__main__.NumericalAndTreeChecks.test_sign_error_is_not_hidden_by_normalization) ... ok\n\n----------------------------------------------------------------------\nRan 50 tests in 0.646s\n\nOK\n{\"scope\": \"accounting-unit-tests-only; no production observations\", \"tests\": 50, \"failures\": 0, \"errors\": 0}",
             "benchmarks": {
-              "analysis": "evidence/l1/benchmarks-20261102T171908Z-a2e4791c/benchmark-analysis.json",
+              "analysis": "evidence/l1/benchmarks-20261102T211144Z-dd4eef72/benchmark-analysis.json",
               "prompt_count": 100,
               "expected_domain_cells": 250,
               "input_errors": [
-                "generational_handoff: design/GENERATIONAL_HANDOFF.md: missing immutable SHA-256",
                 "observations: no immutable inputs supplied"
               ]
             },
-            "end_time": "2026-11-02T17:19:17.197622+00:00",
+            "end_time": "2026-11-02T21:11:53.780839+00:00",
             "exit_code": 0,
-            "reason": "RuntimeError: benchmark prerequisites missing or invalid: generational_handoff: design/GENERATIONAL_HANDOFF.md: missing immutable SHA-256; observations: no immutable inputs supplied",
+            "reason": "RuntimeError: benchmark prerequisites missing or invalid: observations: no immutable inputs supplied",
             "source_hashes_unchanged": true,
             "status": "passed",
             "auto_waived_external_prerequisite": true
