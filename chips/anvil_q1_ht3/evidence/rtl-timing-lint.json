@@ -1,10 +1,10 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-11-02T18:19:52.196021+00:00",
+  "timestamp_utc": "2026-11-02T18:29:38.453925+00:00",
   "root": "/data/sufeng/anvil-q1-ht3-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
-  "rtl_files_checked": 36,
+  "rtl_files_checked": 40,
   "auto_sanitized_nomem2reg_files": [],
   "source_sha256": {
     "rtl/anvil_q1_ht3_00_fp_pkg.sv": "df8425010a228237c78086f12d3526333a40578452ef3d2a658abafc99a01391",
@@ -12,8 +12,11 @@
     "rtl/anvil_q1_ht3_async_fifo.sv": "5de325a04843c021349c6cfab1b0fc45dce8120cd3f67443454cbe634c0de62e",
     "rtl/anvil_q1_ht3_attn_tiles.sv": "440dada0d051b5e57cbf6eeb42a0bc9210b420b4ea4c3462d894194fb7d4361c",
     "rtl/anvil_q1_ht3_burst_reader.sv": "272df0d1918cf64bf9a40b89405374e7207762a65a431e71986501f40e675f3e",
+    "rtl/anvil_q1_ht3_control.sv": "8dd5052291616a0b950bfaf4c68b8848b909e87b1ffa9b417e9354838b5e920b",
+    "rtl/anvil_q1_ht3_counter_cdc.sv": "4c9d9b0f21cadf6be0b2d15b585e502f76fc77ef1e26d33575961e3503e47fad",
     "rtl/anvil_q1_ht3_decoder.sv": "95cb478da923c7e8d9187f3a5b943c34716f855d2c4b3008ca3b5bf4ce6c963d",
     "rtl/anvil_q1_ht3_dequant.sv": "0ed742036781c43f2c84d800f9226e3cebd1dd70b9310ea056f463d78cd6ef96",
+    "rtl/anvil_q1_ht3_descriptors.sv": "42aa8be1f427c8f7333968e1f1c358747f0b2796e82f31f6aafea5916949f445",
     "rtl/anvil_q1_ht3_dma_mux.sv": "40e79a1a13aaf37e03856b9f20aba53d0c9d58c22df18f8942cd2813cb105a36",
     "rtl/anvil_q1_ht3_epilogue_fusion.sv": "02b6a6e285df3db8e6b0ad4e3452f0de885d724443d64be0638125be60600491",
     "rtl/anvil_q1_ht3_execution.sv": "b3f4ad334ab33b01dcfedcd81b1703e9e9327c4ad856e8668b7a118fb3905e07",
@@ -41,6 +44,7 @@
     "rtl/anvil_q1_ht3_scalar.sv": "fdd41c1cc1b436f4071d4d713fc28d8d4274bf342c5f97131a13b679b89bc19b",
     "rtl/anvil_q1_ht3_spec_verifier.sv": "842e1b754eb85b88f014618ec1156fabf16f867485d90ce05bea5f8e8bead3e9",
     "rtl/anvil_q1_ht3_tensor_array.sv": "593fa69f0340740f8ad215bf52957ae9567d49b8806094a42606925a915ec5f9",
+    "rtl/anvil_q1_ht3_top.sv": "c759de70c852ab2af498646680b977bed01c6621b45b0b3855f21f86ea486353",
     "rtl/anvil_q1_ht3_transport.sv": "5c721912260a2dfa0473255aaa128f57736b80b36de5ceb692019249d1527d84",
     "rtl/anvil_q1_ht3_tree_mask.sv": "8b8f0c6f40ae7fd6a16a655d7d50380a3d734f84606eeee6c80f17dcc1b009f3"
   },

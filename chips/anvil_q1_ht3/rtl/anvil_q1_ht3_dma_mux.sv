@@ -58,9 +58,9 @@ module anvil_q1_ht3_dma_mux #(
   reg found;
   integer scan;
   reg [1:0] candidate;
-  reg [1:0] owners [0:N-1];
+  (* nomem2reg *) reg [1:0] owners [0:N-1];
   reg writing [0:N-1];
-  reg [7:0] lengths [0:N-1];
+  (* nomem2reg *) reg [7:0] lengths [0:N-1];
   wire [1:0] chosen = locked ? locked_owner : selected;
   wire chosen_valid = client_valid[chosen];
   wire chosen_write = client_write[chosen];

@@ -45,7 +45,7 @@ module anvil_q1_ht3_transport (
   reg [3:0] debt_read, debt_write;
   reg [7:0] debt_remaining;
   reg bus_fault;
-  reg [7:0] debt_lengths [0:15];
+  (* nomem2reg *) reg [7:0] debt_lengths [0:15];
   reg debt_writes [0:15];
   initial begin
     debt_count = 0;

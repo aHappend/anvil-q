@@ -1132,6 +1132,238 @@ each mailbox's clock-crossing recurrence above. No local cable/device,
 simulation substitute, software dequantization or private runtime dependency
 is embedded in these RTL modules.
 
+## External top, CSR and immutable image ownership
+
+`anvil_q1_ht3_top` instantiates only the HT3 execution, control, descriptors,
+loader, mux and transport. No HT2 module is an execution substitute. All
+external ports retain the parent's order, widths, directions and signedness;
+all parent parameter defaults are unchanged, with FLASH_TILE appended.
+The diagnostic-only generate branch drives every output zero and emits
+`PARAMETER ERROR` for illegal top parameters without constructing children.
+KV_WINDOW remains an accepted compatibility parameter; FlashAttention uses
+bounded FLASH_TILE storage rather than a context-proportional window buffer.
+
+The raw reset feeds all domain/leaf release interlocks independently. The top
+also uses its own core/DDR release gates for public admission and counters.
+CSR becomes ready after R2, first accepting at R3. Token/batch readiness
+additionally requires initialized descriptor ownership, a finite committed
+image, recovered transport, no sticky/fatal error, no CSR request/response
+ownership, no loader acquisition/lease, no image-validation work and no
+invalidation pulse. Execution itself excludes new_sequence/abort and active
+commands/results. Concurrent token and batch assertion is admitted as one
+explicit erroneous execution, not two commands. Read-only CSR operations are
+allowed during execution; image/config/table mutations are rejected while
+execution, pending results, loader acquisition/ownership or DMA debt are busy.
+The loader acquires only after descriptor initialization and full execution/
+CSR/DMA release. Its acquisition invalidates image and prefix before writing.
+
+The inherited registers are:
+
+| Address | Behavior |
+| --- | --- |
+| 0x0000 | Read-only legacy identity `0x02000001`, unchanged |
+| 0x0004 | Read-only bits[3:0]: sticky error, committed image, busy, engine ready |
+| 0x0008 | Reads zero; write bit0 invalidates image/prefix, bit1 commits/validates image, bit2 clears sticky/loader errors; bits[1:0]=3 and bits above 2 are erroneous |
+| 0x000c | Legacy native enable: read zero for AWQ, one otherwise; write 0 selects AWQ, write 1 keeps FP16 or selects BF16; invalidates image/prefix |
+| 0x0010 | Descriptor selected index, 0..96*NUM_LAYERS-1 |
+| 0x0014/0x0018/0x001c | Stage kind/layer/projection writes; reads return installed selected descriptor fields |
+| 0x0020/0x0024/0x0028 | Stage base low/base high/byte length writes; installed descriptor reads; only high bit0 is legal |
+| 0x002c | Write 1 installs staged descriptor; write 0 is a no-op; other values error |
+| 0x0030/0x0034 | Token cycles low/high; low captures high until its next read |
+| 0x0038/0x003c | Physical read beats low/high, asynchronously snapshotted; low captures high until its next read |
+| 0x0100 | Four legacy config bits: format[1:0] 0 BF16/1 FP16/2 AWQ, bit2 batch admission enable, bit3 sparse policy; value 3 and high bits rejected; format changes invalidate image/prefix |
+| 0x0104 | Nonnegative finite BF16 sparse threshold in bits[15:0]; upper bits zero; negative nonzero/NaN/infinity rejected |
+| 0x0108 | Read-only bits[3:0]: sticky error, mutation busy, image valid, initialized |
+| 0x010c | Reserved; reads zero, writes error |
+| 0x0110/0x0114 | Accepted-token counter low/high |
+| 0x0118/0x011c | Completed-batch counter low/high |
+| 0x0120/0x0124 | Physical DDR bytes read low/high, request/acknowledgment snapshot |
+| 0x0128/0x012c | Eligible dense-weight bytes low/high |
+| 0x0130/0x0134 | Avoided sparse-weight bytes low/high |
+| 0x0138..0x014c | Reserved; reads zero, writes error |
+| 0x0150 | Extension bits[1:0] cache format, bit2 signed-INT8 projection override, high bits zero; reset zero |
+| 0x0154 | Read-only HT3 version `0x03000003` |
+| 0x0158/0x015c | Extension scale-table base low/high; low 64-byte aligned, only high bit0 legal |
+| 0x0160 | Scale-table byte length, 64-byte aligned; required exact length checked at commit |
+| 0x0164..0x017c | Reserved; reads zero, writes error |
+
+For the five extended counters, low reads acquire coherent snapshots and high
+reads require/consume the matching snapshot. Legacy high reads retain the
+parent's live-high fallback if no low snapshot exists. Counters are unsigned
+64-bit, reset to zero. Accepted-token and batch counts advance only on the
+successful public final retirement; dense/avoided bytes count actual decoder
+events. Physical beat/byte counters count actual DDR return beats, not predicted
+bandwidth; legacy beat reads are a coherent but asynchronously delayed snapshot.
+Counter snapshots never block the arithmetic or memory consumer.
+
+All successful extension format/base/length writes invalidate image/prefix,
+even if the value is unchanged. Query encoding remains selected by legacy
+FP16. For backward compatibility, extension cache selector zero with legacy
+FP16 uses the inherited FP16 cache boundary; otherwise zero is BF16. Selector
+one explicitly chooses FP16 and selectors two/three choose signed INT4/INT8
+independently of query encoding. The effective format is captured at execution
+acceptance and supplied unchanged to decoder, converter, provisional store,
+packed writer/reader and attention. The zero-extension BF16/FP16/AWQ descriptor
+images keep their inherited byte layout. Legacy format 3 remains rejected.
+
+Every invalid CSR operation produces a held error-bearing response. Errors
+are also reflected in descriptor sticky status; clearing requires a legal
+idle clear command. DMA protocol faults remain transport-owned sticky faults
+and cannot be disguised by clearing the image's status. No invalid image
+commit makes image_valid true. An installed descriptor replacement/deletion,
+accepted upload, commit start or explicit mutation increments the image
+generation, clears committed status and invalidates prefix. Generation is a
+32-bit ownership tag, not a content checksum. Command admission captures it,
+and scale/data access ownership cannot migrate while a response is held.
+
+### Descriptor layout and validation
+
+Descriptor index is `96*layer+8*kind+projection`. Bases are 64-byte aligned;
+all lengths below are bytes rounded up to 64. Zero-length installation deletes
+a legal identity. Each nonzero install checks exact length, 33-bit exclusive
+end <=2^33, identity/index agreement and disjointness from every other
+installed region before writing RAM. If extensions are active it also rejects
+overlap with their configured nonempty table. Later table-base changes cannot
+make an overlapping image usable: image recommit independently checks overlap
+against every occupied descriptor. Region endpoints may coincide without
+overlap; the final record may end exactly at 2^33.
+
+Let P_R=ceil(R/64), G_N=N/GROUP_SIZE and C=NUM_KV_HEADS*HEAD_DIM. Projection
+rows/input lengths are (H,H) for Q/O, (C,H) for K/V, (I,H) for gate/up and
+(H,I) for down. These are mathematical definitions; RTL chooses elaboration
+constants and advances panel/column/half-beat counters, with no runtime '/' or
+'%' operators.
+
+| Kind | Legal identity / exact unrounded length |
+| --- | --- |
+| 0 | Layer0/projection0 embedding/LM image: P_V*H*128, inherited 64 native 16-bit vocabulary rows per column |
+| 1 | Every layer/projection0..6 weights: P_R*N*128 native, P_R*N*64 AWQ or INT8 override |
+| 2 | AWQ only, every layer/projection0..6 zeros: P_R*G_N*64; absent with INT8 override |
+| 3 | AWQ only, every layer/projection0..6 FP16 scales: P_R*G_N*128; absent with INT8 override |
+| 4 | Every layer/projection0 Q bias H*2, projection1/2 K/V bias C*2 |
+| 5/6 | Every layer/projection0 input/post-attention norm gamma: H*2 |
+| 7 | Layer0/projection0 final norm gamma: H*2 |
+| 8 | Layer0/projection0 inherited scratch reservation: 15*max(H,I)*4; graph does not use it for epilogue round trips |
+| 9/10 | Every layer/projection0 separate K/V regions: S*64*ceil(2*C/64) native; S*64*ceil(b*C/512) for b=4/8 |
+| 11 | Layer0/projection0 inherited RoPE reservation: S*HEAD_DIM*4; HT3 phase generation uses hardware frequency/CORDIC, not a software replacement |
+
+INT8 panel/column traversal uses one ascending byte per row (64 bytes per
+column); AWQ retains its unsigned nibble permutation and metadata padding.
+Quantized K/V records use head-major ascending coordinates with zero-padded
+aligned per-token records, separate regions and bit-preserving provisional
+copies as specified above. Native records preserve their two-byte coordinates.
+
+Image commit scans all 96*L slots, rejecting missing required identities,
+unexpected occupied optional slots, wrong stored tags/lengths, alignment,
+overflow or scale-table overlap. Pairwise descriptor disjointness is maintained
+by every installation: no other operation changes descriptor base/length.
+Commit reads every active native embedding/weight/bias/gamma coordinate and
+AWQ scale coordinate through real DMA and rejects nonfinite values. AWQ
+scale negative nonzero is invalid; inherited zero scale is allowed. Padding
+and inactive native panel rows are not arithmetic inputs and cannot cause a
+numeric error. Packed integer weights/zeros, scratch, empty K/V and the
+inherited unused RoPE reservation are not misinterpreted as native values.
+Arithmetic/dequantization overflow remains checked by the consuming hardware,
+not waived by image commit.
+
+Extension scales are little-endian positive finite FP32, including positive
+subnormals. Entry count is the sum of optional INT8 projection entries
+`L*sum_projection(R*G_N)` and optional quantized K/V entries `2*L*NUM_KV_HEADS`;
+required length is `64*ceil(4*entries/64)`. INT8 entries are layer, projection,
+output row, input group; K/V entries follow, layer, KV head, K before V.
+The controller checks exact length/alignment, 34-bit address end and descriptor
+overlap, then reads all entries through DMA and requires all trailing table
+padding words zero. Zero, negative and nonfinite entries reject commit.
+The decoder fetches each layer's K/V scales into captured registers and each
+projection's exact unrounded logical INT8 subregion. No provisional copy of
+unquantized K/V bypasses those scales or the store rounding boundary.
+
+### Top/CSR/image cycle recurrences
+
+Let N_D=96*L. Starting at R3, descriptor RAM ownership initializes one slot
+per core edge; initialized becomes visible after R3+(N_D-1). There is no
+RAM-content reset loop or premature lookup of uninitialized descriptors.
+An outer CSR accepted at E remains owned until its held response transfers.
+Direct control/version/reserved/config responses appear after E and first
+transfer E+1. Forwarded legacy requests first accept at F=E+1 once descriptor
+initialization is complete. A simple legacy response becomes visible after F
+and is captured by control at F+1, first externally transferable at F+2.
+A selected descriptor read uses synchronous RAM at F+1, field decode at F+2,
+control capture at F+3 and first external transfer F+4. A descriptor deletion
+uses INSTALL_WRITE at F+1, control capture F+2 and external transfer F+3.
+A nonzero install scans one RAM read/check pair per slot: read/check slot i
+at F+1+2*i / F+2+2*i; INSTALL_WRITE is F+2*N_D+1, control capture is the
+following edge and the first external response transfer is F+2*N_D+3.
+Invalid direct commands report errors without entering an execution phase.
+
+For image commit accepted by descriptors at F, entry0's COMMIT_READ is F+1.
+Let A_i be entry i's RAM read edge. COMMIT_CHECK is A_i+1. For an entry with
+no numeric payload, COMMIT_NEXT is A_i+2, and next entry read is A_i+3.
+For an entry requiring n=length/64 payload beats, the first validator command
+accepts at A_i+2 and first raw DMA request at A_i+3. Let R_j be the actual
+raw response-accepting edge of beat j, including mux/transport/CDC/supply
+delays. The burst reader's held result transfers to descriptors at R_j+1.
+The next beat command/raw request is R_j+2 / R_j+3; after the last beat,
+COMMIT_NEXT is R_last+2 and the next descriptor read is R_last+3.
+These formulas count one actual acquisition per payload beat, not an
+assumed zero-latency memory or receipt-only validation.
+
+Let T be the final COMMIT_NEXT edge. Without an extension, committed and
+the descriptor CSR response become visible after T. With extensions,
+EXTENSION_BEGIN executes T+1, first validator command is T+2 and first raw
+request T+3. Its beats follow the same R_j recurrence; the final table result
+check at R_last+1 establishes committed/response only if all scale/padding/
+ownership checks pass. Control captures a descriptor response on the next
+edge; its external response first transfers on the following edge. Thus a
+no-payload/no-extension scan takes 3*N_D descriptor edges from F to response
+visibility; numeric and table costs substitute the explicit recurrences above.
+Every actual input/output stall extends the appropriate accepting edge,
+with unchanged held data/error/ownership. A failure drains its already accepted
+validator response before returning an error, never dropping bus obligations.
+
+A descriptor lookup accepted at L produces registered payload/valid after L
+and first transfers at L+1. The execution lookup arbiter then captures/forwards
+it using its separate registered owner as specified above. Direct mutation
+invalidation is visible after its accepting edge; execution observes it on
+the next edge, while top CSR/loader ownership already excludes new requests.
+new_sequence invalidates prefix/provisional ownership but does not invalidate
+the committed model image or abandon an accepted memory return.
+
+Physical-byte snapshot request acceptance toggles ownership. At the first two
+eligible DDR edges the request traverses two synchronizers; on the following
+DDR edge the pre-edge counter is captured and acknowledged. Two core
+synchronizer edges and the following core edge capture the held bus into the
+response. Control consumes that response on its following core edge, then
+offers the held external CSR response. Clock phase and physical debt recovery
+remain explicit supply costs. The physical-source counter continues counting
+while its prior snapshot is held, without tearing that snapshot.
+
+### Portable integration
+
+From the delivered project root, static elaboration is
+`iverilog -g2012 -t null -s anvil_q1_ht3_top rtl/*.sv`. The lexical source
+order places FP/layout packages first. No include path, private state, device
+identifier or simulator replacement is required. Functional L1 entry remains
+`python3 tests/verify.py`, authored/executed by independent Verifier with
+declared Icarus/vvp, Verilator, Yosys and Python dependencies. Missing verification
+sources/data/tools are not a passing design result; Designer does not install
+tools, author verification harnesses or execute functional/synthesis checks.
+
+Host startup: assert reset in both clock domains, allow R1/R2 release and
+descriptor initialization/transport recovery, configure legacy/extension
+formats and table location, upload the image through the granted loader
+handshake, install its descriptors, and issue image commit. Wait for a
+successful held CSR response and image_valid before token/batch admission.
+Use new_sequence before replacing the inference prefix; acknowledge all
+logit/commit responses and completion. Wait for idle ownership before
+format/table/image changes. Recommit is mandatory after every image mutation.
+
+Native timing constraints must declare clk at 5.0 ns and ddr_clk at 10.0 ns,
+with actual CDC synchronizer/dual-clock RAM boundaries, not broadly masked
+functional paths. The shared runtime supplies target synthesis/STA and hardware
+integration. This document supplies no achieved-frequency waiver or inferred
+physical result.
+
 ## Implementation and independent acceptance obligations
 
 No combinational division/modulo operators, mixed sequential assignment styles,
