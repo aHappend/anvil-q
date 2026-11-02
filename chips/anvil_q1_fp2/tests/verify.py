@@ -24,6 +24,7 @@ from protocols import simulate_csr, simulate_ddr  # noqa: E402
 from architecture import GEOMETRIES, simulate_architecture  # noqa: E402
 from sensitivity import sensitivity  # noqa: E402
 from benchmarks import rms_benchmark  # noqa: E402
+from errors import simulate_errors  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -582,7 +583,7 @@ def main():
     selector.add_argument("--probe",
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
                                  "synthesis", "csr", "ddr", "architecture", "sensitivity",
-                                 "portable-inner", "rms-benchmark"])
+                                 "portable-inner", "rms-benchmark", "top-errors"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
@@ -601,6 +602,8 @@ def main():
             portable(run)
         elif selected == "rms-benchmark":
             rms_benchmark(run, ROOT, compile_and_run)
+        elif selected == "top-errors":
+            simulate_errors(run, ROOT, compile_and_run, args.simulator or "iverilog")
         elif selected == "portable-inner":
             arithmetic(run, [17], compact=True, leaves=("add", "multiply", "tensor"))
             simulate_csr(run, 17, "iverilog", compile_and_run, 8)
