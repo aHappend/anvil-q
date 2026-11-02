@@ -80,16 +80,20 @@ module tb;
   wire [104:0] req_payload={req_kind,req_row,req_col,req_tag,req_proj,req_format};
   wire [65:0] row_payload={row_data,row_index,row_last,row_error};
   wire reset_ok=({cmd_ready,busy,row_valid,row_data,row_index,row_last,row_error,
-    underflow,bubble,act_read_valid,req_valid,rsp_ready,w_valid,in_valid,
+    underflow,bubble,act_read_valid,act_read_column,req_valid,req_kind,req_layer,
+    req_row,req_col,req_tag,req_proj,req_format,rsp_ready,tensor_flush,
+    w_valid,w_ready,w_data,w_scale,w_format,w_first,w_last,w_error,w_tag,
+    in_valid,in_ready,in_a,in_mask,in_first,in_last,in_tag,out_ready,
     out_valid,out_data,out_first,out_last,out_tag,out_error}===0);
   string input_path;
   always @(posedge clk) if(!rst_n && reset_ok !== 1'b1) $fatal(1,"RESET posedge");
   always @(negedge clk) if(!rst_n && reset_ok !== 1'b1) $fatal(1,"RESET negedge");
   initial begin
     rst_n=0; #1; if(reset_ok !== 1'b1)
-      $fatal(1,"RESET time0 cmd_ready=%b busy=%b row_valid=%b row_data=%h row_index=%h row_last=%b row_error=%b underflow=%b bubble=%b act_read_valid=%b req_valid=%b rsp_ready=%b w_valid=%b in_valid=%b out_valid=%b out_data=%h out_first=%b out_last=%b out_tag=%h out_error=%b",
+      $fatal(1,"RESET time0 cmd_ready=%b busy=%b row_valid=%b row_data=%h row_index=%h row_last=%b row_error=%b underflow=%b bubble=%b act_read_valid=%b req_valid=%b req_kind=%h rsp_ready=%b w_valid=%b w_scale=%h w_first=%b w_last=%b in_valid=%b in_first=%b in_last=%b out_valid=%b out_data=%h out_first=%b out_last=%b out_tag=%h out_error=%b",
         cmd_ready,busy,row_valid,row_data,row_index,row_last,row_error,underflow,bubble,
-        act_read_valid,req_valid,rsp_ready,w_valid,in_valid,out_valid,out_data,
+        act_read_valid,req_valid,req_kind,rsp_ready,w_valid,w_scale,w_first,w_last,
+        in_valid,in_first,in_last,out_valid,out_data,
         out_first,out_last,out_tag,out_error);
     lengths[0]=1; lengths[1]=127; lengths[2]=128;
     lengths[3]=129; lengths[4]=1536; lengths[5]=8960;
@@ -291,7 +295,7 @@ def run(probe):
 
 def main():
     probe = Probe("gemv-stream")
-    probe.receipt["diagnostic_of"] = "evidence/preparation/fp2-gemv-stream-20261102T190155Z-678f2962/receipt.json"
+    probe.receipt["diagnostic_of"] = "evidence/preparation/fp2-gemv-stream-20261102T190441Z-ec4cfcca/receipt.json"
     try:
         with SuiteDeadline():
             run(probe)

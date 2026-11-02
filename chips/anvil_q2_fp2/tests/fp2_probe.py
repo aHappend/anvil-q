@@ -32,6 +32,9 @@ class SuiteDeadline:
 
     def __init__(self, seconds=2700):
         self.end = time.monotonic() + seconds
+        inherited = os.environ.get("ANVIL_Q2_VERIFY_DEADLINE")
+        if inherited is not None:
+            self.end = min(self.end, float(inherited))
         self.seconds = seconds
 
     def remaining(self):
@@ -202,8 +205,13 @@ class Probe:
         self.receipt["commands"].append(record)
         with stdout.open("w") as out, stderr.open("w") as err:
             try:
+                environment = os.environ.copy()
+                child_end = time.monotonic() + max(0.01, timeout - 5)
+                if _budget:
+                    child_end = min(child_end, _budget.end)
+                environment["ANVIL_Q2_VERIFY_DEADLINE"] = str(child_end)
                 with subprocess.Popen(argv, cwd=ROOT, stdout=out, stderr=err,
-                                      start_new_session=True) as process:
+                                      start_new_session=True, env=environment) as process:
                     deadline = time.monotonic() + timeout
                     try:
                         while True:

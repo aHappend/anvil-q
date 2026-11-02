@@ -134,17 +134,25 @@ def synthesis_checks(suite):
     run("default-accelerated-top", lambda p: synthesis.run(p, "anvil_q2_fp2_top"))
     for name in synthesis.TOPS[:-1]:
         run(f"default-{name}", lambda p: synthesis.run(p, name))
+    compact_results = {}
     for weight, cache in ((0, 0), (2, 0), (0, 2), (2, 2)):
         parameters = {**synthesis.COMPACT_TOP, "WEIGHT_MODE": weight, "CACHE_MODE": cache}
-        run(f"native-mx-weight{weight}-cache{cache}",
-            lambda p: synthesis.run(p, "anvil_q2_fp2_top", parameters))
+        result = run(f"native-mx-weight{weight}-cache{cache}",
+                     lambda p: synthesis.run(p, "anvil_q2_fp2_top", parameters))
+        compact_results[f"weight{weight}-cache{cache}"] = result.summary["synthesis"]
     for format_, weight, cache in ((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)):
         parameters = {**synthesis.COMPACT_TOP, "ACCEL_ENABLE": 0,
                       "FP_FORMAT": format_, "WEIGHT_MODE": weight, "CACHE_MODE": cache}
         run(f"compatibility-format{format_}-weight{weight}-cache{cache}",
             lambda p: synthesis.run(p, "anvil_q2_fp2_top", parameters))
-    run("executed-parent-baseline", lambda p: synthesis.run(
+    baseline = run("executed-parent-baseline", lambda p: synthesis.run(
         p, "anvil_q2_fp_top", synthesis.COMPACT_TOP))
+    suite.probe.summary["comparable_logical_ppa"] = {
+        "parameters": synthesis.COMPACT_TOP,
+        "parent": baseline.summary["synthesis"], "fp2": compact_results,
+        "units": "generic hierarchical logic cells, state bits and inferred memory bits",
+        "physical_or_power_claim": "none; generic statistics are not ALMs, DSPs, M20Ks or watts",
+    }
 
     def expanded_parent(probe):
         expanded = synthesis.expand_parent(probe.directory / "exact-package-expansion")
@@ -158,6 +166,7 @@ def synthesis_checks(suite):
 
 
 def benchmark_checks(suite):
+    suite.execute("ping-pong-live-buffer-overlap", lambda p: prefetch.run(p, "verilator"))
     suite.execute("long-stream-accounted-native-mx-density", gemv.run)
     benchmark.run(suite.probe, suite.execute)
 

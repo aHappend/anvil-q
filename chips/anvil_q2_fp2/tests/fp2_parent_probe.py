@@ -314,11 +314,11 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
         dual_reference=False, embedding_fn=embedding, tb_template=PARENT_TB,
         expected_results=None):
     commands = commands or [(3, 0, 1, 0)]
+    if simulator == "iverilog" and len(commands) > 1:
+        simulator = "verilator"
     source = probe.directory / "tb.sv"
     text = tb_template.replace("@MODULE@", "anvil_q2_fp2_top" if compatibility else "anvil_q2_fp_top")
     if simulator == "iverilog":
-        if len(commands) != 1:
-            commands = commands[:1]
         text = text.replace("cycle<5000000", "cycle<500000")
     for needle, value in (("@FORMAT@", fp_format), ("@WEIGHT@", weight_mode), ("@CACHE@", cache_mode)):
         text = text.replace(needle, str(value))
