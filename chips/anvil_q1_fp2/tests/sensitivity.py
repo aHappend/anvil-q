@@ -13,7 +13,7 @@ MUTATIONS = (
     ("rsqrt-seed", "rtl/anvil_q1_fp2_fast_rsqrt.sv",
      "32'h5f3759df", "32'h5f000000", "rsqrt", "NUMERICAL"),
     ("residual-routing", "rtl/anvil_q1_fp2_epilogue_fusion.sv",
-     "add_b=residual_value;", "add_b=32'd0;", "epilogue", "NUMERICAL"),
+     "add_b=residual_q;", "add_b=32'd0;", "epilogue", "NUMERICAL"),
     ("online-rescaling", "rtl/anvil_q1_fp2_flash_attn.sv",
      "alpha<=exp_result[0];", "alpha<=32'h3f800000;", "attention", "NUMERICAL"),
     ("response-ownership", "rtl/anvil_q1_fp2_ddr_pingpong.sv",
