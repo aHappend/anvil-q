@@ -41,7 +41,7 @@ class Evidence:
         # This run's receipt is live until finish; earlier run directories are immutable.
         (self.path / "receipt.json").write_text(json.dumps(self.record, indent=2) + "\n")
 
-    def run(self, name, argv, version_argv, cwd=None):
+    def run(self, name, argv, version_argv, cwd=None, expected_exit_codes=(0,)):
         cwd = ROOT if cwd is None else Path(cwd)
         stdout = self.path / (name + ".stdout.txt")
         stderr = self.path / (name + ".stderr.txt")
@@ -50,7 +50,8 @@ class Evidence:
         child = dict(argv=[str(x) for x in argv], cwd=rel(cwd), start_time=now(),
                      timeout_s=None, timed_out=False, stdout=rel(stdout), stderr=rel(stderr),
                      tool_version_argv=version_argv, tool_version_stdout=rel(version_stdout),
-                     tool_version_stderr=rel(version_stderr))
+                     tool_version_stderr=rel(version_stderr),
+                     expected_exit_codes=list(expected_exit_codes))
         self.record["children"].append(child)
         self.save()
         start = time.monotonic()
@@ -68,7 +69,7 @@ class Evidence:
             child["end_time"] = now()
             child["duration_s"] = time.monotonic() - start
             self.save()
-        if result.returncode:
+        if result.returncode not in expected_exit_codes:
             raise RuntimeError(f"{name} exited {result.returncode}: {rel(stdout)}, {rel(stderr)}")
         return stdout
 
