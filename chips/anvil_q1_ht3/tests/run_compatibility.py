@@ -17,7 +17,26 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, clean_objects, execute, hashes, relative, remaining, timestamp
-from reference import convert, encode, float_bits, float_value, vector_check
+from reference import convert, encode, float_bits, float_value
+
+
+def logit_check(actual, reference):
+    """Model vectors require cosine; the standalone operator error bound is separate."""
+    if not actual or len(actual) != len(reference):
+        raise AssertionError("missing or wrong-length model logit vector")
+    if not all(math.isfinite(x) for x in actual+reference):
+        raise AssertionError("nonfinite model logits")
+    aa, rr = math.fsum(x*x for x in actual), math.fsum(x*x for x in reference)
+    if not aa or not rr:
+        if aa != rr or any(x != 0 for x in actual):
+            raise AssertionError("model logit zero-vector mismatch")
+        cosine = 1.0
+    else:
+        cosine = math.fsum(a*b for a, b in zip(actual, reference))/math.sqrt(aa*rr)
+    error = max(abs(a-b) for a, b in zip(actual, reference))
+    if cosine < 0.9999:
+        raise AssertionError(f"model logit cosine={cosine}, required=0.9999, error={error}")
+    return dict(cosine=cosine, max_abs_error=error, required_cosine=0.9999)
 
 
 def rounded16(value, fp16):
@@ -218,7 +237,7 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False):
             raise AssertionError("unrecognized inference observation")
     if len(cycles) != len(expected):
         raise AssertionError("missing completed-token measurements")
-    metrics = [vector_check(a, b) for a, b in zip(actual, expected)]
+    metrics = [logit_check(a, b) for a, b in zip(actual, expected)]
     return dict(status="passed", format=fmt, seed=seed, metrics=metrics, measurements=cycles,
                 raw_summary=match[0], binary_binding=binding)
 
