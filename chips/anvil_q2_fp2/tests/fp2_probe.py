@@ -141,7 +141,7 @@ class Probe:
         self.summary = {"comparisons": {}, "mismatches": [], "mismatch_count": 0}
         self.versions = {}
 
-    def command(self, argv, stem, timeout=600):
+    def command(self, argv, stem, timeout=600, allow_nonzero=False):
         stdout = self.directory / f"{stem}.stdout.txt"
         stderr = self.directory / f"{stem}.stderr.txt"
         record = {
@@ -179,7 +179,7 @@ class Probe:
                 raise
             finally:
                 record["end_unix"] = time.time()
-        if result_code:
+        if result_code and not allow_nonzero:
             raise RuntimeError(f"tool exit {result_code}: {record['stderr']}")
         return stdout
 
