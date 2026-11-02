@@ -8,8 +8,17 @@ from architecture import bf16
 from reference import bits32
 
 
-def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0):
+def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0,
+                           compact=False, precisions=None):
+    requested_geometry = geometry
+    if compact:
+        geometry = (*geometry[:-2], min(3, geometry[-2]), geometry[-1])
     layers, hidden, intermediate, queries, kvheads, dimension, group, vocab, sequence = geometry
+    precisions = tuple(precisions if precisions is not None else
+                       (range(3) if enable == 0 else (0,)))
+    if not precisions or any(mode not in (range(3) if enable == 0 else (0,))
+                             for mode in precisions):
+        raise ValueError("unsupported compatibility precision selection")
     stem = f"compatibility-h{hidden}-enable{enable}-{seed}"
     directory = run.path / stem
     directory.mkdir()
@@ -34,8 +43,10 @@ def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0)
     with (directory / "rope.hex").open("x") as output:
         output.write("".join(f"{word:08x}\n" for word in coefficients))
     maximum = max(hidden, intermediate)
-    tokens = sequence
-    commands = (tokens + 3 + int(sequence > 1)) * (3 if enable == 0 else 1) + 1
+    tokens = min(3, sequence) if compact else sequence
+    commands = (tokens + 3 + int(sequence > 1)) * len(precisions) + 1
+    precision_cases = " ".join(
+        f"{index}: mode={precision};" for index, precision in enumerate(precisions))
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
 module tb;
@@ -102,7 +113,7 @@ module tb;
   integer parent_counts[0:{commands-1}],parent_outputs[0:{commands-1}];
   reg parent_errors[0:{commands-1}];
   integer model=0,command_index=0,cycle=0,received=0,requests=0,compared=0;
-  integer command_accepts=0,completion_count=0,remaining=0,position,mode,j;
+  integer command_accepts=0,completion_count=0,remaining=0,position,mode,mode_index,j;
   reg pending=0,held=0;
   reg [31:0] pending_data=0,held_index=0,held_data=0;
   reg pending_error=0,finished=0,fault=0;
@@ -250,7 +261,8 @@ module tb;
       for (j=0;j<{15*maximum};j=j+1) scratch[j]=0;
       for (j=0;j<{layers*sequence*kvheads*dimension};j=j+1) begin keys[j]=0; vals[j]=0; end
       command_index=0; cycle=0; rng=seed_value; rst_n=1; #1;
-      for (mode=0;mode<{3 if enable == 0 else 1};mode=mode+1) begin
+      for (mode_index=0;mode_index<{len(precisions)};mode_index=mode_index+1) begin
+        case (mode_index) {precision_cases} default: $fatal(1,"precision matrix"); endcase
         fault=0;
         for (position=0;position<{tokens};position=position+1)
           command(position%{vocab},position,position==0,mode[1:0]);
@@ -275,9 +287,10 @@ endmodule
     compile_and_run(run, directory, bench, sources, "verilator", stem,
                     arguments=[f"+fixture={run.relative / stem}", f"+seed={seed}"], cache=True)
     run.receipt["comparisons"].append({
-        "kind": "compatibility", "seed": seed, "geometry": geometry, "enable_fp2": enable,
+        "kind": "compatibility", "seed": seed, "geometry": requested_geometry,
+        "executed_geometry": geometry, "enable_fp2": enable,
         "commands_per_implementation": commands, "successive_tokens": tokens,
-        "precisions": [0, 1, 2] if enable == 0 else [0],
+        "precisions": list(precisions),
         "checks": ["bit-exact logits", "memory transaction hash/count", "error semantics",
                    "fresh sequences", "continuations", "fault termination", "invalid position",
                    "maximum legal compact position",

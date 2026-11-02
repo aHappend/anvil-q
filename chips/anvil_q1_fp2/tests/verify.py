@@ -659,7 +659,7 @@ def portable(run):
     })
 
 
-def behavior(run, seeds):
+def behavior(run, seeds, compact=True):
     """Regenerate all functional stimuli and execute both simulator tiers."""
     arithmetic(run, [17], compact=True)
     simulate_commands(run, "epilogue", 17, 2, "iverilog", compile_and_run)
@@ -669,6 +669,10 @@ def behavior(run, seeds):
                               compile_and_run, ROOT, tokens=1)
     simulate_errors(run, ROOT, compile_and_run, "iverilog")
     arithmetic(run, seeds)
+    architecture_matrix = [
+        (seed, geometry) for index, seed in enumerate(seeds)
+        for geometry in (GEOMETRIES[index % len(GEOMETRIES)],)
+    ] if compact else [(seed, geometry) for seed in seeds for geometry in GEOMETRIES]
     for seed in seeds:
         for bits in (8, 64):
             simulate_csr(run, seed, "verilator", compile_and_run, bits)
@@ -676,12 +680,24 @@ def behavior(run, seeds):
         simulate_commands(run, "epilogue", seed, 256, "verilator", compile_and_run)
         for tile in (1, 3, 16):
             simulate_commands(run, "attention", seed, 64, "verilator", compile_and_run, tile)
-        for geometry in GEOMETRIES:
-            for mx in (False, True):
-                simulate_architecture(run, seed, geometry, mx, "verilator",
-                                      compile_and_run, ROOT, tokens=geometry[-1])
+        if compact:
             for enable in (0, 1):
-                simulate_compatibility(run, ROOT, compile_and_run, geometry, seed, enable)
+                simulate_compatibility(run, ROOT, compile_and_run, GEOMETRIES[0],
+                                       seed, enable, compact=True)
+        else:
+            for geometry in GEOMETRIES:
+                for enable in (0, 1):
+                    simulate_compatibility(run, ROOT, compile_and_run, geometry, seed, enable)
+    for seed, geometry in architecture_matrix:
+        for mx in (False, True):
+            simulate_architecture(run, seed, geometry, mx, "verilator",
+                                  compile_and_run, ROOT,
+                                  tokens=min(3, geometry[-1]) if compact else geometry[-1])
+    if compact:
+        for index, geometry in enumerate(GEOMETRIES[1:]):
+            simulate_compatibility(run, ROOT, compile_and_run, geometry,
+                                   seeds[index % len(seeds)], 0, compact=True,
+                                   precisions=(index + 1,))
     comparisons = run.receipt["comparisons"]
     for seed in seeds:
         tensor_rows = [row for row in comparisons if row.get("kind") == "tensor" and
@@ -690,7 +706,9 @@ def behavior(run, seeds):
             tensor_rows[0]["format_counts"][fmt] < 4096 for fmt in ("bf16", "mx")
         ):
             raise AssertionError(f"seed {seed}: missing 4096 tensor groups per format")
-        for geometry in GEOMETRIES:
+        for architecture_seed, geometry in architecture_matrix:
+            if architecture_seed != seed:
+                continue
             architecture_rows = [row for row in comparisons if row.get("kind") == "architecture"
                                  and row.get("seed") == seed and row.get("geometry") == geometry
                                  and row.get("simulator") == "verilator"]
@@ -698,6 +716,8 @@ def behavior(run, seeds):
                 raise AssertionError(f"seed {seed}: missing decoder format/geometry comparisons")
     run.receipt["coverage"] = {
         "seeds": seeds, "executed_geometries": GEOMETRIES,
+        "fixture_tier": "compact pairwise" if compact else "Cartesian",
+        "architecture_seed_geometry_matrix": architecture_matrix,
         "tensor_groups_per_format_per_seed": {
             str(row["seed"]): row["format_counts"] for row in comparisons
             if row.get("kind") == "tensor" and row.get("simulator") == "verilator"
@@ -709,8 +729,11 @@ def behavior(run, seeds):
     }
 
 
-def benchmark(run, seeds):
+def benchmark(run, seeds, compact=True):
     """Five measured domains; no synthesis-cell or nominal-frequency PPA claims."""
+    run.receipt["fixture_tier"] = (
+        "bounded production-width cold/warm operators" if compact else "production-width operators"
+    )
     for seed in seeds:
         projection_benchmark(run, ROOT, compile_and_run, False, seed)
         projection_benchmark(run, ROOT, compile_and_run, True, seed)
@@ -763,13 +786,14 @@ def main():
     if args.mutation and args.probe != "sensitivity":
         parser.error("--mutation is only valid for bounded sensitivity preparation probes")
     selected = args.suite or args.probe
+    compact = args.compact or args.suite in ("behavior", "benchmark")
     run = Run(f"fp2-{selected}", preparation=args.probe is not None, repair_of=args.repair_of)
     error = None
     try:
         if selected == "behavior":
-            behavior(run, [int(seed) for seed in args.seeds.split(",")])
+            behavior(run, [int(seed) for seed in args.seeds.split(",")], compact=compact)
         elif selected == "benchmark":
-            benchmark(run, [int(seed) for seed in args.seeds.split(",")])
+            benchmark(run, [int(seed) for seed in args.seeds.split(",")], compact=compact)
         elif selected == "rsqrt-startup":
             rsqrt_startup(run)
         elif selected == "portable":
@@ -785,9 +809,13 @@ def main():
         elif selected == "compatibility":
             geometry = GEOMETRIES[("minimum", "nonpower", "multihead").index(
                 args.geometry or "minimum")]
-            for enable in (0, 1):
-                simulate_compatibility(run, ROOT, compile_and_run, geometry,
-                                       int(args.seeds.split(",")[0]), enable)
+            for seed in map(int, args.seeds.split(",")):
+                for enable in ((0,) if args.compact and geometry != GEOMETRIES[0] else (0, 1)):
+                    precisions = ((1 if geometry == GEOMETRIES[1] else 2,)
+                                  if args.compact and geometry != GEOMETRIES[0] else None)
+                    simulate_compatibility(run, ROOT, compile_and_run, geometry,
+                                           seed, enable, compact=args.compact,
+                                           precisions=precisions)
         elif selected in ("rope-benchmark", "swiglu-benchmark"):
             stream_operator_benchmark(
                 run, ROOT, compile_and_run,
