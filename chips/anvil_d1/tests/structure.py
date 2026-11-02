@@ -47,8 +47,9 @@ def synthesize(evidence, top="anvil_d1_top", parameters=None):
             if kind not in modules and not kind.startswith("$"):
                 prohibited.append([name, cell_name, "unresolved:" + kind])
             if kind == "$mem_v2":
-                parameters = cell["parameters"]
-                memory_bits += int(parameters["SIZE"], 2) * int(parameters["WIDTH"], 2)
+                memory_parameters = cell["parameters"]
+                memory_bits += (int(memory_parameters["SIZE"], 2) *
+                                int(memory_parameters["WIDTH"], 2))
     if prohibited:
         raise AssertionError(f"prohibited synthesis cells: {prohibited[:10]}")
     registers = sum(v for k, v in counts.items() if "dff" in k.lower())
