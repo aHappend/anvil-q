@@ -43,7 +43,7 @@ and line alignment/bounds checking. All calculations use widened intermediates.
 The one-outstanding policy is intentionally conservative. It fulfills the
 corrected one-column assembly contract without a response-backpressure port,
 does not reuse lines between columns, and counts every physical reread.
-The future integrated scheduler must provide sufficient buffering/prefetch
+The shared public transport must provide sufficient buffering/prefetch
 elsewhere to sustain the arithmetic array. No achieved throughput is inferred
 from this leaf's storage or lane counts.
 
@@ -384,3 +384,24 @@ These are advisory syntax/elaboration results, not engineering acceptance.
 Portable compile ordering is parent sources (package first), then HT2 sources
 (`anvil_q3_ht2_00_fp_pkg.sv` first among HT2 files). The independently owned
 verification entry point must supply both dependencies in that order.
+
+## Decoder increment's static diagnostic
+
+One fast `iverilog -g2012 -t null` command elaborated the connected decoder at
+production INT8 defaults, a standalone INT4 KV staging root, and scalar/scratch
+arbiter roots with one client. All current RTL and the unchanged parent
+dependency were parsed in package-first order. The command exited zero in
+2.76 seconds with empty stderr. Exact argv, current RTL source snapshots/hashes,
+installed Icarus version, start/end times and raw output paths are retained at
+`evidence/preparation/decoder-scalar-staging-elaboration-20261102T204024323384Z/receipt.json`.
+No functional simulation, numerical comparison, mutation, synthesis, STA, fit
+or physical-board experiment ran. This receipt is an advisory elaboration
+diagnostic, not acceptance or a throughput/timing claim.
+
+The decoder's evaluated tree still requires the public sequence controller and
+verifier/atomic-engine connection. Ordinary HT2 priming must use the same engine
+to publish its one-token KV before caching the computed next-token argmax;
+speculative execution must preserve the prior prefix during cancellation.
+The literal legacy core, host exclusion, mode latch, common Avalon arbitration,
+new-sequence lifecycle and target FPGA/PCIe bridge remain to be implemented.
+No ready handoff is claimed for the incomplete public product.

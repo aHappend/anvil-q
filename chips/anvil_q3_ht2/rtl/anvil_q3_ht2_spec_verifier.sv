@@ -43,6 +43,8 @@ module anvil_q3_ht2_spec_verifier #(
   output wire [127:0] out_tokens,
   output wire [31:0] out_next_token, out_committed_pos,
   output wire idle, fault, drain_done,
+  output wire publication_valid,
+  output wire [31:0] publication_pos, publication_next_token,
   output wire memory_req_valid,
   input wire memory_req_ready,
   output wire memory_req_write,
@@ -87,6 +89,9 @@ module anvil_q3_ht2_spec_verifier #(
     assign idle=0;
     assign fault=0;
     assign drain_done=0;
+    assign publication_valid=0;
+    assign publication_pos=0;
+    assign publication_next_token=0;
     assign memory_req_valid=0;
     assign memory_req_write=0;
     assign memory_req_address=0;
@@ -132,6 +137,7 @@ module anvil_q3_ht2_spec_verifier #(
     wire running=rst_n && !flush && !failed;
     wire engine_ready, engine_stage_ready, engine_staged, engine_commit_ready;
     wire engine_publish, engine_done, engine_error, engine_idle, engine_fault, engine_drained;
+    wire engine_publication;
     wire [2:0] engine_publish_count;
     wire [31:0] engine_publish_pos, visible_count, visible_epoch;
     wire logit_fire=logit_valid && logit_ready;
@@ -211,6 +217,9 @@ module anvil_q3_ht2_spec_verifier #(
     assign fault=rst_n && !flush && failed;
     assign drain_done=rst_n && !flush && engine_drained &&
       (state==IDLE || state==FAULTED || state==ERROR_RESPONSE);
+    assign publication_valid=running && state==COMMIT_WAIT && engine_publication;
+    assign publication_pos=publication_valid ? base_pos+{29'd0,accepted_count} : 32'd0;
+    assign publication_next_token=publication_valid ? current_target : 32'd0;
 
     anvil_q3_ht2_kv_commit_engine #(
       .NUM_LAYERS(NUM_LAYERS),.NUM_KV_HEADS(NUM_KV_HEADS),.HEAD_DIM(HEAD_DIM),
@@ -226,6 +235,7 @@ module anvil_q3_ht2_spec_verifier #(
       .staged(engine_staged),.commit_valid(running && state==COMMIT),
       .commit_ready(engine_commit_ready),.commit_count(accepted_count),
       .commit_nodes(selected_path),.publish_valid(engine_publish),
+      .publication_valid(engine_publication),
       .publish_count(engine_publish_count),.publish_pos(engine_publish_pos),
       .visible_count(visible_count),.visible_epoch(visible_epoch),
       .done(engine_done),.error(engine_error),.idle(engine_idle),

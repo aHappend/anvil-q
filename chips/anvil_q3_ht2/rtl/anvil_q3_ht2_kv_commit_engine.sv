@@ -21,6 +21,7 @@ module anvil_q3_ht2_kv_commit_engine #(
   input wire [2:0] commit_count,
   input wire [7:0] commit_nodes,
   output wire publish_valid,
+  output wire publication_valid,
   output wire [2:0] publish_count,
   output wire [31:0] publish_pos, visible_count, visible_epoch,
   output wire done, error, idle, fault, drain_done,
@@ -60,6 +61,7 @@ module anvil_q3_ht2_kv_commit_engine #(
     assign staged=0;
     assign commit_ready=0;
     assign publish_valid=0;
+    assign publication_valid=0;
     assign publish_count=0;
     assign publish_pos=0;
     assign visible_count=0;
@@ -148,6 +150,7 @@ module anvil_q3_ht2_kv_commit_engine #(
     assign staged=running && state==STAGE && all_staged;
     assign commit_ready=staged;
     assign publish_valid=running && state==COMPLETE;
+    assign publication_valid=running && state==PUBLICATION && !transport_fault;
     assign publish_count=publish_valid ? path_count : 3'd0;
     assign publish_pos=publish_valid ? committed : 32'd0;
     assign visible_count=rst_n && !flush ? committed : 32'd0;
