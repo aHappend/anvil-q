@@ -6,6 +6,32 @@ import json
 import re
 
 
+def flatten_configuration(text, filename):
+    read_index = {
+        "anvil_q2_ht_configuration.sv": "index",
+        "anvil_q2_ht2_native_configuration.sv": "shadow_read_address",
+    }[filename]
+    bit_access = "initialized[{cfg_index,cfg_addr[5:2]}]"
+    word_access = "initialized[{" + read_index + ",4'b0000}+:16]"
+    replacements = [
+        ("reg [15:0] initialized [0:ENTRIES-1];",
+         "reg [16*ENTRIES-1:0] initialized;"),
+        ("initialized[cfg_index][cfg_addr[5:2]]", bit_access),
+        (f"initialized[{read_index}]", word_access),
+    ]
+    for old, new in replacements:
+        if old not in text:
+            raise RuntimeError(f"unrecognized configuration storage syntax: {filename}")
+        text = text.replace(old, new)
+    text, resets = re.subn(
+        r"for \(i=0;\s*i<ENTRIES;\s*i=i\+1\) initialized\[i\]<=0;",
+        "initialized<=0;", text)
+    remaining = text.replace(bit_access, "").replace(word_access, "")
+    if resets != 1 or re.search(r"\binitialized\s*\[", remaining):
+        raise RuntimeError(f"unrecognized configuration reset/index: {filename}")
+    return text
+
+
 def expand_packages(run, root, source_paths):
     """Inline only project function/constant packages at their import sites."""
     packages = {}
@@ -30,22 +56,7 @@ def expand_packages(run, root, source_paths):
         lowered = imports.sub(inline, text)
         if path.name in ("anvil_q2_ht_configuration.sv",
                          "anvil_q2_ht2_native_configuration.sv"):
-            replacements = [
-                ("reg [15:0] initialized [0:ENTRIES-1];",
-                 "reg [16*ENTRIES-1:0] initialized;"),
-                ("initialized[cfg_index][cfg_addr[5:2]]",
-                 "initialized[{cfg_index,cfg_addr[5:2]}]"),
-                ("initialized[index]", "initialized[{index,4'b0000}+:16]"),
-            ]
-            for old, new in replacements:
-                if old not in lowered:
-                    raise RuntimeError(f"unrecognized configuration storage syntax: {path.name}")
-                lowered = lowered.replace(old, new)
-            lowered, resets = re.subn(
-                r"for \(i=0;\s*i<ENTRIES;\s*i=i\+1\) initialized\[i\]<=0;",
-                "initialized<=0;", lowered)
-            if resets != 1 or re.search(r"initialized\[(?:i|index|cfg_index)\]", lowered):
-                raise RuntimeError(f"unrecognized configuration reset/index: {path.name}")
+            lowered = flatten_configuration(lowered, path.name)
         lowered = re.sub(r"\bint'\(([^()]*)\)", r"$signed(32'(\1))", lowered)
         if re.search(r"\bint'\s*\(", lowered):
             raise RuntimeError(f"unsupported nested int cast: {path.relative_to(root)}")
@@ -64,7 +75,8 @@ def expand_packages(run, root, source_paths):
         "operation": ("replace wildcard imports with verbatim package bodies; omit package units; "
                       "lower int'(x) to $signed(32'(x)); flatten only the asynchronous-reset "
                       "16-bit initialized register arrays in both configuration modules, "
-                      "with index {row,word} and whole-vector reset"),
+                      "with index {row,word} and whole-vector reset; retain parent index reads "
+                      "and native synchronous shadow_read_address reads at their original edges"),
         "bindings": bindings,
     }
     run.save()
@@ -81,12 +93,13 @@ COMPACT_PARAMETERS = {
 
 
 def execute(run, root, source_paths, compact=False):
+    from synthesis_checks import execute as check_lowering
+    lowered = check_lowering(run, root, source_paths)
     run.tool("yosys")
     record, _, stderr = run.command(
         ["yosys", "-Q", "-T", "-m", "slang", "-p", "help read_slang"],
         "systemverilog-frontend", check=False)
     if record["exit_code"] != 0:
-        lowered = expand_packages(run, root, source_paths)
         frontend = []
         read_command = "read_verilog -sv -defer " + " ".join(run.relative(p) for p in lowered)
     else:
