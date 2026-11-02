@@ -335,6 +335,7 @@ def simulate(probe, source, rtl, simulator, extra=None):
     probe.command(
         ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
          "--unroll-count", "512", "-j", "2", "--Mdir", str(objects), "-o", str(binary),
+         "--unroll-stmts", "65536",
          *map(str, rtl), str(source)], "compile"
     )
     try:

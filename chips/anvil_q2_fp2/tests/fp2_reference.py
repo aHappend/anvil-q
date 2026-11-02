@@ -13,16 +13,18 @@ def finite(bits, exponent_bits=8, fraction_bits=23):
     )
 
 
-def exact(bits, fraction_bits=23):
+def exact(bits, fraction_bits=23, exponent_bits=8):
     """Decode a finite binary32 or BF16 into an exact rational."""
-    exponent = (bits >> fraction_bits) & 255
+    exponent_max = (1 << exponent_bits) - 1
+    bias = (1 << (exponent_bits - 1)) - 1
+    exponent = (bits >> fraction_bits) & exponent_max
     fraction = bits & ((1 << fraction_bits) - 1)
-    if exponent == 255:
+    if exponent == exponent_max:
         raise ValueError("nonfinite operand")
     significand = fraction if exponent == 0 else (1 << fraction_bits) + fraction
-    shift = (1 if exponent == 0 else exponent) - 127 - fraction_bits
+    shift = (1 if exponent == 0 else exponent) - bias - fraction_bits
     value = Fraction(significand << max(shift, 0), 1 << max(-shift, 0))
-    return -value if bits >> (fraction_bits + 8) else value
+    return -value if bits >> (fraction_bits + exponent_bits) else value
 
 
 def nearest_even(numerator, denominator):
@@ -31,11 +33,13 @@ def nearest_even(numerator, denominator):
     return quotient + (twice > denominator or (twice == denominator and quotient & 1))
 
 
-def rounded(value, fraction_bits=23, negative_zero=False):
+def rounded(value, fraction_bits=23, negative_zero=False, exponent_bits=8):
     """RNE a rational to a binary format with an 8-bit exponent."""
     value = Fraction(value)
     sign = int(value < 0 or (value == 0 and negative_zero))
-    sign_field = sign << (fraction_bits + 8)
+    bias = (1 << (exponent_bits - 1)) - 1
+    minimum_exponent = 1 - bias
+    sign_field = sign << (fraction_bits + exponent_bits)
     value = abs(value)
     if value == 0:
         return sign_field
@@ -45,7 +49,7 @@ def rounded(value, fraction_bits=23, negative_zero=False):
         exponent -= numerator < denominator << exponent
     else:
         exponent -= numerator << -exponent < denominator
-    quantum = max(exponent, -126) - fraction_bits
+    quantum = max(exponent, minimum_exponent) - fraction_bits
     significand = nearest_even(
         numerator << max(-quantum, 0), denominator << max(quantum, 0)
     )
@@ -54,9 +58,10 @@ def rounded(value, fraction_bits=23, negative_zero=False):
     if significand >= 1 << (fraction_bits + 1):
         significand >>= 1
         exponent += 1
-    if exponent > 127:
-        return sign_field | (255 << fraction_bits)
-    encoded = 0 if significand < 1 << fraction_bits else max(exponent, -126) + 127
+    if exponent > bias:
+        return sign_field | (((1 << exponent_bits) - 1) << fraction_bits)
+    encoded = (0 if significand < 1 << fraction_bits
+               else max(exponent, minimum_exponent) + bias)
     return sign_field | (encoded << fraction_bits) | (significand & ((1 << fraction_bits) - 1))
 
 
