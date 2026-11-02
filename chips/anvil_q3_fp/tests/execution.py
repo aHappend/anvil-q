@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import time
 import sys
+import os
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,7 +61,16 @@ class Evidence:
             with stdout.open("w") as out, stderr.open("w") as err:
                 process = subprocess.Popen(command["argv"], cwd=directory, stdout=out, stderr=err)
                 try:
-                    command["exit_code"] = process.wait(timeout=timeout)
+                    deadline = start + timeout
+                    while True:
+                        try:
+                            command["exit_code"] = process.wait(timeout=min(30, max(0.001, deadline - time.monotonic())))
+                            break
+                        except subprocess.TimeoutExpired:
+                            if time.monotonic() >= deadline:
+                                raise
+                            print(f"RUNNING {argv[0]} log={relative(stdout)} elapsed_s={int(time.monotonic() - start)}",
+                                  flush=True)
                 except subprocess.TimeoutExpired:
                     process.terminate()
                     try:
@@ -125,3 +135,36 @@ def verilator(evidence, name, testbench, rtl, files=None):
         for path in objects.glob(pattern):
             path.unlink()
     return output
+
+
+def compiled(evidence, name, testbench, rtl):
+    """Build once per elaboration; each fixture still runs in a fresh process."""
+    cache = getattr(evidence, "_simulators", {})
+    identity = hashlib.sha256((testbench + "\n" + "\n".join(rtl)).encode()).hexdigest()
+    if identity in cache:
+        return cache[identity]
+    directory = evidence.path / f"build-{name}-{identity[:12]}"
+    directory.mkdir()
+    (directory / "tb.sv").write_text(testbench.replace("#0; reset_check;", "#1; reset_check;"))
+    objects = directory / "compile-obj"
+    evidence.run(["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
+                  "-j", "2", "--Mdir", relative(objects), "-o", "sim", *rtl,
+                  relative(directory / "tb.sv")])
+    binary = objects / "sim"
+    for pattern in ("*.o", "*.a", "*.gch"):
+        for path in objects.glob(pattern):
+            path.unlink()
+    cache[identity] = binary
+    evidence._simulators = cache
+    return binary
+
+
+def run_compiled(evidence, binary, name, files):
+    directory = evidence.path / name
+    directory.mkdir()
+    for filename, text in files.items():
+        (directory / filename).write_text(text)
+    argv = os.path.relpath(binary, directory)
+    if not argv.startswith("."):
+        argv = "./" + argv
+    return evidence.run([argv], cwd=directory)

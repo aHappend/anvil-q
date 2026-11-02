@@ -14,6 +14,8 @@ import integration
 import synthesis
 import cache_checks
 import nonlinear
+import campaigns
+import tensor_checks
 
 
 def main():
@@ -21,20 +23,27 @@ def main():
     parser.add_argument("--suite", choices=["numerics", "protocol", "behavior", "benchmark",
                                            "synthesis", "defects", "portability"])
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear"])
+    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor"])
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
     parser.add_argument("--dtype", choices=["bf16", "fp16"], default="bf16")
     parser.add_argument("--awq", action="store_true")
     parser.add_argument("--tokens", type=int, choices=[1, 4], default=1)
+    parser.add_argument("--cache-mode", type=int, choices=[0, 1, 2], default=0)
+    parser.add_argument("--fp8", type=int, choices=[0, 1], default=0)
+    parser.add_argument("--affine", type=int, choices=[0, 1], default=0)
+    parser.add_argument("--layers", type=int, choices=[1, 36], default=1)
     args = parser.parse_args()
     evidence = Evidence(args.probe or args.suite or "aggregate",
                         preparation=bool(args.probe), repair_of=args.repair_of)
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
-            if args.probe == "nonlinear":
+            if args.probe == "tensor":
+                evidence.versions([["verilator", "--version"]])
+                result = tensor_checks.check(evidence, args.seed, args.banks)
+            elif args.probe == "nonlinear":
                 evidence.versions([["verilator", "--version"]])
                 result = nonlinear.check(evidence, args.seed)
             elif args.probe == "cache":
@@ -45,11 +54,19 @@ def main():
             elif args.probe == "top":
                 evidence.versions([["verilator", "--version"]])
                 result = integration.smoke(evidence, args.seed, args.simulator, args.banks,
-                                           args.dtype, args.awq, args.tokens)
+                                           args.dtype, args.awq, args.tokens, args.cache_mode,
+                                           args.fp8, args.affine, args.layers)
             else:
-                result = getattr(numerics, args.probe)(evidence)
+                result = getattr(numerics, args.probe)(evidence, args.seed)
         else:
-            raise NotImplementedError("Full L1 suites are not yet authored; this is not a ready handoff")
+            evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"],
+                               ["verilator", "--version"], ["yosys", "-V"]])
+            dispatch = {"numerics": campaigns.numerics_suite,
+                        "behavior": campaigns.behavior,
+                        "synthesis": campaigns.synthesis_suite}
+            if args.suite not in dispatch:
+                raise NotImplementedError(f"Suite {args.suite or 'aggregate'} is still being authored")
+            result = dispatch[args.suite](evidence, args.seed)
         evidence.finish("passed", comparisons=result)
         print(f"PASS {relative(evidence.path / 'receipt.json')}")
         return 0

@@ -6,6 +6,85 @@ import re
 from execution import ROOT, relative
 
 
+def output_cone(module):
+    """Conservative structural fan-in, retaining sequential and RAM dependencies."""
+    drivers = {}
+    cells = module.get("cells", {})
+    for name, cell in cells.items():
+        for port, direction in cell["port_directions"].items():
+            if direction == "output":
+                for bit in cell["connections"][port]:
+                    if isinstance(bit, int):
+                        drivers.setdefault(bit, []).append(name)
+    work = [bit for port in module.get("ports", {}).values() if port["direction"] == "output"
+            for bit in port["bits"] if isinstance(bit, int)]
+    bits, reached = set(), set()
+    while work:
+        bit = work.pop()
+        if bit in bits:
+            continue
+        bits.add(bit)
+        for name in drivers.get(bit, []):
+            if name in reached:
+                continue
+            reached.add(name)
+            cell = cells[name]
+            work.extend(bit for port, direction in cell["port_directions"].items()
+                        if direction == "input" for bit in cell["connections"][port]
+                        if isinstance(bit, int) and bit not in bits)
+    return reached
+
+
+def structure(modules, banks):
+    paths, counts, memory_bits = [], {}, 0
+    active_paths = []
+    def visit(name, prefix="", active=True):
+        nonlocal memory_bits
+        module = modules[name]
+        cone = output_cone(module)
+        for instance, cell in module.get("cells", {}).items():
+            path = prefix + instance
+            kind = cell["type"]
+            paths.append(path)
+            live = active and instance in cone
+            if live:
+                active_paths.append(path)
+            if kind in modules:
+                visit(kind, path + ".", live)
+            else:
+                counts[kind] = counts.get(kind, 0) + 1
+                if kind == "$mem_v2":
+                    memory_bits += int(cell["parameters"]["WIDTH"], 2) * int(cell["parameters"]["SIZE"], 2)
+    visit("anvil_q3_fp_top")
+    required = ("decoder", "final_norm", "token_io", "bank_scheduler",
+                "decoder.norm", "decoder.gemv", "decoder.rope", "decoder.attention",
+                "decoder.mlp", "decoder.residual", "decoder.gemv.tensor_array",
+                "decoder.gemv.tensor_array.weight_prefetcher")
+    for path in required:
+        if path not in active_paths:
+            raise AssertionError(f"Required hierarchy absent from public output cone: {path}")
+    base = "decoder.gemv.tensor_array."
+    for bank in range(banks):
+        for path in (base + f"engines[{bank}].dot8",
+                     base + f"engines[{bank}].accumulator",
+                     base + f"weight_prefetcher.banks[{bank}].storage"):
+            if path not in active_paths:
+                raise AssertionError(f"Bank arithmetic/prefetch bypassed: {path}")
+        storage = base + f"weight_prefetcher.banks[{bank}].storage."
+        if not any(path.startswith(storage) and "weight_storage" in path for path in active_paths):
+            raise AssertionError(f"Native weight tile RAM not in output cone for bank {bank}")
+    scheduler = modules[modules["anvil_q3_fp_top"]["cells"]["bank_scheduler"]["type"]]
+    scheduler_cone = output_cone(scheduler)
+    if not any(name in scheduler_cone and cell["type"] in ("$dff", "$adff", "$sdff", "$dffe", "$adffe")
+               for name, cell in scheduler["cells"].items()):
+        raise AssertionError("Scheduler state missing from output cone")
+    if memory_bits == 0 or counts.get("$mul", 0) == 0:
+        raise AssertionError("Synthesis lost all memories or actual multipliers")
+    return {"generic_instantiated_cells": counts, "generic_instantiated_memory_bits": memory_bits,
+            "active_hierarchy_paths": [path for path in active_paths if not path.split(".")[-1].startswith("$")],
+            "cone_analysis": "conservative structural public-output fan-in, not functional equivalence proof"}
+
+
 def adapted_sources(directory, rtl_root=None):
     """Inline only the common SV package for the installed Verilog frontend."""
     rtl_root = rtl_root or ROOT / "rtl"
@@ -68,8 +147,10 @@ def synthesize(evidence, banks=1, mode=0, fp8=0, affine=0, production=False):
     instances = {name.split(".")[-1] for module in modules.values() for name in module.get("cells", {})}
     if required - instances:
         raise AssertionError(f"Missing required hierarchy: {sorted(required - instances)}")
+    connectivity = structure(modules, banks)
     result = {"parameters": parameters, "generic_cell_definitions": counts,
               "generic_memory_definition_bits": memory_bits,
-              "netlist": relative(directory / "netlist.json"), "physical_ppa": False}
+              "netlist": relative(directory / "netlist.json"), "physical_ppa": False,
+              "structure": connectivity}
     (directory / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     return result

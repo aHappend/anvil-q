@@ -1,7 +1,11 @@
 """Compact public-memory/logit oracle. No DUT-internal assertions."""
 
-from execution import ROOT, icarus, relative, verilator
-from model import Fixture
+import json
+import re
+
+from execution import ROOT, compiled, icarus, relative, run_compiled
+from model import Fixture, FP64Fixture
+from metrics import compare
 
 
 def key_bits(key):
@@ -9,27 +13,70 @@ def key_bits(key):
     return (kind << 99) | (layer << 67) | (projection << 64) | (row << 32) | column
 
 
-def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=False, tokens=1):
-    fixture = Fixture(seed=seed, fmt=fmt, awq=awq)
+def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=False, tokens=1,
+          mode=0, fp8=0, affine=0, layers=1, heads=8, head_dim=2,
+          intermediate=24, vocab=3, queue_depth=3, tile_k=8, tile_rows=3,
+          max_seq_len=4):
+    if simulator == "iverilog" and (tokens > 1 or heads * head_dim >= 64 or layers > 1):
+        portability_smoke = smoke(evidence, seed, "iverilog", banks, fmt, awq, 1)
+        substantive = smoke(evidence, seed, "verilator", banks, fmt, awq, tokens,
+                            mode, fp8, affine, layers, heads, head_dim, intermediate,
+                            vocab, queue_depth, tile_k, tile_rows, max_seq_len)
+        return {"icarus_compact_smoke": portability_smoke, "requested_workload": substantive}
+    config = dict(seed=seed, fmt=fmt, awq=awq, cache_mode=mode, fp8=fp8, affine=affine,
+                  layers=layers, heads=heads, kv_heads=heads // 8, head_dim=head_dim,
+                  hidden=heads * head_dim, intermediate=intermediate, vocab=vocab)
+    fixture = Fixture(**config)
+    fp64 = FP64Fixture(**config)
     initial = dict(fixture.memory)
     for position in range(tokens):
         fixture.token(token=position % fixture.vocab, position=position)
+        fp64.token(token=position % fixture.vocab, position=position)
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
-    text = "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in initial.items())
+    text = f"{int(fmt == 'fp16')} {int(awq)} {tokens}\n"
+    text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
     text += "".join(f"1 {key_bits(key):026x} {value:08x}\n" for key, value in fixture.writes)
     text += "".join(f"2 {index:026x} {value:08x}\n"
                     for index, value in enumerate(value for token in fixture.logits for value in token))
     rtl = [relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))]
     rtl += ["anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
             "anvil_q3_reference/rtl/anvil_q3_mem_port.sv"]
-    runner = verilator if simulator == "verilator" else icarus
-    tb = TOP_TB.replace("localparam B=1;", f"localparam B={banks}, TOKENS={tokens};")
-    tb = tb.replace("token_fp16=0,token_awq=0", f"token_fp16={int(fmt == 'fp16')},token_awq={int(awq)}")
-    output = runner(evidence, "top-smoke", tb, rtl, {"vectors.txt": text})
-    return {"scratch_cache_writes": len(fixture.writes), "logits": sum(map(len, fixture.logits)),
-            "stdout": relative(output), "configuration": {"banks": banks, "cache_mode": 0,
-            "hidden": fixture.h, "intermediate": fixture.i, "layers": 1, "tokens": tokens,
-            "activation": fixture.fmt, "awq": awq, "seed": seed}}
+    parameters = dict(NUM_LAYERS=layers, HIDDEN_SIZE=fixture.h, INTERMEDIATE_SIZE=intermediate,
+                      NUM_Q_HEADS=heads, NUM_KV_HEADS=heads // 8, HEAD_DIM=head_dim,
+                      GROUP_SIZE=8, VOCAB_SIZE=vocab, MAX_SEQ_LEN=max_seq_len, BANKS="B",
+                      CACHE_MODE=mode, MODE1_FP8=fp8, INT4_ASYM=affine,
+                      QUEUE_DEPTH=queue_depth, TILE_K=tile_k, TILE_ROWS=tile_rows)
+    tb = TOP_TB.replace("localparam B=1;", f"localparam B={banks}, VOCAB={vocab};")
+    tb = re.sub(r"anvil_q3_fp_top #\([\s\S]*?\) dut", "anvil_q3_fp_top #(" +
+                ",".join(f".{key}({value})" for key, value in parameters.items()) + ") dut", tb)
+    name = (f"top-b{banks}-m{mode}-f{fp8}-a{affine}-l{layers}-h{fixture.h}"
+            f"-{fmt}-w{int(awq)}-s{seed}-n{tokens}-q{queue_depth}-k{tile_k}-r{tile_rows}-v{vocab}")
+    if simulator == "verilator":
+        binary = compiled(evidence, name, tb, rtl)
+        output = run_compiled(evidence, binary, name, {"vectors.txt": text})
+    else:
+        output = icarus(evidence, name, tb, rtl, {"vectors.txt": text})
+    observed = [int(line.split()[1], 16)
+                for line in (evidence.path / name / "logits.txt").read_text().splitlines()]
+    metrics = [compare(observed[t * vocab:(t + 1) * vocab], fp64.logits[t], fmt)
+               for t in range(tokens)]
+    threshold = (0.999, 0.99, 0.95)[mode]
+    for token_metrics in metrics:
+        if token_metrics["cosine"] < threshold:
+            raise AssertionError(f"FP64 cosine {token_metrics['cosine']} below {threshold}: {name}")
+    observations = []
+    for line in output.read_text().splitlines():
+        if line.startswith("TOKEN "):
+            observations.append(dict(zip(("position", "cycles", "requests", "writes", "stalls"),
+                                         map(int, line.split()[1:]))))
+    if len(observations) != tokens:
+        raise AssertionError(f"Missing measured token records in {relative(output)}")
+    result = {"scratch_cache_writes": len(fixture.writes), "logits": len(observed),
+              "stdout": relative(output), "parameters": parameters, "seed": seed,
+              "activation": fmt, "awq": awq, "metrics_vs_fp64": metrics,
+              "minimum_cosine": threshold, "tokens": observations}
+    (evidence.path / name / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
+    return result
 
 
 TOP_TB = """
@@ -54,12 +101,17 @@ module tb;
     .NUM_Q_HEADS(8),.NUM_KV_HEADS(1),.HEAD_DIM(2),.GROUP_SIZE(8),
     .VOCAB_SIZE(3),.MAX_SEQ_LEN(4),.BANKS(B),.CACHE_MODE(0),
     .QUEUE_DEPTH(3),.TILE_K(8),.TILE_ROWS(3)) dut(.*);
-  reg [102:0] memory_key[0:8191],expected_key[0:4095];
-  reg [31:0] memory_data[0:8191],expected_data[0:4095],expected_logit[0:15];
-  reg used[0:4095];
+  reg [102:0] memory_key[0:262143],expected_key[0:262143];
+  reg [31:0] memory_data[0:262143],expected_data[0:262143],expected_logit[0:255];
+  reg [102:0] mutable_key[0:65535];
+  reg [31:0] mutable_data[0:65535];
+  reg mutable_used[0:65535];
+  reg used[0:262143];
   reg [102:0] key,load_key;
   reg [31:0] load_data;
-  integer nmemory=0,nexpected=0,nlogit=0,fd,rc,record_type,i,j,match_index,memory_index;
+  integer nmemory=0,ninitial=0,nexpected=0,nlogit=0,fd,outfile,rc,record_type,i,j,match_index,memory_index;
+  integer dtype,awq,TOKENS,token_start=0,token_requests=0,token_writes=0,stalls=0,token_stalls=0;
+  integer low,high,middle,first_expected=0,mutable_index,hash_steps;
   integer cycle=0,accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
   integer occupied[0:B-1],queue_head[0:B-1],queue_tail[0:B-1],due[0:B-1][0:31],bank;
   reg [31:0] queued_data[0:B-1][0:31];
@@ -78,11 +130,17 @@ module tb;
   endtask
   initial begin
     rst_n=0;
+    for (i=0;i<65536;i=i+1) mutable_used[i]=0;
     for (bank=0;bank<B;bank=bank+1) begin occupied[bank]=0; queue_head[bank]=0; queue_tail[bank]=0; end
     #0; reset_check;
     #1; reset_check;
     fd=$fopen("vectors.txt","r");
     if (!fd) $fatal(1,"vector open");
+    outfile=$fopen("logits.txt","w");
+    if (!outfile) $fatal(1,"logit output open");
+    rc=$fscanf(fd,"%d %d %d\\n",dtype,awq,TOKENS);
+    if (rc!=3 || TOKENS<1) $fatal(1,"fixture header");
+    token_fp16=dtype; token_awq=awq;
     while (!$feof(fd)) begin
       rc=$fscanf(fd,"%d %h %h\\n",record_type,load_key,load_data);
       if (rc!=3) $fatal(1,"malformed integration vector");
@@ -96,6 +154,7 @@ module tb;
         default: $fatal(1,"bad fixture record");
       endcase
     end
+    ninitial=nmemory;
     @(negedge clk); rst_n=1;
   end
   always @(posedge clk) begin
@@ -111,6 +170,7 @@ module tb;
             mem_req_wdata[bank*32+:32],mem_req_tag[bank*64+:64]}!==request_payload[bank] ||
             mem_req_valid[bank]!==1'b1)) $fatal(1,"STALL memory request changed bank=%0d",bank);
         held_request[bank]=mem_req_valid[bank] && !mem_req_ready[bank];
+        if (held_request[bank]) stalls=stalls+1;
         request_payload[bank]={mem_req_write[bank],mem_req_kind[bank*4+:4],mem_req_layer[bank*32+:32],
             mem_req_proj[bank*3+:3],mem_req_row[bank*32+:32],mem_req_col[bank*32+:32],
             mem_req_wdata[bank*32+:32],mem_req_tag[bank*64+:64]};
@@ -122,11 +182,27 @@ module tb;
         key={mem_req_kind[bank*4+:4],mem_req_layer[bank*32+:32],mem_req_proj[bank*3+:3],
           mem_req_row[bank*32+:32],mem_req_col[bank*32+:32]};
         memory_index=-1;
-        for (i=0;i<nmemory;i=i+1) if (memory_key[i]==key) memory_index=i;
+        low=0; high=ninitial-1;
+        while (low<=high) begin
+          middle=(low+high)>>1;
+          if (memory_key[middle]==key) begin memory_index=middle; low=high+1; end
+          else if (memory_key[middle]<key) low=middle+1;
+          else high=middle-1;
+        end
+        mutable_index=(key[31:0]*97+key[63:32]*193+key[98:67]*389+
+          key[102:99]*769+key[66:64]*1543)&65535;
+        hash_steps=0;
+        while (mutable_used[mutable_index] && mutable_key[mutable_index]!=key && hash_steps<65536) begin
+          mutable_index=(mutable_index+1)&65535; hash_steps=hash_steps+1;
+        end
+        if (hash_steps==65536) $fatal(1,"memory oracle hash capacity");
         if (mem_req_write[bank]) begin
           match_index=-1;
-          for (j=0;j<nexpected;j=j+1)
-            if (match_index<0 && !used[j] && expected_key[j]==key) match_index=j;
+          j=first_expected;
+          while (j<nexpected && match_index<0) begin
+            if (!used[j] && expected_key[j]==key) match_index=j;
+            j=j+1;
+          end
           if (match_index<0) $fatal(1,"UNEXPECTED WRITE kind=%d row=%d col=%d",
             mem_req_kind,mem_req_row,mem_req_col);
           if (mem_req_wdata[bank*32+:32]!==expected_data[match_index])
@@ -134,28 +210,34 @@ module tb;
               match_index,mem_req_kind,mem_req_layer,mem_req_proj,mem_req_row,mem_req_col,
               expected_data[match_index],mem_req_wdata,cycle);
           used[match_index]=1; compared_writes=compared_writes+1;
-          if (memory_index<0) begin
-            memory_index=nmemory; memory_key[nmemory]=key; nmemory=nmemory+1;
-          end
-          memory_data[memory_index]=mem_req_wdata[bank*32+:32];
+          while (first_expected<nexpected && used[first_expected]) first_expected=first_expected+1;
+          mutable_key[mutable_index]=key; mutable_used[mutable_index]=1;
+          mutable_data[mutable_index]=mem_req_wdata[bank*32+:32];
         end
-        if (memory_index<0) $fatal(1,"UNINITIALIZED READ kind=%d layer=%d proj=%d row=%d col=%d",
+        if (memory_index<0 && !mutable_used[mutable_index]) $fatal(1,"UNINITIALIZED READ kind=%d layer=%d proj=%d row=%d col=%d",
           mem_req_kind,mem_req_layer,mem_req_proj,mem_req_row,mem_req_col);
-        queued_data[bank][queue_tail[bank]]=mem_req_write[bank] ? 32'd0 : memory_data[memory_index];
+        queued_data[bank][queue_tail[bank]]=mem_req_write[bank] ? 32'd0 :
+          mutable_used[mutable_index] ? mutable_data[mutable_index] : memory_data[memory_index];
         queued_tag[bank][queue_tail[bank]]=mem_req_tag[bank*64+:64];
         due[bank][queue_tail[bank]]=cycle+2+(requests%5);
         queue_tail[bank]=(queue_tail[bank]+1)&31; occupied[bank]=occupied[bank]+1; requests=requests+1;
         end
       end
-      if (token_valid && token_ready) accepted_token=accepted_token+1;
+      if (token_valid && token_ready) begin
+        accepted_token=accepted_token+1; token_start=cycle;
+        token_requests=requests; token_writes=compared_writes; token_stalls=stalls;
+      end
       if (logit_valid && logit_ready) begin
-        if (logit_index!==32'(compared_logits%3) || logit_data!==expected_logit[compared_logits])
+        if (logit_index!==32'(compared_logits%VOCAB) || logit_data!==expected_logit[compared_logits])
           $fatal(1,"LOGIT index=%0d expected=%h got=%h",logit_index,expected_logit[compared_logits],logit_data);
         compared_logits=compared_logits+1;
+        $fdisplay(outfile,"%h %h",logit_index,logit_data);
       end
       if (done) begin
         if (error!==1'b0) $fatal(1,"TOP error after requests=%0d writes=%0d cycle=%0d",requests,compared_writes,cycle);
         completed_token=completed_token+1;
+        $display("TOKEN %0d %0d %0d %0d %0d",completed_token-1,cycle-token_start,
+          requests-token_requests,compared_writes-token_writes,stalls-token_stalls);
         if (completed_token==TOKENS) begin
         if (accepted_token!=TOKENS || compared_logits!=nlogit || compared_writes!=nexpected)
           $fatal(1,"INCOMPLETE writes=%0d/%0d logits=%0d/%0d outstanding=%0d",
@@ -163,18 +245,19 @@ module tb;
         for (bank=0;bank<B;bank=bank+1) if (occupied[bank]!=0) $fatal(1,"outstanding memory at done");
         $display("COMPARED top writes=%0d logits=%0d requests=%0d cycles=%0d",
           compared_writes,compared_logits,requests,cycle);
+        $fclose(outfile);
         $finish;
         end
       end
       cycle=cycle+1;
-      if (cycle>400000) $fatal(1,"TOP progress bound writes=%0d requests=%0d",compared_writes,requests);
+      if (cycle>20000000) $fatal(1,"TOP progress bound writes=%0d requests=%0d",compared_writes,requests);
     end
   end
   always @(negedge clk) begin
     if (!rst_n) reset_check;
     else begin
       token_valid=accepted_token<TOKENS;
-      token_id=accepted_token%3; token_pos=accepted_token;
+      token_id=accepted_token%VOCAB; token_pos=accepted_token;
       new_sequence=accepted_token==0; token_phase=accepted_token>=2;
       logit_ready=cycle%13<9;
       for (bank=0;bank<B;bank=bank+1) begin

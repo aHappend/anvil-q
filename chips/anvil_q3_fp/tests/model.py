@@ -5,14 +5,17 @@ import math
 import random
 
 from ieee import binary, bits_float, convert, dot, exact, float_bits, pack, sqrt
+from cache_reference import decode, encode
 
 
 class Fixture:
     def __init__(self, seed=17, fmt="bf16", hidden=16, intermediate=24,
-                 heads=8, kv_heads=1, head_dim=2, layers=1, vocab=3, awq=False):
+                 heads=8, kv_heads=1, head_dim=2, layers=1, vocab=3, awq=False,
+                 cache_mode=0, fp8=0, affine=0):
         self.seed, self.fmt = seed, fmt
         self.h, self.i, self.qh, self.kh, self.d = hidden, intermediate, heads, kv_heads, head_dim
         self.layers, self.vocab = layers, vocab
+        self.cache_mode, self.fp8, self.affine = cache_mode, fp8, affine
         self.memory, self.writes, self.logits = {}, [], []
         self.rng = random.Random(seed)
         self.weights = {}
@@ -129,13 +132,25 @@ class Fixture:
         return result
 
     def attention(self, query, key, value, layer, position):
-        self.cache[layer, position] = key, value
+        cached = []
         for kind, vector in ((9, key), (10, value)):
+            decoded = []
             for head in range(self.kh):
-                for dimension in range(0, self.d, 2):
-                    index = head * self.d + dimension
-                    word = vector[index] | (vector[index + 1] << 16)
-                    self.write((kind, layer, 0, position, head * ((self.d + 1) // 2) + dimension // 2), word)
+                group = 2 if not self.cache_mode else 32 if self.cache_mode == 1 else 64
+                blocks = (self.d + group - 1) // group
+                for block, dimension in enumerate(range(0, self.d, group)):
+                    values = vector[head * self.d + dimension:head * self.d + min(dimension + group, self.d)]
+                    words = encode(values, self.fmt, self.cache_mode, self.fp8, self.affine)
+                    decoded.extend(decode(words, len(values), self.fmt, self.cache_mode, self.fp8, self.affine))
+                    logical_block = head * blocks + block
+                    if not self.cache_mode:
+                        self.write((kind, layer, 0, position, logical_block), words[0])
+                    else:
+                        self.write((14 + kind - 9, layer, 0, position, logical_block), words[0])
+                        for word, payload in enumerate(words[1:]):
+                            self.write((12 + kind - 9, layer, 0, position, logical_block * 8 + word), payload)
+            cached.append(decoded)
+        self.cache[layer, position] = tuple(cached)
         result = []
         root = sqrt(pack(Fraction(self.d))[0])[0]
         for head in range(self.qh):
@@ -203,5 +218,87 @@ class Fixture:
                 term = binary("mul", self.wide(activation), self.wide(weight))[0]
                 total = binary("add", total, term)[0]
             logits.append(total)
+        self.logits.append(logits)
+        return logits
+
+
+class FP64Fixture(Fixture):
+    """Unrounded mathematical decoder using exactly the represented input image.
+
+    Unlike the binary32 ABI interpreter, this path retains Python binary64
+    activations throughout the decoder and uses math.exp/sqrt directly.
+    """
+
+    def wide(self, value):
+        return bits_float(super().wide(value))
+
+    def scratch(self, slot, values):
+        return values
+
+    def norm(self, values, layer, mode):
+        reciprocal = 1.0 / math.sqrt(sum(x * x for x in values) / len(values) + 1e-6)
+        kind = (5, 6, 7)[mode]
+        return [x * self.wide(self.memory[kind, 0 if kind == 7 else layer, 0, 0, col]) * reciprocal
+                for col, x in enumerate(values)]
+
+    def projection(self, values, layer, projection):
+        result = []
+        for row, weights in enumerate(self.weights[layer, projection]):
+            total = sum(x * self.wide(w) for x, w in zip(values, weights))
+            if projection < 3:
+                total += self.wide(self.memory[4, layer, projection, 0, row])
+            result.append(total)
+        return result
+
+    def rope(self, values, position, slot):
+        result = list(values)
+        half = self.d // 2
+        for base in range(0, len(values), self.d):
+            for pair in range(half):
+                angle = position / (1000000.0 ** (2 * pair / self.d))
+                cosine, sine = math.cos(angle), math.sin(angle)
+                x, y = values[base + pair], values[base + pair + half]
+                result[base + pair] = x * cosine - y * sine
+                result[base + pair + half] = x * sine + y * cosine
+        return result
+
+    def attention(self, query, key, value, layer, position):
+        self.cache[layer, position] = list(key), list(value)
+        result = []
+        for head in range(self.qh):
+            kv = head // 8
+            scores = [sum(query[head * self.d + d] * self.cache[layer, t][0][kv * self.d + d]
+                          for d in range(self.d)) / math.sqrt(self.d)
+                      for t in range(position + 1)]
+            maximum = max(scores)
+            probabilities = [math.exp(score - maximum) for score in scores]
+            denominator = sum(probabilities)
+            for d in range(self.d):
+                result.append(sum(p * self.cache[layer, t][1][kv * self.d + d]
+                                  for t, p in enumerate(probabilities)) / denominator)
+        return result
+
+    def residual(self, left, right, slot):
+        return [a + b for a, b in zip(left, right)]
+
+    def silu_product(self, gate, up):
+        return [(g / (1 + math.exp(-g)) if g >= 0 else
+                 g * math.exp(g) / (1 + math.exp(g))) * u for g, u in zip(gate, up)]
+
+    def token(self, token=0, position=0):
+        values = [self.wide(self.memory[0, 0, 0, token, col]) for col in range(self.h)]
+        for layer in range(self.layers):
+            normalized = self.norm(values, layer, 0)
+            query, key, value = [self.projection(normalized, layer, p) for p in range(3)]
+            query, key = self.rope(query, position, 2), self.rope(key, position, 3)
+            context = self.attention(query, key, value, layer, position)
+            residual = self.residual(values, self.projection(context, layer, 3), 7)
+            normalized = self.norm(residual, layer, 1)
+            gate, up = [self.projection(normalized, layer, p) for p in (4, 5)]
+            down = self.projection(self.silu_product(gate, up), layer, 6)
+            values = self.residual(residual, down, 0)
+        final = self.norm(values, 0, 2)
+        logits = [sum(x * self.wide(self.memory[0, 0, 0, row, col]) for col, x in enumerate(final))
+                  for row in range(self.vocab)]
         self.logits.append(logits)
         return logits

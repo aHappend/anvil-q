@@ -2,10 +2,10 @@
 
 import random
 
-from execution import icarus
+from execution import compiled, icarus, relative, run_compiled
 from fractions import Fraction
 
-from ieee import binary, convert, dot, pack, sqrt
+from ieee import binary, classify, convert, dot, exact, pack, sqrt
 
 
 PKG = "rtl/anvil_q3_fp_00_pkg.sv"
@@ -17,7 +17,7 @@ SPECIALS = [
 ]
 
 
-def conversions(evidence):
+def conversions(evidence, seed=17):
     vectors = []
     for dtype, fmt in enumerate(("bf16", "fp16")):
         for value in range(65536):
@@ -57,7 +57,50 @@ module tb;
 endmodule
 """
     icarus(evidence, "conversions", tb, [PKG], {"vectors.txt": "".join(vectors)})
-    return {"widen_narrow_encodings": 131072}
+    narrow_vectors = []
+    rng = random.Random(seed)
+    for dtype, fmt in enumerate(("bf16", "fp16")):
+        values = list(SPECIALS) + [rng.getrandbits(32) for _ in range(8192)]
+        for raw in (0, 1, 2, 0x7f, 0x80, 0x3f7f, 0x3f80, 0x7f7e, 0x7f7f,
+                    0x3ff, 0x400, 0x3bff, 0x3c00, 0x7bfe, 0x7bff):
+            if classify(raw, fmt)[0] in ("finite", "zero") and classify(raw + 1, fmt)[0] == "finite":
+                midpoint = pack((exact(raw, fmt) + exact(raw + 1, fmt)) / 2)[0]
+                values += [midpoint - 1, midpoint, midpoint + 1,
+                           (midpoint - 1) | 0x80000000, midpoint | 0x80000000,
+                           (midpoint + 1) | 0x80000000]
+        for value in values:
+            narrowed, flags = convert(value, "fp32", fmt)
+            narrow_vectors.append(f"{dtype:x} {value:08x} {narrowed:04x} {flags:02x}\n")
+    icarus(evidence, "narrowing-boundaries", NARROW_TB, [PKG],
+           {"vectors.txt": "".join(narrow_vectors)})
+    return {"widen_narrow_encodings": 131072, "binary32_narrowing_cases": len(narrow_vectors)}
+
+
+NARROW_TB = """
+module tb;
+  import anvil_q3_fp_pkg::*;
+  reg dtype;
+  reg [31:0] source;
+  reg [15:0] expected;
+  reg [4:0] flags;
+  integer fd,rc,count=0;
+  initial begin
+    fd=$fopen("vectors.txt","r");
+    if (!fd) $fatal(1,"narrow vectors");
+    while (!$feof(fd)) begin
+      rc=$fscanf(fd,"%h %h %h %h\\n",dtype,source,expected,flags);
+      if (rc!=4) $fatal(1,"malformed narrow vector");
+      if (narrow16(source,dtype)!=={flags,expected})
+        $fatal(1,"NARROW32 dtype=%b source=%h expected=%h/%h got=%h",
+          dtype,source,flags,expected,narrow16(source,dtype));
+      count=count+1;
+    end
+    if (count==0) $fatal(1,"no narrow comparisons");
+    $display("COMPARED narrow32=%0d",count);
+    $finish;
+  end
+endmodule
+"""
 
 
 def operation_vectors(seed=17, count=4096, include_awq=False):
@@ -179,7 +222,8 @@ def iterative(evidence, seed=17, count=4096):
         connection = (".numerator(a),.denominator(b),.quotient(value)" if operation == "div"
                       else ".radicand(a),.value(value)")
         tb = ITERATIVE_TB.replace("@MODULE@", module).replace("@CONNECTION@", connection)
-        icarus(evidence, operation, tb, [PKG, f"rtl/{module}.sv"], {"vectors.txt": text})
+        executable = compiled(evidence, operation, tb, [PKG, f"rtl/{module}.sv"])
+        run_compiled(evidence, executable, operation, {"vectors.txt": text})
         results[operation] = len(pairs)
     return results
 
