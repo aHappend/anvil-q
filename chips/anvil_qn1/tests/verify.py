@@ -40,6 +40,7 @@ from smoke_checks import run_startup, run_elaboration, run_smoke
 from speculation_checks import run_speculation
 from numerical_checks import run_numerical
 from synthesis_checks import run_synthesis_probe, run_controller_synthesis
+from behavior_checks import run_behavior_core
 import reference
 
 
@@ -54,14 +55,17 @@ def main():
                                           "elementary", "csr", "controller", "startup", "elaboration",
                                           "speculation", "qk-stress", "analytic",
                                           "startup-matrix", "scalar-compiled", "synthesis-frontend",
-                                          "controller-synthesis"))
+                                          "controller-synthesis", "behavior-core"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "controller-synthesis":
+        if args.probe == "behavior-core":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_behavior_core(run)
+        elif args.probe == "controller-synthesis":
             run.versions(("python3", "yosys"))
             results = run_controller_synthesis(run)
         elif args.probe == "synthesis-frontend":

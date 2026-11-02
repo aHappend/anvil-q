@@ -147,7 +147,7 @@ def speculative_bench():
     return text
 
 
-def speculation_images(path, geometry, seed, prefix, branching=False):
+def speculation_images(path, geometry, seed, prefix, branching=False, storage_evaluations=None):
     path.mkdir(exist_ok=False)
     image = Image(geometry, seed)
     decoder = Decoder(image)
@@ -222,6 +222,16 @@ def speculation_images(path, geometry, seed, prefix, branching=False):
     else:
         transaction(deferred, next_position, 1,
                     [(second_target + 1) % geometry.vocabulary], [4], [second_target])
+    if storage_evaluations is not None:
+        if len(evaluations) > storage_evaluations:
+            raise ValueError("evaluation storage is smaller than the actual fixture")
+        extents = {"expected-scratch": 15 * geometry.maximum,
+                   "expected-initial": geometry.hidden,
+                   "expected-key": geometry.kv_dimension,
+                   "expected-value": geometry.kv_dimension,
+                   "expected-logits": geometry.vocabulary, "eval-token": 1}
+        for name, extent in extents.items():
+            tables[name].extend([0] * ((storage_evaluations - len(evaluations)) * extent))
     for name, values in tables.items():
         with (path / f"{name}.hex").open("x") as file:
             width = 32 if name == "draft-token" else 3 if name == "draft-parent" else 8
@@ -231,22 +241,30 @@ def speculation_images(path, geometry, seed, prefix, branching=False):
     return evaluations, transactions
 
 
-def run_speculation(run, prefix=4, geometry=Geometry(), seed=17, branching=False):
+def run_speculation(run, prefix=4, geometry=Geometry(), seed=17, branching=False,
+                    compiled=None, storage_evaluations=None, continuation_fault=None):
     images = run.path / "checkpoint-images"
-    evaluations, transactions = speculation_images(images, geometry, seed, prefix, branching)
+    evaluations, transactions = speculation_images(
+        images, geometry, seed, prefix, branching, storage_evaluations)
     bench = run.path / "speculative_tb.sv"
-    bench.write_text(speculative_bench())
+    text = speculative_bench()
+    if continuation_fault is not None:
+        text = continuation_fault_bench(text)
+    bench.write_text(text)
     parameters = {"H": geometry.hidden, "I": geometry.intermediate,
                   "QH": geometry.q_heads, "KH": geometry.kv_heads, "D": geometry.head_dim,
                   "V": geometry.vocabulary, "M": geometry.max_sequence,
-                  "N": len(evaluations), "T": len(transactions)}
+                  "N": storage_evaluations or len(evaluations), "T": len(transactions)}
     objects = run.path / "obj-speculative"
     sources = [p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
-    run.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
-                 "--top-module", "top_tb", *[f"-G{k}={v}" for k, v in parameters.items()],
-                 "--Mdir", relative(objects), "-o", "simulate", *sources, relative(bench)],
-                "speculation-compile")
-    text = run.execute([relative(objects / "simulate"), f"+images={relative(images)}"],
+    if compiled is None:
+        run.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                     "--top-module", "top_tb", *[f"-G{k}={v}" for k, v in parameters.items()],
+                     "--Mdir", relative(objects), "-o", "simulate", *sources, relative(bench)],
+                    "speculation-compile")
+        compiled = objects / "simulate"
+    text = run.execute([relative(compiled), f"+images={relative(images)}",
+                        f"+continuation-fault={continuation_fault or 0}"],
                        "speculation-simulation")
     frames = len(evaluations)
     expected = (f"SUMMARY transactions=3 frames={frames} logits={frames*geometry.vocabulary} "
@@ -255,6 +273,70 @@ def run_speculation(run, prefix=4, geometry=Geometry(), seed=17, branching=False
         raise AssertionError("speculation full-frame/KV/continuation coverage missing")
     result = {"seed": seed, "geometry": vars(geometry), "prefix": prefix,
               "branching": branching, "evaluations": evaluations,
-              "transactions": transactions, "raw_summary": text[-1000:]}
+              "transactions": transactions, "raw_summary": text[-1000:],
+              "compiled_binary": relative(compiled),
+              "continuation_fault": continuation_fault}
+    if continuation_fault is not None:
+        if text.count(f"REJECTED continuation_fault={continuation_fault}") != 1:
+            raise AssertionError("continuation rejection was not observed")
     (run.path / "speculation-reference.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
+
+
+def continuation_fault_bench(text):
+    """Append a real invalid host handshake after the last published transaction."""
+    text = replace_once(text, "reg new_evaluation=1;",
+                        "reg new_evaluation=1,negative_test=0;\n"
+                        "  integer fault_kind=0,fault_seen=0,negative_requests=0;")
+    text = replace_once(
+        text, "if (error!==0 || cancel_done!==0 || think_active!==configured_mode)",
+        "if (!negative_test && (error!==0 || cancel_done!==0 || "
+        "think_active!==configured_mode))")
+    text = replace_once(text, "if (token_valid && token_ready) begin",
+                        "if (!negative_test && token_valid && token_ready) begin")
+    text = replace_once(
+        text, "if (mem_req_valid && mem_req_ready) begin",
+        "if (negative_test && (done!==0 || commit_valid!==0 || logit_valid!==0))\n"
+        "        $fatal(1,\"INVALID_CONTINUATION_PUBLISHED\");\n"
+        "      if (negative_test && error) fault_seen=fault_seen+1;\n"
+        "      if (mem_req_valid && mem_req_ready) begin\n"
+        "        if (negative_test) begin\n"
+        "          negative_requests=negative_requests+1;\n"
+        "          $fatal(1,\"INVALID_CONTINUATION_MEMORY_WORK\");\n"
+        "        end")
+    text = replace_once(
+        text, '$display("SUMMARY transactions=%0d frames=%0d logits=%0d '
+        'key_writes=%0d value_writes=%0d memory_requests=%0d cycles=%0d",',
+        'if (!$value$plusargs("continuation-fault=%d",fault_kind)) '
+        '$fatal(1,"MISSING_CONTINUATION_FAULT");\n'
+        "    if (fault_kind>0) begin\n"
+        "      @(negedge clk);#1;negative_test=1;draft_valid=0;draft_seen=1;\n"
+        "      guard=0;\n"
+        "      while (token_ready!==1 && guard<100) begin "
+        "@(negedge clk);#1;guard=guard+1;end\n"
+        "      if (token_ready!==1) $fatal(1,\"INVALID_HOST_NOT_READY\");\n"
+        "      token_id=expected_committed[(T-1)*5];\n"
+        "      token_pos=host_positions[T-1]+expected_counts[T-1];\n"
+        "      token_phase=1;new_sequence=0;\n"
+        "      case (fault_kind)\n"
+        "        1: token_id=(token_id+1)%V;\n"
+        "        2: token_pos=token_pos+1;\n"
+        "        3: begin token_pos=host_positions[T-1];token_id=host_tokens[T-1];end\n"
+        "        4: begin token_pos=M;token_id=host_tokens[T-1];end\n"
+        "        default: $fatal(1,\"UNKNOWN_CONTINUATION_FAULT\");\n"
+        "      endcase\n"
+        "      token_valid=1;@(posedge clk);\n"
+        "      if (token_ready!==1) $fatal(1,\"INVALID_HOST_HANDSHAKE\");\n"
+        "      #1;@(negedge clk);#1;token_valid=0;\n"
+        "      guard=0;\n"
+        "      while (!fault_seen && guard<100) begin "
+        "@(negedge clk);#1;guard=guard+1;end\n"
+        "      if (fault_seen!=1 || negative_requests!=0 || queued!=0)\n"
+        "        $fatal(1,\"INVALID_CONTINUATION_NOT_REJECTED\");\n"
+        "      repeat (4) begin @(negedge clk);#1;end\n"
+        "      if (fault_seen!=1) $fatal(1,\"REPEATED_TRANSACTION_ERROR\");\n"
+        '      $display("REJECTED continuation_fault=%0d",fault_kind);\n'
+        "    end\n"
+        '$display("SUMMARY transactions=%0d frames=%0d logits=%0d '
+        'key_writes=%0d value_writes=%0d memory_requests=%0d cycles=%0d",')
+    return text
