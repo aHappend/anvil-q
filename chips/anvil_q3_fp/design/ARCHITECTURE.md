@@ -5,9 +5,12 @@
 This is the architecture for the admitted full product, with explicit progress
 tracking rather than an assertion of completion. The current source increment
 establishes common format conversion, three-stage binary32 arithmetic, native
-and AWQ dot8 reduction, iterative division/square root, exponential/SiLU and
-parameter checks. The integrated floating-point decoder, tensor/prefetch path
-and cache remain to be implemented. The parent RTL remains unchanged.
+and AWQ dot8 reduction, iterative division/square root, exponential/SiLU,
+parameter checks, weight prefetch, tensor accumulation, projection GEMV,
+streaming cache codec/controller and residual/SwiGLU element arithmetic.
+The integrated floating-point decoder, norm, RoPE, attention, MLP command
+sequencer, token I/O and top remain to be implemented. The parent RTL remains
+unchanged.
 No functional simulation, synthesis, timing or physical measurements have
 been performed by Designer.
 
@@ -109,6 +112,37 @@ Native tiles store actual 16-bit weights in this path; native mode may not
 bypass prefetch. AWQ fetch preserves parent packing and validates scales and
 padding before exposing a tile.
 
+`rtl/anvil_q3_fp_weight_prefetcher.sv` derives the parent two-slot controller
+and descriptor traversal, with `banks[g].storage` as actual bank instances.
+Each slot stores the descriptor's epoch, bounds, projection and format controls.
+Eight lane-addressed synchronous RAM sets hold q, z, FP16 scale and raw native
+weights. Writes and registered reads occupy a non-reset memory process; reset
+and flush clear ownership rather than RAM contents. Native kind-1 responses
+select the output row's even/odd half and validate unused high-half padding.
+AWQ retains the parent's packed lane permutation and group-index counters.
+The fill FSM fetches one element at a time; it does not claim packed-word
+coalescing or one eight-lane beat of memory bandwidth per cycle.
+
+`rtl/anvil_q3_fp_tensor_array.sv` keeps bank-distributed output tiles and
+replicated eight-lane synchronous activation RAMs. Each engine has a metadata
+FIFO of TILE_ROWS entries carrying the dot transaction's row and first/final
+contribution flags. This FIFO follows accepted dot transfers rather than a
+fixed wall-clock shift count. A row is busy from dot input acceptance through
+accumulator output retirement. The three-stage FP32 accumulator uses the
+committed sum (or +0 for input zero), and returns row metadata through the
+same three elastic stages. Repeated-row beats wait; independently owned rows
+and other banks can progress. Explicit endpoint wrapping covers FIFO depths
+one and three. A held final result blocks accumulator retirement without
+changing the payload or releasing its row prematurely.
+
+`rtl/anvil_q3_fp_gemv.sv` retains the parent scalar memory client, source and
+destination scratch slots, and round-robin result selection. Activations
+load as raw 16-bit words. Q/K/V biases widen exactly, add in binary32, and
+round only at the subsequent selected-format store. All seven projection
+codes use the banked tensor path. Upper-half garbage in scalar activation
+or coefficient words is a format error; IEEE nonfinites are not confused
+with that transport-format check.
+
 The external memory bus is still 32 bits per bank request/response. Native
 projection words pack two output-row weights at a common input index.
 Scratch words contain one zero-extended selected-format activation. Cache
@@ -129,6 +163,31 @@ Mode 2 selects symmetric or affine Group-64 INT4. Shared exponents and affine
 zero points follow `SPEC.md`, not a heuristic range estimate. Invalid
 nonfinites, metadata, forbidden payloads and padding produce explicit errors.
 
+`rtl/anvil_q3_fp_cache_codec.sv` buffers at most one 64-element group.
+Mode 0 packs/unpacks the untouched 16-bit words, including signed zeros and
+NaN payloads. Lossy encoding collects exact represented extrema, searches
+shared exponents in ascending order from -256, and uses integer dyadic
+ties-to-even rounding. The affine search checks the admitted feasible
+zero-point interval and chooses its point nearest zero. FP8 conversion has
+its own E4M3FN normal/subnormal rounding boundary; it is not an INT8 alias.
+Decode checks the complete metadata and every allocated payload element,
+including padding, before exposing output. It scales codes to binary32
+before the selected-format cache-read narrowing. Shared exponent and
+zero-point selection are sequential; no combinational divider is used.
+
+`rtl/anvil_q3_fp_kv_cache.sv` retains the parent three commands (commit,
+read K, read V), per-layer committed-position/prefill state and external
+memory-port handshake. Mode-0 groups are two raw elements per word. Lossy
+groups allocate eight words plus metadata, with head/block-major addressing.
+The controller streams scratch values into the codec and acknowledges
+every output write before advancing. Only completion of the final V group
+increments committed ownership. A memory or codec failure invalidates
+ownership, and flush invalidates it without clearing external storage.
+Format ownership is pinned per layer until flush. Reads require a previously
+committed position and return a zero-extended selected-format element.
+This is bounded group staging above external cache storage, not a
+MAX_SEQ_LEN-sized on-chip value array.
+
 ## Model arithmetic and activation lifetimes
 
 Norm statistics, dot reductions, QK scores, softmax denominators, weighted
@@ -142,6 +201,12 @@ Division and square root use bounded iterative recurrence with at most
 exponential bound. SiLU avoids positive exponent growth through exp(-abs(x)).
 These units must connect to the decoder; isolated arithmetic leaves do not
 establish integrated model correctness.
+
+`rtl/anvil_q3_fp_elementwise.sv` implements the parent's two residual modes
+and SiLU(gate)*up mode with binary32 arithmetic. It widens scratch operands,
+uses the common registered adder/multiplier and stable SiLU unit, then
+narrows once for the destination scratch store. Scalar transfers retain
+the parent memory-port protocol and fault/flush behavior.
 
 ## Performance and evidence model
 

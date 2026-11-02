@@ -44,6 +44,7 @@ module anvil_q3_fp_gemv #(
   wire scalar_request=state==LOAD_REQ || state==BIAS_REQ || state==WRITE_REQ;
   wire scalar_response=state==LOAD_RSP || state==BIAS_RSP || state==WRITE_RSP;
   wire [31:0] response_data=c_rsp_rdata[SB*32+:32];
+  wire [31:0] widened_response=anvil_q3_fp_pkg::widen16(response_data[15:0],fp16);
   wire bad_response=c_rsp_valid[SB] && !scalar_response;
   wire response_fault=c_rsp_valid[SB] && scalar_response &&
     (c_rsp_error[SB] || ((state==BIAS_RSP || state==LOAD_RSP) && response_data[31:16]!=0));
@@ -157,7 +158,7 @@ module anvil_q3_fp_gemv #(
         end
         BIAS_REQ: if (c_req_ready[SB]) state<=BIAS_RSP;
         BIAS_RSP: if (c_rsp_valid[SB]) begin
-          bias<=anvil_q3_fp_pkg::widen16(response_data[15:0],fp16); state<=BIAS_ADD;
+          bias<=widened_response; state<=BIAS_ADD;
         end
         BIAS_ADD: if (bias_add_ready) state<=BIAS_WAIT;
         BIAS_WAIT: if (bias_add_valid) begin output_accumulator<=biased_sum; state<=ROUND; end

@@ -108,6 +108,12 @@ not claims that all corresponding modules already exist.
 | dot8 | New interface specified below; not the parent's integer dot interface |
 | cache_codec | New streaming group interface specified below |
 
+`kv_cache.read_data` retains its 32-bit port width and carries a
+zero-extended selected-format 16-bit cache-read element. Scratch-facing
+parent-derived scalar modules likewise keep 32-bit memory ports while
+validating zero upper halves. These are numerical ABI changes, not port
+width changes.
+
 Command controls are sampled at the existing `cmd_valid && cmd_ready` or
 `desc_valid && desc_ready` handshake and stored with ownership. Native prefetch
 still returns AWQ q/z/scale outputs, zero when inactive; AWQ beats return
@@ -239,6 +245,12 @@ E0 is the rising edge accepting pre-edge valid && ready.
 | MAX_SEQ_LEN=1 | Position zero only; later position errors, never wraps to a live entry |
 | Partial cache group | Scan valid elements only; allocated padding is zero and validated |
 | Failed/cancelled K/V write | Never establishes committed position, even if a subset was acknowledged |
+| Tensor metadata FIFO full | Issue waits for a slot; simultaneous head retirement and tail insertion preserve order |
+| Accumulator retirement and another-row issue | Commit old sum/release its row and reserve the other row on the same edge |
+| Repeated-row issue at retirement | Conservatively waits one further clock; never bypasses an uncommitted sum |
+| Prefetch RAM fill plus active read | Independent owned slots may write/read concurrently; held beat disables replacement read |
+| Codec final input and validation | Last is checked on acceptance; lossy output waits for complete group/padding validation |
+| Codec output retirement and last write acknowledgment | Separate events; cache commitment requires the acknowledgment, not just codec retirement |
 
 Wall-clock latency includes stalls. Counters advance on transfers, not asserted
 valid alone. A repeated row cannot read an uncommitted accumulator. Masked lanes

@@ -92,6 +92,7 @@ module anvil_q3_fp_weight_prefetch_bank #(
   output wire c_rsp_ready,
   input wire [31:0] c_rsp_rdata
 );
+  import anvil_q3_fp_pkg::*;
   localparam CELLS=TK*TR;
   localparam WORDS=CELLS>>3;
   localparam AW=(2*WORDS)>1 ? $clog2(2*WORDS) : 1;
@@ -155,19 +156,6 @@ module anvil_q3_fp_weight_prefetch_bank #(
   wire [15:0] native_value=fill_global_row[0] ? c_rsp_rdata[31:16] : c_rsp_rdata[15:0];
   wire [31:0] read_q, read_z;
   wire [127:0] read_scale, read_weight;
-
-  function automatic [4:0] awq_lane_shift(input reg [2:0] lane);
-    case (lane)
-      0: awq_lane_shift=0;
-      1: awq_lane_shift=16;
-      2: awq_lane_shift=4;
-      3: awq_lane_shift=20;
-      4: awq_lane_shift=8;
-      5: awq_lane_shift=24;
-      6: awq_lane_shift=12;
-      default: awq_lane_shift=28;
-    endcase
-  endfunction
 
   function automatic bad_packed_padding(
     input reg [31:0] word_value, input reg [31:0] packed_base, limit_value
