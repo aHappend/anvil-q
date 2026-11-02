@@ -1,0 +1,167 @@
+# Anvil-Q3-FP architecture
+
+## Implementation state
+
+This is the architecture for the admitted full product, with explicit progress
+tracking rather than an assertion of completion. The current source increment
+establishes common format conversion, three-stage binary32 arithmetic, native
+and AWQ dot8 reduction, iterative division/square root, exponential/SiLU and
+parameter checks. The integrated floating-point decoder, tensor/prefetch path
+and cache remain to be implemented. The parent RTL remains unchanged.
+No functional simulation, synthesis, timing or physical measurements have
+been performed by Designer.
+
+`SPEC.md` freezes interfaces and behavior. Its defined hierarchy is a required
+integration destination, not evidence that a stub or integer wrapper is a
+floating-point implementation. No replacement top is supplied until its real
+floating datapath and protocol are connected.
+
+## Preservation boundaries
+
+Reuse `anvil_q3_bank_scheduler` unchanged. The scheduler retains accepted-request
+ownership, unique tags, independent bank activity and response reordering.
+Top-level sequence/cancel/drain state, client partitioning, decoder ordering,
+ping-pong descriptor state and GQA ownership derive from the immutable parent.
+Their numerical children must change rather than reinterpret integer outputs.
+
+The required data path is:
+
+```text
+selected-format activation stream
+  -> bank-local activation RAM
+  -> eight exact wideners
+native tile RAM -> exact wideners ---------+
+AWQ tile RAM -> FP16 scale * signed delta -+-> 8 x FP32 multiply
+  -> 4 x FP32 add -> 2 x FP32 add -> 1 x FP32 add
+  -> interlocked FP32 row accumulator
+  -> optional FP32 bias -> activation-store RNE
+```
+
+The three multiply stages are not a three-cycle dot product. Native dot
+reduction has twelve registered stages; its accumulator makes fifteen.
+AWQ contributes three prefix stages, retaining binary32 dequantized weights.
+Independent bank engines remain concurrent, even when row feedback reduces
+per-bank issue rate. Row contexts interlock rather than reading stale sums.
+
+## Arithmetic foundation
+
+`rtl/anvil_q3_fp_00_pkg.sv` centralizes bit-level format conversion, bounded
+leading-zero trees, right-shift-with-jam and round-to-nearest ties-to-even.
+It contains no real-number or file-backed arithmetic. Widening is exact for
+finite encodings; NaN payload/sign survive widening for leaf classification.
+Arithmetic and narrowing canonicalize NaNs, while Mode-0 storage bypasses
+conversion to retain every original bit.
+
+`rtl/anvil_q3_fp_mul.sv` has:
+
+1. Classification, special-result description, normalized 24-bit significands
+   and unbiased exponents.
+2. Registered 24x24 significand product and exponent sum.
+3. Product normalization, gradual underflow, RNE and special-result selection.
+
+`rtl/anvil_q3_fp_add.sv` has:
+
+1. Classification, magnitude ordering and sticky alignment.
+2. Registered magnitude addition/subtraction.
+3. Bounded leading-zero normalization, RNE and special-result selection.
+
+Each stage has its own valid/ready enable. A blocked output holds its complete
+payload; an empty upstream stage can still absorb an operation. Flush/reset
+clear valid ownership before any output handshake. Output flags are invalid,
+divide-by-zero, overflow, underflow and inexact. Invalid is distinct from a
+transport/data-format error. Underflow is inexact tininess after rounding.
+
+Combinational functions are evaluated outside sequential processes to avoid
+function-local state becoming spurious asynchronous-reset registers.
+Leading-zero normalization uses a logarithmic priority tree, not a linear
+procedural shift chain. Pipeline boundaries constrain logic structure but do
+not constitute a measured <=10 ns physical result.
+
+`rtl/anvil_q3_fp_dot8.sv` composes eight multiply lanes with the fixed
+three-level adjacent reduction. An optional three-stage AWQ prefix carries
+the corresponding activations and dtype alongside dequantization. A bounded
+in-flight counter drains the path before a native/AWQ mode change, preventing
+different prefix lengths from reordering transactions. The internal vector
+wrapper carries accumulated flags and format errors through identical
+three-stage enables. It does not replace the bank scheduler or row interlock.
+
+`rtl/anvil_q3_fp_divider.sv` emits 27 significand bits using one bounded
+shift/subtract iteration per clock. `rtl/anvil_q3_fp_sqrt.sv` consumes two
+radicand bits per clock for 27 restoring iterations. Both round once with the
+common RNE packer, including remainder-as-sticky, and use explicit exceptional
+result paths. Finite operations reach completion after 28 clocks following
+acceptance; this is structural edge accounting, not an executed measurement.
+
+`rtl/anvil_q3_fp_exp.sv` reduces x to r=x*2^-k with |r|<=1/16, evaluates
+the degree-five Taylor polynomial using registered Horner multiply/add,
+then squares k times. For the admitted [-80,0] range k<=11. Every operation
+is binary32, and x=0 has an exact dedicated result. Approximation acceptance
+is still the independent error bound in `SPEC.md`, not polynomial identity.
+`rtl/anvil_q3_fp_silu.sv` uses x/(1+exp(-x)) for nonnegative x and
+x*exp(x)/(1+exp(x)) for negative x, with explicit NaN/infinity/zero limits.
+
+## Weight ownership and numerical memory ABI
+
+The two tile slots have independent EMPTY/FILLING/READY/ACTIVE states. A
+descriptor owns epoch, layer, projection, bounds and native/AWQ controls.
+One slot may fill while the other is consumed. A stalled beat is immutable.
+Native tiles store actual 16-bit weights in this path; native mode may not
+bypass prefetch. AWQ fetch preserves parent packing and validates scales and
+padding before exposing a tile.
+
+The external memory bus is still 32 bits per bank request/response. Native
+projection words pack two output-row weights at a common input index.
+Scratch words contain one zero-extended selected-format activation. Cache
+Mode 0 packs two raw elements; lossy modes use eight words per allocated
+block plus one metadata word. Requests retain logical addressing rather than
+encoding private byte pointers.
+
+## Cache hierarchy
+
+The cache controller owns committed positions and epochs. Bounded group
+staging and decoded-group storage sit above packed external K/V. Lossy
+quantization is group-local; no full-context on-chip register array or
+eightfold GQA replication is allowed. K and V writes, including metadata,
+must all be acknowledged before commitment becomes visible.
+
+Mode 0 is a raw bit-preserving path. Mode 1 selects Group-32 INT8 or E4M3FN.
+Mode 2 selects symmetric or affine Group-64 INT4. Shared exponents and affine
+zero points follow `SPEC.md`, not a heuristic range estimate. Invalid
+nonfinites, metadata, forbidden payloads and padding produce explicit errors.
+
+## Model arithmetic and activation lifetimes
+
+Norm statistics, dot reductions, QK scores, softmax denominators, weighted
+value sums and logits remain binary32. Selected-format stores are explicit
+rounding boundaries, listed in `SPEC.md`. RoPE uses Qwen split-half rotation.
+Query heads 0..7 use KV head 0 and heads 8..15 use KV head 1 at default
+geometry; head selection is a counter/shift, not a divider.
+
+Division and square root use bounded iterative recurrence with at most
+128 unstalled clocks. Stable softmax/sigmoid share the nonpositive-argument
+exponential bound. SiLU avoids positive exponent growth through exp(-abs(x)).
+These units must connect to the decoder; isolated arithmetic leaves do not
+establish integrated model correctness.
+
+## Performance and evidence model
+
+Count one multiply-accumulate as two useful operations. Eight lanes per bank
+give an issue ceiling of 8*BANKS products per cycle, not an achieved MAC rate:
+the registered reduction, row feedback, packing, prefetch and memory
+backpressure may lower utilization. A 32-bit-per-bank interface at 100 MHz
+has an ideal payload ceiling of 0.4*BANKS GB/s in each separately measured
+direction; actual accepted request traffic determines observed bandwidth.
+Read/write sharing, metadata and padding must not be hidden in that ceiling.
+
+For a dense M-by-K projection, useful work is 2*M*K operations; activation,
+weight, output and metadata traffic are counted separately. Default Q/K/V/O,
+gate/up/down shapes and compact decoder fixtures must be identified distinctly.
+Do not extrapolate sampled row tiles into measured complete-Qwen throughput.
+Negative INT-versus-FP comparisons are valid observations.
+
+Independent L1 numerical references, simulation, sensitivity and generic
+synthesis remain Verifier work. Native post-synthesis Quartus timing and
+physical ALM/DSP evidence are separate from generic cells/storage. Parent
+timing/PPA provenance is unresolved because `GENERATIONAL_HANDOFF.md` was
+not supplied. Neither the target frequency nor historical parent acceptance
+certifies this branch. Product PDF generation follows engineering acceptance.
