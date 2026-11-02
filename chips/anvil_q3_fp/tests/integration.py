@@ -99,6 +99,12 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
     tb = tb.replace("memory_data[0:262143],expected_data[0:262143]",
                     f"memory_data[0:{memory_capacity - 1}],expected_data[0:{write_capacity - 1}]")
     tb = tb.replace("used[0:262143]", f"used[0:{write_capacity - 1}]")
+    projection_coefficients = (2 * fixture.h * fixture.h + 2 * fixture.h * heads // 8 * head_dim +
+                               3 * fixture.h * intermediate)
+    progress_bound = max(20000000, tokens * layers *
+                         (64 * projection_coefficients +
+                          1024 * heads * head_dim * (head_dim + 1) * (tokens + 1)) + 1000000)
+    tb = tb.replace("cycle>20000000", f"cycle>64'd{progress_bound}")
     if simulator == "verilator":
         binary = compiled(evidence, name, tb, rtl)
         output = run_compiled(evidence, binary, name, {"vectors.txt": text})
@@ -169,7 +175,8 @@ module tb;
   integer nmemory=0,ninitial=0,nexpected=0,nlogit=0,fd,outfile,rc,record_type,i,j,match_index,memory_index;
   integer dtype,awq,TOKENS,transition,image_split=-1,token_start=0,token_requests=0,token_writes=0,stalls=0,token_stalls=0;
   integer low,high,middle,first_expected=0,mutable_index,hash_steps;
-  integer cycle=0,accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
+  longint unsigned cycle=0;
+  integer accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
   integer traffic_first[0:4095],traffic_last[0:4095],traffic_reads[0:4095];
   integer traffic_writes[0:4095],traffic_stalls[0:4095],traffic_index;
   integer traffic_padding[0:4095],padding_bits,group_size,code_width,block_count;
