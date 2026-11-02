@@ -148,7 +148,7 @@ def cases(compact):
             yield mode, [(value, other, 0, 0, 0)], [(result, 0)]
 
 
-def run(probe, compact, simulator):
+def run(probe, compact, simulator, overrides=None):
     stimulus = list(cases(compact))
     source = probe.directory / "tb.sv"
     source.write_text(EPILOGUE_TB)
@@ -160,7 +160,8 @@ def run(probe, compact, simulator):
             for index, (element, result) in enumerate(zip(elements, results, strict=True)):
                 stream.write(" ".join(f"{word:08x}" for word in element) + "\n")
                 expected[tag, index] = (mode, result)
-    rtl = [ROOT / "rtl" / name for name in (
+    overrides = overrides or {}
+    rtl = [overrides.get(name, ROOT / "rtl" / name) for name in (
         "anvil_q2_fp2_arithmetic.sv", "anvil_q2_fp2_nonlinear.sv",
         "anvil_q2_fp2_coefficients.sv", "anvil_q2_fp2_epilogue_fusion.sv",
     )]

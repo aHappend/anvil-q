@@ -184,7 +184,7 @@ def cases(compact, dimension):
         yield query, bus, attention_reference(query, keys, values, dimension)
 
 
-def run(probe, compact, simulator, dimension, tile):
+def run(probe, compact, simulator, dimension, tile, overrides=None):
     stimulus = list(cases(compact, dimension))
     source = probe.directory / "tb.sv"
     source.write_text(ATTENTION_TB.replace("@DIM@", str(dimension)).replace("@TILE@", str(tile)))
@@ -198,7 +198,8 @@ def run(probe, compact, simulator, dimension, tile):
                 stream.write(packed(query[head * dimension:(head + 1) * dimension]) + "\n")
             for format_, key, value, ks, vs in bus:
                 stream.write(f"{format_} {key:x} {value:x} {ks:x} {vs:x}\n")
-    rtl = [ROOT / "rtl" / name for name in (
+    overrides = overrides or {}
+    rtl = [overrides.get(name, ROOT / "rtl" / name) for name in (
         "anvil_q2_fp2_arithmetic.sv", "anvil_q2_fp2_nonlinear.sv",
         "anvil_q2_fp2_coefficients.sv", "anvil_q2_fp2_mx_decode.sv",
         "anvil_q2_fp2_flash_attn.sv",

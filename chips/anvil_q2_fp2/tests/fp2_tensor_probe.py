@@ -136,7 +136,7 @@ def packed(values):
     return "".join(f"{word:04x}" for word in reversed(values))
 
 
-def run(probe, compact, simulator):
+def run(probe, compact, simulator, overrides=None):
     cases = list(vectors(compact))
     expected = [tensor(a, b, mask) for a, b, mask in cases]
     source = probe.directory / "tb.sv"
@@ -147,7 +147,8 @@ def run(probe, compact, simulator):
     with inputs.open("w") as stream:
         for index, (a, b, mask) in enumerate(cases):
             stream.write(f"{index} {packed(a)} {packed(b)} {mask:032x}\n")
-    rtl = [ROOT / "rtl" / name for name in (
+    overrides = overrides or {}
+    rtl = [overrides.get(name, ROOT / "rtl" / name) for name in (
         "anvil_q2_fp2_arithmetic.sv", "anvil_q2_fp2_mx_decode.sv",
         "anvil_q2_fp2_ping_pong_prefetch.sv", "anvil_q2_fp2_bfp_tensor_array.sv",
     )]

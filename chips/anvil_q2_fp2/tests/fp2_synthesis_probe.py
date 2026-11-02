@@ -143,12 +143,21 @@ def run(probe, top, parameters=None):
         sources = expand_parent(probe.directory / "parent-expanded") + sources
     script = probe.directory / "synthesis.ys"
     netlist = probe.directory / "netlist.json"
-    relative_sources = [str(path.relative_to(ROOT)) for path in sources]
+    deferred_names = {
+        "anvil_q2_fp2_top.sv", "anvil_q2_fp2_controller.sv", "anvil_q2_fp2_flash_attn.sv"
+    }
+    eager_sources = [str(path.relative_to(ROOT)) for path in sources
+                     if path.name not in deferred_names]
+    deferred_sources = [str(path.relative_to(ROOT)) for path in sources
+                        if path.name in deferred_names]
     parameters = parameters or {}
     overrides = "".join(f" -chparam {key} {value}" for key, value in parameters.items())
     probe.summary["parameters"] = parameters
     script.write_text(
-        "read_verilog -sv -defer " + " ".join(relative_sources) + "\n"
+        "read_verilog -sv " + " ".join(eager_sources) + "\n"
+        + ("read_verilog -sv -defer " + " ".join(deferred_sources) + "\n"
+           if deferred_sources else "")
+        +
         f"hierarchy -check -top {top}{overrides}\n"
         "proc\nopt_expr\nopt_clean\ncheck -assert\n"
         "memory -nomap\nopt_clean\ncheck -assert\n"
