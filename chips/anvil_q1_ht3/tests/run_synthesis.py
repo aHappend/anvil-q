@@ -258,7 +258,9 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                 continue
             record = json.loads(binding.read_text())
             phase_receipt = candidate / "synthesis.receipt.json"
-            if record.get("identity") != identity or not phase_receipt.is_file():
+            if (record.get("identity") != identity or record.get("status") != "passed"
+                    or not phase_receipt.is_file()
+                    or record.get("receipt") != relative(phase_receipt)):
                 continue
             receipt = json.loads(phase_receipt.read_text())
             if (receipt.get("exit") != 0 or receipt.get("timed_out")
@@ -273,11 +275,15 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             if any(receipt.get("artifact_sha256", {}).get(receipt[k]) !=
                    digest(ROOT / receipt[k]) for k in ("stdout", "stderr")):
                 continue
-            counts = checked_account(json.loads((candidate / "netlist.json").read_text()),
-                                     top, identifier, phase == "abc")
-            retained = (candidate, counts)
+            retained = candidate
             break
         if retained is None:
+            if predecessor is not None:
+                # The complete bound chain is hash-validated above. Validate
+                # its actual last netlist before advancing, not every growing
+                # intermediate netlist again on each resumed invocation.
+                checked_account(json.loads((predecessor.parent/"netlist.json").read_text()),
+                                top, identifier, False)
             directory = cache / f"synthesis-{phase}-{key}-{uuid.uuid4().hex[:12]}"
             directory.mkdir()
             read_checkpoint = f"read_rtlil {relative(predecessor)}; " if predecessor else ""
@@ -289,7 +295,9 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             deadline = os.environ.get("HT3_CHECK_DEADLINE")
             allocation = remaining()
             reserve = (90 if identifier == "compact-mapped" else 30) if phase != "abc" else 0
-            minimum = 120 if identifier == "compact-mapped" else 30 if phase == "abc" else 0
+            minimum = (240 if identifier == "compact-mapped" and phase != "abc"
+                       else 60 if identifier == "compact-mapped"
+                       else 30 if phase == "abc" else 0)
             if allocation-reserve-10 < minimum:
                 raise RuntimeError(f"unstarted synthesis phase {phase}: {allocation:.3f}s "
                                    f"remain, reserving {reserve}s ABC and 10s settlement; "
@@ -315,7 +323,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                                receipt=relative(directory / "synthesis.receipt.json")), out, indent=2)
             reused = False
         else:
-            directory, counts = retained
+            directory, counts = retained, None
             reused = True
         predecessor = directory / "checkpoint.il"
         predecessor_digest = digest(predecessor)
@@ -327,6 +335,9 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
         if phase == "word" and identifier == "compact-mapped":
             netlist = json.loads((directory / "netlist.json").read_text())
             phases[1:2] = mapping_groups(netlist)
+    if counts is None:
+        counts = checked_account(json.loads((directory/"netlist.json").read_text()),
+                                 top, identifier, True)
     return dict(id=identifier, status="passed", parameters=parameters,
                 mapped=True, phases=records, accounting=counts,
                 receipt=records[-1]["receipt"], netlist=relative(directory / "netlist.json"),

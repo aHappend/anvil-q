@@ -98,12 +98,17 @@ def inference_reference(embedding, weights, fmt, traffic):
     return outputs
 
 
-def fixture(directory, fmt, seed, smoke=False):
+def compact_checkpoint(seed):
     rng = random.Random(seed)
     embedding = [[rng.choice((-7, -5, -3, 1, 2, 4, 6))/16 for _ in range(8)]
                  for _ in range(3)]
     weights = [[[rng.randrange(-4, 5)/16 for _ in range(8)] for _ in range(8)]
                for _ in range(7)]
+    return embedding, weights
+
+
+def fixture(directory, fmt, seed, smoke=False):
+    embedding, weights = compact_checkpoint(seed)
     image = bytearray()
     descriptors = []
 
@@ -169,6 +174,45 @@ def fixture(directory, fmt, seed, smoke=False):
     return path, expected
 
 
+def batch_fixture(directory, fmt, seed, count):
+    original, _ = fixture(directory, fmt, seed, smoke=True)
+    embedding, weights = compact_checkpoint(seed)
+    evaluate = lambda tokens: inference_reference(
+        embedding, weights, fmt, [(token, position, int(position == 0))
+                                 for position, token in enumerate(tokens)])
+    prefix_target = max(range(3), key=evaluate([0])[-1].__getitem__)
+    if count == 1:
+        drafts, parents = [(prefix_target+1) % 3], [4]
+        committed = [prefix_target]
+    elif count == 4:
+        root_target = max(range(3), key=evaluate([0, prefix_target])[-1].__getitem__)
+        drafts = [(prefix_target+1) % 3, prefix_target, 0, (root_target+1) % 3]
+        parents = [4, 4, 0, 1]
+        committed = [prefix_target, root_target]
+    else:
+        raise ValueError("batch fixture count must be one or four")
+    follow = (committed[-1]+1) % 3
+    complete = evaluate([0, *committed, follow])
+    lines = original.read_text().splitlines()
+    header = lines[0].split()
+    header[-1] = "2"
+    lines[0] = " ".join(header)
+    lines.append(f"{follow} {1+len(committed)} 0")
+    vectors = directory/"batch-vectors.txt"
+    with vectors.open("x") as out:
+        out.write("\n".join(lines)+"\n")
+    packed_drafts = sum(token << (32*i) for i, token in enumerate(drafts))
+    packed_parents = sum(parent << (3*i) for i, parent in enumerate(parents))
+    packed_commit = sum(token << (32*i) for i, token in enumerate(committed))
+    batch = directory/"batch.txt"
+    with batch.open("x") as out:
+        out.write(f"{count} {packed_drafts:032x} {packed_parents:03x} "
+                  f"{len(committed)} {packed_commit:032x}\n")
+    expected_batch = dict(count=len(committed), tokens=packed_commit, position=1,
+                          drafts=drafts, parents=parents, committed=committed)
+    return vectors, [complete[0], complete[-1]], batch, expected_batch
+
+
 def compiled():
     paths = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+["tests/inference_tb.sv"]
     current = hashes()
@@ -205,11 +249,16 @@ def compiled():
     return binary, relative(directory/"binding.json")
 
 
-def run_case(directory, binary, binding, fmt, seed, smoke=False):
-    vectors, expected = fixture(directory, fmt, seed, smoke)
+def run_case(directory, binary, binding, fmt, seed, smoke=False, batch_count=None):
+    options, expected_batch = [], None
+    if batch_count is None:
+        vectors, expected = fixture(directory, fmt, seed, smoke)
+    else:
+        vectors, expected, batch, expected_batch = batch_fixture(directory, fmt, seed, batch_count)
+        options = [f"+batch={relative(batch)}"]
     observations = directory/"observations.txt"
     text = execute([relative(binary), f"+vectors={relative(vectors)}",
-                    f"+observations={relative(observations)}", f"+seed={seed}"],
+                    f"+observations={relative(observations)}", f"+seed={seed}", *options],
                    directory, "simulation", ["verilator", "--version"])
     match = re.search(r"SUMMARY inference format=(\d+) tokens=(\d+) logits=(\d+) "
                       r"csr=(\d+) csr_holds=(\d+) output_stalls=(\d+) reads=(\d+) "
@@ -219,6 +268,7 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False):
         raise AssertionError("incomplete integrated inference observation summary")
     actual = [[] for _ in expected]
     cycles = []
+    batches = []
     for line in observations.read_text().splitlines():
         parts = line.split()
         if parts[0] == "L":
@@ -233,19 +283,29 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False):
                                ddr_read_beats=int(parts[3]), ddr_write_beats=int(parts[4]),
                                simulated_tpm=60*100000000/int(parts[2]),
                                timing_basis="simulated 100 MHz core / 50 MHz DDR; not STA"))
+        elif parts[0] == "B":
+            if expected_batch is None or batches or len(parts) != 4:
+                raise AssertionError("unexpected/duplicate batch publication")
+            observed = dict(count=int(parts[1]), tokens=int(parts[2], 16), position=int(parts[3]))
+            if any(observed[key] != expected_batch[key] for key in observed):
+                raise AssertionError("batch commit disagrees with independent graph prediction")
+            batches.append(dict(observed=observed, expected=expected_batch))
         else:
             raise AssertionError("unrecognized inference observation")
     if len(cycles) != len(expected):
         raise AssertionError("missing completed-token measurements")
+    if expected_batch is not None and len(batches) != 1:
+        raise AssertionError("missing checked batch publication")
     metrics = [logit_check(a, b) for a, b in zip(actual, expected)]
     return dict(status="passed", format=fmt, seed=seed, metrics=metrics, measurements=cycles,
-                raw_summary=match[0], binary_binding=binding)
+                raw_summary=match[0], binary_binding=binding, batches=batches)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--batch-only", action="store_true")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -255,7 +315,7 @@ def main():
     rows = []
     try:
         binary, binding = compiled()
-        for seed in ((17,) if args.smoke else (17, 89, 2026)):
+        for seed in (() if args.batch_only else (17,) if args.smoke else (17, 89, 2026)):
             for fmt in ((0,) if args.smoke else range(3)):
                 directory = output/f"format{fmt}-seed{seed}-{uuid.uuid4().hex[:8]}"
                 directory.mkdir()
@@ -265,15 +325,24 @@ def main():
                     rows.append(dict(status="failed", format=fmt, seed=seed,
                                      error=f"{type(exc).__name__}: {exc}",
                                      directory=relative(directory)))
+        if not args.smoke:
+            for count, seed in ((1, 17), (4, 89), (4, 2026)):
+                directory = output/f"batch{count}-seed{seed}-{uuid.uuid4().hex[:8]}"
+                directory.mkdir()
+                try:
+                    rows.append(run_case(directory, binary, binding, 0, seed, batch_count=count))
+                except (RuntimeError, AssertionError, ValueError, OSError) as exc:
+                    rows.append(dict(status="failed", batch_count=count, seed=seed,
+                                     error=f"{type(exc).__name__}: {exc}",
+                                     directory=relative(directory)))
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
         rows.append(dict(status="failed", error=f"{type(exc).__name__}: {exc}"))
     result = dict(status="passed" if rows and all(r["status"]=="passed" for r in rows) else "failed",
                   runs=rows, checkpoint="independent compact synthetic image, not official model",
                   coverage_limits=[] if args.smoke else [
                       "H>=64 integrated inference and legal geometry extrema",
-                      "batch/ancestor/correction/commit, nonzero sparse threshold and injected bus errors",
+                      "nonzero sparse threshold and injected bus errors",
                       "reset/abort during accepted inference and loader/CSR ownership collisions",
-                      "unchanged HT2 differential execution",
                       "authentic historical five-domain fixtures unavailable in supplied RTL-only intake"])
     with (output/"result.json").open("x") as out:
         json.dump(result, out, indent=2)

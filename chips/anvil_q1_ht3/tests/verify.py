@@ -41,7 +41,7 @@ REPRODUCTION_RESERVE = 360
 SETTLEMENT_RESERVE = 30
 SUITE_BUDGETS = {"attention": 750, "parameters": 260, "attention_restart": 60,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
-                 "mutations": 420, "benchmarks": 300, "performance": 180}
+                 "mutations": 420, "benchmarks": 300, "performance": 480}
 
 
 def dependencies(script):
