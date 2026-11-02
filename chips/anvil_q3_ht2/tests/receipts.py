@@ -163,6 +163,23 @@ def relative(path):
     return str(path.relative_to(ROOT))
 
 
+def mutation_copy(run, source, before, after, defect):
+    source = ROOT / source
+    original = source.read_text()
+    if original.count(before) != 1:
+        raise AssertionError(f"mutation target is not unique: {defect}")
+    copy = run / f"mutant-{source.name}"
+    copy.write_text(original.replace(before, after))
+    (run / "mutation.json").write_text(json.dumps({
+        "defect": defect, "source": relative(source),
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "mutant": relative(copy),
+        "mutant_sha256": hashlib.sha256(copy.read_bytes()).hexdigest(),
+        "before": before, "after": after,
+    }, indent=2) + "\n")
+    return relative(copy)
+
+
 def cleanup_build(path):
     path = path.resolve()
     if not path.is_dir() or not path.is_relative_to(ROOT / "evidence"):

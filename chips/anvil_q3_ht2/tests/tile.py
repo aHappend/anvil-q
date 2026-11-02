@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative, cleanup_build
+from receipts import execute, new_run, relative, cleanup_build, mutation_copy
 from reference import pack_rows, tile_sum, f32
 
 
@@ -78,14 +78,23 @@ def generate(path, seed, lanes, compact):
     return {"cases": len(cases), "inputs": input_count, "outputs": len(cases)}
 
 
-def run_tile(run, simulator, seed, compact):
+def run_tile(run, simulator, seed, compact, mutant=False):
     lanes = 8 if simulator == "iverilog" else 128
     path = run / f"tile-seed{seed}.txt"
     totals = generate(path, seed, lanes, compact)
+    sources = list(SOURCES)
+    if mutant:
+        if simulator != "verilator":
+            raise ValueError("broadcast mutation requires compiled Verilator")
+        source = "rtl/anvil_q3_ht2_tile_batch_mac.sv"
+        sources[sources.index(source)] = mutation_copy(run, source,
+            ".weight_f32(decoded_weight[row*32+:32]),",
+            ".weight_f32(token==3 ? 32'd0 : decoded_weight[row*32+:32]),",
+            "disable fourth token weight broadcast")
     if simulator == "iverilog":
         executable = run / "tile.vvp"
         execute(run, "tile-compile", ["iverilog", "-g2012", "-Wall", "-s", "tile_tb",
-                "-o", relative(executable), *SOURCES], ["iverilog", "-V"])
+                "-o", relative(executable), *sources], ["iverilog", "-V"])
         argv = ["vvp", relative(executable), f"+vectors={relative(path)}"]
         version = ["vvp", "-V"]
     else:
@@ -94,17 +103,27 @@ def run_tile(run, simulator, seed, compact):
                 "--top-module", "tile_tb", "-GWEIGHT_LANES=128", "-GHIDDEN_SIZE=2048",
                 "-GNUM_KV_HEADS=2", "-GHEAD_DIM=128", "--Mdir", relative(obj),
                 "-j", "2", "--output-split", "20000", "--output-split-cfuncs", "2000",
-                "-CFLAGS", "-O0", *SOURCES], ["verilator", "--version"])
+                "-CFLAGS", "-O0", *sources], ["verilator", "--version"])
         argv = [relative(obj / "Vtile_tb"), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
     try:
-        output = execute(run, "tile-simulate", argv, version)
+        output = execute(run, "tile-simulate", argv, version, expect=-6 if mutant else 0)
     finally:
         if simulator == "verilator":
             cleanup_build(obj)
+    raw = (output / "stdout.txt").read_text()
     records = [json.loads(line.removeprefix("RESULT "))
-               for line in (output / "stdout.txt").read_text().splitlines()
+               for line in raw.splitlines()
                if line.startswith("RESULT ")]
+    if mutant:
+        if records or "TILE numerical mismatch" not in raw or "token=3 " not in raw:
+            raise AssertionError("broadcast mutant did not reach fourth-token mismatch")
+        summary = {"seed": seed, "simulator": simulator,
+                   "discrimination": "independent fourth-token tile sum mismatch",
+                   "vector_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                   "receipt": relative(output / "receipt.json")}
+        (run / "mutation-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+        return summary
     if len(records) != 1:
         raise AssertionError("missing or malformed tile result")
     for field, expected in totals.items():
@@ -125,12 +144,14 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
+    parser.add_argument("--mutant", action="store_true")
     args = parser.parse_args()
     compact = args.compact or args.simulator == "iverilog"
     run = new_run("tile", preparation=True, repair_of=args.repair_of)
     print(f"tile evidence: {relative(run)}", flush=True)
     try:
-        print(json.dumps(run_tile(run, args.simulator, args.seed, compact), sort_keys=True))
+        print(json.dumps(run_tile(run, args.simulator, args.seed, compact,
+                                  args.mutant), sort_keys=True))
     except (RuntimeError, AssertionError, OSError) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1)

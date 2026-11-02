@@ -179,6 +179,13 @@ def all_checks(ledger):
     for mutant in ("gqa", "sibling"):
         ledger.check(f"mutation-{mutant}", run_tree, 1, 17, mutant=mutant)
     ledger.check("mutation-atomic", run_atomic, 1, 17, mutant=True)
+    for name, function in (("broadcast", run_tile), ("rounding", run_arithmetic),
+                           ("sparse", run_sparse)):
+        control = ledger.check(f"control-{name}", function, "verilator", 17, True)
+        mutant = ledger.check(f"mutation-{name}", function, "verilator", 17, True,
+                              mutant=True)
+        if control["vector_sha256"] != mutant["vector_sha256"]:
+            raise AssertionError(f"mutation/control vectors differ: {name}")
     ledger.check("clean-reproduction", clean_reproduction)
     require_complete_coverage(ledger)
 

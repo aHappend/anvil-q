@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import ROOT, execute, new_run, relative, cleanup_build
+from receipts import ROOT, execute, new_run, relative, cleanup_build, mutation_copy
 from reference import fp_operation, q16_to_half, single_to_q16, weight
 
 
@@ -67,14 +67,22 @@ def vectors(path, seed, compact=False):
     return len(records)
 
 
-def run_arithmetic(run, simulator="iverilog", seed=17, compact=False):
+def run_arithmetic(run, simulator="iverilog", seed=17, compact=False, mutant=False):
     vector_path = run / f"arithmetic-seed{seed}.txt"
     count = vectors(vector_path, seed, compact)
+    sources = list(ARITH_SOURCES)
+    if mutant:
+        if simulator != "verilator":
+            raise ValueError("arithmetic mutations require compiled Verilator")
+        sources[0] = mutation_copy(run, sources[0],
+            "(significand[1] || significand[0] || significand[3]);",
+            "(significand[1] || significand[0] || !significand[3]);",
+            "reverse binary32 ties-to-even parity")
     if simulator == "iverilog":
         executable = run / "arithmetic.vvp"
         execute(run, "arithmetic-compile",
                 ["iverilog", "-g2012", "-Wall", "-s", "arithmetic_tb",
-                 "-o", relative(executable), *ARITH_SOURCES, "tests/arithmetic_tb.sv"],
+                 "-o", relative(executable), *sources, "tests/arithmetic_tb.sv"],
                 ["iverilog", "-V"])
         argv = ["vvp", relative(executable), f"+vectors={relative(vector_path)}"]
         version = ["vvp", "-V"]
@@ -83,17 +91,27 @@ def run_arithmetic(run, simulator="iverilog", seed=17, compact=False):
         execute(run, "arithmetic-compile",
                 ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module",
                  "arithmetic_tb", "--Mdir", relative(obj), "-j", "2",
-                 *ARITH_SOURCES, "tests/arithmetic_tb.sv"], ["verilator", "--version"])
+                 *sources, "tests/arithmetic_tb.sv"], ["verilator", "--version"])
         argv = [relative(obj / "Varithmetic_tb"), f"+vectors={relative(vector_path)}"]
         version = ["verilator", "--version"]
     try:
-        result_path = execute(run, "arithmetic-simulate", argv, version)
+        result_path = execute(run, "arithmetic-simulate", argv, version,
+                              expect=-6 if mutant else 0)
     finally:
         if simulator == "verilator":
             cleanup_build(obj)
     lines = (result_path / "stdout.txt").read_text().splitlines()
     outputs = [json.loads(line.removeprefix("RESULT ")) for line in lines
                if line.startswith("RESULT ")]
+    if mutant:
+        if outputs or not any("ARITH mismatch kind=0" in line for line in lines):
+            raise AssertionError("rounding mutant did not reach independent add mismatch")
+        summary = {"seed": seed, "simulator": simulator,
+                   "discrimination": "independent binary32 rounding mismatch",
+                   "vector_sha256": hashlib.sha256(vector_path.read_bytes()).hexdigest(),
+                   "receipt": relative(result_path / "receipt.json")}
+        (run / "mutation-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+        return summary
     if len(outputs) != 1 or outputs[0]["cycles"] != count:
         raise AssertionError("missing or malformed complete arithmetic result")
     for field in ("inputs", "comparisons", "stall_edges", "flush_edges"):
@@ -111,11 +129,12 @@ def main():
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="iverilog")
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--compact", action="store_true")
+    parser.add_argument("--mutant", action="store_true")
     args = parser.parse_args()
     run = new_run("arithmetic", preparation=True)
     print(f"arithmetic evidence: {relative(run)}", flush=True)
     try:
-        result = run_arithmetic(run, args.simulator, args.seed, args.compact)
+        result = run_arithmetic(run, args.simulator, args.seed, args.compact, args.mutant)
     except (RuntimeError, AssertionError, OSError) as error:
         print(str(error), file=sys.stderr)
         return 1
