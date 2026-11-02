@@ -2,11 +2,10 @@
 
 ## Current state
 
-This is an incomplete Designer implementation, not a verified accelerator.
+The Designer implementation is connected, but is not a verified accelerator.
 Native mathematical, streaming, controller, CSR, memory scheduler, GEMV,
-ordinary normalization, attention, MLP and residual engines are saved.
-The native decoder and `anvil_qn1_top` are not yet present. The saved engines
-are not connected into an end-to-end accelerator.
+ordinary normalization, attention, MLP and residual engines are connected
+through `anvil_qn1_decoder` and `anvil_qn1_top`.
 No native end-to-end inference, fusion overhead, synthesis, timing, PPA or HIL
 result is claimed. Acceptance requirements remain those in SPEC.md.
 
@@ -26,6 +25,22 @@ without diagnostics using Icarus 12.0:
 It records the exact command, source hashes, tool output, settled child and
 byte-identical parent copies. This is not a simulation or synthesis result,
 and no native top was compiled.
+
+The integrated native default-profile top and separately buildable legacy top
+subsequently statically elaborated without diagnostics using Icarus 12.0:
+`evidence/preparation/integrated-top-static-20261102T180120Z-84eeb72c/receipt.json`.
+It retains the exact command, source hashes and raw output, exit0 with no
+timeout, and byte-identical parent copies. This was syntax/elaboration only,
+not functional simulation, production-profile verification or synthesis.
+
+After completing the telemetry edge wiring, the same bounded static command
+again exited0 without diagnostics on the final RTL:
+`evidence/preparation/integrated-final-static-20261102T180811Z-9289c67d/receipt.json`.
+It links the earlier integrated syntax receipt and retains final source hashes,
+raw output and the byte-identical parent comparison. The node-event change
+preserves prior-edge transfers across cancellation; the sequence event change
+counts successful terminal completion rather than a pending completion.
+Neither syntax run is functional acceptance evidence.
 
 The parent consists of 26 original SystemVerilog files in
 `anvil_q3_reference/rtl/`. Copies in `rtl/anvil_q3_*.sv` preserve their bytes,
@@ -58,6 +73,9 @@ PPA cannot be reconstructed or claimed from intake.
 | anvil_qn1_mlp.sv | Gate/up/down command orchestration and real BF16 SiLU-times-up scratch computation |
 | anvil_qn1_elementwise.sv | Acknowledged BF16 residual additions |
 | anvil_qn1_head_buffer.sv | Two ordered projected-head buffers feeding the fused leaf without raw writeback |
+| anvil_qn1_client_router.sv | Eight-client round-robin scalar arbitration, pinned stalls and tagged demultiplexing |
+| anvil_qn1_decoder.sv | Embedding, all decoder layers, shared projections, final norm and complete tied-LM frames |
+| anvil_qn1_top.sv | Fixed public interface, deferred continuation, staged-cache fencing, controller/CSR integration and drain |
 
 The private arithmetic helpers have clock enable for streaming pipelines and
 flush for annulment. A four-stage helper computes from pre-edge operands on
@@ -104,9 +122,10 @@ position. A fused-leaf ingress transfer releases that raw buffer, allowing
 projection to fill it while the leaf owns a different head. A following K
 projection may be configured after Q ingress finishes even if Q heads are
 still queued. Only final fused outputs may be written externally. The decoder
-must connect this frontend directly to its named qknorm_rope instance and
-arbitrate final scratch/KV writes alongside projection traffic. The buffers
-exist, but that overlap/integration is still outstanding.
+connects this frontend directly to its named qknorm_rope instance and
+arbitrates final scratch/KV writes alongside projection traffic. Its independent
+fused-output writer retires each final head only after all required write
+responses. Attention waits for the complete Q/K/V layer fence.
 
 ## Saved memory and numerical engines
 
@@ -123,9 +142,9 @@ counter which survives host reset. Reset annuls ownership without reusing a
 pre-reset tag; late pre-reset responses therefore cannot match new work.
 Cancellation and detected faults suppress new traffic, discard unaccepted
 requests/returned responses and drain accepted requests. Unknown responses do
-not release unrelated ownership. The scheduler exposes fault and drained,
-but top-level sequence invalidation, cancellation completion and recovery
-remain unimplemented. FPGA configuration initializes the serial once;
+not release unrelated ownership. Top uses the scheduler's fault and drained
+signals for sequence invalidation, cancellation completion and recovery
+through an explicit new sequence. FPGA configuration initializes the serial once;
 the external memory bridge must share the device-configuration lifecycle.
 
 GEMV gathers zero/scale groups first, then active activation/weight lanes.
@@ -156,8 +175,8 @@ The following multiple, residual, six Taylor terms, ordered sums, clamp and
 binary scaling use the specified RN32 boundaries. SiLU has its own BF16
 output boundary. MLP requests real gate/up/down GEMVs from the decoder's
 shared service and computes BF16 SiLU-gate times up before down projection.
-It does not contain a supplied-result oracle; its command service still needs
-the decoder connection.
+It does not contain a supplied-result oracle; its commands connect to the same
+real GEMV and tensor array as Q/K/V/O and tied-LM operations.
 
 Attention owns one query head, one K/V head and HEAD_DIM binary32 numerator
 storage. It scans positions 0 through the commanded input position once to
@@ -186,20 +205,24 @@ ownership for responses. The backend must compute real contexts and must not
 respond until the corresponding full public frame has transferred. Parent 4
 means root; another parent names the accepted draft context to evaluate.
 The controller's start interface is internal, not an extra public top port.
-Top must start it only for nonterminal decode and independently orchestrate
+Top starts it only for nonterminal decode and independently orchestrates
 prefill, terminal materialization, cancellation, sequence validity, and pending
-deferred-token ID/position. Backend errors and illegal drafts must cause top
+deferred-token ID/position. Backend errors and illegal drafts cause top
 sequence invalidation and memory drain. The controller does not itself own
 external KV or claim that a memory write has settled.
 
 The CSR block samples request payload/busy/mode on acceptance, executes it on
-the following edge and holds one response. Top must arbitrate idle
+the following edge and holds one response. Top arbitrates idle
 configuration before a simultaneous token start; an accepted control operation
 has priority. Snapshot/clear actions remain available during work without mode
 changes. Mode pulses configure the controller; marker changes remain owned by
 the controller. Live counters are incremented in bounded 16-bit carry chunks.
 Snapshot banks capture pre-edge state atomically. Generated token classification
-must use the mode immediately before commit, not a resubmitted deferred token.
+uses the mode immediately before commit, not a resubmitted deferred token.
+Registered node-event pulses survive through the sampling edge of a later
+cancel, so accepted draft/backend/commit handshakes are not erased from
+telemetry. Completed-sequence events occur on successful terminal completion,
+not before a cancellation can suppress that pending completion.
 
 Required final literal hierarchy:
 
@@ -215,9 +238,8 @@ anvil_qn1_top
   bank_scheduler
 ```
 
-Attention, MLP and bank scheduler sources now exist, but the named decoder and
-all required hierarchy connections are still to be implemented. Merely
-wrapping the legacy decoder would be incorrect:
+All named hierarchy connections above are implemented. The native decoder
+does not wrap the legacy decoder:
 its Q extents, FP16/Q16 arithmetic, bias behavior, context limit and cache
 protocol are different.
 
@@ -244,19 +266,62 @@ Sequence/cache ownership must distinguish: committed extent, the root input
 under evaluation, accepted evaluated ancestors, and the final deferred token.
 Cache publication must await every required write response. Because the
 controller follows only the greedy accepted path, rejected siblings require no
-reachable committed KV; future implementation must still fence all staged
-state until batch publication and invalidate on cancel/error. Bounded local
-speculative storage may cover at most four draft nodes.
+reachable committed KV. Top fences staged ownership until batch publication
+and invalidates it on cancel/error. Physical accepted-path writes may precede
+publication, but no second host token or off-path context can read them. The
+committed extent, staged extent and currently evaluated position authorize
+cache reads; a new sequence cannot inherit stale positions from old physical
+bytes. Since only matching nodes are evaluated, scratch is reused after each
+settled context instead of allocating four full speculative decoder replicas.
+Draft ownership is bounded to four token/parent entries.
 
-## Remaining Designer work
+## Connected decoder schedule
 
-Implement embedding/tied-LM token-I/O orchestration and the named decoder/native
-top. Connect the existing memory engines and 256-lane array, load Q/K gamma and
-RoPE coefficients once per layer/position, overlap buffered Q/K capture and
-fusion with continued projection, and acknowledge final scratch/KV publication.
-Wire complete logit frames/argmax responses, deferred-token continuation,
-accepted-path cache ownership, cancellation/fault drain, all real CSR events
-and every production/compact parameter guard. Complete integration
-documentation, then perform at most a fast static elaboration and hand off to
-independent Verifier. Do not create verification models or simulation/synthesis
-harnesses as Designer.
+Embedding reads populate scratch0 with acknowledged writes. Each layer performs
+pre-attention hidden RMSNorm, Q/K gamma and RoPE ingress, Q/K/V projections with
+overlapping head fusion, the acknowledged Q/K/V fence, all GQA query-head
+attention contexts, O projection, first residual, post-attention RMSNorm,
+gate/up/SiLU/product/down and second residual. The final hidden norm populates
+scratch14. Tied-LM computes every vocabulary row and holds each binary32 logit
+under public backpressure. Lowest-ID greedy selection is registered from those
+actual transferred logits. A held decoder argmax response follows the full
+frame and all writes, not an independently supplied prediction.
+
+| Memory client | Owned work |
+|---:|---|
+| 0 | Embedding/coefficient/query ingress and embedding/context writes |
+| 1 | Real GEMV activation/group/weight ingress |
+| 2 | Hidden norm ingress and acknowledged outputs |
+| 3 | Causal attention K/V reads |
+| 4 | MLP elementwise scratch reads/writes |
+| 5 | Residual scratch reads/writes |
+| 6 | Projection scratch and V cache writes |
+| 7 | Final fused Q/K scratch and K cache writes |
+
+The round-robin router pins the selected client through a stall. Internal
+tags identify the client in bits31:28 and retain the leaf tag in bits27:0.
+All generated leaf tags fit this range. Responses are demultiplexed by tag,
+not by the current request selection. The external scheduler owns the
+independent 64-bit association and bank slots.
+
+Top captures host input and its already-committed deferred-marker status on
+token acceptance. Prefill and terminal materialization execute the same full
+decoder without a controller commit. Nonterminal decode starts the controller,
+whose root/accepted-node requests execute that decoder sequentially. The root
+response observes a newly consumed input marker once before mode selection.
+A generated commit atomically promotes the evaluated prefix and stores the
+last token/position for the exact next host resubmission. Every backend response
+and generated publication additionally requires the bank scheduler to be
+drained. Done is a later registered pulse and readiness returns in a later idle
+cycle. Cancel/fault suppress unpublished outputs and drain accepted requests.
+Held cancel produces one cancellation completion, not repeated completions.
+
+## Independent work still required
+
+Designer ran only the retained static elaborations above. The independent
+Verifier must author and execute all admitted L1 numerical, protocol, benchmark,
+mutation, hierarchy/connectivity, synthesis and clean-directory checks. The
+strict per-profile measured fusion-overhead threshold remains mandatory.
+Shared-runtime timing lint, Quartus Arria 10 fit/100 MHz STA and consecutive
+physical HIL passes remain pending. No functional, numerical, resource, timing,
+hardware or product-report acceptance is implied by this implementation.

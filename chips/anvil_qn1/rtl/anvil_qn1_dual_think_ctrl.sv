@@ -71,10 +71,11 @@ module anvil_qn1_dual_think_ctrl #(
   assign verify_parent=verify_valid ? request_parent : 3'd0;
   assign verify_pos=verify_valid ? request_position : 32'd0;
   assign verify_rsp_ready=active && response_expected;
-  assign event_draft_nodes=active ? draft_event : 3'd0;
-  assign event_verified_nodes=active ? verified_event : 3'd0;
-  assign event_accepted_nodes=active ? accepted_event : 3'd0;
-  assign event_rejected_nodes=active ? rejected_event : 3'd0;
+  // A later cancel cannot erase telemetry for a transfer on the previous edge.
+  assign event_draft_nodes=rst_n ? draft_event : 3'd0;
+  assign event_verified_nodes=rst_n ? verified_event : 3'd0;
+  assign event_accepted_nodes=rst_n ? accepted_event : 3'd0;
+  assign event_rejected_nodes=rst_n ? rejected_event : 3'd0;
   generate if (VOCAB_SIZE<1 || VOCAB_SIZE>151936 ||
       MAX_SEQ_LEN<1 || MAX_SEQ_LEN>40960) begin: invalid_parameters
     initial $fatal(1,"ANVIL_QN1 PARAMETER ERROR: thinking controller geometry");

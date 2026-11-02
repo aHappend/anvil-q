@@ -57,7 +57,7 @@ module anvil_qn1_top #(
     reg [31:0] backend_position;
     reg [127:0] owned_drafts;
     reg [2:0] owned_draft_count;
-    reg done_reg, error_reg, cancel_done_reg;
+    reg done_reg, error_reg, cancel_done_reg, cancel_seen;
     wire ctrl_ready, ctrl_done, ctrl_error, ctrl_busy, ctrl_draft_ready;
     wire ctrl_commit_valid, ctrl_commit_ready;
     wire [2:0] ctrl_commit_count;
@@ -188,7 +188,8 @@ module anvil_qn1_top #(
       .event_verified_nodes(verified_event),.event_accepted_nodes(accepted_event),
       .event_rejected_nodes(rejected_event)
     );
-    wire success_exhaustion=root_publication && host_position==MAX_SEQ_LEN-1;
+    wire success_exhaustion=active && !detected_fault && state==SINGLE_FINISH &&
+      exhausted && bank_drained && decoder_ready;
     anvil_qn1_csr_perf #(.PROFILE(PROFILE)) csr_perf (
       .clk(clk),.rst_n(rst_n),.csr_valid(csr_valid),.csr_ready(csr_ready),
       .csr_write(csr_write),.csr_addr(csr_addr),.csr_wdata(csr_wdata),.csr_wstrb(csr_wstrb),
@@ -244,10 +245,12 @@ module anvil_qn1_top #(
         committed_extent<=0; staged_extent<=0; host_phase<=0;
         backend_owned<=0; backend_root<=0; backend_position<=0;
         draft_owned<=0; owned_drafts<=0; owned_draft_count<=0;
-        done_reg<=0; error_reg<=0; cancel_done_reg<=0;
+        done_reg<=0; error_reg<=0; cancel_done_reg<=0; cancel_seen<=0;
       end else begin
         done_reg<=0; error_reg<=0; cancel_done_reg<=0;
-        if (cancel) begin
+        if (!cancel) cancel_seen<=0;
+        else cancel_seen<=1;
+        if (cancel && !cancel_seen) begin
           state<=CANCEL_DRAIN; sequence_valid<=0; exhausted<=0;
           pending_final<=0; backend_owned<=0; draft_owned<=0;
         end else if (!draining && detected_fault) begin

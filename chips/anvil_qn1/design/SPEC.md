@@ -1,9 +1,9 @@
 # Anvil-QN1 numerical and transaction specification
 
-Version: `1.0.0-qwen3-qknorm-think`. Intended native top: `anvil_qn1_top`.
+Version: `1.0.0-qwen3-qknorm-think`. Native top: `anvil_qn1_top`.
 This document records the admitted contract, not an acceptance result. The
-implementation inventory and outstanding integration are in ARCHITECTURE.md.
-Unimplemented requirements below remain requirements; they are not waived.
+connected implementation inventory and pending independent checks are in
+ARCHITECTURE.md. None of the acceptance requirements below is waived.
 
 ## Profiles and legal elaboration
 
@@ -129,6 +129,10 @@ requires reset ownership/validity and cannot leak active X/Z.
 | HEAD_DIM<128 | Align the sum tree so fused-head latency remains 133 |
 | Clear and increments | Clear wins; simultaneous snapshot captures pre-clear values |
 | Cancellation and commit | Cancel wins before transfer; earlier public commits cannot be retracted |
+| Held cancel | One cancellation completion after drain, even if cancel remains asserted; no new token until release |
+| CSR and idle token | CSR acceptance/held response/mode pulse excludes token acceptance; idle configuration takes priority |
+| Deferred marker resubmission | Capture its already-committed status at token acceptance; materialize KV without re-observation |
+| Root marker and mode selection | Observe the successful root on backend response transfer; select continuation mode on a later edge |
 
 Head edge schedule: squares n+4, sum n+39, mean n+40, epsilon n+45,
 root n+79, reciprocal n+113, scaled x n+117, rounded u n+118,
@@ -302,8 +306,8 @@ top and are not overloaded by native mode.
 
 ### Internal engine boundaries
 
-These boundaries describe saved implementation sources, not a completed native
-top. They do not replace the public transaction/publication contract.
+These boundaries describe the connected implementation. They do not replace
+the public transaction/publication contract.
 
 The scalar memory scheduler accepts one internal request carrying kind,
 layer, projection, row, column, write/data and a 32-bit client tag. It returns
@@ -352,7 +356,47 @@ order, copies gamma/coefficients/metadata per head and holds FIFO-ordered head
 packets. Freeing a buffer on fused ingress permits projection/fusion overlap;
 no raw or normalized-before-RoPE external write is permitted. `input_done`
 means the projected ingress finished, not that final fusion or cache writes
-finished. The decoder still must establish that latter publication fence.
+finished. The decoder's fused-output writer retires each head only after every
+scratch/K write response, and attention starts only after all Q/K heads and V
+writes have retired.
+
+### Connected ownership and memory arbitration
+
+`anvil_qn1_top` instantiates `decoder`, `dual_think_ctrl`, `csr_perf` and
+`bank_scheduler`. The decoder contains the actual `tensor_array`,
+`qknorm_rope`, `attention` and `mlp` instances. Its eight scalar memory clients
+are token/coefficient/context I/O, GEMV ingress, hidden norm, attention,
+MLP elementwise work, residuals, projection output writes and fused-head
+output writes. A round-robin router pins a stalled request owner. Bits31:28
+of its scheduler-client tag identify the client; bits27:0 retain the leaf tag.
+Every generated leaf tag fits that range. The scheduler replaces this internal
+tag with its separately allocated external 64-bit tag and restores it on the
+matching response. Neither banking nor response order changes reductions.
+
+One decoder context at a time evaluates the host root or a greedy-matching
+accepted draft. Off-path nodes never issue a decoder command. Scratch is
+transaction-owned and reused only after its previous context settles. Physical
+KV writes use the eventual position/layer/kind addresses before publication.
+Top owns separate publicly committed and transaction-staged extents; a decoder
+may read only the acknowledged earlier committed/accepted path and its current
+layer-fenced input position. No other token request can reach staged state.
+New sequence/cancel/fault annuls this ownership, so stale physical entries are
+not reachable merely because bytes remain in external memory. This is an
+accepted-path-only speculative implementation, not a rollback by position
+decrement and not an off-path cache populated by supplied target predictions.
+It does not allocate sequence-sized on-chip KV.
+
+The decoder reads embeddings into slot0, executes every layer, final norm and
+tied-LM projection, and transfers all vocabulary logits in ascending order
+before presenting its held argmax response. A context's final response follows
+all required write acknowledgments. Top additionally requires scheduler drain
+before transferring that response or publishing a generated batch. Accepted
+draft evaluation advances staged extent only on that response transfer; commit
+promotes precisely the evaluated prefix and stores the deferred final token
+ID/position. Prefill and terminal materialization bypass generated publication,
+not decoder computation. Invalid continuations invalidate sequence ownership
+and produce error only after drain. Cancellation suppresses traffic immediately
+and acknowledges once after accepted requests drain.
 
 ## CSR ABI
 
@@ -386,7 +430,11 @@ per snapshot. Reference data is host supplied, never a native measured result.
 Generated token counters count each committed slice once in its pre-commit
 mode. Prefill consumption and final-token resubmission do not recount generated
 tokens. sequence_done denotes actual sequence exhaustion/completion, not each
-host transaction. Cancelled real QK activity still counts.
+host transaction; top drives it on successful terminal completion, never a
+cancelled pending completion. Cancelled real QK activity still counts.
+Registered draft/verification/publication telemetry describes transfers on the
+preceding edge. A later cancel/flush clears ownership but does not erase those
+already-observed events before the CSR bank samples them.
 
 ## Required independent acceptance
 
