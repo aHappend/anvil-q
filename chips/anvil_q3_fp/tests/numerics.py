@@ -127,7 +127,8 @@ def primitives(evidence, seed=17, count=4096, simulator="iverilog"):
     for operation in ("add", "mul"):
         text = "".join(f"{a:08x} {b:08x} {value:08x} {flags:02x}\n"
                        for a, b in pairs for value, flags in [binary(operation, a, b)])
-        tb = PRIMITIVE_TB.replace("@MODULE@", f"anvil_q3_fp_{operation}")
+        tb = PRIMITIVE_TB.replace("@MODULE@", f"anvil_q3_fp_{operation}").replace(
+            "@WITNESS@", "32'h40000000" if operation == "add" else "32'h3f800000")
         rtl = [PKG, f"rtl/anvil_q3_fp_{operation}.sv"]
         if simulator == "verilator":
             executable = compiled(evidence, operation, tb, rtl)
@@ -152,6 +153,8 @@ module tb;
   reg [4:0] flags[0:49999];
   integer fd,rc,n=0,sent=0,received=0,cycle=0,accepted_cycle[0:49999];
   integer stalls=0,simultaneous=0;
+  integer preparation_accepts=0;
+  reg running=0;
   reg held=0;
   reg [36:0] held_payload;
   task reset_check;
@@ -172,10 +175,37 @@ module tb;
       n=n+1;
     end
     @(negedge clk); rst_n=1;
+    in_a=32'h3f800000; in_b=32'h3f800000; in_valid=1;
+    repeat (3) @(negedge clk);
+    in_valid=0;
+    repeat (3) @(negedge clk);
+    if (preparation_accepts!=3 || {out_valid,out_flags,out_data}!=={1'b1,5'd0,@WITNESS@})
+      $fatal(1,"flush precondition requires three accepted operations and held exact result");
+    flush=1;
+    #1; reset_check;
+    @(negedge clk); flush=0; out_ready=1;
+    repeat (4) begin
+      @(negedge clk);
+      if (out_valid!==1'b0) $fatal(1,"flush emitted stale arithmetic");
+    end
+    out_ready=0; in_valid=1;
+    repeat (3) @(negedge clk);
+    in_valid=0;
+    repeat (3) @(negedge clk);
+    if (preparation_accepts!=6 || {out_valid,out_flags,out_data}!=={1'b1,5'd0,@WITNESS@})
+      $fatal(1,"reset precondition requires three accepted operations and held exact result");
+    #1; rst_n=0;
+    #1; reset_check;
+    @(negedge clk); rst_n=1; out_ready=1;
+    repeat (4) begin
+      @(negedge clk);
+      if (out_valid!==1'b0) $fatal(1,"reset emitted stale arithmetic");
+    end
+    running=1;
   end
   always @(posedge clk) begin
     if (!rst_n) reset_check;
-    else begin
+    else if (running) begin
       if (held && {out_flags,out_data}!==held_payload)
         $fatal(1,"STALL payload changed index=%0d",received);
       if (held && out_valid!==1'b1) $fatal(1,"STALL valid dropped");
@@ -197,15 +227,16 @@ module tb;
       cycle=cycle+1;
       if (received==n) begin
         if (stalls==0 || simultaneous==0) $fatal(1,"missing stall/replace coverage");
-        $display("COMPARED operations=%0d stalls=%0d simultaneous=%0d",received,stalls,simultaneous);
+        $display("COMPARED operations=%0d stalls=%0d simultaneous=%0d flushed=3 reset_discarded=3",
+          received,stalls,simultaneous);
         $finish;
       end
       if (cycle>100000) $fatal(1,"PROGRESS bound");
-    end
+    end else if (in_valid && in_ready) preparation_accepts=preparation_accepts+1;
   end
   always @(negedge clk) begin
     if (!rst_n) reset_check;
-    else begin
+    else if (running) begin
       out_ready=cycle<40 || cycle%11<7;
       in_valid=sent<n;
       if (in_valid) begin in_a=a[sent]; in_b=b[sent]; end

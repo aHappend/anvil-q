@@ -50,7 +50,7 @@ def behavior(evidence, seed):
                     print(f"BEHAVIOR seed={seed} banks={banks} mode={mode} fp8={fp8} "
                           f"affine={affine} fmt={fmt} awq={int(awq)}", flush=True)
                     results.append(integration.smoke(evidence, seed, "verilator", banks,
-                                                     fmt, awq, 4, mode, fp8, affine, heads=16))
+                                                     fmt, awq, 4, mode, fp8, affine))
                     (evidence.path / "behavior-progress.json").write_text(json.dumps(results, indent=2) + "\n")
     if len(results) != 80 or any(len(row["tokens"]) != 4 for row in results):
         raise AssertionError("Incomplete bank/cache/dtype/AWQ matrix")
@@ -111,7 +111,7 @@ def benchmark(evidence, seed):
                     print(f"BENCHMARK banks={banks} mode={mode} fp8={fp8} affine={affine} "
                           f"fmt={fmt} awq={int(awq)}", flush=True)
                     run = integration.smoke(evidence, seed, "verilator", banks, fmt,
-                                            awq, 4, mode, fp8, affine, heads=16)
+                                            awq, 4, mode, fp8, affine)
                     rows.append({"execution": run, "domains": domain_metrics(run)})
                     (evidence.path / "benchmark-progress.json").write_text(json.dumps(rows, indent=2) + "\n")
     if len(rows) != 80 or any(len(row["domains"]) != 5 for row in rows):
