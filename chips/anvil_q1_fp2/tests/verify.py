@@ -24,6 +24,7 @@ from reference import (  # noqa: E402
 )
 from operators import simulate_commands  # noqa: E402
 from structure import synthesize  # noqa: E402
+from protocols import simulate_csr  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -517,7 +518,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", required=True,
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
-                                 "synthesis"])
+                                 "synthesis", "csr"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
@@ -532,6 +533,11 @@ def main():
             rsqrt_startup(run)
         elif args.probe == "synthesis":
             synthesize(run, ROOT)
+        elif args.probe == "csr":
+            for seed in map(int, args.seeds.split(",")):
+                for bits in (8, 64):
+                    simulate_csr(run, seed, args.simulator or "iverilog",
+                                 compile_and_run, bits)
         elif args.probe in ("epilogue", "attention"):
             for seed in map(int, args.seeds.split(",")):
                 for tile in ((3,) if args.probe == "epilogue" or args.compact else (1, 3, 16)):
