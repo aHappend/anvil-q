@@ -121,7 +121,7 @@ endmodule
 """
 
 
-def qk_vectors(dimension, full=False):
+def qk_vectors(dimension, full=False, stress=False):
     vectors = []
     positions = [0, 1, 32767, 32768, 40959]
     for seed in ([17, 89, 203] if full else [17]):
@@ -148,6 +148,28 @@ def qk_vectors(dimension, full=False):
                 expected = ref.qknorm(data, gamma, cosine, sine, position)
                 vectors.append((key, index % (8 if key else 32), seed % 36,
                                 position, data, gamma, cosine, sine, 0, expected))
+    if stress:
+        for seed in (17, 89, 203):
+            rng = random.Random(seed + 1000)
+            for index in range(32):
+                data_pair = [
+                    [ref.encode(Fraction(rng.randrange(-512, 513), 64), 16)
+                     for _ in range(dimension)] for _ in range(2)]
+                if index == 0:
+                    data_pair = [[0x3F80] * dimension, [0xBF80] * dimension]
+                if index == 1:
+                    data_pair = [[0x4100] + [0x3E80] * (dimension - 1),
+                                 [0xC100] + [0xBE80] * (dimension - 1)]
+                cosine, sine = ref.coefficients(dimension, positions[index % 5])
+                for factor in (1, 256):
+                    for key in (0, 1):
+                        data = [ref.encode(ref.decode(x, 16) * factor, 16)
+                                for x in data_pair[key]]
+                        gamma = [0x3F80] * dimension
+                        expected = ref.qknorm(data, gamma, cosine, sine, positions[index % 5])
+                        vectors.append((key, index % (8 if key else 16), seed % 36,
+                                        positions[index % 5], data, gamma, cosine, sine,
+                                        0, expected))
     for category in ("position", "head", "layer", "data", "gamma", "cosine", "overflow"):
         key, head, layer, position = 0, 0, 0, 1
         data, gamma = [0x3F80] * dimension, [0x3F80] * dimension
@@ -171,8 +193,8 @@ def qk_vectors(dimension, full=False):
     return vectors
 
 
-def run_qk(run, simulator="icarus", dimension=8, full=False):
-    vectors = qk_vectors(dimension, full)
+def run_qk(run, simulator="icarus", dimension=8, full=False, stress=False):
+    vectors = qk_vectors(dimension, full, stress)
     vector_file = run.path / f"qk-{dimension}.txt"
     with vector_file.open("x") as output:
         for key, head, layer, position, data, gamma, cosine, sine, error, expected in vectors:
@@ -207,8 +229,53 @@ def run_qk(run, simulator="icarus", dimension=8, full=False):
     expected_record = f"SUMMARY qk_cases={len(vectors)} elements={len(vectors)*dimension} latency=133"
     if text.count(expected_record) != 1:
         raise AssertionError(f"missing/excess QK comparisons: expected {expected_record}")
-    return {"qk_cases": len(vectors), "compared_elements": len(vectors) * dimension,
-            "dimension": dimension, "simulator": simulator, "latency": 133}
+    result = {"qk_cases": len(vectors), "compared_elements": len(vectors) * dimension,
+              "dimension": dimension, "simulator": simulator, "latency": 133}
+    if stress:
+        result["analytic"] = qk_analytic(vectors, dimension)
+    return result
+
+
+def qk_analytic(vectors, dimension):
+    import math
+    finite = [v for v in vectors if not v[-2]]
+    general_bounds = 0
+    max_score = 0.0
+    scale_checks = 0
+    for left, right in zip(finite[::2], finite[1::2]):
+        a, b = left[-1], right[-1]
+        score = ref.multiply(ref.balanced_sum(
+            ref.multiply(x << 16, y << 16) for x, y in zip(a, b)),
+            ref.divide(0x3F800000, ref.sqrt32(ref.encode(dimension))))
+        magnitude = abs(float(ref.decode(score)))
+        gamma_bound = max(abs(float(ref.decode(x, 16))) for x in left[5]) * max(
+            abs(float(ref.decode(x, 16))) for x in right[5])
+        if magnitude > 1.05 * math.sqrt(dimension) * gamma_bound:
+            raise AssertionError("general gamma-scaled attention score bound")
+        max_score = max(max_score, magnitude)
+        general_bounds += 1
+    stress = finite[3 * 2 * 64:]
+    for base in range(0, len(stress), 4):
+        q1, k1, q256, k256 = stress[base:base + 4]
+        scores = []
+        for q, k in ((q1, k1), (q256, k256)):
+            for head in (q, k):
+                rms = math.sqrt(sum(float(ref.decode(x, 16)) ** 2 for x in head[4]) / dimension)
+                if rms < 0.1:
+                    raise AssertionError("nonzero normalization stress RMS coverage")
+            score = ref.multiply(ref.balanced_sum(
+                ref.multiply(x << 16, y << 16) for x, y in zip(q[-1], k[-1])),
+                ref.divide(0x3F800000, ref.sqrt32(ref.encode(dimension))))
+            scores.append(float(ref.decode(score)))
+            if abs(scores[-1]) > 1.05 * math.sqrt(dimension):
+                raise AssertionError("normalized/rotated unit-gamma score bound")
+        if abs(scores[0] - scores[1]) > 0.05 * max(abs(scores[0]), abs(scores[1])):
+            raise AssertionError("scale-1 versus scale-256 score rounding envelope")
+        scale_checks += 1
+    if scale_checks != 96 or not general_bounds:
+        raise AssertionError("normalization analytic stress coverage missing")
+    return {"general_gamma_bounds": general_bounds, "scale_pairs": scale_checks,
+            "maximum_absolute_score": max_score}
 
 
 SCALAR_BENCH = r"""

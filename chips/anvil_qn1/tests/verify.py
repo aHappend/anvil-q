@@ -30,6 +30,7 @@ from integration import run_top
 from control_checks import run_csr, run_controller
 from smoke_checks import run_startup, run_elaboration, run_smoke
 from speculation_checks import run_speculation
+from numerical_checks import run_numerical
 import reference
 
 
@@ -42,14 +43,31 @@ def main():
                                           "top-compact", "top-compiled", "top-continuation",
                                           "tensor-compact", "tensor-full", "tensor-cpp", "tensor-sv",
                                           "elementary", "csr", "controller", "startup", "elaboration",
-                                          "speculation"))
+                                          "speculation", "qk-stress", "analytic",
+                                          "startup-matrix", "scalar-compiled"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "speculation":
+        if args.probe == "startup-matrix":
+            run.versions(("python3", "iverilog", "vvp"))
+            results = [run_startup(run, banks=b, queue=q)
+                       for b in (1, 8) for q in (1, 3, 16)]
+            results.extend([run_startup(run, queue=1, q_heads=4, vocabulary=1, max_sequence=1),
+                            run_startup(run, banks=8, head_dim=128, q_heads=4)])
+        elif args.probe == "scalar-compiled":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_scalar(run, "verilator")
+        elif args.probe == "analytic":
+            from numerical_checks import analytic_coefficients
+            run.versions(("python3",))
+            results = analytic_coefficients()
+        elif args.probe == "qk-stress":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_qk(run, "verilator", 128, True, stress=True)
+        elif args.probe == "speculation":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_speculation(run)
         elif args.probe == "startup":
@@ -97,6 +115,9 @@ def main():
         elif args.suite == "smoke":
             run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
             results = run_smoke(run)
+        elif args.suite == "numerical":
+            run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+            results = run_numerical(run)
         else:
             raise NotImplementedError("L1 suite authoring is in progress; no passing result claimed")
         run.finish("passed", results)
