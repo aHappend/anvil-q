@@ -125,7 +125,7 @@ def run_synthesis_probe(run):
         "memory -nomap\nopt_clean\ncheck -assert\nstat\n"
         f"write_json {relative(netlist)}\n"
         "select anvil_qn1_top/native.bank_scheduler\n"
-        "flatten\nselect anvil_qn1_top\nscc -expect 0\n")
+        "flatten\nselect anvil_qn1_top\nopt -full\nscc -expect 0\n")
     run.execute(["yosys", "-Q", "-T", "-s", relative(script)], "yosys-compact-structural")
     _, before = retain_json(hierarchy)
     data, after = retain_json(netlist)

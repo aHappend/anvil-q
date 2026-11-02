@@ -18,6 +18,11 @@ Executable coverage:
           second transactions, six logical steps and invalid resubmissions.
   banked-top / memory-matrix: six-step complete direct frames/KV with banked
           request stalls, bank/tag associations and observed response reordering.
+  fault-case / fault-matrix: read/write errors, malformed payloads, unknown/
+          duplicate/wrong-bank/stale tags, cancellation in projection/QK/attention
+          and around publication, reset in work, and compared fresh-sequence recovery.
+  synthesis-frontend: compact hierarchy/connectivity checks and optimized
+          top/scheduler cross-boundary zero-combinational-SCC assertion.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
@@ -28,6 +33,8 @@ incomplete; no whole-product acceptance is claimed. The original controller
 structural-loop counterexample is retained; the repaired controller has a fresh
 successful structural receipt. No-argument dispatch remains
 incomplete until every mandatory suite has been authored.
+The new scheduler/top boundary SCC check has a retained RTL failure; ordinary
+functional matrix passes do not certify absence of combinational feedback.
 """
 
 import argparse
