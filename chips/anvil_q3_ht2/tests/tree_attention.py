@@ -98,9 +98,9 @@ def run_tree(run, mode, seed, mutant=None, residency=3):
             before = "kv_cmd_head=kv_cmd_valid ? head>>3 : 32'd0;"
             after = "kv_cmd_head=kv_cmd_valid ? ((head>>3)^32'd1) : 32'd0;"
         else:
-            original_path = ROOT / "rtl/anvil_q3_ht2_tree_attention.sv"
-            before = ".cmd_visibility(visibility),.cmd_positions(positions),"
-            after = ".cmd_visibility(active),.cmd_positions(positions),"
+            original_path = ROOT / "rtl/anvil_q3_ht2_kv_read_port.sv"
+            before = "node<=private_node; lane<=6'(cmd_dim&(CAP-1));"
+            after = "node<=(private_node^2'd1); lane<=6'(cmd_dim&(CAP-1));"
         original = original_path.read_text()
         if original.count(before) != 1:
             raise AssertionError("tree mutation target not unique")
