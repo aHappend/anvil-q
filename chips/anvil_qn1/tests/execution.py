@@ -28,6 +28,8 @@ def fresh(stem, preparation=False):
     parent = ROOT / "evidence"
     if preparation:
         parent /= "preparation"
+    else:
+        stem = f"l1-{stem}"
     path = parent / f"{stem}-{stamp}-{uuid.uuid4().hex[:8]}"
     path.mkdir(parents=True, exist_ok=False)
     return path

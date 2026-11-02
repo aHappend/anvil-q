@@ -21,11 +21,13 @@ import argparse
 from pathlib import Path
 import sys
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from execution import Run
 from leaf_checks import run_qk, run_scalar, run_tensor, run_tensor_cpp, run_elementary
 from integration import run_top
+from control_checks import run_csr, run_controller
 import reference
 
 
@@ -36,17 +38,26 @@ def main():
     parser.add_argument("--domain", choices=("gsm8k", "humaneval", "mmlu", "boolq", "hellaswag"))
     parser.add_argument("--probe", choices=("qk-compact", "qk-production", "scalar",
                                           "top-compact", "top-compiled", "top-continuation",
-                                          "tensor-compact", "tensor-full", "tensor-cpp",
-                                          "elementary"))
+                                          "tensor-compact", "tensor-full", "tensor-cpp", "tensor-sv",
+                                          "elementary", "csr", "controller"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "elementary":
+        if args.probe == "controller":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_controller(run)
+        elif args.probe == "csr":
+            run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+            results = [run_csr(run), run_csr(run, "verilator")]
+        elif args.probe == "elementary":
             run.versions(("python3", "iverilog", "vvp"))
             results = run_elementary(run)
+        elif args.probe == "tensor-sv":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_tensor(run, "verilator", True, sv_driver=True)
         elif args.probe == "tensor-cpp":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_tensor_cpp(run)

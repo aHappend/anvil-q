@@ -339,6 +339,10 @@ module tensor_tb;
   reg errors[0:2047];
   reg [64:0] held_payload;
   reg holding=0,was_enabled;
+  reg [255:0] next_mask;
+  reg [1023:0] next_q,next_z;
+  reg [4095:0] next_scale,next_activation,next_weight;
+  reg [31:0] next_tag;
   reg [4095:0] filename;
   anvil_qn1_tensor_array dut(.clk(clk),.rst_n(rst_n),.flush(flush),
     .in_valid(in_valid),.in_w4(in_w4),.in_ready(in_ready),.q(q),.z(z),
@@ -353,8 +357,12 @@ module tensor_tb;
   task next_vector;
     begin
       rc=$fscanf(fd,"%d %h %h %h %h %h %h %h %h %d\n",
-        format_value,lane_mask,q,z,scale_bf16,activation_bf16,weight_bf16,
-        in_tag,expected_input,error_value);
+        format_value,next_mask,next_q,next_z,next_scale,next_activation,next_weight,
+        next_tag,expected_input,error_value);
+      #1;
+      lane_mask=next_mask;q=next_q;z=next_z;
+      scale_bf16=next_scale;activation_bf16=next_activation;weight_bf16=next_weight;
+      in_tag=next_tag;
       in_valid=(rc==10); in_w4=format_value;
       if (rc!=10 && rc!=0 && rc!=-1) $fatal(1,"MALFORMED_TENSOR_VECTORS");
     end
@@ -468,8 +476,8 @@ def tensor_vectors(full=True):
     return vectors
 
 
-def run_tensor(run, simulator="icarus", full=False):
-    if simulator == "verilator":
+def run_tensor(run, simulator="icarus", full=False, sv_driver=False):
+    if simulator == "verilator" and not sv_driver:
         return run_tensor_cpp(run, full)
     vectors = tensor_vectors(full)
     vector_file = run.path / "tensor-vectors.txt"
