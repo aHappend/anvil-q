@@ -192,7 +192,6 @@ int main(int argc, char** argv) {
         if (ta) dut.valid&=~(1<<model);
         if (sa) dut.rspv&=~(1<<model);
         if (pending && remaining>0) --remaining;
-        dut.eval();
         dut.clk=0; context.timeInc(5); dut.eval();
         if (cycle%1000000==0)
             std::cout<<"PROGRESS compatibility model="<<model<<" command="<<command_index
