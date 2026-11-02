@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-02T16:24:58.670275+00:00",
+  "timestamp_utc": "2026-11-02T19:45:02.312945+00:00",
   "project_dir": "/data/sufeng/anvil-q4-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -33,11 +33,16 @@
       "",
       "    while executing",
       "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_6mca7u0v.tcl\" line 2)",
+      "    (file \"vulcan_sta_mc1hms54.tcl\" line 2)",
       "------------------------------------------------"
     ]
   },
   "detail": "quartus_map timed out after 3600s (check for uninferred large RAM arrays; split byte-enabled 1D RAMs into byte-lane arrays in a single always @(posedge clk) block).",
+  "quartus_slot_telemetry": {
+    "slot_index": 0,
+    "max_slots": 6,
+    "slot_wait_s": 0.002
+  },
   "top_module": "anvil_q4_top",
   "clock_port": "clk",
   "clock_period_ns": 10.0,
