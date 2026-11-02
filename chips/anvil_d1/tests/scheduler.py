@@ -41,6 +41,7 @@ module tb;
   wire [B*64-1:0] mem_req_tag;
   reg [B*32-1:0] mem_rsp_rdata=0;
   reg [B*64-1:0] mem_rsp_tag=0;
+  reg [B-1:0] response_accepted=0;
   anvil_d1_bank_scheduler #(.BANKS(B),.CLIENTS(C),.QUEUE_DEPTH(Q)) device(.*);
   integer sent[0:C-1],received[0:C-1];
   reg ingressed[0:T-1],issued[0:T-1],returned[0:T-1],owned[0:T-1];
@@ -89,6 +90,8 @@ module tb;
     $finish;
   end
   always @(negedge clk) if (rst_n) begin
+    // Only this driver changes response pins; retire pre-edge sampled transfers.
+    mem_rsp_valid=mem_rsp_valid & ~response_accepted;
     for (integer j=0;j<C;j=j+1) begin
       c_req_valid[j]=sent[j]<N;
       c_req_write[j]=j%2;
@@ -116,6 +119,7 @@ module tb;
     end
   end
   always @(posedge clk) if (rst_n) begin
+    response_accepted=mem_rsp_valid & mem_rsp_ready;
     cycles=cycles+1;
     if(cycles>20000) $fatal(1,"SCHEDULER_CYCLE_BOUND");
     if ((^{idle,drain_done,fault,c_req_ready,c_rsp_valid,mem_req_valid,mem_rsp_ready})===1'bx ||
@@ -171,7 +175,6 @@ module tb;
         for(integer j=0;j<T;j=j+1) if(owned[j] && order[j]<oldest) oldest=order[j];
         if(order[id]>oldest) reorderings=reorderings+1;
         owned[id]=0;returned[id]=1;responses=responses+1;
-        mem_rsp_valid[b]<=0;
       end
     end
     pending=0;for(integer j=0;j<T;j=j+1) if(owned[j]) pending=pending+1;
@@ -187,11 +190,14 @@ if __name__ == "__main__":
     from evidence import Evidence, rel
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repair-of")
+    parser.add_argument("--banks", type=int, choices=(1, 2, 4, 8), default=2)
+    parser.add_argument("--queue", type=int, choices=range(1, 17), default=3)
+    parser.add_argument("--sim", choices=("icarus", "verilator"), default="icarus")
     args = parser.parse_args()
-    evidence = Evidence("scheduler-reorder", args.repair_of)
+    evidence = Evidence(f"scheduler-b{args.banks}-q{args.queue}-{args.sim}", args.repair_of)
     try:
-        fixture = scheduler_bench(evidence)
-        text = simulate(evidence, "scheduler.sv", "icarus")
+        fixture = scheduler_bench(evidence, args.banks, args.queue)
+        text = simulate(evidence, "scheduler.sv", args.sim)
         evidence.finish("passed", fixture=fixture, observations=text)
         print(text.strip())
         print(rel(evidence.path/"receipt.json"))
