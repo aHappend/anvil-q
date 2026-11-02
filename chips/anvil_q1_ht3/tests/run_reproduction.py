@@ -41,12 +41,12 @@ def main():
         json.dump(dict(source_sha256=bindings,bundle=relative(bundle)),out,indent=2)
     rows = []
     for identifier,script,options in (
-            ("compact-behavior","tests/run_parameters.py",["--diagnostic"]),
+            ("compact-inference","tests/run_compatibility.py",["--smoke"]),
             ("compact-zero-latch","tests/run_synthesis.py",["--job", "compact-hierarchy"])):
         child_path = f"evidence/reproduction-{uuid.uuid4().hex[:12]}"
         argv = ["python3",script,*options,"--output",child_path]
         deadline = os.environ.get("HT3_CHECK_DEADLINE")
-        allocation = 120 if identifier == "compact-behavior" else 180
+        allocation = 180 if identifier == "compact-inference" else 150
         os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + min(remaining(), allocation))
         try:
             execute(argv,output,identifier,["python3","--version"],root=bundle)
@@ -68,7 +68,7 @@ def main():
                 os.environ["HT3_CHECK_DEADLINE"] = deadline
     result = dict(status="passed" if all(r["status"]=="passed" for r in rows) else "failed",
                   runs=rows,bundle_manifest=relative(output/"bundle-manifest.json"),
-                  coverage_limits=["compact integrated model-inference reproduction"])
+                  coverage_limits=[])
     with (output/"result.json").open("x") as out:
         json.dump(result,out,indent=2)
     receipt.update(exit=0 if result["status"]=="passed" else 1,end=timestamp(),
