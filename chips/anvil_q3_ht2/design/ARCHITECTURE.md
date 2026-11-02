@@ -2,9 +2,11 @@
 
 ## Current increment
 
-The only implemented block is `rtl/anvil_q3_ht2_sparse_dma.sv`. It does not
-constitute an integrated accelerator. The parent RTL is read-only; tests and
-FPGA integration are not authored by this increment.
+Implemented sources comprise sparse DMA, the FP package, registered weight
+decode/multiply/add helpers, Q16/FP boundary converters, the per-lane stripe
+controller and the four-bank tile MAC. They do not constitute an integrated
+accelerator. The parent RTL is read-only; tests and FPGA integration are not
+authored by this increment.
 
 The DMA has four synchronous 16-bit activation banks and one 4-bit keep-mask
 bank, each with MAX_COLUMNS entries. No RAM data reset is required: commands
@@ -40,7 +42,53 @@ The future integrated scheduler must provide sufficient buffering/prefetch
 elsewhere to sustain the arithmetic array. No achieved throughput is inferred
 from this leaf's storage or lane counts.
 
-## Full-product connection plan (not implemented)
+## Registered projection tensor path
+
+`anvil_q3_ht2_tile_batch_mac` owns one output-row tile. Its command registers
+hold epoch/layer/projection/row and row/token masks until response transfer.
+128 weight decoders share one qweight/qzero burst; each decoder's registered
+binary32 weight feeds the corresponding row of four literal token banks.
+AWQ source nibbles are selected in local packed-row order exactly once.
+DMA is responsible for global-to-local repacking before this interface.
+
+Each of the 512 production lanes has a multiplier and a stripe/tree adder.
+The activation path registers binary16 capture, exact binary32 expansion and
+broadcast alignment. Weight decode independently registers operand capture,
+exact delta-scale multiplication and binary32 normalization. The subsequent
+six-stage lane multiplier produces post E8 for a burst accepted at E0.
+The shared issued-ordinal tag is delayed to the same product edge.
+
+The next edge captures the product and its stripe into the adder. Its final
+rounding result is registered directly in that stripe at E14. Eight stripes
+separate updates sufficiently for consecutive issued ordinals. No cycle-level
+behavior or achieved initiation interval has yet been independently measured.
+The fixed reduction controller issues four first-level additions at last+15
+through +18, two second-level additions at +24/+25 and the final addition at
++31. The held top sum register captures the final retiring result at +36.
+This deliberately avoids an extra output-register edge after an arithmetic
+helper result, which would violate the frozen latency.
+
+All helper stages and shared tags use the same pipeline-enable condition.
+Input bubbles are tagged invalid, not interpreted as zero-column beats.
+The pipeline runs during feed/drain and freezes while the public result
+owns output storage. Flush and faults invalidate all local work; this tensor
+leaf owns no DDR returns, so DMA/shared transport retain their own draining
+responsibility.
+
+The FP package provides bounded eight-bit leading-zero groups, grouped
+leading-zero descriptors, jam shifts, exact FP16 expansion and final
+nearest-even pack logic. Arithmetic functions are evaluated on wires outside
+resettable sequential processes. Weight decode contains one 11-by-4 product
+stage; FP32 multiplication separates its significand multiplier from exponent
+normalization and final rounding. Adders separate alignment, arithmetic and
+normalization/rounding. FPGA mapping and actual timing/resource suitability
+are still unproven and require the unchanged independent hardware gates.
+
+Four-stage conversion helpers express the Q16-to-FP16 and FP32-to-Q16
+boundaries. They are authored but not yet connected to the batched scalar
+scheduler; no parent/HT2 numerical equivalence is inferred from their existence.
+
+## Full-product connection plan (integration not implemented)
 
 `anvil_q3_ht2_top` will own mode-exclusive legacy and HT2 command dispatch.
 The unchanged literal `legacy_core` retains parent behavior. HT2 scheduling
@@ -49,10 +97,10 @@ SwiGLU activation banks to sparse DMA, normalize resident qzero records to
 local packed rows and provide natural-row FP16 scales to `tile_batch_mac`.
 Qweight traffic and metadata traffic share the public DDR arbitration path.
 
-The MAC requires four physical token banks, 128 lanes per bank, three-stage
-shared weight decode, six-stage products/adders, eight stripe sums per output
-and the fixed final tree. Surrounding parent scalar paths stay Q16.16; their
-projection conversion boundaries must be implemented explicitly.
+The authored MAC provides four physical token banks, 128 lanes per bank,
+three-stage shared weight decode, six-stage products/adders, eight stripe sums
+per output and the fixed final tree. Surrounding parent scalar paths stay
+Q16.16; the authored projection conversion helpers still need scheduler wiring.
 
 Private scratch, causal `anvil_q3_ht2_tree_attention`, the batched decoder,
 ordered vocabulary logits, `spec_verifier` and its literal KV commit engine
@@ -84,3 +132,13 @@ This checks the sparse-DMA RTL only; the receipt's document hashes describe the
 documents before this evidence citation was added. No functional or synthesis
 experiment has been executed. Static elaboration is advisory only, not passing
 engineering evidence.
+
+The production-width tile MAC was also statically elaborated with all nine
+current RTL sources parsed, using `iverilog -g2012 -t null -s
+anvil_q3_ht2_tile_batch_mac`. It exited zero in 2.39 seconds; exact argv,
+RTL hashes, tool version, times and raw outputs are retained at
+`evidence/preparation/tile-mac-elaboration-20261102T200349722122Z/receipt.json`.
+No simulation, numerical experiment, synthesis or hardware execution occurred.
+The converters were parsed in that command but were not selected elaboration
+roots. The arithmetic/tile path still requires independent functional and
+structural verification; this receipt does not establish its correctness.

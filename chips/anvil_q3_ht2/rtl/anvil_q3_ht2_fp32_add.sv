@@ -37,6 +37,13 @@ module anvil_q3_ht2_fp32_add (
     available_shift3 : {3'd0,zeros3};
   wire [32:0] rounded4=round_pack_f32(sign4,exponent4,normalized4);
   wire running=rst_n && !flush;
+  reg input_bad;
+  always @* begin
+    input_bad=in_a[30:23]==255 || in_b[30:23]==255;
+`ifndef SYNTHESIS
+    if ((^{in_a,in_b})===1'bx) input_bad=1;
+`endif
+  end
   assign retire_valid=running && enable && valid_pipe[4];
   assign retire_error=retire_valid && (error_pipe[4] || rounded4[32]);
   assign retire_result=retire_valid && !retire_error ? rounded4[31:0] : 0;
@@ -66,7 +73,7 @@ module anvil_q3_ht2_fp32_add (
     end else if (enable) begin
       valid_pipe<={valid_pipe[4:0],in_valid};
       error_pipe<={error_pipe[4] || rounded4[32],error_pipe[3:0],
-        in_valid && (in_a[30:23]==255 || in_b[30:23]==255)};
+        in_valid && input_bad};
       a0<=in_valid ? in_a : 0;
       b0<=in_valid ? in_b : 0;
       sign1<=large0[31];

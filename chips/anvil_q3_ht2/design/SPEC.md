@@ -8,7 +8,9 @@ acceptance report. The complete product is an integrated accelerator with
 sparsity, causal tree attention and atomic all-layer KV publication. A collection
 of leaf modules does not satisfy that objective.
 
-Implementation is currently incomplete. Only the sparse-DMA leaf is present.
+Implementation is currently incomplete. Sparse DMA, registered FP32 helpers,
+Q16 projection-boundary converters and the four-bank tile MAC are authored.
+The batched decoder, attention, commit, integrated top and FPGA files are absent.
 Independent functional verification, synthesis, timing, fit and board execution
 are pending. No performance or numerical result is claimed.
 
@@ -77,6 +79,89 @@ registered state; they cannot transfer retroactively on that edge.
 | Queue/residency one or three | Explicit wrap counters in their owning future modules; no modulo operator. |
 | KV count one / capacity | Both legal; padding and complete expected-record accounting still apply. |
 
+### Atomic commit leaf implementation boundary
+
+The internal `anvil_q3_ht2_kv_commit_engine` takes a transaction command
+`cmd_id/epoch/base_pos/mask`, the frozen staged-record interface, and a selected
+path `commit_count[2:0]/commit_nodes[7:0]` (two bits per node, path order).
+`staged` means every active node has completed all expected shadow writes.
+`publish_valid/publish_count/publish_pos` is a one-edge notification of the
+single registered visible-count update; it has no response-ready dependency.
+`visible_count/visible_epoch` are internal reader visibility gates, not host
+correctness inputs. `done/error` is a one-edge completion; `idle/fault/drain_done`
+describe transaction recovery. Command acceptance reserves all four shadows.
+
+Per-node records must arrive in increasing `(layer, value, head, group)` order,
+where key precedes value within each layer. Different nodes may interleave.
+This bounds duplicate/missing-record accounting to four ordinal counters and
+four expected-field tuples without a large asynchronous bitmap. An accepted
+stage record is checked by the unchanged parent symmetric codec in decode mode
+before its shadow write. The last HEAD_DIM group supplies its actual count.
+Wrong ownership, order, header, reserved code or padding is a transaction fault.
+
+Committed records retain the parent address formula
+`0x100000000 + (((layer*2+value)*MAX_SEQ_LEN+position)*NUM_KV_HEADS+head)*HEAD_BYTES
++ group*64`. Four shadow images follow the complete committed extent and use
+node-major `(node, layer, value, head, group)` order. Address generation has
+separate registered multiply, add and final region-check stages. Copy destinations
+are never below the old visible count. Only an explicitly selected active,
+unique path can copy records; a zero-count path publishes no memory writes.
+
+The record-memory transport reserves one read response before accepting a
+request. Writes complete on accepted request, not on a fictitious write response.
+`memory_rsp_error` is also monitored without `memory_rsp_valid`, allowing the
+enclosing bridge to forward available Avalon response faults. A two-edge quiet
+fence follows the final accepted copy write before publication; the future
+public-DDR integration must map its controller error indication over this fence
+and must not claim persistent-memory durability. Flush drops unaccepted requests,
+drains accepted reads and suppresses publication. A fault preserves the visible
+prefix and recovers only after a flush; flush alone preserves the sequence.
+Reset, including an enclosing explicit new-sequence reset, invalidates visibility.
+
+| Atomic boundary | Registered behavior |
+| --- | --- |
+| Stage handshake | Capture ownership and full record; no shadow write before codec validation. |
+| Same-edge read request/return | Capture once using pending-or-accepted ownership. |
+| Flush plus request | Request output is suppressed; only previously accepted reads drain. |
+| Flush plus publication | No publication; old visible count survives. |
+| Last copy write | Advance only after accepted physical write; then two quiet fence edges. |
+| Zero accepted nodes | Preserve count and pass through the same cancellation-sensitive fence. |
+| Publication | One count update, then engine completion on the following edge. |
+| Stage or transport fault | Stop new traffic, retain read ownership, preserve visible prefix. |
+| Invalid geometry | Diagnostic-only branch; no substituted datapath or public traffic. |
+
+### Greedy verifier leaf implementation boundary
+
+`anvil_q3_ht2_spec_verifier` implements the frozen command/evaluation/logit/
+staging/response/record-memory ports. Geometry parameters are NUM_LAYERS,
+NUM_KV_HEADS, HEAD_DIM, MAX_SEQ_LEN, CACHE_MODE and VOCAB_SIZE. The literal
+`kv_commit_engine` instance owns visible prefix state. The top must reset this
+sequence-owned verifier explicitly on a new sequence, together with the enclosing
+transport; speculative cancellation instead uses flush, preserving visibility.
+The prefix-root argmax comes from the decoder's cached hardware result.
+
+Graph validation uses two registered stages per slot. Lower-index active parents
+permit bounded ancestor-mask and depth construction, including roots in any slot.
+Evaluation begins only after graph validation and engine command acceptance.
+Each node's logit stream may interleave with other nodes, but its vocabulary
+indices are strictly ordered and complete. Logit operand capture precedes a
+registered signed comparison; acceptance at E updates argmax post E+1.
+`eval_done` may coincide with the final accepted logit or staged record.
+Selection waits until this comparison pipeline drains and the last shadow write
+finishes. Missing logits or missing records are faults, not indefinite successful
+waiting. No stage/logit transfer is accepted after eval_done.
+
+Selection alternates registered child search and path update: two edges per
+accepted node, at most four accepted nodes. A no-match search returns the current
+target argmax, including successful zero-token rejection. Commit copies only
+the selected path. The public response is registered on the edge after the
+engine's publication; downstream response backpressure cannot defer publication.
+Faults pulse local cancellation to the engine, drain accepted reads, then publish
+a held zero-data error response. Fault recovery requires flush. A flush suppresses
+all response/evaluation valid signals and clears local transaction metadata.
+The actual tree-attention datapath and decoder are separate required integration
+work; the verifier's visibility descriptor is not a substitute for attention.
+
 Reset has highest priority, then flush/cancellation, then faults, then ordinary
 progress. Inactive outputs are zero. No response may be accepted twice or
 overwrite a pending transaction.
@@ -105,8 +190,8 @@ order. The signed-Q16.16 input range is inside finite binary16 range, so the
 input conversion must not produce infinity; rounding at the negative endpoint
 may produce -32768, which is finite. FP32-to-Q16 overflow saturates only at the
 declared conversion boundary, never inside FP32 arithmetic. These boundaries
-require implementation and independent coverage; they are not implemented
-by this leaf.
+are implemented by the projection-boundary helpers below; their connection
+to the complete decoder and independent numerical coverage remain pending.
 Legacy mode invokes the literal parent without an arithmetic correction wrapper.
 
 Weight decode has three registers; FP32 product and every FP32 adder have six
@@ -115,6 +200,73 @@ commit post E14. Final accepted beat L gives the last commit post L+14,
 level-one captures L+15..18/results L+20..23, level-two captures
 L+24..25/results L+29..30, final capture L+31 and result post L+36.
 Any common freeze must preserve all tags, data and valid stages together.
+
+## Arithmetic helper and tile interfaces
+
+The tile MAC implements the frozen public ports and bus widths in the admitted
+plan. All outputs are valid-gated, with 32-bit sum entry `(token*128+row)`
+at the least-significant corresponding slice. Leaf `WEIGHT_LANES` reduces
+physical lane count without changing the fixed public buses; unused rows are
+zero. Additional geometry parameters `NUM_LAYERS`, `HIDDEN_SIZE`,
+`INTERMEDIATE_SIZE`, `NUM_KV_HEADS` and `HEAD_DIM` validate column, layer and
+row identities. Their production defaults are the frozen geometry. Invalid
+parameters select only the terminating diagnostic branch.
+
+Commands accept a nonempty token/row mask; selected local rows must exist in
+the projection and leaf capacity. Projection 6 takes intermediate columns;
+others take hidden columns. Projections 1/2 produce KV-head rows, 4/5 produce
+intermediate rows, and the remainder produce hidden rows. Column beats must
+be strictly increasing, legal original column indices, have a nonempty keep
+mask contained in the command token mask, and set `in_last` exactly on the
+declared retained-beat count. Active token activations are classified even
+when that token's keep bit is zero; its arithmetic contribution is then zero.
+Inactive command tokens/rows do not classify payloads.
+
+| Helper | Ports in addition to clk/rst_n/flush/enable | Registered stages |
+| --- | --- | --- |
+| `anvil_q3_ht2_weight_decode` | in_valid, in_q[3:0], in_zero[3:0], in_scale_f16[15:0]; out_valid, out_error, out_weight_f32[31:0] | Capture; exact 11-by-4 unsigned product and sign/power; exact FP32 normalization |
+| `anvil_q3_ht2_fp32_mul` | in_valid, in_a/in_b[31:0]; out_valid, out_error, out_result[31:0] | Capture; finite operand expansion; significand multiply; leading-zero/exponent descriptor; normalize/jam; nearest-even round/pack |
+| `anvil_q3_ht2_fp32_add` | Same binary32 interface, plus retire_valid/retire_error/retire_result[31:0] | Capture; magnitude order/field decode; alignment/jam; add/subtract; normalize; nearest-even round/pack |
+| `anvil_q3_ht2_q16_to_f16` | in_valid, signed in_q16[31:0]; out_valid, out_error, out_f16[15:0] | Capture; unsigned absolute magnitude; leading-zero/normalization descriptor; nearest-even round/pack |
+| `anvil_q3_ht2_f32_to_q16` | in_valid, in_f32[31:0]; out_valid, out_error, signed out_q16[31:0] | Capture; scale/guard descriptor; signed magnitude; ties-away rounding/saturation |
+
+An input accepted at E gives decode post E+2, six-stage FP32 output post E+5,
+or four-stage conversion output post E+3. Helpers use a common clock enable:
+disable freezes all data/error/valid registers, and reset/flush clears them
+regardless of enable. Helper output valid describes registered state, not an
+additional independent ready/valid transfer. A scheduler must reserve their
+fixed-rate output storage before enabling them. They are internal interfaces,
+not host-provided numerical oracles.
+
+The adder's `retire_*` signals describe its pending sixth-stage rounding
+result **before** the retirement edge and are gated by enable. Lane stripe
+or tree storage captures this result at that edge, providing the sixth
+register directly rather than adding a seventh register after `out_result`.
+For the final reduction, the top's held sum register provides that register.
+No public result is asserted by this combinational retirement interface.
+
+The tile broadcasts 128 registered weights to four literal token banks, each
+with 128 `anvil_q3_ht2_mac_lane` instances at production width. Each lane has
+one six-stage multiplier, one shared six-stage stripe/tree adder, eight
+32-bit stripe registers, four level-one results and two level-two results.
+Three registered shared activation stages align with weight decode. Issued
+ordinal tags align through nine decode/product stages and five pre-retirement
+adder stages. Arithmetic pipelines do not stall on input bubbles; valid tags
+preserve each operation. They freeze together while the held tile result
+is blocked. No next command overlaps result ownership.
+
+Faults discard arithmetic, set persistent `fault`, and return an explicit
+zero-sum error response one edge after the offending accepted command/beat.
+The error response holds normally under backpressure; flush is required to
+leave persistent fault recovery. Empty legal commands return a positive-zero
+result one edge after command acceptance. Zero columns are legal only at
+the MAC descriptor boundary, not as an empty source projection in DMA.
+
+FP32 helpers reject NaN/Inf, report arithmetic overflow instead of saturating,
+handle finite normal/subnormal operands, and normalize exact zero to positive
+zero. Simulation-only active X/Z classification becomes an explicit error.
+Only FP32-to-Q16 conversion has signed saturation. These are implementation
+intent and interfaces, not independently checked numerical results.
 
 ## Sparse-DMA leaf interface
 

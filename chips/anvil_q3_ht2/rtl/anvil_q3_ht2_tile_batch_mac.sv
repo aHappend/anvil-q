@@ -34,10 +34,11 @@ module anvil_q3_ht2_tile_batch_mac #(
     (WEIGHT_LANES==8 || WEIGHT_LANES==16 || WEIGHT_LANES==32 ||
       WEIGHT_LANES==64 || WEIGHT_LANES==128) &&
     NUM_LAYERS>0 && HIDDEN_SIZE>0 && INTERMEDIATE_SIZE>0 &&
-    NUM_KV_HEADS>0 && HEAD_DIM>0 &&
+    NUM_KV_HEADS>0 && HEAD_DIM>0 && (HEAD_DIM & 1)==0 &&
     64'(HIDDEN_SIZE)==64'(NUM_KV_HEADS)*64'(HEAD_DIM)*64'd8 &&
     64'(HIDDEN_SIZE)<=64'hffffffff &&
-    64'(INTERMEDIATE_SIZE)<=64'hffffffff;
+    64'(INTERMEDIATE_SIZE)<=64'hffffffff &&
+    (INTERMEDIATE_SIZE & 7)==0;
   generate if (!LEGAL) begin: invalid_parameters
     initial $fatal(1,"ANVIL_Q3_HT2 PARAMETER ERROR: tile MAC geometry");
     assign cmd_ready=0; assign in_ready=0; assign out_valid=0;
@@ -57,7 +58,9 @@ module anvil_q3_ht2_tile_batch_mac #(
     reg [16383:0] sums;
     reg [5:0] elapsed;
     reg [2:0] stripe_tag [0:8];
-    reg [31:0] activation [0:3][0:2];
+    reg [15:0] activation_capture [0:3];
+    reg [31:0] activation [0:3][1:2];
+    wire [127:0] expanded_activation;
     wire enabled=rst_n && !flush;
     wire pipeline_enable=state==FEED || state==DRAIN;
     wire command_fire=cmd_valid && cmd_ready;
@@ -108,7 +111,7 @@ module anvil_q3_ht2_tile_batch_mac #(
       activation_bad=0;
       scale_bad=0;
       for (t=0;t<4;t=t+1) begin
-        if (token_mask[t] && in_keep_mask[t]) begin
+        if (token_mask[t]) begin
           activation_bad[t]=in_activation_f16[t*16+10+:5]==31;
 `ifndef SYNTHESIS
           if ((^in_activation_f16[t*16+:16])===1'bx)
@@ -168,6 +171,7 @@ module anvil_q3_ht2_tile_batch_mac #(
       );
     end
     for (token=0;token<4;token=token+1) begin: token_banks
+      assign expanded_activation[token*32+:32]=expand_f16(activation_capture[token]);
       for (row=0;row<128;row=row+1) begin: rows
         if (row<WEIGHT_LANES) begin: physical_lane
           anvil_q3_ht2_mac_lane lane (
@@ -195,24 +199,28 @@ module anvil_q3_ht2_tile_batch_mac #(
         token_mask<=0; row_mask<=0; sums<=0;
         received<=0; previous_column<=0; elapsed<=0;
         for (p=0;p<9;p=p+1) stripe_tag[p]<=0;
-        for (t=0;t<4;t=t+1)
-          for (p=0;p<3;p=p+1) activation[t][p]<=0;
+        for (t=0;t<4;t=t+1) begin
+          activation_capture[t]<=0;
+          for (p=1;p<3;p=p+1) activation[t][p]<=0;
+        end
       end else if (flush) begin
         state<=IDLE; failed<=0; result_valid<=0; result_error<=0;
         epoch<=0; layer<=0; projection<=0; row_base<=0; columns<=0;
         token_mask<=0; row_mask<=0; sums<=0;
         received<=0; previous_column<=0; elapsed<=0;
         for (p=0;p<9;p=p+1) stripe_tag[p]<=0;
-        for (t=0;t<4;t=t+1)
-          for (p=0;p<3;p=p+1) activation[t][p]<=0;
+        for (t=0;t<4;t=t+1) begin
+          activation_capture[t]<=0;
+          for (p=1;p<3;p=p+1) activation[t][p]<=0;
+        end
       end else begin
         if (pipeline_enable && !failed) begin
           stripe_tag[0]<=beat_fire ? received[2:0] : 0;
           for (p=1;p<9;p=p+1) stripe_tag[p]<=stripe_tag[p-1];
           for (t=0;t<4;t=t+1) begin
-            activation[t][0]<=beat_fire && token_mask[t] && in_keep_mask[t] ?
-              expand_f16(in_activation_f16[t*16+:16]) : 0;
-            activation[t][1]<=activation[t][0];
+            activation_capture[t]<=beat_fire && token_mask[t] && in_keep_mask[t] ?
+              in_activation_f16[t*16+:16] : 0;
+            activation[t][1]<=expanded_activation[t*32+:32];
             activation[t][2]<=activation[t][1];
           end
         end

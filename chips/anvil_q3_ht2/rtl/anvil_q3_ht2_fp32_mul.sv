@@ -41,6 +41,13 @@ module anvil_q3_ht2_fp32_mul (
   wire [47:0] denormalized3=shift_jam48(shifted3,underflow_shift3);
   wire [26:0] significand3={denormalized3[47:22],|denormalized3[21:0]};
   wire [32:0] rounded4=round_pack_f32(sign4,exponent4,normalized4);
+  reg input_bad;
+  always @* begin
+    input_bad=in_a[30:23]==255 || in_b[30:23]==255;
+`ifndef SYNTHESIS
+    if ((^{in_a,in_b})===1'bx) input_bad=1;
+`endif
+  end
   assign out_valid=rst_n && !flush && valid_pipe[5];
   assign out_error=out_valid && error_pipe[5];
   assign out_result=out_valid && !out_error ? result5 : 0;
@@ -61,7 +68,7 @@ module anvil_q3_ht2_fp32_mul (
     end else if (enable) begin
       valid_pipe<={valid_pipe[4:0],in_valid};
       error_pipe<={error_pipe[4] || rounded4[32],error_pipe[3:0],
-        in_valid && (in_a[30:23]==255 || in_b[30:23]==255)};
+        in_valid && input_bad};
       a0<=in_valid ? in_a : 0;
       b0<=in_valid ? in_b : 0;
       sign1<=a0[31]^b0[31];

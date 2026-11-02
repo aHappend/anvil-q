@@ -21,6 +21,14 @@ module anvil_q3_ht2_weight_decode (
   wire [23:0] normalized1={product1,9'd0}<<zeros1;
   wire signed [9:0] exponent1=power1+10'sd141-
     $signed({4'd0,zeros1});
+  reg input_bad;
+  always @* begin
+    input_bad=in_scale_f16[14:10]==31 ||
+      (in_scale_f16[15] && in_scale_f16[14:0]!=0);
+`ifndef SYNTHESIS
+    if ((^{in_q,in_zero,in_scale_f16})===1'bx) input_bad=1;
+`endif
+  end
   assign out_valid=rst_n && !flush && valid_pipe[2];
   assign out_error=out_valid && error_pipe[2];
   assign out_weight_f32=out_valid && !out_error ? weight2 : 0;
@@ -34,9 +42,7 @@ module anvil_q3_ht2_weight_decode (
       sign1<=0; product1<=0; power1<=0; weight2<=0;
     end else if (enable) begin
       valid_pipe<={valid_pipe[1:0],in_valid};
-      error_pipe<={error_pipe[1:0],in_valid &&
-        (in_scale_f16[14:10]==31 ||
-          (in_scale_f16[15] && in_scale_f16[14:0]!=0))};
+      error_pipe<={error_pipe[1:0],in_valid && input_bad};
       q0<=in_valid ? in_q : 0;
       z0<=in_valid ? in_zero : 0;
       scale0<=in_valid ? in_scale_f16 : 0;
