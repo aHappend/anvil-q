@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent L1 entry point. Verification implementation is incremental."""
+"""Independent L1 arithmetic, protocol, decoder, benchmark and synthesis checks."""
 
 import argparse
 from pathlib import Path
@@ -23,6 +23,7 @@ import portability
 import defects
 import accumulation
 import attention_checks
+import prefetch_checks
 
 
 def main():
@@ -30,7 +31,7 @@ def main():
     parser.add_argument("--suite", choices=["numerics", "protocol", "behavior", "benchmark",
                                            "synthesis", "defects", "portability"])
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control", "sequence", "defect", "accumulation", "attention"])
+    parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control", "sequence", "defect", "accumulation", "attention", "prefetch"])
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
@@ -53,7 +54,10 @@ def main():
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
-            if args.probe == "attention":
+            if args.probe == "prefetch":
+                evidence.versions([["verilator", "--version"]])
+                result = prefetch_checks.check(evidence, args.banks)
+            elif args.probe == "attention":
                 evidence.versions([["verilator", "--version"]])
                 result = attention_checks.check(evidence, args.head_dim, args.cache_mode,
                                                 args.fp8, args.affine, args.dtype, args.tokens)
@@ -94,6 +98,8 @@ def main():
                                            args.fp8, args.affine, args.layers,
                                            heads=args.heads, head_dim=args.head_dim,
                                            awq_transition=args.awq_transition)
+                if "tokens" in result:
+                    result["benchmark_domains"] = campaigns.domain_metrics(result)
             elif args.probe in ("primitives", "dots"):
                 result = getattr(numerics, args.probe)(evidence, args.seed, simulator=args.simulator)
             else:
@@ -110,12 +116,20 @@ def main():
             dispatch = {"numerics": campaigns.numerics_suite,
                         "protocol": campaigns.protocol,
                         "behavior": campaigns.behavior,
+                        "benchmark": campaigns.benchmark,
                         "synthesis": campaigns.synthesis_suite,
                         "portability": portability.check,
                         "defects": defects.check}
-            if args.suite not in dispatch:
-                raise NotImplementedError(f"Suite {args.suite or 'aggregate'} is still being authored")
-            result = dispatch[args.suite](evidence, args.seed)
+            if args.suite is None:
+                result = {}
+                for suite, check in dispatch.items():
+                    if suite == "behavior":
+                        result[suite] = {str(seed): check(evidence.scope(f"behavior-seed{seed}"), seed)
+                                         for seed in (17, 89, 211)}
+                    else:
+                        result[suite] = check(evidence.scope(suite), args.seed)
+            else:
+                result = dispatch[args.suite](evidence, args.seed)
         evidence.finish("passed", comparisons=result)
         print(f"PASS {relative(evidence.path / 'receipt.json')}")
         return 0

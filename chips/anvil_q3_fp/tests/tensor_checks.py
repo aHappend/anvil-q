@@ -2,9 +2,11 @@
 
 from fractions import Fraction
 import random
+import math
 
 from execution import compiled, relative, run_compiled
 from ieee import binary, dot, exact, pack
+from metrics import compare
 
 
 SHIFTS = (0, 16, 4, 20, 8, 24, 12, 28)
@@ -72,6 +74,7 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
             lines += [f"{kind:x} {proj:x} {row:08x} {col:08x} {value:08x}\n"
                       for (kind, proj, row, col), value in sorted(memory.items())]
             compared = 0
+            command_metrics = []
             for repetition in range(repeats):
                 for projection in range(7):
                     rows, cols = len(weights[projection]), len(weights[projection][0])
@@ -79,7 +82,15 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                     lines.append(f"{projection} {cols} {rows}\n")
                     activation_q16 = [int(exact(a, fmt) * 65536) for a in activations]
                     lines += [f"{a & 0xffffffff:08x}\n" for a in activation_q16] if parent else [f"{a:04x}\n" for a in activations]
+                    references, measured = [], []
                     for row in range(rows):
+                        represented_weights = [
+                            float((qs[projection][row][col] - zs[projection][row][col // 8]) *
+                                  exact(scales[projection][row][col // 8], "fp16"))
+                            if awq else float(exact(weights[projection][row][col], fmt))
+                            for col in range(cols)]
+                        references.append(math.fsum(float(exact(a, fmt)) * w
+                                                    for a, w in zip(activations, represented_weights)))
                         total = 0
                         if parent:
                             for col, activation in enumerate(activation_q16):
@@ -87,6 +98,7 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                                 scale_q16 = (2 * scale.numerator + scale.denominator) // (2 * scale.denominator)
                                 total += (qs[projection][row][col] - zs[projection][row][col // 8]) * scale_q16 * activation
                             lines.append(f"{total & ((1 << 128) - 1):032x}\n")
+                            measured.append(float(Fraction(total, 1 << 32)))
                             compared += 1
                             continue
                         for base in range(0, cols, 8):
@@ -101,7 +113,22 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                             reduced = dot(a, w, (1 << count) - 1, fmt, q if awq else None, z, scale)[0]
                             total = binary("add", total, reduced)[0]
                         lines.append(f"{total:08x}\n")
+                        measured.append(total)
                         compared += 1
+                    if parent:
+                        absolute = [abs(a - b) for a, b in zip(measured, references)]
+                        norm_a = math.sqrt(sum(a * a for a in measured))
+                        norm_b = math.sqrt(sum(b * b for b in references))
+                        cosine = (1.0 if not norm_a and not norm_b else
+                                  0.0 if not norm_a or not norm_b else
+                                  sum(a * b for a, b in zip(measured, references)) / (norm_a * norm_b))
+                        command_metrics.append({"count": rows, "cosine": cosine,
+                                                "maximum_absolute_error": max(absolute),
+                                                "rms_absolute_error": math.sqrt(sum(a * a for a in absolute) / rows),
+                                                "output_representation": "signed 128-bit sum scaled by 2^-32",
+                                                "ulp": "not IEEE output; no floating ULP claim"})
+                    else:
+                        command_metrics.append(compare(measured, references, fmt))
             name = f"{prefix}tensor-b{banks}-r{tile_rows}-k{tile_k}-h{hidden}-{fmt}-w{awq}-s{seed}"
             output = run_compiled(evidence, executable, name, {"vectors.txt": "".join(lines)})
             commands = []
@@ -119,6 +146,7 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                                      "observed_bytes_per_second_at_100mhz": observed,
                                      "ideal_bank_bytes_per_second_at_100mhz": ideal,
                                      "bandwidth_gap_bytes_per_second": ideal - observed})
+                    commands[-1]["metrics_vs_fp64"] = command_metrics[command]
             if len(commands) != 7 * repeats:
                 raise AssertionError(f"Missing measured tensor command records: {name}")
             results.append({"banks": banks, "tile_rows": tile_rows, "tile_k": tile_k,

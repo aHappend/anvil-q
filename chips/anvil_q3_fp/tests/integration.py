@@ -61,12 +61,23 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
                       CACHE_MODE=mode, MODE1_FP8=fp8, INT4_ASYM=affine,
                       QUEUE_DEPTH=queue_depth, TILE_K=tile_k, TILE_ROWS=tile_rows)
     tb = TOP_TB.replace("localparam B=1;", f"localparam B={banks}, VOCAB={vocab};")
+    tb = tb.replace("localparam C_MODE=0,C_H=16,C_I=24,C_KV=2,C_D=2;",
+                    f"localparam C_MODE={mode},C_H={fixture.h},C_I={intermediate},"
+                    f"C_KV={heads // 8 * head_dim},C_D={head_dim};")
     tb = re.sub(r"anvil_q3_fp_top #\([\s\S]*?\) dut", "anvil_q3_fp_top #(" +
                 ",".join(f".{key}({value})" for key, value in parameters.items()) + ") dut", tb)
     name = (f"top-b{banks}-m{mode}-f{fp8}-a{affine}-l{layers}-h{fixture.h}"
             f"-{fmt}-w{int(awq)}-s{seed}-n{tokens}-q{queue_depth}-k{tile_k}-r{tile_rows}-v{vocab}")
     if awq_transition:
         name += "-transition"
+    image_count = len(initial) + (len(second_image) if second_image is not None else 0)
+    memory_capacity = max(262144, image_count)
+    write_capacity = max(262144, len(fixture.writes))
+    tb = tb.replace("memory_key[0:262143],expected_key[0:262143]",
+                    f"memory_key[0:{memory_capacity - 1}],expected_key[0:{write_capacity - 1}]")
+    tb = tb.replace("memory_data[0:262143],expected_data[0:262143]",
+                    f"memory_data[0:{memory_capacity - 1}],expected_data[0:{write_capacity - 1}]")
+    tb = tb.replace("used[0:262143]", f"used[0:{write_capacity - 1}]")
     if simulator == "verilator":
         binary = compiled(evidence, name, tb, rtl)
         output = run_compiled(evidence, binary, name, {"vectors.txt": text})
@@ -86,16 +97,16 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
             observations.append(dict(zip(("position", "cycles", "requests", "writes", "stalls"),
                                          map(int, line.split()[1:]))))
         elif line.startswith("TRAFFIC "):
-            kind, projection, row, first, last, reads, writes, stalls = map(int, line.split()[1:])
+            kind, projection, row, first, last, reads, writes, stalls, padding_bits = map(int, line.split()[1:])
             traffic.append({"kind": kind, "projection": projection, "scratch_slot": row,
                             "first_accepted_request_cycle": first,
                             "last_response_cycle": last,
                             "accepted_reads": reads, "accepted_writes": writes,
-                            "request_stalls": stalls})
+                            "request_stalls": stalls, "padding_bytes": padding_bits / 8})
     if len(observations) != tokens:
         raise AssertionError(f"Missing measured token records in {relative(output)}")
     result = {"scratch_cache_writes": len(fixture.writes), "logits": len(observed),
-              "stdout": relative(output), "parameters": parameters, "seed": seed,
+              "stdout": relative(output), "parameters": {**parameters, "BANKS": banks}, "seed": seed,
               "activation": fmt, "awq": awq, "native_to_awq_transition": awq_transition, "metrics_vs_fp64": metrics,
               "minimum_cosine": threshold, "tokens": observations}
     result["public_transaction_traffic"] = traffic
@@ -106,6 +117,7 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
 TOP_TB = """
 module tb;
   localparam B=1;
+  localparam C_MODE=0,C_H=16,C_I=24,C_KV=2,C_D=2;
   reg clk=0;
   always #5 clk=~clk;
   reg rst_n,cancel=0,token_valid=0;
@@ -139,12 +151,15 @@ module tb;
   integer cycle=0,accepted_token=0,completed_token=0,compared_writes=0,compared_logits=0,requests=0;
   integer traffic_first[0:4095],traffic_last[0:4095],traffic_reads[0:4095];
   integer traffic_writes[0:4095],traffic_stalls[0:4095],traffic_index;
+  integer traffic_padding[0:4095],padding_bits,group_size,code_width,block_count;
+  integer valid_elements,first_element,packed_outputs,packed_column;
   integer queued_traffic[0:B-1][0:31];
   integer occupied[0:B-1],queue_head[0:B-1],queue_tail[0:B-1],due[0:B-1][0:31],bank;
   reg [31:0] queued_data[0:B-1][0:31];
   reg [63:0] queued_tag[0:B-1][0:31];
   reg [B-1:0] held_request=0;
   reg held_logit=0;
+  reg accepted_awq=0;
   reg [199:0] request_payload[0:B-1];
   reg [63:0] logit_payload;
   task reset_check;
@@ -160,6 +175,7 @@ module tb;
     for (i=0;i<4096;i=i+1) begin
       traffic_first[i]=-1; traffic_last[i]=-1; traffic_reads[i]=0;
       traffic_writes[i]=0; traffic_stalls[i]=0;
+      traffic_padding[i]=0;
     end
     for (i=0;i<65536;i=i+1) mutable_used[i]=0;
     for (bank=0;bank<B;bank=bank+1) begin occupied[bank]=0; queue_head[bank]=0; queue_tail[bank]=0; end
@@ -176,13 +192,21 @@ module tb;
       rc=$fscanf(fd,"%d %h %h\\n",record_type,load_key,load_data);
       if (rc!=3) $fatal(1,"malformed integration vector");
       case (record_type)
-        0: begin memory_key[nmemory]=load_key; memory_data[nmemory]=load_data; nmemory=nmemory+1; end
+        0: begin
+          if (nmemory>=$size(memory_key)) $fatal(1,"fixture memory array capacity");
+          memory_key[nmemory]=load_key; memory_data[nmemory]=load_data; nmemory=nmemory+1;
+        end
         1: begin
+          if (nexpected>=$size(expected_key)) $fatal(1,"fixture expected-write capacity");
           expected_key[nexpected]=load_key; expected_data[nexpected]=load_data;
           used[nexpected]=0; nexpected=nexpected+1;
         end
-        2: begin expected_logit[load_key]=load_data; nlogit=nlogit+1; end
+        2: begin
+          if (load_key>=$size(expected_logit)) $fatal(1,"fixture logit capacity");
+          expected_logit[load_key]=load_data; nlogit=nlogit+1;
+        end
         3: begin
+          if (nmemory>=$size(memory_key)) $fatal(1,"fixture transition-image capacity");
           if (image_split<0) image_split=nmemory;
           memory_key[nmemory]=load_key; memory_data[nmemory]=load_data; nmemory=nmemory+1;
         end
@@ -218,6 +242,29 @@ module tb;
         end
         if (mem_req_valid[bank] && mem_req_ready[bank]) begin
         if (occupied[bank]==32) $fatal(1,"scoreboard overflow");
+        padding_bits=0;
+        if (mem_req_kind[bank*4+:4]==0 || mem_req_kind[bank*4+:4]==3 ||
+            (mem_req_kind[bank*4+:4]>=4 && mem_req_kind[bank*4+:4]<=8)) padding_bits=16;
+        if (accepted_awq && (mem_req_kind[bank*4+:4]==1 || mem_req_kind[bank*4+:4]==2)) begin
+          packed_outputs=(mem_req_proj[bank*3+:3]==1 || mem_req_proj[bank*3+:3]==2) ? C_KV :
+            (mem_req_proj[bank*3+:3]==4 || mem_req_proj[bank*3+:3]==5) ? C_I : C_H;
+          packed_column=mem_req_col[bank*32+:32]*8;
+          valid_elements=packed_outputs-packed_column;
+          if (valid_elements<8) padding_bits=(8-valid_elements)*4;
+        end
+        if (C_MODE!=0 && (mem_req_kind[bank*4+:4]==12 || mem_req_kind[bank*4+:4]==13)) begin
+          group_size=C_MODE==1 ? 32 : 64; code_width=C_MODE==1 ? 8 : 4;
+          block_count=(C_D+group_size-1)/group_size;
+          valid_elements=C_D-((mem_req_col[bank*32+:32]>>3)%block_count)*group_size;
+          if (valid_elements>group_size) valid_elements=group_size;
+          first_element=(mem_req_col[bank*32+:32]&7)*(32/code_width);
+          valid_elements=valid_elements-first_element;
+          if (valid_elements<0) valid_elements=0;
+          if (valid_elements>32/code_width) valid_elements=32/code_width;
+          padding_bits=32-valid_elements*code_width;
+        end
+        if (padding_bits<0 || padding_bits>32) $fatal(1,"invalid transfer padding accounting");
+        traffic_padding[traffic_index]=traffic_padding[traffic_index]+padding_bits;
         queued_traffic[bank][queue_tail[bank]]=traffic_index;
         if (traffic_first[traffic_index]<0) traffic_first[traffic_index]=cycle;
         if (mem_req_write[bank]) traffic_writes[traffic_index]=traffic_writes[traffic_index]+1;
@@ -268,6 +315,7 @@ module tb;
         end
       end
       if (token_valid && token_ready) begin
+        accepted_awq=token_awq;
         accepted_token=accepted_token+1; token_start=cycle;
         token_requests=requests; token_writes=compared_writes; token_stalls=stalls;
       end
@@ -288,9 +336,9 @@ module tb;
             compared_writes,nexpected,compared_logits,nlogit,occupied[0]);
         for (bank=0;bank<B;bank=bank+1) if (occupied[bank]!=0) $fatal(1,"outstanding memory at done");
         for (i=0;i<4096;i=i+1) if (traffic_first[i]>=0)
-          $display("TRAFFIC %0d %0d %0d %0d %0d %0d %0d %0d",
+          $display("TRAFFIC %0d %0d %0d %0d %0d %0d %0d %0d %0d",
             i>>8,(i>>5)&7,i&31,traffic_first[i],traffic_last[i],
-            traffic_reads[i],traffic_writes[i],traffic_stalls[i]);
+            traffic_reads[i],traffic_writes[i],traffic_stalls[i],traffic_padding[i]);
         $display("COMPARED top writes=%0d logits=%0d requests=%0d cycles=%0d",
           compared_writes,compared_logits,requests,cycle);
         $fclose(outfile);

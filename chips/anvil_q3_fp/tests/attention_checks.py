@@ -46,6 +46,7 @@ def check(evidence, head_dim=34, mode=0, fp8=0, affine=0, fmt="bf16", tokens=2):
 
 ATTENTION_TB = """
 module tb;
+  localparam [63:0] PROGRESS_BOUND=64'd16*(@D@+1)*4*(2048*@D@+4096)+1000000;
   reg clk=0;
   always #5 clk=~clk;
   reg rst_n,flush=0,cmd_valid=0,cmd_fp16=0,cmd_phase=0;
@@ -115,7 +116,7 @@ module tb;
       while (cmd_ready!==1'b1) @(negedge clk);
       cmd_pos=position; cmd_phase=phase; cmd_valid=1; received=0; latency=0;
       @(negedge clk); cmd_valid=0;
-      while (done!==1'b1 && latency<20000000) begin
+      while (done!==1'b1 && latency<PROGRESS_BOUND) begin
         @(negedge clk); latency=latency+1;
       end
       if (done!==1'b1 || error!==1'b0 || received!=nexpected)
