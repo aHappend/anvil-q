@@ -134,7 +134,6 @@ module anvil_q3_ht2_spec_verifier #(
     wire engine_publish, engine_done, engine_error, engine_idle, engine_fault, engine_drained;
     wire [2:0] engine_publish_count;
     wire [31:0] engine_publish_pos, visible_count, visible_epoch;
-    wire engine_flush=flush || state==ABORT_PULSE;
     wire logit_fire=logit_valid && logit_ready;
     wire logit_bad=logit_id!=transaction_id || logit_epoch!=epoch ||
       !active[logit_node] || logits_complete[logit_node] ||
@@ -153,6 +152,10 @@ module anvil_q3_ht2_spec_verifier #(
       state!=CANCEL_WAIT && state!=FAULTED;
     wire transaction_fault=engine_fault || engine_error ||
       receive_fault || unexpected_completion;
+    wire incoming_fault=unexpected_completion ||
+      (state==RECEIVE && (eval_error || (logit_fire && logit_bad)));
+    wire engine_flush=flush || state==ABORT_PULSE ||
+      (!failed && state!=CANCEL_WAIT && incoming_fault);
     wire [2:0] graph_parent=parents[graph_node*3+:3];
     wire [1:0] safe_parent=graph_parent[1:0];
     reg calculated_bad, calculated_found;

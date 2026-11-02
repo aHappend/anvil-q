@@ -208,3 +208,20 @@ No simulation, numerical experiment, synthesis or hardware execution occurred.
 The converters were parsed in that command but were not selected elaboration
 roots. The arithmetic/tile path still requires independent functional and
 structural verification; this receipt does not establish its correctness.
+
+The new KV engine, verifier, KV reader, tree attention and private scratch were
+statically elaborated together with the production tile MAC in one Icarus
+`-g2012 -t null` invocation. Verifier/tree roots selected INT4, while standalone
+engine/reader roots selected their default INT8 configurations. The command
+parsed all current RTL and the unchanged reference dependency and exited zero
+in 2.44 seconds. Exact argv, source hashes, installed tool version, timestamps
+and raw outputs are retained at
+`evidence/preparation/kv-tree-scratch-elaboration-20261102T201700004266Z/receipt.json`.
+This was a syntax/elaboration check only. No functional simulation, reference
+comparison, mutation, synthesis, timing or hardware experiment ran.
+
+The next owned implementation work is the batched projection/decoder scheduler,
+real activation reuse across row blocks, shared output-head weight reuse,
+image-loaded metadata normalization, public top/DDR integration and FPGA bridge
+configuration. Tests remain exclusively Verifier-owned. The complete design is
+not ready for independent verification handoff or engineering acceptance.

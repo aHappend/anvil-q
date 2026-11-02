@@ -1,5 +1,6 @@
 module anvil_q3_ht2_sparse_dma #(
-  parameter MAX_COLUMNS = 11008
+  parameter MAX_COLUMNS = 11008,
+  parameter RETAIN_SCAN = 0
 ) (
   input wire clk, rst_n, flush,
   input wire cmd_valid,
@@ -35,7 +36,8 @@ module anvil_q3_ht2_sparse_dma #(
   output wire done, error, idle, drain_done, fault,
   output wire [31:0] scanned_columns, skipped_columns, issued_weight_beats
 );
-  localparam LEGAL = MAX_COLUMNS > 0 && 64'(MAX_COLUMNS) <= 64'hffffffff;
+  localparam LEGAL = MAX_COLUMNS > 0 && 64'(MAX_COLUMNS) <= 64'hffffffff &&
+    (RETAIN_SCAN == 0 || RETAIN_SCAN == 1);
   generate if (!LEGAL) begin: invalid_parameters
     initial $fatal(1, "ANVIL_Q3_HT2 PARAMETER ERROR: MAX_COLUMNS");
     assign cmd_ready = 1'b0;
@@ -68,6 +70,8 @@ module anvil_q3_ht2_sparse_dma #(
       DRAIN_FINISH=18, FAULTED=19;
     reg [4:0] state;
     reg failed, cancelled, outstanding;
+    reg scan_cached, reuse_scan;
+    reg [31:0] cached_scanned, cached_skipped, cached_retained;
     reg [31:0] epoch, layer, columns, output_count, row_base;
     reg [2:0] projection;
     reg [3:0] token_mask;
@@ -99,6 +103,12 @@ module anvil_q3_ht2_sparse_dma #(
     wire [63:0] activation_q;
     wire enabled = rst_n && !flush;
     wire command_fire = cmd_valid && cmd_ready;
+    wire matching_scan = RETAIN_SCAN == 1 && scan_cached &&
+      cmd_epoch == epoch && cmd_layer == layer && cmd_proj == projection &&
+      cmd_qweight_base == matrix_base && cmd_output_count == output_count &&
+      cmd_columns == columns && cmd_token_mask == token_mask &&
+      cmd_sparse_enable == sparse && cmd_threshold_f16[14:0] == threshold &&
+      cmd_row_base != row_base;
     wire activation_fire = act_valid && act_ready;
     wire request_fire = memory_req_valid && memory_req_ready;
     wire response_known = outstanding || request_fire;
@@ -257,6 +267,8 @@ module anvil_q3_ht2_sparse_dma #(
       if (!rst_n) begin
         state <= IDLE;
         failed <= 0; cancelled <= 0; outstanding <= 0;
+        scan_cached <= 0; reuse_scan <= 0;
+        cached_scanned <= 0; cached_skipped <= 0; cached_retained <= 0;
         epoch <= 0; layer <= 0; projection <= 0; columns <= 0;
         output_count <= 0; row_base <= 0; token_mask <= 0;
         sparse <= 0; threshold <= 0; matrix_base <= 0;
@@ -281,6 +293,8 @@ module anvil_q3_ht2_sparse_dma #(
           state <= DRAIN;
           failed <= 0;
           cancelled <= 1;
+          scan_cached <= 0; reuse_scan <= 0;
+          cached_scanned <= 0; cached_skipped <= 0; cached_retained <= 0;
           capture_valid <= 0; predicate_valid <= 0;
           capture_bad <= 0; predicate_bad <= 0;
           capture_column <= 0; predicate_column <= 0;
@@ -303,6 +317,7 @@ module anvil_q3_ht2_sparse_dma #(
             failed <= 1;
             cancelled <= 0;
             state <= DRAIN;
+            scan_cached <= 0; reuse_scan <= 0;
             capture_valid <= 0;
             predicate_valid <= 0;
           end else begin
@@ -326,6 +341,8 @@ module anvil_q3_ht2_sparse_dma #(
             case (state)
               IDLE: if (command_fire) begin
                 cancelled <= 0;
+                reuse_scan <= matching_scan;
+                scan_cached <= 0;
                 epoch <= cmd_epoch; layer <= cmd_layer; projection <= cmd_proj;
                 columns <= cmd_columns; output_count <= cmd_output_count;
                 row_base <= cmd_row_base; token_mask <= cmd_token_mask;
@@ -369,7 +386,13 @@ module anvil_q3_ht2_sparse_dma #(
                 if (command_bad || matrix_end > 64'h60000000 ||
                     matrix_end <= {31'd0,matrix_base}) begin
                   failed <= 1;
+                  scan_cached <= 0;
                   state <= DRAIN;
+                end else if (reuse_scan) begin
+                  scan_count <= cached_scanned;
+                  skip_count <= cached_skipped;
+                  retained <= cached_retained;
+                  state <= DESCRIPTOR;
                 end else state <= SCAN;
               end
               SCAN: if (predicate_valid) begin
@@ -454,7 +477,13 @@ module anvil_q3_ht2_sparse_dma #(
               FINISH: state <= COMPLETE;
               COMPLETE: begin
                 if (failed) state <= FAULTED;
-                else state <= IDLE;
+                else begin
+                  scan_cached <= RETAIN_SCAN == 1;
+                  cached_scanned <= scan_count;
+                  cached_skipped <= skip_count;
+                  cached_retained <= retained;
+                  state <= IDLE;
+                end
               end
               DRAIN: if (!outstanding) state <= DRAIN_FINISH;
               DRAIN_FINISH: begin

@@ -59,6 +59,78 @@ for an illegal configuration.
 
 ## Cycle and degenerate-boundary table
 
+### Batched projection and resident-metadata implementation boundary
+
+`anvil_q3_ht2_projection` owns one complete projection (IDs 0..6), not
+one token. Its command freezes epoch, layer, projection, candidate mask and
+sparse controls. It reads the source scratch slot once per logical column
+for all active candidates, converts these Q16 operands through four literal
+Q16-to-FP16 helpers, and supplies the first row block's DMA scan. Later row
+blocks reuse the DMA's scan RAM and keep masks; no new scratch activation
+reads or SwiGLU evaluation occur. The projection uses 128-row blocks, with
+an exact tail mask, and writes converted results to each active candidate's
+destination scratch slot. Projection IDs 0..2 read compatible FP16 biases
+after FP32-to-Q16 conversion, then perform the parent's saturating Q16 bias
+addition. IDs 3..6 have no bias.
+
+The DMA's optional elaboration parameter `RETAIN_SCAN=1` is internal
+integration functionality; its default zero preserves the frozen standalone
+ingestion protocol. Retention is valid only after successful completion, for
+an identical epoch/layer/projection/matrix/column-count/token-mask/sparse-control
+tuple and a different row base. Flush, reset, faults, or a nonmatching command
+invalidate it. The enclosing projection flushes DMA between complete
+projection transactions, including identical consecutive commands, so stale
+activation values cannot be reused. A reused command revalidates its new row
+block/extent, restores the retained logical scan counters, and publishes its
+descriptor without activation handshakes. Physical counters still reset and
+count every read in the new block.
+
+`anvil_q3_ht2_projection_metadata` owns all AWQ group metadata for one row
+block. Its command supplies image-mapped qzero/scale bases, full input/output
+counts and row base. It checks the complete end-rounded matrix allocations
+before reads. Groups are loaded in increasing order, zeros before scales.
+Zero source words use the containing-word AWQ permutation and are repacked
+into the MAC's local packed-row convention. Scale records are stored in
+natural local-row order. Invalid rows are zero; active scales must be finite
+and nonnegative, with negative zero legal. Each physical request is one aligned
+64-byte read; all repeated lines and padding count as metadata traffic.
+There is no host metadata oracle or hidden ideal-memory port.
+
+128 synchronous four-bit zero banks and 128 synchronous 16-bit scale banks
+each contain `ceil(MAX_INPUTS/GROUP_SIZE)` entries. Their dedicated reset-free
+RAM processes have one write/read port. Validity is block-wide: no query can
+read before every group is loaded. A column query selects its resident group,
+captures bank data synchronously, and returns a held zero/scale operand.
+Metadata is read over DDR once per group/row block, not once per column or
+candidate. The projection keeps the DMA's complete operand blocked while it
+queries metadata, then transfers weights, scales, zeros, activations and
+keep/last fields together to the literal tile MAC.
+
+| Projection boundary | Behavior |
+| --- | --- |
+| Command transfer | Latch controls; flush previous local arithmetic/scan/metadata ownership before setup. |
+| First block | One shared scratch read and FP16 conversion per column; descriptor only after complete scan. |
+| Later block | Same scanned activation/mask banks; revalidate row block, then descriptor without activation reads. |
+| Metadata command | Widened zero/scale extent products, rounding, then base-plus-end checks in separate registered states. |
+| Metadata group | Separate stride multiplication, packed-start addition, and aligned-line descriptor stages. |
+| Metadata response at R | Capture bounded per-bank fields; zero normalization/storage occurs after the final zero return, never after only its first crossing line. |
+| Resident query at Q | Registered group capture, synchronous bank read at Q+1, held response post Q+1. |
+| Metadata/query depth one | One entry, explicit bounds, no zero-width RAM index. |
+| Non-power-of-two groups | Group ordinal comparison, no modulo wrap or inferred padded geometry. |
+| Tile result transfer | Capture all FP32 sums and exact metadata; no result overwrite during scratch writes. |
+| Q16 output | Four registered conversion stages, then optional FP16 bias read and registered saturating add. |
+| Scratch or DDR fault | Flush local producers; drain accepted scalar/metadata/qweight reads before fault completion. |
+| Cancellation | Suppress new traffic; preserve accepted response ownership until drain; no completion claims successful projection. |
+
+The projection's memory interface is three ordered burstcount-one read clients:
+qweight, resident metadata, and bias. Its scratch interface is the private
+scratch's common-mask read / single-node write protocol. The enclosing decoder
+must arbitrate both interfaces and cannot change scratch source values during
+an owned projection. Integration still must implement embedding, scalar
+decoder scheduling, shadow-record staging, shared FP16 output-head projection,
+public top arbitration, and target bridge configuration. No leaf implementation
+or syntax check certifies these pending connections.
+
 All transfers use pre-edge `valid && ready`. Outputs after an edge describe
 registered state; they cannot transfer retroactively on that edge.
 
