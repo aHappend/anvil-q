@@ -275,6 +275,9 @@ module tb;
   integer cycle=0,position,j,byte_index,address_index,compared=0,received=0;
   integer requests=0,read_bytes=0,write_bytes=0,two_slots=0,reordered=0;
   integer output_stalls=0,request_stalls=0,completed=0,fixture_fd,scan;
+  integer csr_issued=0,csr_compared=0,csr_accept_edge=-1,csr_overlap=0;
+  reg csr_pending=0,csr_expected_error=0,csr_running=1;
+  reg [31:0] csr_expected_data=0;
   function [31:0] ordered(input [31:0] value);
     ordered=value[31] ? ~value : value^32'h80000000;
   endfunction
@@ -319,6 +322,7 @@ module tb;
   task tick;
     reg req_transfer,rsp_transfer,scalar_req_transfer,scalar_rsp_transfer;
     reg output_transfer,token_transfer,finished;
+    reg csr_request_transfer,csr_response_transfer;
     integer chosen;
     begin
       cycle=cycle+1;
@@ -327,6 +331,9 @@ module tb;
       ddr_req_ready=rng[2:0]!=0 && cycle%23>=3;
       mem_req_ready=!scalar_pending && !mem_rsp_valid && rng[3:0]!=0;
       logit_ready=cycle%17>=4 && rng[4:2]!=0;
+      csr_req_valid=csr_running && !csr_pending && cycle%13==0;
+      csr_req_addr=csr_issued[0] ? 12'h003 : 12'h000;
+      csr_rsp_ready=cycle%11>=4 && rng[6:4]!=0;
       if (!ddr_rsp_valid) begin
         chosen=-1;
         if (occupied[1] && delay_count[1]==0) chosen=1;
@@ -349,7 +356,14 @@ module tb;
       scalar_rsp_transfer=mem_rsp_valid && mem_rsp_ready;
       output_transfer=logit_valid && logit_ready;
       token_transfer=token_valid && token_ready;
+      csr_request_transfer=csr_req_valid && csr_req_ready;
+      csr_response_transfer=csr_rsp_valid && csr_rsp_ready;
       finished=done;
+      if (csr_rsp_valid) begin
+        if (!csr_pending || cycle<=csr_accept_edge+1 ||
+            {{csr_rsp_rdata,csr_rsp_error}} !== {{csr_expected_data,csr_expected_error}})
+          $fatal(1,"architectural CSR latency/value/error mismatch");
+      end
       if (error) $fatal(1,"nontrivial finite token failed");
       if (held_logit && ({{logit_valid,logit_index,logit_data}} !==
         {{1'b1,held_logit_payload}})) $fatal(1,"logit changed under stall");
@@ -378,6 +392,17 @@ module tb;
       if (finished) begin
         if (received!={vocab}) $fatal(1,"premature done");
         completed=completed+1;
+      end
+      if (csr_response_transfer) begin
+        csr_pending=0; csr_compared=csr_compared+1;
+        if (rsp_transfer || scalar_rsp_transfer) csr_overlap=csr_overlap+1;
+      end
+      if (csr_request_transfer) begin
+        if (csr_pending) $fatal(1,"architectural CSR duplicate ownership");
+        csr_pending=1; csr_accept_edge=cycle;
+        csr_expected_error=csr_issued[0];
+        csr_expected_data=csr_issued[0] ? 32'd0 : 32'h02020002;
+        csr_issued=csr_issued+1;
       end
       if (rsp_transfer) begin occupied[ddr_rsp_id]=0; end
       if (req_transfer) begin
@@ -408,6 +433,8 @@ module tb;
         scalar_pending=1; scalar_delay=2+rng[5:4];
       end
       #1;
+      if (csr_rsp_valid !== (csr_pending && cycle>csr_accept_edge))
+        $fatal(1,"architectural CSR registered response latency");
       if (token_transfer) token_valid=0;
       if (rsp_transfer) ddr_rsp_valid=0;
       if (scalar_rsp_transfer) mem_rsp_valid=0;
@@ -441,10 +468,14 @@ module tb;
       while (token_valid) tick();
       while (completed<=position) tick();
     end
-    if (compared!={tokens*vocab} || requests==0 || write_bytes==0 ||
+    csr_running=0;
+    while (csr_pending) tick();
+    if (compared!={tokens*vocab} || requests==0 || write_bytes==0 || csr_compared==0 ||
+        csr_issued!=csr_compared ||
         request_stalls==0) $fatal(1,"architectural coverage absent");
-    $display("SUMMARY architecture: tokens=%0d logits=%0d cycles=%0d read_bytes=%0d write_bytes=%0d two_slots=%0d reordered=%0d output_stalls=%0d",
-      completed,compared,cycle,read_bytes,write_bytes,two_slots,reordered,output_stalls);
+    $display("SUMMARY architecture: tokens=%0d logits=%0d cycles=%0d read_bytes=%0d write_bytes=%0d two_slots=%0d reordered=%0d output_stalls=%0d csr_compared=%0d csr_memory_overlap=%0d",
+      completed,compared,cycle,read_bytes,write_bytes,two_slots,reordered,output_stalls,
+      csr_compared,csr_overlap);
     $finish;
   end
 endmodule

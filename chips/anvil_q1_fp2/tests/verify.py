@@ -226,6 +226,39 @@ def tensor_vectors(seed, count):
                 (mask, 64), (acc, 32),
             )
             records.append((fields, value, value, status, events))
+    directed = []
+    for mx in (False, True):
+        a, b = [0] * 64, [0] * 64
+        a[0], b[0] = (0x38, 0x38) if mx else (0x3380, 0x3F80)
+        a[63] = 0x7F if mx else 0x7F81
+        directed.append((mx, a, b, 1, 0x3F800001,
+                         0x7F67 if mx else 0x7F7F, 0x7F7F))
+        if not mx and count >= 256:
+            for exponent in range(1, 255):
+                for fraction in (0, 0x7F):
+                    magnitude = (exponent << 7) | fraction
+                    a, b = [0] * 64, [0x3F80] * 64
+                    a[:4] = [magnitude, magnitude | 0x8000, 0x3F80, 0x7F81]
+                    directed.append((False, a, b, 7, 0, 0x7F7F, 0x7F7F))
+            for magnitude in (1, 2, 0x3F, 0x40, 0x7E, 0x7F):
+                a, b = [0] * 64, [0] * 64
+                a[:2], b[:2] = [magnitude, magnitude | 0x8000], [magnitude, magnitude]
+                directed.append((False, a, b, 3, 0, 0x7F7F, 0x7F7F))
+        elif mx and count >= 256:
+            for scale in range(256):
+                a, b = [0] * 64, [0] * 64
+                a[31], a[32], b[31], b[32] = 0x38, 0xB8, 0x38, 0x38
+                directed.append((True, a, b, (1 << 31) | (1 << 32), 0,
+                                 scale | ((255 - scale) << 8), 0x7F7F))
+    for mx, a, b, mask, acc, scale_a, scale_b in directed:
+        value, status, events = tensor(a, b, mask, acc, mx, scale_a, scale_b)
+        fields = (
+            (pack_lanes(a, 8 if mx else 16), 1024),
+            (pack_lanes(b, 8 if mx else 16), 1024),
+            (int(mx), 1), (scale_a, 16), (scale_b, 16),
+            (mask, 64), (acc, 32),
+        )
+        records.append((fields, value, value, status, events))
     return records
 
 
@@ -456,6 +489,10 @@ def simulate_pipeline(run, kind, records, seed, simulator):
     run.receipt["comparisons"].append({
         "kind": kind, "seed": seed, "simulator": simulator,
         "vectors": len(records), "result": "passed",
+        **({"format_counts": {
+            "mx": sum(fields[2][0] == 1 for fields, *_ in records),
+            "bf16": sum(fields[2][0] == 0 for fields, *_ in records),
+        }} if kind == "tensor" else {}),
     })
 
 
@@ -641,7 +678,9 @@ def behavior(run, seeds):
     for seed in seeds:
         tensor_rows = [row for row in comparisons if row.get("kind") == "tensor" and
                        row.get("seed") == seed and row.get("simulator") == "verilator"]
-        if len(tensor_rows) != 1 or tensor_rows[0]["vectors"] < 8192:
+        if len(tensor_rows) != 1 or any(
+            tensor_rows[0]["format_counts"][fmt] < 4096 for fmt in ("bf16", "mx")
+        ):
             raise AssertionError(f"seed {seed}: missing 4096 tensor groups per format")
         for geometry in GEOMETRIES:
             architecture_rows = [row for row in comparisons if row.get("kind") == "architecture"
@@ -651,7 +690,10 @@ def behavior(run, seeds):
                 raise AssertionError(f"seed {seed}: missing decoder format/geometry comparisons")
     run.receipt["coverage"] = {
         "seeds": seeds, "executed_geometries": GEOMETRIES,
-        "tensor_groups_per_format_per_seed": 4097,
+        "tensor_groups_per_format_per_seed": {
+            str(row["seed"]): row["format_counts"] for row in comparisons
+            if row.get("kind") == "tensor" and row.get("simulator") == "verilator"
+        },
         "epilogue_vectors_per_operation_per_seed": 256,
         "attention_queries_per_tile_per_seed": 64, "tile_tokens": [1, 3, 16],
         "compatibility_precisions": [0, 1, 2], "optimized_precisions": [1, 3],

@@ -15,7 +15,7 @@ def measured_cycles(run, stem, domain):
     for line in log.read_text().splitlines():
         if line.startswith("MEASUREMENT "):
             fields = {key: int(value) for key, value in
-                      re.findall(r"([a-z_]+)=(\d+)", line)}
+                      re.findall(r"\b([a-z][a-z0-9_]*)=(\d+)", line)}
             if not {"run", "parent_cycles", "fp2_cycles"} <= fields.keys():
                 raise AssertionError(f"{domain}: incomplete cycle measurement")
             rows.append(fields)
