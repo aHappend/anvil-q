@@ -12,7 +12,9 @@ Implementation is currently incomplete. Sparse DMA, registered FP32 helpers,
 Q16 projection-boundary converters and the four-bank tile MAC are authored.
 Private scratch, a causal parent-Q16 attention wrapper with quantized KV reader,
 the greedy verifier and atomic shadow/copy engine are also authored as leaves.
-The batched decoder/projection scheduler, integrated top and FPGA files are absent.
+The shared batched projection scheduler, resident metadata loader, scan-RAM
+reuse and shared embedding/output-head module are now authored. The batched
+scalar decoder scheduler, integrated top and FPGA files are absent.
 Independent functional verification, synthesis, timing, fit and board execution
 are pending. No performance or numerical result is claimed.
 
@@ -130,6 +132,48 @@ an owned projection. Integration still must implement embedding, scalar
 decoder scheduling, shadow-record staging, shared FP16 output-head projection,
 public top arbitration, and target bridge configuration. No leaf implementation
 or syntax check certifies these pending connections.
+
+### Shared embedding/output-head boundary
+
+`anvil_q3_ht2_token_io` owns a command `id/epoch/project/mask/tokens`.
+Embedding mode reads the compatible FP16 embedding image for each active
+candidate and writes its Q16 values to that candidate's private scratch slot
+zero. Output-head mode first reads slot 14 once for all active candidates into
+four synchronous activation banks. It then walks vocabulary rows in increasing
+order, reusing each fetched FP16 weight and its parent-compatible Q16 expansion
+across four simultaneous signed-Q16 multipliers. The shared physical line cache
+is transaction-private and may reuse a line across components/adjacent vocabulary
+rows; it does not substitute fabricated memory. Matrix allocation and every
+physical line are checked against `[0x80000000,0xc0000000)`.
+
+The output head remains the parent's scalar Q16 numerical path, not an
+undocumented W4 or FP32 reinterpretation of embedding weights. Each FP16 weight
+is expanded/saturated with parent `f16_q16` semantics. Exact signed 32-by-32
+products are sign-extended to 128 bits and accumulated in increasing component
+order, then rounded/saturated with parent `round_q32_to_q16`. Four literal
+parent segmented multipliers and four segmented accumulators bound arithmetic
+depth. This head is folded by component, but never by candidate weight traversal.
+The fixed FP32 eight-stripe order applies to W4 projection tiles, not this
+distinct scalar FP16 output head.
+
+Its logit stream carries id/epoch/node/index/data/last, with active nodes
+interleaved at each vocabulary index. Every node sees ordered complete indices.
+Signed argmax chooses the smallest ID on ties, updated only on actual logit
+transfer. The four hardware argmax values are returned on successful output-head
+completion for caching/selection by the enclosing decoder, not supplied by the
+host. No output-head result publishes KV by itself.
+
+| Token-I/O boundary | Registered behavior |
+| --- | --- |
+| Command | Freeze mask/tokens/id/epoch/mode, invalidate line cache and activation validity. |
+| Activation preload | One common scratch read per component, synchronous writes to all active banks. |
+| Image addressing | Row product, component addition and image-base addition in separate stages. |
+| Read return | Capture a complete owned line; select one FP16 half on the following registered edge. |
+| Weight expansion | Registered parent Q16 conversion before shared multiplier launch. |
+| Logit backpressure | Node, vocabulary index, last, data and ownership metadata remain held. |
+| Last logit | Update that node's argmax and complete only after its actual transfer. |
+| Cancellation/fault | Drop unaccepted work and drain both accepted scratch and DDR response ownership. |
+| Minimum image | Positive dimensions divisible by eight; end-rounded allocation checked, including shared narrow-row lines. |
 
 All transfers use pre-edge `valid && ready`. Outputs after an edge describe
 registered state; they cannot transfer retroactively on that edge.

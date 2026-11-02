@@ -165,25 +165,39 @@ module anvil_q3_ht2_projection #(
     wire mac_out_ready=active && state==RESULT_WAIT && (dma_completed || dma_done);
     wire result_fire=mac_valid && mac_out_ready;
     wire scratch_bad=scratch_rsp_valid && (!scratch_known ||
-      scratch_rsp_error || (state==ACT_RETURN &&
+      scratch_rsp_error || ((state==ACT_RETURN || state==ACT_REQUEST) &&
         (scratch_rsp_mask!=token_mask || scratch_rsp_node!=0)) ||
-      (state==WRITE_RETURN &&
+      ((state==WRITE_RETURN || state==WRITE_REQUEST) &&
         (scratch_rsp_mask!=(4'b0001<<write_node) || scratch_rsp_node!=write_node)));
     wire result_bad=mac_valid && (mac_error || mac_epoch!=epoch || mac_layer!=layer ||
       mac_projection!=projection || mac_row_base!=row_base ||
       mac_token_mask!=token_mask || mac_row_mask!=dma_row_mask_saved);
     reg [127:0] dma_row_mask_saved;
+    reg classification_bad;
     wire local_fault=active && (scratch_bad ||
       (memory_rsp_valid[2] && !bias_known) || memory_rsp_error[2] ||
       dma_fault || meta_fault || mac_fault || (dma_done && dma_error) ||
       meta_error || (meta_valid && meta_operand_error) || result_bad ||
       (state==ACT_CONVERT_WAIT && |(a_error&token_mask)) ||
       (state==OUT_CONVERT_WAIT && |(q_error&token_mask)) ||
-      (state==BIAS_DECODE && anvil_q3_pkg::f16_invalid(bias_f16)));
+      classification_bad);
     wire all_drained=dma_idle && meta_idle && mac_idle &&
       !scratch_pending && !bias_pending;
     wire signed [31:0] decoded_bias=anvil_q3_pkg::f16_q16(bias_f16);
     integer t;
+
+    always @* begin
+      classification_bad=state==BIAS_DECODE && anvil_q3_pkg::f16_invalid(bias_f16);
+`ifndef SYNTHESIS
+      if (scratch_rsp_valid &&
+          (^{scratch_rsp_error,scratch_rsp_node,scratch_rsp_mask})===1'bx)
+        classification_bad=1;
+      if (mac_valid &&
+          (^{mac_error,mac_epoch,mac_layer,mac_row_base,mac_projection,
+              mac_token_mask,mac_row_mask})===1'bx) classification_bad=1;
+      if (state==BIAS_DECODE && (^bias_f16)===1'bx) classification_bad=1;
+`endif
+    end
 
     always @* begin
       selected_qw_offset=0; selected_qz_offset=0; selected_sc_offset=0;
@@ -338,15 +352,16 @@ module anvil_q3_ht2_projection #(
         .out_valid(q_valid[n]),.out_error(q_error[n]),.out_q16(q_result[n*32+:32])
       );
       for (genvar b=0;b<16;b=b+1) begin: result_bank
-        (* ramstyle="MLAB", nomem2reg *) reg [31:0] sums [0:7];
+        reg [255:0] sums;
         reg [31:0] read_sum;
         assign result_q[n][b]=read_sum;
         always @(posedge clk) begin
           if (result_fire && !local_fault && !mac_error) begin
             for (integer j=0;j<8;j=j+1)
-              sums[j]<=mac_sums[(n*128+b*8+j)*32+:32];
+              sums[j*32+:32]<=mac_sums[(n*128+b*8+j)*32+:32];
           end
-          if (active && state==OUT_READ) read_sum<=sums[output_row[2:0]];
+          if (active && state==OUT_READ)
+            read_sum<=sums[{output_row[2:0],5'd0}+:32];
         end
       end
     end
@@ -370,6 +385,10 @@ module anvil_q3_ht2_projection #(
         if (scratch_return && scratch_known) scratch_pending<=0;
         if (bias_fire && !memory_rsp_valid[2]) bias_pending<=1;
         if (memory_rsp_valid[2] && bias_known) bias_pending<=0;
+        if (memory_req_valid[0] && memory_req_ready[0]) qw_count<=qw_count+1'b1;
+        if (memory_req_valid[1] && memory_req_ready[1]) meta_count<=meta_count+1'b1;
+        if (bias_fire) bias_count<=bias_count+1'b1;
+        if (scratch_fire && !scratch_req_write) activation_count<=activation_count+1'b1;
         if (flush) begin
           state<=CANCEL_DRAIN; failed<=0; sparse<=0; dma_completed<=0;
           epoch<=0; layer<=0; inputs<=0; outputs<=0; source_slot<=0; target_slot<=0;
@@ -385,10 +404,6 @@ module anvil_q3_ht2_projection #(
         end else if (local_fault) begin
           failed<=1; state<=FAIL_FLUSH;
         end else begin
-          if (memory_req_valid[0] && memory_req_ready[0]) qw_count<=qw_count+1'b1;
-          if (memory_req_valid[1] && memory_req_ready[1]) meta_count<=meta_count+1'b1;
-          if (bias_fire) bias_count<=bias_count+1'b1;
-          if (scratch_fire && !scratch_req_write) activation_count<=activation_count+1'b1;
           if (dma_done && !dma_error) dma_completed<=1;
           case (state)
             IDLE: if (cmd_valid && cmd_ready) begin

@@ -5,7 +5,9 @@
 Implemented sources comprise sparse DMA, the FP package, registered weight
 decode/multiply/add helpers, Q16/FP boundary converters, the per-lane stripe
 controller, the four-bank tile MAC, private scratch, causal tree attention and
-its quantized KV reader, the greedy verifier and atomic KV commit engine.
+its quantized KV reader, the greedy verifier and atomic KV commit engine,
+the batched projection/resident metadata loader and shared embedding/output-head
+token I/O.
 They do not constitute an integrated
 accelerator. The parent RTL is read-only; tests and FPGA integration are not
 authored by this increment.
@@ -87,13 +89,86 @@ normalization/rounding. FPGA mapping and actual timing/resource suitability
 are still unproven and require the unchanged independent hardware gates.
 
 Four-stage conversion helpers express the Q16-to-FP16 and FP32-to-Q16
-boundaries. They are authored but not yet connected to the batched scalar
-scheduler; no parent/HT2 numerical equivalence is inferred from their existence.
+boundaries. The projection scheduler now connects them to common scratch reads
+and four-candidate result writes. The enclosing scalar decoder remains
+unimplemented; no numerical equivalence is inferred from authored connections.
+
+## Shared projection and resident image metadata
+
+`anvil_q3_ht2_projection` executes a complete projection for one to four
+candidate banks. It derives the parent's exact seven-matrix image offsets
+from widened elaboration constants, then registers layer products, matrix
+offsets and region-base additions separately. Its scratch slot mapping is
+identical to the parent: 1->2/3/4, 5->6, 8->9/10 and 11->12.
+Each 128-row tile uses the DMA's retained-count/tail-mask descriptor,
+consumed by the literal `tile_batch_mac`.
+
+The first row block converts one common-mask scratch read per logical column
+through four Q16-to-FP16 helpers. The DMA retains these activation/mask banks
+for later row blocks under its internal `RETAIN_SCAN=1` setting.
+A complete projection command explicitly flushes prior scan ownership before
+setup; row-block commands must match the complete retained scan identity.
+No later block rereads scratch activations or reevaluates SwiGLU. Standalone
+DMA defaults retain their original ingestion contract.
+
+The literal `resident_metadata` loads all image-backed group records for the
+owned row block. Containing packed qzero words are assembled in 17 bounded
+source-word banks, then global AWQ nibbles are normalized into local packed
+rows. Natural-row scales are captured with a bounded 32-half line selector
+per bank. One zero and one scale RAM bank per row provide synchronous resident
+queries; query data cannot be visible until all groups load. Tail rows are zero,
+and invalid active scales fault explicitly. Metadata uses aligned physical
+reads, full allocation-bound checks and actual padding/repeated-line accounting.
+
+The DMA holds a complete logical-column operand during each resident query.
+Weight, zero, scale, activation, keep and last fields then transfer together
+into the MAC. One physical weight traversal serves all active candidates,
+not four serial parent projections. The conservative DMA/query schedule does
+not claim measured full-rate array utilization; independent performance checks
+remain required.
+
+Four banks of sixteen eight-word result-register groups capture all 512 MAC
+entries. Eight-way selection and sixteen-way bank selection are separated
+by registers. Four FP32-to-Q16 helpers process one row's candidates together.
+For projections 0..2, one shared compatible FP16 bias is read after conversion;
+registered expansion, addition and saturation states implement the Q16
+boundary. Each active candidate then receives one acknowledged scratch write.
+Result storage cannot be overwritten until all tile writes finish.
+
+Three ordered read clients export qweight, metadata and bias traffic for the
+future public DDR arbiter. Physical-handshake counters, logical descriptors
+and common activation reads remain separate. Fault/cancellation flush local
+producers while accepted scratch/bias/metadata/qweight responses drain.
+No private read client is an idealized memory bypass.
+
+## Shared embedding and output-head token I/O
+
+`anvil_q3_ht2_token_io` implements the compatible FP16 embedding image and
+Q16 scalar output head. Embedding writes active candidate scratch banks
+individually. Output-head commands preload slot 14 into four synchronous
+activation banks, then walk vocabulary rows with one shared physical weight-line
+cache. Every selected FP16 half is expanded once with parent Q16 rules and
+broadcast to four literal segmented multipliers; exact signed products feed
+four segmented 128-bit accumulators. Component order and final parent
+rounding/saturation are preserved, distinct from W4 FP32 tile accumulation.
+
+The head genuinely reuses weights across candidates, but is folded by component.
+There is no claim of 512 head multipliers or measured end-to-end token rate.
+Aligned-line reads include full physical bytes; candidate-consumer counts
+and common activation-preload counts are separate hardware counters.
+Narrow rows may share cached lines without altering image geometry.
+
+Complete node logit streams interleave candidates at increasing vocabulary
+indices, carry transaction ownership and hold while blocked. Hardware argmax
+state updates only on logit handshakes, resolving ties to the smaller ID.
+The successful completion edge supplies four argmax IDs for the decoder's
+prefix/leaf cache. KV publication remains the verifier/commit engine's
+responsibility, not token I/O's.
 
 ## Full-product connection plan (integration not implemented)
 
 `anvil_q3_ht2_top` will own mode-exclusive legacy and HT2 command dispatch.
-The unchanged literal `legacy_core` retains parent behavior. HT2 scheduling
+The unchanged literal `legacy_core` retains parent behavior. HT2 decoder scheduling
 will process active candidates together by layer/projection, supply real
 SwiGLU activation banks to sparse DMA, normalize resident qzero records to
 local packed rows and provide natural-row FP16 scales to `tile_batch_mac`.
@@ -102,10 +177,12 @@ Qweight traffic and metadata traffic share the public DDR arbitration path.
 The authored MAC provides four physical token banks, 128 lanes per bank,
 three-stage shared weight decode, six-stage products/adders, eight stripe sums
 per output and the fixed final tree. Surrounding parent scalar paths stay
-Q16.16; the authored projection conversion helpers still need scheduler wiring.
+Q16.16; projection conversion helpers are connected internally but still need
+decoder/top wiring.
 
-The batched decoder, ordered vocabulary logits and public integration remain
-to be implemented. The new leaves below do not replace that work. Image and
+The batched scalar decoder and public integration remain to be implemented.
+Ordered vocabulary logits are authored in token I/O but not yet connected to
+the complete decoder/verifier. The new leaves below do not replace that work. Image and
 complete integrated extents still require production parameter validation.
 
 ## Private scratch, causal attention and atomic KV
@@ -183,13 +260,13 @@ these authored connections.
 | Publication fence | Map actual controller response errors through the final accepted write and two quiet fence edges |
 | Scratch | Overwrite each candidate's consumed inputs and retain valid response ownership until transfer/drain |
 | Metadata | Image-loaded qzero/scales, tail-zeroed and AWQ-local-normalized consistently |
-| Activation reuse | Retain/reuse scan storage across production row blocks without recomputing SwiGLU or DDR activation reads |
+| Activation reuse | Projection retains scan storage across row blocks; decoder must preserve its actual source-slot activations during ownership |
 | Physical traffic accounting | Include qweight reads, all metadata, crossing lines, allocation padding and repeated addresses |
 | FPGA | Actual HT2 top, Arria 10 device, 10.0-ns SDC, shared-DDR bridge and PCIe host mapping |
 
-Cross-row-block scan reuse is not yet exposed by this fixed-interface DMA leaf;
-the scheduler/storage design must resolve it without adding a host oracle or
-weakening the required activation reuse. Static elaboration alone cannot
+Cross-row-block scan reuse is now implemented as an internal elaboration option,
+without additional public inputs or a host oracle. The enclosing projection
+flushes retained identity at each complete transaction. Static elaboration alone cannot
 establish behavior, performance, arithmetic correctness, synthesis or timing.
 The single Icarus static elaboration (`iverilog -g2012 -t null`) exited zero.
 Its retained command, source hashes, tool version and raw outputs are at
@@ -220,8 +297,33 @@ and raw outputs are retained at
 This was a syntax/elaboration check only. No functional simulation, reference
 comparison, mutation, synthesis, timing or hardware experiment ran.
 
-The next owned implementation work is the batched projection/decoder scheduler,
-real activation reuse across row blocks, shared output-head weight reuse,
-image-loaded metadata normalization, public top/DDR integration and FPGA bridge
+The next owned implementation work is the batched scalar decoder scheduler,
+scalar image/scratch arbitration, private quantized shadow staging, connection
+of projection/token I/O to tree attention and the verifier,
+public top/DDR integration and FPGA bridge
 configuration. Tests remain exclusively Verifier-owned. The complete design is
 not ready for independent verification handoff or engineering acceptance.
+
+## Current increment's static diagnostic
+
+The new projection scheduler, shared token I/O and resident metadata loader
+were selected together for a single fast Icarus static-elaboration diagnostic.
+Projection and token I/O selected production defaults; the separate metadata
+root selected GROUP_SIZE=8 and MAX_INPUTS=9. All current RTL and the immutable
+reference dependency were parsed. There was no testbench, simulation,
+numerical comparison, synthesis or hardware execution.
+
+The first invocation exited 12 because the command placed the parent package
+after RTL that references `anvil_q3_pkg`. Its exact failed argv, source snapshot,
+tool version and raw error output remain at
+`evidence/preparation/projection-token-io-elaboration-20261102T202949736134Z/receipt.json`.
+The corrected invocation loads `anvil_q3_ht_reference/rtl/anvil_q3_00_pkg.sv`
+before the HT2 sources, matching the earlier accepted source-order convention.
+No RTL changed between those invocations. It exited zero in 2.65 seconds;
+the separate linked receipt is
+`evidence/preparation/projection-token-io-elaboration-20261102T203019442393Z/receipt.json`.
+These are advisory syntax/elaboration results, not engineering acceptance.
+
+Portable compile ordering is parent sources (package first), then HT2 sources
+(`anvil_q3_ht2_00_fp_pkg.sv` first among HT2 files). The independently owned
+verification entry point must supply both dependencies in that order.

@@ -187,6 +187,7 @@ module anvil_q3_ht2_projection_metadata #(
         loaded_pulse<=0; drain_pulse<=0;
         if (request_fire && !memory_rsp_valid) outstanding<=1;
         if (memory_rsp_valid && response_known) outstanding<=0;
+        if (request_fire) physical_count<=physical_count+1'b1;
         if (flush) begin
           state<=DRAIN; failed<=0; cancelled<=1;
           scales<=0; inputs<=0; outputs<=0; row_base<=0; rows<=0;
@@ -199,7 +200,6 @@ module anvil_q3_ht2_projection_metadata #(
         end else if (fault_now) begin
           failed<=1; cancelled<=0; state<=DRAIN;
         end else begin
-          if (request_fire) physical_count<=physical_count+1'b1;
           case (state)
             IDLE,READY: begin
               if (cmd_valid && cmd_ready) begin
