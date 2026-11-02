@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-02T23:09:08.635155+00:00",
+  "timestamp_utc": "2026-11-02T23:31:42.335036+00:00",
   "project_dir": "/data/sufeng/anvil-q2-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -42,15 +42,15 @@
       "",
       "    while executing",
       "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_8ndqw73t.tcl\" line 2)",
+      "    (file \"vulcan_sta_3jlqn2aj.tcl\" line 2)",
       "------------------------------------------------"
     ]
   },
   "detail": "quartus_map reported 3 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
   "quartus_slot_telemetry": {
-    "slot_index": 0,
+    "slot_index": 1,
     "max_slots": 6,
-    "slot_wait_s": 0.003
+    "slot_wait_s": 0.004
   },
   "top_module": "anvil_q2_ht2_top",
   "clock_port": "clk",
