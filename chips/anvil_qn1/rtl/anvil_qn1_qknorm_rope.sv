@@ -68,7 +68,7 @@ module anvil_qn1_qknorm_rope #(
     assign out_data=out_valid ? result_data : {SD*16{1'b0}};
     anvil_qn1_fp32_add epsilon_add (
       .clk(clk),.rst_n(rst_n),.flush(flush),.ce(1'b1),
-      .a(mean),.b(EPSILON32),.in_error(mean_failed),
+      .a(mean),.b(anvil_qn1_pkg::EPSILON32),.in_error(mean_failed),
       .result(epsilon_sum),.out_error(epsilon_failed)
     );
     anvil_qn1_fp32_sqrt square_root (

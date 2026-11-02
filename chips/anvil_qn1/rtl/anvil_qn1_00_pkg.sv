@@ -146,6 +146,7 @@ package anvil_qn1_pkg;
       k=128'(kv_heads); d=128'(head_dim); l=128'(layers);
       v=128'(vocabulary); s=128'(sequence_length); g=128'(group_size);
       extent=h>i ? h : i;
+      if (q*d>extent) extent=q*d;
       dimensions_valid=(profile==1 || profile==2 || profile==3) &&
         (compact==0 || compact==1) && layers>=1 && layers<=36 &&
         hidden>=8 && hidden<=2560 && intermediate>=8 && intermediate<=9728 &&
@@ -186,6 +187,45 @@ package anvil_qn1_pkg;
       carry3=carry1 && (&value[47:16]);
       event_add64={value[63:48]+{15'd0,carry3},
         value[47:32]+{15'd0,carry2},value[31:16]+{15'd0,carry1},low[15:0]};
+    end
+  endfunction
+
+  function automatic fp32_greater(input logic [31:0] a, b);
+    begin
+      if (a[30:0]==0 && b[30:0]==0) fp32_greater=0;
+      else if (a[31]!=b[31]) fp32_greater=!a[31];
+      else if (a[31]) fp32_greater=a[30:0]<b[30:0];
+      else fp32_greater=a[30:0]>b[30:0];
+    end
+  endfunction
+
+  function automatic [31:0] unsigned32_to_fp32(input logic [31:0] value);
+    reg [5:0] shift;
+    reg [31:0] normalized;
+    reg [32:0] packed_value;
+    begin
+      shift=leading_zero32(value);
+      normalized=value << shift;
+      packed_value=round_pack32(1'b0,12'sd31-$signed({6'd0,shift}),
+        {normalized[31:6],(|normalized[5:0])});
+      unsigned32_to_fp32=value==0 ? 32'd0 : packed_value[31:0];
+    end
+  endfunction
+
+  function automatic [32:0] scale32(
+    input logic [31:0] value, input logic signed [11:0] power
+  );
+    reg [23:0] raw, normalized;
+    reg [5:0] shift;
+    reg signed [11:0] exponent;
+    begin
+      raw={value[30:23]!=0,value[22:0]};
+      shift=raw==0 ? 6'd0 : leading_zero32({8'd0,raw})-6'd8;
+      normalized=raw << shift;
+      exponent=(value[30:23]==0 ? -12'sd126 :
+        $signed({4'd0,value[30:23]})-12'sd127)-$signed({6'd0,shift})+power;
+      scale32=fp32_invalid(value) ? {1'b1,32'd0} :
+        round_pack32(value[31],exponent,{normalized,3'd0});
     end
   endfunction
 endpackage
