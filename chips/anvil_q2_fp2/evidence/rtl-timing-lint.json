@@ -1,0 +1,30 @@
+{
+  "gate": "rtl-timing-lint",
+  "timestamp_utc": "2026-11-02T16:52:52.344951+00:00",
+  "root": "/data/sufeng/anvil-q2-fp2-line/workspace/project",
+  "status": "passed",
+  "max_comb_div_width": 0,
+  "rtl_files_checked": 11,
+  "auto_sanitized_nomem2reg_files": [],
+  "source_sha256": {
+    "rtl/anvil_q2_fp2_arithmetic.sv": "f109c04b4e02186ce47b72bc3a7636d8c86fdc41135afa6cb77bde2d32fbfa8e",
+    "rtl/anvil_q2_fp2_bfp_tensor_array.sv": "cde55602fadcb8d7bf15a6e8311b6aba9de102faf8c8ba6b58975a116fa2814e",
+    "rtl/anvil_q2_fp2_coefficients.sv": "ab271211a3313e3460bf143ef3d13c6770ea291379a26b27094d02d795b7c117",
+    "rtl/anvil_q2_fp2_ddr_engine.sv": "af70cfdc849d903eeb77ffc12f62519a7282791d665d58087f2218679120ad2c",
+    "rtl/anvil_q2_fp2_epilogue_fusion.sv": "ca043d32dcd5e2b484ae94a69c942a50084fd637d3e4117f0fd42b17156606dc",
+    "rtl/anvil_q2_fp2_flash_attn.sv": "e8960e40d2fd5f3ebee7d3026e11b6d42b6bb3be7d1864a1a2a5800cb7f5ce61",
+    "rtl/anvil_q2_fp2_mx_decode.sv": "ea2e4f55d6c1e03bc9a83ca246246de248b8f93b42489ed053562d20afbdd67f",
+    "rtl/anvil_q2_fp2_mx_encode.sv": "318cea5ad0e1f34f49f39b70b7367469e00112638ac165185cc071231152d6e3",
+    "rtl/anvil_q2_fp2_nonlinear.sv": "acdbf0188964699d2e932fa17ea2bda443f8d83a32fff6cc1f02a1afc52bcf25",
+    "rtl/anvil_q2_fp2_ping_pong_prefetch.sv": "6fb3ccd00242a8058120fdd5ddce86ac6d50de8c95481c46cd00b4803d4df71d",
+    "rtl/anvil_q2_fp2_telemetry.sv": "974b55c5d019a1a566f6fc76a081569cd314881209974143432603c0c85a018d"
+  },
+  "netlist_sha256": {},
+  "rtl_div_mod_hazards": [],
+  "netlist_div_mod_hazards": [],
+  "mixed_assign_hazards": [],
+  "lut_clock_gate_hazards": [],
+  "ast_unroll_loop_hazards": [],
+  "detail": "Zero combinational divider/modulo, LUT clock-gate, AST loop-unroll, or mixed-assignment hazards detected.",
+  "applicable": true
+}
