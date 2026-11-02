@@ -497,7 +497,8 @@ def simulate_pipeline(run, kind, records, seed, simulator):
     })
 
 
-def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(), cache=False):
+def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(), cache=False,
+                    driver=None):
     run.check_deadline()
     overrides = getattr(run, "source_overrides", {})
     sources = [*(overrides.get(source, source) for source in sources),
@@ -505,13 +506,16 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
     run.version(simulator)
     flags = (
         ["-g2012", "-Wall", "-s", "tb"] if simulator == "iverilog" else
-        ["--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
+        [*(["--cc", "--exe", "--build"] if driver else ["--binary", "--timing"]),
+         "-Wno-fatal", "--top-module", "tb",
          "-j", "2", "-CFLAGS", "-O3"]
     )
     digest = hashlib.sha256(simulator.encode())
     digest.update(json.dumps(flags).encode())
     for source in sources:
         digest.update((ROOT / source).read_bytes())
+    if driver:
+        digest.update(driver.read_bytes())
     cache_key = digest.hexdigest()
     binaries = getattr(run, "build_cache", {})
     if cache and cache_key in binaries:
@@ -539,7 +543,8 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
         obj = directory / "compile-obj"
         try:
             run.command(
-                ["verilator", *flags, "--Mdir", str(obj.relative_to(ROOT)), *sources],
+                ["verilator", *flags, "--Mdir", str(obj.relative_to(ROOT)), *sources,
+                 *([os.path.relpath(driver, obj)] if driver else [])],
                 f"{stem}-compile",
             )
             if cache:

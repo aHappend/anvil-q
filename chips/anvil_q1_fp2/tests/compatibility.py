@@ -8,6 +8,249 @@ from architecture import bf16
 from reference import bits32
 
 
+def compiled_driver(bench, directory, geometry, seed, enable, tokens, precisions, commands):
+    """Drive only public pins; keep clocks of the inactive comparator stopped."""
+    layers, hidden, intermediate, queries, kvheads, dimension, group, vocab, sequence = geometry
+    maximum = max(hidden, intermediate)
+    text = bench.read_text()
+    instances = text[text.index("  anvil_q1_fp_top #("):text.index("  reg [15:0] values")]
+    instances = instances.replace(".clk(clk)", ".clk(clk && !model)", 1)
+    start = instances.index("  anvil_q1_fp2_top #(")
+    instances = instances[:start] + instances[start:].replace(
+        ".clk(clk)", ".clk(clk && model)", 1)
+    bench.write_text("""module tb(
+  input clk,rst_n,model,new_sequence,logit_ready,
+  input [1:0] valid,precision_mode,reqr,rspv,rspe,
+  input [31:0] token_id,token_pos,
+  input [63:0] rspdata,
+  output [1:0] ready,lv,done,error,reqv,reqw,rspr,
+  output [63:0] li,ld,reql,reqrow,reqcol,reqwd,
+  output [7:0] reqk,
+  output [5:0] reqp,
+  output ddr_req_valid,ddr_req_write,ddr_req_id,ddr_req_scale,ddr_rsp_ready,
+  output [3:0] ddr_req_kind,
+  output [2:0] ddr_req_proj,
+  output [31:0] ddr_req_layer,ddr_req_row,ddr_req_col,
+  output [511:0] ddr_req_wdata,
+  output [63:0] ddr_req_wstrb
+);
+""" + instances[:instances.index("  wire ddr_req_valid")] +
+                     instances[instances.index("  anvil_q1_fp2_top #("):] + "\nendmodule\n")
+    driver = directory / "driver.cpp"
+    code = r"""
+#include "Vtb.h"
+#include "verilated.h"
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+static void require(bool condition, const std::string& message) {
+    if (!condition) throw std::runtime_error("COMPATIBILITY " + message);
+}
+static uint32_t word(uint64_t packed, unsigned model) { return packed >> (32 * model); }
+static bool bit(unsigned packed, unsigned model) { return (packed >> model) & 1; }
+static void load(const std::string& path, std::vector<uint32_t>& values) {
+    std::ifstream stream(path);
+    require(bool(stream), "fixture open " + path);
+    for (auto& value : values) require(bool(stream >> std::hex >> value), "fixture short " + path);
+    std::string extra;
+    require(!(stream >> extra), "fixture extra " + path);
+}
+int main(int argc, char** argv) {
+  try {
+    VerilatedContext context;
+    context.commandArgs(argc, argv);
+    Vtb dut(&context);
+    std::string fixture;
+    uint32_t seed = 0;
+    for (int i=1; i<argc; ++i) {
+        std::string arg(argv[i]);
+        if (arg.rfind("+fixture=",0)==0) fixture=arg.substr(9);
+        if (arg.rfind("+seed=",0)==0) seed=std::stoul(arg.substr(6));
+    }
+    require(!fixture.empty() && seed!=0, "missing fixture/seed arguments");
+    constexpr unsigned L=@L@, H=@H@, I=@I@, KV=@KV@, D=@D@, V=@V@, S=@S@, M=@M@;
+    constexpr unsigned COMMANDS=@COMMANDS@, TOKENS=@TOKENS@, ENABLE=@ENABLE@;
+    const std::vector<unsigned> modes={@MODES@};
+    std::vector<uint32_t> values(96), coefficients(2*S*D);
+    load(fixture+"/checkpoint-images/values.hex", values);
+    load(fixture+"/rope.hex", coefficients);
+    std::vector<uint32_t> scratch(15*M), keys(L*S*KV*D), vals(keys.size());
+    std::vector<uint32_t> parent_logits(COMMANDS*V);
+    std::array<uint64_t,COMMANDS> parent_hash{};
+    std::array<unsigned,COMMANDS> parent_counts{}, parent_outputs{};
+    std::array<bool,COMMANDS> parent_errors{};
+    unsigned model=0, command_index=0, cycle=0, received=0, requests=0, compared=0;
+    unsigned command_accepts=0, completion_count=0, remaining=0;
+    bool pending=false, held=false, pending_error=false, finished=false, fault=false;
+    uint32_t pending_data=0, held_index=0, held_data=0, rng=seed;
+    uint64_t hash=0xcbf29ce484222325ULL;
+    dut.clk=0; dut.rst_n=0; dut.model=0; dut.valid=0; dut.reqr=0;
+    dut.rspv=0; dut.rspe=0; dut.rspdata=0; dut.logit_ready=0;
+    dut.new_sequence=0; dut.precision_mode=0; dut.token_id=0; dut.token_pos=0;
+    auto read_word = [&](unsigned kind, uint32_t layer, unsigned projection,
+                         uint32_t row, uint32_t col) -> uint32_t {
+        unsigned address=((row*7+col*3+layer*11+projection*5)&31)+dut.precision_mode*32;
+        if (kind==0 || kind==12 || kind==4) return values.at(address);
+        if (kind==1) return 0x87654321;
+        if (kind==2) return 0x88888888;
+        if (kind==3) return 0x00001400;
+        if (kind>=5 && kind<=7) return dut.precision_mode==1 ? 0x3f80 : 0x3c00;
+        if (kind==8) {
+            require(row<15 && col<M, "scratch indexing");
+            return scratch.at(row*M+col);
+        }
+        if (kind==9 || kind==10) {
+            require(layer<L && row<S && col<KV*D, "KV indexing");
+            return (kind==9 ? keys : vals).at((layer*S+row)*KV*D+col);
+        }
+        if (kind==11) {
+            require(row<S && col<D, "RoPE indexing");
+            return coefficients.at((dut.precision_mode!=0 ? S*D : 0)+row*D+col);
+        }
+        throw std::runtime_error("COMPATIBILITY unknown memory kind");
+    };
+    auto tick = [&]() {
+        require(++cycle<=15000000, "cycle watchdog");
+        rng^=rng<<13; rng^=rng>>17; rng^=rng<<5;
+        dut.reqr=(!pending && !bit(dut.rspv,model) && cycle%17>=3 && (rng&3)!=0)<<model;
+        dut.logit_ready=cycle%19>=4 && ((rng>>1)&7)!=0;
+        if (pending && remaining==0 && !bit(dut.rspv,model)) {
+            dut.rspv|=1<<model; dut.rspdata=uint64_t(pending_data)<<(model*32);
+            dut.rspe=pending_error<<model;
+        }
+        dut.eval();
+        if (model==1) {
+            bool unused=dut.ddr_req_valid || dut.ddr_req_write || dut.ddr_req_id ||
+                dut.ddr_req_scale || dut.ddr_req_kind || dut.ddr_req_layer ||
+                dut.ddr_req_proj || dut.ddr_req_row || dut.ddr_req_col ||
+                dut.ddr_req_wstrb;
+            for (unsigned i=0;i<16;++i) unused|=dut.ddr_req_wdata[i]!=0;
+            require(!unused, "legacy execution used DDR");
+        }
+        bool ta=bit(dut.valid,model) && bit(dut.ready,model);
+        bool ra=bit(dut.reqv,model) && bit(dut.reqr,model);
+        bool sa=bit(dut.rspv,model) && bit(dut.rspr,model);
+        bool oa=bit(dut.lv,model) && dut.logit_ready;
+        uint32_t index=word(dut.li,model), data=word(dut.ld,model);
+        require(!held || (bit(dut.lv,model) && index==held_index && data==held_data),
+                "output stability");
+        held=bit(dut.lv,model) && !dut.logit_ready;
+        held_index=index; held_data=data;
+        require(!bit(dut.lv,model) || (received<V && index==received), "logit indexing");
+        if (oa) {
+            if (model==0) parent_logits.at(command_index*V+received)=data;
+            else {
+                require(data==parent_logits.at(command_index*V+received), "bit-exact logit mismatch");
+                ++compared;
+            }
+            ++received;
+        }
+        if (bit(dut.done,model)) {
+            require(!pending && !bit(dut.rspv,model), "completion ownership");
+            if (model==0) {
+                parent_hash.at(command_index)=hash; parent_counts.at(command_index)=requests;
+                parent_outputs.at(command_index)=received;
+                parent_errors.at(command_index)=bit(dut.error,model);
+            } else require(hash==parent_hash.at(command_index) &&
+                requests==parent_counts.at(command_index) &&
+                received==parent_outputs.at(command_index) &&
+                bit(dut.error,model)==parent_errors.at(command_index),
+                "memory/error/output semantics mismatch command="+std::to_string(command_index));
+            ++completion_count; finished=true;
+            std::cout<<"PROGRESS compatibility model="<<model<<" command="<<command_index
+                <<" cycles="<<cycle<<" requests="<<requests<<" logits="<<received
+                <<" error="<<bit(dut.error,model)<<std::endl;
+        }
+        if (ra) {
+            unsigned kind=(dut.reqk>>(model*4))&15, projection=(dut.reqp>>(model*3))&7;
+            uint32_t layer=word(dut.reql,model), row=word(dut.reqrow,model);
+            uint32_t col=word(dut.reqcol,model), data=word(dut.reqwd,model);
+            bool write=bit(dut.reqw,model);
+            for (uint64_t field : {uint64_t(kind),uint64_t(layer),uint64_t(projection),
+                                  uint64_t(row),uint64_t(col),uint64_t(write)})
+                hash=(hash^field)*0x100000001b3ULL;
+            if (write) {
+                hash=(hash^data)*0x100000001b3ULL;
+                if (kind==8 && row<15 && col<M) scratch.at(row*M+col)=data;
+                else if ((kind==9 || kind==10) && layer<L && row<S && col<KV*D)
+                    (kind==9 ? keys : vals).at((layer*S+row)*KV*D+col)=data;
+                else throw std::runtime_error("COMPATIBILITY write indexing");
+                pending_data=0;
+            } else pending_data=read_word(kind,layer,projection,row,col);
+            pending_error=fault && requests==17; ++requests;
+        }
+        dut.clk=1; context.timeInc(5); dut.eval();
+        if (ta) ++command_accepts;
+        if (sa) pending=false;
+        if (ra) {pending=true; remaining=2+((rng>>4)&3);}
+        if (ta) dut.valid&=~(1<<model);
+        if (sa) dut.rspv&=~(1<<model);
+        if (pending && remaining>0) --remaining;
+        dut.eval();
+        dut.clk=0; context.timeInc(5); dut.eval();
+        if (cycle%1000000==0)
+            std::cout<<"PROGRESS compatibility model="<<model<<" command="<<command_index
+                <<" cycles="<<cycle<<" requests="<<requests<<" pending="<<pending<<std::endl;
+    };
+    auto command = [&](uint32_t id, uint32_t pos, bool fresh, unsigned precision) {
+        dut.token_id=id; dut.token_pos=pos; dut.new_sequence=fresh; dut.precision_mode=precision;
+        received=0; requests=0; hash=0xcbf29ce484222325ULL; finished=false;
+        for (unsigned i=0;i<3;++i) tick();
+        dut.valid|=1<<model;
+        while (bit(dut.valid,model)) tick();
+        while (!finished) tick();
+        ++command_index; tick(); tick();
+        require(bit(dut.ready,model), "did not return idle");
+    };
+    for (model=0;model<2;++model) {
+        dut.rst_n=0; dut.valid=0; dut.rspv=0; dut.reqr=0; pending=false; held=false;
+        dut.model=model; dut.eval();
+        for (unsigned i=0;i<2;++i) {
+            dut.clk=1; dut.eval(); context.timeInc(5);
+            dut.clk=0; dut.eval(); context.timeInc(5);
+        }
+        std::fill(scratch.begin(),scratch.end(),0);
+        std::fill(keys.begin(),keys.end(),0); std::fill(vals.begin(),vals.end(),0);
+        command_index=0; cycle=0; rng=seed; dut.rst_n=1; dut.eval();
+        for (unsigned mode : modes) {
+            fault=false;
+            for (unsigned pos=0;pos<TOKENS;++pos) command(pos%V,pos,pos==0,mode);
+            command(0,0,true,mode);
+            if (S>1) command(0,1,false,mode^1);
+            fault=true; command(0,0,true,mode); fault=false;
+            command(0,S,false,mode);
+        }
+        if (ENABLE==0) command(0,0,true,3);
+        else command(V,0,true,0);
+        require(command_index==COMMANDS, "command coverage");
+    }
+    require(completion_count==COMMANDS*2 && command_accepts==COMMANDS*2 && compared>0,
+            "missing comparisons/completions");
+    std::cout<<"SUMMARY compatibility: commands="<<completion_count<<" logits="<<compared
+        <<" enable="<<ENABLE<<" geometry_h="<<H<<std::endl;
+    dut.final();
+    return 0;
+  } catch (const std::exception& error) {
+    std::cerr<<error.what()<<std::endl;
+    return 1;
+  }
+}
+"""
+    replacements = dict(L=layers, H=hidden, I=intermediate, KV=kvheads, D=dimension,
+                        V=vocab, S=sequence, M=maximum, COMMANDS=commands,
+                        TOKENS=tokens, ENABLE=enable, MODES=",".join(map(str, precisions)))
+    for key, value in replacements.items():
+        code = code.replace(f"@{key}@", str(value))
+    driver.write_text(code)
+    return driver
+
+
 def simulate_compatibility(run, root, compile_and_run, geometry, seed, enable=0,
                            compact=False, precisions=None):
     requested_geometry = geometry
@@ -284,8 +527,10 @@ endmodule
 """)
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
+    driver = compiled_driver(bench, directory, geometry, seed, enable, tokens, precisions, commands)
     compile_and_run(run, directory, bench, sources, "verilator", stem,
-                    arguments=[f"+fixture={run.relative / stem}", f"+seed={seed}"], cache=True)
+                    arguments=[f"+fixture={run.relative / stem}", f"+seed={seed}"], cache=True,
+                    driver=driver)
     run.receipt["comparisons"].append({
         "kind": "compatibility", "seed": seed, "geometry": requested_geometry,
         "executed_geometry": geometry, "enable_fp2": enable,

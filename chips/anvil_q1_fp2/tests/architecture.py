@@ -195,15 +195,32 @@ class Fixture:
 def top_tb(fixture, stem, relative, tokens, cycle_limit):
     layers, hidden, intermediate, queries, kvheads, dimension, group, vocab, sequence = fixture.geometry
     table_cases = []
-    for (kind, layer, proj, scale), (base, rows, columns, stride) in fixture.planes.items():
+    plane_keys = sorted({(*key[:3], scale) for key in fixture.planes for scale in (False, True)})
+    descriptors = []
+    memory_capacity = 0
+    for kind, layer, proj, scale in plane_keys:
+        data_plane = fixture.planes[kind, layer, proj, False]
+        rows, columns = data_plane[1:3]
+        if not scale:
+            memory_capacity += rows * ((columns + 31) // 32 + (columns + 2047) // 2048)
+        base, _, _, stride = fixture.planes.get(
+            (kind, layer, proj, scale), (0, rows, columns, 0))
+        descriptor_index = len(descriptors)
+        descriptors.append((base << 64) | (rows << 32) | stride)
         key = (kind << 16) | (layer << 8) | (proj << 1) | int(scale)
-        shift = 6 if scale or fixture.mx else 5
         table_cases.append(f"""
         32'h{key:08x}: begin
-          if (row>={rows} || (col>>{shift})>={stride})
+          if (row>=planes[{descriptor_index}][63:32] ||
+              (col>>(scale || precision_mode==3 ? 6 : 5))>=planes[{descriptor_index}][31:0])
             $fatal(1,"DDR row/column outside tensor");
-          address={base}+row*{stride}+(col>>{shift});
+          address=planes[{descriptor_index}][95:64]+row*planes[{descriptor_index}][31:0]+
+            (col>>(scale || precision_mode==3 ? 6 : 5));
         end""")
+    with (fixture.output_path / "planes.hex").open("x") as output:
+        output.write("".join(f"{word:024x}\n" for word in descriptors))
+    with (fixture.output_path / "checkpoint-images/memory.hex").open("x") as output:
+        output.write("".join(f"{beat:0128x}\n" for beat in fixture.beats))
+        output.write("0\n" * (memory_capacity - len(fixture.beats)))
     scalar_cases = []
     configuration = []
     for (kind, layer), values in fixture.gamma.items():
@@ -230,7 +247,7 @@ def top_tb(fixture, stem, relative, tokens, cycle_limit):
 module tb;
   reg clk=0,rst_n=0,token_valid=0,new_sequence=0,logit_ready=0;
   reg [31:0] token_id=0,token_pos=0;
-  reg [1:0] precision_mode=2'd{3 if fixture.mx else 1};
+  reg [1:0] precision_mode=0;
   wire token_ready,logit_valid,done,error;
   wire [31:0] logit_index,logit_data;
   wire mem_req_valid,mem_req_write,mem_rsp_ready;
@@ -258,7 +275,8 @@ module tb;
     .NUM_LAYERS({layers}),.HIDDEN_SIZE({hidden}),.INTERMEDIATE_SIZE({intermediate}),
     .NUM_Q_HEADS({queries}),.NUM_KV_HEADS({kvheads}),.HEAD_DIM({dimension}),
     .GROUP_SIZE({group}),.VOCAB_SIZE({vocab}),.MAX_SEQ_LEN({sequence})) dut(.*);
-  reg [511:0] memory[0:{len(fixture.beats)-1}];
+  reg [511:0] memory[0:{memory_capacity-1}];
+  reg [95:0] planes[0:{len(descriptors)-1}];
   reg [31:0] configuration[0:{len(configuration)-1}];
   string fixture_root;
   reg [31:0] lower[0:{tokens*vocab-1}],upper[0:{tokens*vocab-1}];
@@ -462,9 +480,12 @@ module tb;
     delay_count[0]=0; delay_count[1]=0;
     #1; reset_check(); @(posedge clk); reset_check();
     #1; reset_check(); @(negedge clk); reset_check();
-    if (!$value$plusargs("fixture=%s",fixture_root) || !$value$plusargs("seed=%d",rng))
+    if (!$value$plusargs("fixture=%s",fixture_root) || !$value$plusargs("seed=%d",rng) ||
+        !$value$plusargs("precision=%d",precision_mode) ||
+        (precision_mode!=1 && precision_mode!=3))
       $fatal(1,"missing fixture/seed arguments");
     $readmemh({{fixture_root,"/checkpoint-images/memory.hex"}},memory);
+    $readmemh({{fixture_root,"/planes.hex"}},planes);
     $readmemh({{fixture_root,"/configuration.hex"}},configuration);
     fixture_fd=$fopen({{fixture_root,"/expected.txt"}},"r");
     if (!fixture_fd) $fatal(1,"expected fixture open");
@@ -510,8 +531,6 @@ def simulate_architecture(run, seed, geometry, mx, simulator, compile_and_run, r
     fixture.output_path = directory
     images = directory / "checkpoint-images"
     images.mkdir()
-    with (images / "memory.hex").open("x") as output:
-        output.write("".join(f"{beat:0128x}\n" for beat in fixture.beats))
     expected = fixture.expected_tokens(tokens)
     quantization_drift = None
     if mx:
@@ -537,7 +556,8 @@ def simulate_architecture(run, seed, geometry, mx, simulator, compile_and_run, r
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
     compile_and_run(
         run, directory, bench, sources, simulator, stem,
-        arguments=[f"+fixture={run.relative / stem}", f"+seed={seed}"], cache=True,
+        arguments=[f"+fixture={run.relative / stem}", f"+seed={seed}",
+                   f"+precision={3 if mx else 1}"], cache=True,
     )
     run.receipt["comparisons"].append({
         "kind": "architecture", "seed": seed, "geometry": geometry,
