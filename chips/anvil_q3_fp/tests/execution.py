@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECK_BUDGET_S = 2700
 COMMAND_BUDGET_S = 600
 DEADLINE_ENV = "ANVIL_L1_MONOTONIC_DEADLINE"
+MAX_TOOL_WORKERS = 6
 
 
 def timestamp():
@@ -39,6 +40,7 @@ class Evidence:
         self.deadline = min(start + CHECK_BUDGET_S,
                             float(os.environ.get(DEADLINE_ENV, start + CHECK_BUDGET_S)))
         self._simulators = {}
+        self._tool_slots = threading.BoundedSemaphore(MAX_TOOL_WORKERS)
         self._lock = threading.RLock()
         self._build_locks = {}
         self._integration_runs = {}
@@ -74,6 +76,15 @@ class Evidence:
                 self._last_heartbeat = now
 
     def run(self, argv, cwd=None, timeout=COMMAND_BUDGET_S, expect_failure=False):
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0 or not self._tool_slots.acquire(timeout=max(0, remaining)):
+            raise TimeoutError("Whole-check 2700-second budget exhausted waiting for a tool slot")
+        try:
+            return self._run(argv, cwd, timeout, expect_failure)
+        finally:
+            self._tool_slots.release()
+
+    def _run(self, argv, cwd=None, timeout=COMMAND_BUDGET_S, expect_failure=False):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise TimeoutError("Whole-check 2700-second budget exhausted")

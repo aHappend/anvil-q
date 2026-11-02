@@ -1,6 +1,7 @@
 """Mandatory suite dispatch; every suite generates its own inputs and tools."""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 import cache_checks
 import integration
@@ -19,18 +20,25 @@ import prefetch_checks
 REPRESENTATIONS = ((0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 0, 0), (2, 0, 1))
 
 
+def parallel(function, items):
+    """Independent fixtures only; Evidence additionally bounds live tool commands."""
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        return list(executor.map(function, items))
+
+
 def numerics_suite(evidence, seed):
     results = {"conversions": numerics.conversions(evidence, seed),
                "cache": cache_checks.check(evidence, seed, exhaustive=True),
                "nonlinear": nonlinear.check(evidence, seed), "seeds": {}}
-    for numeric_seed in (17, 89, 211):
+    def numeric_seed_check(numeric_seed):
         scope = evidence.scope(f"seed-{numeric_seed}")
         print(f"NUMERICS seed={numeric_seed}", flush=True)
-        results["seeds"][str(numeric_seed)] = {
+        return {
             "primitives": numerics.primitives(scope, numeric_seed),
             "iterative": numerics.iterative(scope, numeric_seed),
             "dots": numerics.dots(scope, numeric_seed),
             "masked_accumulation": accumulation.check(scope, numeric_seed)}
+    results["seeds"] = dict(zip(("17", "89", "211"), parallel(numeric_seed_check, (17, 89, 211))))
     scope = evidence.scope("tensor-accumulation")
     results["accumulation"] = []
     for banks in (1, 2, 4, 8):
@@ -41,19 +49,27 @@ def numerics_suite(evidence, seed):
     return results
 
 
-def behavior(evidence, seed):
-    results = []
-    for banks in (1, 2, 4, 8):
+def integration_matrix(evidence, seed, label):
+    def bank_check(banks):
+        results = []
+        scope = evidence.scope(f"bank-{banks}")
         for mode, fp8, affine in REPRESENTATIONS:
             for fmt in ("bf16", "fp16"):
                 for awq in (False, True):
-                    print(f"BEHAVIOR seed={seed} banks={banks} mode={mode} fp8={fp8} "
+                    print(f"{label.upper()} seed={seed} banks={banks} mode={mode} fp8={fp8} "
                           f"affine={affine} fmt={fmt} awq={int(awq)}", flush=True)
-                    results.append(integration.smoke(evidence, seed, "verilator", banks,
+                    results.append(integration.smoke(scope, seed, "verilator", banks,
                                                      fmt, awq, 4, mode, fp8, affine))
-                    (evidence.path / "behavior-progress.json").write_text(json.dumps(results, indent=2) + "\n")
+                    (scope.path / f"{label}-progress.json").write_text(json.dumps(results, indent=2) + "\n")
+        return results
+    results = [row for group in parallel(bank_check, (1, 2, 4, 8)) for row in group]
     if len(results) != 80 or any(len(row["tokens"]) != 4 for row in results):
         raise AssertionError("Incomplete bank/cache/dtype/AWQ matrix")
+    return results
+
+
+def behavior(evidence, seed):
+    results = integration_matrix(evidence, seed, "behavior")
     transitions = []
     for fmt in ("bf16", "fp16"):
         transitions.append(integration.smoke(evidence, seed, "verilator", 8,
@@ -68,23 +84,21 @@ def behavior(evidence, seed):
 
 def protocol(evidence, seed):
     results = {"scheduler": [], "top_control": []}
-    for banks in (1, 2, 4, 8):
-        for depth in (1, 3, 16):
-            results["scheduler"].append(protocol_checks.scheduler(evidence, banks, depth))
+    results["scheduler"] = parallel(
+        lambda cell: protocol_checks.scheduler(evidence, *cell),
+        [(banks, depth) for banks in (1, 2, 4, 8) for depth in (1, 3, 16)])
     results["icarus_startup"] = protocol_checks.scheduler(evidence, 1, 1, "iverilog")
     results["invalid_parameters"] = parameter_checks.check(evidence)
-    for mode, fp8, affine in REPRESENTATIONS:
-        results["top_control"] += top_control.check(evidence, 1, mode, fp8, affine)
+    results["top_control"] = [row for group in parallel(
+        lambda cell: top_control.check(evidence, 1, *cell), REPRESENTATIONS) for row in group]
     results["sequence_rejections"] = [top_control.rejected_sequence(evidence, case)
                                       for case in ("dtype", "position", "phase-reversal", "token-id")]
     results["minimal_top"] = integration.smoke(evidence, seed, "iverilog", 1,
                                               vocab=1, max_seq_len=1, tile_rows=1)
-    results["tail_gqa_cache"] = []
-    for dimension in (34, 66):
-        for mode, fp8, affine in REPRESENTATIONS:
-            for fmt in ("bf16", "fp16"):
-                results["tail_gqa_cache"].append(attention_checks.check(
-                    evidence, dimension, mode, fp8, affine, fmt, tokens=1))
+    results["tail_gqa_cache"] = parallel(
+        lambda cell: attention_checks.check(evidence, *cell, tokens=1),
+        [(dimension, mode, fp8, affine, fmt) for dimension in (34, 66)
+         for mode, fp8, affine in REPRESENTATIONS for fmt in ("bf16", "fp16")])
     results["default_prefetch_overlap"] = []
     for banks in (1, 2, 4, 8):
         results["default_prefetch_overlap"] += prefetch_checks.check(evidence, banks, [0])
@@ -94,36 +108,33 @@ def protocol(evidence, seed):
 
 
 def synthesis_suite(evidence, seed):
-    results = []
-    for banks in (1, 2, 4, 8):
-        for mode, fp8, affine in REPRESENTATIONS:
-            print(f"SYNTHESIS banks={banks} mode={mode} fp8={fp8} affine={affine}", flush=True)
-            results.append(synthesis.synthesize(evidence, banks, mode, fp8, affine))
+    def cell_check(cell):
+        banks, mode, fp8, affine = cell
+        print(f"SYNTHESIS banks={banks} mode={mode} fp8={fp8} affine={affine}", flush=True)
+        return synthesis.synthesize(evidence, banks, mode, fp8, affine)
+    results = parallel(cell_check, [(banks, *cell) for banks in (1, 2, 4, 8)
+                                    for cell in REPRESENTATIONS])
     results.append(synthesis.synthesize(evidence, 8, production=True))
     return results
 
 
 def benchmark(evidence, seed):
     """Measured synthetic five-domain work; no real-checkpoint extrapolation."""
-    rows = []
-    for banks in (1, 2, 4, 8):
-        for mode, fp8, affine in REPRESENTATIONS:
-            for fmt in ("bf16", "fp16"):
-                for awq in (False, True):
-                    print(f"BENCHMARK banks={banks} mode={mode} fp8={fp8} affine={affine} "
-                          f"fmt={fmt} awq={int(awq)}", flush=True)
-                    run = integration.smoke(evidence, seed, "verilator", banks, fmt,
-                                            awq, 4, mode, fp8, affine)
-                    rows.append({"execution": run, "domains": domain_metrics(run)})
-                    (evidence.path / "benchmark-progress.json").write_text(json.dumps(rows, indent=2) + "\n")
+    rows = [{"execution": run, "domains": domain_metrics(run)}
+            for run in integration_matrix(evidence, seed, "benchmark")]
+    (evidence.path / "benchmark-progress.json").write_text(json.dumps(rows, indent=2) + "\n")
     if len(rows) != 80 or any(len(row["domains"]) != 5 for row in rows):
         raise AssertionError("Missing five-domain bank/cache/dtype/AWQ benchmark cells")
     tensor, parent, sampled = [], [], []
-    for banks in (1, 2, 4, 8):
+    def projection_check(banks):
         scope = evidence.scope(f"projection-comparison-b{banks}")
-        tensor += tensor_checks.check(scope, seed, banks, repeats=1)
-        parent += tensor_checks.check(scope, seed, banks, repeats=1, parent=True)
-        sampled += prefetch_checks.check(evidence, banks)
+        return (tensor_checks.check(scope, seed, banks, repeats=1),
+                tensor_checks.check(scope, seed, banks, repeats=1, parent=True),
+                prefetch_checks.check(evidence, banks))
+    for floating, integer, production in parallel(projection_check, (1, 2, 4, 8)):
+        tensor += floating
+        parent += integer
+        sampled += production
     direct = []
     for baseline in parent:
         matched = [row for row in tensor if row["banks"] == baseline["banks"] and
@@ -137,10 +148,10 @@ def benchmark(evidence, seed):
                            "projection": integer["projection"], "integer": integer, "floating": floating,
                            "fp_minus_int_cycles": floating["command_to_done_cycles"] - integer["command_to_done_cycles"],
                            "fp_minus_int_bytes": floating["response_bytes"] - integer["response_bytes"]})
-    default_attention = []
-    for mode, fp8, affine in REPRESENTATIONS:
-        for fmt in ("bf16", "fp16"):
-            default_attention.append(attention_checks.check(evidence, 128, mode, fp8, affine, fmt, tokens=1))
+    default_attention = parallel(
+        lambda cell: attention_checks.check(evidence, 128, *cell, tokens=1),
+        [(mode, fp8, affine, fmt) for mode, fp8, affine in REPRESENTATIONS
+         for fmt in ("bf16", "fp16")])
     deep = integration.smoke(evidence, seed, "verilator", 1, "bf16", False, 4,
                              layers=36, intermediate=8, vocab=1)
     return {"synthetic_seed": seed, "clock_hz_for_bandwidth": 100000000,

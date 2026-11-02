@@ -18,7 +18,7 @@ Synthesis: real memory-preserving Yosys checks at every bank/cache representatio
 and the default hierarchy. Defects: six disposable observable mutations.
 Portability: real compact simulation and synthesis in a fresh declared-source copy.
 
-The aggregate uses two bounded workers and may share identical, already checked
+The aggregate uses bounded workers and may share identical, already checked
 fixtures within that invocation; it never loads past receipts to manufacture a
 pass. One monotonic 2700-second budget includes fixture generation, compilation
 and nested checks; every child command is capped at 600 seconds or remaining
@@ -28,6 +28,7 @@ physical evidence and the independently approved PDF remain separate obligations
 """
 
 import argparse
+import os
 from pathlib import Path
 import sys
 import traceback
@@ -35,7 +36,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from execution import Evidence, relative
+from execution import Evidence, MAX_TOOL_WORKERS, relative
 import numerics
 import integration
 import synthesis
@@ -61,6 +62,8 @@ def main():
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--probe", choices=["conversions", "primitives", "iterative", "dots", "top", "synthesis", "cache", "nonlinear", "tensor", "scheduler", "parameters", "control", "sequence", "defect", "accumulation", "attention", "prefetch", "execution"])
     parser.add_argument("--repair-of")
+    parser.add_argument("--preparation", action="store_true",
+                        help="Retain an advisory performance-repair run under evidence/preparation")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"], default="verilator")
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=1)
     parser.add_argument("--dtype", choices=["bf16", "fp16"], default="bf16")
@@ -80,7 +83,9 @@ def main():
     parser.add_argument("--mutant", choices=[mutation[0] for mutation in defects.MUTATIONS], default="rounding")
     args = parser.parse_args()
     evidence = Evidence(args.probe or args.suite or "aggregate",
-                        preparation=bool(args.probe), repair_of=args.repair_of)
+                        preparation=bool(args.probe) or args.preparation or
+                                    os.environ.get("ANVIL_L1_PREPARATION") == "1",
+                        repair_of=args.repair_of or os.environ.get("ANVIL_L1_REPAIR_OF"))
     try:
         if args.probe:
             evidence.versions([["python3", "--version"], ["iverilog", "-V"], ["vvp", "-V"]])
@@ -159,15 +164,15 @@ def main():
                         "portability": portability.check,
                         "defects": defects.check}
             if args.suite is None:
-                def run_suite(suite, check):
-                    if suite == "behavior":
-                        return {str(seed): check(evidence.scope(f"behavior-seed{seed}"), seed)
-                                for seed in (17, 89, 211)}
-                    return check(evidence.scope(suite), args.seed)
-                with ThreadPoolExecutor(max_workers=2) as executor:
-                    jobs = {suite: executor.submit(run_suite, suite, check)
-                            for suite, check in dispatch.items()}
-                    result = {suite: job.result() for suite, job in jobs.items()}
+                with ThreadPoolExecutor(max_workers=MAX_TOOL_WORKERS) as executor:
+                    behavior_jobs = {
+                        str(seed): executor.submit(campaigns.behavior,
+                                                   evidence.scope(f"behavior-seed{seed}"), seed)
+                        for seed in (17, 89, 211)}
+                    jobs = {suite: executor.submit(check, evidence.scope(suite), args.seed)
+                            for suite, check in dispatch.items() if suite != "behavior"}
+                    result = {"behavior": {seed: job.result() for seed, job in behavior_jobs.items()}}
+                    result.update({suite: job.result() for suite, job in jobs.items()})
             else:
                 result = dispatch[args.suite](evidence, args.seed)
         evidence.finish("passed", comparisons=result)
