@@ -16,11 +16,15 @@ Implemented leaves are:
 | `rtl/anvil_q1_fp2_mx_quantize.sv` | Nine-stage two-Group-32 scale selection and E4M3FN RNE quantization |
 | `rtl/anvil_q1_fp2_epilogue_fusion.sv` | Buffered RMSNorm/RoPE/SwiGLU/residual commands using internal vector RAM and named fast-rsqrt |
 | `rtl/anvil_q1_fp2_flash_attn.sv` | Single-query chronological online attention with bounded K/V tile RAM and one final normalization |
+| `rtl/anvil_q1_fp2_gqa_group.sv` | Shared-query-group command/broadcast ownership, independent-head result buffering and ordered group output |
+| `rtl/anvil_q1_fp2_ddr_read_stream.sv` | BF16/MX vector intake with aligned descriptors, shared-scale caching and held-response consumption |
+| `rtl/anvil_q1_fp2_kv_reader.sv` | One chronological external K/V traversal for a whole GQA query group |
 | `rtl/anvil_q1_fp2_ddr_pingpong.sv` | Two descriptor/response buffers with ID ownership and ordered retirement |
 | `rtl/anvil_q1_fp2_telemetry_csr.sv` | Independent saturating live/snapshot counters and delayed CSR response |
 | `fpga/anvil_q1_fp2.sdc` | Single 10.000 ns clk constraint, no timing exceptions |
 
-Shared GQA traversal, the decoder controller and top-level are outstanding.
+Shared GQA traversal primitives now exist; their architectural wiring, the
+decoder controller and top-level are outstanding.
 The named top instances required at integration are `tensor_array`,
 `epilogue_fusion`, `flash_attn` and `telemetry_csr`; the epilogue must instantiate
 `anvil_q1_fp2_fast_rsqrt`. A module-name shell is not an implemented decoder.
@@ -69,9 +73,15 @@ response arrival, releases the slot; this avoids overwriting returned-but-unused
 data. At full occupancy, retirement and refill share the freed slot on one edge,
 with new descriptor ownership winning over release.
 
-The future controller must schedule ahead sufficiently to overlap one buffer's
-transfer with consumption of the other. The leaf's concurrency alone does not
-prove end-to-end overlap or bandwidth improvement.
+The read-stream engine submits subsequent aligned data descriptors while it
+consumes the current ping-pong head. A response remains owned by the ping-pong
+slot until its last needed element transfers; a second response can return
+concurrently. MX scale reads precede their corresponding data segment and
+cache all 64 scale bytes for up to 2048 logical elements. The engine submits no
+data from the following scale segment until the current segment retires.
+This prevents a stale shared exponent from being applied to prefetched data.
+It is a connected ownership schedule at the internal client interface, not yet
+an end-to-end overlap or measured bandwidth result.
 
 ## Dependency and lifetime table
 
@@ -89,7 +99,10 @@ prove end-to-end overlap or bandwidth improvement.
 | Attention query RAM | One accepted query vector | All tokens in that command | Loaded once before tile intake |
 | Attention K/V tile RAM | Single chronological KV stream | Current tile computation | Reused only after every token of the tile updates running state |
 | Attention output RAM | Online alpha/p updates | Next token or final normalization | First token supplies explicit zero instead of reading stale state |
-| Future grouped queries | Q projection / RoPE | All GQA query heads | Must permit one chronological shared KV traversal |
+| Group query channels | Q projection / RoPE stream | One attention leaf per query head | All commands launch before head-major queries; each query loads only once |
+| Group broadcast register | Chronological K/V reader | Every attention leaf in the query group | Per-head accepted mask prevents duplicates when tile readiness differs |
+| Group output RAM banks | Independent attention leaf outputs | Ordered group output stream | No group output is exposed before every sibling completes successfully |
+| K/V reader key-vector RAM | Current token's K row | Same token's V stream and query-group broadcast | HEAD_DIM BF16 words, reused only after the V command completes |
 | Future KV history | Current K/V projection | Causal attention | External, sequence-owned, invalidated on reset/new-sequence |
 
 ## Nonlinear pipeline strategy
@@ -130,11 +143,59 @@ It is a precursor for activation/KV packing, not yet an integrated transport.
 FP32-to-BF16 conversion and integer-to-FP32 helpers have also been added to the
 owned package. Independent verification must not reuse these as its oracle.
 
-These are substantive leaves, but they are not yet an accelerator. The decoder
-must still join the required named hierarchy, share one KV traversal across
-each GQA query group, compose projection/epilogue dependencies, and connect
-real conversion/transport/starvation events to telemetry. No simulation or
-synthesis has been performed by Designer.
+These are substantive blocks, but they are not yet an accelerator. The decoder
+must still join the required named hierarchy, connect the shared traversal
+blocks, compose projection/epilogue dependencies, and connect real
+conversion/transport/starvation events to telemetry. No simulation or synthesis
+has been performed by Designer.
+
+## Shared GQA traversal primitives
+
+`anvil_q1_fp2_gqa_group` controls GROUP_HEADS independent instances of the
+unchanged single-query attention leaf. Its engine channels are flattened,
+low-head-first buses. The future top must retain the required direct
+`anvil_q1_fp2_flash_attn flash_attn` instance for head zero and instantiate the
+remaining siblings alongside it, connecting all of them to this group
+controller. A leaf must use `engines_rst_n`: a group fault synchronously aborts
+siblings still collecting a tile rather than stranding them in a busy state.
+
+The group starts every sibling once and loads queries in head-major component
+order. It accepts a chronological K/V component pair into one holding register.
+Each sibling sees that pair until its individual handshake; a sent mask then
+suppresses that sibling's valid. Only after all siblings accept can the holding
+register be reused. Thus different tile-ready timings do not duplicate or drop
+components, and the external reader does not reread KV for a different query
+head. This conservative broadcast has a one-cycle refill bubble; it makes no
+claim of one external pair per cycle.
+
+Independent synchronous result-RAM banks accept all sibling output channels
+concurrently. Successful done pulses are remembered. No group result escapes
+until all HEAD_DIM components and successful completions have arrived from every
+head. Results then stream head-major with stable head/component/last metadata.
+Framing errors, unexpected extra outputs and fatal operator flags abort the
+group, so a failed sibling cannot leave an apparently successful partial group.
+The architectural decoder must additionally buffer logits until the whole token
+is known to be successful.
+
+`anvil_q1_fp2_kv_reader` reads kind 9 and kind 10 rows for token positions
+0..cmd_len-1 exactly once per group. `cmd_first` is the KV-head component offset
+in the row containing all KV heads. A synchronous HEAD_DIM-word key-vector RAM
+holds the current token's K vector while V streams from the read engine.
+Each V transfer pairs with the corresponding registered K component. Only that
+bounded vector, response buffers and the attention tiles are resident; history
+remains external. BF16 and independently scaled MX rows use identical logical
+indices. The controller must launch one reader per KV-head group, not one per
+query head, and enforce cmd_len=token_pos+1.
+
+The generic read engine and K/V reader expose descriptors for the existing
+DDR ping-pong module; neither fabricates DDR completions or owns physical IDs.
+Their descriptor fields are all reads. Integration ties the ping-pong write
+flag/data/strobes to zero and forwards scale/kind/layer/proj/row/col/tag fields.
+These clients require exclusive descriptor/response ownership from command
+acceptance through completion. Do not interleave another client's descriptors
+without an explicit response router. An error drains already accepted requests
+and any previously offered stalled descriptor before returning command ownership.
+No failed response is exposed as operand data.
 
 ## Integration and performance accounting still required
 

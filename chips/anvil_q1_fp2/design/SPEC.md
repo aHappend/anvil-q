@@ -6,8 +6,9 @@ This is the design-side implementation contract, not a verification or acceptanc
 report. The admitted work order remains authoritative. Implementation is in
 progress: the exact tensor, fast-rsqrt, FP32 arithmetic, fused epilogue,
 single-query tiled attention, MX quantizer, DDR ping-pong and telemetry leaves
-exist. The optimized decoder, shared GQA traversal and top-level integration
-are not yet complete. No numerical, performance, synthesis, timing or board
+exist. Shared-GQA broadcast/result control and chronological DDR K/V intake
+primitives also exist, but their decoder/top-level integration is not yet
+complete. No numerical, performance, synthesis, timing or board
 result is claimed here.
 
 The immutable parent is `anvil_q1_fp_reference/rtl/*.sv`. No repository intake
@@ -385,9 +386,126 @@ numerical reduction order.
 | Final output at f | COMPLETE_WAIT after f, FINISH/done after f+1, IDLE after f+2. |
 | Bad command at k | ERROR_WAIT0 after k, ERROR_WAIT1 after k+1, FINISH/done/error after k+2. |
 
-This leaf handles one query head. The required top-level shared GQA query
-group and broadcast/tile reuse are not yet implemented. Instantiating this leaf
-and re-reading the whole external KV prefix once per query head is prohibited.
+This leaf handles one query head. The shared GQA group and chronological K/V
+intake primitives below implement broadcast ownership, but are not yet wired
+into an architectural top. Re-reading the external KV prefix once per query
+head remains prohibited.
+
+### Shared query-group control
+
+`anvil_q1_fp2_gqa_group` has parameters GROUP_HEADS=7, HEAD_DIM=64 and
+MAX_SEQ_LEN=32768, all positive. GROUP_HEADS*HEAD_DIM and
+MAX_SEQ_LEN*HEAD_DIM must fit unsigned 32-bit component indexing. Its command
+is `cmd_valid/cmd_ready/cmd_len`, with 1<=cmd_len<=MAX_SEQ_LEN. The decoder is
+responsible for selecting the correct KV-head group and causal prefix.
+
+Queries enter on `query_valid/query_ready/query_data[15:0]/query_last`, in
+head-major order, with exactly HEAD_DIM BF16 components per head. query_last
+marks each head's last component. K/V enter on
+`kv_valid/kv_ready/k_data[15:0]/v_data[15:0]/kv_last`, in chronological token-major
+order, with kv_last marking every HEAD_DIM-component vector. The group accepts
+exactly cmd_len vectors once, independently of GROUP_HEADS.
+
+The internal engine interface exposes GROUP_HEADS command/query/KV/output/done
+channels. All packed data/status buses are low-head-first; data for head h is
+bits 32*h+:32 and flags are bits 5*h+:5. Query and KV payloads are shared buses
+with individually qualified valid bits. A per-head accepted mask holds each KV
+pair until all siblings consume it. A fast sibling cannot consume a pair twice.
+The consumer must connect one real attention leaf per head, with the same
+HEAD_DIM, MAX_SEQ_LEN and TILE_TOKENS. Sibling reset is `engines_rst_n`, not
+unconditionally rst_n: a group error aborts all leaf commands synchronously.
+
+Group outputs are `out_valid/out_ready/out_data[31:0]/out_head[31:0]/
+out_component[31:0]/out_last`, in head-major order. out_last marks the final
+component of the final head. Per-head synchronous output RAM and remembered
+completion pulses prevent output from any head until every sibling completes
+successfully. `status[4:0]` accumulates all sibling flags. Command/input/output
+framing violations and invalid/divide-by-zero/overflow flags produce an error
+completion and abort siblings. This internal group is not a replacement for
+whole-token error/logit ownership.
+
+| Group boundary | Implemented behavior |
+|---|---|
+| Legal command at k | START after k; issue each sibling command until its own acceptance, then begin queries. No query or KV acceptance at k. |
+| Invalid command at k | ERROR_WAIT0 after k, ERROR_WAIT1 after k+1, FINISH/done/error after k+2. No operand acceptance. |
+| Final query of final head at q | KV after q; the first KV pair may transfer at q+1. |
+| KV pair accepted at t | The holding register is valid after t; first sibling transfers are at t+1 or later. Each sibling transfers exactly once. |
+| Differing sibling readiness | Retain payload/last and the accepted mask; suppress valid only for siblings that already transferred. |
+| All siblings transfer the held pair at b | Release after b. Refill occurs no earlier than b+1, including a one-head group. |
+| Final KV pair | Stop upstream intake immediately; wait for its broadcast and every sibling result/completion. |
+| Sibling results | Independent per-head banks capture concurrent outputs; extra components or incorrect last are errors, never silently dropped. |
+| Group result fetch | READ_RESULT performs the synchronous bank reads, LATCH_RESULT captures the selected head, OUTPUT holds the public payload. |
+| Final output transfer at f | COMPLETE_WAIT after f, FINISH/done after f+1, IDLE after f+2. |
+| Singleton head/vector | The first query/KV/output component is also last when HEAD_DIM=1; it follows the same ownership schedule. Architectural geometry retains the parent's even-head constraint. |
+| Group fault | No result stream starts; drive sibling reset low, clear held KV validity and complete through ERROR_WAIT0/1. Reset remains asserted for siblings until the group returns idle. |
+
+### Chronological DDR K/V intake
+
+`anvil_q1_fp2_kv_reader` has HEAD_DIM=64 and MAX_SEQ_LEN=32768 parameters.
+Its command contains format_mx, layer, first and len; first is the logical
+KV-head offset in each history row, not a byte address. len is the positive
+causal token count, bounded by MAX_SEQ_LEN. first+HEAD_DIM must not exceed
+2^32, evaluated at 33-bit width. Every token reads kind 9 then kind 10 at
+row=token index, proj=0, layer=cmd_layer, with the same first/HEAD_DIM slice.
+
+K components are retained in a synchronous HEAD_DIM-word BF16 RAM. V components
+pair with the matching registered K and stream on
+kv_valid/kv_ready/k_data/v_data/kv_last. The component pointer changes only on
+pair acceptance. READ_KEY supplies a complete registered-read edge before each
+PAIR state, including component zero and non-power-of-two head dimensions.
+kv_last marks each vector, not only the final causal token. The next token's
+K command starts only after the preceding V command completes. No whole-history
+RAM, score matrix or query-head-specific reread is used.
+
+This block instantiates `anvil_q1_fp2_ddr_read_stream`. The generic reader accepts
+kind/layer/proj/row/first/len/format_mx and emits decoded BF16 components with
+per-command accumulated conversion status. It rejects zero length and a 33-bit
+first+len greater than 2^32 before issuing any descriptor. Tensor-specific row
+bounds remain the decoder's responsibility, not a silently clamped reader limit.
+
+The descriptor side is `fetch_valid/fetch_ready/fetch_scale/fetch_kind/
+fetch_layer/fetch_proj/fetch_row/fetch_col/fetch_tag`. Every descriptor is a read;
+integration ties write/data/strobes to zero at the ping-pong command port.
+Responses contain valid/ready/tag/write/error/data. Connect these to the
+ping-pong's ordered retirement channel, not directly to unordered physical
+responses. A client exclusively owns this channel until its done completion;
+cross-client response arbitration is still a top-level integration obligation.
+
+For BF16, align the first descriptor down to 32 elements and issue subsequent
+32-element beats. For MX, align down to 64 elements; before each 2048-element
+segment, fetch and cache the aligned 64-byte scale-plane beat, whose col is the
+first Group-32 index. Data descriptors then advance by 64 elements. A command
+may start partway through either a data beat or scale segment. Select each
+scale by absolute element bits 10:5, so a Group-32 transition within a beat
+cannot inherit its neighbor's scale. Independent K/V rows load independent
+scale planes.
+
+The reader prefetches into both existing ping-pong slots while the consumer
+drains a returned beat. It retires a data response only after its last requested
+component transfers; final padding is not exposed or included in conversion
+flags. It does not issue data beyond the current scale segment. After the last
+response of a segment retires it can replace the cached scale plane safely.
+An error response, unexpected tag/write acknowledgment or fatal MX/BF16
+conversion flag terminates the command. Already accepted requests and a
+previously offered stalled descriptor are drained before error completion.
+The consumer never receives data from the failing response.
+
+| Read-stream boundary | Implemented behavior |
+|---|---|
+| Legal command at k | DATA after k for BF16, SCALE after k for MX; no response is assumed present. |
+| MX scale request/response | Hold the descriptor until accepted; WAIT_SCALE captures its response before any associated data descriptors issue. |
+| Data response held | Response payload/ID remain owned by ping-pong while individual components transfer; a second slot can issue or return concurrently. |
+| First/last in same beat | Skip prefix elements, expose exactly len components, and retire on the final component; never require another beat to complete a singleton. |
+| Final output stalled | Keep decoded data, last, status, cursor and cached scales stable; do not retire the response. |
+| Final data transfer at f | COMPLETE_WAIT after f, FINISH/done after f+1. |
+| Invalid command at k | Error completion after k+2 with no descriptors. |
+| Response fault | Drain outstanding ownership; only then enter the two-edge error completion path. No new command is accepted during draining. |
+| Reset | Abort the stream and clear cursors/counters/scale validity; the common ping-pong/bridge reset must also discard the previous epoch. |
+
+The reader's work_active/result_needed outputs describe real transport
+ownership and consumer demand for connection to ping-pong stall telemetry.
+No constant synthetic event source is needed. Their architectural event
+connection remains pending with decoder/top integration.
 
 ## DDR4 application-side channel
 
