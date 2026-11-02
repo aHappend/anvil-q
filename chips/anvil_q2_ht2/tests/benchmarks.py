@@ -301,6 +301,9 @@ class PromptAccount:
                     f"unaccounted {phase} {direction} DDR beats")
         return {
             "tokens": len(output), "decode_ns": self.decode_ns, "prefill_ns": self.prefill_ns,
+            "sequence_position": self.initial_position,
+            "output_ids_sha256": hashlib.sha256(
+                json.dumps(output, separators=(",", ":")).encode("ascii")).hexdigest(),
             "measured_clock_hz": self.clock, "ddr_bytes": dict(self.bytes_by_phase),
             "ddr_classes": {"/".join(key): value for key, value in self.bytes_by_class.items()},
             "acceptance": dict(self.acceptance), "compared_vectors": self.compared,
@@ -310,6 +313,25 @@ class PromptAccount:
                                            "compared_vectors": values[2]}
                               for layer, values in sorted(self.layer_quality.items())},
         }
+
+
+def validate_greedy_equivalence(grouped):
+    """Compare actual publications across widths and exact-zero sparse modes."""
+    failures = []
+    for key, prompts in grouped.items():
+        engine, _width, mode, kv = key
+        if engine != "ht2":
+            continue
+        reference_key = ("ht2", 1, mode.split("-")[0] + "-dense", kv)
+        reference = grouped.get(reference_key, {})
+        for prompt, row in prompts.items():
+            expected = reference.get(prompt)
+            if expected is None:
+                failures.append(f"{key}/{prompt}: missing K=1 dense greedy comparison")
+            elif any(row[field] != expected[field] for field in
+                     ("sequence_position", "tokens", "output_ids_sha256")):
+                failures.append(f"{key}/{prompt}: greedy sequence differs from K=1 dense")
+    return failures
 
 
 def summarize(rows):
@@ -515,6 +537,9 @@ def execute(run):
         entry.update(status="measured", summary=summary)
         if summary["tokens"] < 1000:
             failures.append(f"{cell_key(cell)}/{domain}: fewer than 1000 committed tokens")
+    greedy_errors = validate_greedy_equivalence(grouped)
+    failures.extend(greedy_errors)
+    report["greedy_equivalence_errors"] = greedy_errors
     report["measurement_errors"] = failures
     save()
     require(not failures, "; ".join(failures))

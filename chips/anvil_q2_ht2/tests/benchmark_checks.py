@@ -247,6 +247,54 @@ class NumericalAndTreeChecks(unittest.TestCase):
 
 
 class AccountingChecks(unittest.TestCase):
+    def test_completed_prompt_retains_greedy_identity(self):
+        result = completed_account().finish(end())
+        expected = hashlib.sha256(b"[0,1]").hexdigest()
+        self.assertEqual(result["output_ids_sha256"], expected)
+        self.assertEqual(result["sequence_position"], 0)
+
+    def test_cross_width_and_sparse_greedy_equivalence(self):
+        from benchmarks import validate_greedy_equivalence
+        grouped = defaultdict(dict)
+        for cell in cells():
+            if cell["engine"] != "ht2":
+                continue
+            row = completed_account().finish(end())
+            # Different precisions/KV policies may legitimately produce different IDs.
+            precision = cell["mode"].split("-")[0]
+            row["output_ids_sha256"] = hashlib.sha256(
+                (precision + cell["kv"]).encode()).hexdigest()
+            grouped[cell_key(cell)]["dialogue-00"] = row
+        self.assertEqual(validate_greedy_equivalence(grouped), [])
+        for changed in ("output_ids_sha256", "tokens", "sequence_position"):
+            for width, mode in ((2, "bf16-dense"), (4, "w2-sparse"),
+                                (1, "fp16-sparse")):
+                with self.subTest(field=changed, width=width, mode=mode):
+                    broken = copy.deepcopy(grouped)
+                    key = ("ht2", width, mode, "bf16")
+                    broken[key]["dialogue-00"][changed] = (
+                        "0"*64 if changed == "output_ids_sha256" else 7)
+                    self.assertTrue(validate_greedy_equivalence(broken))
+
+    def test_self_consistent_but_different_greedy_exports_rejected(self):
+        from benchmarks import validate_greedy_equivalence
+        dense = completed_account().finish(end())
+        sparse_cell = {"engine": "ht2", "k": 1, "mode": "bf16-sparse", "kv": "bf16"}
+        account = PromptAccount(begin(sparse_cell, [2, 1]), 4, [1], hidden_size=8)
+        add_traffic(account)
+        add_vectors(account)
+        add_batch(account)
+        add_vectors(account)
+        add_batch(account, 220, 310)
+        sparse = account.finish(end([2, 1]))
+        grouped = {("ht2", 1, "bf16-dense", "bf16"): {"dialogue-00": dense},
+                   cell_key(sparse_cell): {"dialogue-00": sparse}}
+        errors = validate_greedy_equivalence(grouped)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("greedy sequence differs", errors[0])
+        del grouped[("ht2", 1, "bf16-dense", "bf16")]
+        self.assertIn("missing K=1 dense", validate_greedy_equivalence(grouped)[0])
+
     def test_complete_comparisons_and_actual_traffic(self):
         summary = completed_account().finish(end())
         self.assertEqual(summary["tokens"], 2)
