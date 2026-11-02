@@ -29,7 +29,7 @@ def testbench():
     text = TOP_TB.replace("module tb;", "module tb;" + CSR_TASK + r"""
   integer scenario=0,abort_count=0,cancel_count=0,fault_count=0,late_count=0,csr_checks=0;
   integer cancel_cycle=-1,suppressed_tokens=0,successful_count=0;
-  reg command_accepted=0,cancel_issued=0,fault_issued=0,malformed_response=0;
+  reg command_accepted=0,cancel_issued=0,fault_issued=0,malformed_response=0,weight_held=0;
 """, 1)
     for needle, replacement in (
         (".csr_req_valid(1'b0)", ".csr_req_valid(bench_csr_valid)"),
@@ -52,7 +52,7 @@ def testbench():
         cancel=1; cancel_issued=1; cancel_cycle=cycle;
       end
       if(command_index==0 && (scenario==1 || scenario==2) && !cancel_issued &&
-         outstanding>=(scenario==1 ? 1 : 2)) begin
+         weight_held && outstanding>=(scenario==1 ? 1 : 2)) begin
         ddr_req_ready=0;
         bench_csr(16'h0000,0,0);
         if(bench_csr_observation !== 32'h00020200) $fatal(1,"CSR_DURING_STALLED_TOKEN");
@@ -95,8 +95,9 @@ def testbench():
     text = text.replace("pending[slot]=1; tags[slot]=ddr_req_tag; due[slot]=cycle+2+(random_state[9:6]);",
                         r"""
         pending[slot]=1; tags[slot]=ddr_req_tag; due[slot]=cycle+2+(random_state[9:6]);
-        if(command_index==0 && (scenario==1 || scenario==2) && !cancel_issued)
-          due[slot]=1000000;""", 1)
+        if(command_index==0 && (scenario==1 || scenario==2) && !cancel_issued && ddr_req_kind==1) begin
+          due[slot]=1000000; weight_held=1;
+        end""", 1)
     text = text.replace(
         "responses[slot]=read_beat(ddr_req_kind,ddr_req_row,ddr_req_col,ddr_req_format);", r"""
           responses[slot]=read_beat(ddr_req_kind,ddr_req_row,ddr_req_col,ddr_req_format);
@@ -196,9 +197,25 @@ def run(probe, scenario, first_command, seed=17):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case", choices=[case[0] for case in CASES], default=CASES[2][0])
+    parser.add_argument("--all", action="store_true")
     args = parser.parse_args()
+    if args.all:
+        from verify import Suite
+        suite = Suite("protocol-cases", preparation=True)
+        error = None
+        try:
+            with SuiteDeadline():
+                for name, scenario, command in CASES:
+                    suite.execute(name, lambda p: run(p, scenario, command))
+        except Exception as failure:
+            error = f"{type(failure).__name__}: {failure}"
+        return suite.probe.settle(error)
     name, scenario, command = next(case for case in CASES if case[0] == args.case)
-    probe = Probe(name)
+    probe = Probe(name, repair_of=
+                  "evidence/preparation/fp2-cancel-two-outstanding-and-old-responses-20261102T185029Z-e0618d62/receipt.json")
+    probe.receipt["repair_description"] = (
+        "Hold projection payload reads, not the serial embedding startup read, so the "
+        "required two-outstanding prefetch event can actually occur before cancellation.")
     try:
         with SuiteDeadline():
             run(probe, scenario, command)
