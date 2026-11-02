@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 import time
 import uuid
 
@@ -45,11 +46,14 @@ def sources():
 
 
 class Evidence:
-    def __init__(self, stem, repair_of=None):
+    def __init__(self, stem, repair_of=None, preparation=True):
         suffix = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:12]
-        self.path = (SUITE_PATH or ROOT / "evidence" / "preparation") / (stem + "-" + suffix)
+        base = ROOT / "evidence" / "preparation" if preparation else ROOT / "evidence"
+        self.path = (SUITE_PATH or base) / (stem + "-" + suffix)
         self.path.mkdir(parents=True, exist_ok=False)
-        self.record = dict(kind="verifier preparation", start_time=now(),
+        self.record = dict(kind="L1 verification" if SUITE_PATH or not preparation else "verifier preparation",
+                           start_time=now(), argv=["python3", *sys.argv], cwd=rel(Path.cwd()),
+                           python_version=sys.version,
                            source_sha256={rel(p): hashlib.sha256(p.read_bytes()).hexdigest()
                                           for p in sources()},
                            children=[], repair_of=repair_of)

@@ -279,7 +279,9 @@ def primitive_bench(evidence):
     reset_payload = "{"+",".join(reset_outputs)+"}"
     bench = "\n".join([
         "module tb; reg clk=0; always #5 clk=~clk;",
-        "reg rst_n,flush=0; integer comparisons=0,reset_samples=0;",
+        "reg rst_n,flush=0; integer comparisons=0,reset_samples=0,watchdog=0;",
+        'always @(posedge clk) begin watchdog=watchdog+1; '
+        'if(watchdog>500000) $fatal(1,"NUMERICAL_CYCLE_BOUND"); end',
         *declarations, *instances,
         "task automatic check_reset; begin",
         f'if ({reset_payload} !== 0) $fatal(1,"RESET_XZ_OR_NONZERO t=%0t",$time);',

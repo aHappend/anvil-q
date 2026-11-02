@@ -123,8 +123,10 @@ def main():
             if args.top not in ("anvil_d1_top", "anvil_q3_top"):
                 raise ValueError("--legacy-profile requires a native or parent top")
             parameters = dict(PROFILE=args.legacy_profile, NUM_LAYERS=1,
-                              HIDDEN_SIZE=16, INTERMEDIATE_SIZE=16, NUM_Q_HEADS=2,
-                              NUM_KV_HEADS=1, HEAD_DIM=8, GROUP_SIZE=8, AWQ_BITS=4,
+                              HIDDEN_SIZE=16, INTERMEDIATE_SIZE=16,
+                              NUM_Q_HEADS=8 if args.legacy_profile == 3 else 2,
+                              NUM_KV_HEADS=1, HEAD_DIM=2 if args.legacy_profile == 3 else 8,
+                              GROUP_SIZE=8, AWQ_BITS=4,
                               VOCAB_SIZE=8, MAX_SEQ_LEN=5, BANKS=2, QUEUE_DEPTH=3,
                               TILE_K=8, TILE_ROWS=3)
             if args.top == "anvil_d1_top":

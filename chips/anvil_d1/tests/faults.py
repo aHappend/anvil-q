@@ -22,14 +22,19 @@ def replace_once(text, old, new):
     return text.replace(old, new, 1)
 
 
-def faults_bench(evidence):
-    fixture = native_bench(evidence, 17, 1)
+def faults_bench(evidence, legacy=None):
+    if legacy is None:
+        native_bench(evidence, 17, 1)
+    else:
+        from inference import inference_bench
+        inference_bench(evidence, seed=17, tokens=1, legacy=legacy)
     path = evidence.path / "native.sv"
     bench = path.read_text()
     begin = bench.index("    for (position=0;position<TOKENS;position=position+1) begin")
     end = bench.index("\n  always @(negedge clk)", begin)
     bench = bench[:begin] + STIMULUS + bench[end:]
-    bench = replace_once(bench, "if (cycles>500000)", "if (cycles>10000000)")
+    if legacy is None:
+        bench = replace_once(bench, "if (cycles>500000)", "if (cycles>10000000)")
     bench = replace_once(bench, "if (stalled[b] &&", "if (stalled[b] && !cancel &&")
     bench = replace_once(bench, "if (held_logit &&", "if (held_logit && !cancel &&")
     bench = replace_once(bench, "if (pending[b] && !mem_rsp_valid[b])",
@@ -95,9 +100,47 @@ def faults_bench(evidence):
     # Logit cancellation must keep the offered first logit stalled throughout
     # observation, rather than let a default-ready helper retire it.
     bench = replace_once(bench, "else logit_ready=1;", "else logit_ready=!hold_logits;")
+    if legacy is not None:
+        bench = replace_once(bench,
+            "mem_req_kind[bank*4+:4]==15 && mem_req_proj[bank*3+:3]==0",
+            "mem_req_kind[bank*4+:4]==1")
+        bench = replace_once(bench, """mem_req_kind[bank*4+:4]==15 &&
+        mem_req_proj[bank*3+:3]==3 && mem_req_write[bank]""",
+            "(mem_req_kind[bank*4+:4]==9 || mem_req_kind[bank*4+:4]==12) && mem_req_write[bank]")
+        bench = replace_once(bench, """mem_req_kind[bank*4+:4]==15 &&
+        mem_req_proj[bank*3+:3]==5 && mem_req_row[bank*32+25+:7]<7""",
+            "mem_req_kind[bank*4+:4]==1")
     path.write_text(bench)
     return dict(experiments=12, required_successful_sequences=13,
-                compared_write_prefixes=True, oracle_seed=fixture.seed)
+                compared_write_prefixes=True, oracle_seed=17, legacy=legacy,
+                targets="native absorption/cache/routed prefetch" if legacy is None else
+                        "dense weight prefetch/cache/weight prefetch")
+
+
+def reset_bench(evidence):
+    native_bench(evidence, 17, 1)
+    path = evidence.path/"native.sv"
+    text = path.read_text()
+    interruption = r"""
+    @(negedge clk); token_valid=1; new_sequence=1; token_id=2; token_pos=0;
+    @(posedge clk); while (!token_ready) @(posedge clk);
+    @(negedge clk); token_valid=0;
+    while (!(pending && (mem_req_kind[3:0]==15 || mem_req_kind[7:4]==15)))
+      @(negedge clk);
+    if (completed || compared_logits) $fatal(1,"RESET_TARGET_ALREADY_COMPLETE");
+    $display("RESET_TARGET checked_prefix_writes=%0d accepted_reads=%0d",writes,reads);
+    #1; rst_n=0; mem_req_ready=0; mem_rsp_valid=0; mem_rsp_error=0;
+    mem_rsp_rdata=0; mem_rsp_tag=0; pending=0; stalled=0; held_logit=0;
+    #1; check_reset();
+    repeat(2) @(negedge clk);
+    #1; rst_n=1;
+    writes=0; reads=0; accepted=0;
+    for (i=0;i<SLOTS;i=i+1) consumed[i]=0;
+"""
+    text = replace_once(text, "    for (position=0;position<TOKENS;position=position+1) begin",
+                        interruption+"\n    for (position=0;position<TOKENS;position=position+1) begin")
+    path.write_text(text)
+    return dict(reset_mid_work=1, required_successful_restarts=1, checked_prefix=True)
 
 
 STIMULUS = r"""
@@ -238,10 +281,13 @@ STIMULUS = r"""
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repair-of")
+    parser.add_argument("--legacy-profile", type=int, choices=(1, 2, 3))
+    parser.add_argument("--reset-only", action="store_true")
     args = parser.parse_args()
     evidence = Evidence("native-faults-verilator", args.repair_of)
     try:
-        summary = faults_bench(evidence)
+        summary = (reset_bench(evidence) if args.reset_only else faults_bench(
+            evidence, legacy=None if args.legacy_profile is None else (args.legacy_profile, 0, 0)))
         summary["observations"] = simulate(evidence, "native.sv", "verilator")
         evidence.finish("passed", **summary)
         print(summary["observations"].strip())

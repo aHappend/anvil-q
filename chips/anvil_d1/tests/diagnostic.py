@@ -288,11 +288,11 @@ endmodule
 """
 
 
-def simulate(evidence, bench, simulator, source_root=None):
+def simulate(evidence, bench, simulator, source_root=None, extra_sources=()):
     source_root = ROOT if source_root is None else Path(source_root)
     rtl = sorted(source_root.glob("rtl/*.sv"))
     parent = sorted(source_root.glob("anvil_q3_reference/rtl/*.sv"))
-    inputs = [rel(p) for p in parent + rtl]
+    inputs = [rel(p) for p in parent + rtl]+[rel(p) for p in extra_sources]
     bench_path = rel(evidence.path / bench)
     if simulator == "icarus":
         exe = evidence.path / "simulation.vvp"
@@ -300,6 +300,7 @@ def simulate(evidence, bench, simulator, source_root=None):
                                 rel(exe), *inputs, bench_path], ["iverilog", "-V"])
         output = evidence.run("simulation", ["vvp", "simulation.vvp"], ["vvp", "-V"],
                               cwd=evidence.path)
+        exe.unlink()
     else:
         obj = evidence.path / "obj_dir"
         evidence.run("compile", ["verilator", "--binary", "--timing", "-Wno-fatal",

@@ -128,6 +128,7 @@ class Fixture:
         self.cache = {}
         self.absorbed = {}
         self.routing = []
+        self.contraction_characterization = []
         rng = random.Random(seed)
 
         def weight():
@@ -238,6 +239,33 @@ class Fixture:
         output = [round_sat(sum(self.absorbed[layer, head][1][i][r]*contexts[head][r]
                                 for head in range(s.heads) for r in range(s.rank)), 32)
                   for i in range(s.hidden)]
+        for head in range(s.heads):
+            unabsorbed = [round_sat(sum(
+                self.raw(layer, 4, head, d, s.rank)[r] *
+                self.raw(layer, 2, head, d, s.hidden)[j] * x[j]
+                for d in range(s.nope) for j in range(s.hidden)), 32)
+                for r in range(s.rank)]
+            if unabsorbed != qa[head]:
+                raise AssertionError("unabsorbed query contraction mismatch")
+        expanded = [round_sat(sum(
+            self.raw(layer, 6, 0, i, s.heads*s.value)[head*s.value+v] *
+            self.raw(layer, 5, head, v, s.rank)[r] * contexts[head][r]
+            for head in range(s.heads) for v in range(s.value) for r in range(s.rank)), 32)
+            for i in range(s.hidden)]
+        if expanded != output:
+            raise AssertionError("unabsorbed output contraction mismatch")
+        conventional_q = []
+        for head in range(s.heads):
+            qn = [dot(self.raw(layer, 2, head, d, s.hidden), x) for d in range(s.nope)]
+            conventional_q.extend(dot([self.raw(layer, 4, head, d, s.rank)[r]
+                                       for d in range(s.nope)], qn) for r in range(s.rank))
+        self.contraction_characterization.append(dict(
+            layer=layer, position=pos,
+            conventional_intermediate_rounding_query_differences=sum(
+                a != b for a, b in zip(conventional_q,
+                                      [v for head in qa for v in head], strict=True)),
+            exact_unabsorbed_query_comparisons=s.heads*s.rank,
+            exact_unabsorbed_output_comparisons=s.hidden))
         self.vector_write(15, layer, 7, 3, output)
         return output
 
