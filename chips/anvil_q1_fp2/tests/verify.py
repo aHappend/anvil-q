@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Source-bound independent verification; preparation probes are not acceptance.
-
-Work in progress: --probe arithmetic executes pointwise leaf experiments.
-The full admitted --suite entrypoints will be completed after design repairs.
-"""
+"""Source-bound independent arithmetic, protocol, decoder and synthesis checks."""
 
 import argparse
 import datetime
@@ -24,7 +20,9 @@ from reference import (  # noqa: E402
 )
 from operators import simulate_commands  # noqa: E402
 from structure import synthesize  # noqa: E402
-from protocols import simulate_csr  # noqa: E402
+from protocols import simulate_csr, simulate_ddr  # noqa: E402
+from architecture import GEOMETRIES, simulate_architecture  # noqa: E402
+from sensitivity import sensitivity  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,10 +61,11 @@ class Run:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
         self.versions = set()
+        self.build_cache = {}
 
-    def command(self, argv, stem, timeout=3600, expect=0):
+    def command(self, argv, stem, timeout=3600, expect=0, cwd="."):
         command = {
-            "argv": list(map(str, argv)), "cwd": ".",
+            "argv": list(map(str, argv)), "cwd": str(cwd),
             "started_at": now(), "timeout_s": timeout,
             "stdout": str(self.relative / f"{stem}.stdout.txt"),
             "stderr": str(self.relative / f"{stem}.stderr.txt"),
@@ -77,7 +76,7 @@ class Run:
                 ROOT / command["stderr"]
             ).open("x") as stderr:
                 process = subprocess.Popen(
-                    command["argv"], cwd=ROOT, stdout=stdout, stderr=stderr,
+                    command["argv"], cwd=ROOT / cwd, stdout=stdout, stderr=stderr,
                 )
                 command["timed_out"] = False
                 while True:
@@ -129,6 +128,8 @@ class Run:
             json.dump(self.receipt, output, indent=2)
             output.write("\n")
         print(f"receipt: {self.relative}/receipt.json", flush=True)
+        if (self.path / "build-cache").exists():
+            shutil.rmtree(self.path / "build-cache")
 
 
 def pack_lanes(values, width):
@@ -143,14 +144,25 @@ def tensor_vectors(seed, count):
         0x3F81, 0x4000, 0x7F7F, 0xFF7F, 0x7F80, 0xFF80, 0x7FC0, 0x7F81,
     ]
     for mx in (False, True):
-        for case in range(count):
+        for case in range(count + 1):
             mask = rng.getrandbits(64)
             a = [rng.getrandbits(8 if mx else 16) for _ in range(64)]
             b = [rng.getrandbits(8 if mx else 16) for _ in range(64)]
             scale_a = rng.getrandbits(16) if mx else 0x7F7F
             scale_b = rng.getrandbits(16) if mx else 0x7F7F
             acc = rng.getrandbits(32)
-            if case < 256 and mx:
+            if case == count:
+                # Exactly 1 + 2^-24, halfway between FP32 values with an even low endpoint.
+                a, b = [0] * 64, [0] * 64
+                acc = 0
+                if mx:
+                    a[0], a[32], b[0], b[32] = 0x38, 0x38, 0x38, 0x38
+                    mask = 1 | (1 << 32)
+                    scale_a, scale_b = 0x677F, 0x7F7F
+                else:
+                    a[0], a[1], b[0], b[1] = 0x3F80, 0x3380, 0x3F80, 0x3F80
+                    mask = 3
+            elif case < 256 and mx:
                 a = [case] * 64
                 b = [0x38] * 64
                 mask = 0xFFFFFFFFFFFFFFFF
@@ -408,9 +420,27 @@ def simulate_pipeline(run, kind, records, seed, simulator):
     })
 
 
-def compile_and_run(run, directory, bench, sources, simulator, stem):
-    sources = [*sources, str(bench.relative_to(ROOT))]
+def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(), cache=False):
+    overrides = getattr(run, "source_overrides", {})
+    sources = [*(overrides.get(source, source) for source in sources),
+               str(bench.relative_to(ROOT))]
     run.version(simulator)
+    digest = hashlib.sha256(simulator.encode())
+    for source in sources:
+        digest.update((ROOT / source).read_bytes())
+    cache_key = digest.hexdigest()
+    binaries = getattr(run, "build_cache", {})
+    if cache and cache_key in binaries:
+        binary_path = binaries[cache_key]
+        run.receipt.setdefault("build_reuse", []).append({
+            "case": stem, "source_digest": cache_key,
+            "binary_sha256": hashlib.sha256(binary_path.read_bytes()).hexdigest(),
+        })
+        run.command(
+            (["vvp"] if simulator == "iverilog" else []) +
+            [str(binary_path.relative_to(ROOT)), *arguments], f"{stem}-simulate",
+        )
+        return
     if simulator == "iverilog":
         run.version("vvp")
         binary_path = directory / "sim.vvp"
@@ -418,16 +448,22 @@ def compile_and_run(run, directory, bench, sources, simulator, stem):
             ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o",
              str(binary_path.relative_to(ROOT)), *sources], f"{stem}-compile",
         )
-        run.command(["vvp", str(binary_path.relative_to(ROOT))], f"{stem}-simulate")
+        run.command(["vvp", str(binary_path.relative_to(ROOT)), *arguments], f"{stem}-simulate")
     else:
         obj = directory / "compile-obj"
         run.command(
             ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
-             "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", *sources],
+             "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", "-CFLAGS", "-O0", *sources],
             f"{stem}-compile",
         )
         try:
-            run.command([str((obj / "Vtb").relative_to(ROOT))], f"{stem}-simulate")
+            if cache:
+                cached = run.path / "build-cache" / cache_key
+                cached.parent.mkdir(exist_ok=True)
+                shutil.copyfile(obj / "Vtb", cached)
+                cached.chmod(0o700)
+                binaries[cache_key] = cached
+            run.command([str((obj / "Vtb").relative_to(ROOT)), *arguments], f"{stem}-simulate")
         finally:
             shutil.rmtree(obj)
 
@@ -514,11 +550,37 @@ endmodule
         raise RuntimeError("\n".join(failures))
 
 
+def portable(run):
+    clean = run.path / ("clean-project-" + uuid.uuid4().hex[:8])
+    clean.mkdir()
+    for source in source_paths():
+        target = clean / source.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    run.command(
+        ["python3", "tests/verify.py", "--probe", "portable-inner", "--seeds", "17"],
+        "clean-reproduction", cwd=clean.relative_to(ROOT),
+    )
+    receipts = list(clean.glob("evidence/preparation/*/receipt.json"))
+    if len(receipts) != 1:
+        raise AssertionError("clean reproduction did not retain exactly one execution receipt")
+    receipt = json.loads(receipts[0].read_text())
+    if receipt["exit_code"] != 0 or not receipt["comparisons"]:
+        raise AssertionError("clean simulation/comparison/synthesis failed")
+    run.receipt["comparisons"].append({
+        "kind": "portable", "receipt": str(receipts[0].relative_to(ROOT)),
+        "source_count": len(source_paths()), "result": "passed",
+    })
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", required=True,
+    selector = parser.add_mutually_exclusive_group(required=True)
+    selector.add_argument("--suite", choices=["synthesis", "sensitivity", "portable"])
+    selector.add_argument("--probe",
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
-                                 "synthesis", "csr"])
+                                 "synthesis", "csr", "ddr", "architecture", "sensitivity",
+                                 "portable-inner"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
@@ -526,24 +588,47 @@ def main():
     parser.add_argument("--leaf", action="append",
                         choices=["add", "multiply", "tensor", "rsqrt", "exp"])
     args = parser.parse_args()
-    run = Run(f"fp2-{args.probe}", preparation=True, repair_of=args.repair_of)
+    selected = args.suite or args.probe
+    run = Run(f"fp2-{selected}", preparation=args.probe is not None, repair_of=args.repair_of)
     error = None
     try:
-        if args.probe == "rsqrt-startup":
+        if selected == "rsqrt-startup":
             rsqrt_startup(run)
-        elif args.probe == "synthesis":
+        elif selected == "portable":
+            portable(run)
+        elif selected == "portable-inner":
+            arithmetic(run, [17], compact=True, leaves=("add", "multiply", "tensor"))
+            simulate_csr(run, 17, "iverilog", compile_and_run, 8)
+            simulate_ddr(run, 17, "iverilog", compile_and_run)
+            synthesize(run, ROOT, tops=("anvil_q1_fp2_bfp_tensor_array",
+                                       "anvil_q1_fp2_telemetry_csr"))
+        elif selected == "synthesis":
             synthesize(run, ROOT)
-        elif args.probe == "csr":
+        elif selected == "sensitivity":
+            sensitivity(run, ROOT, compile_and_run, simulate_pipeline, tensor_vectors,
+                        unary_vectors, simulate_commands, simulate_ddr, simulate_csr)
+        elif selected == "csr":
             for seed in map(int, args.seeds.split(",")):
                 for bits in (8, 64):
                     simulate_csr(run, seed, args.simulator or "iverilog",
                                  compile_and_run, bits)
-        elif args.probe in ("epilogue", "attention"):
+        elif selected == "ddr":
             for seed in map(int, args.seeds.split(",")):
-                for tile in ((3,) if args.probe == "epilogue" or args.compact else (1, 3, 16)):
+                simulate_ddr(run, seed, args.simulator or "iverilog", compile_and_run)
+        elif selected == "architecture":
+            for seed in map(int, args.seeds.split(",")):
+                for geometry in GEOMETRIES[:1] if args.compact else GEOMETRIES:
+                    for mx in (False, True):
+                        simulate_architecture(
+                            run, seed, geometry, mx, args.simulator or "verilator",
+                            compile_and_run, ROOT,
+                        )
+        elif selected in ("epilogue", "attention"):
+            for seed in map(int, args.seeds.split(",")):
+                for tile in ((3,) if selected == "epilogue" or args.compact else (1, 3, 16)):
                     simulate_commands(
-                        run, args.probe, seed,
-                        2 if args.compact else 256 if args.probe == "epilogue" else 64,
+                        run, selected, seed,
+                        2 if args.compact else 256 if selected == "epilogue" else 64,
                         args.simulator or ("iverilog" if args.compact else "verilator"),
                         compile_and_run, tile,
                     )

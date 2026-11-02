@@ -218,3 +218,162 @@ endmodule
         "kind": "csr", "seed": seed, "counter_bits": counter_bits,
         "edges": len(records), "coverage": coverage, "result": "passed",
     })
+
+
+def simulate_ddr(run, seed, simulator, compile_and_run):
+    stem = f"ddr-{seed}-{simulator}"
+    directory = run.path / stem
+    directory.mkdir()
+    bench = directory / "tb.sv"
+    bench.write_text(f"""`timescale 1ns/1ps
+module tb;
+  reg clk=0,rst_n=0,cmd_valid=0,cmd_write=0,cmd_scale=0,out_ready=0;
+  reg [3:0] cmd_kind=0;
+  reg [31:0] cmd_layer=0,cmd_row=0,cmd_col=0,cmd_tag=0;
+  reg [2:0] cmd_proj=0;
+  reg [511:0] cmd_wdata=0;
+  reg [63:0] cmd_wstrb=0;
+  wire cmd_ready,out_valid,out_write,out_error,stall_event;
+  wire [31:0] out_tag;
+  wire [511:0] out_data;
+  reg work_active=0,result_needed=0,ddr_req_ready=0,ddr_rsp_valid=0;
+  reg ddr_rsp_id=0,ddr_rsp_error=0;
+  reg [511:0] ddr_rsp_rdata=0;
+  wire ddr_req_valid,ddr_req_write,ddr_req_id,ddr_req_scale,ddr_rsp_ready;
+  wire [3:0] ddr_req_kind;
+  wire [31:0] ddr_req_layer,ddr_req_row,ddr_req_col;
+  wire [2:0] ddr_req_proj;
+  wire [511:0] ddr_req_wdata;
+  wire [63:0] ddr_req_wstrb;
+  anvil_q1_fp2_ddr_pingpong dut(.*);
+  always #5 clk=~clk;
+  integer accepted=0,issued=0,retired=0,cycle=0,i,chosen;
+  integer transaction[0:1],due[0:1];
+  integer returned[0:95];
+  integer out_of_order=0,two_outstanding=0,refill=0,stalls=0,zero_latency=0;
+  reg live[0:1],pop,push,issue,response;
+  reg [31:0] rng=32'd{seed};
+  reg held_output=0,held_request=0;
+  reg [545:0] saved_output;
+  reg [681:0] saved_request;
+  function [511:0] data(input integer index);
+    integer n;
+    for (n=0;n<16;n=n+1) data[32*n+:32]=32'h9e3779b9*(index+1)^32'hdeadbeef*n;
+  endfunction
+  function fault(input integer index);
+    fault=index%13==5;
+  endfunction
+  task reset_check;
+    if ({{cmd_ready,out_valid,out_tag,out_write,out_error,out_data,stall_event,
+      ddr_req_valid,ddr_req_write,ddr_req_id,ddr_req_scale,ddr_req_kind,
+      ddr_req_layer,ddr_req_proj,ddr_req_row,ddr_req_col,ddr_req_wdata,
+      ddr_req_wstrb,ddr_rsp_ready}} !== 0) $fatal(1,"DDR reset");
+  endtask
+  initial begin
+    live[0]=0; live[1]=0;
+    for (i=0;i<96;i=i+1) returned[i]=0;
+    #1; reset_check(); @(posedge clk); reset_check();
+    #1; reset_check(); @(negedge clk); reset_check(); rst_n=1; work_active=1;
+    for (cycle=0;cycle<10000;cycle=cycle+1) begin
+      rng=rng^(rng<<13); rng=rng^(rng>>17); rng=rng^(rng<<5);
+      cmd_valid=accepted<96;
+      cmd_tag=accepted; cmd_write=accepted[0]; cmd_scale=accepted[1];
+      cmd_kind=accepted%15; cmd_layer=accepted/15; cmd_proj=accepted%7;
+      cmd_row=accepted*3; cmd_col=accepted*64;
+      cmd_wdata=data(accepted); cmd_wstrb=64'hffffffffffffffff >> (accepted%64);
+      ddr_req_ready=(cycle%29>4) && rng[3:0]!=0;
+      out_ready=(cycle%31>8) && rng[2:0]!=0;
+      result_needed=accepted>retired;
+      if (!ddr_rsp_valid) begin
+        chosen=-1;
+        if (live[1] && cycle>=due[1]) chosen=1;
+        else if (live[0] && cycle>=due[0]) chosen=0;
+        if (chosen>=0) begin
+          ddr_rsp_id=chosen; ddr_rsp_valid=1;
+          ddr_rsp_error=fault(transaction[chosen]);
+          ddr_rsp_rdata=data(transaction[chosen])^512'd17;
+          if (live[!chosen] && transaction[chosen]>transaction[!chosen])
+            out_of_order=out_of_order+1;
+        end
+      end
+      #1;
+      // Some transactions receive a legal same-edge bridge response.
+      if (!ddr_rsp_valid && ddr_req_valid && ddr_req_ready && issued%7==0) begin
+        ddr_rsp_valid=1; ddr_rsp_id=ddr_req_id;
+        ddr_rsp_error=fault(issued); ddr_rsp_rdata=data(issued)^512'd17;
+        zero_latency=zero_latency+1;
+      end
+      #1;
+      if ((^{{cmd_ready,out_valid,ddr_req_valid,ddr_rsp_ready,stall_event}})===1'bx)
+        $fatal(1,"DDR active control X/Z");
+      if (held_output && ({{out_valid,out_tag,out_write,out_error,out_data}} !==
+        {{1'b1,saved_output}})) $fatal(1,"DDR returned payload changed while stalled");
+      if (held_request && ({{ddr_req_valid,ddr_req_write,ddr_req_id,ddr_req_scale,
+        ddr_req_kind,ddr_req_layer,ddr_req_proj,ddr_req_row,ddr_req_col,
+        ddr_req_wdata,ddr_req_wstrb}} !== {{1'b1,saved_request}}))
+        $fatal(1,"DDR offered request changed while stalled");
+      held_output=out_valid && !out_ready;
+      saved_output={{out_tag,out_write,out_error,out_data}};
+      held_request=ddr_req_valid && !ddr_req_ready;
+      saved_request={{ddr_req_write,ddr_req_id,ddr_req_scale,ddr_req_kind,ddr_req_layer,
+        ddr_req_proj,ddr_req_row,ddr_req_col,ddr_req_wdata,ddr_req_wstrb}};
+      if (held_request) begin
+        stalls=stalls+1;
+        if (stall_event!==1) $fatal(1,"missing DDR backpressure event");
+      end
+      pop=out_valid && out_ready; push=cmd_valid && cmd_ready;
+      issue=ddr_req_valid && ddr_req_ready;
+      response=ddr_rsp_valid && ddr_rsp_ready;
+      if (out_valid) begin
+        if (retired>=issued || !returned[retired] ||
+            {{out_tag,out_write,out_error,out_data}} !==
+              {{32'(retired),retired[0],fault(retired),(data(retired)^512'd17)}})
+          $fatal(1,"DDR RESPONSE OWNERSHIP index=%0d tag=%0d got=%h",
+            retired,out_tag,out_data);
+      end
+      if (issue) begin
+        if (issued>=accepted || live[ddr_req_id]) $fatal(1,"DDR issue without ownership");
+        if ({{ddr_req_write,ddr_req_scale,ddr_req_kind,ddr_req_layer,
+          ddr_req_proj,ddr_req_row,ddr_req_col,ddr_req_wdata,ddr_req_wstrb}} !==
+          {{issued[0],issued[1],4'(issued%15),32'(issued/15),3'(issued%7),
+            32'(issued*3),32'(issued*64),data(issued),
+            (64'hffffffffffffffff>>(issued%64))}})
+          $fatal(1,"DDR descriptor mismatch");
+      end
+      if (ddr_rsp_valid && !ddr_rsp_ready) $fatal(1,"bridge response rejected for live ID");
+      @(posedge clk);
+      if (issue) begin
+        live[ddr_req_id]=1; transaction[ddr_req_id]=issued;
+        due[ddr_req_id]=cycle+(ddr_req_id ? 2 : 15);
+        issued=issued+1;
+      end
+      if (response) begin
+        if (!live[ddr_rsp_id]) $fatal(1,"DDR unexpected response");
+        returned[transaction[ddr_rsp_id]]=1; live[ddr_rsp_id]=0;
+      end
+      if (push) accepted=accepted+1;
+      if (pop) retired=retired+1;
+      if (pop && push && accepted-retired==2) refill=refill+1;
+      if (live[0] && live[1]) two_outstanding=two_outstanding+1;
+      #1;
+      if (response) ddr_rsp_valid=0;
+      @(negedge clk);
+      if (retired==96) begin
+        if (accepted!=96 || issued!=96 || out_of_order==0 || two_outstanding==0 ||
+            refill==0 || stalls==0 || zero_latency==0)
+          $fatal(1,"DDR coverage missing: reordered=%0d two=%0d refill=%0d zero=%0d",
+            out_of_order,two_outstanding,refill,zero_latency);
+        $display("SUMMARY ddr: compared=%0d reordered=%0d two=%0d refill=%0d zero=%0d",
+          retired,out_of_order,two_outstanding,refill,zero_latency);
+        $finish;
+      end
+    end
+    $fatal(1,"DDR cycle watchdog");
+  end
+endmodule
+""")
+    compile_and_run(run, directory, bench, ["rtl/anvil_q1_fp2_ddr_pingpong.sv"],
+                    simulator, stem)
+    run.receipt["comparisons"].append({
+        "kind": "ddr", "seed": seed, "transactions": 96, "result": "passed",
+    })

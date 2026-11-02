@@ -30,7 +30,9 @@ def synthesize(run, root, tops=None):
             "read_verilog -sv " + " ".join(str(source.relative_to(root)) for source in sources) +
             f"\nhierarchy -check -top {top}\n"
             "proc\nopt_expr\nopt_clean\ncheck -assert\n"
-            "memory -nomap\nopt_clean\ncheck -assert\n"
+            # Collect memories without mapping to registers or invoking the optional
+            # quadratic write-priority/SAT sharing optimizations on wide bank stores.
+            "memory_dff\nmemory_collect\nopt_clean\ncheck -assert\n"
             "select -assert-none t:$dlatch t:$adlatch t:$dlatchsr "
             "t:$div t:$mod t:$divfloor t:$modfloor\n"
             f"stat\nwrite_json {netlist}\n"
