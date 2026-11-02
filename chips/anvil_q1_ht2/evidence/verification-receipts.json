@@ -1904,13 +1904,13 @@
       ]
     },
     "check:synthesis": {
-      "attempt_id": 2449,
-      "duration_s": 215.43687860295177,
-      "stdout_preview": "progress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/synthesis-20261102T111228Z-728d257b/receipt.json\"}\n",
+      "attempt_id": 2616,
+      "duration_s": 218.08192389993928,
+      "stdout_preview": "progress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/synthesis-20261102T161404Z-2c2e4e72/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/synthesis-20261102T111228Z-728d257b/receipt.json",
+          "path": "evidence/synthesis-20261102T161404Z-2c2e4e72/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -1948,8 +1948,8 @@
                   "$xor": 2
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp16_mul-498433fe/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp16_mul-synthesis-4a02cb9a/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp16_mul-8689cbd1/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp16_mul-synthesis-9c7315c7/receipt.json",
                 "registered_cells": 10,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp16_mul",
@@ -1986,8 +1986,8 @@
                   "$sub": 8
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_add-3ef98a9a/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_add-synthesis-169d3258/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_add-c3578507/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_add-synthesis-91b86e09/receipt.json",
                 "registered_cells": 17,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_add",
@@ -2022,8 +2022,8 @@
                   "$xor": 2
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_mul-4fd774c0/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_mul-synthesis-0b482513/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_mul-264a24c0/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_mul-synthesis-7708eaab/receipt.json",
                 "registered_cells": 9,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_mul",
@@ -2060,8 +2060,8 @@
                   "$xor": 3
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_divsqrt-b52594fe/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_divsqrt-synthesis-4f7b837e/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_divsqrt-48f7dfdb/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_divsqrt-synthesis-fe4eecc4/receipt.json",
                 "registered_cells": 14,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_divsqrt",
@@ -2107,8 +2107,8 @@
                   "$xor": 2
                 },
                 "memory_bits": 464,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_exp-033b01e7/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_exp-synthesis-2ef701f3/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_exp-d7612daa/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_exp-synthesis-25dec4d8/receipt.json",
                 "registered_cells": 38,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_exp",
@@ -2155,8 +2155,8 @@
                   "$xor": 3
                 },
                 "memory_bits": 976,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_sincos-502658b6/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_fp32_sincos-synthesis-b6aeb57d/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_sincos-bc124085/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_sincos-synthesis-71eaff87/receipt.json",
                 "registered_cells": 66,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_fp32_sincos",
@@ -2201,8 +2201,8 @@
                   "$xor": 512
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_tile_batch_mac-fdcb17ab/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_tile_batch_mac-synthesis-adbe151b/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_tile_batch_mac-08a6a5d1/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_tile_batch_mac-synthesis-64b60f5b/receipt.json",
                 "registered_cells": 9228,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_tile_batch_mac",
@@ -2229,8 +2229,8 @@
                   "$reduce_bool": 2
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_sparse_dma-1a3180dd/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_sparse_dma-synthesis-4e9aa57c/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_sparse_dma-d1dba3b4/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_sparse_dma-synthesis-c7ba1f97/receipt.json",
                 "registered_cells": 9,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_sparse_dma",
@@ -2265,8 +2265,8 @@
                   "$shiftx": 3
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_spec_verifier-0231f52e/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_spec_verifier-synthesis-b3910778/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_spec_verifier-4be9904e/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_spec_verifier-synthesis-3f142b10/receipt.json",
                 "registered_cells": 11,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_spec_verifier",
@@ -2354,8 +2354,8 @@
                   "$xor": 974
                 },
                 "memory_bits": 19007744,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_top-6b3a2bda/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht2_top-synthesis-2b20fc80/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_top-1a667eb1/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_top-synthesis-5c662a81/receipt.json",
                 "registered_cells": 15010,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht2_top",
@@ -2425,8 +2425,8 @@
                   "$xor": 384
                 },
                 "memory_bits": 29212160,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht_top-8d2af4ed/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_ht_top-synthesis-b471954a/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht_top-f61076dd/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht_top-synthesis-1524d146/receipt.json",
                 "registered_cells": 2414,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_ht_top",
@@ -2480,8 +2480,8 @@
                   "$xor": 384
                 },
                 "memory_bits": 0,
-                "netlist": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_top-fb17c444/netlist.json",
-                "receipt": "evidence/synthesis-20261102T111228Z-728d257b/anvil_q1_top-synthesis-dcdded56/receipt.json",
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_top-c1676298/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_top-synthesis-4cb3842a/receipt.json",
                 "registered_cells": 1469,
                 "scope": "generic synthesis, not FPGA resource mapping or timing",
                 "top": "anvil_q1_top",
@@ -2490,8 +2490,8 @@
               }
             ],
             "cwd": ".",
-            "duration_s": 215.15020791208372,
-            "end_time": "2026-11-02T11:16:03.988371+00:00",
+            "duration_s": 217.8031945268158,
+            "end_time": "2026-11-02T16:17:42.781918+00:00",
             "exit_code": 0,
             "preparation": false,
             "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -2599,7 +2599,7 @@
               "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
               "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
               "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
-              "tests/benchmark_checks.py": "33810eafec3f63c454abd4703ed86814c33327d354d284ee908383249dfce63f",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
               "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
               "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
               "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
@@ -2620,7 +2620,7 @@
               "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
             },
             "source_unchanged": true,
-            "start_time": "2026-11-02T11:12:28.838183+00:00",
+            "start_time": "2026-11-02T16:14:04.978735+00:00",
             "status": "passed",
             "stderr": "stderr.txt",
             "stdout": "stdout.txt",
