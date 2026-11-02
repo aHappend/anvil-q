@@ -15,7 +15,7 @@ module anvil_q1_fp2_bfp_tensor_array (
   reg [15:0] valid;
   wire advance=!valid[15] || out_ready;
   reg [15:0] a0 [0:63], b0 [0:63];
-  reg [4:0] conversion0 [0:63];
+  (* nomem2reg *) reg [4:0] conversion0 [0:63];
   reg [63:0] mask0;
   reg [31:0] acc0, acc1, acc2, acc3;
   wire [20:0] mx_a [0:63], mx_b [0:63];
@@ -31,10 +31,10 @@ module anvil_q1_fp2_bfp_tensor_array (
   wire [4:0] event_quarter [0:3];
   wire [5:0] event_half [0:1];
   wire [6:0] event_total;
-  reg [543:0] coarse4 [0:63];
-  reg [4:0] fine4 [0:63];
+  (* nomem2reg *) reg [543:0] coarse4 [0:63];
+  (* nomem2reg *) reg [4:0] fine4 [0:63];
   reg [63:0] sign4;
-  reg signed [543:0] aligned5 [0:63];
+  (* nomem2reg *) reg signed [543:0] aligned5 [0:63];
   reg [543:0] acc_coarse4;
   reg [4:0] acc_fine4;
   reg acc_sign4;

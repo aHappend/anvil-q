@@ -1,9 +1,9 @@
 # Anvil-Q1-FP2 architecture
 
-## Current implementation boundary
+## Design handoff boundary
 
-The design is not ready for independent verification of the full product.
-Implemented leaves are:
+The integrated source is ready for independent functional verification, not
+accepted as a measured accelerator. Implemented modules are:
 
 | Source | Responsibility |
 |---|---|
@@ -21,13 +21,16 @@ Implemented leaves are:
 | `rtl/anvil_q1_fp2_kv_reader.sv` | One chronological external K/V traversal for a whole GQA query group |
 | `rtl/anvil_q1_fp2_ddr_pingpong.sv` | Two descriptor/response buffers with ID ownership and ordered retirement |
 | `rtl/anvil_q1_fp2_telemetry_csr.sv` | Independent saturating live/snapshot counters and delayed CSR response |
+| `rtl/anvil_q1_fp2_projection.sv` | Cached activation groups, transposed 64-by-64 weight tiles, exact tensor groups and native Q/K/V bias |
+| `rtl/anvil_q1_fp2_kv_writer.sv` | Acknowledged BF16/MX history data and scale-plane writes with byte strobes |
+| `rtl/anvil_q1_fp2_decoder_control.sv` | Complete decoder dependency graph, internal vector/logit RAM, exclusive DDR client routing and scalar configuration |
+| `rtl/anvil_q1_fp2_top.sv` | Parent-compatible dispatch, optimized direct named hierarchy, sequence ownership and live telemetry |
 | `fpga/anvil_q1_fp2.sdc` | Single 10.000 ns clk constraint, no timing exceptions |
 
-Shared GQA traversal primitives now exist; their architectural wiring, the
-decoder controller and top-level are outstanding.
-The named top instances required at integration are `tensor_array`,
-`epilogue_fusion`, `flash_attn` and `telemetry_csr`; the epilogue must instantiate
-`anvil_q1_fp2_fast_rsqrt`. A module-name shell is not an implemented decoder.
+The direct top instances are `tensor_array`, `epilogue_fusion`, `flash_attn`
+and `telemetry_csr`; the epilogue instantiates `anvil_q1_fp2_fast_rsqrt` as
+`fast_rsqrt`. The first attention head and its sibling heads are connected to
+the shared-query-group controller, not left as demonstration-only kernels.
 
 ## Tensor dataflow and exactness
 
@@ -80,8 +83,10 @@ concurrently. MX scale reads precede their corresponding data segment and
 cache all 64 scale bytes for up to 2048 logical elements. The engine submits no
 data from the following scale segment until the current segment retires.
 This prevents a stale shared exponent from being applied to prefetched data.
-It is a connected ownership schedule at the internal client interface, not yet
-an end-to-end overlap or measured bandwidth result.
+The decoder routes exactly one client until its completion. Projection
+computation and scalar bias requests cannot consume another client's DDR
+response. This is an implemented ownership schedule, not a measured bandwidth
+or overlap result.
 
 ## Dependency and lifetime table
 
@@ -104,6 +109,11 @@ an end-to-end overlap or measured bandwidth result.
 | Group output RAM banks | Independent attention leaf outputs | Ordered group output stream | No group output is exposed before every sibling completes successfully |
 | K/V reader key-vector RAM | Current token's K row | Same token's V stream and query-group broadcast | HEAD_DIM BF16 words, reused only after the V command completes |
 | Future KV history | Current K/V projection | Causal attention | External, sequence-owned, invalidated on reset/new-sequence |
+| Cached projection inputs | FP32 input conversion / optional MX quantization | Every output tile | One BF16-decoded group RAM per projection command |
+| Transposed weight tile | DDR weight-row stream | Tensor input-axis dot | Up to 64 input rows by 64 output columns; masked ragged tails |
+| Projection sum bank | Tensor ordered results | Next input group / output stream | FP32 group-boundary rounding, cleared once per output tile |
+| Architectural vector slots | Embedding/projection/epilogue/attention outputs | Next graph dependency | Internal FP32 RAM, no optimized external kind-8 accesses |
+| Complete logit RAM | Output-head projection | Public logit stream | Invisible until every vocabulary row succeeds; errors discard validity |
 
 ## Nonlinear pipeline strategy
 
@@ -139,24 +149,25 @@ or all KV history. See SPEC.md for exact command, framing and completion edges.
 The Group-32 MX quantizer selects each scale through five registered maximum
 levels, then performs per-lane ties-to-even encoding. Masks suppress metadata,
 status and code effects; scales and saturation counts remain public outputs.
-It is a precursor for activation/KV packing, not yet an integrated transport.
+It supplies projection activation conversion and external KV packing.
 FP32-to-BF16 conversion and integer-to-FP32 helpers have also been added to the
 owned package. Independent verification must not reuse these as its oracle.
 
-These are substantive blocks, but they are not yet an accelerator. The decoder
-must still join the required named hierarchy, connect the shared traversal
-blocks, compose projection/epilogue dependencies, and connect real
-conversion/transport/starvation events to telemetry. No simulation or synthesis
-has been performed by Designer.
+The decoder joins these blocks through explicit commands and internal FP32
+vector storage. Scalar gamma/bias/table responses feed the appropriate command
+operands; they are not intermediate scratchpad round-trips. Actual conversion
+handshakes, tensor result events, transport demand and epilogue input starvation
+feed telemetry. No functional simulation or synthesis has been performed by
+Designer.
 
 ## Shared GQA traversal primitives
 
 `anvil_q1_fp2_gqa_group` controls GROUP_HEADS independent instances of the
 unchanged single-query attention leaf. Its engine channels are flattened,
-low-head-first buses. The future top must retain the required direct
-`anvil_q1_fp2_flash_attn flash_attn` instance for head zero and instantiate the
+low-head-first buses. The top retains the required direct
+`anvil_q1_fp2_flash_attn flash_attn` instance for head zero and instantiates the
 remaining siblings alongside it, connecting all of them to this group
-controller. A leaf must use `engines_rst_n`: a group fault synchronously aborts
+controller. Each leaf uses `engines_rst_n`: a group fault synchronously aborts
 siblings still collecting a tile rather than stranding them in a busy state.
 
 The group starts every sibling once and loads queries in head-major component
@@ -174,7 +185,7 @@ until all HEAD_DIM components and successful completions have arrived from every
 head. Results then stream head-major with stable head/component/last metadata.
 Framing errors, unexpected extra outputs and fatal operator flags abort the
 group, so a failed sibling cannot leave an apparently successful partial group.
-The architectural decoder must additionally buffer logits until the whole token
+The architectural decoder additionally buffers logits until the whole token
 is known to be successful.
 
 `anvil_q1_fp2_kv_reader` reads kind 9 and kind 10 rows for token positions
@@ -184,31 +195,65 @@ holds the current token's K vector while V streams from the read engine.
 Each V transfer pairs with the corresponding registered K component. Only that
 bounded vector, response buffers and the attention tiles are resident; history
 remains external. BF16 and independently scaled MX rows use identical logical
-indices. The controller must launch one reader per KV-head group, not one per
-query head, and enforce cmd_len=token_pos+1.
+indices. The controller launches one reader per KV-head group, not one per
+query head, with cmd_len=token_pos+1.
 
 The generic read engine and K/V reader expose descriptors for the existing
 DDR ping-pong module; neither fabricates DDR completions or owns physical IDs.
 Their descriptor fields are all reads. Integration ties the ping-pong write
 flag/data/strobes to zero and forwards scale/kind/layer/proj/row/col/tag fields.
-These clients require exclusive descriptor/response ownership from command
-acceptance through completion. Do not interleave another client's descriptors
-without an explicit response router. An error drains already accepted requests
+These clients have exclusive descriptor/response ownership from command
+acceptance through completion in decoder_control. An error drains already accepted requests
 and any previously offered stalled descriptor before returning command ownership.
 No failed response is exposed as operand data.
 
-## Integration and performance accounting still required
+## Projection, writeback and top-level integration
 
-The compatibility branch must preserve the immutable parent's complete scalar
-ABI and mode behavior, while optimized modes must use DDR for floating weights
-and KV. Preserve logical projection orientation: parent native projection
-weights are indexed by input row and output column; embedding/output-head
-weights use vocabulary row and hidden column.
+The compatibility decoder is the immutable parent instance. ENABLE_FP2=0
+preserves its modes, including mode-3 rejection, while the optimized dispatcher
+uses DDR for all weights and history. ENABLE_FP2=1 selects that compatibility
+decoder only for modes 0 and 2. A token's latched precision cannot change while
+it runs, and continuation must match the last committed sequence precision.
 
-The optimized branch must hold residuals and intermediate vectors internally,
-integrate the actual decoder dependency graph, and coordinate fatal status
-with logit buffering so a failed token cannot appear partially successful.
-No top-level shortcut or parent scalar fallback may be called optimized BF16/MX.
+Native projection weights preserve input-row/output-column orientation.
+Each DDR command reads up to 64 adjacent outputs from one input row; a
+64-by-64 local tile transposes this stream into input-axis tensor reductions.
+The input activation cache is reused across output tiles. Two response slots
+overlap prefetch with scalar component retirement. Synchronous tile/sum reads
+precede tensor issue; every prior result retires before the next input group
+can read its accumulator bank. Ragged input groups mask unused tile bits.
+Output-head weights instead retain vocabulary-row/hidden-column orientation.
+
+MX weight scales are per matrix row along output columns, so an input-axis
+dot has more than two independent weight scales. The streaming reader decodes
+those scales to exact specified BF16 operands before tile storage. Activation
+groups have their own quantization/scales and are decoded once into the cache.
+The integrated tensor therefore uses its lossless BF16 port in both modes;
+mode 3 still transports MX codes/scales, not dense BF16 weights. Its standalone
+native-MX port supports matching-group leaf traffic. This avoids silently
+changing the parent's matrix orientation or grouping unrelated exponents.
+
+The KV writer uses one 64-component staging register and one quantizer.
+BF16 writes consume up to two beats per group; MX data consumes one beat and
+scale-plane writes use one/two byte enables within an aligned metadata beat.
+All writes are acknowledged before storage reuse. This conservative writer
+does not claim write-side double buffering; read-side ping-pong overlap is real.
+
+The full layer graph, final norm and output head use internal FP32 vector slots.
+No optimized external scratchpad transaction is generated. All vocabulary
+logits remain buffered until the complete token succeeds. A group failure drains
+the shared reader before operator abort; scalar/reader/writer faults complete
+only after their response ownership has settled. The reset bridge must discard
+old-epoch responses, as required by the external protocol.
+
+ULP telemetry samples actual FP32-to-BF16 rounding for projection inputs,
+history writes and queries. These mutually exclusive schedule phases cannot
+drop simultaneous samples. Alignment counters receive each tensor result's
+full event count. DDR stalls use actual selected-client demand; epilogue bubbles
+measure input-ready cycles waiting on RAM/config feeding, not reduction,
+computation or downstream stalls.
+
+## Performance and physical acceptance still required
 
 Matched benchmarks must account for the scalar-to-physical-beat adapter on
 both sides consistently. Report cold scale/table loading, warm runs, actual

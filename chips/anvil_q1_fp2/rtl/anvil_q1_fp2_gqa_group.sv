@@ -49,7 +49,7 @@ module anvil_q1_fp2_gqa_group #(
   reg [GROUP_HEADS-1:0] started, sent, finished;
   reg held, held_last, final_pair;
   reg [15:0] held_k, held_v;
-  reg [31:0] received [0:GROUP_HEADS-1];
+  (* nomem2reg *) reg [31:0] received [0:GROUP_HEADS-1];
   wire [31:0] result_q [0:GROUP_HEADS-1];
   wire [GROUP_HEADS-1:0] result_complete, framing_error, fatal_result;
   wire [GROUP_HEADS-1:0] status_bits [0:4];

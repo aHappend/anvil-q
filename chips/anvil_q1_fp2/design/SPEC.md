@@ -3,13 +3,12 @@
 ## Status and authority
 
 This is the design-side implementation contract, not a verification or acceptance
-report. The admitted work order remains authoritative. Implementation is in
-progress: the exact tensor, fast-rsqrt, FP32 arithmetic, fused epilogue,
-single-query tiled attention, MX quantizer, DDR ping-pong and telemetry leaves
-exist. Shared-GQA broadcast/result control and chronological DDR K/V intake
-primitives also exist, but their decoder/top-level integration is not yet
-complete. No numerical, performance, synthesis, timing or board
-result is claimed here.
+report. The admitted work order remains authoritative. The design handoff now
+includes the integrated top, decoder schedule, tiled projections, KV writer,
+shared-GQA traversal and actual datapath telemetry connections, in addition to
+the arithmetic/operator leaves. Independent functional and physical verification
+is pending. No numerical, performance, synthesis, timing or board result is
+claimed here.
 
 The immutable parent is `anvil_q1_fp_reference/rtl/*.sv`. No repository intake
 source index was supplied. `design/GENERATIONAL_HANDOFF.md` was absent at intake;
@@ -29,7 +28,7 @@ Target Intel Arria 10 GX `10AX115N2F45E1SG`, one synchronous 100 MHz clock,
 mixed blocking/nonblocking sequential assignments, latches, floating-point
 `real` datapaths, or unsubstantiated timing exceptions are permitted.
 
-The top will be `anvil_q1_fp2_top`. Preserve parent parameter order:
+The top is `anvil_q1_fp2_top`, with the parent parameter order:
 
 | Parameter | Default |
 |---|---:|
@@ -469,7 +468,10 @@ integration ties write/data/strobes to zero at the ping-pong command port.
 Responses contain valid/ready/tag/write/error/data. Connect these to the
 ping-pong's ordered retirement channel, not directly to unordered physical
 responses. A client exclusively owns this channel until its done completion;
-cross-client response arbitration is still a top-level integration obligation.
+the integrated decoder selects one client through that client's completion.
+Embedding, projection, history write and history read commands cannot overlap
+on this ordered retirement channel. Within a read command both physical slots
+can prefetch concurrently.
 
 For BF16, align the first descriptor down to 32 elements and issue subsequent
 32-element beats. For MX, align down to 64 elements; before each 2048-element
@@ -504,8 +506,8 @@ The consumer never receives data from the failing response.
 
 The reader's work_active/result_needed outputs describe real transport
 ownership and consumer demand for connection to ping-pong stall telemetry.
-No constant synthetic event source is needed. Their architectural event
-connection remains pending with decoder/top integration.
+No constant synthetic event source is used. The integrated decoder routes the
+selected client's work_active/result_needed to the ping-pong stall detector.
 
 ## DDR4 application-side channel
 
@@ -537,7 +539,9 @@ scale-inclusive dense comparison is not exactly one-half.
 DDR stall events are qualified by actual useful optimized work. The ping-pong
 leaf reports request backpressure, or an explicitly needed head response still
 in flight; returned data stalled solely by its consumer does not count.
-The decoder must supply `work_active` and `result_needed` correctly.
+The decoder supplies `work_active` and `result_needed` from the selected reader
+or writer. Computation without outstanding transport, idle clocks and downstream
+output stalls alone do not contribute.
 
 ## Parent logical memory ABI
 
@@ -614,27 +618,105 @@ FP32->BF16->FP32 round-trip. `ulp_valid` marks an actual sample. Distance
 0xffffffff is reserved as a nonfinite-event sentinel (finite round-trip
 distances cannot reach it); these samples increment only the nonfinite counter.
 Hardware does not claim an unavailable mathematical-oracle answer. The
-controller must generate these events at real conversion handshakes.
+controller generates these events at real projection-input, KV-write-input and
+query-input conversion handshakes. Those operations are mutually exclusive;
+there is no priority mux that drops simultaneous conversion samples.
 
-## Remaining numerical and integration requirements
+## Integrated decoder and numerical boundaries
 
-The following admitted requirements remain mandatory and are not implemented
-by merely instantiating the existing leaves:
+The direct top instances are `tensor_array`, `epilogue_fusion`, `flash_attn`
+(query-group head zero) and `telemetry_csr`. Other attention siblings, the
+query-group controller, `ddr_pingpong`, `decoder_control` and the immutable
+`compatibility_decoder` are connected alongside them. The epilogue's direct
+`fast_rsqrt` instance implements the required two-stage leaf.
 
-* Connect the implemented fused commands to the actual projection/residual
-  graph and supply theta=1e6 coefficients from the deterministic kind-11 table.
-* Integrate online attention with a shared external KV traversal across the
-  query heads sharing each KV head, rather than sequentially rereading the prefix.
-* Wire MX quantization/decode, scale-plane ownership, real conversion ULP
-  samples, DDR stall qualification and epilogue-starvation events.
-* Actual decoder dependency graph: input norm, Q/K/V, RoPE, causal attention,
-  output projection, residual, second norm, gate/up/SwiGLU/down, residual,
-  final norm and output head. Optimized weights/KV use DDR, not scalar fallback.
-* Internal vector RAM/registers are allowed; external intermediate SRAM
-  materialization between fused optimized operators is not. Full checkpoint
-  weights and KV history remain external.
-* Fatal invalid/divide-by-zero/overflow must terminate a token without a
-  successful partial logit stream afterward.
+`decoder_control` implements embedding -> (input norm -> Q/K/V projections ->
+Q/K RoPE -> external K/V append -> shared-GQA causal attention -> output
+projection -> residual -> second norm -> gate/up projections -> SwiGLU -> down
+projection -> residual) repeated NUM_LAYERS times -> final norm -> shared
+embedding/output head -> logits. All intermediate slots described above are
+internal FP32 vector RAM, not external kind-8 transfers. The full weights and
+KV history remain external.
+
+Optimized scalar requests are reads of kind 4 (Q/K/V bias), kinds 5/6/7
+(gamma) and kind 11 (RoPE); no optimized weight or history fetch uses scalar
+transport. Bias and gamma retain the parent native BF16-in-low-halfword ABI,
+including rejection of nonzero upper bits. Kind-11 coefficients are full FP32,
+row=position, layer/proj=0. For each head, the coefficient stream supplies
+cosine to the first half and sine to the second half using the original
+interleaved pair table. The bridge/fixture must generate that table from
+theta=1000000, not from arbitrary per-fixture constants.
+
+`anvil_q1_fp2_projection` first accepts and caches its complete input vector.
+Convert FP32 inputs to BF16 with RNE. In MX mode, quantize each independent
+32-element activation group, decode its codes/scales to BF16, and retain those
+decoded operands. Cache input groups for reuse across output tiles. A projection
+tile contains up to 64 output columns and up to 64 input rows. Weight DDR
+reads preserve kind-12 input-row/output-column orientation; each fetched row
+has independent Group-32 scales across its output columns. The local transposed
+tile feeds one 64-input reduction per output column into the tensor.
+
+This orientation matters: the input-axis dot can cross 64 distinct weight-row
+scales. Two tensor scale bytes cannot describe them. Consequently MX transport
+is decoded once by the read engine, and architectural reductions use the
+tensor's lossless BF16 operand port for those decoded weights and decoded
+activations. They are not requantized into a different grouping or secretly
+fetched as dense BF16. The standalone tensor's native MX port remains available
+for matching Group-32 dot streams. Include decoder/quantizer/transposition costs
+in area, cycles and traffic accounting, not just the tensor's tied-off MX port.
+
+The output head uses kind 0, vocabulary row / hidden column orientation, and
+the same activation cache and exact 64-input tensor reduction. Within each
+projection, increasing input groups round once each to FP32 using the previous
+group's FP32 result as acc_in. Q/K/V bias is added once after the entire dot;
+the other projections and head have no bias, matching the parent graph.
+Projection results, epilogue results and residuals remain FP32. Attention
+queries are RNE BF16. K/V writes are RNE BF16 in mode 1 and Group-32 MX in mode 3;
+history reads perform the specified MX-to-BF16 conversion before attention.
+
+`anvil_q1_fp2_kv_writer` collects at most 64 components, quantizes if requested,
+and issues acknowledged, byte-strobed data/scale writes. BF16 uses one or two
+32-element beats; MX uses one 64-element data beat plus a scale-plane write.
+Scale writes align to 64 scale bytes and strobe only the one/two updated scale
+bytes, preserving neighboring groups. Final data bytes are strobed only for
+valid elements; padding must never affect arithmetic. The writer waits for
+each acknowledgment, including scale writes, before reusing its group buffer.
+It does not claim two outstanding writes; read clients exercise concurrent
+ping-pong prefetch.
+
+One query group covers all query heads mapped to a KV head. For each KV head,
+the controller supplies its contiguous head-major query group once and launches
+exactly one chronological K/V reader with cmd_len=position+1. Group results go
+to the corresponding internal attention-output slice. If the group fails,
+drain the reader to release accepted DDR ownership before completing the token
+with error. A history-reader error already drains its accepted descriptors.
+
+All VOCAB_SIZE logits are retained in synchronous internal RAM until the entire
+token has completed successfully. Only then is logit_valid exposed. A late
+memory or arithmetic error discards that token's logical result validity;
+there can be no earlier successful partial optimized logit stream. Operator
+invalid/divide-by-zero/overflow flags are fatal at the controller boundary.
+Underflow/inexact remain nonfatal and contribute to leaf status. Error
+completion synchronously aborts local operator state; it does not annul or
+reuse a live external DDR ID.
+
+| Integrated boundary | Behavior |
+|---|---|
+| Token transfer at k | Latch token/position/precision/new-sequence. Child command starts after k; changes to token inputs while busy have no effect. |
+| Reset | Reset ownership and sequence validity. External bridge discards old responses before releasing reset. With FP2 enabled, the first accepted token must request a new sequence at position zero. |
+| New sequence | Position must be zero. Existing external history is logically invalid beyond the new causal prefix; each layer overwrites its current row before reading it. |
+| Continuation | Require committed next_position and unchanged precision. A failed token invalidates continuation. |
+| Compatibility configuration | ENABLE_FP2=0 delegates token/memory/error/mode behavior to the immutable parent, including mode-3 rejection; all DDR outputs are zero and DDR inputs are ignored. |
+| Final operand stalled | Hold feeder x/aux/residual/last and index. No operation completes before the final transfer. |
+| Projection singleton/tail | One input/output and partial groups follow the same states; lane masks suppress stale tile entries. Architectural legal geometry still requires multiples of eight. |
+| Projection tensor issue | Synchronous activation/tile/sum reads precede valid; ordered result count selects the accumulator bank, independently of issue count. A new input group waits for every prior result. |
+| Final projection/epilogue output | Store internal result and count the transfer. Wait for the leaf's delayed done before advancing the graph. |
+| Final KV write | Acknowledgment, not request acceptance, completes the stored data/scale group. |
+| Optimized final logit stalled | Synchronous RAM result is latched; hold logit index/data until accepted. No next token is accepted. |
+| Final logit transferred at f | Decoder COMPLETE_WAIT after f, decoder done after f+1, top done after f+2. Top returns idle after f+3. |
+| Top validation error accepted at k | ERROR_WAIT after k, done/error after k+1, idle after k+2; no child memory transaction. |
+| DDR/scalar response coincidence | DDR retires only through its ID/tag owner; scalar configuration/bias response uses its separate waiting state. |
+| Epilogue bubble | Count while the commanded epilogue is input-ready but its RAM/config feeder has no valid operand. Exclude its reduction/compute states and all final-output stalls. |
 
 Required componentwise bounds are RMSNorm 0.005, RoPE 0.0005, SwiGLU 0.002,
 attention 0.003, and architectural decoded-weight logits 0.02, each multiplying
@@ -642,6 +724,35 @@ max(1,abs(reference)). Fundamental FP32 add/multiply/conversions and required
 legacy comparisons are bit-exact. Exp on [-80,0] requires relative error
 <=0.0005; values below -80 may become zero with explicit error accounting.
 MX quantization drift is reported separately.
+
+## Integration and source loading
+
+Compile the immutable parent sources before FP2 sources so both packages are
+defined before module elaboration. All ROM provenance is in the RTL; there is
+no runtime-generated ROM image dependency. A fast design-only syntax command
+from the delivered root is:
+
+```sh
+iverilog -g2012 -t null -s anvil_q1_fp2_top anvil_q1_fp_reference/rtl/*.sv rtl/*.sv
+```
+
+For scalar-only integration use ENABLE_FP2=0 and connect the complete legacy
+interface normally. Explicitly tie off every added input as below; output ports
+can be connected to bridge/CSR wires or left open:
+
+```systemverilog
+// Added input connections on an ENABLE_FP2=0 scalar integration:
+.ddr_req_ready(1'b0),
+.ddr_rsp_valid(1'b0), .ddr_rsp_id(1'b0), .ddr_rsp_error(1'b0),
+.ddr_rsp_rdata(512'd0),
+.csr_req_valid(1'b0), .csr_req_write(1'b0), .csr_req_addr(12'd0),
+.csr_req_wdata(32'd0), .csr_req_wstrb(4'd0), .csr_rsp_ready(1'b0)
+```
+
+For optimized execution, supply the described application-side DDR bridge,
+scalar configuration/table responses and CSR channel; unused CSR inputs still
+need explicit zero tie-offs. The application beat protocol is not a physical
+DDR controller, PCIe endpoint or local host driver.
 
 ## Independent acceptance and reproduction
 
