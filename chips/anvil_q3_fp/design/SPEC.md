@@ -346,6 +346,66 @@ dimension/position order, binary32 QK, division by sqrt(HEAD_DIM),
 max-subtracted stable softmax and binary32 weighted-value accumulation.
 Never route these operations through fixed-point parent kernels.
 
+The scalar norm implementation starts the square sum at +0 and adds each
+rounded square in ascending dimension order. Mean is RN32(sum/float(H)),
+epsilon is `0x358637bd`, reciprocal is RN32(1/sqrt(RN32(mean+epsilon))),
+and the store value is narrow(RN32(RN32(x*gamma)*reciprocal)).
+The dimension conversion to binary32 uses RNE.
+RoPE computes RN32(RN32(x*cos)-RN32(y*sin)) and
+RN32(RN32(y*cos)+RN32(x*sin)); only those final values narrow.
+The host supplies coefficients for angle
+`token_pos * 1000000.0**(-2*pair_index/HEAD_DIM)` in binary32, with
+pair_index in `[0,HEAD_DIM/2)`. Coefficients must be finite and in [-1,1].
+
+Attention starts each QK dot at +0, adds RN32(q[d]*k[d]) in ascending d,
+then divides by RN32(sqrt(float(HEAD_DIM))). For each head, a causal
+maximum scan precedes component-wise stable-softmax scans. Each component
+restarts denominator and weighted sum at +0, sums exp(score-max) and
+RN32(exp(score-max)*v[component]) in ascending position order, then divides
+the weighted sum by the denominator in binary32. No exp or sum is narrowed
+to the activation format. Recomputing identical scores between scans is
+intentional and does not change arithmetic order. NaN scores contaminate
+the head's maximum and context; NaN/undefined infinity differences propagate
+canonical NaNs instead of becoming a positive-domain exp command.
+Output-head logits use ascending scalar products/additions from +0, with
+no narrowing after the last addition.
+
+The MLP sequences the decoder's shared GEMV using its existing projection
+handshake (4, 5, then 6). The decoder's captured cmd_fp16/cmd_awq controls
+remain fixed through these projections. The MLP's cmd_fp16 is also captured
+for its elementwise child; its cmd_awq input annotates the shared mode and
+does not add an independent mode-change channel.
+
+## Source integration and reset/start
+
+Compile `rtl/*.sv` with the immutable parent files
+`anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv` and
+`anvil_q3_reference/rtl/anvil_q3_mem_port.sv`. The package filename sorts
+before its users. No other parent numerical module is in the FP top's
+active hierarchy. A portable static elaboration command from the project
+root, requiring Icarus Verilog with SystemVerilog support, is:
+
+```sh
+iverilog -g2012 -t null -s anvil_q3_fp_top rtl/*.sv \
+  anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv \
+  anvil_q3_reference/rtl/anvil_q3_mem_port.sv
+```
+
+Static elaboration does not establish functional or timing acceptance.
+The immutable parent directory is also a required source input for the
+independently authored comparison/reproduction suites, not a generated cache.
+
+Assert rst_n low before starting traffic, then release it with the synchronous
+clock running. The first accepted token uses new_sequence=1 and token_pos=0;
+hold token inputs unchanged until token_ready accepts them. Serve each bank's
+tagged memory requests using the floating-point ABI above and return write
+acknowledgments as well as read responses. Keep logit_ready asserted or
+backpressure complete indexed logits. Start another token only at token_ready,
+using the next position and the same dtype unless beginning a new sequence.
+For cancellation, assert cancel, release it, continue returning all previously
+accepted external transactions, and wait for cancel_done before restarting.
+Never reuse the fixed-point parent's memory image as a floating-point image.
+
 Verifier's mandatory, independently runnable commands are:
 
 ```sh

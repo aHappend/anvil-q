@@ -2,22 +2,20 @@
 
 ## Implementation state
 
-This is the architecture for the admitted full product, with explicit progress
-tracking rather than an assertion of completion. The current source increment
-establishes common format conversion, three-stage binary32 arithmetic, native
+This is the architecture for the admitted full product, not an assertion of
+engineering acceptance. The sources implement common format conversion,
+three-stage binary32 arithmetic, native
 and AWQ dot8 reduction, iterative division/square root, exponential/SiLU,
 parameter checks, weight prefetch, tensor accumulation, projection GEMV,
-streaming cache codec/controller and residual/SwiGLU element arithmetic.
-The integrated floating-point decoder, norm, RoPE, attention, MLP command
-sequencer, token I/O and top remain to be implemented. The parent RTL remains
-unchanged.
-No functional simulation, synthesis, timing or physical measurements have
-been performed by Designer.
+streaming cache codec/controller and residual/SwiGLU element arithmetic,
+floating-point RMSNorm, split-half RoPE, causal GQA attention, the MLP command
+sequencer, decoder, token I/O and `anvil_q3_fp_top` integration. The parent
+RTL remains unchanged. Functional simulation, synthesis, timing and physical
+measurements remain independent verification/shared-runtime work.
 
-`SPEC.md` freezes interfaces and behavior. Its defined hierarchy is a required
-integration destination, not evidence that a stub or integer wrapper is a
-floating-point implementation. No replacement top is supplied until its real
-floating datapath and protocol are connected.
+`SPEC.md` freezes interfaces and behavior. The top connects the numerical
+modules through the parent's scheduler and scalar memory-port implementation;
+it does not reinterpret integer kernel outputs as floating-point values.
 
 ## Preservation boundaries
 
@@ -201,6 +199,56 @@ Division and square root use bounded iterative recurrence with at most
 exponential bound. SiLU avoids positive exponent growth through exp(-abs(x)).
 These units must connect to the decoder; isolated arithmetic leaves do not
 establish integrated model correctness.
+
+`rtl/anvil_q3_fp_rmsnorm.sv` walks dimensions in ascending order, squares and
+accumulates in binary32, divides by the represented dimension, adds binary32
+epsilon `0x358637bd`, takes the square root and divides one by that root.
+The output path multiplies x by gamma, then by the reciprocal, before one
+selected-format store. The scalar implementation shares a registered adder
+and multiplier across these phases and never bypasses their handshakes.
+
+`rtl/anvil_q3_fp_rope.sv` reads selected-format split-half pairs and binary32
+cosine/sine coefficients, then performs four registered products and two
+registered sums. It rounds each rotated component once and acknowledges both
+writes before advancing the pair, head or Q-to-K vector boundary. Coefficients
+must be finite with magnitude at most one; bad scalar upper halves and bad
+coefficients are explicit data-format errors.
+
+`rtl/anvil_q3_fp_gqa_attention.sv` first commits all current K/V values through
+the cache controller. For each query head it scans causal positions to find
+the maximum scaled QK score. It then computes each context component by
+ascending-position exponential/denominator and weighted-value reductions,
+followed by binary32 division and selected-format storage. QK dimensions
+always advance in ascending order. The implementation recomputes QK scores
+for each context component, trading throughput and external bandwidth for
+bounded storage rather than allocating context-sized score RAM. Denominator
+and weighted sums restart at +0 for each component. Query-to-KV head mapping
+is `head >> 3`; cache values are not replicated per query head. A NaN score
+propagates through the head's context rather than being silently omitted
+from the maximum. Undefined infinite softmax differences similarly propagate
+canonical NaNs; finite stable-softmax exponentials use only nonpositive inputs.
+
+`rtl/anvil_q3_fp_swiglu_mlp.sv` sequences gate, up, SiLU-product and down
+commands. The decoder owns the shared GEMV's latched native/AWQ mode throughout
+all three projections; the MLP's cmd_awq port is the matching interface
+annotation, not a second independently writable GEMV mode. The decoder keeps
+the parent's norm/Q/K/V/RoPE/attention/O/residual/norm/MLP/residual ordering
+and client allocation. Its arithmetic children retain fault-until-flush
+behavior; cache commitment survives ordinary layer/token command boundaries.
+
+`rtl/anvil_q3_fp_token_io.sv` copies raw selected-format embedding words into
+scratch slot zero. Output-head projection widens inputs and weights exactly,
+then accumulates registered binary32 products in ascending component order.
+The accumulator restarts at +0 for every vocabulary row; no activation
+narrowing is applied to logits. Indexed logits hold under backpressure.
+
+`rtl/anvil_q3_fp_top.sv` derives the parent sequence/cancellation/drain FSM,
+adding sequence-pinned activation dtype and per-token AWQ sampling. A dtype
+change without new_sequence follows the same failed-completion/drain path
+as an invalid token position. Cancel overrides acceptance and flushes the
+core immediately; only the unchanged scheduler retains external transaction
+ownership until drain completes. New-sequence flushing invalidates every
+layer's cache ownership before embedding starts.
 
 `rtl/anvil_q3_fp_elementwise.sv` implements the parent's two residual modes
 and SiLU(gate)*up mode with binary32 arithmetic. It widens scratch operands,

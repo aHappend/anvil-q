@@ -237,6 +237,19 @@ package anvil_q3_fp_pkg;
     end
   endfunction
 
+  function automatic [31:0] uint32_to_fp32(input logic [31:0] x);
+    reg [5:0] leading;
+    reg [31:0] normalized;
+    reg [36:0] rounded;
+    begin
+      leading = clz32(x);
+      normalized = x << leading;
+      rounded = round32(1'b0,13'sd31-$signed({7'd0,leading}),
+        {normalized[31:6],|normalized[5:0]});
+      uint32_to_fp32 = x == 0 ? 32'd0 : rounded[31:0];
+    end
+  endfunction
+
   function automatic [36:0] scale32(
     input logic [31:0] x, input logic signed [12:0] power
   );

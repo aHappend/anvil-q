@@ -24,8 +24,8 @@ module anvil_q3_fp_cache_codec #(
   reg [2:0] state;
   reg failed, decoding, fp16;
   reg [6:0] count, input_index, input_length, work_index, output_index, output_length;
-  reg [15:0] values [0:63];
-  reg [15:0] decoded [0:63];
+  (* nomem2reg *) reg [15:0] values [0:63];
+  (* nomem2reg *) reg [15:0] decoded [0:63];
   reg [31:0] payload [0:31];
   reg [31:0] metadata, maximum_abs, minimum_value, maximum_value;
   reg signed [15:0] shared_exp;
