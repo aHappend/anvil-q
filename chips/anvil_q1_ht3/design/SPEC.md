@@ -570,6 +570,20 @@ even on abort; the command fails after that held response transfers. Active
 reset cancels internal ownership. The enclosing transport must still implement
 the admitted reset epoch/drain rules for external accepted DDR traffic.
 
+Fault ownership ends with the command, not with the next reset. The tile
+fetcher's retained error is relevant only after the current command starts its
+fetch. COMPLETE clears that ownership before returning to IDLE; an IDLE
+fetcher may accept a new start despite its previous cancellation flag, clearing
+that flag and its retained error on the accepted start.
+
+| Attention recovery boundary | Pre-edge sampling and post-edge behavior |
+| --- | --- |
+| Fault/abort with displayed or accepted KV traffic | SEND/WAIT_RSP retain request/response ownership until transfer; DRAIN cannot return to IDLE with an outstanding response. |
+| DRAIN with no tile debt and all scalar workers ready | Enter COMPLETE after the edge; done/error identify the retiring command for one cycle. |
+| COMPLETE edge | Return to IDLE and clear tile-fault ownership; no replacement command transfers on this edge. |
+| Next valid/ready command edge E | Capture the command regardless of the previous fetcher's retained error; legal commands enter QUERY_FILL after E, invalid commands expose done/error after E. |
+| Fresh tile start with IDLE fetcher and abort low | Capture new fetch ownership and clear previous failed/canceled/finished flags after the edge, including TILE_TOKENS=1 and partial singleton tiles. |
+
 ### Attention no-stall and bounded-transaction cycle formulas
 
 All offsets below are **edges**, not claimed measured cycle results. Let

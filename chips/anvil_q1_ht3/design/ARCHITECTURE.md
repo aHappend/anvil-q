@@ -242,6 +242,12 @@ and signed INT8; native queries remain controlled independently by cmd_fp16.
 Each layer/head K/V scale is fixed for the committed image and shared across
 tokens/slots.
 
+Attention faults are command-owned: completion relinquishes tile-error
+ownership before command readiness returns. The drained tile fetcher accepts
+a fresh start from IDLE and clears its previous cancellation/error state.
+Displayed requests and accepted responses retain the same drainage rules;
+recovery does not require reset or discard memory obligations.
+
 Each quantized K or V record is 64-byte aligned with
 `64*ceil(C*b/512)` bytes, packed coordinate-major and zero padded; K and V
 remain separate regions. Runtime layout generation must use counters/shifts

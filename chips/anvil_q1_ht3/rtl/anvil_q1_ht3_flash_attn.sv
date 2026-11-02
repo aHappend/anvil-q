@@ -116,7 +116,8 @@ module anvil_q1_ht3_flash_attn #(
     wire [1:0] tiles_valid, tiles_last;
     wire [15:0] tiles_counts;
     wire tile_start_ready, tile_busy, tile_fetch_done, tile_error;
-    wire tile_fault = tile_started && tile_error;
+    wire tile_fault = tile_started && tile_error &&
+      state != IDLE && state != COMPLETE;
     wire [15:0] tile_key, tile_value;
     wire [31:0] tile_key_scale, tile_value_scale;
     wire [3:0] tile_slots;
@@ -670,7 +671,10 @@ module anvil_q1_ht3_flash_attn #(
               end
             end
             DRAIN: if (!tile_busy && (&arithmetic_ready)) state <= COMPLETE;
-            COMPLETE: state <= IDLE;
+            COMPLETE: begin
+              tile_started <= 0;
+              state <= IDLE;
+            end
             default: begin failed <= 1; canceled <= 1; state <= DRAIN; end
           endcase
         end

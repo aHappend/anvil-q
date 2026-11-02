@@ -189,7 +189,8 @@ module anvil_q1_ht3_attn_tiles #(
           if (state != SEND && state != WAIT_RSP) state <= DRAIN;
         end
         if ((!abort_error || state == SEND || state == WAIT_RSP) &&
-            (!canceled || state == SEND || state == WAIT_RSP || state == DRAIN)) begin
+            (!canceled || state == IDLE || state == SEND ||
+             state == WAIT_RSP || state == DRAIN)) begin
           case (state)
             IDLE: if (start_valid && start_ready) begin
               prefix_q <= start_prefix;
