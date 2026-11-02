@@ -83,6 +83,7 @@ module anvil_q4_descriptor #(
       reg [16:0] computed_hidden, computed_kv_width;
       reg [15:0] computed_queries;
       reg [22:0] computed_page_capacity;
+      reg [31:0] successful_commits;
 
       wire [31:0] version = shadow[0*32+:32];
       wire [31:0] mode = shadow[1*32+:32];
@@ -182,6 +183,7 @@ module anvil_q4_descriptor #(
           computed_kv_width <= 0;
           computed_queries <= 0;
           computed_page_capacity <= 0;
+          successful_commits <= 0;
           cfg_done <= 1'b0;
           cfg_error <= 1'b0;
         end else begin
@@ -190,7 +192,8 @@ module anvil_q4_descriptor #(
           case (state)
             IDLE: if (cfg_valid && cfg_ready) begin
               if (cfg_commit) begin
-                commit_valid <= shadow_valid && !write_fault;
+                commit_valid <= shadow_valid && !write_fault &&
+                  successful_commits!=32'hffffffff;
                 state <= COMMIT_RESPONSE;
               end else if (cfg_index >= 32) begin
                 write_fault <= 1'b1;
@@ -238,7 +241,10 @@ module anvil_q4_descriptor #(
               if (!cancel) begin
                 cfg_done <= 1'b1;
                 cfg_error <= !commit_valid;
-                if (commit_valid) active <= shadow;
+                if (commit_valid) begin
+                  active <= shadow;
+                  successful_commits <= successful_commits+1'b1;
+                end
                 else write_fault <= 1'b0;
               end
               state <= SETTLE;

@@ -27,9 +27,11 @@ module anvil_q4_exp (
   wire [127:0] product;
   wire [63:0] rounded_product = product[125:62]+
     {63'd0,(product[61] && ((|product[60:0]) || product[62]))};
-  wire [26:0] packed_significand = {polynomial[62:37],
-    polynomial[36] || (|polynomial[35:0])};
-  wire [36:0] packed_result = round_pack32(1'b0,power,packed_significand);
+  wire [26:0] packed_significand = polynomial[63] ?
+    {polynomial[63:38],polynomial[37] || (|polynomial[36:0])} :
+    {polynomial[62:37],polynomial[36] || (|polynomial[35:0])};
+  wire signed [11:0] packed_power=polynomial[63] ? power+12'sd1 : power;
+  wire [36:0] packed_result = round_pack32(1'b0,packed_power,packed_significand);
 
   function automatic [63:0] coefficient(input [4:0] n);
     begin

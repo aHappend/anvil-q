@@ -36,10 +36,14 @@ the edge; register updates are observable immediately after the edge.
 | Simultaneous retire and allocate | Distinct ownership transitions. A slot retired at an edge is not reused by a request already offered before that edge. |
 | Coincident request/response | A response may match a request that handshakes at that edge; a response to an unaccepted offer is a protocol fault. |
 | Flush with allocation/response | Flush suppresses new allocations and drops client delivery, but accepted transactions remain owned until response drain. |
+| Fault during a stalled verify result | Preserve the published verify bundle, inhibit prefix commit, drain memory and report `done/error` after its transfer. A fault before publication produces a zero-length error bundle. |
 | One/16 banks | No invalid-width bank indices. Bank 15 is distinct from bank 7. |
 | Tile K one/seven; rows one/three | Explicit tails and masks; these do not redefine legacy eight-channel packing. |
 | D two, intermediate one, vocabulary one | Legal Q4 dimensions if the descriptor equations hold; no zero-length reduction or illegal array select. |
 | Page tokens one | Page offset zero and logical page equals token position. |
+| INT8 head completion | Acknowledge every packed/escape payload write for the head before offering its metadata write. A partial shared word is written at the head boundary; later updates preserve its acknowledged bytes. |
+| INT8 escape scalar | Acknowledge the FP32 escape word before writing its zero ordinary-byte placeholder. Metadata publication still waits for the packed-word acknowledgment. |
+| Cache fault/flush | A failed payload response prevents metadata publication. Flush suppresses further writes; top-level drain and sequence/prefix ownership prevent incomplete cache state becoming reachable. |
 | Failed commit | Old descriptor, sequence and prediction remain unchanged. Only the remembered invalid-index write fault clears. |
 
 ## Public top-level interface
@@ -164,7 +168,8 @@ A8 uses per-tile maxabs/127, zero scale1, RNE codes [-127,127], then BF16.
 Mask tails before metadata access or arithmetic.
 
 Q4 kind strides are C0=H; C4=Op; C5/6/7=H; C8=M; C9/10=KD;
-C11=D; C12/13=ceil(KD/4); C14=KV; C15=1.
+C11=D; C12/13=ceil(KD/4) for proj0 and KD for proj1;
+C14=KV; C15=1.
 Q4 physical bank = (row*Ckind(proj)+col)&(active_banks-1).
 The full semantic identity is
 J=(kind<<99)+(layer<<67)+(proj<<64)+row*Ckind(proj)+col.
@@ -200,9 +205,40 @@ Scratch is a single-command workspace, never committed KV history.
 Q4 page kind15 uses layer=sequence epoch,row=logical page,col0,proj0.
 Bit31 is valid, bits30:0 physical page. Payload row=physical_page*page_tokens
 +offset; payload layer=decoder layer. BF16 cache is always BF16, even for FP16
-activations. INT8 bytes pack across head boundaries; preserve shared words and
-mask final padding. Kind14 stores independent FP32 K/V per-head scales using
-proj0/1. Detect absent/out-of-range/aliased pages and stale epochs.
+activations. BF16 payload col=head*D+dimension, proj0, stride=KD.
+INT8 uses the following independently admitted per-head encoding for K and V:
+
+* Ordinary heads use scale=FP32-RNE(maxabs/127), or scale1 for an all-positive-zero
+  head; RNE signed codes are clamped to [-127,127]. Kind12/13 proj0 packs
+  ascending bytes at col=(head*D+dimension)>>2, stride=ceil(KD/4).
+* Select lossless FP32 escape for a head containing any NaN, infinity, negative
+  zero, or finite nonzero maxabs whose FP32-RNE(maxabs/127) is zero.
+  Kind14 metadata is exactly marker `0x7fc00000`. Escape payload is kind12/13,
+  proj1, col=head*D+dimension, stride=KD, with the same decoder layer and
+  physical-token row. Preserve all finite bits, signed zeros and signed
+  infinities; canonicalize every NaN to `0x7fc00000`. Decode directly to FP32,
+  without integer conversion or multiplication. A marker authorizes finite
+  escape values without rescanning the head for escape eligibility.
+* Kind14 metadata uses layer=decoder layer,row=physical token,col=head,
+  stride=KV, proj0 for K and proj1 for V. Every accepted non-marker metadata
+  word must be positive finite nonzero FP32. Ordinary reconstructed values are
+  FP32(integer(code)*scale).
+
+Escape heads have zero ordinary bytes; final packed-word padding is zero.
+Bytes pack across head boundaries, including D=2. At every head boundary write
+and acknowledge its partial shared word before publishing its metadata; when
+the next head updates that word, preserve all preceding acknowledged bytes.
+Escape payload words are also acknowledged before metadata. Thus metadata
+never advertises payload still awaiting acknowledgment. Reject noncanonical
+escape NaNs, nonzero escape placeholders, ordinary -128 codes, nonzero final
+padding and malformed scales. Maxima of 63 minimum FP32 subnormal units escape;
+64 units use ordinary scale `0x00000001`.
+
+The selected payload stride determines bank routing under the formula above.
+Detect absent/out-of-range/aliased pages and stale epochs identically for both
+encodings. Complete successful target execution and speculative retirement,
+not metadata publication alone, determine committed-prefix visibility.
+Error/cancellation commits no new prefix.
 RoPE kind11 has layer=descriptor generation,row=position,col=2*d/2*d+1;
 legacy coefficients retain layer0 and signed Q2.30.
 
@@ -244,3 +280,20 @@ with at least three deterministic passes. No combinational datapath division or
 modulo, mixed blocking/nonblocking sequential assignments, latches or DUT real
 math is permitted. A static compiler result is not numerical or timing evidence.
 Product PDF generation follows engineering acceptance and is runtime-owned.
+
+## Current implementation boundary
+
+The saved design includes the public `anvil_q4_top`, connected Q4 decoder stages,
+embedding/lm-head, tile execution, nonlinear units, runtime Q1/Q2/Q3 execution,
+and two-target speculative control. The top sequences all configured layers,
+tracks target argmax, drains cancellation/fault ownership, and commits speculative
+position/prediction state only at the verify-result transfer. A new-sequence draft
+uses a tentative epoch; its page accesses reject aliases with the preceding
+committed sequence so failed verification cannot overwrite that sequence.
+
+`ARCHITECTURE.md` records the implementation, including the admitted FP32 cache
+escape and payload-before-metadata acknowledgment repair. This is a design
+handoff for independent verification, not acceptance. Verifier-owned cache
+diagnostics exist; completion of all eight L1 suites and native gates remains
+required. No tests or reference models are supplied by Designer, and no
+functional, synthesis, timing or board pass is claimed.

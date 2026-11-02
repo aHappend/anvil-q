@@ -313,7 +313,8 @@ module anvil_q4_bank_scheduler #(
         assign allocation_client[b] = selected_client[1];
         assign allocation_slot[b] = selected_free[1];
         assign serial_exhausted[b] = allocation[b] && next_serial == 24'hffffff;
-        assign mem_rsp_ready[b] = rst_n && (b < active_banks || (|slot_sent));
+        assign mem_rsp_ready[b] = rst_n &&
+          (b < active_banks || (|slot_sent) || mem_rsp_valid[b]);
         assign returning[b] = rst_n && mem_rsp_valid[b] && mem_rsp_ready[b] &&
           response_candidate[1];
         assign response_client[b] = slot_owner[selected_response[1]];

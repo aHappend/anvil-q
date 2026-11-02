@@ -276,4 +276,32 @@ package anvil_q4_fp_pkg;
     ordered_equal = !is_nan(a) && !is_nan(b) &&
       (a == b || (is_zero(a) && is_zero(b)));
   endfunction
+
+  // Used only after a finite activation ratio is bounded to [-127,127].
+  function automatic [31:0] bounded_int_rne(input [31:0] x);
+    reg [35:0] unpacked;
+    reg signed [11:0] exponent;
+    reg [23:0] significand, integer_magnitude, discarded, halfway, mask;
+    reg [4:0] distance;
+    reg increment;
+    begin
+      unpacked=unpack_normalized(x);
+      exponent=$signed(unpacked[35:24]); significand=unpacked[23:0];
+      integer_magnitude=0; discarded=0; halfway=0; mask=0;
+      distance=0; increment=0;
+      if (exponent>=0 && exponent<=6) begin
+        distance=5'd23-exponent[4:0];
+        integer_magnitude=significand >> distance;
+        mask=(24'd1 << distance)-24'd1;
+        discarded=significand & mask;
+        halfway=24'd1 << (distance-1'b1);
+        increment=discarded>halfway ||
+          (discarded==halfway && integer_magnitude[0]);
+      end else if (exponent==-12'sd1) begin
+        increment=significand>24'h800000;
+      end
+      integer_magnitude=integer_magnitude+{23'd0,increment};
+      bounded_int_rne=x[31] ? -{8'd0,integer_magnitude} : {8'd0,integer_magnitude};
+    end
+  endfunction
 endpackage
