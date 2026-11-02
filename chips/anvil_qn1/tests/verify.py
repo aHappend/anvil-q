@@ -55,6 +55,7 @@ from synthesis_checks import run_synthesis_probe, run_controller_synthesis
 from behavior_checks import run_behavior_core
 from memory_checks import run_banked_top, run_memory_matrix
 from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
+from telemetry_checks import run_telemetry
 from model import Geometry
 import reference
 
@@ -72,7 +73,7 @@ def main():
                                           "startup-matrix", "scalar-compiled", "synthesis-frontend",
                                           "controller-synthesis", "behavior-core", "banked-top",
                                           "memory-matrix", "banked-boundary", "fault-case",
-                                          "fault-matrix"))
+                                          "fault-matrix", "integrated-csr"))
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
@@ -80,7 +81,10 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "fault-case":
+        if args.probe == "integrated-csr":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_telemetry(run)
+        elif args.probe == "fault-case":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_fault_case(run, args.fault)
         elif args.probe == "fault-matrix":
