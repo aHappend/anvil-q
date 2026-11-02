@@ -152,6 +152,13 @@ def checked_account(netlist, top, identifier, mapped):
         if unresolved:
             raise AssertionError(f"unmapped nonmemory logic: {unresolved}")
     counts["sequential_cells"] = sequential
+    counts["initialized_wires"] = {
+        module: [name for name, net in netlist["modules"][module]["netnames"].items()
+                 if "init" in net.get("attributes", {})]
+        for module in counts["hierarchy"]
+        if any("init" in net.get("attributes", {})
+               for net in netlist["modules"][module]["netnames"].values())
+    }
     return counts
 
 
@@ -162,7 +169,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                      + f" {top}; " if parameters else "")
     phases = [
         ("word", f"read_verilog -sv {sources}; {parameter_cmd}"
-         f"hierarchy -check -top {top}; proc; opt_expr; opt_clean; check -assert -noinit; "
+         f"hierarchy -check -top {top}; proc; opt_expr; opt_clean; check -assert; "
          "memory -nomap; opt_clean; opt -fast; wreduce; alumacc; opt_clean; "),
         ("gates", "techmap; opt_expr; opt_merge; opt_clean; "),
         ("abc", "abc -fast; opt_clean; "),
@@ -171,7 +178,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
     predecessor_digest = None
     records = []
     for phase, commands in phases:
-        commands += ("check -assert -noinit; select -assert-none "
+        commands += ("check -assert; select -assert-none "
                      "t:$dlatch t:$adlatch t:$_DLATCH_* t:$div t:$mod t:$divfloor t:$modfloor; ")
         semantic = commands
         for entry in frontend["transformations"]:
