@@ -184,6 +184,9 @@ against original BF16 operands.
 `anvil_q1_fp2_fast_rsqrt` has `clk,rst_n,in_valid,x[31:0]` inputs and
 `out_valid,result[31:0],status[4:0]` outputs. No backpressure is supported;
 the fixed two-stage II=1 contract is counted in the table above.
+This leaf retains exactly its single magic-seed Newton update. RMSNorm adds
+the separate bounded residual-polynomial refinement described below; it does
+not change the leaf's result, latency, interface or special-value rules.
 
 For positive finite x, normalize x=n*2^(2q), with n in [1,4).
 The 2048-entry ROM index is normalized exponent parity plus ten high fraction
@@ -326,7 +329,7 @@ terminates with an error completion and no output vector.
 
 | Op | Operand routing and FP32 boundaries |
 |---:|---|
-| 0 | RMSNorm: square every x, add squares in component order starting at +0, multiply sum by reciprocal(FP32(cmd_len)), add epsilon 0x358637bd, call the named two-stage `fast_rsqrt`, multiply each x by its result, then multiply by stored in_aux gamma. Every add/multiply is an independent FP32 RNE boundary. |
+| 0 | RMSNorm: square every x, add squares in component order starting at +0, multiply sum by reciprocal(FP32(cmd_len)), add epsilon 0x358637bd, call the named two-stage `fast_rsqrt`, refine its finite positive result with the residual polynomial below, multiply each x by the refined factor, then multiply by stored in_aux gamma. Every add/multiply is an independent FP32 RNE boundary. |
 | 1 | RoPE: within each split-half head, in_aux for first-half component j is cosine and in_aux for second-half component j+D/2 is sine. Compute x*cos-y*sin and y*cos+x*sin with four FP32 products and two FP32 sums. |
 | 2 | SwiGLU: e=exp(-abs(gate)), r=reciprocal(1+e); sigmoid is r for a nonnegative gate and e*r for a negative gate. Compute (gate*sigmoid)*in_aux, with in_aux the up projection. Finite tails saturate sigmoid at the exp range limit. For negative infinity the swish factor is its limiting -0 before multiplication by up, avoiding infinity*zero. |
 | 3 | Residual: exact-RNE add of in_data and in_residual. |
@@ -352,8 +355,27 @@ buffered schedule.
 | RoPE pair completion | For a rotation issued at p, accept its rounded products in the adder at p+9 and write its destination at p+18. The final write, not the final issue, enters OUT_READ. HEAD_DIM=2 uses the same first/second issue and drain sequence; no pair-index wrap shortcut. |
 | Final RMSNorm input at t, length n | RMS_SQUARE after t; read component zero at t+1, accept its square at t+2, write its rounded result at t+11. Consecutive squares issue every edge; the final write at t+n+10 enters READ_X for ordered reduction. No public output is yet valid. |
 | RMSNorm singleton reduction | For n=1, write its square at t+11, read/latch that square at t+12/t+13, accept +0+square at t+14 and capture the rounded sum at t+23. Mean, epsilon and fast-rsqrt follow their existing issue/wait boundaries. |
-| RMSNorm normalization | After fast-rsqrt capture at r, read component zero at r+1, accept x*factor at r+2 and accept the rounded product*gamma at r+11. Write its result at r+20; consecutive results write every edge. Only the final write enters OUT_READ, so aggregate status is fixed before public output. |
+| RMSNorm factor refinement | After fast-rsqrt capture at r, the eight registered add/multiply operations below capture at r+10, r+20, ..., r+80. They accept no vector inputs and emit no outputs. Finite positive inputs then enter RMS_NORMALIZE. Exceptional/zero factors bypass refinement, preserving their status and IEEE operand behavior. Reset aborts every step. |
+| RMSNorm normalization | After refined-factor capture at f (r+80 for the finite path, r for bypass), read component zero at f+1, accept x*factor at f+2 and accept the rounded product*gamma at f+11. Write its result at f+20; consecutive results write every edge. Only the final write enters OUT_READ, so aggregate status is fixed before public output. |
 | RMSNorm pass ownership | Read counters stop at n; only registered read-valid cycles issue multipliers. Result-write counters advance only on the corresponding multiplier's out_valid. n=1 and non-power-of-two n use these same comparisons, never binary wrap. Reset invalidates all pipeline validity and counters. |
+
+For RMSNorm only, let z be the rounded mean plus epsilon and y the unchanged
+fast-rsqrt output. Normalize z=n*2^(2q), n in [1,4), and scale y to
+v=y*2^q by exact exponent adjustment. The existing FP32 units execute, in order:
+t0=RNE(v*v), t1=RNE(n*t0), r=RNE(1-t1),
+t2=RNE(0.375*r), t3=RNE(0.5+t2), t4=RNE(r*t3),
+c=RNE(1+t4), factor=RNE(y*c).
+Constants are FP32 0x3ec00000, 0x3f000000 and 0x3f800000.
+This is the degree-two binomial residual correction
+(1-r)^(-1/2) approximately 1+r/2+3*r*r/8, not another Newton update,
+iteration or divide/sqrt engine. Normalized operands avoid overflow or
+subnormal loss in the residual computation across the positive finite range.
+Its purpose is to reduce rsqrt bias and midpoint discretization before BF16/MX
+requantization, whose code boundaries can amplify otherwise legal leaf error.
+All correction flags join the command status; no correction intermediate
+overwrites vector RAM or changes input/output backpressure semantics.
+Independent numerical and performance checks must establish the repaired
+architecture's accuracy and the additional fixed 80-edge per-command cost.
 | Stalled final input | Remain COLLECT, preserving count and memories until its actual transfer. |
 | SwiGLU sigmoid pass | After final input t, read component zero at t+1, accept exp at t+2, denominator add at t+10, reciprocal at t+19 and negative-branch product at t+25. Write the selected sigmoid at t+34. Each subsequent component follows one edge later; final write at t+n+33 starts the product pass. Positive components use the delayed reciprocal and exclude the unused product's flags. |
 | SwiGLU product pass | After final sigmoid write r, read gate/sigmoid/up at r+1, accept gate*sigmoid at r+2 and its rounded product*up at r+11. Write at r+20; consecutive results write every edge. Singleton n=1 follows both passes, with first public output after t+56. |

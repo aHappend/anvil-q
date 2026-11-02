@@ -30,13 +30,17 @@ module anvil_q1_fp2_epilogue_fusion #(
   localparam SQUARE=0, REDUCE=1, MEAN=2, EPSILON=3, NORM_X=4, NORM_GAMMA=5;
   localparam ROTATE_X=6, ROTATE_Y=7, RESIDUAL=8, SIGMOID_DENOM=9;
   localparam SIGMOID_NEG=10, SWISH=11, GATED_UP=12;
+  localparam REFINE_SQUARE=13, REFINE_SCALE=14, REFINE_RESIDUAL=15;
+  localparam REFINE_LINEAR=16, REFINE_HALF=17, REFINE_POLY=18;
+  localparam REFINE_ONE=19, REFINE_FACTOR=20;
   reg [4:0] state;
-  reg [3:0] arithmetic;
+  reg [4:0] arithmetic;
   reg [1:0] operation;
   reg failed, normalization_pass;
   reg [31:0] length, received, index, partner, head_base, pair_index, output_index;
   reg [31:0] x_value, aux_value, residual_value, y_value, sine_value;
   reg [31:0] sum, norm_factor, temporary, exponential, inverse;
+  reg [31:0] refinement_x, refinement_y, refinement_residual;
   reg [31:0] product0, product1;
   reg [31:0] rms_read_count, rms_completed;
   reg rms_read_valid;
@@ -78,6 +82,16 @@ module anvil_q1_fp2_epilogue_fusion #(
   wire add_valid, add_ready, recip_valid, exp_valid, rsqrt_valid;
   wire [31:0] add_result, recip_result, exp_result, rsqrt_result;
   wire [4:0] add_status, recip_status, exp_status, rsqrt_status;
+  wire [23:0] norm_sig={temporary[30:23]!=0,temporary[22:0]};
+  wire [4:0] norm_high=anvil_q1_fp2_pkg::leading24(norm_sig);
+  wire [23:0] norm_normalized_sig=norm_sig << (5'd23-norm_high);
+  wire signed [10:0] norm_exponent=temporary[30:23]==0 ?
+    $signed({6'd0,norm_high})-11'sd149 :
+    $signed({3'd0,temporary[30:23]})-11'sd127;
+  wire signed [10:0] norm_half_exponent=norm_exponent >>> 1;
+  wire signed [11:0] normalized_rsqrt_exponent=
+    $signed({4'd0,rsqrt_result[30:23]})+
+    $signed({norm_half_exponent[10],norm_half_exponent});
   function automatic rope_length_valid(input [31:0] n);
     integer heads;
     begin
@@ -150,6 +164,11 @@ module anvil_q1_fp2_epilogue_fusion #(
         mul_b0=temporary;
       end
       GATED_UP: begin mul_a0=temporary; mul_b0=aux_value; end
+      REFINE_SQUARE: begin mul_a0=refinement_y; mul_b0=refinement_y; end
+      REFINE_SCALE: begin mul_a0=refinement_x; mul_b0=temporary; end
+      REFINE_LINEAR: begin mul_a0=refinement_residual; mul_b0=32'h3ec00000; end
+      REFINE_POLY: begin mul_a0=refinement_residual; mul_b0=temporary; end
+      REFINE_FACTOR: begin mul_a0=norm_factor; mul_b0=temporary; end
       default: begin end
     endcase
     if (state==RMS_SQUARE) begin mul_a0=data_q; mul_b0=data_q; end
@@ -175,6 +194,11 @@ module anvil_q1_fp2_epilogue_fusion #(
       ROTATE_X: add_b={~product1[31],product1[30:0]};
       RESIDUAL: begin add_a=x_value; add_b=residual_value; end
       SIGMOID_DENOM: begin add_a=32'h3f800000; add_b=exponential; end
+      REFINE_RESIDUAL: begin
+        add_a=32'h3f800000; add_b={~temporary[31],temporary[30:0]};
+      end
+      REFINE_HALF: begin add_a=32'h3f000000; add_b=temporary; end
+      REFINE_ONE: begin add_a=32'h3f800000; add_b=temporary; end
       default: begin end
     endcase
     reciprocal_x=operation==0 ? anvil_q1_fp2_pkg::uint32_to_fp32(length) : temporary;
@@ -259,6 +283,7 @@ module anvil_q1_fp2_epilogue_fusion #(
       head_base<=0; pair_index<=0; output_index<=0; payload<=0; flags<=0;
       x_value<=0; aux_value<=0; residual_value<=0; y_value<=0; sine_value<=0;
       sum<=0; norm_factor<=0; temporary<=0; exponential<=0; inverse<=0;
+      refinement_x<=0; refinement_y<=0; refinement_residual<=0;
       product0<=0; product1<=0;
       rms_read_count<=0; rms_completed<=0;
     end else case (state)
@@ -324,6 +349,19 @@ module anvil_q1_fp2_epilogue_fusion #(
           end
           SIGMOID_NEG: begin temporary<=mul_result[0]; arithmetic<=SWISH; state<=MUL_ISSUE; end
           SWISH: begin temporary<=mul_result[0]; arithmetic<=GATED_UP; state<=MUL_ISSUE; end
+          REFINE_SQUARE: begin
+            temporary<=mul_result[0]; arithmetic<=REFINE_SCALE; state<=MUL_ISSUE;
+          end
+          REFINE_SCALE: begin
+            temporary<=mul_result[0]; arithmetic<=REFINE_RESIDUAL; state<=ADD_ISSUE;
+          end
+          REFINE_LINEAR: begin
+            temporary<=mul_result[0]; arithmetic<=REFINE_HALF; state<=ADD_ISSUE;
+          end
+          REFINE_POLY: begin
+            temporary<=mul_result[0]; arithmetic<=REFINE_ONE; state<=ADD_ISSUE;
+          end
+          REFINE_FACTOR: begin norm_factor<=mul_result[0]; state<=RMS_NORMALIZE; end
           default: begin failed<=1; state<=ERROR_WAIT0; end
         endcase
       end
@@ -340,6 +378,15 @@ module anvil_q1_fp2_epilogue_fusion #(
           ROTATE_X: begin arithmetic<=ROTATE_Y; state<=MUL_ISSUE; end
           ROTATE_Y, RESIDUAL: state<=NEXT_ELEMENT;
           SIGMOID_DENOM: begin temporary<=add_result; state<=RECIP_ISSUE; end
+          REFINE_RESIDUAL: begin
+            refinement_residual<=add_result; arithmetic<=REFINE_LINEAR; state<=MUL_ISSUE;
+          end
+          REFINE_HALF: begin
+            temporary<=add_result; arithmetic<=REFINE_POLY; state<=MUL_ISSUE;
+          end
+          REFINE_ONE: begin
+            temporary<=add_result; arithmetic<=REFINE_FACTOR; state<=MUL_ISSUE;
+          end
           default: begin failed<=1; state<=ERROR_WAIT0; end
         endcase
       end
@@ -354,7 +401,15 @@ module anvil_q1_fp2_epilogue_fusion #(
       RSQRT_WAIT: if (rsqrt_valid) begin
         flags<=flags | rsqrt_status; norm_factor<=rsqrt_result;
         normalization_pass<=1; index<=0;
-        rms_read_count<=0; rms_completed<=0; state<=RMS_NORMALIZE;
+        rms_read_count<=0; rms_completed<=0;
+        if (temporary[31] || temporary[30:23]==255 || temporary[30:0]==0 ||
+            rsqrt_result[31] || rsqrt_result[30:23]==255 || rsqrt_result[30:0]==0)
+          state<=RMS_NORMALIZE;
+        else begin
+          refinement_x<={1'b0,8'(127+norm_exponent[0]),norm_normalized_sig[22:0]};
+          refinement_y<={1'b0,normalized_rsqrt_exponent[7:0],rsqrt_result[22:0]};
+          arithmetic<=REFINE_SQUARE; state<=MUL_ISSUE;
+        end
       end
       RMS_SQUARE: begin
         if (rms_read_count<length) rms_read_count<=rms_read_count+1;

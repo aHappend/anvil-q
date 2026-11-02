@@ -138,6 +138,20 @@ architectural stages; there is no hidden iterative engine.
 The fused epilogue now sequences exact FP32 add/multiply pipelines with bounded
 internal input/auxiliary/residual/result RAM. RMSNorm performs a component-order
 square/sum reduction, mean/epsilon and fast-rsqrt, then x/factor/gamma products.
+Before the vector products, RMSNorm corrects the unchanged leaf result using
+the normalized residual r=1-n*v*v and the degree-two binomial polynomial
+1+r/2+3*r*r/8. Eight ordered FP32 operations reuse the existing multiplier
+and adder, adding 80 fixed edges per finite command, without extra arithmetic
+units, external storage, another Newton update or a change to the two-stage
+leaf. Power-of-four normalization keeps residual products in a bounded range.
+The correction addresses the upstream drift retained in
+`evidence/preparation/mx-drift-analysis-20261102T203040Z-fdae560c/receipt.json`:
+legal leaf approximation error crossed BF16/MX activation boundaries, while
+all 2664 checked quantizer codes and final-head arithmetic matched their actual
+operands in the linked localization evidence. Quantization, head arithmetic,
+fixtures, references and acceptance tolerances are unchanged. Fresh independent
+architecture/operator/performance evidence is required; this is a repair
+rationale, not a numerical pass or physical-acceptance claim.
 Independent squares now stream through the first multiplier at initiation
 interval one and use result RAM as temporary storage. The sum remains serial
 in its original FP32 rounding order. Normalization cascades both existing
