@@ -7,6 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence import Evidence, ROOT, rel
+from frontend import adapted_sources
 
 
 COMPACT = dict(NUM_LAYERS=2, HIDDEN_SIZE=16, INTERMEDIATE_SIZE=16,
@@ -17,8 +18,10 @@ COMPACT = dict(NUM_LAYERS=2, HIDDEN_SIZE=16, INTERMEDIATE_SIZE=16,
                BANKS=2, QUEUE_DEPTH=3, TILE_K=8, TILE_ROWS=3)
 
 
-def synthesize(evidence, top="anvil_d1_top", parameters=None, frontend_noopt=False):
-    sources = sorted(ROOT.glob("anvil_q3_reference/rtl/*.sv")) + sorted(ROOT.glob("rtl/*.sv"))
+def synthesize(evidence, top="anvil_d1_top", parameters=None, frontend_noopt=False,
+               frontend_adapter=False):
+    sources = (adapted_sources(evidence) if frontend_adapter else
+               sorted(ROOT.glob("anvil_q3_reference/rtl/*.sv")) + sorted(ROOT.glob("rtl/*.sv")))
     params = "".join(f" -chparam {name} {value}" for name, value in (parameters or {}).items())
     output = evidence.path / "netlist.json"
     script = (
@@ -107,6 +110,7 @@ def main():
     parser.add_argument("--legacy-profile", type=int, choices=(1, 2, 3))
     parser.add_argument("--frontend-noopt", action="store_true",
                         help="diagnose AST simplification compatibility without changing RTL")
+    parser.add_argument("--frontend-adapter", action="store_true")
     args = parser.parse_args()
     stem = ("production-synthesis" if args.production else "compact-synthesis") if args.top == "anvil_d1_top" else (
         args.top.removeprefix("anvil_d1_") + "-synthesis")
@@ -126,7 +130,8 @@ def main():
             if args.top == "anvil_d1_top":
                 parameters["MODEL_MODE"] = 1
         summary = synthesize(evidence, top=args.top, parameters=parameters,
-                             frontend_noopt=args.frontend_noopt)
+                             frontend_noopt=args.frontend_noopt,
+                             frontend_adapter=args.frontend_adapter)
         evidence.finish("passed", **summary)
         print(json.dumps({k: v for k, v in summary.items() if k != "cell_types"}))
     except Exception as exc:
