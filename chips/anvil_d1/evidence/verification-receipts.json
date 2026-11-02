@@ -1,0 +1,1695 @@
+{
+  "chip": "Anvil-D1",
+  "passed_checks": {
+    "check:behavior": {
+      "attempt_id": 16,
+      "duration_s": 1695.439000542974,
+      "stdout_preview": "ESS simulation elapsed_s=30\nPROGRESS simulation elapsed_s=60\nPROGRESS simulation elapsed_s=90\nPROGRESS simulation elapsed_s=120\nPROGRESS simulation elapsed_s=150\nPROGRESS simulation elapsed_s=180\nPROGRESS simulation elapsed_s=210\nPROGRESS simulation elapsed_s=240\nPROGRESS simulation elapsed_s=270\nPROGRESS simulation elapsed_s=300\nPROGRESS simulation elapsed_s=330\nPROGRESS simulation elapsed_s=360\nPROGRESS simulation elapsed_s=390\nPROGRESS simulation elapsed_s=420\nPROGRESS simulation elapsed_s=450\nPROGRESS simulation elapsed_s=480\nPROGRESS simulation elapsed_s=510\nPROGRESS simulation elapsed_s=540\nPROGRESS simulation elapsed_s=570\nPROGRESS simulation elapsed_s=600\nPROGRESS simulation elapsed_s=630\nPROGRESS simulation elapsed_s=660\nPROGRESS simulation elapsed_s=690\nPROGRESS simulation elapsed_s=720\nCHECK mla-production-widths {\"absorption\": 393216, \"cache_dense_equiv_bytes\": 61440, \"cache_read_bytes\": 4608, \"cache_write_bytes\": 2304, \"contexts\": 8192, \"cycles\": 242787100, \"heads\": 16, \"queries\": 8192, \"rank\": 512, \"reads\": 34116864, \"rope\": 64, \"same_edge\": 34529160, \"wide_hidden\": 8, \"writes\": 412296}\nCHECK mla-full-hidden-contractions {\"absorption\": 12288, \"cache_dense_equiv_bytes\": 3096, \"cache_read_bytes\": 24, \"cache_write_bytes\": 12, \"contexts\": 1, \"cycles\": 7686353, \"heads\": 1, \"queries\": 1, \"rank\": 1, \"reads\": 1085457, \"rope\": 2, \"same_edge\": 1099804, \"wide_hidden\": 2048, \"writes\": 14347}\nSUITE behavior passed evidence/behavior-20261102T192147Z-7d44872e7b71/receipt.json\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/behavior-20261102T192147Z-7d44872e7b71/receipt.json",
+          "data": {
+            "kind": "L1 verification",
+            "start_time": "2026-11-02T19:21:47.238699+00:00",
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "behavior"
+            ],
+            "cwd": ".",
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "timeout_s": 2699.9993821380194,
+            "source_sha256": {
+              "anvil_q3_reference/rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
+              "anvil_q3_reference/rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
+              "anvil_q3_reference/rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
+              "anvil_q3_reference/rtl/anvil_q3_awq_dot8.sv": "04373f36c70dd1529925de6e8234c371f4e2507590f09ee4e23b0d4fe2249862",
+              "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv": "b8b054826bb015ba222d83de6bdb6c793cfa3185b929474e9bf7a7a85bf8104a",
+              "anvil_q3_reference/rtl/anvil_q3_cache_codec.sv": "4340cd77867041800326c813d9f4cde7a6148491bb21bd4e27dec66c4ccf9044",
+              "anvil_q3_reference/rtl/anvil_q3_decoder_layer.sv": "1494ea7a91fd6e382ff61c8fda083cb9f452e70e7868ef73b2048ad7f9720fa2",
+              "anvil_q3_reference/rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
+              "anvil_q3_reference/rtl/anvil_q3_elementwise.sv": "613f91a6e793fd276793221efe4bc2f114c5f880db906fb559af328b43d5258f",
+              "anvil_q3_reference/rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
+              "anvil_q3_reference/rtl/anvil_q3_gemv.sv": "7f0f0795f5d75c7498aafaf8f311ca3ac86fb8094b21473279fa676d925a793b",
+              "anvil_q3_reference/rtl/anvil_q3_gqa_attention.sv": "4342cb3c3e7bc281647140dd0ed54264288405b21c9292a6698a6ca857715f70",
+              "anvil_q3_reference/rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
+              "anvil_q3_reference/rtl/anvil_q3_kv_cache.sv": "c1cb7e3841aaf2bbe0ce3550c6fca616522d19b1eee57a1fc4bc952d5f377018",
+              "anvil_q3_reference/rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
+              "anvil_q3_reference/rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
+              "anvil_q3_reference/rtl/anvil_q3_parameters.sv": "f2cf2f694fac710809dd182465e16b591f59a8fc645c85d88a574d8d4e9b68fb",
+              "anvil_q3_reference/rtl/anvil_q3_rmsnorm.sv": "a5afd4439e85469bdb82b5eb21b33008860ef602362b7e70591c2dc7ce786f20",
+              "anvil_q3_reference/rtl/anvil_q3_rope.sv": "b71132e4de12828dbf7fe435514cdb7e15fc119ba6d6dfa3f414896b443989f4",
+              "anvil_q3_reference/rtl/anvil_q3_signed_divider.sv": "746c34c31223f1efc29f1d6baa83a873f0ec3487bb40058a38f0a796ee389dfb",
+              "anvil_q3_reference/rtl/anvil_q3_silu.sv": "87b2404e881ff5890adb294d50ce704f5fe165c4743cb133d7e8cea7fb78d3e6",
+              "anvil_q3_reference/rtl/anvil_q3_swiglu_mlp.sv": "3aa20f8f6b53e4b34616900932358e124a072b53c0dbe2c1392deb17586456c6",
+              "anvil_q3_reference/rtl/anvil_q3_tensor_array.sv": "a191b1958ad5e8fe9198c80588be15de012d3ab311aeb32f974b344f6d6cf70d",
+              "anvil_q3_reference/rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
+              "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
+              "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
+              "design/ARCHITECTURE.md": "9ef114a21b4ff124607fbda64c3ff934c647e5808da3d14b5e08ee68a3314ea9",
+              "design/SPEC.md": "82ffa5a6a55518b26872235a77c74c46d66278de3626421474364e1e7b731422",
+              "rtl/anvil_d1_absorption.sv": "180caeba6fe9138d32c36f97a7b6a529561594923e7940c699bd97a9375d5129",
+              "rtl/anvil_d1_accumulator.sv": "e22c9f41f9eb5bed316517549acf81a9342218785b09e950e511412cb81e7013",
+              "rtl/anvil_d1_add128.sv": "119ea43776111b2f372dc7a1714d97342b0ae686b730dc42d6d2777ae9165228",
+              "rtl/anvil_d1_bank_scheduler.sv": "88d0cb55fc6d24a99745314d36c562b5a8db9bb800ee1e7ac8df4a0f34d68e11",
+              "rtl/anvil_d1_counter64.sv": "23a28f9bea2f7ecf2b5ae536cbe3720e98424af0435287151cdbf27216aee939",
+              "rtl/anvil_d1_csr_perf.sv": "54dac94094fe97c1bba031c2bcad77f48b13cf9376d59e3ce9a4a3fda4a57810",
+              "rtl/anvil_d1_decoder_layer.sv": "2683f2c8e454f675e2ca75abfd7d10b63ff07d6bd9ef862da9277db40c202afd",
+              "rtl/anvil_d1_exp.sv": "59a6f2cd88af34ed76f793505202f20f5eb3409dda48a25c51d3123271c21d17",
+              "rtl/anvil_d1_expert.sv": "34b188138081dea03fa078b774c0878a2bc5d96f65701525a64489ef05e7de16",
+              "rtl/anvil_d1_isqrt.sv": "513d9ef6c0f1deef80a7ef102728cff7c2099df07ea902fb6bc10527998081b0",
+              "rtl/anvil_d1_mem_mux.sv": "04f174456f860540190e4564e28de09d119b7fccdc87d7f95345423fc6b26bd0",
+              "rtl/anvil_d1_mem_port.sv": "89d0894d98b30f3262f284db02e1c83c90419795debbaaed15d653a5a49cfbc9",
+              "rtl/anvil_d1_mla_engine.sv": "8a3352b2fbed9c6f93a4424b23ffa3cabb80d60664441a509f8ad86ea6d07507",
+              "rtl/anvil_d1_moe_router_dma.sv": "147911c0f17be6ee6c77259799fa288d61e9e0f356c01f66251b5710093f5acd",
+              "rtl/anvil_d1_mul32.sv": "28f7ee63cdaacca0b9f8a4dad2ab0cbb69bd9ab5d4b7410d8aafd8f6a74e1be9",
+              "rtl/anvil_d1_mul96x32.sv": "4c9523caa4ce92f96f22409dff3b4d03c7341b50cfc24fdc02cd3093cc9093e7",
+              "rtl/anvil_d1_parameters.sv": "6cdffd2024644c5505123489271b8f1a9b1d1bb88ee81114ab628ac4142237ed",
+              "rtl/anvil_d1_rmsnorm.sv": "bb46643c28d31773e5a0a7d9d651080b75321c88035511da4cc24b67b6447a82",
+              "rtl/anvil_d1_rope.sv": "037e96ced0ce06071bc5d711ba4bb0e6351c55c7afcb96537293d623780b6929",
+              "rtl/anvil_d1_round_sat.sv": "a3780a5758bc6b1ceef23c384c0570cf4fd74dec3a88b9bf793e374861255b17",
+              "rtl/anvil_d1_sdiv.sv": "65c33964303dc6280c5dc0db7065b8c30ea1f988d70653eac6e7f893630b2ce4",
+              "rtl/anvil_d1_silu.sv": "29b914f16765016608dcf5346990a34afd26a756968b83a91fc3bbe1253aad2a",
+              "rtl/anvil_d1_sub_unsigned.sv": "01cae90fce53f662f15780f6954780bb17cd3e5ba94ba8f434507d3e23e54b22",
+              "rtl/anvil_d1_tensor.sv": "67fdf2d94f3f9768d02f63c7fb1b9a65cc0ed46eb5c1275bc48e177740a43d39",
+              "rtl/anvil_d1_token_io.sv": "411a34bba9a80eda1da7e306c1032af64ef86852f5cdfb555d21b79ef9c30569",
+              "rtl/anvil_d1_top.sv": "f331cd032dbef476dbf1af08b5ee81edf853e0d6e24db3587a3ff2f9e75c1cf5",
+              "rtl/anvil_d1_udiv.sv": "ca404a9a9febef0688ad5b69f9753eb366cc569a92dadd57aabe3b0302cd7f14",
+              "tests/counter.py": "8300ae781e77a4759dd92a0155d4e35e37f17b6be97ad82531017f2913764805",
+              "tests/csr.py": "4cf5a1a17383f562c0dce63143bc5cd0c65b69f376277054f87489e9afea6183",
+              "tests/defects.py": "13dfab3fdeff8c44842cb27659390a2993380a56e3532271dab26749f2576298",
+              "tests/diagnostic.py": "e13aac9e9099961c4fdc29268f8309587b364a9679a5d5a976431b0529702c5d",
+              "tests/elaboration.py": "705dd074c00044342220989cb559c0671fc2a984aa32d17c9725f92b111cdb71",
+              "tests/evidence.py": "71210345376cef03ce722ef2eec2d17d90cb3cdec18be5e22e27d009788cd1ea",
+              "tests/faults.py": "d2163eede40c3778b6e040854746f018c73eda0012a6c21e726380f96bfffc53",
+              "tests/floating.py": "8ed1b9d14e6e557af3dd3b15f03277b928462e09f97717b33e073fc8053cd695",
+              "tests/frontend.py": "49033ed27cf2b8526ac820ac4b37edf7aff5ca034769c27496f2796bdc06915a",
+              "tests/inference.py": "f835cc577ccecc50cb0a633c06fe4ffb0c26c778d890dde4c6a99d1555716869",
+              "tests/legacy.py": "755886ddb77aba1e8b35843931f082be7da2023d1187e79c1d389e37c5d557cf",
+              "tests/mla.py": "4547fd3fd926fad5050265a63d7068bb57ca5723c0253ae8f2a9320f21120448",
+              "tests/numerical.py": "2e510697988adaede8ded478a938516f6e70b5f437325edb7629d04393a1d490",
+              "tests/reference.py": "3bd6e83b886975a69adf9e33851c19fefd46a5616d2c407a0d616bc6174b8a34",
+              "tests/rms.py": "5df5adcd07f6421d7cb71039cd6f69d690aee21403ea822dc6ea343ece0419fb",
+              "tests/router.py": "7e637e3b9a3cf2844f1081f48e4e12e0e829c363a8d4a060b1d7e7229941ec2b",
+              "tests/scheduler.py": "04b34e9c15f0c19c54c151c92f5bc1d77cf2af6a200f0f922f88073dbb6105ce",
+              "tests/structure.py": "3d78cd0870efb9291d511b3f033613d950bc2c8291022f54710e94857279ae85",
+              "tests/verify.py": "1883f0ab62f76ca35d347d8424233ce8c464a5bdc0772d56b2c8f83c5a4ad745",
+              "tests/wide_mla.py": "3960722f8ed28f8adf983087fe6efc4719e2984a1679b338b46340b6dc11bc7d"
+            },
+            "children": [],
+            "repair_of": null,
+            "end_time": "2026-11-02T19:50:02.389155+00:00",
+            "status": "passed",
+            "summary": {
+              "runs": [
+                {
+                  "case": "arithmetic-ieee-smoke",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/arithmetic-ieee-smoke-20261102T192147Z-38d4739857df/receipt.json",
+                  "simulator": "icarus",
+                  "actual": {
+                    "numerical_comparisons": 1068,
+                    "reset_samples": 5
+                  },
+                  "fixture": {
+                    "primitive_cases": 1068,
+                    "rms_traces": 6,
+                    "fixed_rms_u": 1099511300096,
+                    "fixed_rms_outputs": [
+                      256,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "rms_integrated_outputs_checked": false
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "arithmetic-compiled",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/arithmetic-compiled-20261102T192150Z-dffeb0cd76a4/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "numerical_comparisons": 1068,
+                    "reset_samples": 5
+                  },
+                  "fixture": {
+                    "primitive_cases": 1068,
+                    "rms_traces": 6,
+                    "fixed_rms_u": 1099511300096,
+                    "fixed_rms_outputs": [
+                      256,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "rms_integrated_outputs_checked": false
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "native-rms",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/native-rms-20261102T192231Z-d31511046023/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "rms_vectors": 6,
+                    "commands": 18,
+                    "reads": 1296,
+                    "compared_writes": 432,
+                    "final_ack_latency_checks": 18,
+                    "stalls": 201,
+                    "reset": 5
+                  },
+                  "fixture": {
+                    "rms_vectors": 6,
+                    "modes": 3,
+                    "expected_scalars": 432,
+                    "fixed_u": 1099511300096,
+                    "fixed_output": [
+                      256,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "native-mla-ieee",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/native-mla-ieee-20261102T192237Z-0d3e7dcc8b9d/receipt.json",
+                  "simulator": "icarus",
+                  "actual": {
+                    "mla_cases": 13,
+                    "writes": 2197,
+                    "reads": 6283,
+                    "contexts": 39,
+                    "absorption": 1872,
+                    "stalls": 881,
+                    "reset": 5,
+                    "cycles": 101024
+                  },
+                  "fixture": {
+                    "cases": 13,
+                    "expected_writes": 2197,
+                    "nope": 2,
+                    "expected_contexts": 39,
+                    "absorption_words": 1872
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "native-mla-discriminators",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/native-mla-discriminators-20261102T192243Z-acb2e7ad3396/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "mla_cases": 13,
+                    "writes": 2197,
+                    "reads": 6283,
+                    "contexts": 39,
+                    "absorption": 1872,
+                    "stalls": 881,
+                    "reset": 5,
+                    "cycles": 101024
+                  },
+                  "fixture": {
+                    "cases": 13,
+                    "expected_writes": 2197,
+                    "nope": 2,
+                    "expected_contexts": 39,
+                    "absorption_words": 1872
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "mla-nonsquare-scale",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/mla-nonsquare-scale-20261102T192257Z-c76e621f59c6/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "mla_cases": 13,
+                    "writes": 2197,
+                    "reads": 5659,
+                    "contexts": 39,
+                    "absorption": 1872,
+                    "stalls": 736,
+                    "reset": 5,
+                    "cycles": 94199
+                  },
+                  "fixture": {
+                    "cases": 13,
+                    "expected_writes": 2197,
+                    "nope": 1,
+                    "expected_contexts": 39,
+                    "absorption_words": 1872
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "complete-inference-seed17",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/complete-inference-seed17-20261102T192310Z-34c570a5b9d3/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 1188800,
+                    "tokens": 4,
+                    "writes": 3124,
+                    "reads": 63316,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 10565,
+                    "logit_stalls": 128,
+                    "read_bytes": 253264,
+                    "write_bytes": 12496,
+                    "expert_bytes": 134400
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -54035,
+                        -121559,
+                        451754,
+                        139901,
+                        -49513,
+                        -177978,
+                        -302993,
+                        108775
+                      ],
+                      [
+                        -91703,
+                        -219074,
+                        256724,
+                        372701,
+                        -211450,
+                        -174692,
+                        -320307,
+                        -21473
+                      ],
+                      [
+                        368711,
+                        -191724,
+                        172427,
+                        64052,
+                        426141,
+                        -250216,
+                        -77324,
+                        58248
+                      ],
+                      [
+                        -47777,
+                        138156,
+                        193653,
+                        -66260,
+                        35386,
+                        321618,
+                        21305,
+                        44448
+                      ]
+                    ],
+                    "expected_write_comparisons": 3124,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "complete-inference-seed89",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/complete-inference-seed89-20261102T192348Z-bd2c885ad066/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 1188800,
+                    "tokens": 4,
+                    "writes": 3124,
+                    "reads": 63316,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 10571,
+                    "logit_stalls": 128,
+                    "read_bytes": 253264,
+                    "write_bytes": 12496,
+                    "expert_bytes": 134400
+                  },
+                  "fixture": {
+                    "seed": 89,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        91637,
+                        136619,
+                        491218,
+                        164429,
+                        -174997,
+                        -141648,
+                        260419,
+                        -68530
+                      ],
+                      [
+                        215557,
+                        359973,
+                        425382,
+                        374365,
+                        -3593,
+                        -84024,
+                        -7515,
+                        50662
+                      ],
+                      [
+                        87866,
+                        48354,
+                        33369,
+                        74719,
+                        422208,
+                        56586,
+                        119558,
+                        -169154
+                      ],
+                      [
+                        6005,
+                        -116267,
+                        127751,
+                        127414,
+                        -83583,
+                        112871,
+                        -47184,
+                        -194589
+                      ]
+                    ],
+                    "expected_write_comparisons": 3124,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "complete-inference-seed203",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/complete-inference-seed203-20261102T192430Z-5e5803d34cf4/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 1188835,
+                    "tokens": 4,
+                    "writes": 3124,
+                    "reads": 63316,
+                    "logits": 32,
+                    "reset": 5,
+                    "request_stalls": 10568,
+                    "logit_stalls": 128,
+                    "read_bytes": 253264,
+                    "write_bytes": 12496,
+                    "expert_bytes": 134400
+                  },
+                  "fixture": {
+                    "seed": 203,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 3,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        402147,
+                        30134,
+                        573696,
+                        60535,
+                        -22109,
+                        130681,
+                        -68174,
+                        38731
+                      ],
+                      [
+                        56617,
+                        -44486,
+                        231586,
+                        418203,
+                        34163,
+                        -35412,
+                        -36453,
+                        23096
+                      ],
+                      [
+                        -65987,
+                        108864,
+                        -34392,
+                        -45653,
+                        561142,
+                        -113218,
+                        117478,
+                        -178335
+                      ],
+                      [
+                        358391,
+                        -87745,
+                        145010,
+                        -50960,
+                        -57327,
+                        446795,
+                        14930,
+                        167241
+                      ]
+                    ],
+                    "expected_write_comparisons": 3124,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "complete-ieee-one-token",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/complete-ieee-one-token-20261102T192511Z-0243983ab9e3/receipt.json",
+                  "simulator": "icarus",
+                  "actual": {
+                    "cycles": 317440,
+                    "tokens": 1,
+                    "writes": 1645,
+                    "reads": 16951,
+                    "logits": 8,
+                    "reset": 5,
+                    "request_stalls": 2860,
+                    "logit_stalls": 32
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "geometry": {
+                      "hidden": 16,
+                      "intermediate": 16,
+                      "moe_intermediate": 8,
+                      "heads": 2,
+                      "rank": 3,
+                      "nope": 2,
+                      "rope": 2,
+                      "value": 2,
+                      "layers": 2,
+                      "first_dense": 1,
+                      "experts": 7,
+                      "topk": 6,
+                      "vocab": 8,
+                      "maxseq": 5
+                    },
+                    "tokens": 1,
+                    "expected_logits": [
+                      [
+                        -54035,
+                        -121559,
+                        451754,
+                        139901,
+                        -49513,
+                        -177978,
+                        -302993,
+                        108775
+                      ]
+                    ],
+                    "routing": [
+                      {
+                        "layer": 1,
+                        "scores": [
+                          6059,
+                          -118145,
+                          -147529,
+                          29311,
+                          26727,
+                          -106958,
+                          -59765
+                        ],
+                        "probabilities": [
+                          3657182,
+                          549629,
+                          351037,
+                          5214745,
+                          5013135,
+                          651953,
+                          1339530
+                        ],
+                        "winners": [
+                          3,
+                          4,
+                          0,
+                          6,
+                          5,
+                          1
+                        ],
+                        "weights": [
+                          5326189,
+                          5120271,
+                          3735340,
+                          1368156,
+                          665885,
+                          561375
+                        ]
+                      }
+                    ],
+                    "memory_slots": 6982,
+                    "expected_writes": 1645
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "complete-compiled-one-token",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/complete-compiled-one-token-20261102T192627Z-4035166141db/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 317440,
+                    "tokens": 1,
+                    "writes": 1645,
+                    "reads": 16951,
+                    "logits": 8,
+                    "reset": 5,
+                    "request_stalls": 2860,
+                    "logit_stalls": 32
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "geometry": {
+                      "hidden": 16,
+                      "intermediate": 16,
+                      "moe_intermediate": 8,
+                      "heads": 2,
+                      "rank": 3,
+                      "nope": 2,
+                      "rope": 2,
+                      "value": 2,
+                      "layers": 2,
+                      "first_dense": 1,
+                      "experts": 7,
+                      "topk": 6,
+                      "vocab": 8,
+                      "maxseq": 5
+                    },
+                    "tokens": 1,
+                    "expected_logits": [
+                      [
+                        -54035,
+                        -121559,
+                        451754,
+                        139901,
+                        -49513,
+                        -177978,
+                        -302993,
+                        108775
+                      ]
+                    ],
+                    "routing": [
+                      {
+                        "layer": 1,
+                        "scores": [
+                          6059,
+                          -118145,
+                          -147529,
+                          29311,
+                          26727,
+                          -106958,
+                          -59765
+                        ],
+                        "probabilities": [
+                          3657182,
+                          549629,
+                          351037,
+                          5214745,
+                          5013135,
+                          651953,
+                          1339530
+                        ],
+                        "winners": [
+                          3,
+                          4,
+                          0,
+                          6,
+                          5,
+                          1
+                        ],
+                        "weights": [
+                          5326189,
+                          5120271,
+                          3735340,
+                          1368156,
+                          665885,
+                          561375
+                        ]
+                      }
+                    ],
+                    "memory_slots": 6982,
+                    "expected_writes": 1645
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "singleton-route-ieee",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/singleton-route-ieee-20261102T192652Z-34ddc7656cc7/receipt.json",
+                  "simulator": "icarus",
+                  "actual": {
+                    "case": 2,
+                    "expert_bytes": 2592,
+                    "dense_expert_bytes": 2592,
+                    "shared_cycles": 13056,
+                    "prefetch_cycles": 44,
+                    "overlap_cycles": 3,
+                    "router_cases": 3,
+                    "experts": 1,
+                    "topk": 1,
+                    "writes": 171,
+                    "reads": 3795,
+                    "mixtures": 24,
+                    "affinities": 3,
+                    "independent_client_transfers": 1,
+                    "stalls": 378,
+                    "reset": 5,
+                    "cycles": 89598
+                  },
+                  "fixture": {
+                    "cases": 3,
+                    "experts": 1,
+                    "topk": 1,
+                    "expected_writes": 171,
+                    "compared_affinities": 3,
+                    "compared_mixture_scalars": 24,
+                    "required_prefetch_beats": 24
+                  },
+                  "ratio_metrics": [
+                    {
+                      "case": 0,
+                      "expert_bytes": 2592,
+                      "dense_expert_bytes": 2592,
+                      "shared_cycles": 13056,
+                      "prefetch_cycles": 38,
+                      "overlap_cycles": 4,
+                      "active_parameter_saving": {
+                        "numerator": 0,
+                        "denominator": 2592,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "0"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 4,
+                        "denominator": 13056,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "1/3264"
+                      }
+                    },
+                    {
+                      "case": 1,
+                      "expert_bytes": 2592,
+                      "dense_expert_bytes": 2592,
+                      "shared_cycles": 13056,
+                      "prefetch_cycles": 44,
+                      "overlap_cycles": 3,
+                      "active_parameter_saving": {
+                        "numerator": 0,
+                        "denominator": 2592,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "0"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 3,
+                        "denominator": 13056,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "1/4352"
+                      }
+                    },
+                    {
+                      "case": 2,
+                      "expert_bytes": 2592,
+                      "dense_expert_bytes": 2592,
+                      "shared_cycles": 13056,
+                      "prefetch_cycles": 44,
+                      "overlap_cycles": 3,
+                      "active_parameter_saving": {
+                        "numerator": 0,
+                        "denominator": 2592,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "0"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 3,
+                        "denominator": 13056,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "1/4352"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "case": "full64-top6",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/full64-top6-20261102T192658Z-0a23bdb8e510/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "case": 2,
+                    "expert_bytes": 26496,
+                    "dense_expert_bytes": 109824,
+                    "shared_cycles": 17008,
+                    "prefetch_cycles": 759,
+                    "overlap_cycles": 380,
+                    "router_cases": 3,
+                    "experts": 64,
+                    "topk": 6,
+                    "writes": 816,
+                    "reads": 35808,
+                    "mixtures": 48,
+                    "affinities": 192,
+                    "independent_client_transfers": 21,
+                    "stalls": 4157,
+                    "reset": 5,
+                    "cycles": 570078
+                  },
+                  "fixture": {
+                    "cases": 3,
+                    "experts": 64,
+                    "topk": 6,
+                    "expected_writes": 816,
+                    "compared_affinities": 192,
+                    "compared_mixture_scalars": 48,
+                    "required_prefetch_beats": 432
+                  },
+                  "ratio_metrics": [
+                    {
+                      "case": 0,
+                      "expert_bytes": 26496,
+                      "dense_expert_bytes": 109824,
+                      "shared_cycles": 17008,
+                      "prefetch_cycles": 759,
+                      "overlap_cycles": 377,
+                      "active_parameter_saving": {
+                        "numerator": 83328,
+                        "denominator": 109824,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "217/286"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 377,
+                        "denominator": 17008,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "377/17008"
+                      }
+                    },
+                    {
+                      "case": 1,
+                      "expert_bytes": 26496,
+                      "dense_expert_bytes": 109824,
+                      "shared_cycles": 17008,
+                      "prefetch_cycles": 755,
+                      "overlap_cycles": 377,
+                      "active_parameter_saving": {
+                        "numerator": 83328,
+                        "denominator": 109824,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "217/286"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 377,
+                        "denominator": 17008,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "377/17008"
+                      }
+                    },
+                    {
+                      "case": 2,
+                      "expert_bytes": 26496,
+                      "dense_expert_bytes": 109824,
+                      "shared_cycles": 17008,
+                      "prefetch_cycles": 759,
+                      "overlap_cycles": 380,
+                      "active_parameter_saving": {
+                        "numerator": 83328,
+                        "denominator": 109824,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "217/286"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 380,
+                        "denominator": 17008,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "95/4252"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "case": "topk-equals-experts",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/topk-equals-experts-20261102T192715Z-8afbf6c4dad8/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "case": 2,
+                    "expert_bytes": 6912,
+                    "dense_expert_bytes": 6912,
+                    "shared_cycles": 13056,
+                    "prefetch_cycles": 245,
+                    "overlap_cycles": 140,
+                    "router_cases": 3,
+                    "experts": 6,
+                    "topk": 6,
+                    "writes": 426,
+                    "reads": 10290,
+                    "mixtures": 24,
+                    "affinities": 18,
+                    "independent_client_transfers": 9,
+                    "stalls": 1034,
+                    "reset": 5,
+                    "cycles": 246118
+                  },
+                  "fixture": {
+                    "cases": 3,
+                    "experts": 6,
+                    "topk": 6,
+                    "expected_writes": 426,
+                    "compared_affinities": 18,
+                    "compared_mixture_scalars": 24,
+                    "required_prefetch_beats": 144
+                  },
+                  "ratio_metrics": [
+                    {
+                      "case": 0,
+                      "expert_bytes": 6912,
+                      "dense_expert_bytes": 6912,
+                      "shared_cycles": 13056,
+                      "prefetch_cycles": 245,
+                      "overlap_cycles": 140,
+                      "active_parameter_saving": {
+                        "numerator": 0,
+                        "denominator": 6912,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "0"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 140,
+                        "denominator": 13056,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "35/3264"
+                      }
+                    },
+                    {
+                      "case": 1,
+                      "expert_bytes": 6912,
+                      "dense_expert_bytes": 6912,
+                      "shared_cycles": 13056,
+                      "prefetch_cycles": 245,
+                      "overlap_cycles": 140,
+                      "active_parameter_saving": {
+                        "numerator": 0,
+                        "denominator": 6912,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "0"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 140,
+                        "denominator": 13056,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "35/3264"
+                      }
+                    },
+                    {
+                      "case": 2,
+                      "expert_bytes": 6912,
+                      "dense_expert_bytes": 6912,
+                      "shared_cycles": 13056,
+                      "prefetch_cycles": 245,
+                      "overlap_cycles": 140,
+                      "active_parameter_saving": {
+                        "numerator": 0,
+                        "denominator": 6912,
+                        "units": "expert bytes saved / dense expert bytes",
+                        "exact": "0"
+                      },
+                      "prefetch_overlap_efficiency": {
+                        "numerator": 140,
+                        "denominator": 13056,
+                        "units": "overlap cycles / shared arithmetic-active cycles",
+                        "exact": "35/3264"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "case": "csr-protocol",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/csr-protocol-20261102T192729Z-c6d2495139d8/receipt.json",
+                  "simulator": "icarus",
+                  "actual": {
+                    "csr_edges": 484,
+                    "pin_comparisons": 968,
+                    "reset": 11
+                  },
+                  "fixture": {
+                    "edges": 484,
+                    "pin_comparisons": 968,
+                    "accepted": 203,
+                    "errors": 80,
+                    "response_stalls": 26,
+                    "reset_response": 1,
+                    "simultaneous_clear_events": 1,
+                    "snapshot_reads": 97
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "counter-saturation",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/counter-saturation-20261102T192729Z-7ab0bd870735/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "counter_comparisons": 8,
+                    "saturation_events": 1,
+                    "low_carries": 1,
+                    "clear_increment_priority": 1,
+                    "reset": 4
+                  },
+                  "fixture": {
+                    "required_saturation_events": 1,
+                    "required_comparisons": 8,
+                    "compiled_only": true
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "fault-cancel-recovery",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/fault-cancel-recovery-20261102T193022Z-cbbda8bbe530/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "experiment": 11,
+                    "completed": 20,
+                    "fault_experiments": 12,
+                    "successful_restarts": 13,
+                    "error_completions": 10,
+                    "cancellation_completions": 6,
+                    "checked_writes": 26482,
+                    "reads": 251607,
+                    "owned_cancel_targets": 3,
+                    "logit_cancel_targets": 1,
+                    "injected_faults": 4,
+                    "held_drain_cycles": 39,
+                    "cycles": 4725165
+                  },
+                  "fixture": {
+                    "experiments": 12,
+                    "required_successful_sequences": 13,
+                    "compared_write_prefixes": true,
+                    "oracle_seed": 17,
+                    "legacy": null,
+                    "targets": "native absorption/cache/routed prefetch"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "reset-mid-work-restart",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/reset-mid-work-restart-20261102T193152Z-c1b47af4ef38/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "checked_prefix_writes": 1405,
+                    "accepted_reads": 6792,
+                    "cycles": 448725,
+                    "tokens": 1,
+                    "writes": 1645,
+                    "reads": 16951,
+                    "logits": 8,
+                    "reset": 10,
+                    "request_stalls": 3979,
+                    "logit_stalls": 32
+                  },
+                  "fixture": {
+                    "reset_mid_work": 1,
+                    "required_successful_restarts": 1,
+                    "checked_prefix": true
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "sequence-legality-and-restarts",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/sequence-legality-and-restarts-20261102T193218Z-a3806b9219d6/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "good_tokens": 6,
+                    "rejected_commands": 3,
+                    "noncontiguous_positions": 1,
+                    "decode_to_prefill_rejections": 1,
+                    "out_of_range_positions": 1
+                  },
+                  "fixture": {
+                    "successful_tokens": 6,
+                    "noncontiguous_positions": 1,
+                    "decode_to_prefill_rejections": 1,
+                    "out_of_range_positions": 1,
+                    "successful_restart_after_each_error": true
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "bank-tag-reorder-ieee",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/bank-tag-reorder-ieee-20261102T193302Z-f3a6e50501ff/receipt.json",
+                  "simulator": "icarus",
+                  "actual": {
+                    "scheduler_banks": 2,
+                    "queue": 3,
+                    "ingress": 40,
+                    "memory_requests": 40,
+                    "memory_responses": 40,
+                    "client_responses": 40,
+                    "reordered_responses": 5,
+                    "peak_owned": 6,
+                    "request_stalls": 56,
+                    "response_stalls": 194,
+                    "reset": 5,
+                    "cycles": 231
+                  },
+                  "fixture": {
+                    "banks": 2,
+                    "queue": 3,
+                    "clients": 5,
+                    "transactions": 40,
+                    "require_reordering": true,
+                    "finite_service_hold_cycles": 100
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "bank-tag-b1-q1",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/bank-tag-b1-q1-20261102T193303Z-1f811c20f98b/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "scheduler_banks": 1,
+                    "queue": 1,
+                    "ingress": 40,
+                    "memory_requests": 40,
+                    "memory_responses": 40,
+                    "client_responses": 40,
+                    "reordered_responses": 0,
+                    "peak_owned": 1,
+                    "request_stalls": 31,
+                    "response_stalls": 154,
+                    "reset": 5,
+                    "cycles": 461
+                  },
+                  "fixture": {
+                    "banks": 1,
+                    "queue": 1,
+                    "clients": 5,
+                    "transactions": 40,
+                    "require_reordering": false,
+                    "finite_service_hold_cycles": 100
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "bank-tag-b4-q16",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/bank-tag-b4-q16-20261102T193309Z-98b73ee46487/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "scheduler_banks": 4,
+                    "queue": 16,
+                    "ingress": 40,
+                    "memory_requests": 40,
+                    "memory_responses": 40,
+                    "client_responses": 40,
+                    "reordered_responses": 39,
+                    "peak_owned": 40,
+                    "request_stalls": 109,
+                    "response_stalls": 260,
+                    "reset": 5,
+                    "cycles": 213
+                  },
+                  "fixture": {
+                    "banks": 4,
+                    "queue": 16,
+                    "clients": 5,
+                    "transactions": 40,
+                    "require_reordering": true,
+                    "finite_service_hold_cycles": 100
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "bank-tag-b8-q1",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/bank-tag-b8-q1-20261102T193341Z-945470ee7615/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "scheduler_banks": 8,
+                    "queue": 1,
+                    "ingress": 40,
+                    "memory_requests": 40,
+                    "memory_responses": 40,
+                    "client_responses": 40,
+                    "reordered_responses": 13,
+                    "peak_owned": 8,
+                    "request_stalls": 192,
+                    "response_stalls": 259,
+                    "reset": 5,
+                    "cycles": 186
+                  },
+                  "fixture": {
+                    "banks": 8,
+                    "queue": 1,
+                    "clients": 5,
+                    "transactions": 40,
+                    "require_reordering": true,
+                    "finite_service_hold_cycles": 100
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "minimum-routed-banks1-queue1",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/minimum-routed-banks1-queue1-20261102T193353Z-0666b8b00555/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 44373,
+                    "tokens": 1,
+                    "writes": 172,
+                    "reads": 1634,
+                    "logits": 4,
+                    "reset": 5,
+                    "request_stalls": 309,
+                    "logit_stalls": 16,
+                    "read_bytes": 6536,
+                    "write_bytes": 688,
+                    "expert_bytes": 2592
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 8,
+                      "INTERMEDIATE_SIZE": 8,
+                      "NUM_Q_HEADS": 1,
+                      "KV_LORA_RANK": 1,
+                      "QK_NOPE_HEAD_DIM": 1,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 1,
+                      "ROUTED_EXPERTS": 1,
+                      "TOP_K": 1,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 0,
+                      "VOCAB_SIZE": 4,
+                      "MAX_SEQ_LEN": 1,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 1,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 1
+                    },
+                    "tokens": [
+                      2
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -48529,
+                        -12030,
+                        194456,
+                        65805
+                      ]
+                    ],
+                    "expected_write_comparisons": 172,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "minimum-all-dense",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/minimum-all-dense-20261102T193413Z-faaf076f269f/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 20398,
+                    "tokens": 1,
+                    "writes": 131,
+                    "reads": 777,
+                    "logits": 4,
+                    "reset": 5,
+                    "request_stalls": 161,
+                    "logit_stalls": 16,
+                    "read_bytes": 3108,
+                    "write_bytes": 524,
+                    "expert_bytes": 864
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "NUM_LAYERS": 1,
+                      "HIDDEN_SIZE": 8,
+                      "INTERMEDIATE_SIZE": 8,
+                      "NUM_Q_HEADS": 1,
+                      "KV_LORA_RANK": 1,
+                      "QK_NOPE_HEAD_DIM": 1,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 1,
+                      "ROUTED_EXPERTS": 1,
+                      "TOP_K": 1,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 4,
+                      "MAX_SEQ_LEN": 1,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 1,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 1
+                    },
+                    "tokens": [
+                      2
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -104720,
+                        -24775,
+                        200285,
+                        34825
+                      ]
+                    ],
+                    "expected_write_comparisons": 131,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "last-position-banks4-queue16",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/last-position-banks4-queue16-20261102T193433Z-3ff42142e829/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 1484481,
+                    "tokens": 5,
+                    "writes": 3617,
+                    "reads": 78811,
+                    "logits": 40,
+                    "reset": 5,
+                    "request_stalls": 14871,
+                    "logit_stalls": 160,
+                    "read_bytes": 315244,
+                    "write_bytes": 14468,
+                    "expert_bytes": 168000
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 16,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2,
+                      3,
+                      4,
+                      5,
+                      6
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -54035,
+                        -121559,
+                        451754,
+                        139901,
+                        -49513,
+                        -177978,
+                        -302993,
+                        108775
+                      ],
+                      [
+                        -91703,
+                        -219074,
+                        256724,
+                        372701,
+                        -211450,
+                        -174692,
+                        -320307,
+                        -21473
+                      ],
+                      [
+                        368711,
+                        -191724,
+                        172427,
+                        64052,
+                        426141,
+                        -250216,
+                        -77324,
+                        58248
+                      ],
+                      [
+                        -47777,
+                        138156,
+                        193653,
+                        -66260,
+                        35386,
+                        321618,
+                        21305,
+                        44448
+                      ],
+                      [
+                        94282,
+                        301215,
+                        -103393,
+                        -164177,
+                        -63410,
+                        -66643,
+                        488022,
+                        -74663
+                      ]
+                    ],
+                    "expected_write_comparisons": 3617,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "banks8-queue1",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/banks8-queue1-20261102T193606Z-c3eccfd5b15b/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 315264,
+                    "tokens": 1,
+                    "writes": 1645,
+                    "reads": 16951,
+                    "logits": 8,
+                    "reset": 5,
+                    "request_stalls": 2950,
+                    "logit_stalls": 32,
+                    "read_bytes": 67804,
+                    "write_bytes": 6580,
+                    "expert_bytes": 33600
+                  },
+                  "fixture": {
+                    "seed": 17,
+                    "parameters": {
+                      "NUM_LAYERS": 2,
+                      "HIDDEN_SIZE": 16,
+                      "INTERMEDIATE_SIZE": 16,
+                      "NUM_Q_HEADS": 2,
+                      "KV_LORA_RANK": 3,
+                      "QK_NOPE_HEAD_DIM": 2,
+                      "QK_ROPE_HEAD_DIM": 2,
+                      "V_HEAD_DIM": 2,
+                      "ROUTED_EXPERTS": 7,
+                      "TOP_K": 6,
+                      "SHARED_EXPERTS": 2,
+                      "MOE_INTERMEDIATE_SIZE": 8,
+                      "FIRST_DENSE_LAYERS": 1,
+                      "VOCAB_SIZE": 8,
+                      "MAX_SEQ_LEN": 5,
+                      "BANKS": "B",
+                      "QUEUE_DEPTH": 1,
+                      "TILE_K": 8,
+                      "TILE_ROWS": 3
+                    },
+                    "tokens": [
+                      2
+                    ],
+                    "sequences": 1,
+                    "expected_logits": [
+                      [
+                        -54035,
+                        -121559,
+                        451754,
+                        139901,
+                        -49513,
+                        -177978,
+                        -302993,
+                        108775
+                      ]
+                    ],
+                    "expected_write_comparisons": 1645,
+                    "domain": null,
+                    "architecture": "native fixed-point MLA/MoE",
+                    "numerical_model": "reference.py",
+                    "service_schedule": "bank ready (cycles+bank)%7!=0; response (cycles+bank*3)%5; four logit stall cycles"
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "mla-production-widths",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/mla-production-widths-20261102T193634Z-05c143b47354/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "cycles": 242787100,
+                    "absorption": 393216,
+                    "wide_hidden": 8,
+                    "heads": 16,
+                    "rank": 512,
+                    "rope": 64,
+                    "queries": 8192,
+                    "contexts": 8192,
+                    "writes": 412296,
+                    "reads": 34116864,
+                    "same_edge": 34529160,
+                    "cache_read_bytes": 4608,
+                    "cache_write_bytes": 2304,
+                    "cache_dense_equiv_bytes": 61440
+                  },
+                  "fixture": {
+                    "hidden": 8,
+                    "heads": 16,
+                    "rank": 512,
+                    "nope": 128,
+                    "rope": 64,
+                    "value": 128,
+                    "absorption_comparisons": 393216,
+                    "query_comparisons": 8192,
+                    "context_comparisons": 8192,
+                    "cache_read_bytes": 4608,
+                    "cache_write_bytes": 2304,
+                    "dense_equiv_bytes": 61440,
+                    "raw_weight_formula": "((matrix*13+head*7+row*3+col*5)%17-8)*1024",
+                    "full_production_top_inference": false
+                  },
+                  "ratio_metrics": []
+                },
+                {
+                  "case": "mla-full-hidden-contractions",
+                  "status": "passed",
+                  "receipt": "evidence/behavior-20261102T192147Z-7d44872e7b71/mla-full-hidden-contractions-20261102T194921Z-a1e2557f0299/receipt.json",
+                  "simulator": "verilator",
+                  "actual": {
+                    "wide_hidden": 2048,
+                    "heads": 1,
+                    "rank": 1,
+                    "rope": 2,
+                    "absorption": 12288,
+                    "queries": 1,
+                    "contexts": 1,
+                    "writes": 14347,
+                    "reads": 1085457,
+                    "same_edge": 1099804,
+                    "cache_read_bytes": 24,
+                    "cache_write_bytes": 12,
+                    "cache_dense_equiv_bytes": 3096,
+                    "cycles": 7686353
+                  },
+                  "fixture": {
+                    "hidden": 2048,
+                    "heads": 1,
+                    "rank": 1,
+                    "nope": 128,
+                    "rope": 2,
+                    "value": 128,
+                    "absorption_comparisons": 12288,
+                    "query_comparisons": 1,
+                    "context_comparisons": 1,
+                    "cache_read_bytes": 24,
+                    "cache_write_bytes": 12,
+                    "dense_equiv_bytes": 3096,
+                    "raw_weight_formula": "((matrix*13+head*7+row*3+col*5)%17-8)*1024",
+                    "full_production_top_inference": false
+                  },
+                  "ratio_metrics": []
+                }
+              ],
+              "cache_reduction": {
+                "numerator": 54528,
+                "denominator": 61440,
+                "units": "accepted cache bytes saved / identical-pass MHA cache bytes",
+                "exact": "71/80"
+              },
+              "floating_characterized_scalars": 96
+            }
+          }
+        }
+      ]
+    }
+  }
+}
