@@ -32,6 +32,7 @@ class Variant:
         self.relative = parent.relative / stem
         self.path.mkdir()
         self.receipt = parent.receipt
+        self.build_cache = parent.build_cache
         self.source_overrides = overrides or {}
 
     def version(self, tool):

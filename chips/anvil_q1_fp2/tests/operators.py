@@ -177,7 +177,8 @@ module tb;
   reg [31:0] data[0:255],aux[0:255],residual[0:255];
   reg [15:0] query[0:7],keys[0:255],values[0:255];
   reg [31:0] low[0:15],high[0:15],reference_value[0:15];
-  reg [31:0] rng=32'd{seed},scanned0,scanned1,scanned2;
+  reg [31:0] rng=0,scanned0,scanned1,scanned2;
+  string vector_file;
   reg [31:0] held_data;
   reg [4:0] held_status;
   reg held_last,held=0,expect_error,seen_done=0;
@@ -252,7 +253,9 @@ module tb;
   initial begin
     #1; reset_check(); @(posedge clk); reset_check();
     #1; reset_check(); @(negedge clk); reset_check(); rst_n=1;
-    file_handle=$fopen("{path}","r");
+    if (!$value$plusargs("vectors=%s",vector_file) || !$value$plusargs("seed=%d",rng))
+      $fatal(1,"missing command vector/seed arguments");
+    file_handle=$fopen(vector_file,"r");
     if (!file_handle) $fatal(1,"fixture open");
     for (test=0;test<{cases};test=test+1) begin
       scan=$fscanf(file_handle,"%d %d %d %d %d %d\\n",
@@ -334,7 +337,9 @@ def simulate_commands(run, kind, seed, count, simulator, compile_and_run, tile=3
         "rtl/anvil_q1_fp2_exp.sv",
         f"rtl/anvil_q1_fp2_{'epilogue_fusion' if kind == 'epilogue' else 'flash_attn'}.sv",
     ]
-    compile_and_run(run, directory, bench, sources, simulator, stem)
+    compile_and_run(run, directory, bench, sources, simulator, stem,
+                    arguments=[f"+vectors={run.relative / stem / 'vectors.txt'}",
+                               f"+seed={seed}"], cache=True)
     run.receipt["comparisons"].append({
         "kind": kind, "seed": seed, "simulator": simulator, "tile": tile,
         "commands": len(cases), "components": sum(len(case["bounds"]) for case in cases),

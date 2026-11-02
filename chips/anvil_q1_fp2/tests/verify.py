@@ -341,7 +341,8 @@ module tb;
   {"assign in_ready=rst_n;" if not elastic else ""}
   {"assign events=0;" if not tensor_kind else ""}
   integer file_handle,scan,cycle,i,accepted=0,compared=0,stalls=0,bubbles=0;
-  reg [31:0] rng=32'd{seed},lo,hi;
+  reg [31:0] rng=0,lo,hi;
+  string vector_file;
   reg [4:0] flags;
   reg [6:0] event_count;
   reg loaded=0,advance;
@@ -363,7 +364,9 @@ module tb;
     @(posedge clk); reset_check();
     #1; reset_check();
     @(negedge clk); reset_check(); rst_n=1;
-    file_handle=$fopen("{vector_path}","r");
+    if (!$value$plusargs("vectors=%s",vector_file) || !$value$plusargs("seed=%d",rng))
+      $fatal(1,"missing vector/seed arguments");
+    file_handle=$fopen(vector_file,"r");
     if (!file_handle) $fatal(1,"vector open failed");
     for (cycle=0;cycle<500000;cycle=cycle+1) begin
       rng=rng ^ (rng<<13); rng=rng ^ (rng>>17); rng=rng ^ (rng<<5);
@@ -447,7 +450,9 @@ def simulate_pipeline(run, kind, records, seed, simulator):
         "rtl/anvil_q1_fp2_00_pkg.sv", f"rtl/anvil_q1_fp2_{source_name}.sv",
         str(bench.relative_to(ROOT)),
     ]
-    compile_and_run(run, directory, bench, sources[:-1], simulator, stem)
+    compile_and_run(run, directory, bench, sources[:-1], simulator, stem,
+                    arguments=[f"+vectors={vectors.relative_to(ROOT)}", f"+seed={seed}"],
+                    cache=True)
     run.receipt["comparisons"].append({
         "kind": kind, "seed": seed, "simulator": simulator,
         "vectors": len(records), "result": "passed",
@@ -493,7 +498,7 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
                 f"{stem}-compile",
             )
             if cache:
-                cached = run.path / "build-cache" / cache_key
+                cached = getattr(run, "parent", run).path / "build-cache" / cache_key
                 cached.parent.mkdir(exist_ok=True)
                 shutil.copyfile(obj / "Vtb", cached)
                 cached.chmod(0o700)
@@ -609,10 +614,86 @@ def portable(run):
     })
 
 
+def behavior(run, seeds):
+    """Regenerate all functional stimuli and execute both simulator tiers."""
+    arithmetic(run, [17], compact=True)
+    simulate_commands(run, "epilogue", 17, 2, "iverilog", compile_and_run)
+    simulate_commands(run, "attention", 17, 2, "iverilog", compile_and_run)
+    for mx in (False, True):
+        simulate_architecture(run, 17, GEOMETRIES[0], mx, "iverilog",
+                              compile_and_run, ROOT, tokens=1)
+    simulate_errors(run, ROOT, compile_and_run, "iverilog")
+    arithmetic(run, seeds)
+    for seed in seeds:
+        for bits in (8, 64):
+            simulate_csr(run, seed, "verilator", compile_and_run, bits)
+        simulate_ddr(run, seed, "verilator", compile_and_run)
+        simulate_commands(run, "epilogue", seed, 256, "verilator", compile_and_run)
+        for tile in (1, 3, 16):
+            simulate_commands(run, "attention", seed, 64, "verilator", compile_and_run, tile)
+        for geometry in GEOMETRIES:
+            for mx in (False, True):
+                simulate_architecture(run, seed, geometry, mx, "verilator",
+                                      compile_and_run, ROOT)
+            for enable in (0, 1):
+                simulate_compatibility(run, ROOT, compile_and_run, geometry, seed, enable)
+    comparisons = run.receipt["comparisons"]
+    for seed in seeds:
+        tensor_rows = [row for row in comparisons if row.get("kind") == "tensor" and
+                       row.get("seed") == seed and row.get("simulator") == "verilator"]
+        if len(tensor_rows) != 1 or tensor_rows[0]["vectors"] < 8192:
+            raise AssertionError(f"seed {seed}: missing 4096 tensor groups per format")
+        for geometry in GEOMETRIES:
+            architecture_rows = [row for row in comparisons if row.get("kind") == "architecture"
+                                 and row.get("seed") == seed and row.get("geometry") == geometry
+                                 and row.get("simulator") == "verilator"]
+            if {row["format"] for row in architecture_rows} != {"bf16", "mx"}:
+                raise AssertionError(f"seed {seed}: missing decoder format/geometry comparisons")
+    run.receipt["coverage"] = {
+        "seeds": seeds, "executed_geometries": GEOMETRIES,
+        "tensor_groups_per_format_per_seed": 4097,
+        "epilogue_vectors_per_operation_per_seed": 256,
+        "attention_queries_per_tile_per_seed": 64, "tile_tokens": [1, 3, 16],
+        "compatibility_precisions": [0, 1, 2], "optimized_precisions": [1, 3],
+        "simulator_tiers": ["compact Icarus", "compiled seeded Verilator"],
+    }
+
+
+def benchmark(run, seeds):
+    """Five measured domains; no synthesis-cell or nominal-frequency PPA claims."""
+    for seed in seeds:
+        projection_benchmark(run, ROOT, compile_and_run, False, seed)
+        projection_benchmark(run, ROOT, compile_and_run, True, seed)
+        rms_benchmark(run, ROOT, compile_and_run, seed=seed)
+        stream_operator_benchmark(run, ROOT, compile_and_run, "rope", seed=seed)
+        stream_operator_benchmark(run, ROOT, compile_and_run, "swiglu-residual", seed=seed)
+        attention_benchmark(run, ROOT, compile_and_run, seed)
+    rows = run.receipt["benchmarks"]
+    required = {"tensor-bf16", "tensor-mx", "rmsnorm", "rope", "swiglu-residual", "attention"}
+    if {row["domain"] for row in rows} != required or len(rows) != len(seeds) * len(required):
+        raise AssertionError("missing independently executed benchmark domains/seeds")
+    aggregates = []
+    for temperature in (0, 1):
+        for format_domain in ("tensor-bf16", "tensor-mx"):
+            selected = [row["measurements"][temperature] for row in rows
+                        if row["domain"] not in ({"tensor-bf16", "tensor-mx"} - {format_domain})]
+            parent_cycles = sum(row["parent_cycles"] for row in selected)
+            fp2_cycles = sum(row["fp2_cycles"] for row in selected)
+            if fp2_cycles >= parent_cycles:
+                raise AssertionError("aggregate benchmark requires strictly fewer FP2 cycles")
+            aggregates.append({
+                "format": format_domain, "temperature": "cold" if temperature == 0 else "warm",
+                "parent_cycles": parent_cycles, "fp2_cycles": fp2_cycles,
+                "speedup": parent_cycles / fp2_cycles, "domains": 5,
+            })
+    run.receipt["aggregate_benchmarks"] = aggregates
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     selector = parser.add_mutually_exclusive_group(required=True)
-    selector.add_argument("--suite", choices=["synthesis", "sensitivity", "portable"])
+    selector.add_argument("--suite", choices=["behavior", "benchmark", "synthesis",
+                                             "sensitivity", "portable"])
     selector.add_argument("--probe",
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
                                  "synthesis", "csr", "ddr", "architecture", "sensitivity",
@@ -631,7 +712,11 @@ def main():
     run = Run(f"fp2-{selected}", preparation=args.probe is not None, repair_of=args.repair_of)
     error = None
     try:
-        if selected == "rsqrt-startup":
+        if selected == "behavior":
+            behavior(run, [int(seed) for seed in args.seeds.split(",")])
+        elif selected == "benchmark":
+            benchmark(run, [int(seed) for seed in args.seeds.split(",")])
+        elif selected == "rsqrt-startup":
             rsqrt_startup(run)
         elif selected == "portable":
             portable(run)

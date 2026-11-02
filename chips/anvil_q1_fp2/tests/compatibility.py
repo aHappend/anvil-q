@@ -106,6 +106,8 @@ module tb;
   reg pending_error=0,finished=0,fault=0;
   reg [63:0] hash=64'hcbf29ce484222325;
   reg [31:0] rng=0;
+  integer seed_value;
+  string fixture_root;
   reg ta,ra,sa,oa;
   reg [3:0] kind;
   reg [2:0] projection;
@@ -234,14 +236,16 @@ module tb;
     end
   endtask
   initial begin
-    $readmemh("{run.relative / stem / 'values.hex'}",values);
-    $readmemh("{run.relative / stem / 'rope.hex'}",coefficients);
+    if (!$value$plusargs("fixture=%s",fixture_root) ||
+        !$value$plusargs("seed=%d",seed_value)) $fatal(1,"compatibility missing arguments");
+    $readmemh({{fixture_root,"/values.hex"}},values);
+    $readmemh({{fixture_root,"/rope.hex"}},coefficients);
     for (model=0;model<2;model=model+1) begin
       rst_n=0; valid=0; rspv=0; reqr=0; pending=0; held=0;
       repeat(2) @(posedge clk); @(negedge clk);
       for (j=0;j<{15*maximum};j=j+1) scratch[j]=0;
       for (j=0;j<{layers*sequence*kvheads*dimension};j=j+1) begin keys[j]=0; vals[j]=0; end
-      command_index=0; cycle=0; rng=32'd{seed}; rst_n=1; #1;
+      command_index=0; cycle=0; rng=seed_value; rst_n=1; #1;
       for (mode=0;mode<{3 if enable == 0 else 1};mode=mode+1) begin
         fault=0;
         for (position=0;position<{tokens};position=position+1)
@@ -263,7 +267,8 @@ endmodule
 """)
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
-    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    compile_and_run(run, directory, bench, sources, "verilator", stem,
+                    arguments=[f"+fixture={run.relative / stem}", f"+seed={seed}"], cache=True)
     run.receipt["comparisons"].append({
         "kind": "compatibility", "seed": seed, "geometry": geometry, "enable_fp2": enable,
         "commands_per_implementation": commands, "successive_tokens": tokens,
