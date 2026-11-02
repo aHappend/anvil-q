@@ -176,6 +176,7 @@ module tb;
   wire [31:0] csr_rsp_rdata;
   reg expected_ready,expected_valid,expected_error;
   reg [31:0] expected_data;
+  reg [31:0] stimulus[0:13];
   integer file_handle,scan,cycle,compared=0;
   always #5 clk=~clk;
   anvil_q1_fp2_telemetry_csr #(.COUNTER_BITS({counter_bits})) dut(.*);
@@ -198,11 +199,18 @@ module tb;
     if (!file_handle) $fatal(1,"fixture open");
     for (cycle=0;cycle<{len(records)};cycle=cycle+1) begin
       scan=$fscanf(file_handle,"%h %h %h %h %h %h %h %h %h %h %h %h %h %h %h %h %h %h\\n",
-        rst_n,csr_req_valid,csr_req_write,csr_req_addr,csr_req_wdata,csr_req_wstrb,
-        csr_rsp_ready,fp_ddr_stall_event,alignment_events,epilogue_bubble_event,
-        ulp_valid,ulp_distance,error_event,active,
+        stimulus[0],stimulus[1],stimulus[2],stimulus[3],stimulus[4],stimulus[5],
+        stimulus[6],stimulus[7],stimulus[8],stimulus[9],
+        stimulus[10],stimulus[11],stimulus[12],stimulus[13],
         expected_ready,expected_valid,expected_data,expected_error);
       if (scan!=18) $fatal(1,"malformed fixture");
+      rst_n=stimulus[0][0]; csr_req_valid=stimulus[1][0]; csr_req_write=stimulus[2][0];
+      csr_req_addr=stimulus[3][11:0]; csr_req_wdata=stimulus[4];
+      csr_req_wstrb=stimulus[5][3:0]; csr_rsp_ready=stimulus[6][0];
+      fp_ddr_stall_event=stimulus[7][0]; alignment_events=stimulus[8][6:0];
+      epilogue_bubble_event=stimulus[9][0]; ulp_valid=stimulus[10][0];
+      ulp_distance=stimulus[11]; error_event=stimulus[12][0]; active=stimulus[13][0];
+      #1;
       @(posedge clk); #1; compare(); compared=compared+1;
       @(negedge clk); compare();
     end

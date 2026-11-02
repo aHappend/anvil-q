@@ -92,7 +92,7 @@ def sensitivity(run, root, compile_and_run, simulate_pipeline, tensor_vectors,
                 "assertion": assertion, "simulation_stdout": failed["stdout"],
                 "simulation_stderr": failed["stderr"],
             })
+            run.receipt["comparisons"].append(results[-1])
         else:
             raise AssertionError(f"{name}: mutation escaped unchanged assertions")
     (run.path / "mutation-results.json").write_text(json.dumps(results, indent=2) + "\n")
-    run.receipt["comparisons"].extend(results)

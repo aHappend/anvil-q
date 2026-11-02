@@ -27,7 +27,7 @@ def synthesize(run, root, tops=None):
         script = directory / "synthesis.ys"
         netlist = run.relative / top / "netlist.json"
         script.write_text(
-            "read_verilog -sv " + " ".join(str(source.relative_to(root)) for source in sources) +
+            "read_verilog -defer -sv " + " ".join(str(source.relative_to(root)) for source in sources) +
             f"\nhierarchy -check -top {top}\n"
             "proc\nopt_expr\nopt_clean\ncheck -assert\n"
             # Collect memories without mapping to registers or invoking the optional

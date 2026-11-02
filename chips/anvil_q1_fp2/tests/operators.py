@@ -297,6 +297,8 @@ endmodule
 
 
 def simulate_commands(run, kind, seed, count, simulator, compile_and_run, tile=3):
+    if simulator == "iverilog" and count > 2:
+        simulator = "verilator"
     cases = epilogue_cases(seed, count) if kind == "epilogue" else attention_cases(seed, count)
     stem = f"{kind}-{tile}-{seed}-{simulator}"
     directory = run.path / stem

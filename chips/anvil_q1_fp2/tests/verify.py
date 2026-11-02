@@ -23,6 +23,7 @@ from structure import synthesize  # noqa: E402
 from protocols import simulate_csr, simulate_ddr  # noqa: E402
 from architecture import GEOMETRIES, simulate_architecture  # noqa: E402
 from sensitivity import sensitivity  # noqa: E402
+from benchmarks import rms_benchmark  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -451,12 +452,12 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
         run.command(["vvp", str(binary_path.relative_to(ROOT)), *arguments], f"{stem}-simulate")
     else:
         obj = directory / "compile-obj"
-        run.command(
-            ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
-             "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", "-CFLAGS", "-O0", *sources],
-            f"{stem}-compile",
-        )
         try:
+            run.command(
+                ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
+                 "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", "-CFLAGS", "-O0", *sources],
+                f"{stem}-compile",
+            )
             if cache:
                 cached = run.path / "build-cache" / cache_key
                 cached.parent.mkdir(exist_ok=True)
@@ -465,7 +466,8 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
                 binaries[cache_key] = cached
             run.command([str((obj / "Vtb").relative_to(ROOT)), *arguments], f"{stem}-simulate")
         finally:
-            shutil.rmtree(obj)
+            if obj.exists():
+                shutil.rmtree(obj)
 
 
 def arithmetic(run, seeds, compact=False, simulator=None, leaves=None):
@@ -580,7 +582,7 @@ def main():
     selector.add_argument("--probe",
                         choices=["arithmetic", "rsqrt-startup", "epilogue", "attention",
                                  "synthesis", "csr", "ddr", "architecture", "sensitivity",
-                                 "portable-inner"])
+                                 "portable-inner", "rms-benchmark"])
     parser.add_argument("--seeds", default="17,29,71")
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
@@ -596,6 +598,8 @@ def main():
             rsqrt_startup(run)
         elif selected == "portable":
             portable(run)
+        elif selected == "rms-benchmark":
+            rms_benchmark(run, ROOT, compile_and_run)
         elif selected == "portable-inner":
             arithmetic(run, [17], compact=True, leaves=("add", "multiply", "tensor"))
             simulate_csr(run, 17, "iverilog", compile_and_run, 8)

@@ -453,6 +453,8 @@ endmodule
 
 def simulate_architecture(run, seed, geometry, mx, simulator, compile_and_run, root, tokens=None):
     tokens = min(3, geometry[-1]) if tokens is None else tokens
+    if simulator == "iverilog" and (geometry[1] > 32 or tokens > 1):
+        simulator = "verilator"
     stem = f"architecture-h{geometry[1]}-{'mx' if mx else 'bf16'}-{seed}-{simulator}"
     directory = run.path / stem
     directory.mkdir()
