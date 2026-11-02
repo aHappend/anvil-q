@@ -8674,13 +8674,13 @@
       ]
     },
     "check:l1-synthesis-zero-latches": {
-      "attempt_id": 508,
-      "duration_s": 1308.7852255639154,
-      "stdout_preview": "ion-synthesis, 210s\nprogress: production-synthesis, 240s\nprogress: production-synthesis, 270s\nprogress: production-synthesis, 300s\nprogress: production-synthesis, 330s\nprogress: production-synthesis, 360s\nprogress: production-synthesis, 390s\nprogress: production-synthesis, 420s\nprogress: production-synthesis, 450s\nprogress: production-synthesis, 480s\nprogress: production-synthesis, 510s\nprogress: production-synthesis, 540s\nprogress: production-synthesis, 570s\nprogress: production-synthesis, 600s\nprogress: production-synthesis, 630s\nprogress: production-synthesis, 660s\nprogress: production-synthesis, 690s\nprogress: production-synthesis, 720s\nprogress: production-synthesis, 750s\nprogress: production-synthesis, 780s\nprogress: production-synthesis, 810s\nprogress: production-synthesis, 840s\nprogress: production-synthesis, 870s\nprogress: production-synthesis, 900s\nprogress: production-synthesis, 930s\nprogress: production-synthesis, 960s\nprogress: production-synthesis, 990s\nprogress: production-synthesis, 1020s\nprogress: production-synthesis, 1050s\nprogress: production-synthesis, 1080s\nprogress: production-synthesis, 1110s\nprogress: production-synthesis, 1140s\nprogress: production-synthesis, 1170s\nprogress: production-synthesis, 1200s\nprogress: production-synthesis, 1230s\nprogress: production-synthesis, 1260s\nprogress: production-synthesis, 1290s\n{\"exit_code\": 0, \"reason\": \"all requested comparisons passed\", \"receipt\": \"evidence/l1/synthesis-20261101T152338Z-d4f0afc0/receipt.json\"}\n",
+      "attempt_id": 1556,
+      "duration_s": 1321.0610473200213,
+      "stdout_preview": "ion-synthesis, 210s\nprogress: production-synthesis, 240s\nprogress: production-synthesis, 270s\nprogress: production-synthesis, 300s\nprogress: production-synthesis, 330s\nprogress: production-synthesis, 360s\nprogress: production-synthesis, 390s\nprogress: production-synthesis, 420s\nprogress: production-synthesis, 450s\nprogress: production-synthesis, 480s\nprogress: production-synthesis, 510s\nprogress: production-synthesis, 540s\nprogress: production-synthesis, 570s\nprogress: production-synthesis, 600s\nprogress: production-synthesis, 630s\nprogress: production-synthesis, 660s\nprogress: production-synthesis, 690s\nprogress: production-synthesis, 720s\nprogress: production-synthesis, 750s\nprogress: production-synthesis, 780s\nprogress: production-synthesis, 810s\nprogress: production-synthesis, 840s\nprogress: production-synthesis, 870s\nprogress: production-synthesis, 900s\nprogress: production-synthesis, 930s\nprogress: production-synthesis, 960s\nprogress: production-synthesis, 990s\nprogress: production-synthesis, 1020s\nprogress: production-synthesis, 1050s\nprogress: production-synthesis, 1080s\nprogress: production-synthesis, 1110s\nprogress: production-synthesis, 1140s\nprogress: production-synthesis, 1170s\nprogress: production-synthesis, 1200s\nprogress: production-synthesis, 1230s\nprogress: production-synthesis, 1260s\nprogress: production-synthesis, 1290s\n{\"exit_code\": 0, \"reason\": \"all requested comparisons passed\", \"receipt\": \"evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/receipt.json\"}\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/receipt.json",
+          "path": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/receipt.json",
           "data": {
             "schema": 1,
             "kind": "l1",
@@ -8690,7 +8690,7 @@
               "synthesis"
             ],
             "cwd": ".",
-            "start_time": "2026-11-01T15:23:38.839487+00:00",
+            "start_time": "2026-11-02T11:52:38.059213+00:00",
             "source_hashes": {
               "rtl/anvil_q2_ht2_00_fp_pkg.sv": "c754bf1868de1fe61d06733f1992e23c7883abd2a4e044a52429eda0b32f6dc3",
               "rtl/anvil_q2_ht2_activation_store.sv": "c8cf308a6893da395b846499a740dffedfda3b346f9e0ff0b02cd1a08976b0e6",
@@ -8756,14 +8756,15 @@
               "anvil_q2_ht_reference/rtl/anvil_q2_ht_top.sv": "03617cbcd59b05ff5d4b4a5b720b364a777fb091fc39e59d0be57c5429c4735f",
               "anvil_q2_ht_reference/rtl/anvil_q2_ht_vector_store.sv": "cc47adeb90beccdabebadc3167e6eb7ab43e7949c7d6ba56cb4921c8353184ce",
               "design/ARCHITECTURE.md": "22bde05c5b84c1ce3aee8cc0692df4a9c226502f2aa41b47f6a5c5aa1ccaca4d",
+              "design/GENERATIONAL_HANDOFF.md": "5363006c2786d5fc6afd53e18fd295ba3d1e6dba25fb90e5fc8a43b1b3a51880",
               "design/SPEC.md": "b75e36e851b0fedcc4d671f61efb2f1b124775458dd3b5d28fc49ccbf9b92fad",
-              "tests/METHOD.md": "413d13049698efebaacb5afa3a6fef2f215f61c371e88f10e71c206bba1e1adc",
+              "tests/METHOD.md": "b5fc345cbcadcf2ca38a144cb4f13532cd982503934ec7f013387fa9a0525b3b",
               "tests/activation_startup_tb.sv": "5ea74cc5ad54913a12425ee6a80cb0fd6b3c4335bfdf58e0599e46ebdcba34cb",
               "tests/activation_tb.sv": "7aff691b5cd287708e7a7ef9a93a2bcdad85e311c94ba5bead7e2c3e0c377946",
-              "tests/benchmark_checks.py": "e3d4e744d30e85b21c238b7f3eeb966d1f5d52970779207d4854c8e5169e9249",
+              "tests/benchmark_checks.py": "0e7ab8f6d5721bb0a4952b4f292793e42ea14b39848889b108bed88e9bd5e8dc",
               "tests/benchmark_corpus.json": "f6f7cfabe0b59e3b43aa750de867cb954f393a2018fcec0424eb77f41232bacb",
-              "tests/benchmark_manifest.json": "cf5b29be7269e44f89e6a803c4e933745bbaea04ced19eacd7ee1a2784a1bf33",
-              "tests/benchmarks.py": "4d2cf8cb0962e143abc861e3b9d3dae9175fdcb806314d4b21e48efe711c682c",
+              "tests/benchmark_manifest.json": "b6aedae5f2e4b76a24da56da9f529d4033906c604e57f3f0a450935e14cdc0d9",
+              "tests/benchmarks.py": "94a798b929a1665d36eb7a3d96b50ee3132febceaf42855b34e4dd9256cfab6e",
               "tests/codec_tb.sv": "40d14d84491876c005b4c850685bb41774a083ca7e93930cdc24acf7a01b7ee3",
               "tests/device_image.py": "9c8976ce94627406e94d7eb89d03f56eeddd8e28e58c393a237d325bdfd35ff3",
               "tests/device_image_checks.py": "668d58691d9fb1a95c7ce2d62a5f862a453c2f7c63d3afaddc5b507d6c4f5f2c",
@@ -8795,14 +8796,14 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T15:23:38.857001+00:00",
+                "start_time": "2026-11-02T11:52:38.077285+00:00",
                 "timeout_s": 60,
-                "stdout": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/000-version-yosys.stdout.txt",
-                "stderr": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/000-version-yosys.stderr.txt",
+                "stdout": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/000-version-yosys.stdout.txt",
+                "stderr": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/000-version-yosys.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 0.018296413123607635,
-                "end_time": "2026-11-01T15:23:38.875214+00:00"
+                "duration_s": 0.018310779938474298,
+                "end_time": "2026-11-02T11:52:38.095513+00:00"
               },
               {
                 "argv": [
@@ -8815,14 +8816,14 @@
                   "help read_slang"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T15:23:38.875885+00:00",
+                "start_time": "2026-11-02T11:52:38.096178+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/001-systemverilog-frontend.stdout.txt",
-                "stderr": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/001-systemverilog-frontend.stderr.txt",
+                "stdout": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/001-systemverilog-frontend.stdout.txt",
+                "stderr": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/001-systemverilog-frontend.stderr.txt",
                 "exit_code": 1,
                 "timed_out": false,
-                "duration_s": 0.0177562958560884,
-                "end_time": "2026-11-01T15:23:38.893561+00:00"
+                "duration_s": 0.017713435925543308,
+                "end_time": "2026-11-02T11:52:38.113812+00:00"
               },
               {
                 "argv": [
@@ -8830,17 +8831,17 @@
                   "-Q",
                   "-T",
                   "-s",
-                  "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/synthesis.ys"
+                  "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/synthesis.ys"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-01T15:23:39.018331+00:00",
+                "start_time": "2026-11-02T11:52:38.239161+00:00",
                 "timeout_s": 2600,
-                "stdout": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/002-production-synthesis.stdout.txt",
-                "stderr": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/002-production-synthesis.stderr.txt",
+                "stdout": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/002-production-synthesis.stdout.txt",
+                "stderr": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/002-production-synthesis.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "duration_s": 1301.851100119995,
-                "end_time": "2026-11-01T15:45:20.869366+00:00"
+                "duration_s": 1314.0326015199535,
+                "end_time": "2026-11-02T12:14:32.271699+00:00"
               }
             ],
             "repair_of": null,
@@ -8849,361 +8850,361 @@
               "bindings": [
                 {
                   "source": "rtl/anvil_q2_ht2_activation_store.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_activation_store.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_activation_store.sv",
                   "source_sha256": "c8cf308a6893da395b846499a740dffedfda3b346f9e0ff0b02cd1a08976b0e6",
                   "lowered_sha256": "c8cf308a6893da395b846499a740dffedfda3b346f9e0ff0b02cd1a08976b0e6"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_attention.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_attention.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_attention.sv",
                   "source_sha256": "343ef2c7b1a0adfe700f2a3de7ebf99ec0b59b93509630af4a455c77dedac7c9",
                   "lowered_sha256": "b4037ea3786459c20b8919a40a25e4ce1b46e0291deca2d5f10a2da7e94334c2"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_configuration.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_configuration.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_configuration.sv",
                   "source_sha256": "be776e75eb5fb85194a51521ef5b5a0474f8bea778987514f602331dcc368021",
                   "lowered_sha256": "be776e75eb5fb85194a51521ef5b5a0474f8bea778987514f602331dcc368021"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_convert_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_convert_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_convert_pipe.sv",
                   "source_sha256": "cf9f0cf22c6d0781f12220df2cc5e83d05c99e303fa22ff9f79cbfee494088d7",
                   "lowered_sha256": "4ba94f6613ead1c3d709200c97db77b941e939dae0322c2ef3fa251a4bf7b6f1"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_ddr_fabric.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_ddr_fabric.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_ddr_fabric.sv",
                   "source_sha256": "af294b92ab68271d4403c7018d8ec7ac1dc49cee1465c04f48467aa7cf09ab94",
                   "lowered_sha256": "af294b92ab68271d4403c7018d8ec7ac1dc49cee1465c04f48467aa7cf09ab94"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_delay.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_delay.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_delay.sv",
                   "source_sha256": "831a38fafa8b70b92d6f40994d9a404c297b197c606c76866e7ead43ad139fe0",
                   "lowered_sha256": "831a38fafa8b70b92d6f40994d9a404c297b197c606c76866e7ead43ad139fe0"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_descriptor_check.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_descriptor_check.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_descriptor_check.sv",
                   "source_sha256": "e9345cb6654306b898bb1ae325f9e8b1fac80c54453f4e470523115f702ca4ed",
                   "lowered_sha256": "e9345cb6654306b898bb1ae325f9e8b1fac80c54453f4e470523115f702ca4ed"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_exp_datapath.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_exp_datapath.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_exp_datapath.sv",
                   "source_sha256": "5d717e02e6373585d0293d57d8e0e99130e535ca64602a907da022a4c85a2a22",
                   "lowered_sha256": "8c2844d0f5a5cd4a3c9979cc1d5a6af658eefd32e29ea87f23cd03860c07a8c6"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_fp32_add_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_fp32_add_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_fp32_add_pipe.sv",
                   "source_sha256": "7772324428d3c8e28e98fca255b3d2ca465e07414ebc54ff7d5be97f683778dc",
                   "lowered_sha256": "f693ba77c0976aefcd533f438ba8c3cce976e9a250d4b877dde6d2d0c9915443"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_fp32_mul_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_fp32_mul_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_fp32_mul_pipe.sv",
                   "source_sha256": "1b934f2223e4369da032b7ff1ecc99ca865ee33e86d2dde5e4286c6dae6afeee",
                   "lowered_sha256": "3fb8de25075941988b4da05ea1bb13e4e689152d3792f89b4362379d8121acfc"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_inverse.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_inverse.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_inverse.sv",
                   "source_sha256": "fd01cefb83fe318d9072ef3553c5275e56e7994d0dcbdbe36778764cb561b6e0",
                   "lowered_sha256": "161c017fadf7eae60119ad941a662e48e525a19d3fda97e8cab709d1b553fc8e"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_kv_map.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_kv_map.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_kv_map.sv",
                   "source_sha256": "de3e411b9bbb1a4a60a6314e56bb4041f6d5d37e7848cccb16a964a00e74274a",
                   "lowered_sha256": "de3e411b9bbb1a4a60a6314e56bb4041f6d5d37e7848cccb16a964a00e74274a"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_legacy_logit_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_legacy_logit_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_legacy_logit_pipe.sv",
                   "source_sha256": "b9b4334d4feef0162870fd02357a2be8e957eb1d24ef04d598316359dce13380",
                   "lowered_sha256": "44af1f56a05bb1b4ace6266ccbf4b1877595deebe0820967038b83adee08163b"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_metadata_tile.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_metadata_tile.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_metadata_tile.sv",
                   "source_sha256": "9b2372e35a0dd32ddf841d82ae05628ec4ffa8b6e89a04f8d389bd307dfdf9d7",
                   "lowered_sha256": "a3e233b27ef2e02ff62523ced26af8887497adda9ca67c0a2f535785ba5e0610"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_mode_control.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_mode_control.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_mode_control.sv",
                   "source_sha256": "49d8e81529454af2f236f108ce0f688100367c3673c628ae8195ce04cb848eab",
                   "lowered_sha256": "49d8e81529454af2f236f108ce0f688100367c3673c628ae8195ce04cb848eab"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_model_sequencer.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_model_sequencer.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_model_sequencer.sv",
                   "source_sha256": "3835eb209fea80f628298bc801ce5b7d46c77af9d54b9f91a25a68115b8b0988",
                   "lowered_sha256": "3835eb209fea80f628298bc801ce5b7d46c77af9d54b9f91a25a68115b8b0988"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_native_configuration.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_native_configuration.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_native_configuration.sv",
                   "source_sha256": "29473c49a72a405b3729bd217bbb964342874912963fdba340e3c4a0da4527fd",
                   "lowered_sha256": "db09ab850e5bd48a09899b04833524a4792c71f56fbd5a4240a01765f462dba0"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_native_kv_codec.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_native_kv_codec.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_native_kv_codec.sv",
                   "source_sha256": "a2b32f8469238f0410d3a1d0c99f884ecdfa18581fa72df705d8d1e5c60422a6",
                   "lowered_sha256": "67a7d04aa18aa7323965cc6ffc48b723ee74448ec4c1da7e83e0fe794825831c"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_native_kv_store.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_native_kv_store.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_native_kv_store.sv",
                   "source_sha256": "385603ffc68424007c2343d14503fe40f85e2473bda1a9a4e3caf1461783ce98",
                   "lowered_sha256": "385603ffc68424007c2343d14503fe40f85e2473bda1a9a4e3caf1461783ce98"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_native_tile_reader.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_native_tile_reader.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_native_tile_reader.sv",
                   "source_sha256": "d03d8655af96d480459c02ac84f728644ef99352fc4c6c03f2a99fa160d4cf52",
                   "lowered_sha256": "d03d8655af96d480459c02ac84f728644ef99352fc4c6c03f2a99fa160d4cf52"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_payload_prefetch.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_payload_prefetch.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_payload_prefetch.sv",
                   "source_sha256": "7c548c6d2a0951914c05c30897dcaea65f5d2ab002613887089f7e1471587a2a",
                   "lowered_sha256": "e407e0fb493ac3ddd8da691fad33ca3afe2c42c227aec441773b2825fa1427fe"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_product_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_product_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_product_pipe.sv",
                   "source_sha256": "3b9d727870eae72b4eaa85b80ca220a5ca232fd0e0f1a7ac267c631fdacbd415",
                   "lowered_sha256": "82f89d03603dd2b2543d65a50cfdf9eb3c65fa9c4b6edbb2e34804905795a5d0"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_projection_store_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_projection_store_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_projection_store_pipe.sv",
                   "source_sha256": "f79fc72e073a1c9d08095e0a414b19d87987606f8f7fdf168d4f5e8d5424dda3",
                   "lowered_sha256": "f79fc72e073a1c9d08095e0a414b19d87987606f8f7fdf168d4f5e8d5424dda3"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_rope_pair.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_rope_pair.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_rope_pair.sv",
                   "source_sha256": "6d540a76048d3b234bafa430117612535bd60956901d9f50359eb2041fc3d415",
                   "lowered_sha256": "6d540a76048d3b234bafa430117612535bd60956901d9f50359eb2041fc3d415"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_row_accumulator.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_row_accumulator.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_row_accumulator.sv",
                   "source_sha256": "ab331bec05bd0cdaa556e673f159067a3fdb8131530210deaae693e7b2a60965",
                   "lowered_sha256": "ab331bec05bd0cdaa556e673f159067a3fdb8131530210deaae693e7b2a60965"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_scalar.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_scalar.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_scalar.sv",
                   "source_sha256": "dc7978d3ff3e40fbe2a49f45c37ce3dd9cc4ddf4d0ab4134ac94b35a0da87525",
                   "lowered_sha256": "a497fdf4443386b41a36043a3fe6908748f73749e83c26fb2a61e9c5301f2a17"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_scalar_reader.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_scalar_reader.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_scalar_reader.sv",
                   "source_sha256": "59a021709a21a94ab67d9a6c2bdf3b6a2288beb6a2160cd84df9759ddf650c8f",
                   "lowered_sha256": "59a021709a21a94ab67d9a6c2bdf3b6a2288beb6a2160cd84df9759ddf650c8f"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_sigmoid_reciprocal.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_sigmoid_reciprocal.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_sigmoid_reciprocal.sv",
                   "source_sha256": "6567e54b6132ac8e6353402f0ec19bc6d9978186e2ef622a76d28040a30f713f",
                   "lowered_sha256": "c50e5947867dae72db36e260f696798feeeb2aebadcea6e4406ad73663c12407"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_sparse_w2w4_dma.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_sparse_w2w4_dma.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_sparse_w2w4_dma.sv",
                   "source_sha256": "f3d5ca368a354a6bb294d189374dcfff9f487c15c5a630e12ea810458dde2e1e",
                   "lowered_sha256": "de460f27837d543925492274f2201ad8c7005e27cffbe9804956100da7f88ae1"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_spec_verifier.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_spec_verifier.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_spec_verifier.sv",
                   "source_sha256": "84b11698c680d276299bda48117a750a2c99522bff255d159742b5d52fde4ce1",
                   "lowered_sha256": "84b11698c680d276299bda48117a750a2c99522bff255d159742b5d52fde4ce1"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_stream_reduction.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_stream_reduction.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_stream_reduction.sv",
                   "source_sha256": "8be5661c547124d8afc9d4792bb11aca9878dc88addc3b9dc34b1fd78dbc1ddd",
                   "lowered_sha256": "8be5661c547124d8afc9d4792bb11aca9878dc88addc3b9dc34b1fd78dbc1ddd"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_swiglu_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_swiglu_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_swiglu_pipe.sv",
                   "source_sha256": "e105f4daa09a754a1b35f995a7400e651370e79e29143d35457f6d6b47ec3571",
                   "lowered_sha256": "e105f4daa09a754a1b35f995a7400e651370e79e29143d35457f6d6b47ec3571"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_tensor_engine.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_tensor_engine.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_tensor_engine.sv",
                   "source_sha256": "cc32d460d8dfc962b70c41b6f9c13e0b1ff36aecfd4ed2efc243013e07e8f37c",
                   "lowered_sha256": "cc32d460d8dfc962b70c41b6f9c13e0b1ff36aecfd4ed2efc243013e07e8f37c"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_tile_batch_mac.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_tile_batch_mac.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_tile_batch_mac.sv",
                   "source_sha256": "9ade0b220332ecad95a8a661a40763cc0cef52c02432349014be513593165407",
                   "lowered_sha256": "9ade0b220332ecad95a8a661a40763cc0cef52c02432349014be513593165407"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_top.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_top.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_top.sv",
                   "source_sha256": "f10c9cd481c1623cf624790ebb8c6ab9b48bad1a4f2cb9c1de110e23133c8534",
                   "lowered_sha256": "f10c9cd481c1623cf624790ebb8c6ab9b48bad1a4f2cb9c1de110e23133c8534"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_unpack_lane.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_unpack_lane.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_unpack_lane.sv",
                   "source_sha256": "2e4729498f6d1fba928db0d72722cef68816988c3f2cfaa015121b7e71efabfb",
                   "lowered_sha256": "f4ade40fb89ea83dd7842183915c4e3c67e09c56d1f1b7a495f48ea9df50f181"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_vector_input_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_vector_input_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_vector_input_pipe.sv",
                   "source_sha256": "4b94338089749d7f50732354a3d1529cdff43fe2e6f33477c5baaca6635edfc8",
                   "lowered_sha256": "4b94338089749d7f50732354a3d1529cdff43fe2e6f33477c5baaca6635edfc8"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_vector_result_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_vector_result_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_vector_result_pipe.sv",
                   "source_sha256": "1e4c86b189b85deee68c546c1632503305a0559e8a691c6fc78734779243dff8",
                   "lowered_sha256": "1e4c86b189b85deee68c546c1632503305a0559e8a691c6fc78734779243dff8"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_vector_unit.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_vector_unit.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_vector_unit.sv",
                   "source_sha256": "4506746b477ee8554e8d77b2efb59f3322f0e4f98ecb57045e829ec16c699cff",
                   "lowered_sha256": "f0010163a0508bcaef0edb4f55a9435d0839927b813159d2431e6d53546c54bc"
                 },
                 {
                   "source": "rtl/anvil_q2_ht2_weight_path.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/rtl/anvil_q2_ht2_weight_path.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/rtl/anvil_q2_ht2_weight_path.sv",
                   "source_sha256": "38b8a0cec08d34bf8acc83f2f0df7c02ffcbf3ed54634fa2160c0de212fca467",
                   "lowered_sha256": "38b8a0cec08d34bf8acc83f2f0df7c02ffcbf3ed54634fa2160c0de212fca467"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_add128_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_add128_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_add128_pipe.sv",
                   "source_sha256": "3f49d50cd90eada1591f0e440161f29c7b86e5453bb92167a7934d8d52ba1fb6",
                   "lowered_sha256": "3f49d50cd90eada1591f0e440161f29c7b86e5453bb92167a7934d8d52ba1fb6"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_configuration.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_configuration.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_configuration.sv",
                   "source_sha256": "a6b68ffd52f5fc26c41a28d3e923c877cfaeb7fabe113e4221d9c0e3daf93b0e",
                   "lowered_sha256": "0732c95f2ba50c46af3b5c719d62b33a652e1655522b39d5be237216a7d0308e"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_convert.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_convert.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_convert.sv",
                   "source_sha256": "6120d9f677588b4852a8f91d4a1de294c8f82e0a43bf6118d23bcf075d80f7a0",
                   "lowered_sha256": "c7cf8cc6525360f7ceff0ad8e03c326e3409829b6fe1c665e32a7e3e72697312"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_fabric.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_fabric.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_fabric.sv",
                   "source_sha256": "da8eb385d8690b42bcb4cb6aebc816d699423bfe183020237ba3d9b544e39e12",
                   "lowered_sha256": "da8eb385d8690b42bcb4cb6aebc816d699423bfe183020237ba3d9b544e39e12"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_prefetcher.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_prefetcher.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_prefetcher.sv",
                   "source_sha256": "35486e9fc108d480b2714e3aa0c9e8fb1dd17cfc6603e1fd095e78de189ad820",
                   "lowered_sha256": "35486e9fc108d480b2714e3aa0c9e8fb1dd17cfc6603e1fd095e78de189ad820"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_exp.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_exp.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_exp.sv",
                   "source_sha256": "a7de66fb01154613ce68abcc1e18af8c8976789874f1a58c92efbce6b4c1ebc4",
                   "lowered_sha256": "cc2d3fca497c2dc66d8f49bca95358ad9d8e42f44ded705b830724b1a867e0d8"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_fp32_add_pipe.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_fp32_add_pipe.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_fp32_add_pipe.sv",
                   "source_sha256": "17fb8c26ec7292ee4037e87357e6a7381ba36b75916b031a71d0b4e1c56c2f44",
                   "lowered_sha256": "6782142e978728be59d7db2c8176de326bc242b9a43de20b301ebb0d6a1a3979"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_host_port.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_host_port.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_host_port.sv",
                   "source_sha256": "2c1e0f4e9e7aa543682eb8a2437c5adfb3b80a68aeadf06ad6a9ae7ed869b77f",
                   "lowered_sha256": "2c1e0f4e9e7aa543682eb8a2437c5adfb3b80a68aeadf06ad6a9ae7ed869b77f"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_integer_math.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_integer_math.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_integer_math.sv",
                   "source_sha256": "297bdc80bc13b40ff7dafede4f9e8e551eb77e6a02b776eac17b823c5f7035c8",
                   "lowered_sha256": "44de0f31f9fa93645c19c2ab742d60c456f83d690622a74b48e1a6191da9b1ef"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_burst.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_burst.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_burst.sv",
                   "source_sha256": "45747491d24de22efe5103455b03739c84634efaa9381369c817eb475a5044f2",
                   "lowered_sha256": "45747491d24de22efe5103455b03739c84634efaa9381369c817eb475a5044f2"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_cache.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_cache.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_cache.sv",
                   "source_sha256": "b27c4af360b5bb67178b9d1e0a013ebf30ec4d5e6ba033763cb9ff4c32a40fbf",
                   "lowered_sha256": "b27c4af360b5bb67178b9d1e0a013ebf30ec4d5e6ba033763cb9ff4c32a40fbf"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_codec.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_codec.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_kv_codec.sv",
                   "source_sha256": "d3074c93160c898d59be7bd69852c2502de1b1cdc610eedc295e94f0fd7c3355",
                   "lowered_sha256": "d3074c93160c898d59be7bd69852c2502de1b1cdc610eedc295e94f0fd7c3355"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_projection.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_projection.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_projection.sv",
                   "source_sha256": "77911f270766eae113847745d3c3d2b7cfbfc2ba93407a637076dd30b74fb7dd",
                   "lowered_sha256": "77911f270766eae113847745d3c3d2b7cfbfc2ba93407a637076dd30b74fb7dd"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_scalar_reader.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_scalar_reader.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_scalar_reader.sv",
                   "source_sha256": "40c5b51a70b74c093fc65cf4e44ccff7186494e1a96e350cd01ce5bc26f093f8",
                   "lowered_sha256": "40c5b51a70b74c093fc65cf4e44ccff7186494e1a96e350cd01ce5bc26f093f8"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_sequencer.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_sequencer.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_sequencer.sv",
                   "source_sha256": "e6e61f5e22394716082d9d3a70cc08753410fd477ccbe3be4ddb643e9e78f529",
                   "lowered_sha256": "ab212a56470781c98d1b6b41c32e0af8ae67447c3a8b0917ca72f3d908221f26"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_tensor_array.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_tensor_array.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_tensor_array.sv",
                   "source_sha256": "2bab6971836fe1a763dc3b829ed5c7da1446fcb5ce41bb1fb879366b6b17059d",
                   "lowered_sha256": "2bab6971836fe1a763dc3b829ed5c7da1446fcb5ce41bb1fb879366b6b17059d"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_tensor_lane.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_tensor_lane.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_tensor_lane.sv",
                   "source_sha256": "13456526ea43d593f3ac9a7212384ba9d06b77044b6296ae732c1b8a385c49d1",
                   "lowered_sha256": "9526afee7f7fd9437bc89006a259ec7d89fc05c9e792c6fc38c006d36f562a78"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_tile_buffers.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_tile_buffers.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_tile_buffers.sv",
                   "source_sha256": "d09c1241dfe565788cad472aca0532ece30fae3b8f5336868f318320f63cc640",
                   "lowered_sha256": "d09c1241dfe565788cad472aca0532ece30fae3b8f5336868f318320f63cc640"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_top.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_top.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_top.sv",
                   "source_sha256": "03617cbcd59b05ff5d4b4a5b720b364a777fb091fc39e59d0be57c5429c4735f",
                   "lowered_sha256": "03617cbcd59b05ff5d4b4a5b720b364a777fb091fc39e59d0be57c5429c4735f"
                 },
                 {
                   "source": "anvil_q2_ht_reference/rtl/anvil_q2_ht_vector_store.sv",
-                  "lowered": "evidence/l1/synthesis-20261101T152338Z-d4f0afc0/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_vector_store.sv",
+                  "lowered": "evidence/l1/synthesis-20261102T115238Z-3d4bbcc7/lowered-sources/anvil_q2_ht_reference/rtl/anvil_q2_ht_vector_store.sv",
                   "source_sha256": "cc47adeb90beccdabebadc3167e6eb7ab43e7949c7d6ba56cb4921c8353184ce",
                   "lowered_sha256": "cc47adeb90beccdabebadc3167e6eb7ab43e7949c7d6ba56cb4921c8353184ce"
                 }
@@ -9310,7 +9311,7 @@
               "black_boxes": 0,
               "limits": "Generic structural synthesis does not establish M20K/DSP mapping, fit or timing."
             },
-            "end_time": "2026-11-01T15:45:26.140536+00:00",
+            "end_time": "2026-11-02T12:14:37.595351+00:00",
             "exit_code": 0,
             "reason": "all requested comparisons passed",
             "source_hashes_unchanged": true
