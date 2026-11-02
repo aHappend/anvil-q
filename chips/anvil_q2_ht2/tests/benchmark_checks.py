@@ -9,7 +9,9 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from benchmarks import (BOUNDARY, DOMAINS, PromptAccount, cell_key, cells, corpus,
@@ -478,6 +480,46 @@ class ExportChecks(unittest.TestCase):
         rows.insert(2, rows[1])
         with self.assertRaisesRegex(ValueError, "overlapping"):
             self.read_rows(rows)
+
+
+class BenchmarkExecutionChecks(unittest.TestCase):
+    def reject_missing_production_input(self, error):
+        from benchmarks import execute
+
+        path = FIXTURES / hashlib.sha256(self.id().encode()).hexdigest()[:12]
+        path.mkdir()
+        accounting = json.dumps({
+            "scope": "accounting-unit-tests-only; no production observations",
+            "tests": 48, "failures": 0, "errors": 0})
+        run = SimpleNamespace(
+            path=path, receipt={}, tool=Mock(), save=Mock(),
+            relative=lambda item: str(item.relative_to(ROOT)),
+            command=Mock(return_value=({}, accounting, "")))
+        # Isolate each missing production input without reading model assets or
+        # recursively launching this accounting suite.
+        with patch("benchmarks.prerequisites", return_value=({}, [error])):
+            with self.assertRaisesRegex(RuntimeError, "benchmark prerequisites missing or invalid") as failure:
+                execute(run)
+        self.assertIn(error, str(failure.exception))
+        report = json.loads((path / "benchmark-analysis.json").read_text())
+        self.assertEqual(report["status"], "missing-inputs")
+        self.assertEqual(report["input_errors"], [error])
+        self.assertEqual(len(report["matrix"]), 250)
+        self.assertTrue(all(row["status"] == "missing-observations"
+                            for row in report["matrix"]))
+        self.assertNotIn("production_comparisons", report)
+        self.assertEqual(run.receipt["benchmark_accounting_self_tests"], accounting)
+        run.tool.assert_called_once_with("python3")
+        run.command.assert_called_once()
+        self.assertEqual(run.command.call_args.args[1], "benchmark-accounting-self-tests")
+        run.save.assert_called()
+
+    def test_missing_observations_cannot_pass_after_accounting_success(self):
+        self.reject_missing_production_input("observations: no immutable inputs supplied")
+
+    def test_missing_parent_handoff_cannot_pass_after_accounting_success(self):
+        self.reject_missing_production_input(
+            "generational_handoff: design/GENERATIONAL_HANDOFF.md: missing immutable SHA-256")
 
 
 def main():

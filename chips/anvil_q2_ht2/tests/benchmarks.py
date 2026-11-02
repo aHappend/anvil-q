@@ -493,6 +493,8 @@ def execute(run):
 
     save()
     if errors:
+        report["status"] = "missing-inputs"
+        save()
         raise RuntimeError("benchmark prerequisites missing or invalid: " + "; ".join(errors))
     from quantized_checkpoint import benchmark_image, check
     from quantized_checkpoint_tests import execute as converter_self_tests
