@@ -374,9 +374,11 @@ PHY or PCIe endpoint.
 Independent functional/numerical, mutation, synthesis, benchmark and delivery
 checks remain mandatory, followed by native timing and board gates.
 No clock constraint, static elaboration result, requested performance target
-or named instance establishes those results. No parent physical baseline
-was supplied. Missing historical evidence remains a prerequisite for
-parent-relative throughput/ALM claims, not permission to fabricate one.
+or named instance establishes those results. The present
+`design/GENERATIONAL_HANDOFF.md` reports N/A physical results, not a measured
+parent baseline. Comparable source-bound parent target evidence remains a
+prerequisite for parent-relative throughput/ALM claims, not permission to
+fabricate one.
 
 ## Claim-to-evidence guide
 
@@ -386,6 +388,6 @@ mutant detection. Benchmark receipts establish fixture-specific cycles and
 accepted external traffic, not official-checkpoint quality. Yosys receipts
 establish logical structure/proxies. Only native comparable Quartus receipts
 establish target timing, ALMs, DSPs, registers and RAM; only native board
-receipts establish physical deterministic execution. The absent parent handoff
-must not be replaced with invented numbers. The shared runtime produces the
+receipts establish physical deterministic execution. The parent handoff's N/A
+results must not be replaced with invented numbers. The shared runtime produces the
 independently reviewed product PDF after engineering acceptance.

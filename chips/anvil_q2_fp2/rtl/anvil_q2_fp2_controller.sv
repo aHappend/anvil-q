@@ -723,22 +723,24 @@ module anvil_q2_fp2_controller #(
         ATTN_READ_WAIT: if (own_response) begin
           if (attention_read_kind<2) begin
             if (CACHE_MODE==0) begin
-              for (element=0;element<32;element=element+1)
-                if (attention_payload_offset+element<HEAD_DIM) begin
+              for (element=0;element<HEAD_DIM;element=element+1)
+                if (element>=attention_payload_offset &&
+                    element<attention_payload_offset+32) begin
                   if (attention_read_kind[0])
-                    value_buffer[16*(attention_payload_offset+element)+:16]<=
-                      rsp_data[16*element+:16];
-                  else key_buffer[16*(attention_payload_offset+element)+:16]<=
-                    rsp_data[16*element+:16];
+                    value_buffer[16*element+:16]<=
+                      rsp_data[16*(element-attention_payload_offset)+:16];
+                  else key_buffer[16*element+:16]<=
+                    rsp_data[16*(element-attention_payload_offset)+:16];
                 end
             end else begin
-              for (element=0;element<64;element=element+1)
-                if (attention_payload_offset+element<HEAD_DIM) begin
+              for (element=0;element<HEAD_DIM;element=element+1)
+                if (element>=attention_payload_offset &&
+                    element<attention_payload_offset+64) begin
                   if (attention_read_kind[0])
-                    value_buffer[8*(attention_payload_offset+element)+:8]<=
-                      rsp_data[8*element+:8];
-                  else key_buffer[8*(attention_payload_offset+element)+:8]<=
-                    rsp_data[8*element+:8];
+                    value_buffer[8*element+:8]<=
+                      rsp_data[8*(element-attention_payload_offset)+:8];
+                  else key_buffer[8*element+:8]<=
+                    rsp_data[8*(element-attention_payload_offset)+:8];
                 end
             end
             if (attention_payload_offset+((CACHE_MODE==2) ? 64 : 32)<HEAD_DIM) begin

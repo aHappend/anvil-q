@@ -65,7 +65,7 @@ module anvil_q2_fp2_gemv_stream (
   wire live=rst_n && !flush;
   assign cmd_ready=live && !active;
   assign busy=rst_n && active;
-  assign tensor_flush=flush || accepted_command;
+  assign tensor_flush=rst_n && (flush || accepted_command);
   wire [31:0] payload_column=load_column+
     (mx ? ({29'd0,request_beat} << 6) : ({29'd0,request_beat} << 5));
   wire [31:0] remaining=inputs-load_column;
@@ -77,13 +77,13 @@ module anvil_q2_fp2_gemv_stream (
   wire scale_request=load_state==LOAD_SCALE;
   assign req_valid=live && active && (scale_request ||
     (load_state==LOAD_PAYLOAD && request_beat<real_beats));
-  assign req_kind=embedding ? 4'd0 : (scale_request ? 4'd3 : 4'd1);
-  assign req_layer=embedding ? 32'd0 : layer;
-  assign req_proj=embedding ? 3'd0 : projection;
-  assign req_row=load_row;
-  assign req_col=scale_request ? scale_base : payload_column;
-  assign req_format=scale_request ? 2'd3 : (mx ? 2'd2 : 2'd1);
-  assign req_tag={load_tag[28:0],(scale_request ? 3'd4 : request_beat)};
+  assign req_kind=rst_n ? (embedding ? 4'd0 : (scale_request ? 4'd3 : 4'd1)) : 4'd0;
+  assign req_layer=(rst_n && !embedding) ? layer : 32'd0;
+  assign req_proj=(rst_n && !embedding) ? projection : 3'd0;
+  assign req_row=rst_n ? load_row : 32'd0;
+  assign req_col=rst_n ? (scale_request ? scale_base : payload_column) : 32'd0;
+  assign req_format=rst_n ? (scale_request ? 2'd3 : (mx ? 2'd2 : 2'd1)) : 2'd0;
+  assign req_tag=rst_n ? {load_tag[28:0],(scale_request ? 3'd4 : request_beat)} : 32'd0;
   wire real_response=response_beat<real_beats;
   assign w_valid=live && active && load_state==LOAD_PAYLOAD &&
     (real_response ? rsp_valid : 1'b1);
@@ -93,33 +93,33 @@ module anvil_q2_fp2_gemv_stream (
     (mx ? ({29'd0,response_beat} << 6) : ({29'd0,response_beat} << 5));
   genvar element;
   generate for (element=0;element<64;element=element+1) begin: payload_mask
-    assign w_data[8*element+:8]=(real_response &&
+    assign w_data[8*element+:8]=(rst_n && real_response &&
       (mx ? (response_column+element<inputs) :
        (response_column+(element >> 1)<inputs))) ? rsp_data[8*element+:8] : 8'd0;
   end endgenerate
   wire [5:0] scale_offset=load_column[10:5];
   wire [6:0] scale_byte={1'b0,scale_offset}+({4'd0,response_beat} << 1);
-  assign w_scale[7:0]=(mx && response_column<inputs) ?
-    scales[8*scale_byte+:8] : 8'd127;
-  assign w_scale[15:8]=(mx && response_column+32<inputs) ?
-    scales[8*scale_byte+8+:8] : 8'd127;
-  assign w_format=mx;
-  assign w_first=load_column==0;
-  assign w_last=load_column+128>=inputs;
-  assign w_tag=load_tag;
-  assign w_error=scale_bad || (real_response &&
-    (rsp_error || rsp_tag!={load_tag[28:0],response_beat}));
+  assign w_scale[7:0]=rst_n ? ((mx && response_column<inputs) ?
+    scales[8*scale_byte+:8] : 8'd127) : 8'd0;
+  assign w_scale[15:8]=rst_n ? ((mx && response_column+32<inputs) ?
+    scales[8*scale_byte+8+:8] : 8'd127) : 8'd0;
+  assign w_format=rst_n && mx;
+  assign w_first=rst_n && load_column==0;
+  assign w_last=rst_n && load_column+128>=inputs;
+  assign w_tag=rst_n ? load_tag : 32'd0;
+  assign w_error=rst_n && (scale_bad || (real_response &&
+    (rsp_error || rsp_tag!={load_tag[28:0],response_beat})));
   assign act_read_valid=live && active && !activation_done &&
     !activation_pending && !activation_valid;
-  assign act_read_column=activation_column;
+  assign act_read_column=rst_n ? activation_column : 32'd0;
   assign in_valid=live && active && activation_valid;
-  assign in_a=activation_tile;
+  assign in_a=rst_n ? activation_tile : 2048'd0;
   generate for (element=0;element<128;element=element+1) begin: activation_mask
-    assign in_mask[element]=activation_column+element<inputs;
+    assign in_mask[element]=rst_n && activation_column+element<inputs;
   end endgenerate
-  assign in_first=activation_column==0;
-  assign in_last=activation_column+128>=inputs;
-  assign in_tag=activation_tag;
+  assign in_first=rst_n && activation_column==0;
+  assign in_last=rst_n && activation_column+128>=inputs;
+  assign in_tag=rst_n ? activation_tag : 32'd0;
   wire tensor_accept=in_valid && in_ready;
   assign event_weight_underflow=live && active && activation_valid &&
     published_tiles==consumed_tiles;
@@ -137,9 +137,9 @@ module anvil_q2_fp2_gemv_stream (
     .in_a(accumulator),.in_b(out_data),
     .out_valid(sum_valid),.out_data(sum_data),.out_error(sum_error));
   assign row_valid=live && active && result_valid;
-  assign row_data=result_data;
-  assign row_index=result_row;
-  assign row_last=result_row+1>=outputs;
+  assign row_data=rst_n ? result_data : 32'd0;
+  assign row_index=rst_n ? result_row : 32'd0;
+  assign row_last=rst_n && result_row+1>=outputs;
   assign row_error=row_valid && result_bad;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

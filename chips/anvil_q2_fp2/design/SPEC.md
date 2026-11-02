@@ -10,10 +10,11 @@ submitted for independent verification. The admitted work order remains authorit
 coverage matrix and thresholds. No functional, synthesis, timing, board,
 speedup, resource or model-quality result is established by this document.
 The supplied `anvil_q2_fp_reference/rtl/*.sv` files are immutable.
-Neither a repository-intake source index nor a parent
-`design/GENERATIONAL_HANDOFF.md` was supplied. No parent physical baseline has
-therefore been accepted; comparable source-bound parent Quartus results remain
-necessary for physical improvement claims.
+No repository-intake source index was supplied. The now-present
+`design/GENERATIONAL_HANDOFF.md` identifies the inherited parent modules, but
+reports N/A for parent STA, post-fit resources and physical HIL. It does not
+establish an accepted parent physical baseline; comparable source-bound parent
+Quartus results remain necessary for physical improvement claims.
 
 Designer owns `rtl/*.sv`, `design/*.md` and `fpga/*`. Independent Verifier owns
 `tests/*.py`, generated stimulus, mathematics and execution. Designer does not
