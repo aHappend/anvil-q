@@ -10,6 +10,8 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
+import os
+import time
 
 
 def main():
@@ -40,9 +42,12 @@ def main():
     rows = []
     for identifier,script,options in (
             ("compact-behavior","tests/run_parameters.py",["--diagnostic"]),
-            ("compact-zero-latch","tests/run_synthesis.py",["--compact-only"])):
+            ("compact-zero-latch","tests/run_synthesis.py",["--job", "compact-hierarchy"])):
         child_path = f"evidence/reproduction-{uuid.uuid4().hex[:12]}"
         argv = ["python3",script,*options,"--output",child_path]
+        deadline = os.environ.get("HT3_CHECK_DEADLINE")
+        allocation = 120 if identifier == "compact-behavior" else 180
+        os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + min(remaining(), allocation))
         try:
             execute(argv,output,identifier,["python3","--version"],root=bundle)
             result_path = bundle / child_path / "result.json"
@@ -56,6 +61,11 @@ def main():
         except (RuntimeError,AssertionError) as exc:
             rows.append(dict(id=identifier,status="failed",error=str(exc),
                              result=relative(bundle/child_path/"result.json")))
+        finally:
+            if deadline is None:
+                os.environ.pop("HT3_CHECK_DEADLINE", None)
+            else:
+                os.environ["HT3_CHECK_DEADLINE"] = deadline
     result = dict(status="passed" if all(r["status"]=="passed" for r in rows) else "failed",
                   runs=rows,bundle_manifest=relative(output/"bundle-manifest.json"),
                   coverage_limits=["compact integrated model-inference reproduction"])

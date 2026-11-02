@@ -25,6 +25,7 @@ COMPACT = {
 JOBS = (
     ("default-hierarchy", "anvil_q1_ht3_top", {}, False),
     ("compact-mapped", "anvil_q1_ht3_top", COMPACT, True),
+    ("compact-hierarchy", "anvil_q1_ht3_top", COMPACT, False),
     ("fp32_add", "anvil_q1_ht3_fp32_add", {}, True),
     ("fp32_mul", "anvil_q1_ht3_fp32_mul", {}, True),
     ("fp32_divsqrt", "anvil_q1_ht3_fp32_divsqrt", {}, True),
@@ -37,6 +38,7 @@ JOBS = (
       "MAX_SEQ_LEN": 1, "TILE_TOKENS": 3}, False),
 )
 JOB_BUDGETS = {"default-hierarchy": 360, "compact-mapped": 420,
+               "compact-hierarchy": 180,
                "fp32_add": 60, "fp32_mul": 60, "fp32_divsqrt": 90,
                "fp32_exp": 90, "fp32_sincos": 120,
                "epilogue_fusion": 90, "flash_attn": 90}
@@ -129,7 +131,7 @@ def checked_account(netlist, top, identifier, mapped):
     counts = account(netlist, top)
     if not counts["cells"]:
         raise AssertionError("empty synthesis hierarchy")
-    if identifier in ("default-hierarchy", "compact-mapped"):
+    if identifier in ("default-hierarchy", "compact-mapped", "compact-hierarchy"):
         lane_count = sum(count for name, count in counts["hierarchy"].items()
                          if "anvil_q1_ht3_mac_lane" in name)
         if lane_count != 256:
@@ -208,7 +210,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                    digest(ROOT / receipt[k]) for k in ("stdout", "stderr")):
                 continue
             counts = checked_account(json.loads((candidate / "netlist.json").read_text()),
-                                     top, identifier, phase != "word")
+                                     top, identifier, phase == "abc")
             retained = (candidate, counts)
             break
         if retained is None:
@@ -223,7 +225,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             execute(["yosys", "-Q", "-T", "-s", relative(directory / "synthesis.ys")],
                     directory, "synthesis", ["yosys", "-V"])
             counts = checked_account(json.loads((directory / "netlist.json").read_text()),
-                                     top, identifier, phase != "word")
+                                     top, identifier, phase == "abc")
             artifacts = [directory / name for name in
                          ("synthesis.ys", "statistics.json", "netlist.json", "checkpoint.il")]
             if not all(path.is_file() for path in artifacts):
@@ -243,6 +245,29 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                             receipt=relative(directory / "synthesis.receipt.json")))
         with (output / f"{phase}-progress.json").open("x") as out:
             json.dump(records, out, indent=2)
+        if phase == "word" and identifier == "compact-mapped":
+            netlist = json.loads((directory / "netlist.json").read_text())
+            ordered = sorted(netlist["modules"],
+                             key=lambda name: (-len(netlist["modules"][name]["cells"]), name))
+            groups, group, size = [], [], 0
+            for name in ordered:
+                cells = len(netlist["modules"][name]["cells"])
+                if group and size + cells > 2500:
+                    groups.append(group)
+                    group, size = [], 0
+                group.append(name)
+                size += cells
+            if group:
+                groups.append(group)
+            group_phases = []
+            for index, group in enumerate(groups):
+                selection = " ".join(group)
+                group_phases.append((
+                    f"gates-{index:02d}",
+                    f"select -set mapping_group {selection}; techmap @mapping_group; "
+                    "opt_expr @mapping_group; opt_merge @mapping_group; "
+                    "opt_clean @mapping_group; select -clear; "))
+            phases[1:2] = group_phases
     return dict(id=identifier, status="passed", parameters=parameters,
                 mapped=True, phases=records, accounting=counts,
                 receipt=records[-1]["receipt"], netlist=relative(directory / "netlist.json"),
@@ -325,9 +350,7 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--diagnostic", action="store_true")
     mode.add_argument("--compact-only", action="store_true")
-    mode.add_argument("--job", choices=("default-hierarchy", "compact-mapped", "fp32_add",
-                                       "fp32_mul", "fp32_divsqrt", "fp32_exp", "fp32_sincos",
-                                       "epilogue_fusion", "flash_attn"))
+    mode.add_argument("--job", choices=tuple(row[0] for row in JOBS))
     args = parser.parse_args()
     output = ROOT / args.output
     output.mkdir(parents=True, exist_ok=False)
