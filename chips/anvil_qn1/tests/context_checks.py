@@ -205,6 +205,7 @@ def run_context(run, positions=40960, q_heads=32, kv_heads=8, head=31, compiled=
         objects = run.path / "obj-context"
         sources = [relative(p) for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
         run.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                     "-CFLAGS", "-O3",
                      "--top-module", "context_tb", *[f"-G{k}={v}" for k, v in parameters.items()],
                      "--Mdir", relative(objects), "-o", "simulate", *sources, relative(bench)],
                     "context-compile")

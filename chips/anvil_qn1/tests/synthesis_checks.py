@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 from execution import ROOT, relative
 
@@ -196,23 +197,27 @@ def run_synthesis_case(run, profile=3, compact=False, banks=8, queue=3,
 
 
 def run_synthesis(run):
-    results = []
+    cases = []
     for profile in (1, 2, 3):
-        results.append(run.component(
-            f"synthesis-profile{profile}",
-            lambda child, profile=profile: run_synthesis_case(child, profile=profile)))
+        cases.append((f"synthesis-profile{profile}", {"profile": profile}))
     for index, (banks, queue, vocabulary, maximum, head_dim, q_heads) in enumerate((
             (1, 1, 1, 1, 8, 2),
             (8, 3, 8, 16, 8, 4),
             (1, 16, 8, 16, 128, 4),
             (8, 16, 8, 16, 128, 2))):
-        results.append(run.component(
-            f"synthesis-boundary{index}",
-            lambda child, banks=banks, queue=queue, vocabulary=vocabulary,
-            maximum=maximum, head_dim=head_dim, q_heads=q_heads:
-            run_synthesis_case(child, compact=True, banks=banks, queue=queue,
-                               vocabulary=vocabulary, maximum=maximum,
-                               head_dim=head_dim, q_heads=q_heads)))
+        cases.append((f"synthesis-boundary{index}",
+                      {"compact": True, "banks": banks, "queue": queue,
+                       "vocabulary": vocabulary, "maximum": maximum,
+                       "head_dim": head_dim, "q_heads": q_heads}))
+
+    def execute_case(case):
+        stem, parameters = case
+        return run.component(stem, lambda child: run_synthesis_case(child, **parameters))
+
+    # Independent Yosys processes, no shared output paths or mutable build cache.
+    # Three bounded workers keep the campaign within its whole-check deadline.
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        results = list(executor.map(execute_case, cases))
     return {"cases": results, "case_count": len(results),
             "production_profiles": [1, 2, 3], "compact_boundaries": 4,
             "latches": 0, "combinational_div_mod": 0, "unresolved_blackboxes": 0}
