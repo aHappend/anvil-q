@@ -86,7 +86,8 @@ module anvil_q3_ht2_batch_controller #(
   assign token_ready=eligible;
   assign spec_req_ready=eligible && !token_valid && sequence_valid && prefix_count!=0;
   assign idle=running && state==IDLE && all_drained;
-  assign transport_flush=rst_n && children_flush;
+  assign transport_flush=rst_n && (children_flush ||
+    (state==RUN && (decoder_fault || verifier_fault)));
   assign done=running && ((!speculative && (state==COMPLETE || state==INVALID_COMPLETE)) ||
     (state==CANCEL_COMPLETE && cancelled_active));
   assign error=done && (failed || state==CANCEL_COMPLETE);
@@ -196,6 +197,7 @@ module anvil_q3_ht2_batch_controller #(
           cancelled_active<=0;
           if (token_fire) begin
             speculative<=0; failed<=0; sparse<=sparse_enable;
+            if (new_sequence) sequence_valid<=0;
             threshold<=sparse_threshold_f16; id<=id_counter; id_counter<=id_counter+1'b1;
             base<=token_pos; root_target<=token_id;
             mask<=4'b0001; tokens<={96'd0,token_id}; parents<=12'd4;
@@ -211,6 +213,12 @@ module anvil_q3_ht2_batch_controller #(
               if (token_phase) decoding<=1;
               state<=START;
             end
+`ifndef SYNTHESIS
+            if ((^{token_id,token_pos,new_sequence,token_phase,sparse_enable,
+                   sparse_threshold_f16})===1'bx) begin
+              failed<=1; state<=INVALID_COMPLETE;
+            end
+`endif
           end else if (spec_fire) begin
             speculative<=1; failed<=0; decoding<=1; sparse<=sparse_enable;
             threshold<=sparse_threshold_f16; id<=spec_req_id; base<=spec_base_pos;

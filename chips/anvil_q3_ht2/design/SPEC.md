@@ -8,16 +8,20 @@ acceptance report. The complete product is an integrated accelerator with
 sparsity, causal tree attention and atomic all-layer KV publication. A collection
 of leaf modules does not satisfy that objective.
 
-Implementation is currently incomplete. Sparse DMA, registered FP32 helpers,
+The authored integrated RTL includes sparse DMA, registered FP32 helpers,
 Q16 projection-boundary converters and the four-bank tile MAC are authored.
 Private scratch, a causal parent-Q16 attention wrapper with quantized KV reader,
 the greedy verifier and atomic shadow/copy engine are also authored as leaves.
 The shared batched projection scheduler, resident metadata loader, scan-RAM
 reuse and shared embedding/output-head module are now authored. The batched
 decoder, scalar image/scratch adapter, five-client scratch arbiter and quantized
-KV staging path are also authored. The decoder's command/logit/staging/DDR
-interfaces still need connection to sequence control and the verifier.
-The integrated public top and FPGA files are absent.
+KV staging path. `anvil_q3_ht2_batch_controller` now connects decoder evaluation,
+logits and staging to the same verifier/atomic engine for ordinary tokens and
+draft trees. `anvil_q3_ht2_top` includes the literal unchanged legacy core,
+sequence-mode control and shared physical DDR selection/arbitration.
+The production CSR bridge, target/source configuration and 10 ns constraints
+are in `rtl/anvil_q3_ht2_bridge.sv` and `fpga/`; platform connection requirements
+and the host register map are in `design/FPGA_INTEGRATION.md`.
 Independent functional verification, synthesis, timing, fit and board execution
 are pending. No performance or numerical result is claimed.
 
@@ -220,10 +224,10 @@ qweight, resident metadata, and bias. Its scratch interface is the private
 scratch's common-mask read / single-node write protocol. The enclosing decoder
 must preserve scratch source values during
 an owned projection. The decoder now arbitrates scratch and schedules embedding,
-scalar layers, staging, attention and the shared head. Integration still must
-connect its six DDR clients and verifier staging/logit interfaces to public
-sequence control, top arbitration and target bridge configuration. No module implementation
-or syntax check certifies these pending connections.
+scalar layers, staging, attention and the shared head. Its six DDR clients and
+the verifier's record-memory client now connect through the seven-client HT2
+arbiter to the top's mode-exclusive physical Avalon path. No authored
+connection or syntax check certifies functional correctness or target timing.
 
 ### Shared embedding/output-head boundary
 
@@ -286,7 +290,7 @@ registered state; they cannot transfer retroactively on that edge.
 | Two-line column | First response never publishes an operand; final response at R publishes one operand post R + 1. |
 | Cancel before second-line acceptance | Drop the unaccepted second request; drain only actual accepted reads. |
 | All-sparse DMA | Zero physical reads; descriptor transfer precedes completion. |
-| Queue/residency one or three | Explicit wrap counters in their owning future modules; no modulo operator. |
+| Queue/residency one or three | Explicit wrap counters in their owning modules; no modulo operator. |
 | KV count one / capacity | Both legal; padding and complete expected-record accounting still apply. |
 
 ### Atomic commit leaf implementation boundary
@@ -322,8 +326,8 @@ The record-memory transport reserves one read response before accepting a
 request. Writes complete on accepted request, not on a fictitious write response.
 `memory_rsp_error` is also monitored without `memory_rsp_valid`, allowing the
 enclosing bridge to forward available Avalon response faults. A two-edge quiet
-fence follows the final accepted copy write before publication; the future
-public-DDR integration must map its controller error indication over this fence
+fence follows the final accepted copy write before publication; the
+public-DDR integration maps its controller error indication over this fence
 and must not claim persistent-memory durability. Flush drops unaccepted requests,
 drains accepted reads and suppresses publication. A fault preserves the visible
 prefix and recovers only after a flush; flush alone preserves the sequence.
@@ -460,8 +464,8 @@ order. The signed-Q16.16 input range is inside finite binary16 range, so the
 input conversion must not produce infinity; rounding at the negative endpoint
 may produce -32768, which is finite. FP32-to-Q16 overflow saturates only at the
 declared conversion boundary, never inside FP32 arithmetic. These boundaries
-are implemented by the projection-boundary helpers below; their connection
-to the complete decoder and independent numerical coverage remain pending.
+are implemented by the projection-boundary helpers below and connected
+to the complete decoder. Independent numerical coverage remains pending.
 Legacy mode invokes the literal parent without an arithmetic correction wrapper.
 
 Weight decode has three registers; FP32 product and every FP32 adder have six
@@ -621,15 +625,84 @@ drain_done is a pulse after accepted reads drain; cancelled data never completes
 as a successful operand. Reset requires the enclosing transport reset to
 invalidate old returns; flush alone retains read ownership.
 
-## Remaining integrated contracts
+## Integrated sequence and physical-memory contract
 
-The public HT2 top must retain every parent port verbatim and add the admitted
-mode, sparse-control and draft-tree request/response ports. Latch mode at a new
-sequence, arbitrate one physical DDR interface, prioritize ordinary tokens
-when idle, exclude host changes during inference, and compute the prefix
-argmax in hardware. All seven projections, embedding, output head, complete
-36-layer decoder, private node scratch and long-context backing remain required.
-Output-head weights must also be reused across candidates.
+The public HT2 top retains every parent port verbatim and adds the admitted
+mode, sparse-control and draft-tree request/response ports. Mode is latched
+on a new-sequence ordinary-token transfer; a live sequence ignores subsequent
+ht2_enable changes. Ordinary-token valid suppresses speculative readiness,
+including when that ordinary token will be diagnosed as malformed.
+Legacy requests invoke the literal parent `legacy_core` without arithmetic
+fixups. HT2 requests invoke the shared seven-projection decoder and shared
+FP16 output head, with private node scratch and full committed KV backing.
+
+Ordinary HT2 tokens are unconditional one-root evaluations through the same
+verifier/commit engine. The controller supplies that ordinary token itself as
+the internal one-node selection target, guaranteeing its commit independently
+of greedy speculation. This is **not** a host-supplied prefix-logit oracle:
+ordinary tokens are inputs to be consumed, while speculative root targets come
+only from the previously published hardware argmax. Both paths compute actual
+embedding, all layers, causal attention and complete logits before publishing.
+An ordinary request requires position equal to the committed count, or a
+position-zero new sequence. Once decode begins, a prefill-phase request is
+rejected. A speculative request requires a valid nonempty committed prefix and
+uses the cached hardware next-token target. Malformed accepted requests
+produce errors; successful zero-token greedy rejection preserves the prefix.
+
+New sequence resets the sequence-owned verifier and decoder only after the
+previous transport is drained, and clears cached prefix state. Cancellation
+uses flush, never that reset, so previous committed values/count survive.
+The commit engine's internal `publication_valid` identifies the prospective
+publication edge, gated by cancellation and transport faults.
+The verifier exports internal `publication_valid/publication_pos/
+publication_next_token` to the sequence controller. These are necessary
+integration signals, not additional host ports or verifier results.
+At that same registered publication edge the controller caches the actual
+new count and hardware next token. A subsequent cancellation before the public
+response therefore cannot roll back a published prefix or lose its argmax.
+
+The physical DDR port is mode-exclusive. HT2 acquires it on request acceptance
+only after the legacy loader/transport is idle and no host response is held.
+It retains ownership through arithmetic, response backpressure, cancellation,
+fault recovery and complete read drain. The parent remains the host-model
+loader; host requests are blocked while HT2 owns the port. An attempted model
+commit during HT2 inference is an explicit top error and invalidates parent
+model readiness rather than silently changing the model. Host writes and
+model commits invalidate the cached HT2 prefix; a new sequence is then required.
+
+`anvil_q3_ht2_ddr_arbiter` reserves one client and one ordered physical burst
+at a time. Round-robin selection is registered; client ready is asserted only
+on the actual physical Avalon transfer, not on grant capture. A blocked offer
+holds address/data/byte enables/burst count. It supports read bursts 1..16
+within a 4 KiB boundary and burstcount-one writes. Flush suppresses/drops only
+unaccepted offers and retains accepted-read owner/remaining count until drain.
+Immediate returns coincident with a read transfer have explicit ownership.
+Unexpected/duplicate returns, malformed addresses and available controller
+errors fault all current HT2 owners. Stale cancelled returns still drain but
+cannot publish operands or KV. No idealized/private memory bypass is present.
+Decoder/verifier faults suppress pending, unaccepted physical offers immediately
+through the transport flush; they do not wait for the public error response
+to transfer. This preserves producer ownership when a local fault drops valid.
+
+| Sequence / transport boundary | Behavior |
+| --- | --- |
+| Ordinary and speculative offered together | Ordinary request priority; at most one ready asserted. |
+| New-sequence transfer | Freeze mode and numerical controls; invalidate old prefix before new work. |
+| Single ordinary root | Token mask 1, parent 4, actual position; unconditional one-node commit. |
+| Tree command | Frozen graph from public draft fields; internal root target from cached hardware argmax. |
+| Actual publication edge | Update visible count and cached argmax independently of response ready. |
+| Cancellation on prospective publication | Flush wins in both engine and sequence controller; no count advance. |
+| Cancellation after publication but before response | Preserve the already published prefix and cached next token. |
+| Physical read at E, immediate return at E | One accepted request and one owned response; no double capture. |
+| Queue/residency depth one or three | Explicit bounded ownership/wrap; no power-of-two assumption. |
+| Held request or result | Associated fields remain stable until transfer or explicit cancellation/fault. |
+| Fault / cancel recovery | No new ready until every accepted physical return drains and local flush recovery finishes. |
+| Reset | Reset both physical ownership and sequence state; no old response may survive transport reset. |
+
+The PCIe shell and EMIF must satisfy the documented ordering/fence
+requirements in FPGA_INTEGRATION.md. No platform vendor IP, physical board
+pinout or historical target evidence was supplied; the target configuration is
+not a board bitstream or proof of fit.
 
 Tree parent code 4 means prefix root; other parents must be active lower-index
 nodes. Attention includes prefix, self and ancestors only. Query head h maps

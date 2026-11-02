@@ -8,10 +8,12 @@ controller, the four-bank tile MAC, private scratch, causal tree attention and
 its quantized KV reader, the greedy verifier and atomic KV commit engine,
 the batched projection/resident metadata loader and shared embedding/output-head
 token I/O, and the connected batched decoder with scalar image/scratch transport,
-scratch arbitration and quantized shadow-record staging.
-They do not constitute an integrated
-public accelerator. The parent RTL is read-only; tests and FPGA integration are not
-authored by this increment.
+scratch arbitration and quantized shadow-record staging. The new batch controller
+connects that decoder to the verifier/atomic engine. The public top now connects
+the literal unchanged parent legacy core, HT2 sequence control and mode-exclusive
+DDR arbitration. A production CSR bridge and Arria 10 target/source/clock files
+are authored. The parent RTL is read-only; tests remain independently
+Verifier-owned. This is an authored design, not engineering acceptance.
 
 The DMA has four synchronous 16-bit activation banks and one 4-bit keep-mask
 bank, each with MAX_COLUMNS entries. No RAM data reset is required: commands
@@ -137,7 +139,7 @@ boundary. Each active candidate then receives one acknowledged scratch write.
 Result storage cannot be overwritten until all tile writes finish.
 
 Three ordered read clients export qweight, metadata and bias traffic for the
-future public DDR arbiter. Physical-handshake counters, logical descriptors
+public DDR arbiter. Physical-handshake counters, logical descriptors
 and common activation reads remain separate. Fault/cancellation flush local
 producers while accepted scratch/bias/metadata/qweight responses drain.
 No private read client is an idealized memory bypass.
@@ -172,8 +174,9 @@ responsibility, not token I/O's.
 one shared projection module, one shared embedding/output head, parent scalar
 normalization/RoPE/residual/SiLU kernels, the quantized KV staging module, literal
 `tree_attention`, scratch arbitration and literal `private_scratch`.
-It is not yet the public top: sequence ownership, ordinary-token publication,
-verifier dispatch and physical DDR arbitration remain outside this module.
+Sequence ownership, ordinary-token publication, verifier dispatch and physical
+DDR arbitration are implemented outside this module by the batch controller
+and public top.
 
 The scheduler completes each scalar operation for every active node before
 advancing to the next shared projection. Q/K/V, O and gate/up/down each walk
@@ -223,25 +226,64 @@ and non-power-of-two-client rules are in SPEC.md's decoder boundary table.
 Functional, numerical, mutation, synthesis and current-target evidence remain
 entirely pending independent execution.
 
-## Full-product connection plan (public integration not implemented)
+## Public sequence control and shared DDR integration
 
-`anvil_q3_ht2_top` will own mode-exclusive legacy and HT2 command dispatch.
-The unchanged literal `legacy_core` retains parent behavior. HT2 decoder scheduling
-will process active candidates together by layer/projection, supply real
+`anvil_q3_ht2_top` owns mode-exclusive legacy and HT2 command dispatch.
+The unchanged literal `legacy_core` retains its own parent datapath. HT2 decoder scheduling
+processes active candidates together by layer/projection and supplies real
 SwiGLU activation banks to sparse DMA, normalize resident qzero records to
-local packed rows and provide natural-row FP16 scales to `tile_batch_mac`.
+local packed rows and natural-row FP16 scales to `tile_batch_mac`.
 Qweight traffic and metadata traffic share the public DDR arbitration path.
 
 The authored MAC provides four physical token banks, 128 lanes per bank,
 three-stage shared weight decode, six-stage products/adders, eight stripe sums
 per output and the fixed final tree. Surrounding parent scalar paths stay
-Q16.16; projection conversion helpers are connected internally but still need
-decoder/top wiring.
+Q16.16; projection conversion helpers are connected through the decoder/top.
 
-The batched scalar decoder is now implemented; public integration remains.
-Ordered vocabulary logits are connected to the decoder's internal output but
-not yet to the verifier/public dispatch. The modules below do not replace that work. Image and
-complete integrated extents still require production parameter validation.
+The batch controller commands the same verifier/atomic engine for both ordinary
+one-root priming and speculative trees. An ordinary input token is consumed
+unconditionally, not checked against the prefix's greedy target. The internal
+one-root selection target is therefore that input token. Speculation instead
+uses only the hardware argmax cached at the previous publication. The decoder
+receives the verifier's validated positions/visibility, sends its complete
+ordered logits back, and stages actual encoded K/V. Ordinary logits also
+transfer through the public stream with coupled backpressure; speculation
+does not expose or accept external target scores.
+
+A prospective-publication signal from the engine, gated by flush/fault, lets
+the sequence controller update committed count and cached next token on the
+same edge as the engine. Waiting until response transfer would be incorrect:
+the response may be blocked or cancelled after publication. New sequence
+resets the sequence-owned children only at a completely drained idle boundary.
+Cancellation flushes them and leaves that published prefix/cache unchanged.
+Local fault recovery performs another drained flush before readiness returns.
+
+The top grants the HT2 physical DDR path only when the unchanged parent loader
+and memory are idle. HT2 ownership is retained until the batch controller and
+transport finish/drain, including blocked responses and cancellation.
+The legacy top remains the literal model loader and legacy accelerator. Host
+requests are excluded during HT2 ownership, and actual host writes/model commits
+invalidate the HT2 prefix cache. Attempts to commit a model during HT2 inference
+surface an error and invalidate parent model readiness.
+
+The seven-client HT2 arbiter registers a round-robin grant and all offer fields.
+It acknowledges upstream requests only on the physical Avalon handshake.
+One ordered read burst may be outstanding; ownership includes an immediate
+same-edge return. Flush drops only unaccepted physical offers and keeps the
+accepted burst owner until its last return. It cannot issue a second line
+merely to finish a cancelled DMA operand. Shared available response faults
+are propagated to every active transaction owner through the atomic fence.
+No achieved DDR bandwidth is inferred from these connections.
+
+The top's diagnostic-only parameter branch checks widened persistent image,
+scratch and committed/shadow extents along with the complete legacy legal
+parameter set. CACHE_MODE=0 elaborates the legal legacy path only; requesting
+HT2 in that regime is diagnosed before traffic rather than substituting INT8.
+The PCIe CSR bridge instantiates the actual production top, snapshots complete
+requests and buffers/acknowledges actual results. See FPGA_INTEGRATION.md for
+the register table, project-relative constraints and the missing board-shell
+dependencies. Device fit, timing, RAM inference and physical PCIe HIL remain
+independent shared-runtime gates.
 
 ## Private scratch, causal attention and atomic KV
 
@@ -355,11 +397,10 @@ and raw outputs are retained at
 This was a syntax/elaboration check only. No functional simulation, reference
 comparison, mutation, synthesis, timing or hardware experiment ran.
 
-The next owned implementation work is connection
-of the decoder's staging/logits to the verifier, ordinary-token atomic priming,
-sequence/mode control, public top/shared DDR integration and FPGA bridge
-configuration. Tests remain exclusively Verifier-owned. The complete design is
-not ready for independent verification handoff or engineering acceptance.
+The previously pending decoder/verifier, ordinary-token priming,
+sequence/mode, public shared-DDR and CSR bridge connections are now authored.
+Tests remain exclusively Verifier-owned. No independent engineering
+acceptance or hardware result is claimed.
 
 ## Current increment's static diagnostic
 
@@ -398,10 +439,47 @@ No functional simulation, numerical comparison, mutation, synthesis, STA, fit
 or physical-board experiment ran. This receipt is an advisory elaboration
 diagnostic, not acceptance or a throughput/timing claim.
 
-The decoder's evaluated tree still requires the public sequence controller and
-verifier/atomic-engine connection. Ordinary HT2 priming must use the same engine
-to publish its one-token KV before caching the computed next-token argmax;
-speculative execution must preserve the prior prefix during cancellation.
-The literal legacy core, host exclusion, mode latch, common Avalon arbitration,
-new-sequence lifecycle and target FPGA/PCIe bridge remain to be implemented.
-No ready handoff is claimed for the incomplete public product.
+That receipt covered the decoder increment before public integration. The
+subsequent public sequence controller, shared verifier/atomic engine,
+ordinary-token priming, literal legacy core, host exclusion, mode latch,
+common Avalon arbitration, new-sequence lifecycle and production CSR bridge
+are now authored. Its result is not evidence for these later connections.
+
+## Integrated top / bridge static diagnostic and handoff
+
+The public integration adds `rtl/anvil_q3_ht2_batch_controller.sv`,
+`rtl/anvil_q3_ht2_ddr_arbiter.sv`, `rtl/anvil_q3_ht2_top.sv` and
+`rtl/anvil_q3_ht2_bridge.sv`. Internal publication notifications were added to
+the verifier/commit engine so cached next-token and committed-count updates
+occur on the actual cancellation-sensitive publication edge, not on public
+response transfer. The public top's parent and admitted HT2 ports are unchanged.
+The CSR bridge and target/source/clock configuration are documented in
+`design/FPGA_INTEGRATION.md`; target files are under `fpga/`.
+
+One fast Icarus `-g2012 -t null` command elaborated the production INT8 top
+and an INT4 production bridge, parsing all current RTL and the immutable parent
+dependency in package-first order. Its first source version exited zero with
+empty stderr in 5.27 seconds; the retained receipt is
+`evidence/preparation/top-bridge-elaboration-20261102T205204808455Z/receipt.json`.
+Subsequent source inspection removed accidental coupling of legacy readiness
+to HT2 scratch startup, suppressed unaccepted physical offers on local faults,
+forwarded attempted in-flight model-commit errors, and tightened CSR launch
+ownership and event-over-clear priority. These were source-review repairs,
+not diagnoses from functional simulation.
+
+The same static command was rerun against those current RTL hashes, selecting
+production INT8 and INT4 as before. It exited zero in 5.37 seconds with empty
+stderr. Its separate, linked receipt with exact argv/cwd, source hashes,
+Icarus version, start/end times and raw output paths is
+`evidence/preparation/top-bridge-elaboration-20261102T205510407309Z/receipt.json`.
+The earlier success receipt and earlier package-order failure/correction
+receipts remain unchanged. Neither current receipt is acceptance evidence.
+No simulation, numerical comparison, mutation, synthesis, fit, STA or
+physical-board experiment was executed by Designer.
+
+Design-owned sources are handed off to the independent Verifier for both
+mandatory portable L1 commands and the frozen coverage/performance obligations.
+No verification source or parent reference source was changed. Native timing,
+device fit/RAM inference and board HIL still require authentic current-source
+execution; the absent generational handoff and unsupplied vendor board shell,
+pinout and PCIe/EMIF connections remain explicit intake limitations.

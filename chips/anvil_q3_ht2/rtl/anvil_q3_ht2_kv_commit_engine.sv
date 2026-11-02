@@ -109,14 +109,8 @@ module anvil_q3_ht2_kv_commit_engine #(
     wire read_fire=request_fire && !memory_req_write;
     wire response_known=outstanding || read_fire;
     wire response_bad=memory_rsp_valid && !response_known;
-    wire transport_fault=memory_rsp_error || response_bad;
+    reg transport_fault, stage_bad, command_bad;
     wire stage_fire=stage_valid && stage_ready;
-    wire stage_bad=stage_id!=transaction_id || stage_epoch!=epoch ||
-      !active[stage_node] || received[stage_node]>=TOKEN_RECORDS ||
-      stage_layer!=expected_layer[stage_node] ||
-      stage_value!=expected_value[stage_node] ||
-      stage_head!=expected_head[stage_node] ||
-      stage_group!=expected_group[stage_node];
     wire all_staged=(!active[0] || received[0]==TOKEN_RECORDS) &&
       (!active[1] || received[1]==TOKEN_RECORDS) &&
       (!active[2] || received[2]==TOKEN_RECORDS) &&
@@ -133,6 +127,15 @@ module anvil_q3_ht2_kv_commit_engine #(
     integer i;
 
     always @* begin
+      transport_fault=memory_rsp_error || response_bad;
+      stage_bad=stage_id!=transaction_id || stage_epoch!=epoch ||
+        !active[stage_node] || received[stage_node]>=TOKEN_RECORDS ||
+        stage_layer!=expected_layer[stage_node] ||
+        stage_value!=expected_value[stage_node] ||
+        stage_head!=expected_head[stage_node] ||
+        stage_group!=expected_group[stage_node];
+      command_bad=cmd_mask==0 || cmd_base_pos!=committed ||
+        cmd_base_pos>=MAX_SEQ_LEN || (epoch_bound && cmd_epoch!=committed_epoch);
       path_bad=commit_count>4 ||
         {32'd0,base_pos}+{61'd0,commit_count}>64'(MAX_SEQ_LEN);
       selected_nodes=0;
@@ -143,6 +146,14 @@ module anvil_q3_ht2_kv_commit_engine #(
           selected_nodes[commit_nodes[p*2+:2]]=1;
         end else if (commit_nodes[p*2+:2]!=0) path_bad=1;
       end
+`ifndef SYNTHESIS
+      if ((^{cmd_id,cmd_epoch,cmd_base_pos,cmd_mask})===1'bx) command_bad=1;
+      if ((^{stage_id,stage_epoch,stage_node,stage_layer,stage_head,stage_value,
+             stage_group,stage_record})===1'bx) stage_bad=1;
+      if ((^{commit_count,commit_nodes})===1'bx) path_bad=1;
+      if (memory_rsp_valid && ((^{memory_rsp_error,memory_rsp_rdata})===1'bx))
+        transport_fault=1;
+`endif
     end
 
     assign cmd_ready=running && state==IDLE && !outstanding;
@@ -224,9 +235,7 @@ module anvil_q3_ht2_kv_commit_engine #(
           for (i=0;i<4;i=i+1) begin
             received[i]<=0; expected_layer[i]<=0; expected_head[i]<=0; expected_group[i]<=0;
           end
-          if (cmd_mask==0 || cmd_base_pos!=committed ||
-              cmd_base_pos>=MAX_SEQ_LEN ||
-              (epoch_bound && cmd_epoch!=committed_epoch)) begin
+          if (command_bad) begin
             failed<=1; state<=FAULTED;
           end else begin
             if (!epoch_bound) begin committed_epoch<=cmd_epoch; epoch_bound<=1; end

@@ -29,8 +29,8 @@ module anvil_q3_ht2_bridge #(
   reg [32:0] host_address_config;
   reg [63:0] host_byteenable_config;
   reg [511:0] host_data_config;
-  reg token_pending, spec_pending, host_pending, host_write;
-  reg busy, sticky_done, sticky_error, sticky_cancel, bridge_error;
+  reg token_pending, spec_pending, host_pending, host_inflight, host_write;
+  reg busy, prefix_available, sticky_done, sticky_error, sticky_cancel, bridge_error;
   reg cancel_pulse, model_commit_pulse;
   reg token_new, token_phase, mode, sparse;
   reg [15:0] sparse_threshold;
@@ -61,7 +61,7 @@ module anvil_q3_ht2_bridge #(
     {8{csr_byteenable[1]}},{8{csr_byteenable[0]}}};
   wire [31:0] command=csr_writedata & write_mask;
   wire launch_available=!busy && !token_pending && !spec_pending &&
-    !host_pending && !response_held && !logit_held && !host_held;
+    !host_inflight && !response_held && !logit_held && !host_held;
   reg [31:0] selected_read;
   reg read_known, write_known;
 
@@ -70,7 +70,7 @@ module anvil_q3_ht2_bridge #(
     selected_read=0; read_known=1; write_known=1;
     case (csr_address)
       10'h000: selected_read=32'h48543225;
-      10'h004: selected_read={21'd0,ddr_cal_ready,bridge_error,host_held,
+      10'h004: selected_read={18'd0,prefix_available,host_inflight,ddr_cal_ready,bridge_error,host_held,
         response_held,logit_held,sticky_cancel,sticky_error,sticky_done,
         host_pending,spec_pending|token_pending,busy,model_ready};
       10'h008: selected_read=controls;
@@ -105,7 +105,7 @@ module anvil_q3_ht2_bridge #(
       10'h164: selected_read=0;
       default: begin
         if (csr_address>=10'h120 && csr_address<=10'h15c && csr_address[1:0]==0)
-          selected_read=host_data_config[csr_address[5:2]*32+:32];
+          selected_read=host_data_config[((csr_address-10'h120)>>2)*32+:32];
         else if (csr_address>=10'h180 && csr_address<=10'h1bc && csr_address[1:0]==0)
           selected_read=host_held ? held_host_data[csr_address[5:2]*32+:32] : 32'd0;
         else read_known=0;
@@ -157,8 +157,8 @@ module anvil_q3_ht2_bridge #(
       controls<=0; threshold<=32'h1400; token_config<=0; position_config<=0;
       spec_id_config<=0; base_config<=0; mask_config<=0; parents_config<=0;
       drafts_config<=0; host_address_config<=0; host_byteenable_config<=0; host_data_config<=0;
-      token_pending<=0; spec_pending<=0; host_pending<=0; host_write<=0;
-      busy<=0; sticky_done<=0; sticky_error<=0; sticky_cancel<=0; bridge_error<=0;
+      token_pending<=0; spec_pending<=0; host_pending<=0; host_inflight<=0; host_write<=0;
+      busy<=0; prefix_available<=0; sticky_done<=0; sticky_error<=0; sticky_cancel<=0; bridge_error<=0;
       cancel_pulse<=0; model_commit_pulse<=0; token_new<=0; token_phase<=0;
       mode<=0; sparse<=0; sparse_threshold<=0; token<=0; position<=0;
       spec_id<=0; base<=0; draft_mask<=0; draft_parents<=0; draft_tokens<=0;
@@ -172,7 +172,10 @@ module anvil_q3_ht2_bridge #(
       if (token_pending && token_ready) token_pending<=0;
       if (spec_pending && spec_ready) spec_pending<=0;
       if (host_pending && host_ready) host_pending<=0;
-      if (done) begin sticky_done<=1; busy<=0; end
+      if (done) begin
+        sticky_done<=1; busy<=0;
+        if (!error && mode) prefix_available<=1;
+      end
       if (error) sticky_error<=1;
       if (cancel_done) begin sticky_cancel<=1; busy<=0; end
       if (logit_valid && !logit_held) begin
@@ -185,7 +188,7 @@ module anvil_q3_ht2_bridge #(
         sticky_done<=1; sticky_error<=sticky_error || response_fault; busy<=0;
       end
       if (host_valid && !host_held) begin
-        host_held<=1; host_error<=host_fault; held_host_data<=host_rsp_data;
+        host_held<=1; host_inflight<=0; host_error<=host_fault; held_host_data<=host_rsp_data;
       end
       if (cancel_pulse) begin
         token_pending<=0; spec_pending<=0; logit_held<=0; response_held<=0;
@@ -194,36 +197,50 @@ module anvil_q3_ht2_bridge #(
       end
       if (csr_transfer) begin
         if (csr_address[1:0]!=0 || (csr_read && csr_write) ||
-            (csr_read && !read_known) || (csr_write && !write_known)) bridge_error<=1;
+            (csr_read && !read_known) || (csr_write && !write_known)) begin
+          bridge_error<=1;
+          if (csr_read && !csr_write) csr_readdatavalid<=1;
+        end
         else if (csr_read) begin csr_readdatavalid<=1; csr_readdata<=selected_read; end
         else if (csr_write) begin
           case (csr_address)
             10'h004: begin
-              if (command[3]) sticky_done<=0;
-              if (command[4]) sticky_error<=0;
-              if (command[5]) sticky_cancel<=0;
-              if (command[9]) bridge_error<=0;
+              if (command[4]) sticky_done<=0;
+              if (command[5]) sticky_error<=0;
+              if (command[6]) sticky_cancel<=0;
+              if (command[10]) bridge_error<=0;
             end
-            10'h008: controls<=(controls & ~write_mask)|command;
-            10'h00c: threshold<=(threshold & ~write_mask)|command;
+            10'h008: if ((command & ~32'h7)==0)
+              controls<=(controls & ~write_mask)|command;
+              else bridge_error<=1;
+            10'h00c: if ((command & 32'hffff0000)==0)
+              threshold<=(threshold & ~write_mask)|command;
+              else bridge_error<=1;
             10'h010: token_config<=(token_config & ~write_mask)|command;
             10'h014: position_config<=(position_config & ~write_mask)|command;
             10'h020: spec_id_config<=(spec_id_config & ~write_mask)|command;
             10'h024: base_config<=(base_config & ~write_mask)|command;
-            10'h028: mask_config<=(mask_config & ~write_mask)|command;
-            10'h02c: parents_config<=(parents_config & ~write_mask)|command;
+            10'h028: if ((command & ~32'hf)==0)
+              mask_config<=(mask_config & ~write_mask)|command;
+              else bridge_error<=1;
+            10'h02c: if ((command & ~32'hfff)==0)
+              parents_config<=(parents_config & ~write_mask)|command;
+              else bridge_error<=1;
             10'h030,10'h034,10'h038,10'h03c:
               drafts_config[csr_address[3:2]*32+:32]<=
                 (drafts_config[csr_address[3:2]*32+:32] & ~write_mask)|command;
             10'h018: begin
               if (command[2] && (command & ~32'h4)==0) begin cancel_pulse<=1; end
-              else if (command[3] && (command & ~32'h8)==0 && launch_available)
-                model_commit_pulse<=1;
-              else if (command[0] && (command & ~32'h3)==0 && launch_available) begin
+              else if (command[3] && (command & ~32'h8)==0 && launch_available) begin
+                model_commit_pulse<=1; prefix_available<=0;
+              end else if (command[0] && (command & ~32'h3)==0 && launch_available &&
+                  model_ready && ddr_cal_ready) begin
                 token_pending<=1; busy<=1; token<=token_config; position<=position_config;
                 token_new<=command[1]; token_phase<=controls[2]; mode<=controls[0];
                 sparse<=controls[1]; sparse_threshold<=threshold[15:0];
-              end else if (command[4] && (command & ~32'h10)==0 && launch_available) begin
+                if (command[1] || !controls[0]) prefix_available<=0;
+              end else if (command[4] && (command & ~32'h10)==0 && launch_available &&
+                  model_ready && ddr_cal_ready && prefix_available && mode) begin
                 spec_pending<=1; busy<=1; spec_id<=spec_id_config; base<=base_config;
                 draft_mask<=mask_config[3:0]; draft_parents<=parents_config[11:0];
                 draft_tokens<=drafts_config; sparse<=controls[1]; sparse_threshold<=threshold[15:0];
@@ -247,8 +264,9 @@ module anvil_q3_ht2_bridge #(
             end else bridge_error<=1;
             10'h108: begin
               if (command[0] && (command & ~32'h3)==0 && launch_available) begin
-                host_pending<=1; host_write<=command[1]; host_address<=host_address_config;
+                host_pending<=1; host_inflight<=1; host_write<=command[1]; host_address<=host_address_config;
                 host_byteenable<=host_byteenable_config; host_data<=host_data_config;
+                if (command[1]) prefix_available<=0;
               end else bridge_error<=1;
             end
             10'h110: host_byteenable_config[31:0]<=
@@ -259,11 +277,14 @@ module anvil_q3_ht2_bridge #(
               if (command==1 && host_held) begin host_held<=0; host_error<=0; held_host_data<=0; end
               else bridge_error<=1;
             end
-            default: host_data_config[csr_address[5:2]*32+:32]<=
-              (host_data_config[csr_address[5:2]*32+:32] & ~write_mask)|command;
+            default: host_data_config[((csr_address-10'h120)>>2)*32+:32]<=
+              (host_data_config[((csr_address-10'h120)>>2)*32+:32] & ~write_mask)|command;
           endcase
         end
       end
+      if (done || (response_valid && !response_held)) sticky_done<=1;
+      if (error || (response_valid && !response_held && response_fault)) sticky_error<=1;
+      if (cancel_done) sticky_cancel<=1;
     end
   end
 endmodule

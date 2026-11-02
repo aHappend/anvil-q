@@ -141,10 +141,7 @@ module anvil_q3_ht2_spec_verifier #(
     wire [2:0] engine_publish_count;
     wire [31:0] engine_publish_pos, visible_count, visible_epoch;
     wire logit_fire=logit_valid && logit_ready;
-    wire logit_bad=logit_id!=transaction_id || logit_epoch!=epoch ||
-      !active[logit_node] || logits_complete[logit_node] ||
-      logit_index!=next_index[logit_node] || logit_index>=VOCAB_SIZE ||
-      logit_last!=(logit_index==VOCAB_SIZE-1);
+    reg logit_bad, command_bad;
     wire all_logits=(!active[0] || logits_complete[0]) &&
       (!active[1] || logits_complete[1]) &&
       (!active[2] || logits_complete[2]) &&
@@ -171,6 +168,19 @@ module anvil_q3_ht2_spec_verifier #(
     integer i;
 
     always @* begin
+      logit_bad=logit_id!=transaction_id || logit_epoch!=epoch ||
+        !active[logit_node] || logits_complete[logit_node] ||
+        logit_index!=next_index[logit_node] || logit_index>=VOCAB_SIZE ||
+        logit_last!=(logit_index==VOCAB_SIZE-1);
+      command_bad=cmd_mask==0 || cmd_root_target>=VOCAB_SIZE ||
+        cmd_base_pos!=visible_count || cmd_base_pos>=MAX_SEQ_LEN ||
+        (visible_count!=0 && cmd_epoch!=visible_epoch);
+`ifndef SYNTHESIS
+      if ((^{logit_id,logit_epoch,logit_node,logit_index,logit_data,logit_last})===1'bx)
+        logit_bad=1;
+      if ((^{cmd_id,cmd_epoch,cmd_base_pos,cmd_mask,cmd_tokens,cmd_parents,
+             cmd_root_target})===1'bx) command_bad=1;
+`endif
       calculated_bad=0;
       calculated_depth=0;
       calculated_visibility=0;
@@ -308,9 +318,7 @@ module anvil_q3_ht2_spec_verifier #(
               depths[i]<=0; next_index[i]<=0; best_id[i]<=0;
               best_value[i]<=32'sh80000000;
             end
-            if (cmd_mask==0 || cmd_root_target>=VOCAB_SIZE ||
-                cmd_base_pos!=visible_count || cmd_base_pos>=MAX_SEQ_LEN ||
-                (visible_count!=0 && cmd_epoch!=visible_epoch)) begin
+            if (command_bad) begin
               failed<=1; response_error<=1; response_id<=cmd_id; state<=ABORT_PULSE;
             end else state<=GRAPH_CAPTURE;
           end

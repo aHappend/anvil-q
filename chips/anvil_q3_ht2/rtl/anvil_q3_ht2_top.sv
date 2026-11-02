@@ -128,20 +128,20 @@ module anvil_q3_ht2_top #(
     wire [55:0] req_burstcount;
     wire [3583:0] req_wdata, rsp_rdata;
     wire [447:0] req_byteenable;
-    wire host_available=rst_n && !cancel && !ht2_bus_owned && batch_idle;
+    wire host_available=rst_n && !ht2_bus_owned;
     wire quiet_legacy=!legacy_busy && !legacy_read && !legacy_write &&
       !legacy_host_valid && legacy_host_ready && !host_req_valid && !model_commit;
     wire batch_enable=legacy_model_ready && ddr_cal_ready && quiet_legacy &&
       !legacy_busy && !ht2_bus_owned;
     wire ordinary_ht2=token_valid && selected_mode;
-    wire legacy_token_valid=token_valid && !selected_mode && !ht2_bus_owned && batch_idle;
+    wire legacy_token_valid=token_valid && !selected_mode && !ht2_bus_owned;
     wire ht2_token_fire=ordinary_ht2 && token_ready;
     wire legacy_token_fire=legacy_token_valid && token_ready;
     wire speculative_fire=spec_req_valid && spec_req_ready;
     wire invalidate=host_req_valid && host_req_ready && host_req_write;
 
     assign token_ready=rst_n && !cancel && (selected_mode ?
-      batch_ready && batch_enable : legacy_token_ready && !ht2_bus_owned && batch_idle);
+      batch_ready && batch_enable : legacy_token_ready && !ht2_bus_owned);
     assign model_ready=legacy_model_ready;
     assign host_req_ready=host_available && legacy_host_ready;
     assign host_rsp_valid=host_available && legacy_host_valid;
@@ -227,7 +227,9 @@ module anvil_q3_ht2_top #(
         .memory_req_valid(req_valid),.memory_req_ready(req_ready),.memory_req_write(req_write),
         .memory_req_address(req_address),.memory_req_burstcount(req_burstcount),
         .memory_req_wdata(req_wdata),.memory_req_byteenable(req_byteenable),
-        .memory_rsp_valid(rsp_valid),.memory_rsp_error(rsp_error),.memory_rsp_rdata(rsp_rdata)
+        .memory_rsp_valid(rsp_valid),
+        .memory_rsp_error(rsp_error | {7{ht2_bus_owned && model_commit}}),
+        .memory_rsp_rdata(rsp_rdata)
       );
       anvil_q3_ht2_ddr_arbiter #(.CLIENTS(7)) shared_ddr (
         .clk(clk),.rst_n(rst_n),.flush(bus_flush),
@@ -255,7 +257,7 @@ module anvil_q3_ht2_top #(
       assign accepted_tokens=0; assign next_token=0; assign committed_pos=0;
 `ifndef SYNTHESIS
       always @(posedge clk)
-        if (rst_n && ht2_enable && (token_valid || spec_req_valid))
+        if (rst_n && token_valid && selected_mode)
           $fatal(1,"ANVIL_Q3_HT2 PARAMETER ERROR: CACHE_MODE=0 is legacy-only");
 `endif
     end
