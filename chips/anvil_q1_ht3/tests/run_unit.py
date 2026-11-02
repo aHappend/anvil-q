@@ -1,0 +1,154 @@
+"""Source-bound unit shards. All diagnostics are retained in a fresh directory."""
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from reference import primitive_vectors, quantizer_vectors
+
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def relative(path):
+    return str(Path(path).relative_to(ROOT))
+
+
+def hashes():
+    return {relative(p): hashlib.sha256(p.read_bytes()).hexdigest()
+            for pattern in ("rtl/*.sv", "design/*.md", "tests/*",
+                            "anvil_q1_ht2_reference/rtl/*.sv")
+            for p in sorted(ROOT.glob(pattern)) if p.is_file()}
+
+
+def execute(argv, output, stem, version_argv):
+    stdout = output / f"{stem}.stdout.txt"
+    stderr = output / f"{stem}.stderr.txt"
+    record = {
+        "argv": argv, "cwd": ".", "start": datetime.now(timezone.utc).isoformat(),
+        "source_sha256": hashes(), "stdout": relative(stdout),
+        "stderr": relative(stderr), "timeout": None,
+    }
+    version = subprocess.run(version_argv, cwd=ROOT, capture_output=True, text=True)
+    record["tool_version_argv"] = version_argv
+    record["tool_version_exit"] = version.returncode
+    record["tool_version"] = version.stdout + version.stderr
+    start = time.monotonic()
+    with stdout.open("w") as out, stderr.open("w") as err:
+        result = subprocess.run(argv, cwd=ROOT, stdout=out, stderr=err)
+    record.update(exit=result.returncode, timed_out=False,
+                  end=datetime.now(timezone.utc).isoformat(),
+                  duration_s=time.monotonic() - start)
+    with (output / f"{stem}.receipt.json").open("x") as out:
+        json.dump(record, out, indent=2)
+        out.write("\n")
+    if result.returncode:
+        raise RuntimeError(f"{stem} exit={result.returncode}; {relative(stdout)}; "
+                           f"{relative(stderr)}")
+    return stdout.read_text()
+
+
+def run(suite, simulator, seed, output, limit=None):
+    vectors = output / "vectors.txt"
+    rows = (primitive_vectors(seed, compact=simulator == "icarus")
+            if suite == "primitive" else quantizer_vectors(seed))
+    count = 0
+    with vectors.open("x") as out:
+        for row in rows:
+            if limit is not None and count == limit:
+                break
+            if suite == "primitive":
+                op, a, b, fp16, expected = row
+                out.write(f"{op} {a:08x} {b:08x} {fp16} {expected:08x}\n")
+            else:
+                x, scale, int8, code, error = row
+                out.write(f"{x:08x} {scale:08x} {int8} {code:04x} {error}\n")
+            count += 1
+    sources = ["rtl/anvil_q1_ht3_00_fp_pkg.sv",
+               "rtl/anvil_q1_ht3_reset_sync.sv"]
+    if suite == "primitive":
+        sources += [f"rtl/anvil_q1_ht3_{module}.sv" for module in
+                    ("fp32_add", "fp32_mul", "expand16", "narrow32")]
+    else:
+        sources.append("rtl/anvil_q1_ht3_kv_quantize.sv")
+    tb = f"tests/{suite}_tb.sv"
+    if simulator == "icarus":
+        binary = output / "simulation.vvp"
+        execute(["iverilog", "-g2012", "-Wall", "-s", f"{suite}_tb",
+                 "-o", relative(binary), *sources, tb], output, "compile",
+                ["iverilog", "-V"])
+        argv = ["vvp", relative(binary)]
+        version = ["iverilog", "-V"]
+    else:
+        objects = output / "compile-obj"
+        execute(["verilator", "--binary", "--timing", "-Wno-fatal",
+                 "-j", "2", "--top-module", f"{suite}_tb",
+                 "--Mdir", relative(objects), *sources, tb], output, "compile",
+                ["verilator", "--version"])
+        argv = [relative(objects / f"V{suite}_tb")]
+        version = ["verilator", "--version"]
+    text = execute([*argv, f"+vectors={relative(vectors)}", f"+seed={seed}"],
+                   output, "simulation", version)
+    summary = re.search(rf"SUMMARY {suite} comparisons=(\d+)\b", text)
+    if not summary or int(summary[1]) != count:
+        raise AssertionError(f"missing complete summary: expected {count}; {text[-2000:]}")
+    if suite == "quantizer" and limit is None:
+        errors = re.search(r"errors=(\d+)\b", text)
+        if not errors or int(errors[1]) == 0:
+            raise AssertionError("missing invalid-input error comparisons")
+    result = {"suite": suite, "simulator": simulator, "seed": seed,
+              "compared": count, "vector_sha256": hashlib.sha256(vectors.read_bytes()).hexdigest(),
+              "status": "passed", "raw_summary": summary[0], "diagnostic_limit": limit}
+    with (output / "result.json").open("x") as out:
+        json.dump(result, out, indent=2)
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--suite", choices=("primitive", "quantizer"), required=True)
+    parser.add_argument("--simulator", choices=("icarus", "verilator"), required=True)
+    parser.add_argument("--seed", type=int, choices=(17, 89, 2026), default=17)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--limit", type=int, help="bounded diagnostic prefix, not full coverage")
+    parser.add_argument("--repair-of", help="project-relative immutable prior diagnostic receipt")
+    args = parser.parse_args()
+    output = ROOT / args.output
+    if output.exists():
+        raise FileExistsError("fresh output required: " + args.output)
+    output.mkdir(parents=True)
+    receipt = {"kind": "independent-unit-preparation",
+               "argv": ["python3", "tests/run_unit.py", *sys.argv[1:]], "cwd": ".",
+               "start": datetime.now(timezone.utc).isoformat(), "timeout": None,
+               "source_sha256": hashes(), "tool_version": sys.version,
+               "stdout": relative(output / "driver.stdout.txt"),
+               "stderr": relative(output / "driver.stderr.txt")}
+    if args.repair_of:
+        receipt["repair_of"] = args.repair_of
+    try:
+        result = run(args.suite, args.simulator, args.seed, output, args.limit)
+        (output / "driver.stdout.txt").write_text(json.dumps(result) + "\n")
+        (output / "driver.stderr.txt").write_text("")
+        receipt["exit"] = 0
+        print(json.dumps(result), flush=True)
+    except Exception as exc:
+        (output / "driver.stdout.txt").write_text("")
+        (output / "driver.stderr.txt").write_text(f"{type(exc).__name__}: {exc}\n")
+        receipt["exit"] = 1
+        print(f"{type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
+    receipt["end"] = datetime.now(timezone.utc).isoformat()
+    with (output / "receipt.json").open("x") as out:
+        json.dump(receipt, out, indent=2)
+        out.write("\n")
+    return receipt["exit"]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
