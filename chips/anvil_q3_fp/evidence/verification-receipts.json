@@ -3229,6 +3229,424 @@
                 "timeout_s": 600,
                 "stdout": "evidence/benchmark-20261102T212646812300Z/command-091.stdout.txt",
                 "stderr": "evidence/benchmark-20261102T212646812300Z/command-091.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215137254200Z",
+                "elapsed_s": 22.763827529968694
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m1-f1-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-4fb6f66b5743/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m1-f1-a0-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215138774965Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-092.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-092.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215202646096Z",
+                "elapsed_s": 23.867833089781925
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m1-f1-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-4fb6f66b5743/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m1-f1-a0-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215204193274Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-093.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-093.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215228767902Z",
+                "elapsed_s": 24.571268445113674
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_cache_codec.sv",
+                  "rtl/anvil_q3_fp_decoder_layer.sv",
+                  "rtl/anvil_q3_fp_divider.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_elementwise.sv",
+                  "rtl/anvil_q3_fp_exp.sv",
+                  "rtl/anvil_q3_fp_gemv.sv",
+                  "rtl/anvil_q3_fp_gqa_attention.sv",
+                  "rtl/anvil_q3_fp_kv_cache.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_parameters.sv",
+                  "rtl/anvil_q3_fp_rmsnorm.sv",
+                  "rtl/anvil_q3_fp_rope.sv",
+                  "rtl/anvil_q3_fp_silu.sv",
+                  "rtl/anvil_q3_fp_sqrt.sv",
+                  "rtl/anvil_q3_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "rtl/anvil_q3_fp_token_io.sv",
+                  "rtl/anvil_q3_fp_top.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_mem_port.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215230299449Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-094.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-094.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215351920172Z",
+                "elapsed_s": 81.61734641809016
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215352019485Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-095.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-095.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215417347818Z",
+                "elapsed_s": 25.32457353384234
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-bf16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215419010498Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-096.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-096.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215445033251Z",
+                "elapsed_s": 26.019570611882955
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215446531079Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-097.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-097.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215513160386Z",
+                "elapsed_s": 26.626047781901434
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215514743908Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-098.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-098.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215543773219Z",
+                "elapsed_s": 29.026065720943734
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_cache_codec.sv",
+                  "rtl/anvil_q3_fp_decoder_layer.sv",
+                  "rtl/anvil_q3_fp_divider.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_elementwise.sv",
+                  "rtl/anvil_q3_fp_exp.sv",
+                  "rtl/anvil_q3_fp_gemv.sv",
+                  "rtl/anvil_q3_fp_gqa_attention.sv",
+                  "rtl/anvil_q3_fp_kv_cache.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_parameters.sv",
+                  "rtl/anvil_q3_fp_rmsnorm.sv",
+                  "rtl/anvil_q3_fp_rope.sv",
+                  "rtl/anvil_q3_fp_silu.sv",
+                  "rtl/anvil_q3_fp_sqrt.sv",
+                  "rtl/anvil_q3_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "rtl/anvil_q3_fp_token_io.sv",
+                  "rtl/anvil_q3_fp_top.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_mem_port.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215545377976Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-099.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-099.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215707499767Z",
+                "elapsed_s": 82.11774596897885
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215707600000Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-100.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-100.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215733477527Z",
+                "elapsed_s": 25.873643370112404
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-bf16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215735054743Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-101.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-101.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215802184470Z",
+                "elapsed_s": 27.126386491116136
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215803791721Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-102.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-102.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215831425257Z",
+                "elapsed_s": 27.630377374123782
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215832288251Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-103.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-103.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215859814128Z",
+                "elapsed_s": 27.524010999128222
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-tensor-b1-r3-k8-h16-270298f701ed/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215859932410Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-104.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-104.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215914487862Z",
+                "elapsed_s": 14.551843737019226
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-bf16-w0-s17",
+                "started_at": "20261102T215914870147Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-105.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-105.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215915189151Z",
+                "elapsed_s": 0.3155859960243106
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-bf16-w1-s17",
+                "started_at": "20261102T215915593867Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-106.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-106.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215916063761Z",
+                "elapsed_s": 0.4659385080449283
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-fp16-w0-s17",
+                "started_at": "20261102T215916387599Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-107.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-107.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215916706493Z",
+                "elapsed_s": 0.31535317096859217
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-fp16-w1-s17",
+                "started_at": "20261102T215917103166Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-108.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-108.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215917571854Z",
+                "elapsed_s": 0.4654886790085584
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj",
+                  "-o",
+                  "sim",
+                  "anvil_q3_reference/rtl/anvil_q3_00_pkg.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_awq_dot8.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_add128.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_tensor_array.sv",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215917577778Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-109.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-109.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215924914255Z",
+                "elapsed_s": 7.332695931894705
+              },
+              {
+                "argv": [
+                  "../build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/parent-tensor-b1-r3-k8-h16-bf16-w1-s17",
+                "started_at": "20261102T215924971291Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-110.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-110.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215925188268Z",
+                "elapsed_s": 0.21485818387009203
+              },
+              {
+                "argv": [
+                  "../build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/parent-tensor-b1-r3-k8-h16-fp16-w1-s17",
+                "started_at": "20261102T215925269981Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-111.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-111.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215925436969Z",
+                "elapsed_s": 0.16475314693525434
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-prefetch-b1-4685eccfc07b/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-prefetch-b1-4685eccfc07b/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215925442272Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-112.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-112.stderr.txt",
                 "timed_out": false
               }
             ],
@@ -15780,6 +16198,424 @@
                 "timeout_s": 600,
                 "stdout": "evidence/benchmark-20261102T212646812300Z/command-091.stdout.txt",
                 "stderr": "evidence/benchmark-20261102T212646812300Z/command-091.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215137254200Z",
+                "elapsed_s": 22.763827529968694
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m1-f1-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-4fb6f66b5743/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m1-f1-a0-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215138774965Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-092.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-092.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215202646096Z",
+                "elapsed_s": 23.867833089781925
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m1-f1-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-4fb6f66b5743/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m1-f1-a0-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215204193274Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-093.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-093.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215228767902Z",
+                "elapsed_s": 24.571268445113674
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_cache_codec.sv",
+                  "rtl/anvil_q3_fp_decoder_layer.sv",
+                  "rtl/anvil_q3_fp_divider.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_elementwise.sv",
+                  "rtl/anvil_q3_fp_exp.sv",
+                  "rtl/anvil_q3_fp_gemv.sv",
+                  "rtl/anvil_q3_fp_gqa_attention.sv",
+                  "rtl/anvil_q3_fp_kv_cache.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_parameters.sv",
+                  "rtl/anvil_q3_fp_rmsnorm.sv",
+                  "rtl/anvil_q3_fp_rope.sv",
+                  "rtl/anvil_q3_fp_silu.sv",
+                  "rtl/anvil_q3_fp_sqrt.sv",
+                  "rtl/anvil_q3_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "rtl/anvil_q3_fp_token_io.sv",
+                  "rtl/anvil_q3_fp_top.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_mem_port.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215230299449Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-094.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-094.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215351920172Z",
+                "elapsed_s": 81.61734641809016
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215352019485Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-095.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-095.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215417347818Z",
+                "elapsed_s": 25.32457353384234
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-bf16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215419010498Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-096.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-096.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215445033251Z",
+                "elapsed_s": 26.019570611882955
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215446531079Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-097.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-097.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215513160386Z",
+                "elapsed_s": 26.626047781901434
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215514743908Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-098.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-098.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215543773219Z",
+                "elapsed_s": 29.026065720943734
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_cache_codec.sv",
+                  "rtl/anvil_q3_fp_decoder_layer.sv",
+                  "rtl/anvil_q3_fp_divider.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_elementwise.sv",
+                  "rtl/anvil_q3_fp_exp.sv",
+                  "rtl/anvil_q3_fp_gemv.sv",
+                  "rtl/anvil_q3_fp_gqa_attention.sv",
+                  "rtl/anvil_q3_fp_kv_cache.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_parameters.sv",
+                  "rtl/anvil_q3_fp_rmsnorm.sv",
+                  "rtl/anvil_q3_fp_rope.sv",
+                  "rtl/anvil_q3_fp_silu.sv",
+                  "rtl/anvil_q3_fp_sqrt.sv",
+                  "rtl/anvil_q3_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "rtl/anvil_q3_fp_token_io.sv",
+                  "rtl/anvil_q3_fp_top.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_mem_port.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215545377976Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-099.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-099.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215707499767Z",
+                "elapsed_s": 82.11774596897885
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215707600000Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-100.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-100.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215733477527Z",
+                "elapsed_s": 25.873643370112404
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-bf16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215735054743Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-101.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-101.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215802184470Z",
+                "elapsed_s": 27.126386491116136
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215803791721Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-102.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-102.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215831425257Z",
+                "elapsed_s": 27.630377374123782
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215832288251Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-103.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-103.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215859814128Z",
+                "elapsed_s": 27.524010999128222
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-tensor-b1-r3-k8-h16-270298f701ed/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215859932410Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-104.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-104.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215914487862Z",
+                "elapsed_s": 14.551843737019226
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-bf16-w0-s17",
+                "started_at": "20261102T215914870147Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-105.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-105.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215915189151Z",
+                "elapsed_s": 0.3155859960243106
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-bf16-w1-s17",
+                "started_at": "20261102T215915593867Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-106.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-106.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215916063761Z",
+                "elapsed_s": 0.4659385080449283
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-fp16-w0-s17",
+                "started_at": "20261102T215916387599Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-107.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-107.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215916706493Z",
+                "elapsed_s": 0.31535317096859217
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-fp16-w1-s17",
+                "started_at": "20261102T215917103166Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-108.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-108.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215917571854Z",
+                "elapsed_s": 0.4654886790085584
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj",
+                  "-o",
+                  "sim",
+                  "anvil_q3_reference/rtl/anvil_q3_00_pkg.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_awq_dot8.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_add128.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_tensor_array.sv",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215917577778Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-109.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-109.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215924914255Z",
+                "elapsed_s": 7.332695931894705
+              },
+              {
+                "argv": [
+                  "../build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/parent-tensor-b1-r3-k8-h16-bf16-w1-s17",
+                "started_at": "20261102T215924971291Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-110.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-110.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215925188268Z",
+                "elapsed_s": 0.21485818387009203
+              },
+              {
+                "argv": [
+                  "../build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/parent-tensor-b1-r3-k8-h16-fp16-w1-s17",
+                "started_at": "20261102T215925269981Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-111.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-111.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215925436969Z",
+                "elapsed_s": 0.16475314693525434
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-prefetch-b1-4685eccfc07b/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-prefetch-b1-4685eccfc07b/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215925442272Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-112.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-112.stderr.txt",
                 "timed_out": false
               }
             ],
@@ -28331,6 +29167,424 @@
                 "timeout_s": 600,
                 "stdout": "evidence/benchmark-20261102T212646812300Z/command-091.stdout.txt",
                 "stderr": "evidence/benchmark-20261102T212646812300Z/command-091.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215137254200Z",
+                "elapsed_s": 22.763827529968694
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m1-f1-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-4fb6f66b5743/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m1-f1-a0-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215138774965Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-092.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-092.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215202646096Z",
+                "elapsed_s": 23.867833089781925
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m1-f1-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-4fb6f66b5743/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m1-f1-a0-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215204193274Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-093.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-093.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215228767902Z",
+                "elapsed_s": 24.571268445113674
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_cache_codec.sv",
+                  "rtl/anvil_q3_fp_decoder_layer.sv",
+                  "rtl/anvil_q3_fp_divider.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_elementwise.sv",
+                  "rtl/anvil_q3_fp_exp.sv",
+                  "rtl/anvil_q3_fp_gemv.sv",
+                  "rtl/anvil_q3_fp_gqa_attention.sv",
+                  "rtl/anvil_q3_fp_kv_cache.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_parameters.sv",
+                  "rtl/anvil_q3_fp_rmsnorm.sv",
+                  "rtl/anvil_q3_fp_rope.sv",
+                  "rtl/anvil_q3_fp_silu.sv",
+                  "rtl/anvil_q3_fp_sqrt.sv",
+                  "rtl/anvil_q3_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "rtl/anvil_q3_fp_token_io.sv",
+                  "rtl/anvil_q3_fp_top.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_mem_port.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215230299449Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-094.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-094.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215351920172Z",
+                "elapsed_s": 81.61734641809016
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215352019485Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-095.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-095.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215417347818Z",
+                "elapsed_s": 25.32457353384234
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-bf16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215419010498Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-096.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-096.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215445033251Z",
+                "elapsed_s": 26.019570611882955
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215446531079Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-097.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-097.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215513160386Z",
+                "elapsed_s": 26.626047781901434
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a0-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-e280dab6f3e7/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a0-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215514743908Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-098.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-098.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215543773219Z",
+                "elapsed_s": 29.026065720943734
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_cache_codec.sv",
+                  "rtl/anvil_q3_fp_decoder_layer.sv",
+                  "rtl/anvil_q3_fp_divider.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_elementwise.sv",
+                  "rtl/anvil_q3_fp_exp.sv",
+                  "rtl/anvil_q3_fp_gemv.sv",
+                  "rtl/anvil_q3_fp_gqa_attention.sv",
+                  "rtl/anvil_q3_fp_kv_cache.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_parameters.sv",
+                  "rtl/anvil_q3_fp_rmsnorm.sv",
+                  "rtl/anvil_q3_fp_rope.sv",
+                  "rtl/anvil_q3_fp_silu.sv",
+                  "rtl/anvil_q3_fp_sqrt.sv",
+                  "rtl/anvil_q3_fp_swiglu_mlp.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "rtl/anvil_q3_fp_token_io.sv",
+                  "rtl/anvil_q3_fp_top.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_mem_port.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215545377976Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-099.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-099.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215707499767Z",
+                "elapsed_s": 82.11774596897885
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215707600000Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-100.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-100.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215733477527Z",
+                "elapsed_s": 25.873643370112404
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-bf16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215735054743Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-101.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-101.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215802184470Z",
+                "elapsed_s": 27.126386491116136
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-fp16-w0-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215803791721Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-102.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-102.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215831425257Z",
+                "elapsed_s": 27.630377374123782
+              },
+              {
+                "argv": [
+                  "../build-top-b8-m2-f0-a1-l1-h16-bf16-w0-s17-n4-q3-k8-r3-v3-172cca6ff057/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/top-b8-m2-f0-a1-l1-h16-fp16-w1-s17-n4-q3-k8-r3-v3",
+                "started_at": "20261102T215832288251Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-103.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-103.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215859814128Z",
+                "elapsed_s": 27.524010999128222
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "rtl/anvil_q3_fp_tensor_array.sv",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-tensor-b1-r3-k8-h16-270298f701ed/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215859932410Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-104.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-104.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215914487862Z",
+                "elapsed_s": 14.551843737019226
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-bf16-w0-s17",
+                "started_at": "20261102T215914870147Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-105.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-105.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215915189151Z",
+                "elapsed_s": 0.3155859960243106
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-bf16-w1-s17",
+                "started_at": "20261102T215915593867Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-106.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-106.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215916063761Z",
+                "elapsed_s": 0.4659385080449283
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-fp16-w0-s17",
+                "started_at": "20261102T215916387599Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-107.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-107.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215916706493Z",
+                "elapsed_s": 0.31535317096859217
+              },
+              {
+                "argv": [
+                  "../build-tensor-b1-r3-k8-h16-270298f701ed/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/tensor-b1-r3-k8-h16-fp16-w1-s17",
+                "started_at": "20261102T215917103166Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-108.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-108.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215917571854Z",
+                "elapsed_s": 0.4654886790085584
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj",
+                  "-o",
+                  "sim",
+                  "anvil_q3_reference/rtl/anvil_q3_00_pkg.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_awq_dot8.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_add128.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv",
+                  "anvil_q3_reference/rtl/anvil_q3_tensor_array.sv",
+                  "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215917577778Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-109.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-109.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215924914255Z",
+                "elapsed_s": 7.332695931894705
+              },
+              {
+                "argv": [
+                  "../build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/parent-tensor-b1-r3-k8-h16-bf16-w1-s17",
+                "started_at": "20261102T215924971291Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-110.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-110.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215925188268Z",
+                "elapsed_s": 0.21485818387009203
+              },
+              {
+                "argv": [
+                  "../build-parent-tensor-b1-r3-k8-h16-0dc84ee748c1/compile-obj/sim"
+                ],
+                "cwd": "evidence/benchmark-20261102T212646812300Z/projection-comparison-b1/parent-tensor-b1-r3-k8-h16-fp16-w1-s17",
+                "started_at": "20261102T215925269981Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-111.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-111.stderr.txt",
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "20261102T215925436969Z",
+                "elapsed_s": 0.16475314693525434
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "--Mdir",
+                  "evidence/benchmark-20261102T212646812300Z/build-prefetch-b1-4685eccfc07b/compile-obj",
+                  "-o",
+                  "sim",
+                  "rtl/anvil_q3_fp_00_pkg.sv",
+                  "rtl/anvil_q3_fp_add.sv",
+                  "rtl/anvil_q3_fp_mul.sv",
+                  "rtl/anvil_q3_fp_dot8.sv",
+                  "rtl/anvil_q3_fp_weight_prefetcher.sv",
+                  "evidence/benchmark-20261102T212646812300Z/build-prefetch-b1-4685eccfc07b/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "20261102T215925442272Z",
+                "timeout_s": 600,
+                "stdout": "evidence/benchmark-20261102T212646812300Z/command-112.stdout.txt",
+                "stderr": "evidence/benchmark-20261102T212646812300Z/command-112.stderr.txt",
                 "timed_out": false
               }
             ],
