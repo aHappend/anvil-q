@@ -8,6 +8,7 @@ import shutil
 import os
 import signal
 import subprocess
+import sys
 import time
 import uuid
 
@@ -147,6 +148,8 @@ class Run:
                 artifacts[file.relative_to(self.path).as_posix()] = hashlib.sha256(file.read_bytes()).hexdigest()
         receipt = {"kind": "independent-l1-preparation" if "preparation" in self.path.parts
                    else "independent-l1",
+                   "entrypoint_argv": list(sys.orig_argv),
+                   "entrypoint_cwd": Path.cwd().resolve().relative_to(ROOT).as_posix(),
                    "start": self.start,
                    "end": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                    "status": status, "source_sha256": self.hashes,

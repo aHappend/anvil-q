@@ -45,8 +45,10 @@ Neither syntax run is functional acceptance evidence.
 The parent consists of 26 original SystemVerilog files in
 `anvil_q3_reference/rtl/`. Copies in `rtl/anvil_q3_*.sv` preserve their bytes,
 interfaces and FP16/Q16 semantics. Never compile both trees together.
-`design/GENERATIONAL_HANDOFF.md` was not supplied. Historical Quartus timing and
-PPA cannot be reconstructed or claimed from intake.
+`design/GENERATIONAL_HANDOFF.md` is now available, but reports N/A for parent
+Quartus STA, setup/hold timing, post-fit PPA and physical PCIe HIL. It does not
+establish historical acceptance; no timing/PPA numbers are reconstructed from
+intake.
 
 ## Saved native source inventory
 
@@ -199,6 +201,16 @@ tree. Only a greedy-matching child causes another backend context request;
 off-path nodes are not evaluated. A correction, leaf bonus, marker or capacity
 boundary finishes the generated batch. Publication additionally waits on
 publish_ready, then holds all commit fields until transfer.
+
+Draft depth validation uses a feed-forward four-node network: each node selects
+only constant-index predecessors below its own index, or root depth one.
+Invalid counts, token IDs, self/forward parents, duplicate siblings and
+out-of-capacity paths remain errors. This replaces the dynamic depth mux
+implicated in six structural loops in the retained failed diagnostic
+`evidence/preparation/controller-synthesis-20261102T190835Z-aa4dfcf4/receipt.json`.
+No controller states, register boundaries, publication rules or telemetry
+events changed. Fresh independent controller and synthesis reruns are required;
+the source repair alone is not a passing synthesis result.
 
 Backend requests are registered states and require accepted outstanding
 ownership for responses. The backend must compute real contexts and must not

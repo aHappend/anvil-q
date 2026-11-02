@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Anvil-QN1 independent L1 verification entry point.
 
-Current executable preparation coverage:
+Executable coverage:
   scalar: exact-rational add/subtract/multiply/divide/sqrt, signed zero,
           subnormals, overflow/nonfinite rejection, and output stalls.
   qk-compact / qk-production: per-element numerical parity, five RoPE positions,
@@ -11,10 +11,18 @@ Current executable preparation coverage:
   elementary: deterministic E parity/error bound and BF16 SiLU parity/error bound.
   top-compiled / top-continuation: seven projections, both residuals, final norm,
           every logit, external scratch/KV payloads and direct deferred continuation.
+  csr: independent pre-edge/post-edge register/event oracle on both simulators.
+  controller: tree prefixes 0..4, branching, markers, malformed trees and cancellation.
+  speculation: real four-draft-plus-bonus, complete frames/KV and deferred continuation.
+  smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
+          matrix and dual-simulator scalar/QK/tensor/CSR checks.
+  numerical: full tensor/head vectors, analytic score bounds, independent Decimal
+          coefficient comparisons and deterministic E/SiLU checks.
 
-The mandatory suite dispatchers are not yet complete. Preparation results are
-not engineering acceptance and do not assert controller, CSR, benchmark,
-mutation, synthesis, production overhead or portable-reproduction closure.
+Behavior, benchmark, defect, synthesis and reproduction suite dispatchers remain
+incomplete; no whole-product acceptance is claimed. Synthesis preparation retains
+a raw-controller structural-loop counterexample. No-argument dispatch remains
+incomplete until every mandatory suite has been authored.
 """
 
 import argparse
@@ -31,7 +39,7 @@ from control_checks import run_csr, run_controller
 from smoke_checks import run_startup, run_elaboration, run_smoke
 from speculation_checks import run_speculation
 from numerical_checks import run_numerical
-from synthesis_checks import run_synthesis_probe
+from synthesis_checks import run_synthesis_probe, run_controller_synthesis
 import reference
 
 
@@ -45,14 +53,18 @@ def main():
                                           "tensor-compact", "tensor-full", "tensor-cpp", "tensor-sv",
                                           "elementary", "csr", "controller", "startup", "elaboration",
                                           "speculation", "qk-stress", "analytic",
-                                          "startup-matrix", "scalar-compiled", "synthesis-frontend"))
+                                          "startup-matrix", "scalar-compiled", "synthesis-frontend",
+                                          "controller-synthesis"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "synthesis-frontend":
+        if args.probe == "controller-synthesis":
+            run.versions(("python3", "yosys"))
+            results = run_controller_synthesis(run)
+        elif args.probe == "synthesis-frontend":
             run.versions(("python3", "yosys"))
             results = run_synthesis_probe(run)
         elif args.probe == "startup-matrix":

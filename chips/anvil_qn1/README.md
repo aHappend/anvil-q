@@ -25,8 +25,9 @@ remains `anvil_q3_top`, with its original FP16/Q16 payloads and parameters.
 Compile **either** parent tree or delivered copies, never both. Native BF16
 images are not legacy FP16/Q16 images.
 
-`design/GENERATIONAL_HANDOFF.md` was not supplied. No historical timing/PPA
-numbers or inherited passing baseline are claimed.
+`design/GENERATIONAL_HANDOFF.md` is now available. It reports N/A for parent
+Quartus STA, timing, post-fit PPA and physical HIL; it does not establish
+historical acceptance or an inherited passing baseline.
 
 ## Static source commands
 
@@ -139,11 +140,12 @@ continuation; start a fresh sequence after a fault.
 
 ## Independent verification and claims
 
-The independent Verifier owns `tests/*.py`, including `tests/verify.py`, which
-is not present yet. Required installed tools are Python 3, Icarus/vvp,
+The independent Verifier owns `tests/*.py`, including the saved
+`tests/verify.py` entry point. Suite authoring and acceptance remain incomplete.
+Required installed tools are Python 3, Icarus/vvp,
 Verilator, g++, make and Yosys; actual versions must be recorded with execution.
 No tool installation or private environment/cache is part of reproduction.
-Once authored by Verifier, the admitted entry points are:
+The admitted entry points are:
 
 ```sh
 python3 tests/verify.py
@@ -160,8 +162,8 @@ python3 tests/verify.py --suite synthesis
 python3 tests/verify.py --suite reproduce
 ```
 
-These are required future checks, **not results or currently implemented test
-commands**. L1 requires real independent comparisons, defect sensitivity and
+These commands describe mandatory checks, **not passing results or a claim
+that all suites are implemented**. L1 requires real independent comparisons, defect sensitivity and
 synthesis; compact domain tests are numerical-parity workloads, not pretrained
 accuracy benchmarks. Static preparation receipts, if any, live under fresh
 `evidence/preparation/` subdirectories and cannot establish acceptance.

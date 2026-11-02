@@ -44,7 +44,7 @@ module anvil_qn1_dual_think_ctrl #(
   reg [2:0] draft_event, verified_event, accepted_event, rejected_event;
   reg malformed, child_found;
   reg [2:0] matching_child;
-  reg [2:0] depths [0:3];
+  wire [2:0] depths [0:3];
   reg committed_open, committed_close;
   integer i, j;
   wire active=rst_n && !flush && !cancel;
@@ -81,16 +81,28 @@ module anvil_qn1_dual_think_ctrl #(
     initial $fatal(1,"ANVIL_QN1 PARAMETER ERROR: thinking controller geometry");
   end endgenerate
 
+  // Each node depends only on constant-index earlier nodes, never a dynamic depth mux.
+  assign depths[0]=draft_count>0 && draft_parents[0+:3]==4 ? 3'd1 : 3'd0;
+  assign depths[1]=draft_count<=1 ? 3'd0 :
+      draft_parents[3+:3]==4 ? 3'd1 :
+      draft_parents[3+:3]==0 ? depths[0]+3'd1 : 3'd0;
+  assign depths[2]=draft_count<=2 ? 3'd0 :
+      draft_parents[6+:3]==4 ? 3'd1 :
+      draft_parents[6+:3]==0 ? depths[0]+3'd1 :
+      draft_parents[6+:3]==1 ? depths[1]+3'd1 : 3'd0;
+  assign depths[3]=draft_count<=3 ? 3'd0 :
+      draft_parents[9+:3]==4 ? 3'd1 :
+      draft_parents[9+:3]==0 ? depths[0]+3'd1 :
+      draft_parents[9+:3]==1 ? depths[1]+3'd1 :
+      draft_parents[9+:3]==2 ? depths[2]+3'd1 : 3'd0;
+
   always @* begin
     malformed=draft_count<1 || draft_count>4;
     for (i=0;i<4;i=i+1) begin
-      depths[i]=0;
       if (i<draft_count) begin
         if (draft_tokens[i*32+:32]>=VOCAB_SIZE) malformed=1;
-        if (draft_parents[i*3+:3]==4) depths[i]=1;
-        else if (draft_parents[i*3+:3]<i)
-          depths[i]=depths[draft_parents[i*3+:3]]+3'd1;
-        else malformed=1;
+        if (draft_parents[i*3+:3]!=4 && draft_parents[i*3+:3]>=i)
+          malformed=1;
         if ({1'b0,position}+{30'd0,depths[i]}>=33'(MAX_SEQ_LEN))
           malformed=1;
         for (j=0;j<4;j=j+1)

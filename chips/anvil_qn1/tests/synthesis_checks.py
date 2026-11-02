@@ -131,3 +131,22 @@ def run_synthesis_probe(run):
     run.execute(["yosys", "-Q", "-T", "-p", "help synth"], "yosys-synth-help")
     return {"geometry": "compact H8/D8/Q2/K1/B1/QD3", "hierarchy": before,
             "structural_netlist": after, "structural": structural}
+
+
+def run_controller_synthesis(run):
+    script = run.path / "controller.ys"
+    netlist = run.path / "controller.json"
+    script.write_text(
+        "read_verilog -sv rtl/anvil_qn1_dual_think_ctrl.sv\n"
+        "chparam -set MAX_SEQ_LEN 16 anvil_qn1_dual_think_ctrl\n"
+        "hierarchy -check -top anvil_qn1_dual_think_ctrl\n"
+        "proc\nopt -full\n"
+        f"write_json {relative(netlist)}\n"
+        "check -assert\nstat\n")
+    text = run.execute(["yosys", "-Q", "-T", "-s", relative(script)],
+                       "yosys-controller-optimized")
+    data, artifact = retain_json(netlist)
+    if "Found and reported 0 problems" not in text:
+        raise AssertionError("controller structural result missing")
+    return {"netlist": artifact, "modules": len(data["modules"]),
+            "structural_consistency": "passed"}
