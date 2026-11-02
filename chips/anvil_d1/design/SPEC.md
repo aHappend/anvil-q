@@ -6,8 +6,9 @@ The admitted work order defines the product. This document fixes implementation
 details within that contract; it does not waive any acceptance check.
 
 The current source increment implements native arithmetic primitives, native
-RMSNorm and the telemetry CSR block. The accelerator integration, MLA,
-absorption, expert execution and router/DMA remain to be implemented. This is
+RMSNorm, exponential/SiLU, hardware absorption and the telemetry CSR block.
+The accelerator integration, MLA, expert execution and router/DMA remain to
+be implemented. This is
 not a completed accelerator or a ready verification handoff. No functional,
 synthesis, timing, board or model-quality result is claimed.
 
@@ -51,6 +52,13 @@ produce a `PARAMETER ERROR` diagnostic, not silently select a smaller design.
 Diagnostic-only port widths use minimum legal widths before rejection.
 Constant elaboration arithmetic does not authorize runtime division hardware.
 
+`anvil_d1_parameters` is the native geometry/address guard and must be
+instantiated by the future native top. Its products check per-object byte or
+component extents using 128-bit elaboration arithmetic. The externally supplied
+memory address is the documented (kind,layer,proj,row,col) tuple, not a 32-bit
+flattening of all model layers/experts. The guard does not change legal
+production geometry or impose a resident whole-checkpoint capacity assumption.
+
 Native weights, biases, activations, gamma and rotary table entries are full
 signed 32-bit Q16.16 integers. They are not parent packed FP16/AWQ words.
 Dense GQA R1-Distill configurations belong to the supported legacy geometry,
@@ -91,6 +99,8 @@ Primitive arithmetic has single-flight ready/valid interfaces. Result valid
 does not depend on result ready; a result is held until accepted. There is a
 retirement bubble before a new arithmetic request. `flush` annuls arithmetic
 state and takes priority over all transfers. Arithmetic does not own DDR tags.
+Invalid engine commands use a separate REJECT state: acceptance E0 never
+asserts done; the rejection completion is first visible post-E1.
 
 ### Exact arithmetic schedules
 
@@ -208,6 +218,17 @@ boundary. Its loop count is H for square accumulation followed by H gamma and
 reciprocal outputs. Memory latency is variable. Acknowledgement of the final
 output write directly changes the engine to its one-cycle COMPLETE state.
 
+For every RMSNorm primitive, if launch is accepted at L0 and the primitive
+registers valid post-Ln, the controller consumes it at Ln+1. The next launch
+state is visible post-Ln+1; the next primitive can accept no earlier than Ln+2.
+This applies separately to square -> accumulator, mean -> epsilon -> root ->
+reciprocal, gamma product -> low product -> correction -> high product ->
+combination -> rounding. There is no combinational or same-edge consumption
+of a newly registered result. The memory port accepts issue at I0, presents
+the registered request post-I0 and can transfer it no earlier than I1.
+The controller consumes a response at its actual transfer edge, not through
+another delayed completion flag.
+
 ## Exponential, SiLU, attention and routing equations
 
 For signed Q16.16 x, `exp_q24(x)` is 2^24 for x>=0 and zero for x< -16*2^16.
@@ -216,6 +237,33 @@ Initialize term=total=2^24; for j=1..6 set
 `term=-trunc_toward_zero(term*r/(2^24*j))`, then add term to total.
 Return max(total,0)>>n. Taylor divisions truncate, not round.
 
+`anvil_d1_exp` accepts a signed 33-bit x so subtracting extreme architectural
+scores cannot overflow. The range checks return a registered result at the
+accepting X0 edge for x>=0 or x< -1048576. Otherwise a 32-bit unsigned divider
+accepts range-reduction operands at X1, registers quotient/remainder at X34,
+and the controller consumes them at X35. The first Taylor multiplication
+accepts at X36. Each Taylor term has this schedule relative to its accepting T0:
+
+| Edge | Action |
+|---|---|
+| T0..T3 | Four-stage multiplication of (-term)*r |
+| T4 | Controller captures registered 64-bit product |
+| T5 | Signed 64-bit divider wrapper accepts numerator |
+| T6 | Unsigned divider accepts prepared magnitude |
+| T7..T70 | Exactly 64 restoring iterations |
+| T71 | Unsigned result registration |
+| T72 | Signed wrapper restores sign and registers valid |
+| T73 | Controller captures next signed term |
+| T74 | Add term to total; sixth term registers final result |
+| T75 | Earliest multiplication acceptance for the next term |
+
+Thus the non-shortcut exponential result is visible post-X485. Result stalls
+hold valid/data/error; they do not alter the arithmetic schedule before valid.
+The term multiplier negates the bounded 32-bit term before multiplication,
+which is exactly equivalent to the specified negated truncating quotient.
+Since 0<=r<11629080<2^24, term magnitude never exceeds 2^24; 32-bit signed
+term/total storage is exact, with explicit narrowing/overflow checks.
+
 Softmax subtracts its maximum in widened signed precision, accumulates
 exponentials exactly, and uses `p_i=floor(e_i*2^24/sum(e))` where probabilities
 are architectural outputs. A zero denominator faults.
@@ -223,6 +271,14 @@ are architectural outputs. A zero denominator faults.
 SiLU uses e=exp_q24(-abs(x)) with a widened absolute value even for -2^31.
 For nonnegative x, s=floor(2^48/(2^24+e)); for negative x,
 s=floor((e*2^24)/(2^24+e)). Output is R_24(x*s).
+
+`anvil_d1_silu` latches x at S0 and launches the widened -abs(x) exponential
+at S1. It consumes that registered result at the following edge, launches a
+49/26-bit unsigned divider on the next edge, consumes its registered quotient
+on the edge following D50, then separately launches/consumes mul32 and
+round_sat. With no result stall, its output is visible post-S61 for exponential
+shortcuts and post-S546 for the six-term path. Output valid is held through
+backpressure. There is no extra intermediate sigmoid or product rounding.
 
 RoPE uses adjacent even/odd components and host Q16.16 cos/sin:
 `x'=R_16(x*cos-y*sin)`, `y'=R_16(x*sin+y*cos)`.
@@ -243,6 +299,17 @@ Each exact Q32.32 coefficient is stored as three little-word-first beats.
 Rebuild per layer/weight epoch before its first native token; new_sequence
 conservatively starts a new epoch. No host-generated A/B substitutes for
 hardware absorption in complete inference.
+
+`anvil_d1_absorption` independently streams raw UK/QN then O/UV pairs through
+mul32 and the separate four-stage accumulator. It loops input component
+inside output row inside head, completes all A coefficients before B, and
+writes every coefficient word 0,1,2 with an individual acknowledgement.
+Reduction 0 uses accumulator in_first; final sum must sign-extend from 96 bits
+or fault. Per-layer epoch-valid is set only at the final B-word acknowledgement.
+An epoch match completes without raw traffic; flush invalidates all ownership.
+This helper needs no production matrix array on chip. Per-command raw-read and
+absorbed-write byte totals count actual accepted requests, clear on acceptance,
+and remain stable after done. These are separate from cache traffic.
 
 Native boundaries are c=R_16(D*x), kR=RoPE(R_16(KR*x)),
 qAbs=R_32(A*x), qR=RoPE(R_16(QR*x)),
@@ -389,6 +456,9 @@ the shared runtime produces and independently reviews it after acceptance.
 | Registered integer division/root | rtl/anvil_d1_udiv.sv, rtl/anvil_d1_sdiv.sv, rtl/anvil_d1_isqrt.sv | Independent verification pending |
 | Sole-boundary signed rounding | rtl/anvil_d1_round_sat.sv | Independent verification pending |
 | Exact native RMSNorm | rtl/anvil_d1_rmsnorm.sv | Independent verification pending |
+| Exact exponential / stable SiLU | rtl/anvil_d1_exp.sv, rtl/anvil_d1_silu.sv | Independent verification pending |
+| Hardware exact A/B construction | rtl/anvil_d1_absorption.sv | Independent verification pending |
+| Native geometry guard | rtl/anvil_d1_parameters.sv | Not yet integrated; diagnostic execution pending |
 | Saturating atomic telemetry | rtl/anvil_d1_csr_perf.sv | Independent verification pending |
 | Full native inference, MLA/MoE, legacy top | Not implemented in this increment | Not ready |
 | 88.75% MHA cache reduction | Geometry calculation above | Mathematical, not measured |

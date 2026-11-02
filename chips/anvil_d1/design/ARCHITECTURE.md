@@ -2,7 +2,8 @@
 
 ## Implementation increment
 
-The current increment is the arithmetic/normalization/CSR foundation. There
+The current increment is the arithmetic/normalization/activation/absorption/CSR
+foundation. There
 is deliberately no placeholder `anvil_d1_top` returning canned results.
 The remaining native pipeline is an implementation obligation, not a claimed
 feature of these partial sources.
@@ -70,6 +71,19 @@ a full native word. Multiplication by the 64-bit reciprocal is decomposed into
 two registered products, signed-limb correction, and registered accumulation.
 No reciprocal or product is clipped before R_48.
 
+Exponential range reduction and all six Taylor divisions use registered
+integer dividers. SiLU uses the stable sign-dependent sigmoid numerator and
+a widened -abs(x), then a separate mul32 and R_24 boundary. The exact normal
+and shortcut schedules are in SPEC.md; no simulator has yet checked them.
+
+Hardware absorption streams UK/QN pairs for A and O/UV pairs for B. It keeps
+one pair of raw weights, one registered product, one 128-bit accumulator and
+one 96-bit completed coefficient. Three acknowledged little-word-first writes
+commit that coefficient to DDR. A per-layer epoch-valid table records only
+fully completed A/B construction, never partially written coefficients.
+This deliberately folded implementation prioritizes exact arithmetic and
+bounded state, not an unmeasured throughput claim.
+
 ## Storage hierarchy
 
 Production absorbed A/B matrices reside in DDR as three-word coefficients.
@@ -104,8 +118,9 @@ measure armed elapsed time. All ratio calculations remain host-side.
 
 ## Remaining work before a ready design handoff
 
-Implement and connect hardware absorption, reusable native tensor/activation
-execution, two-pass MLA, router/dual-client retained prefetch, expert SwiGLU,
+Connect the implemented hardware absorption and native arithmetic/activation
+blocks to reusable tensor execution, two-pass MLA, router/dual-client retained
+prefetch, expert SwiGLU,
 decoder residual sequencing, embedding/projection, parameter guards, native
 bank scheduling/cancellation, legacy top selection and telemetry aggregation.
 Finish exact schedules and integration documentation for those modules.
