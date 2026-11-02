@@ -37,8 +37,8 @@ module tb;
     .kv_last(kv_last),.kv_error(kv_error),.out_valid(out_valid),.out_ready(out_ready),
     .out_data(out_data),.out_tag(out_tag),.out_error(out_error)
   );
-  integer fd,n,id,length,index,format,count=0,accepted_kv=0,cycles,bound,held;
-  reg [6*D*16-1:0] read_query;
+  integer fd,n,id,length,index,format,count=0,accepted_kv=0,cycles,bound,held,read_head;
+  reg [D*16-1:0] read_query;
   reg [D*16-1:0] read_key,read_value;
   reg [G*8-1:0] read_ks,read_vs;
   reg [6*D*32-1:0] held_data;
@@ -57,11 +57,16 @@ module tb;
     fd=$fopen(input_path,"r");
     if(fd==0) $fatal(1,"input open");
     while(!$feof(fd)) begin
-      n=$fscanf(fd,"%d %d %h\n",id,length,read_query);
-      if(n!=3) begin
+      n=$fscanf(fd,"%d %d\n",id,length);
+      if(n!=2) begin
         if(!$feof(fd)) $fatal(1,"malformed header");
       end else begin
-        cmd_query=read_query; cmd_len=length; cmd_pos=length-1; cmd_tag=id; cmd_valid=1;
+        for(read_head=0;read_head<6;read_head=read_head+1) begin
+          n=$fscanf(fd,"%h\n",read_query);
+          if(n!=1) $fatal(1,"malformed query");
+          cmd_query[read_head*D*16+:D*16]=read_query;
+        end
+        cmd_len=length; cmd_pos=length-1; cmd_tag=id; cmd_valid=1;
         @(posedge clk);
         if(cmd_ready !== 1'b1 || out_valid !== 1'b0) $fatal(1,"COMMAND_NOT_IDLE");
         accepted_command=$time; bound=(512+64*D)*length+64*D;
@@ -100,7 +105,9 @@ module tb;
         end
         @(negedge clk); out_ready=1;
         @(posedge clk);
-        $display("RESULT %0d %h %0d %0d",id,out_data,out_error,cycles);
+        for(read_head=0;read_head<6;read_head=read_head+1)
+          $display("RESULT %0d %0d %h %0d %0d",id,read_head,
+            out_data[read_head*D*32+:D*32],out_error,cycles);
         #1; if(out_valid !== 1'b0) $fatal(1,"DUPLICATE_ATTENTION_RESULT");
         @(negedge clk); out_ready=0;
         count=count+1;
@@ -186,7 +193,9 @@ def run(probe, compact, simulator, dimension, tile):
     inputs = images / "attention.txt"
     with inputs.open("w") as stream:
         for tag, (query, bus, _) in enumerate(stimulus):
-            stream.write(f"{tag} {len(bus)} {packed(query)}\n")
+            stream.write(f"{tag} {len(bus)}\n")
+            for head in range(6):
+                stream.write(packed(query[head * dimension:(head + 1) * dimension]) + "\n")
             for format_, key, value, ks, vs in bus:
                 stream.write(f"{format_} {key:x} {value:x} {ks:x} {vs:x}\n")
     rtl = [ROOT / "rtl" / name for name in (
@@ -204,16 +213,18 @@ def run(probe, compact, simulator, dimension, tile):
                 summary = tuple(map(int, words[1:]))
             if words[:1] != ["RESULT"]:
                 continue
-            tag, data, error, cycles = int(words[1]), int(words[2], 16), int(words[3]), int(words[4])
-            if tag in seen or not 0 <= tag < len(stimulus):
-                raise AssertionError(f"duplicate/out-of-range attention observation {tag}")
-            seen.add(tag)
-            probe.compare("attention-error", 0, error, {"tag": tag})
+            tag, head, data, error, cycles = (int(words[1]), int(words[2]), int(words[3], 16),
+                                             int(words[4]), int(words[5]))
+            if (tag, head) in seen or not 0 <= tag < len(stimulus) or not 0 <= head < 6:
+                raise AssertionError(f"duplicate/out-of-range attention observation {tag} {head}")
+            seen.add((tag, head))
+            probe.compare("attention-error", 0, error, {"tag": tag, "head": head})
             query, bus, expected = stimulus[tag]
             probe.compare("attention-cycle-bound", True,
                           cycles <= (512 + 64 * dimension) * len(bus) + 64 * dimension, {"tag": tag})
-            for component, reference in enumerate(expected):
-                actual = (data >> (32 * component)) & 0xFFFFFFFF
+            for local_component, reference in enumerate(expected[head * dimension:(head + 1) * dimension]):
+                component = head * dimension + local_component
+                actual = (data >> (32 * local_component)) & 0xFFFFFFFF
                 difference = abs(exact(reference) - exact(actual)) if finite(actual) else None
                 limit = Fraction(1, 100000) + Fraction(1, 10000) * abs(exact(reference))
                 probe.compare(
@@ -225,7 +236,7 @@ def run(probe, compact, simulator, dimension, tile):
                 )
     expected_kv = sum(len(bus) for _, bus, _ in stimulus)
     probe.compare("summary", (len(stimulus), expected_kv), summary, {})
-    probe.compare("attention-result-count", len(stimulus), len(seen), {})
+    probe.compare("attention-head-result-count", 6 * len(stimulus), len(seen), {})
 
 
 def main():
