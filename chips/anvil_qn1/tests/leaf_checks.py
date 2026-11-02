@@ -209,3 +209,115 @@ def run_qk(run, simulator="icarus", dimension=8, full=False):
         raise AssertionError(f"missing/excess QK comparisons: expected {expected_record}")
     return {"qk_cases": len(vectors), "compared_elements": len(vectors) * dimension,
             "dimension": dimension, "simulator": simulator, "latency": 133}
+
+
+SCALAR_BENCH = r"""
+module scalar_tb;
+  reg clk=0,rst_n,flush=0,in_valid=0,out_ready=0;
+  always #5 clk=~clk;
+  reg [2:0] in_op=0;
+  reg [31:0] in_a=0,in_b=0;
+  reg in_error=0;
+  wire in_ready,out_valid,out_error;
+  wire [31:0] out_data;
+  integer fd,rc,operation,error_value,expected_error,count=0,cycles,stall;
+  reg [31:0] expected;
+  reg [4095:0] filename;
+  anvil_qn1_scalar dut(.clk(clk),.rst_n(rst_n),.flush(flush),
+    .in_valid(in_valid),.in_ready(in_ready),.in_op(in_op),
+    .in_a(in_a),.in_b(in_b),.in_error(in_error),
+    .out_valid(out_valid),.out_ready(out_ready),.out_data(out_data),.out_error(out_error));
+  task reset_outputs;
+    begin
+      if ({in_ready,out_valid,out_data,out_error}!==0) $fatal(1,"SCALAR_RESET");
+    end
+  endtask
+  always @(posedge clk or negedge clk) if (!rst_n) reset_outputs();
+  initial begin
+    rst_n=0; #1; reset_outputs();
+    @(negedge clk); rst_n=1; #1;
+    if (!$value$plusargs("vectors=%s",filename)) $fatal(1,"NO_VECTORS");
+    fd=$fopen(filename,"r"); if (!fd) $fatal(1,"OPEN_VECTORS");
+    rc=$fscanf(fd,"%d %h %h %d %h %d\n",
+      operation,in_a,in_b,error_value,expected,expected_error);
+    while (rc==6) begin
+      @(negedge clk);
+      if (in_ready!==1 || out_valid!==0) $fatal(1,"SCALAR_NOT_READY");
+      in_op=operation; in_error=error_value; in_valid=1; out_ready=0;
+      @(posedge clk); #1;
+      if (in_ready!==0 || out_valid!==0) $fatal(1,"SCALAR_ACCEPT");
+      @(negedge clk); in_valid=0; cycles=0;
+      while (out_valid===0 && cycles<100) begin
+        @(posedge clk); #1; cycles=cycles+1;
+      end
+      if (out_valid!==1 || out_data!==expected || out_error!==expected_error[0])
+        $fatal(1,"SCALAR_COMPARE case=%0d op=%0d a=%h b=%h got=%h expected=%h error=%b expected_error=%b cycles=%0d",
+          count,operation,in_a,in_b,out_data,expected,out_error,expected_error[0],cycles);
+      for (stall=0;stall<2;stall=stall+1) begin
+        @(posedge clk); #1;
+        if (out_valid!==1 || out_data!==expected || out_error!==expected_error[0] ||
+            in_ready!==0) $fatal(1,"SCALAR_STALL");
+      end
+      @(negedge clk); out_ready=1;
+      @(posedge clk); #1;
+      if (out_valid!==0 || in_ready!==1) $fatal(1,"SCALAR_RETIRE");
+      @(negedge clk); out_ready=0; count=count+1;
+      rc=$fscanf(fd,"%d %h %h %d %h %d\n",
+        operation,in_a,in_b,error_value,expected,expected_error);
+    end
+    if (rc!=0 && rc!=-1) $fatal(1,"MALFORMED_VECTORS");
+    if (count==0) $fatal(1,"NO_COMPARISONS");
+    $fclose(fd);
+    $display("SUMMARY scalar_cases=%0d stalled_outputs=%0d",count,count);
+    $finish;
+  end
+  initial begin repeat (500000) @(posedge clk); $fatal(1,"CYCLE_BOUND"); end
+endmodule
+"""
+
+
+def scalar_vectors():
+    functions = (ref.add, ref.subtract, ref.multiply, ref.divide,
+                 lambda a, b: ref.sqrt32(a))
+    directed = [0, 0x80000000, 1, 0x80000001, 0x007FFFFF, 0x00800000,
+                0x3F800000, 0xBF800000, 0x3F800001, 0x3F7FFFFF, 0x40000000,
+                0x7F7FFFFF, 0xFF7FFFFF, 0x7F800000, 0x7FC00001]
+    vectors = []
+    for operation in range(5):
+        pairs = [(a, b) for a in directed for b in directed]
+        for seed in (17, 89, 203):
+            rng = random.Random(seed + operation * 1000)
+            pairs += [(rng.getrandbits(32), rng.getrandbits(32)) for _ in range(256)]
+        for a, b in pairs:
+            try:
+                expected = functions[operation](a, b)
+                error = 0
+            except ref.ArithmeticFault:
+                expected, error = 0, 1
+            vectors.append((operation, a, b, 0, expected, error))
+    for operation in range(8):
+        vectors.append((operation, 0x3F800000, 0x40000000, 1, 0, 1))
+    return vectors
+
+
+def run_scalar(run):
+    vectors = scalar_vectors()
+    vector_file = run.path / "scalar-vectors.txt"
+    with vector_file.open("x") as output:
+        for operation, a, b, injected_error, expected, error in vectors:
+            output.write(f"{operation} {a:08x} {b:08x} {injected_error} "
+                         f"{expected:08x} {error}\n")
+    bench = run.path / "scalar_tb.sv"
+    bench.write_text(SCALAR_BENCH)
+    binary = run.path / "scalar.vvp"
+    sources = [f"rtl/anvil_qn1_{name}.sv" for name in
+               ("00_pkg", "fp32_mul", "fp32_add", "fp32_div", "fp32_sqrt", "scalar")]
+    run.execute(["iverilog", "-g2012", "-Wall", "-s", "scalar_tb", "-o",
+                 relative(binary), *sources, relative(bench)], "scalar-compile")
+    text = run.execute(["vvp", relative(binary), f"+vectors={relative(vector_file)}"],
+                       "scalar-simulation", timeout=600)
+    summary = f"SUMMARY scalar_cases={len(vectors)} stalled_outputs={len(vectors)}"
+    if text.count(summary) != 1:
+        raise AssertionError("scalar comparison count missing")
+    return {"scalar_cases": len(vectors), "seeds": [17, 89, 203],
+            "operations": ["add", "subtract", "multiply", "divide", "sqrt"]}

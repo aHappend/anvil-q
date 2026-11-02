@@ -8,7 +8,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from execution import Run
-from leaf_checks import run_qk
+from leaf_checks import run_qk, run_scalar
+from integration import run_top
 import reference
 
 
@@ -17,14 +18,24 @@ def main():
     parser.add_argument("--suite", choices=("smoke", "numerical", "behavior", "benchmark",
                                            "defects", "synthesis", "reproduce"))
     parser.add_argument("--domain", choices=("gsm8k", "humaneval", "mmlu", "boolq", "hellaswag"))
-    parser.add_argument("--probe", choices=("qk-compact", "qk-production"))
+    parser.add_argument("--probe", choices=("qk-compact", "qk-production", "scalar",
+                                          "top-compact", "top-continuation"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "qk-compact":
+        if args.probe in ("top-compact", "top-continuation"):
+            compiled = args.probe == "top-continuation"
+            run.versions(("python3", "verilator", "g++", "make") if compiled else
+                         ("python3", "iverilog", "vvp"))
+            results = run_top(run, "verilator" if compiled else "icarus",
+                              cases=6 if compiled else 1)
+        elif args.probe == "scalar":
+            run.versions(("python3", "iverilog", "vvp"))
+            results = run_scalar(run)
+        elif args.probe == "qk-compact":
             run.versions(("python3", "iverilog", "vvp"))
             results = run_qk(run)
         elif args.probe == "qk-production":
