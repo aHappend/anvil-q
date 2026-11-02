@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fp2_probe import ROOT
 import fp2_parent_probe as parent
 import fp2_top_probe as top
+import fp2_kv_traffic_probe as kv_traffic
 from fp2_reference import exact, finite, rounded, ulp_distance
 
 
@@ -197,6 +198,14 @@ def run(suite, execute):
                     observations(probe, True)
                 accelerated = execute(f"{name}-fp2-mode{mode}-seed{seed}", fp2_case)
                 accounting = accelerated.summary["external_accounting"]
+                reference_run = execute(f"{name}-six-query-reference-mode{mode}-seed{seed}",
+                                        lambda p: kv_traffic.run(p, commands, mode, seed))
+                reference_accounting = reference_run.summary["nonbroadcast_external_accounting"]
+                suite.compare("at-least-83.333-percent-kv-read-reduction", True,
+                              6 * accounting["kv_read_bytes"] <= reference_accounting["kv_read_bytes"],
+                              {"domain": name, "seed": seed, "mode": mode,
+                               "broadcast_bytes": accounting["kv_read_bytes"],
+                               "nonbroadcast_bytes": reference_accounting["kv_read_bytes"]})
                 # Both graphs use the identical logical BF16 fixture. The zero branches
                 # are exactly representable in native and MX storage.
                 original = {(command, index): bits for command, index, bits
@@ -218,6 +227,9 @@ def run(suite, execute):
                     "speedup": baseline.summary["transactions"]["cycles"] /
                                accelerated.summary["transactions"]["cycles"],
                     "parent_traffic": parent_accounting, "fp2_traffic": accounting,
+                    "nonbroadcast_traffic": reference_accounting,
+                    "observed_kv_read_reduction": 1 - accounting["kv_read_bytes"] /
+                                                   reference_accounting["kv_read_bytes"],
                     "parent_precision": numerical_distribution(baseline),
                     "fp2_precision": numerical_distribution(accelerated),
                     "recommendation": (
@@ -226,6 +238,7 @@ def run(suite, execute):
                         "Inspect tensor/epilogue occupancy before changing scheduling"),
                     "parent_receipt": str((baseline.directory / "receipt.json").relative_to(ROOT)),
                     "fp2_receipt": str((accelerated.directory / "receipt.json").relative_to(ROOT)),
+                    "nonbroadcast_receipt": str((reference_run.directory / "receipt.json").relative_to(ROOT)),
                 })
     suite.compare("benchmark-run-count", 30, len(records), {})
     geometric_mean = math.exp(sum(math.log(row["speedup"]) for row in records) / len(records))

@@ -26,6 +26,7 @@ import fp2_controller_probe as controller
 import fp2_epilogue_probe as epilogue
 import fp2_format_probe as formats
 import fp2_graph_probe as graph
+import fp2_gemv_probe as gemv
 import fp2_mutations as mutations
 import fp2_parent_probe as parent
 import fp2_prefetch_probe as prefetch
@@ -92,6 +93,7 @@ def behavior(suite):
                                      weight_mode=weight, cache_mode=cache, commands=COMMANDS,
                                      seed=seed, dual_reference=True))
     run("compact-28-layer-sequencing", lambda p: top.run(p, "verilator", layers=28))
+    run("full-1536-8960-streamed-operators", gemv.run)
     for tile in (1, 3):
         run(f"distinct-heads-tile{tile}", lambda p: attention.run(p, True, "verilator", 8, tile))
     suite.probe.summary["boundary_matrix"] = [
@@ -156,6 +158,7 @@ def synthesis_checks(suite):
 
 
 def benchmark_checks(suite):
+    suite.execute("long-stream-accounted-native-mx-density", gemv.run)
     benchmark.run(suite.probe, suite.execute)
 
 
