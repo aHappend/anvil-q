@@ -2,17 +2,17 @@
   "chip": "Anvil-Q4",
   "passed_checks": {
     "check:l1-arithmetic": {
-      "attempt_id": 32,
-      "duration_s": 216.9513643430546,
-      "stdout_preview": "L1 arithmetic: arithmetic_probe.py\nL1 arithmetic: numerics_probe.py\nl1-arithmetic: check-1 running 30s\nL1 arithmetic: tensor_probe.py\nL1 arithmetic: tensor_probe.py\nL1 arithmetic: tensor_probe.py\nL1 arithmetic: tensor_probe.py\nl1-arithmetic: check-5 running 30s\nL1 arithmetic: tensor_probe.py\nl1-arithmetic: check-6 running 30s\nevidence/l1-arithmetic-20261102T195037845232Z/receipt.json\n",
+      "attempt_id": 36,
+      "duration_s": 219.14773280383088,
+      "stdout_preview": "L1 arithmetic: arithmetic_probe.py\nL1 arithmetic: numerics_probe.py\nl1-arithmetic: check-1 running 30s\nL1 arithmetic: tensor_probe.py\nL1 arithmetic: tensor_probe.py\nL1 arithmetic: tensor_probe.py\nL1 arithmetic: tensor_probe.py\nl1-arithmetic: check-5 running 30s\nL1 arithmetic: tensor_probe.py\nl1-arithmetic: check-6 running 30s\nevidence/l1-arithmetic-20261102T222859093098Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-arithmetic-20261102T195037845232Z/receipt.json",
+          "path": "evidence/l1-arithmetic-20261102T222859093098Z/receipt.json",
           "data": {
             "suite": "l1-arithmetic",
             "cwd": ".",
-            "start_time": "2026-11-02T19:50:37.849260+00:00",
+            "start_time": "2026-11-02T22:28:59.097252+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -93,7 +93,7 @@
               "rtl/anvil_q4_token_io.sv": "387f84ec75fec88152d7d167b69e3cbf684e7f7e2a12b8a6822b4b998f09e908",
               "rtl/anvil_q4_top.sv": "45ea8bb82cea7f83439ec4b3753c1c30a6784c289282b1a1aeda03a9d5910360",
               "rtl/anvil_q4_umul64.sv": "ac66fd587c2238e8cffab0ae9ac71bbe660580f586fec51e1aaf6e2fb3a68c89",
-              "tests/README.md": "a345171b52463e0cad6b02c1a1b6e3b771f6317c94dbc9b08deecef89a77cce2",
+              "tests/README.md": "d98c5abc330fa27e4af6f842057e819e58b309144eacbcc761e89f5434fccc20",
               "tests/arithmetic_probe.py": "f1ff4d242b5d0fd87e459e8467eab8ad19539c0efa314496f49dbbf4ed5c243b",
               "tests/arithmetic_tb.sv": "42143764a6472d68e32a633710990e86de5587a4d91cd9d5b9858f7f915de888",
               "tests/benchmarks.py": "f11c97ffd2a9addfe6a4809a1c8c6e7e1d164683955d38cc5532b34b5b7c3f1b",
@@ -101,15 +101,15 @@
               "tests/cache_probe.py": "35f7093a5eb4d6ab13f113970bb454b2cb24194973bc646d197cb28248cc7315",
               "tests/cache_recovery_tb.sv": "7a2ef2f2daeb8375379e6d0516f1275a891d3c91e4b1eced3abcd05096a42eaa",
               "tests/cache_reference.py": "ae3ace8fc5f88fdf11949c8b7c2b08978dab176d8a4164e71a49544aea3ffa5a",
-              "tests/codec_equivalence.py": "c609e3f27e9ef85cefec57c82c9a66179ba8d7e6e5baf2e353ba60f780a02cbd",
+              "tests/codec_equivalence.py": "b6261940da4fe5b7dfe2bba9707da7de5b18fdf926e0b39fa2d27b9d209c0abd",
               "tests/codec_equivalence_tb.sv": "556214b9e22ca7a44b8373cb30923f0c6e6300d52f135bd70dca9f44012affd8",
               "tests/codec_lowering_probe.py": "3d8dce4667881b51875c37b1d7a7a04c660dcb744f0be6328dd00c8dca8a14e6",
               "tests/compat_synthesis_top.sv": "078392bb3e3d3f0aad2109bf908fe0581ec0e9374d081138d5e6cdaa2fc66356",
-              "tests/compatibility_probe.py": "f912dedbdf7779a64a5a922138a6b215f47900d885289ecb4c7f127c3c68a2c6",
+              "tests/compatibility_probe.py": "5c5f00038c1413e8f0434dae77b9fe73cfd9156e46421a85c4202300ceb8a95a",
               "tests/descriptor_probe.py": "14112b2487dc2c0b8442b0c0f9412631595f0cd7b31767c4dd94d2acf124776f",
               "tests/descriptor_tb.sv": "14b4aa8f85113edd8d38a8968f3c2765860f2e83816315e4647fa54cc0132415",
               "tests/descriptors.py": "92922dcbdc024c3da724b3629ad911f8d2df3a06e2ff270c041e94cc802f0f0a",
-              "tests/execution.py": "8e3318372ebb7c926d7416ffcd679c027a65763f9da017745a1da4318c8cbaab",
+              "tests/execution.py": "d524b782887ae82f31940282b56ca2f7a95b086bdd4a3ef45b42a789f4cf9a86",
               "tests/frontend_probe.py": "3b3b06e0add029060c46a290a493fb5108386f58f244172226e03b6cb512f1f0",
               "tests/full_shape_probe.py": "3eb0f8df782dea6cd15a9b5f778bb020601dac5888e14d7e4285c62cc5762063",
               "tests/full_shape_tb.sv": "7209ee2b30f161cd750d347c4fb11296cc5ab215b504b691a3d5c309daef3ca3",
@@ -122,7 +122,7 @@
               "tests/official-qwen-config.json": "ec0c1f5f875ad8bc1f78c5140c22dbdde1b55478442ad358e7a4d9ecf947a327",
               "tests/parameter_probe.py": "3eab7e8cfc2b2e70ca4cd4e848efc8e0601d240c000f89e185fa6b4d8704c2ce",
               "tests/portable.py": "92dfeef04ddf92e65dd8032fa02a17a365d58c848a30bfd04adb84190047aedc",
-              "tests/probe_receipt.py": "6f503d78472c142b062a2fa4a755792cc626855a6db8f32c273e88c37425353a",
+              "tests/probe_receipt.py": "804dc763f287d502f494e5a31f068c647bd2db71e006d1e436e4902cdfa7e2b5",
               "tests/protocol_probe.cpp": "3db1a6f7fb8005b9607cf38fa15fbf0e2f0bc9658388521e36f78e5d8b814e35",
               "tests/protocol_probe.py": "323314c95c8f0b29174814a3b65a967f0f7404c3d9a8032c017325ffb04bde53",
               "tests/scheduler_probe.cpp": "114dbeacfbaab73aa36a45ca785013c42a548404c8d0e27ad61fa455ef957ba8",
@@ -132,16 +132,17 @@
               "tests/startup_probe.py": "383a54c216a971f6be35e12169e481dcbe4cef9237b87fad81f59e6d8945ed2e",
               "tests/startup_tb.sv": "a83d30744d94849c378468ec9a87330ef300a838bd412db49658398804ad711e",
               "tests/switching_probe.py": "ea53c187ce431d847584507c73db4df334f8c0b7f42c0fe798161000a88d8c2b",
-              "tests/synthesis_probe.py": "2a9849b8ebe4f1e15052876712d3bcf0f63fda5cbec79924bbe23948c135d0e5",
-              "tests/system_matrix.py": "b4f1a5be5a599719ec634353c099157241b039fe8e1319ec5aacce109e151ae9",
+              "tests/synthesis_probe.py": "ed5aeeddf99132e79ddeb6731edbdb72fdb4a257b82f1344db8f58de49f44ae2",
+              "tests/system_matrix.py": "c3a829a9635c1e38a884f6cec4e6bc372e95fddf6c26c26c27c3c903fcd9894d",
               "tests/system_probe.py": "3f1c5a1b7e71631c4349141d1346b0721823464660353f9f6e4d7f12487f2eeb",
               "tests/tensor_probe.py": "c0e98d7b8b27351e61bbba5592895574df7ea8f2777af407d662f314a567da3d",
               "tests/tensor_tb.sv": "3241da21f30c11bd4a7ecafcde9891350550d7b8328842a1a5b3096c466544bc",
-              "tests/top_probe.cpp": "0674a56002f75e37b955e53a934d2a04873d89bbeb335acbe7a3c6771468e8a2",
+              "tests/top_probe.cpp": "d35b62fab8e75c519f245bd02a7a1619bc6cee1a6f4ea15ca5d6eb305a585223",
               "tests/top_smoke.py": "3b5094237ec19befd3cd4b6b4c80a38f45b640c94fb9b9b92e1813ceb5ba5404",
               "tests/top_smoke_tb.sv": "41f649b36e5e566fbac5370aaaa51308e0dc4a53131038f711dd95a04fbee8a9",
               "tests/transformer_reference.py": "3192842fd2cb509d78971b1ff2afe13a3aac42f031cad61967e7db8a0ad7206b",
-              "tests/verify.py": "2c85d3a0011e5cfd0beea58c236efd11a42818b5ace6d5d31c34794ba0092d8c"
+              "tests/verify.py": "2c85d3a0011e5cfd0beea58c236efd11a42818b5ace6d5d31c34794ba0092d8c",
+              "tests/verilator.vlt": "af872aed74efd82ec97b19b5bae0a448e7c7ff2848e24a4e88ac56b8603bb3de"
             },
             "commands": [
               {
@@ -150,14 +151,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:50:37.867673+00:00",
+                "start_time": "2026-11-02T22:28:59.114774+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/version.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:50:37.873814+00:00",
-                "elapsed_s": 0.005910273874178529
+                "end_time": "2026-11-02T22:28:59.120997+00:00",
+                "elapsed_s": 0.0059895089361816645,
+                "user_cpu_s": 0.0,
+                "system_cpu_s": 0.004483
               },
               {
                 "argv": [
@@ -167,14 +171,17 @@
                   "10000"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:50:37.874685+00:00",
-                "timeout_s": 2699.9706162931398,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T22:28:59.121850+00:00",
+                "timeout_s": 2699.9713187268935,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-0.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:50:58.185810+00:00",
-                "elapsed_s": 20.310918156057596
+                "end_time": "2026-11-02T22:29:19.232146+00:00",
+                "elapsed_s": 20.11008923081681,
+                "user_cpu_s": 18.600023,
+                "system_cpu_s": 1.393593
               },
               {
                 "argv": [
@@ -182,14 +189,17 @@
                   "tests/numerics_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:50:58.188475+00:00",
-                "timeout_s": 2679.656858947128,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-1.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-1.stderr.txt",
+                "start_time": "2026-11-02T22:29:19.235234+00:00",
+                "timeout_s": 2679.8579688700847,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-1.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-1.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:51:30.210694+00:00",
-                "elapsed_s": 32.021924637956545
+                "end_time": "2026-11-02T22:29:51.655748+00:00",
+                "elapsed_s": 32.42024889285676,
+                "user_cpu_s": 29.385761000000002,
+                "system_cpu_s": 2.9780029999999997
               },
               {
                 "argv": [
@@ -199,14 +209,17 @@
                   "1"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:51:30.212696+00:00",
-                "timeout_s": 2647.6326383731794,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-2.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-2.stderr.txt",
+                "start_time": "2026-11-02T22:29:51.657566+00:00",
+                "timeout_s": 2647.4356194459833,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-2.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-2.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:51:51.786129+00:00",
-                "elapsed_s": 21.57316989102401
+                "end_time": "2026-11-02T22:30:12.964993+00:00",
+                "elapsed_s": 21.307256389176473,
+                "user_cpu_s": 18.103627999999993,
+                "system_cpu_s": 3.14912
               },
               {
                 "argv": [
@@ -216,14 +229,17 @@
                   "2"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:51:51.788270+00:00",
-                "timeout_s": 2626.0570628300775,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-3.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-3.stderr.txt",
+                "start_time": "2026-11-02T22:30:12.967138+00:00",
+                "timeout_s": 2626.1260361250024,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-3.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-3.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:52:15.412175+00:00",
-                "elapsed_s": 23.623623681953177
+                "end_time": "2026-11-02T22:30:36.136169+00:00",
+                "elapsed_s": 23.1688727310393,
+                "user_cpu_s": 19.89390800000001,
+                "system_cpu_s": 3.236745
               },
               {
                 "argv": [
@@ -233,14 +249,17 @@
                   "4"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:52:15.414488+00:00",
-                "timeout_s": 2602.4308480811305,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-4.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-4.stderr.txt",
+                "start_time": "2026-11-02T22:30:36.138768+00:00",
+                "timeout_s": 2602.954475136008,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-4.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-4.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:52:43.845169+00:00",
-                "elapsed_s": 28.430404409067705
+                "end_time": "2026-11-02T22:31:04.969259+00:00",
+                "elapsed_s": 28.830211175838485,
+                "user_cpu_s": 24.777672999999993,
+                "system_cpu_s": 4.022238
               },
               {
                 "argv": [
@@ -250,14 +269,17 @@
                   "8"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:52:43.847717+00:00",
-                "timeout_s": 2573.9976207229774,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-5.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-5.stderr.txt",
+                "start_time": "2026-11-02T22:31:04.971601+00:00",
+                "timeout_s": 2574.1216156969313,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-5.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-5.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:53:20.329903+00:00",
-                "elapsed_s": 36.48192578484304
+                "end_time": "2026-11-02T22:31:43.706898+00:00",
+                "elapsed_s": 38.7350300650578,
+                "user_cpu_s": 33.731347000000014,
+                "system_cpu_s": 4.965642000000001
               },
               {
                 "argv": [
@@ -267,14 +289,17 @@
                   "16"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:53:20.332360+00:00",
-                "timeout_s": 2537.512981482083,
-                "stdout_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-6.stdout.txt",
-                "stderr_path": "evidence/l1-arithmetic-20261102T195037845232Z/check-6.stderr.txt",
+                "start_time": "2026-11-02T22:31:43.709406+00:00",
+                "timeout_s": 2535.383796715876,
+                "stdout_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-6.stdout.txt",
+                "stderr_path": "evidence/l1-arithmetic-20261102T222859093098Z/check-6.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:54:14.608201+00:00",
-                "elapsed_s": 54.2755593941547
+                "end_time": "2026-11-02T22:32:38.028205+00:00",
+                "elapsed_s": 54.31851572310552,
+                "user_cpu_s": 47.647515999999996,
+                "system_cpu_s": 6.686890999999999
               }
             ],
             "comparisons": {},
@@ -286,13 +311,13 @@
                   "--samples",
                   "10000"
                 ],
-                "receipt": "evidence/preparation/arithmetic-20261102T195037951917Z/receipt.json"
+                "receipt": "evidence/preparation/arithmetic-20261102T222859200214Z/receipt.json"
               },
               {
                 "command": [
                   "numerics_probe.py"
                 ],
-                "receipt": "evidence/numerics-20261102T195058240076Z/receipt.json"
+                "receipt": "evidence/numerics-20261102T222919327586Z/receipt.json"
               },
               {
                 "command": [
@@ -300,7 +325,7 @@
                   "--lanes",
                   "1"
                 ],
-                "receipt": "evidence/tensor-20261102T195130264533Z/receipt.json"
+                "receipt": "evidence/tensor-20261102T222951753234Z/receipt.json"
               },
               {
                 "command": [
@@ -308,7 +333,7 @@
                   "--lanes",
                   "2"
                 ],
-                "receipt": "evidence/tensor-20261102T195151864994Z/receipt.json"
+                "receipt": "evidence/tensor-20261102T223013059282Z/receipt.json"
               },
               {
                 "command": [
@@ -316,7 +341,7 @@
                   "--lanes",
                   "4"
                 ],
-                "receipt": "evidence/tensor-20261102T195215492868Z/receipt.json"
+                "receipt": "evidence/tensor-20261102T223036230774Z/receipt.json"
               },
               {
                 "command": [
@@ -324,7 +349,7 @@
                   "--lanes",
                   "8"
                 ],
-                "receipt": "evidence/tensor-20261102T195243929503Z/receipt.json"
+                "receipt": "evidence/tensor-20261102T223105062963Z/receipt.json"
               },
               {
                 "command": [
@@ -332,11 +357,11 @@
                   "--lanes",
                   "16"
                 ],
-                "receipt": "evidence/tensor-20261102T195320411737Z/receipt.json"
+                "receipt": "evidence/tensor-20261102T223143806962Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T19:54:14.610487+00:00"
+            "end_time": "2026-11-02T22:32:38.030830+00:00"
           }
         }
       ]
