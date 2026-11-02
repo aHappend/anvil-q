@@ -46,6 +46,8 @@ def retained_epilogue():
     if any(receipt.get("source_sha256", {}).get(p) != current[p] for p in required):
         return None
     result = json.loads((directory / "result.json").read_text())
+    if (receipt.get("exit") == 0) != (result.get("status") == "passed"):
+        raise AssertionError("retained epilogue checker receipt/result disagree")
     if result.get("commands") != 104 or result.get("vectors") != 168:
         raise AssertionError("retained epilogue has incomplete observation counts")
     for name in ("observations.txt", "vectors.txt", "simulation.stdout.txt",

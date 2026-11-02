@@ -30,6 +30,16 @@ def timestamp():
     return datetime.now(timezone.utc).isoformat()
 
 
+def clean_objects(directory):
+    directory.resolve().relative_to(ROOT)
+    if directory.name != "compile-obj":
+        raise ValueError("cleanup is restricted to a named compile-obj directory")
+    if directory.is_dir():
+        for path in directory.iterdir():
+            if path.is_file() and path.suffix in (".o", ".a", ".gch"):
+                path.unlink()
+
+
 def remaining():
     deadline = float(os.environ.get("HT3_CHECK_DEADLINE", time.time() + CHECK_SECONDS))
     return max(0.0, min(CHECK_SECONDS, deadline - time.time()))
@@ -43,7 +53,8 @@ def execute(argv, output, stem, version_argv, root=ROOT):
         raise FileExistsError(f"immutable execution output already exists: {stem}")
     limit = min(remaining(), INTERPRETED_SECONDS if Path(argv[0]).name == "vvp"
                 else CHECK_SECONDS)
-    record = dict(argv=argv, cwd=".", start=timestamp(), source_sha256=hashes(root),
+    record = dict(argv=argv, cwd="." if root == ROOT else relative(root),
+                  start=timestamp(), source_sha256=hashes(root),
                   stdout=relative(stdout), stderr=relative(stderr),
                   timeout=limit, tool_version_argv=version_argv)
     try:
@@ -91,6 +102,8 @@ def execute(argv, output, stem, version_argv, root=ROOT):
     with receipt.open("x") as out:
         json.dump(record, out, indent=2)
         out.write("\n")
+    if Path(argv[0]).parent.name == "compile-obj" and exit_code is not None:
+        clean_objects(root / Path(argv[0]).parent)
     if timed_out or exit_code != 0:
         raise RuntimeError(f"{stem}: exit={exit_code}, timed_out={timed_out}; "
                            f"{relative(receipt)}")

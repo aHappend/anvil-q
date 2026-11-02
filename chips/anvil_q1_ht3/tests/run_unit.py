@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reference import primitive_vectors, quantizer_vectors
-from execution import ROOT, execute, hashes, relative, remaining
+from execution import ROOT, clean_objects, execute, hashes, relative, remaining
 
 
 def run(suite, simulator, seed, output, limit=None):
@@ -52,8 +52,12 @@ def run(suite, simulator, seed, output, limit=None):
                 ["verilator", "--version"])
         argv = [relative(objects / f"V{suite}_tb")]
         version = ["verilator", "--version"]
-    text = execute([*argv, f"+vectors={relative(vectors)}", f"+seed={seed}"],
-                   output, "simulation", version)
+    try:
+        text = execute([*argv, f"+vectors={relative(vectors)}", f"+seed={seed}"],
+                       output, "simulation", version)
+    finally:
+        if simulator == "verilator":
+            clean_objects(objects)
     summary = re.search(rf"SUMMARY {suite} comparisons=(\d+)\b", text)
     if not summary or int(summary[1]) != count:
         raise AssertionError(f"missing complete summary: expected {count}; {text[-2000:]}")

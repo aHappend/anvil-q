@@ -39,7 +39,7 @@ def account(netlist, top):
     return dict(cells=dict(cells), hierarchy=dict(hierarchy))
 
 
-def run(output, diagnostic=False):
+def run(output, diagnostic=False, compact_only=False):
     sources = " ".join(relative(p) for p in sorted(ROOT.glob("rtl/*.sv")))
     jobs = [("default-hierarchy", "anvil_q1_ht3_top", {}, False),
             ("compact-mapped", "anvil_q1_ht3_top", COMPACT, True)]
@@ -49,7 +49,9 @@ def run(output, diagnostic=False):
         ("epilogue_fusion", {"MAX_VECTOR": 8, "HEAD_DIM": 8}, False),
         ("flash_attn", {"NUM_Q_HEADS": 1, "NUM_KV_HEADS": 1, "HEAD_DIM": 8,
                         "MAX_SEQ_LEN": 1, "TILE_TOKENS": 3}, False))]
-    if diagnostic:
+    if compact_only:
+        jobs = jobs[1:2]
+    elif diagnostic:
         jobs = jobs[:1]
     rows = []
     for identifier, top, parameters, mapped in jobs:
@@ -93,8 +95,23 @@ def run(output, diagnostic=False):
                        mapped=mapped, error=str(exc))
         row["receipt"] = relative(directory / "synthesis.receipt.json")
         rows.append(row)
+        if identifier == "default-hierarchy" and row["status"] == "failed":
+            alternative = output / f"slang-frontend-{uuid.uuid4().hex[:8]}"
+            alternative.mkdir()
+            try:
+                execute(["yosys", "-Q", "-T", "-m", "slang", "-p",
+                         f"read_slang --top anvil_q1_ht3_top {sources}; "
+                         "hierarchy -check -top anvil_q1_ht3_top; check -noinit; stat"],
+                        alternative, "frontend", ["yosys", "-V"])
+                rows.append(dict(id="slang-frontend-diagnostic", status="incomplete",
+                                 receipt=relative(alternative/"frontend.receipt.json"),
+                                 reason="frontend available; full structural assertions still required"))
+            except RuntimeError as exc:
+                rows.append(dict(id="slang-frontend-diagnostic", status="failed",
+                                 receipt=relative(alternative/"frontend.receipt.json"),
+                                 error=str(exc)))
     result = dict(status="passed" if all(r["status"] == "passed" for r in rows) else "failed",
-                  runs=rows, diagnostic=diagnostic)
+                  runs=rows, diagnostic=diagnostic, compact_only=compact_only)
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     return result
@@ -103,14 +120,16 @@ def run(output, diagnostic=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
-    parser.add_argument("--diagnostic", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--diagnostic", action="store_true")
+    mode.add_argument("--compact-only", action="store_true")
     args = parser.parse_args()
     output = ROOT / args.output
     output.mkdir(parents=True, exist_ok=False)
     receipt = dict(argv=["python3", "tests/run_synthesis.py", *sys.argv[1:]], cwd=".",
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
-    result = run(output, args.diagnostic)
+    result = run(output, args.diagnostic, args.compact_only)
     receipt.update(exit=0 if result["status"] == "passed" else 1,
                    timed_out=remaining() <= 0, end=timestamp(),
                    result=relative(output / "result.json"))

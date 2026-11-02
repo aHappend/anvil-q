@@ -11,7 +11,7 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, execute, hashes, relative, remaining, timestamp
+from execution import ROOT, clean_objects, execute, hashes, relative, remaining, timestamp
 from reference import convert, decode, float_bits, float_value, vector_check
 
 
@@ -124,17 +124,33 @@ def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False):
              "--top-module", "attention_tb", f"-GQ={q}", f"-GK={k}", f"-GD={d}",
              f"-GTILE={tile}", "--Mdir", relative(objects), *sources,
              "tests/attention_tb.sv"], output, "compile", ["verilator", "--version"])
-    text = execute([relative(objects / "Vattention_tb"), f"+vectors={relative(vectors)}",
-                    f"+observations={relative(observations)}", f"+seed={seed}"],
-                   output, "simulation", ["verilator", "--version"])
+    simulation_failure = None
+    try:
+        text = execute([relative(objects / "Vattention_tb"), f"+vectors={relative(vectors)}",
+                        f"+observations={relative(observations)}", f"+seed={seed}"],
+                       output, "simulation", ["verilator", "--version"])
+    except RuntimeError as exc:
+        simulation_failure = str(exc)
+        text = (output / "simulation.stdout.txt").read_text()
+    finally:
+        clean_objects(objects)
     summary = re.search(r"SUMMARY attention commands=(\d+) requests=(\d+) "
                         r"output_stalls=(\d+) bus_stalls=(\d+) bubbles=(\d+)", text)
-    if not summary or int(summary[1]) != len(cases) or min(map(int, summary.groups()[1:])) <= 0:
+    if not simulation_failure and (
+            not summary or int(summary[1]) != len(cases) or min(map(int, summary.groups()[1:])) <= 0):
         raise AssertionError("missing complete public attention coverage summary")
     actual = [[] for _ in cases]
     completed = {}
-    for line in observations.read_text().splitlines():
+    observation_failures = []
+    lines = observations.read_text().splitlines()
+    for line_number, line in enumerate(lines):
         row = line.split()
+        if not row or len(row) != (5 if row[0] == "O" else 6):
+            if simulation_failure and line_number == len(lines)-1:
+                observation_failures.append(dict(message="aborted simulator left incomplete final observation",
+                                                 raw=line))
+                break
+            raise AssertionError("malformed attention observation field count")
         cmd = int(row[1])
         if cmd >= len(cases) or cmd in completed:
             raise AssertionError("unexpected/late attention observation")
@@ -153,10 +169,16 @@ def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False):
             completed[cmd] = dict(cycles=int(row[4]), fetches=int(row[5]))
         else:
             raise AssertionError("malformed attention observation")
-    if len(completed) != len(cases):
+    if not simulation_failure and len(completed) != len(cases):
         raise AssertionError("unclosed attention commands")
     comparisons, failures = [], []
+    failures.extend(observation_failures)
+    if simulation_failure:
+        failures.append(dict(message=simulation_failure, completed_commands=len(completed),
+                             required_commands=len(cases), first_mismatch=text[-2000:]))
     for cmd, c in enumerate(cases):
+        if cmd not in completed:
+            continue
         if c["error"]:
             if actual[cmd]:
                 raise AssertionError("invalid attention result")
@@ -180,12 +202,12 @@ def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False):
     result = dict(status="failed" if failures else "passed", seed=seed,
                   geometry=dict(q=q, k=k, d=d, tile=tile), commands=len(cases),
                   comparisons=comparisons, failures=failures, completions=completed,
-                  diagnostic=diagnostic, raw_summary=summary[0],
+                  diagnostic=diagnostic, raw_summary=summary[0] if summary else None,
                   vector_sha256=hashlib.sha256(vectors.read_bytes()).hexdigest())
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     if failures:
-        raise AssertionError(f"{len(failures)} attention numerical failures; {relative(output/'result.json')}")
+        raise AssertionError(f"{len(failures)} attention assertion/tool failures; {relative(output/'result.json')}")
     return result
 
 
