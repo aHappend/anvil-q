@@ -67,6 +67,7 @@ module tb;
   integer current_case=0,mode=0,cycles=0,reads=0,writes=0,completions=0;
   integer stimulus_case=0,active_case=0,active_mode=0,active_layer=0;
   integer accepted=0,write_acks=0,last_ack_edge=-1,reset_samples=0,stalls=0;
+  integer final_ack_checks=0;
   integer previous_reads=0,previous_writes=0,previous_acks=0;
   integer mode_completions[0:2];
   integer source_reads[0:H-1],gamma_reads[0:H-1];
@@ -120,12 +121,13 @@ module tb;
         #1;
         if (done!==1'b0 || cmd_ready!==1'b1) $fatal(1,"COMPLETION_RETIREMENT");
       end
-    if (completions!=CASES*3 || accepted!=CASES*3 || stalls==0 || reset_samples<5)
+    if (completions!=CASES*3 || accepted!=CASES*3 || final_ack_checks!=CASES*3 ||
+        stalls==0 || reset_samples<5)
       $fatal(1,"MISSING_COMPARISONS");
     for (integer j=0;j<3;j=j+1)
       if (mode_completions[j]!=CASES) $fatal(1,"MISSING_MODE_COMPARISONS mode=%0d",j);
-    $display("SUMMARY rms_vectors=%0d commands=%0d reads=%0d compared_writes=%0d stalls=%0d reset=%0d",
-      CASES,completions,reads,writes,stalls,reset_samples);
+    $display("SUMMARY rms_vectors=%0d commands=%0d reads=%0d compared_writes=%0d final_ack_latency_checks=%0d stalls=%0d reset=%0d",
+      CASES,completions,reads,writes,final_ack_checks,stalls,reset_samples);
     $finish;
   end
 
@@ -197,11 +199,12 @@ module tb;
           gamma_reads[mem_req_col]=gamma_reads[mem_req_col]+1;
         end
       end
-      if (mem_rsp_valid && mem_rsp_ready && pending_write && pending_col==H-1) begin
-        #1;
-        if (done!==1'b1 || cmd_ready!==1'b0 || error!==1'b0)
-          $fatal(1,"FINAL_WRITE_ACK_COMPLETION_LATENCY");
-      end
+    end
+    if (mem_rsp_valid && mem_rsp_ready && pending_write && pending_col==H-1) begin
+      #1;
+      if (done!==1'b1 || cmd_ready!==1'b0 || error!==1'b0)
+        $fatal(1,"FINAL_WRITE_ACK_COMPLETION_LATENCY");
+      final_ack_checks=final_ack_checks+1;
     end
   end
 endmodule

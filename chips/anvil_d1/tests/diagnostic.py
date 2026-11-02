@@ -288,9 +288,10 @@ endmodule
 """
 
 
-def simulate(evidence, bench, simulator):
-    rtl = sorted(ROOT.glob("rtl/*.sv"))
-    parent = sorted(ROOT.glob("anvil_q3_reference/rtl/*.sv"))
+def simulate(evidence, bench, simulator, source_root=None):
+    source_root = ROOT if source_root is None else Path(source_root)
+    rtl = sorted(source_root.glob("rtl/*.sv"))
+    parent = sorted(source_root.glob("anvil_q3_reference/rtl/*.sv"))
     inputs = [rel(p) for p in parent + rtl]
     bench_path = rel(evidence.path / bench)
     if simulator == "icarus":

@@ -52,6 +52,12 @@ class Evidence:
                      tool_version_argv=version_argv, tool_version_stdout=rel(version_stdout),
                      tool_version_stderr=rel(version_stderr),
                      expected_exit_codes=list(expected_exit_codes))
+        generated_inputs = sorted({path for pattern in (
+            "*.sv", "*.ys", "fixture.json", "*-fixtures.json", "checkpoint-images/*.hex")
+            for path in self.path.glob(pattern)})
+        child["generated_input_sha256"] = {
+            rel(path): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in generated_inputs}
         self.record["children"].append(child)
         self.save()
         start = time.monotonic()
@@ -60,8 +66,17 @@ class Evidence:
                 version = subprocess.run(version_argv, cwd=cwd, stdout=out, stderr=err, check=False)
             child["tool_version_exit_code"] = version.returncode
             with stdout.open("w") as out, stderr.open("w") as err:
-                result = subprocess.run(child["argv"], cwd=cwd, stdout=out, stderr=err, check=False)
-            child["exit_code"] = result.returncode
+                process = subprocess.Popen(child["argv"], cwd=cwd, stdout=out, stderr=err)
+                while True:
+                    try:
+                        exit_code = process.wait(timeout=30)
+                        break
+                    except subprocess.TimeoutExpired:
+                        # This is a progress heartbeat, not an execution
+                        # timeout or a numerical acceptance threshold.
+                        print(f"PROGRESS {name} elapsed_s={int(time.monotonic()-start)}",
+                              flush=True)
+            child["exit_code"] = exit_code
         except OSError as exc:
             child["launch_error"] = str(exc)
             raise
@@ -69,8 +84,8 @@ class Evidence:
             child["end_time"] = now()
             child["duration_s"] = time.monotonic() - start
             self.save()
-        if result.returncode not in expected_exit_codes:
-            raise RuntimeError(f"{name} exited {result.returncode}: {rel(stdout)}, {rel(stderr)}")
+        if exit_code not in expected_exit_codes:
+            raise RuntimeError(f"{name} exited {exit_code}: {rel(stdout)}, {rel(stderr)}")
         return stdout
 
     def finish(self, status, **summary):
