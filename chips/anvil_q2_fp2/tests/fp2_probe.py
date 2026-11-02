@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import random
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -21,6 +22,49 @@ from fp2_reference import add, finite, multiply, mx_decode, transcendental, ulp_
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+_budget = None
+_executables = {}
+
+
+class SuiteDeadline:
+    """One wall-clock budget shared by generation, tools and child probes."""
+
+    def __init__(self, seconds=2700):
+        self.end = time.monotonic() + seconds
+        self.seconds = seconds
+
+    def remaining(self):
+        remaining = self.end - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(f"aggregate verification deadline ({self.seconds}s)")
+        return remaining
+
+    def __enter__(self):
+        global _budget
+        self.previous = _budget
+        if self.previous is not None:
+            self.end = min(self.end, self.previous.end)
+        _budget = self
+        self.handler = signal.getsignal(signal.SIGALRM)
+        self.timer = signal.getitimer(signal.ITIMER_REAL)
+        self.started = time.monotonic()
+        signal.signal(signal.SIGALRM, self.expired)
+        signal.setitimer(signal.ITIMER_REAL, self.remaining())
+        return self
+
+    def expired(self, signum, frame):
+        raise TimeoutError(f"aggregate verification deadline ({self.seconds}s)")
+
+    def __exit__(self, exc_type, exc, traceback):
+        global _budget
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, self.handler)
+        if self.timer[0]:
+            signal.setitimer(signal.ITIMER_REAL,
+                             max(0.001, self.timer[0] - (time.monotonic() - self.started)),
+                             self.timer[1])
+        _budget = self.previous
 
 
 SCALAR_TB = r"""
@@ -140,8 +184,10 @@ class Probe:
         }
         self.summary = {"comparisons": {}, "mismatches": [], "mismatch_count": 0}
         self.versions = {}
+        self.settled = False
 
     def command(self, argv, stem, timeout=600, allow_nonzero=False):
+        timeout = min(timeout, 600, _budget.remaining() if _budget else 600)
         stdout = self.directory / f"{stem}.stdout.txt"
         stderr = self.directory / f"{stem}.stderr.txt"
         record = {
@@ -156,24 +202,28 @@ class Probe:
         self.receipt["commands"].append(record)
         with stdout.open("w") as out, stderr.open("w") as err:
             try:
-                with subprocess.Popen(argv, cwd=ROOT, stdout=out, stderr=err) as process:
+                with subprocess.Popen(argv, cwd=ROOT, stdout=out, stderr=err,
+                                      start_new_session=True) as process:
                     deadline = time.monotonic() + timeout
-                    while True:
-                        remaining = deadline - time.monotonic()
-                        try:
-                            result_code = process.wait(timeout=max(0.01, min(30, remaining)))
-                            break
-                        except subprocess.TimeoutExpired:
-                            if time.monotonic() >= deadline:
-                                process.kill()
-                                process.wait()
-                                raise subprocess.TimeoutExpired(argv, timeout)
-                            print(json.dumps({
-                                "progress": stem, "elapsed_s": round(time.time() - record["start_unix"]),
-                                "stdout": record["stdout"],
-                            }), flush=True)
+                    try:
+                        while True:
+                            remaining = deadline - time.monotonic()
+                            try:
+                                result_code = process.wait(timeout=max(0.01, min(30, remaining)))
+                                break
+                            except subprocess.TimeoutExpired:
+                                if time.monotonic() >= deadline:
+                                    raise subprocess.TimeoutExpired(argv, timeout)
+                                print(json.dumps({
+                                    "progress": stem, "elapsed_s": round(time.time() - record["start_unix"]),
+                                    "stdout": record["stdout"],
+                                }), flush=True)
+                    finally:
+                        if process.poll() is None:
+                            os.killpg(process.pid, signal.SIGKILL)
+                            process.wait()
                 record["exit_status"] = result_code
-            except subprocess.TimeoutExpired:
+            except (subprocess.TimeoutExpired, TimeoutError):
                 record["timed_out"] = True
                 record["exit_status"] = None
                 raise
@@ -200,6 +250,8 @@ class Probe:
                 )
 
     def settle(self, error=None):
+        if self.settled:
+            raise RuntimeError("receipt already settled; create a new run")
         self.summary["status"] = "failed" if error or self.summary["mismatch_count"] else "passed"
         self.summary["error"] = error
         path = self.directory / "summary.json"
@@ -217,6 +269,7 @@ class Probe:
         )
         receipt = self.directory / "receipt.json"
         receipt.write_text(json.dumps(self.receipt, indent=2) + "\n")
+        self.settled = True
         print(json.dumps({"receipt": str(receipt.relative_to(ROOT)), **self.summary}), flush=True)
         return self.receipt["exit_status"]
 
@@ -320,6 +373,24 @@ def run_scalar(probe, simulator, compact=False, overrides=None):
 def simulate(probe, source, rtl, simulator, extra=None):
     extra = extra or []
     probe.version(simulator, "-V" if simulator == "iverilog" else "--version")
+    key = hashlib.sha256(json.dumps({
+        "simulator": simulator, "version": probe.versions[simulator],
+        "testbench": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "rtl": [(path.name, hashlib.sha256(path.read_bytes()).hexdigest()) for path in rtl],
+        "flags": ["--timing", "--unroll-count", "512", "--unroll-stmts", "65536"],
+    }, sort_keys=True).encode()).hexdigest()
+    cached = _executables.get(key)
+    if cached and cached[0].is_file():
+        binary, executable_hash, receipt = cached
+        if hashlib.sha256(binary.read_bytes()).hexdigest() != executable_hash:
+            raise AssertionError("source-bound executable changed")
+        probe.receipt["reused_executable"] = {
+            "path": str(binary.relative_to(ROOT)), "sha256": executable_hash,
+            "compilation_receipt": receipt, "binding_sha256": key,
+        }
+        return probe.command(
+            (["vvp", str(binary)] if simulator == "iverilog" else [str(binary)]) + extra,
+            "simulation")
     if simulator == "iverilog":
         probe.version("vvp", "-V")
         binary = probe.directory / "simulation.vvp"
@@ -327,6 +398,8 @@ def simulate(probe, source, rtl, simulator, extra=None):
             ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o", str(binary),
              *map(str, rtl), str(source)], "compile"
         )
+        _executables[key] = (binary, hashlib.sha256(binary.read_bytes()).hexdigest(),
+                             str((probe.directory / "receipt.json").relative_to(ROOT)))
         return probe.command(["vvp", str(binary), *extra], "simulation")
     objects = probe.directory / "compile-obj"
     binary = probe.directory / "simulation"
@@ -338,6 +411,8 @@ def simulate(probe, source, rtl, simulator, extra=None):
          "--unroll-stmts", "65536",
          *map(str, rtl), str(source)], "compile"
     )
+    _executables[key] = (binary, hashlib.sha256(binary.read_bytes()).hexdigest(),
+                         str((probe.directory / "receipt.json").relative_to(ROOT)))
     try:
         return probe.command([str(binary), *extra], "simulation")
     finally:

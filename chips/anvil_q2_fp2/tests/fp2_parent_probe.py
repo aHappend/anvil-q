@@ -242,6 +242,51 @@ COMPAT_PORTS = """
 """
 
 
+def with_public_pin_comparator(text):
+    outputs = {
+        "token_ready": 1, "logit_valid": 1, "logit_index": 32, "logit_data": 32,
+        "done": 1, "error": 1, "cancel_done": 1, "req_valid": 1, "req_write": 1,
+        "req_kind": 4, "req_layer": 32, "req_proj": 3, "req_row": 32,
+        "req_col": 32, "req_wdata": 32, "req_tag": 64, "rsp_ready": 1,
+    }
+    ports = {
+        "token_ready": "token_ready", "logit_valid": "logit_valid", "logit_index": "logit_index",
+        "logit_data": "logit_data", "done": "done", "error": "error", "cancel_done": "cancel_done",
+        "mem_req_valid": "req_valid", "mem_req_write": "req_write", "mem_req_kind": "req_kind",
+        "mem_req_layer": "req_layer", "mem_req_proj": "req_proj", "mem_req_row": "req_row",
+        "mem_req_col": "req_col", "mem_req_wdata": "req_wdata", "mem_req_tag": "req_tag",
+        "mem_rsp_ready": "rsp_ready",
+    }
+    inputs = {
+        "clk": "clk", "rst_n": "rst_n", "cancel": "cancel", "token_valid": "token_valid",
+        "token_id": "token_id", "token_pos": "token_pos", "new_sequence": "new_sequence",
+        "token_phase": "token_phase", "logit_ready": "logit_ready", "mem_req_ready": "req_ready",
+        "mem_rsp_valid": "rsp_valid", "mem_rsp_error": "rsp_error", "mem_rsp_rdata": "rsp_data",
+        "mem_rsp_tag": "rsp_tag",
+    }
+    start = text.index("  anvil_q2_fp2_top #(")
+    end = text.index(" accelerator(", start)
+    parameters = text[start:end].replace("anvil_q2_fp2_top", "anvil_q2_fp_top").replace(",.ACCEL_ENABLE(0)", "")
+    declarations = "".join(f"wire [{size-1}:0] reference_{name};\n" for name, size in outputs.items())
+    connections = [f".{port}(reference_{signal})" for port, signal in ports.items()]
+    connections += [f".{port}({signal})" for port, signal in inputs.items()]
+    actual = "{" + ",".join(outputs) + "}"
+    reference = "{" + ",".join(f"reference_{name}" for name in outputs) + "}"
+    comparator = f"""
+  {declarations}
+  {parameters} independent_parent({','.join(connections)});
+  integer pin_comparisons=0;
+  always @(posedge clk or negedge clk) begin
+    if(rst_n) begin
+      if({actual} !== {reference}) $fatal(1,"COMPATIBILITY_PUBLIC_PIN_MISMATCH");
+      pin_comparisons=pin_comparisons+1;
+    end
+  end
+"""
+    text = text.replace("  reg [15:0] embeddings[0:767];", comparator + "\n  reg [15:0] embeddings[0:767];")
+    return text.replace("          $finish;", '          $display("PIN_COMPARISONS %0d",pin_comparisons);\n          $finish;')
+
+
 def expected_logits(token, fp_format):
     fraction_bits, exponent_bits = (7, 8) if fp_format == 0 else (10, 5)
     values = [embedding(token, column) for column in range(48)]
@@ -265,7 +310,8 @@ def expected_logits(token, fp_format):
 
 
 def run(probe, simulator="verilator", compatibility=False, fp_format=0,
-        weight_mode=0, cache_mode=0, commands=None, seed=17, binary=None, expanded_sources=None):
+        weight_mode=0, cache_mode=0, commands=None, seed=17, binary=None, expanded_sources=None,
+        dual_reference=False):
     commands = commands or [(3, 0, 1, 0)]
     source = probe.directory / "tb.sv"
     text = PARENT_TB.replace("@MODULE@", "anvil_q2_fp2_top" if compatibility else "anvil_q2_fp_top")
@@ -274,6 +320,10 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
     text = text.replace("@PARAMETERS@", ",.ACCEL_ENABLE(0)" if compatibility else "")
     text = text.replace("@PORTS@", COMPAT_PORTS if compatibility else "")
     text = text.replace("@ONE@", "32'h00003f80" if fp_format == 0 else "32'h00003c00")
+    if dual_reference:
+        if not compatibility:
+            raise ValueError("public-pin comparator requires compatibility DUT")
+        text = with_public_pin_comparator(text)
     source.write_text(text)
     images = probe.directory / "checkpoint-images"
     images.mkdir()
@@ -299,6 +349,7 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
         output = simulate(probe, source, rtl, simulator, arguments)
     expected = [expected_logits(command[0], fp_format) for command in commands]
     logits, completions, summary = {}, [], None
+    pin_comparisons = None
     for line in output.read_text().splitlines():
         words = line.split()
         if words[:1] == ["LOGIT"]:
@@ -316,6 +367,8 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
             completions.append((int(words[1]), int(words[2])))
         elif words[:1] == ["SUMMARY"]:
             summary = [*map(int, words[1:10]), words[10]]
+        elif words[:1] == ["PIN_COMPARISONS"]:
+            pin_comparisons = int(words[1])
     probe.compare("parent-logit-count", 16 * len(commands), len(logits), {})
     probe.compare("parent-completion-order", list(range(len(commands))), [row[0] for row in completions], {})
     if summary is None:
@@ -331,6 +384,10 @@ def run(probe, simulator="verilator", compatibility=False, fp_format=0,
     probe.summary["configuration"] = {
         "compatibility": compatibility, "fp_format": fp_format, "weight_mode": weight_mode,
         "cache_mode": cache_mode, "seed": seed, "commands": commands}
+    if dual_reference:
+        probe.compare("compatibility-public-pin-comparison-count", True,
+                      pin_comparisons is not None and pin_comparisons > 0, {})
+        probe.summary["public_pin_comparisons"] = pin_comparisons
 
 
 def main():
@@ -342,13 +399,15 @@ def main():
     parser.add_argument("--multi-token", action="store_true")
     parser.add_argument("--seed", type=int, choices=(17, 89, 203), default=17)
     parser.add_argument("--repair-of")
+    parser.add_argument("--dual-reference", action="store_true")
     args = parser.parse_args()
     probe = Probe("parent", args.repair_of)
     try:
         commands = [(3, 0, 1, 0), (5, 1, 0, 0), (7, 2, 0, 1),
                     (4, 0, 1, 0), (8, 1, 0, 1)] if args.multi_token else None
         run(probe, compatibility=args.compatibility, fp_format=args.fp_format,
-            weight_mode=args.weight_mode, cache_mode=args.cache_mode, commands=commands, seed=args.seed)
+            weight_mode=args.weight_mode, cache_mode=args.cache_mode, commands=commands, seed=args.seed,
+            dual_reference=args.dual_reference)
         return probe.settle()
     except Exception as error:
         return probe.settle(f"{type(error).__name__}: {error}")
