@@ -314,6 +314,8 @@ endmodule
         "mx_dense_payload_bytes": hidden * outputs if mx else None,
         "equivalent_bf16_payload_bytes": hidden * outputs * 2,
         "mx_unpadded_scale_bytes": hidden * outputs // 32 if mx else None,
+        "metadata_inclusive_dense_ratio": 33 / 64 if mx else None,
+        "row_padded_scale_bytes_per_pass": hidden * 64 if mx else None,
         "transport": "uncached 64-byte parent scalar adapter; FP2 ping-pong DDR",
     })
 

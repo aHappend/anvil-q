@@ -679,7 +679,7 @@ def behavior(run, seeds):
         for geometry in GEOMETRIES:
             for mx in (False, True):
                 simulate_architecture(run, seed, geometry, mx, "verilator",
-                                      compile_and_run, ROOT)
+                                      compile_and_run, ROOT, tokens=geometry[-1])
             for enable in (0, 1):
                 simulate_compatibility(run, ROOT, compile_and_run, geometry, seed, enable)
     comparisons = run.receipt["comparisons"]
