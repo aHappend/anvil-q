@@ -35,7 +35,12 @@ module anvil_q3_ht2_kv_commit_engine #(
 );
   localparam CAP=CACHE_MODE==2 ? 64 : 32;
   localparam SHIFT=$clog2(CAP);
-  localparam [63:0] GROUPS=(64'(HEAD_DIM)+CAP-1)>>SHIFT;
+  localparam [127:0] GROUPS_WIDE=(128'(HEAD_DIM)+CAP-1)>>SHIFT;
+  localparam [127:0] TOKEN_RECORDS_WIDE=128'(NUM_LAYERS)*2*
+    128'(NUM_KV_HEADS)*GROUPS_WIDE;
+  localparam [127:0] TOTAL_BYTES_WIDE=(TOKEN_RECORDS_WIDE<<6)*
+    (128'(MAX_SEQ_LEN)+4);
+  localparam [63:0] GROUPS=GROUPS_WIDE[63:0];
   localparam [63:0] HEAD_BYTES=GROUPS<<6;
   localparam [63:0] TOKEN_RECORDS=64'(NUM_LAYERS)*2*
     64'(NUM_KV_HEADS)*GROUPS;
@@ -45,7 +50,7 @@ module anvil_q3_ht2_kv_commit_engine #(
   localparam LEGAL=NUM_LAYERS>0 && NUM_KV_HEADS>0 && HEAD_DIM>0 &&
     (HEAD_DIM&1)==0 && MAX_SEQ_LEN>=1 && MAX_SEQ_LEN<=32768 &&
     (CACHE_MODE==1 || CACHE_MODE==2) && GROUPS<=64'hffffffff &&
-    TOKEN_RECORDS<=64'hffffffff && TOTAL_BYTES<=64'h100000000 &&
+    TOKEN_RECORDS_WIDE<=128'hffffffff && TOTAL_BYTES_WIDE<=128'h100000000 &&
     TOTAL_BYTES>=COMMITTED_BYTES && COMMITTED_BYTES>=TOKEN_BYTES;
 
   generate if (!LEGAL) begin: invalid_parameters
@@ -78,7 +83,7 @@ module anvil_q3_ht2_kv_commit_engine #(
       DEST_ADDRESS=18, ADDRESS_CHECK=19, SHADOW_WRITE=20,
       COPY_READ=21, COPY_WAIT=22, COPY_WRITE=23, ADVANCE_COPY=24,
       FENCE_FIRST=25, FENCE_SECOND=26, PUBLICATION=27, COMPLETE=28,
-      DRAIN=29, FAULTED=30;
+      DRAIN=29, FAULTED=30, SHADOW_ORIGIN=31;
     reg [4:0] state;
     reg failed, cancelled, outstanding, copying, epoch_bound;
     reg [31:0] transaction_id, epoch, base_pos, committed, committed_epoch;
@@ -206,7 +211,7 @@ module anvil_q3_ht2_kv_commit_engine #(
         end
       end else if (state!=FAULTED && transport_fault) begin
         failed<=1; record<=0; active<=0;
-        if (outstanding && !(memory_rsp_valid && response_known)) state<=DRAIN;
+        if ((outstanding || read_fire) && !(memory_rsp_valid && response_known)) state<=DRAIN;
         else state<=FAULTED;
       end else case (state)
         IDLE: if (cmd_valid && cmd_ready) begin
@@ -258,8 +263,9 @@ module anvil_q3_ht2_kv_commit_engine #(
         HEAD_ADD: begin head_ordinal<=head_product+{32'd0,head}; state<=GROUP_PRODUCT; end
         GROUP_PRODUCT: begin group_product<=head_ordinal*GROUPS; state<=GROUP_ADD; end
         GROUP_ADD: begin record_ordinal<=group_product+{32'd0,group_index}; state<=SHADOW_PRODUCT; end
-        SHADOW_PRODUCT: begin shadow_product<={62'd0,node}*TOKEN_BYTES; state<=SHADOW_BASE; end
-        SHADOW_BASE: begin shadow_base<=64'h100000000+COMMITTED_BYTES+shadow_product; state<=SHADOW_ADDRESS; end
+        SHADOW_PRODUCT: begin shadow_product<={62'd0,node}*TOKEN_BYTES; state<=SHADOW_ORIGIN; end
+        SHADOW_ORIGIN: begin shadow_base<=64'h100000000+COMMITTED_BYTES; state<=SHADOW_BASE; end
+        SHADOW_BASE: begin shadow_base<=shadow_base+shadow_product; state<=SHADOW_ADDRESS; end
         SHADOW_ADDRESS: begin
           shadow_address<=shadow_base+(record_ordinal<<6);
           if (copying) state<=POSITION_PRODUCT;

@@ -10,7 +10,9 @@ of leaf modules does not satisfy that objective.
 
 Implementation is currently incomplete. Sparse DMA, registered FP32 helpers,
 Q16 projection-boundary converters and the four-bank tile MAC are authored.
-The batched decoder, attention, commit, integrated top and FPGA files are absent.
+Private scratch, a causal parent-Q16 attention wrapper with quantized KV reader,
+the greedy verifier and atomic shadow/copy engine are also authored as leaves.
+The batched decoder/projection scheduler, integrated top and FPGA files are absent.
 Independent functional verification, synthesis, timing, fit and board execution
 are pending. No performance or numerical result is claimed.
 
@@ -88,7 +90,8 @@ path `commit_count[2:0]/commit_nodes[7:0]` (two bits per node, path order).
 `publish_valid/publish_count/publish_pos` is a one-edge notification of the
 single registered visible-count update; it has no response-ready dependency.
 `visible_count/visible_epoch` are internal reader visibility gates, not host
-correctness inputs. `done/error` is a one-edge completion; `idle/fault/drain_done`
+correctness inputs. `done` is a one-edge completion and `error` is held in the
+faulted state until flush; `idle/fault/drain_done`
 describe transaction recovery. Command acceptance reserves all four shadows.
 
 Per-node records must arrive in increasing `(layer, value, head, group)` order,
@@ -159,8 +162,67 @@ engine's publication; downstream response backpressure cannot defer publication.
 Faults pulse local cancellation to the engine, drain accepted reads, then publish
 a held zero-data error response. Fault recovery requires flush. A flush suppresses
 all response/evaluation valid signals and clears local transaction metadata.
-The actual tree-attention datapath and decoder are separate required integration
-work; the verifier's visibility descriptor is not a substitute for attention.
+The verifier's visibility descriptor is not a substitute for attention.
+
+### Causal attention leaf boundary
+
+The internal `anvil_q3_ht2_tree_attention` evaluates one selected candidate/layer
+using the unchanged parent Q16 attention arithmetic kernel. Projections remain
+batched; sequential attention traversal does not replicate weight traversal.
+Its command includes id, epoch, layer, selected node, active mask, base prefix
+count, all node positions and the selected node's four-bit visibility mask.
+Only a unique visible node at each virtual position base..selected-position is
+legal. The selected node must be visible and no descendant can be visible.
+The parent kernel's initial per-layer commit operation is intercepted as a
+private-read readiness acknowledgement: no memory write or count publication
+results from it. The decoder must finish validated shadow staging for that
+node/layer before launching attention.
+
+Query/context scratch requests carry the selected node alongside the parent
+scratch interface. They address parent slots 2 and 5 in that node's private
+scratch image. Prefix positions read the complete committed backing extent;
+positions at or above base select exactly one visible private node. Siblings
+never receive a key/value request. Query head h uses the parent h>>3 GQA mapping.
+`anvil_q3_ht2_kv_read_port` generates the same parent committed address and
+node-major shadow address as the engine, using registered address stages.
+Its synchronous bounded resident cache tags epoch, transaction and address,
+uses explicit replacement wrap for residency one or non-power-of-two sizes,
+and never substitutes residency for long-context capacity.
+
+Record returns are ownership checked and decoded through the unchanged parent
+symmetric codec before scalar use. Thus attention sees quantized reconstruction,
+not pre-quantization staging values. Returned data is a held valid/error response.
+Flush invalidates residency, cancels unaccepted requests and drains accepted
+physical reads. Scratch return ownership is likewise retained while cancellation
+drains an accepted request. Reset must reset the enclosing transport too.
+The wrapper does not alter the parent's dot/softmax/context rounding or invoke
+an external attention oracle. Independent causal contexts, GQA mapping,
+quantization, protocol and timing checks remain pending.
+
+### Private scratch boundary
+
+`anvil_q3_ht2_private_scratch` provides four literal synchronous Q16 word banks
+with the parent's 15-slot lengths and offsets. One request owns one slot/index.
+A read mask selects one to four banks at that same address; a write selects
+exactly one node and its one-hot mask. Scalar consumers select their node's
+32-bit slice; projection ingestion can read all four slices in one access.
+Requests return a held mask/node/data/error response. Command capture, slot-map
+capture and bounds/address checks precede synchronous bank access; response valid
+is published on that bank-access edge, with no redundant data-copy register.
+Reads of uninitialized selected entries are explicit errors; inactive banks
+are zero and are not validated.
+
+Only initialized bits are cleared, synchronously and one address per edge in
+all four banks, after reset/flush. Ready remains low until clearing completes.
+All data and initialized RAM ports use non-asynchronous sequential blocks.
+There are no multiported asynchronous array substitutions. The decoder must
+overwrite every consumed slot entry for each new candidate; retained initialized
+bits do not authorize reuse of another candidate's scalar values.
+Production has 54016 words per node: 864256 data bytes plus 27008 validity bytes
+across four nodes (analytical storage, not a fit result). Widened geometry
+arithmetic validates the complete four-bank extent against the declared scratch
+reservation. This real on-chip scratch is not a DDR bypass for weights, metadata
+or committed/shadow KV, whose public transport remains mandatory.
 
 Reset has highest priority, then flush/cancellation, then faults, then ordinary
 progress. Inactive outputs are zero. No response may be accepted twice or

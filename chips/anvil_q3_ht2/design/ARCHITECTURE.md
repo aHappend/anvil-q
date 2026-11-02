@@ -4,7 +4,9 @@
 
 Implemented sources comprise sparse DMA, the FP package, registered weight
 decode/multiply/add helpers, Q16/FP boundary converters, the per-lane stripe
-controller and the four-bank tile MAC. They do not constitute an integrated
+controller, the four-bank tile MAC, private scratch, causal tree attention and
+its quantized KV reader, the greedy verifier and atomic KV commit engine.
+They do not constitute an integrated
 accelerator. The parent RTL is read-only; tests and FPGA integration are not
 authored by this increment.
 
@@ -102,11 +104,71 @@ three-stage shared weight decode, six-stage products/adders, eight stripe sums
 per output and the fixed final tree. Surrounding parent scalar paths stay
 Q16.16; the authored projection conversion helpers still need scheduler wiring.
 
-Private scratch, causal `anvil_q3_ht2_tree_attention`, the batched decoder,
-ordered vocabulary logits, `spec_verifier` and its literal KV commit engine
-remain to be implemented. Commit visibility is one all-layer publication,
-not a sequence of per-layer commits. Shadow placement and all image/scratch/KV
-extents require production INT8/INT4 parameter validation.
+The batched decoder, ordered vocabulary logits and public integration remain
+to be implemented. The new leaves below do not replace that work. Image and
+complete integrated extents still require production parameter validation.
+
+## Private scratch, causal attention and atomic KV
+
+`anvil_q3_ht2_private_scratch` implements four synchronous banks with the parent's
+15-slot Q16 layout. A common slot/index read can return one to four token values
+without reading a separate activation image over DDR for each candidate.
+Each bank has initialized-bit RAM, cleared one address per clock after reset or
+flush. Bank reads/writes and validity clearing are in reset-free synchronous RAM
+processes; controller state is asynchronously reset. Invalid active reads return
+an error, not fabricated zeros. Production storage is analytically 864256 data
+bytes and 27008 validity bytes; this is not a fitted Arria 10 resource result.
+
+`anvil_q3_ht2_tree_attention` walks the selected node's lower-index parent chain
+in two registered stages per ancestor. It verifies positions and the exact
+visibility mask before starting a literal unchanged `anvil_q3_ht_attention`
+scalar kernel. Query/context accesses use slots 2/5 in the selected node's
+scratch bank. The kernel's initial commit command only receives a local private
+readiness acknowledgement; it cannot write KV or expose a new committed token.
+The scheduler must wait for validated shadow staging before attention begins.
+Parent dot, softmax, context rounding and h>>3 GQA mapping are retained.
+
+The literal `causal_kv_reader` chooses committed backing below the prefix count
+and exactly one visible private node above it. It computes aligned parent/shadow
+addresses in registered stages, tracks one accepted response, and uses the
+unchanged parent symmetric codec to reconstruct INT8/INT4 data before scalar
+use. A synchronous tagged resident cache has explicit replacement wrap for
+residency one, three and other legal sizes. The wrapper invalidates residency
+at each attention command, so a reused request ID cannot expose overwritten
+shadow data from an earlier tree. Long-context records still come from DDR,
+not from an idealized all-context on-chip array.
+
+`anvil_q3_ht2_spec_verifier` validates four-slot graphs, generates evaluation
+positions/visibility, captures ordered node logits and compares them one edge
+later. Selection uses a registered child search followed by a registered path
+update, packing only matched children in path order. Complete logits, drained
+comparison stages and all expected shadow writes are prerequisites of selection.
+Missing, duplicate or wrong-owner records/logits fail explicitly. Zero accepted
+tokens is an ordinary successful rejection, not a command error.
+
+Its literal `kv_commit_engine` owns one visible count/epoch. Staged records may
+interleave nodes, but each node's records have fixed layer/key-or-value/head/group
+order, permitting four bounded ownership counters rather than a large bitmap.
+Each accepted record is decoded/validated before a shadow write. Four node-major
+shadow images follow the entire parent-compatible committed reservation.
+Parameter extents use 128-bit constants before runtime address narrowing.
+
+After selection, the engine copies selected records to invisible positions in
+path order. One outstanding read reserves the return register, including an
+immediate accepted-request return. Writes finish on accepted record requests;
+there is no invented write-response-valid input. Available response errors are
+monitored independently of read-valid. Two quiet fence edges precede one
+cancellation-sensitive publication, after which the verifier registers its held
+public response on the following edge. The bridge must map the actual controller
+error/fence behavior before this can constitute integrated atomicity evidence.
+
+Flush discards unaccepted requests, drains accepted returns and leaves the
+previous visible count unchanged. Explicit new-sequence reset must invalidate
+the sequence-owned verifier and its enclosing transport; cancellation instead
+flushes without resetting its prefix. Scratch response ownership survives
+cancellation until its accepted response drains. No simulation, atomicity,
+context, quantization, traffic, synthesis or timing result is inferred from
+these authored connections.
 
 ## Integration dependencies and pending evidence
 
@@ -116,6 +178,10 @@ extents require production INT8/INT4 parameter validation.
 | Read returns | Ordered, one return per accepted burstcount-one request, with controller errors surfaced |
 | Flush | Do not reset/reassign the DDR client until drain_done; no late return can acquire a new column |
 | Reset | Reset enclosing read transport along with leaf ownership |
+| New sequence / cancellation | Reset sequence-owned visibility only for new sequence; cancellation flush preserves the committed count |
+| Tree attention launch | Every selected node/layer shadow record is validated and its physical write accepted before attention reads it |
+| Publication fence | Map actual controller response errors through the final accepted write and two quiet fence edges |
+| Scratch | Overwrite each candidate's consumed inputs and retain valid response ownership until transfer/drain |
 | Metadata | Image-loaded qzero/scales, tail-zeroed and AWQ-local-normalized consistently |
 | Activation reuse | Retain/reuse scan storage across production row blocks without recomputing SwiGLU or DDR activation reads |
 | Physical traffic accounting | Include qweight reads, all metadata, crossing lines, allocation padding and repeated addresses |
