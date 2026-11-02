@@ -258,9 +258,11 @@ selected head in parallel, and later update/normalization results enable only
 their pipelined component's word. Reads select a component within each bank
 and then select the head. This avoids HEAD_DIM variable-address initialization
 ports and a full-vector variable output write without changing storage capacity,
-arithmetic order or cycle schedule. Numerator words remain unreset behind
-first-key write-before-read ownership; normalized words clear on reset, flush
-and command acceptance, and hold through output stalls.
+arithmetic order or cycle schedule. Numerator words asynchronously clear on
+active-low reset and hold during flush; first-key initialization still writes
+every word before any numerator read and takes priority over later updates.
+Normalized words clear on reset, flush and command acceptance, and hold through
+output stalls.
 
 Command length must equal position+1. Index progression and the last marker
 are checked at every KV transfer, including length one; invalid scale,

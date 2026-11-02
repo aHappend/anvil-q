@@ -194,7 +194,8 @@ module anvil_q2_fp2_flash_attn #(
         assign result[(bank*D+slot)*32+:32]=normalized;
         // First-key initialization owns every word before any numerator read.
         always @(posedge clk or negedge rst_n) begin
-          if (rst_n && !flush) begin
+          if (!rst_n) accumulator<=0;
+          else if (!flush) begin
             if (initialize_head) accumulator<={value[16*slot+:16],16'd0};
             else if (update_head && update_component[6]==slot)
               accumulator<=update_data;
