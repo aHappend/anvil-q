@@ -48,6 +48,12 @@ def synthesis_inputs(run, inputs):
         text = text.replace("round_q32_to_q16($signed(sums[b]))",
                             "round_q32_to_q16(sums[b])")
         text = text.replace(".in_value($signed(terms[b]))", ".in_value(terms[b])")
+        declaration = "    reg [127:0] dma_row_mask_saved;\n"
+        if source.name == "anvil_q3_ht2_projection.sv":
+            if text.count(declaration) != 1 or text.count("    wire result_bad=") != 1:
+                raise AssertionError("unrecognized projection declaration ordering")
+            text = text.replace(declaration, "").replace(
+                "    wire result_bad=", declaration + "    wire result_bad=")
         destination = directory / source.name
         destination.write_text(text)
         lowered.append(relative(destination))
