@@ -7,8 +7,9 @@ from pathlib import Path
 import random
 import sys
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative
+from receipts import execute, new_run, relative, cleanup_build
 from reference import pack_rows, tile_sum, f32
 
 
@@ -96,7 +97,11 @@ def run_tile(run, simulator, seed, compact):
                 "-CFLAGS", "-O0", *SOURCES], ["verilator", "--version"])
         argv = [relative(obj / "Vtile_tb"), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
-    output = execute(run, "tile-simulate", argv, version)
+    try:
+        output = execute(run, "tile-simulate", argv, version)
+    finally:
+        if simulator == "verilator":
+            cleanup_build(obj)
     records = [json.loads(line.removeprefix("RESULT "))
                for line in (output / "stdout.txt").read_text().splitlines()
                if line.startswith("RESULT ")]

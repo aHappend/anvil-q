@@ -7,8 +7,9 @@ from pathlib import Path
 import random
 import sys
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import ROOT, execute, new_run, relative
+from receipts import ROOT, execute, new_run, relative, cleanup_build
 from reference import fp_operation, q16_to_half, single_to_q16, weight
 
 
@@ -85,7 +86,11 @@ def run_arithmetic(run, simulator="iverilog", seed=17, compact=False):
                  *ARITH_SOURCES, "tests/arithmetic_tb.sv"], ["verilator", "--version"])
         argv = [relative(obj / "Varithmetic_tb"), f"+vectors={relative(vector_path)}"]
         version = ["verilator", "--version"]
-    result_path = execute(run, "arithmetic-simulate", argv, version)
+    try:
+        result_path = execute(run, "arithmetic-simulate", argv, version)
+    finally:
+        if simulator == "verilator":
+            cleanup_build(obj)
     lines = (result_path / "stdout.txt").read_text().splitlines()
     outputs = [json.loads(line.removeprefix("RESULT ")) for line in lines
                if line.startswith("RESULT ")]

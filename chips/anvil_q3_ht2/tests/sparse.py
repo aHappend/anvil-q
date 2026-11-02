@@ -6,8 +6,9 @@ import json
 from pathlib import Path
 import sys
 
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative
+from receipts import execute, new_run, relative, cleanup_build
 from reference import packed_image, sparse_expected
 
 
@@ -82,7 +83,11 @@ def run_sparse(run, simulator, seed, compact):
                 "--Mdir", relative(obj), "-j", "2", *sources], ["verilator", "--version"])
         argv = [relative(obj / "Vsparse_ddr_tb"), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
-    output = execute(run, "sparse-simulate", argv, version)
+    try:
+        output = execute(run, "sparse-simulate", argv, version)
+    finally:
+        if simulator == "verilator":
+            cleanup_build(obj)
     records = [json.loads(line.removeprefix("RESULT "))
                for line in (output / "stdout.txt").read_text().splitlines()
                if line.startswith("RESULT ")]

@@ -50,15 +50,24 @@ def new_run(stem, preparation=False, repair_of=None):
 
 def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     cwd = ROOT if cwd is None else Path(cwd)
-    location = run / name
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    location = run / f"{name}-{timestamp}"
     location.mkdir(exist_ok=False)
     version = subprocess.run(version_argv, cwd=ROOT, capture_output=True, text=True)
     (location / "version.stdout.txt").write_text(version.stdout)
     (location / "version.stderr.txt").write_text(version.stderr)
+    inputs = []
+    for argument in map(str, argv):
+        argument = argument.removeprefix("+vectors=")
+        candidate = (cwd / argument).resolve()
+        if candidate.is_relative_to(ROOT) and candidate.is_file():
+            inputs.append(candidate)
+    input_hashes = hashes(inputs)
     receipt = {
         "argv": list(map(str, argv)),
         "cwd": str(cwd.relative_to(ROOT)),
         "source_sha256": hashes(sources()),
+        "input_sha256": input_hashes,
         "tool_version_argv": version_argv,
         "tool_version_exit_code": version.returncode,
         "tool_version": (version.stdout + version.stderr).splitlines()[0],
@@ -71,17 +80,36 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     started = time.monotonic()
     with (location / "stdout.txt").open("wb") as stdout, (
             location / "stderr.txt").open("wb") as stderr:
-        result = subprocess.run(argv, cwd=cwd, stdout=stdout, stderr=stderr)
+        process = subprocess.Popen(argv, cwd=cwd, stdout=stdout, stderr=stderr)
+        while True:
+            try:
+                exit_code = process.wait(timeout=30)
+                break
+            except subprocess.TimeoutExpired:
+                print(f"{name}: tool execution active ({int(time.monotonic() - started)}s)",
+                      flush=True)
     receipt.update(finished_at=utc(), duration_s=time.monotonic() - started,
-                   exit_code=result.returncode)
+                   exit_code=exit_code)
     (location / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     if version.returncode != 0:
         raise RuntimeError(f"{name}: version command failed ({version.returncode})")
-    if result.returncode != expect:
-        raise RuntimeError(f"{name}: exit {result.returncode}, expected {expect}; "
+    if hashes(inputs) != input_hashes:
+        raise RuntimeError(f"{name}: declared inputs changed during tool execution")
+    if exit_code != expect:
+        raise RuntimeError(f"{name}: exit {exit_code}, expected {expect}; "
                            f"see {location.relative_to(ROOT)}/receipt.json")
     return location
 
 
 def relative(path):
     return str(path.relative_to(ROOT))
+
+
+def cleanup_build(path):
+    path = path.resolve()
+    if not path.is_dir() or not path.is_relative_to(ROOT / "evidence"):
+        raise ValueError("cleanup requires a known project evidence build directory")
+    for pattern in ("*.o", "*.a", "*.gch", "*.verilator_deplist.tmp"):
+        for file in path.glob(pattern):
+            if file.is_file():
+                file.unlink()
