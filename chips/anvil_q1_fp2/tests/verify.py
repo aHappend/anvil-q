@@ -455,7 +455,7 @@ def compile_and_run(run, directory, bench, sources, simulator, stem, arguments=(
         try:
             run.command(
                 ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module", "tb",
-                 "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", "-CFLAGS", "-O0", *sources],
+                 "--Mdir", str(obj.relative_to(ROOT)), "-j", "2", "-CFLAGS", "-O1", *sources],
                 f"{stem}-compile",
             )
             if cache:
@@ -587,6 +587,7 @@ def main():
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--repair-of")
     parser.add_argument("--simulator", choices=["iverilog", "verilator"])
+    parser.add_argument("--geometry", choices=["minimum", "nonpower", "multihead"])
     parser.add_argument("--leaf", action="append",
                         choices=["add", "multiply", "tensor", "rsqrt", "exp"])
     args = parser.parse_args()
@@ -620,8 +621,12 @@ def main():
             for seed in map(int, args.seeds.split(",")):
                 simulate_ddr(run, seed, args.simulator or "iverilog", compile_and_run)
         elif selected == "architecture":
+            geometries = (
+                (GEOMETRIES[("minimum", "nonpower", "multihead").index(args.geometry)],)
+                if args.geometry else GEOMETRIES[:1] if args.compact else GEOMETRIES
+            )
             for seed in map(int, args.seeds.split(",")):
-                for geometry in GEOMETRIES[:1] if args.compact else GEOMETRIES:
+                for geometry in geometries:
                     for mx in (False, True):
                         simulate_architecture(
                             run, seed, geometry, mx, args.simulator or "verilator",

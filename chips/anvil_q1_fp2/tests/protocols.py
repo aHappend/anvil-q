@@ -258,7 +258,8 @@ module tb;
   integer accepted=0,issued=0,retired=0,cycle=0,i,chosen;
   integer transaction[0:1],due[0:1];
   integer returned[0:95];
-  integer out_of_order=0,two_outstanding=0,refill=0,stalls=0,zero_latency=0;
+  integer out_of_order=0,two_outstanding=0,refill=0,stalls=0,zero_latency=0,aborted=0;
+  reg reset_epoch=0;
   reg live[0:1],pop,push,issue,response;
   reg [31:0] rng=32'd{seed};
   reg held_output=0,held_request=0;
@@ -290,9 +291,9 @@ module tb;
       cmd_row=accepted*3; cmd_col=accepted*64;
       cmd_wdata=data(accepted); cmd_wstrb=64'hffffffffffffffff >> (accepted%64);
       ddr_req_ready=(cycle%29>4) && rng[3:0]!=0;
-      out_ready=(cycle%31>8) && rng[2:0]!=0;
+      out_ready=reset_epoch && (cycle%31>8) && rng[2:0]!=0;
       result_needed=accepted>retired;
-      if (!ddr_rsp_valid) begin
+      if (reset_epoch && !ddr_rsp_valid) begin
         chosen=-1;
         if (live[1] && cycle>=due[1]) chosen=1;
         else if (live[0] && cycle>=due[0]) chosen=0;
@@ -306,7 +307,7 @@ module tb;
       end
       #1;
       // Some transactions receive a legal same-edge bridge response.
-      if (!ddr_rsp_valid && ddr_req_valid && ddr_req_ready && issued%7==0) begin
+      if (reset_epoch && !ddr_rsp_valid && ddr_req_valid && ddr_req_ready && issued%7==0) begin
         ddr_rsp_valid=1; ddr_rsp_id=ddr_req_id;
         ddr_rsp_error=fault(issued); ddr_rsp_rdata=data(issued)^512'd17;
         zero_latency=zero_latency+1;
@@ -366,13 +367,24 @@ module tb;
       #1;
       if (response) ddr_rsp_valid=0;
       @(negedge clk);
+      if (!reset_epoch && live[0] && live[1]) begin
+        if (accepted!=2 || issued!=2 || retired!=0) $fatal(1,"reset precondition absent");
+        aborted=accepted;
+        rst_n=0; cmd_valid=0; ddr_rsp_valid=0;
+        #1; reset_check(); @(posedge clk); reset_check();
+        #1; reset_check(); @(negedge clk); reset_check();
+        accepted=0; issued=0; retired=0; live[0]=0; live[1]=0;
+        held_output=0; held_request=0;
+        for (i=0;i<96;i=i+1) returned[i]=0;
+        rst_n=1; reset_epoch=1;
+      end
       if (retired==96) begin
         if (accepted!=96 || issued!=96 || out_of_order==0 || two_outstanding==0 ||
-            refill==0 || stalls==0 || zero_latency==0)
+            refill==0 || stalls==0 || zero_latency==0 || aborted!=2)
           $fatal(1,"DDR coverage missing: reordered=%0d two=%0d refill=%0d zero=%0d",
             out_of_order,two_outstanding,refill,zero_latency);
-        $display("SUMMARY ddr: compared=%0d reordered=%0d two=%0d refill=%0d zero=%0d",
-          retired,out_of_order,two_outstanding,refill,zero_latency);
+        $display("SUMMARY ddr: compared=%0d reordered=%0d two=%0d refill=%0d zero=%0d reset_aborted=%0d",
+          retired,out_of_order,two_outstanding,refill,zero_latency,aborted);
         $finish;
       end
     end
