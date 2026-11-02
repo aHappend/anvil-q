@@ -171,7 +171,8 @@ def speculation_images(path, geometry, seed, prefix, branching=False, storage_ev
         for slot, values in result["stages"][0].items():
             scratch[slot * geometry.maximum:slot * geometry.maximum + len(values)] = values
         tables["expected-scratch"].extend(scratch)
-        evaluations.append({"token": token, "position": position, "argmax": result["argmax"]})
+        evaluations.append({"token": token, "position": position, "argmax": result["argmax"],
+                            "maximum_absolute_score": decoder.maximum_absolute_score})
         return result["argmax"]
 
     def transaction(token, position, phase, nodes, parents, generated):

@@ -77,6 +77,7 @@ TELEMETRY_TASKS = r"""
       csr_access(0,12'h078,0,0,0);
       csr_access(0,12'h07c,0,0,0);
       csr_access(0,12'h04c,0,0,0);
+      csr_access(0,12'h048,0,0,expected_max_score);
       csr_access(0,12'h00c,0,0,2);
       csr_access(0,12'h084,0,0,0);
       csr_access(0,12'h088,0,0,0);
@@ -96,6 +97,7 @@ TELEMETRY_TASKS = r"""
       csr_access(0,12'h058,0,0,0);
       csr_access(0,12'h060,0,0,0);
       csr_access(0,12'h068,0,0,0);
+      csr_access(0,12'h048,0,0,0);
       if (observed_busy_cycles!=saved_busy || observed_think_tokens!=saved_generated)
         $fatal(1,"INTEGRATED_CSR_IDLE_SIDE_EFFECT");
       $display("TELEMETRY_SUMMARY comparisons=%0d busy=%0d thinking_busy=%0d direct_busy=%0d thinking_tokens=%0d direct_tokens=%0d drafts=%0d verified=%0d accepted=%0d rejected=%0d busy_errors=%0d",
@@ -117,7 +119,8 @@ def telemetry_bench():
         "  reg transaction_owned=0;\n"
         "  integer observed_busy_cycles=0,observed_think_cycles=0,observed_direct_cycles=0;\n"
         "  integer observed_think_tokens=0,observed_direct_tokens=0,observed_drafts=0;\n"
-        "  integer observed_verified=0,expected_accepted=0,csr_comparisons=0,busy_errors=0;")
+        "  integer observed_verified=0,expected_accepted=0,csr_comparisons=0,busy_errors=0;\n"
+        "  reg [31:0] expected_max_score=0;")
     text = replace_once(text,
                         ".csr_write(1'b1),.csr_addr(12'h008),\n"
                         "    .csr_wdata(32'd1)",
@@ -156,7 +159,8 @@ def telemetry_bench():
     text = replace_once(
         text, '$display("SUMMARY transactions=%0d frames=%0d logits=%0d ',
         "repeat (3) begin @(negedge clk);#2;end\n"
-        "    if (!$value$plusargs(\"accepted=%d\",expected_accepted))\n"
+        "    if (!$value$plusargs(\"accepted=%d\",expected_accepted) ||\n"
+        "        !$value$plusargs(\"max-score=%h\",expected_max_score))\n"
         "      $fatal(1,\"MISSING_ACCEPTED_REFERENCE\");\n"
         "    check_counters();\n"
         '$display("SUMMARY transactions=%0d frames=%0d logits=%0d ')
@@ -204,8 +208,10 @@ def run_telemetry(run, geometry=Geometry(), seed=17, prefix=4, compiled=None):
                      "--Mdir", relative(objects), "-o", "simulate", *sources, relative(bench)],
                     "telemetry-compile")
         compiled = {"binary": relative(objects / "simulate"), "binding": binding}
+    maximum_score = evaluations[-1]["maximum_absolute_score"]
     output = run.execute([compiled["binary"], f"+images={relative(images)}",
-                          f"+accepted={accepted}"], "telemetry-simulation")
+                          f"+accepted={accepted}", f"+max-score={maximum_score:08x}"],
+                         "telemetry-simulation")
     matches = re.findall(
         r"TELEMETRY_SUMMARY comparisons=(\d+) busy=(\d+) thinking_busy=(\d+) "
         r"direct_busy=(\d+) thinking_tokens=(\d+) direct_tokens=(\d+) drafts=(\d+) "
@@ -215,7 +221,7 @@ def run_telemetry(run, geometry=Geometry(), seed=17, prefix=4, compiled=None):
     counts = list(map(int, matches[0]))
     expected_tokens = sum(len(t["generated"]) for t in transactions)
     expected_drafts = sum(len(t["nodes"]) for t in transactions)
-    if (counts[0] != 43 or counts[1] != counts[2] + counts[3] or
+    if (counts[0] != 45 or counts[1] != counts[2] + counts[3] or
             counts[4:] != [expected_tokens, 0, expected_drafts,
                            len(evaluations) - len(transactions),
                            accepted, expected_drafts - accepted, 2]):
@@ -227,7 +233,8 @@ def run_telemetry(run, geometry=Geometry(), seed=17, prefix=4, compiled=None):
     if output.count(expected_summary) != 1:
         raise AssertionError("integrated telemetry did not compare complete frames/KV")
     result = {"geometry": vars(geometry), "seed": seed, "prefix": prefix,
-              "counts": counts, "evaluations": evaluations, "transactions": transactions,
+              "counts": counts, "maximum_absolute_score": maximum_score,
+              "evaluations": evaluations, "transactions": transactions,
               "compiled": compiled, "summary": output[-2000:]}
     (run.path / "telemetry-reference.json").write_text(json.dumps(result, indent=2) + "\n")
     return result

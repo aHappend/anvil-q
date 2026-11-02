@@ -143,6 +143,7 @@ class Decoder:
     def __init__(self, image):
         self.image = image
         self.keys, self.values = {}, {}
+        self.maximum_absolute_score = 0
 
     def evaluate(self, token, position):
         image, g = self.image, self.image.geometry
@@ -203,6 +204,8 @@ class Decoder:
                                         key[kv_head * g.head_dim + coordinate] << 16)
                             for coordinate in range(g.head_dim)]
                 scores.append(fp.multiply(fp.balanced_sum(products), scale))
+            self.maximum_absolute_score = max(
+                self.maximum_absolute_score, *(score & 0x7FFFFFFF for score in scores))
             maximum = max(scores, key=fp.decode)
             weights = [fp.exp32(fp.subtract(score, maximum)) for score in scores]
             denominator = 0

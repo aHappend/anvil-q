@@ -23,18 +23,27 @@ Executable coverage:
           and around publication, reset in work, and compared fresh-sequence recovery.
   synthesis-frontend: compact hierarchy/connectivity checks and optimized
           top/scheduler cross-boundary zero-combinational-SCC assertion.
+  integrated-csr: real speculative handshakes, deferred continuation, complete
+          frames/KV, busy-write errors, pre-commit mode token classification,
+          observed cycle counts, snapshot/clear and independent score maximum.
+  speculative-cancel: root, accepted-draft projection/attention and before/after
+          five-token publication, drained responses and no-reset fresh recovery.
+  attention-context: D128 attention consuming every initialized position in
+          a 40960-position external cache with independently calculated context.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
           coefficient comparisons and deterministic E/SiLU checks.
 
-Behavior, benchmark, defect, synthesis and reproduction suite dispatchers remain
-incomplete; no whole-product acceptance is claimed. The original controller
+Behavior, benchmark, defect and reproduction suite dispatchers remain
+incomplete; no whole-product acceptance is claimed. Production and boundary
+coarse-synthesis dispatch is authored but its campaign is not yet demonstrated.
+The original controller
 structural-loop counterexample is retained; the repaired controller has a fresh
 successful structural receipt. No-argument dispatch remains
 incomplete until every mandatory suite has been authored.
-The new scheduler/top boundary SCC check has a retained RTL failure; ordinary
-functional matrix passes do not certify absence of combinational feedback.
+The scheduler/top boundary SCC failure is retained, and the repaired source has
+a successful independent zero-SCC probe; this is not physical timing proof.
 """
 
 import argparse
