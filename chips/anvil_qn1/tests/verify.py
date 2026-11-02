@@ -68,6 +68,7 @@ from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
 from telemetry_checks import run_telemetry
 from context_checks import run_context
 from speculative_fault_checks import run_speculative_cancel_matrix
+from parent_checks import run_parent
 from model import Geometry
 import reference
 
@@ -87,7 +88,9 @@ def main():
                                           "memory-matrix", "banked-boundary", "fault-case",
                                           "fault-matrix", "integrated-csr",
                                           "attention-context", "attention-context-short",
-                                          "speculative-cancel", "synthesis-production"))
+                                          "speculative-cancel", "synthesis-production",
+                                          "parent-reference", "synthesis-boundary",
+                                          "attention-context-sv-short"))
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
@@ -95,7 +98,17 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "synthesis-production":
+        if args.probe == "attention-context-sv-short":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_context(run, positions=64, driver="sv")
+        elif args.probe == "synthesis-boundary":
+            run.versions(("python3", "yosys"))
+            results = run_synthesis_case(run, compact=True, banks=8, queue=16,
+                                         head_dim=128, q_heads=4)
+        elif args.probe == "parent-reference":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_parent(run)
+        elif args.probe == "synthesis-production":
             run.versions(("python3", "yosys"))
             results = run_synthesis_case(run, profile=1)
         elif args.probe == "speculative-cancel":
