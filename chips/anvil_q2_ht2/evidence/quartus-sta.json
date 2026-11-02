@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-02T18:07:08.808288+00:00",
+  "timestamp_utc": "2026-11-02T22:00:56.178379+00:00",
   "project_dir": "/data/sufeng/anvil-q2-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -8,10 +8,19 @@
   "min_hold_slack_ns": 0.0,
   "status": "failed",
   "map_summary": {
-    "exists": false,
-    "errors": [],
+    "exists": true,
+    "path": "/data/sufeng/anvil-q2-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 3,
+    "errors": [
+      "Error (12006): Node instance \"implementation.legacy_product\" instantiates undefined entity \"anvil_q2_ht_top\". Ensure that required library paths are specified correctly, define the specified entity, or change the instantiation. If this entity represents Intel FPGA or third-party IP, generate the synthesis files for the IP. File: /data/sufeng/anvil-q2-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q2_ht2_top.sv Line: 259",
+      "Error (12006): Node instance \"implementation.native_host\" instantiates undefined entity \"anvil_q2_ht_host_port\". Ensure that required library paths are specified correctly, define the specified entity, or change the instantiation. If this entity represents Intel FPGA or third-party IP, generate the synthesis files for the IP. File: /data/sufeng/anvil-q2-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q2_ht2_top.sv Line: 323",
+      "Error (12006): Node instance \"implementation.arbitration\" instantiates undefined entity \"anvil_q2_ht_ddr_fabric\". Ensure that required library paths are specified correctly, define the specified entity, or change the instantiation. If this entity represents Intel FPGA or third-party IP, generate the synthesis files for the IP. File: /data/sufeng/anvil-q2-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q2_ht2_ddr_fabric.sv Line: 118"
+    ],
+    "lpm_divide_error_count": 0,
     "lpm_divide_errors": [],
+    "warning_10268_count": 0,
     "warning_10268": [],
+    "uninferred_ram_count": 0,
     "uninferred_rams": []
   },
   "sta_summary": {
@@ -29,15 +38,20 @@
     "hold_paths": [],
     "stderr_tail": [
       "------------------------------------------------",
-      "ERROR: Can't run TimeQuest Timing Analyzer (quartus_sta) -- Analysis and Synthesis (quartus_map) failed or was not run. Run Analysis and Synthesis (quartus_map) successfully before running the TimeQuest analyzer (create_timing_netlist -post_map).",
+      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
       "",
       "    while executing",
       "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_c357kfg4.tcl\" line 2)",
+      "    (file \"vulcan_sta_2ahz_vh4.tcl\" line 2)",
       "------------------------------------------------"
     ]
   },
-  "detail": "quartus_map aborted early on >30MB uninferred-RAM netlist explosion (check for uninferred large RAM arrays; split byte-enabled 1D RAMs into byte-lane arrays in a single always @(posedge clk) block).",
+  "detail": "quartus_map reported 3 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "quartus_slot_telemetry": {
+    "slot_index": 2,
+    "max_slots": 6,
+    "slot_wait_s": 0.003
+  },
   "top_module": "anvil_q2_ht2_top",
   "clock_port": "clk",
   "clock_period_ns": 10.0,
@@ -54,6 +68,6 @@
     "CACHE_BLOCK": 8,
     "MAX_SEQ_LEN": 8
   },
-  "source_sha256": "696b7bc5eb971c4235ae113e2adc00a604f7bccac4f33016b620715feed3271b",
+  "source_sha256": "0160a0e99a3159c4c48a3c868d26fb1c0d446982f6c7e971165dee125a3ca0b0",
   "applicable": true
 }
