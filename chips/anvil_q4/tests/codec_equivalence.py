@@ -83,7 +83,7 @@ def main():
             experiment.run([
                 "verilator", "--binary", "--timing", "-Wno-fatal",
                 "--top-module", "codec_equivalence_tb", "--Mdir", experiment.rel(objects),
-                "-o", "codec-sim", *sources], "compile")
+                "-o", "codec-sim", "tests/verilator.vlt", *sources], "compile")
             command = [experiment.rel(objects/"codec-sim")]
         else:
             experiment.receipt["tool_version"] = experiment.run(["iverilog", "-V"], "version")
