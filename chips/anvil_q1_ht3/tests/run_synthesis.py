@@ -289,6 +289,11 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             deadline = os.environ.get("HT3_CHECK_DEADLINE")
             allocation = remaining()
             reserve = (90 if identifier == "compact-mapped" else 30) if phase != "abc" else 0
+            minimum = 60 if identifier == "compact-mapped" else 30 if phase == "abc" else 0
+            if allocation-reserve-10 < minimum:
+                raise RuntimeError(f"unstarted synthesis phase {phase}: {allocation:.3f}s "
+                                   f"remain, reserving {reserve}s ABC and 10s settlement; "
+                                   "validated predecessors retained")
             os.environ["HT3_CHECK_DEADLINE"] = str(time.time()+max(0, allocation-reserve-10))
             try:
                 execute(["yosys", "-Q", "-T", "-s", relative(directory / "synthesis.ys")],
