@@ -1,19 +1,13 @@
-"""Yosys 0.33 signed package-function return compatibility adapter.
+"""Yosys 0.33 port-cast compatibility adapter on generated copies only.
 
-Only generated copies change. A signed 32-bit function result is represented as
-an unsigned 32-bit result with an explicit $signed cast at every qualified call.
-This preserves the bit pattern, width and expression signedness. No arithmetic,
-ports, state, parameters or synthesis acceptance assertions are changed.
+A bare unsigned wire cast at a module port trips genrtlil.cc:2063. Explicit
+same-width signed alias nets preserve the connected bit pattern and signed
+extension. Original parent/D1 sources are immutable; arithmetic, state,
+parameters and structural acceptance assertions are unchanged.
 """
 
 import hashlib
-from pathlib import Path
-import re
-
 from evidence import ROOT, rel
-
-
-FUNCTIONS = ("f16_q16", "round_q32_to_q16", "round_shift_sat32")
 
 
 def adapted_sources(evidence):
@@ -22,33 +16,32 @@ def adapted_sources(evidence):
     paths, changes = [], []
     for original in sorted(ROOT.glob("anvil_q3_reference/rtl/*.sv")) + sorted(ROOT.glob("rtl/*.sv")):
         text = original.read_text()
-        if original.parent.name == "rtl" and original.parent.parent.name == "anvil_q3_reference":
-            before = text
-            for name in FUNCTIONS:
-                text = re.sub(r"(function\s+automatic)\s+signed\s+(\[31:0\]\s+"+name+r"\b)",
-                              r"\1 \2", text)
-                prefix = "anvil_q3_pkg::"+name+"("
-                offset = 0
-                while (index := text.find(prefix, offset)) >= 0:
-                    start = index+len(prefix)
-                    depth, end = 1, start
-                    while depth and end < len(text):
-                        depth += (text[end] == "(") - (text[end] == ")")
-                        end += 1
-                    if depth:
-                        raise ValueError(f"unbalanced package call in {rel(original)}")
-                    call = text[index:end]
-                    text = text[:index]+"$signed("+call+")"+text[end:]
-                    offset = end+len("$signed(")+1
-            if text != before:
-                changes.append(dict(source=rel(original),
-                                    original_sha256=hashlib.sha256(before.encode()).hexdigest(),
-                                    adapted_sha256=hashlib.sha256(text.encode()).hexdigest()))
-        target = directory / original.name
+        if original.name == "anvil_q3_rmsnorm.sv":
+            for name in ("square", "mean"):
+                anchor = "$signed("+name+")"
+                if text.count(anchor) != 1:
+                    raise AssertionError(f"frontend anchor changed: {rel(original)} {name}")
+                text = text.replace(anchor, "frontend_signed_"+name)
+            text = text.replace("  wire unit_flush=", (
+                "  wire signed [127:0] frontend_signed_square = square;\n"
+                "  wire signed [127:0] frontend_signed_mean = mean;\n"
+                "  wire unit_flush="), 1)
+        if original.name == "anvil_q3_tensor_array.sv":
+            declaration = "    reg [31:0] addition_row;\n"
+            anchor = "    wire signed [127:0] base_sum="
+            if text.count(declaration) != 1 or text.count(anchor) != 1:
+                raise AssertionError("tensor forward-declaration adapter anchor changed")
+            text = text.replace(declaration, "").replace(anchor, declaration+anchor, 1)
+        if text != original.read_text():
+            changes.append(dict(source=rel(original),
+                                original_sha256=hashlib.sha256(original.read_bytes()).hexdigest(),
+                                adapted_sha256=hashlib.sha256(text.encode()).hexdigest()))
+        target = directory / original.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text)
         paths.append(target)
     evidence.record["frontend_adapter"] = dict(
-        method="unsigned fixed-width function return; explicit signed cast at every call",
+        method="same-width signed aliases for bare unsigned port casts",
         changes=changes, generated_source_sha256={
             rel(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths})
     evidence.save()
