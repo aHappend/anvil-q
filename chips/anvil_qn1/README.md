@@ -2,9 +2,10 @@
 
 **Implementation in progress; not an accepted or complete accelerator.**
 The intended native top is `anvil_qn1_top`, defaulting to Qwen3-4B production
-geometry. Native arithmetic, tensor, fused QK-Norm/RoPE, speculative-controller
-and CSR leaf sources are present; native decoder/top/memory integration is
-still outstanding. See [SPEC](design/SPEC.md) for the frozen numerical and
+geometry. Native arithmetic, tensor, fused QK-Norm/RoPE, speculative-controller,
+CSR, tagged memory scheduler, GEMV, ordinary norm, attention, MLP, residual and
+projected-head buffer sources are present. Native decoder/top and end-to-end
+integration are still outstanding. See [SPEC](design/SPEC.md) for the frozen numerical and
 transaction contract and [ARCHITECTURE](design/ARCHITECTURE.md) for actual
 implementation status.
 
@@ -14,7 +15,9 @@ implementation status.
 `anvil_qn1_00_pkg.sv` first. The tensor has 256 dynamic W4A16/BF16-weight lanes;
 the fused head uses per-head gamma and theta=1e6 split-half RoPE. Leaf public
 ports are declared in their source modules; the eventual fixed top ports are
-listed in SPEC.md.
+listed in SPEC.md. New memory/numerical engines are not yet connected into
+that top. Scratch memory uses layer/projection zero, with the parent-compatible
+row meanings documented in SPEC.md.
 
 `anvil_q3_reference/rtl/` contains the 26 supplied parent files, preserved
 unchanged. Byte-identical copies ship as `rtl/anvil_q3_*.sv`. The legacy top
@@ -32,12 +35,21 @@ From the project root, using an installed SystemVerilog-capable Icarus:
 ```sh
 iverilog -g2012 -t null -s anvil_qn1_tensor_array \
   -s anvil_qn1_qknorm_rope -s anvil_qn1_dual_think_ctrl \
-  -s anvil_qn1_csr_perf -s anvil_qn1_parameters rtl/anvil_qn1_*.sv
+  -s anvil_qn1_csr_perf -s anvil_qn1_parameters \
+  -s anvil_qn1_bank_scheduler -s anvil_qn1_gemv \
+  -s anvil_qn1_rmsnorm -s anvil_qn1_norm_memory \
+  -s anvil_qn1_attention -s anvil_qn1_mlp \
+  -s anvil_qn1_elementwise -s anvil_qn1_head_buffer \
+  -s anvil_qn1_exp -s anvil_qn1_silu rtl/anvil_qn1_*.sv
 iverilog -g2012 -t null -s anvil_q3_top rtl/anvil_q3_*.sv
 ```
 
 These are syntax/elaboration commands, not functional or timing verification.
 There is no runnable native top command until native integration is completed.
+The saved engine roots statically elaborated without diagnostics using
+Icarus 12.0; the exact source/command receipt is
+`evidence/preparation/memory-arithmetic-static-20261102T175050Z-a28f1429/receipt.json`.
+It is advisory syntax evidence only.
 
 ## Memory images and host sequencing
 

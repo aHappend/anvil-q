@@ -37,7 +37,8 @@ module anvil_qn1_bank_scheduler #(
     reg [31:0] wdata [0:SLOTS-1], client_tag [0:SLOTS-1], rdata [0:SLOTS-1];
     reg [63:0] tag [0:SLOTS-1];
     reg [SLOTS-1:0] writing, failed;
-    reg [63:0] serial;
+    // Host reset annuls ownership, but must not reuse a tag from before reset.
+    reg [63:0] serial=64'd1;
     reg [2:0] next_bank;
     reg draining, fault_reg, output_valid, output_error;
     reg [31:0] output_data, output_tag;
@@ -112,9 +113,12 @@ module anvil_qn1_bank_scheduler #(
       assign mem_rsp_ready[bank]=rst_n;
     end
     integer index, bank_index;
+    always @(posedge clk) begin
+      if (rst_n && req_valid && req_ready) serial<=event_add64(serial,3'd1);
+    end
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
-        serial<=1; next_bank<=0; draining<=0; fault_reg<=0;
+        next_bank<=0; draining<=0; fault_reg<=0;
         output_valid<=0; output_error<=0; output_data<=0; output_tag<=0;
         writing<=0; failed<=0;
         request_owned<=0;
@@ -148,7 +152,6 @@ module anvil_qn1_bank_scheduler #(
             layer[free_slot]<=req_layer; row[free_slot]<=req_row;
             col[free_slot]<=req_col; wdata[free_slot]<=req_wdata;
             client_tag[free_slot]<=req_tag; tag[free_slot]<=serial;
-            serial<=event_add64(serial,3'd1);
             if (next_bank==BANKS-1) next_bank<=0;
             else next_bank<=next_bank+1'b1;
           end

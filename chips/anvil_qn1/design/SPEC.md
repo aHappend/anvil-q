@@ -300,6 +300,60 @@ activation/KV ownership is bounded to four nodes, not the entire sequence.
 Legacy compressed-cache kinds remain available only in the unchanged legacy
 top and are not overloaded by native mode.
 
+### Internal engine boundaries
+
+These boundaries describe saved implementation sources, not a completed native
+top. They do not replace the public transaction/publication contract.
+
+The scalar memory scheduler accepts one internal request carrying kind,
+layer, projection, row, column, write/data and a 32-bit client tag. It returns
+that client tag with a held scalar response. External requests use separately
+allocated 64-bit tags and remain owned through their matching response,
+including writes. Its registered issue owner holds each stalled bank payload.
+Client response order is arbitrary; engines associate by tag, not timing.
+`cancel` suppresses new work immediately; `drained` requires no accepted or
+buffered ownership and no held response. `fault` is not successful completion.
+Host reset clears ownership but preserves the configuration-initialized
+external-tag serial so stale pre-reset traffic cannot match new requests.
+
+GEMV consumes a command with input/output extents, layer, projection, source
+scratch slot and W4 versus tied-BF16 mode. It emits held ascending output rows,
+with BF16 projection values or binary32 tied-LM logits. Its tensor interface
+is the frozen 256-lane interface; the decoder must connect the actual array.
+Local memory response tags encode lane/group and activation, packed qweight,
+packed zero, group scale or tied BF16 weight. Validate reserved bits and
+finite/scales before issuing the tile. No masked coordinate is requested.
+All tile reductions and subsequent accumulation retain their frozen order.
+Scratch kind 8 uses layer/projection zero; final norm kind 7 and tied matrix
+kind 0 also use layer/projection zero.
+
+Ordinary RMSNorm accepts a start followed by exactly EXTENT ordered
+data/gamma pairs. It emits exactly EXTENT held ascending BF16 coordinates,
+each with an error indication if accepted arithmetic was invalid. The
+scratch-memory wrapper separately reads source/gamma, feeds this stream and
+acknowledges each final scratch write before retiring the norm output.
+Residual and MLP elementwise writes likewise require responses before their
+successful completion pulse. Standalone norm done retires its stream, which
+may contain error-marked values; its memory wrapper aborts on any such error.
+Memory-wrapper, GEMV, attention, residual and MLP faults do not emit normal
+done and cannot certify successful publication.
+
+Attention accepts one final normalized/rotated query head and layer/head/input
+position. It reads external K/V only at positions 0 through that position,
+mapping the query head to its GQA KV head. Two score passes avoid local
+sequence-sized arrays. It emits ascending context coordinates indexed within
+Q_DIM, actual score events and completion strictly after the final transfer.
+Its caller must own and acknowledge the committed/current/accepted-path KV
+extent; a legal attention command alone does not publish any cache state.
+
+The projected-head frontend contains two raw-head buffers and feeds the fixed
+qknorm_rope ingress. It captures projection coordinates in strict ascending
+order, copies gamma/coefficients/metadata per head and holds FIFO-ordered head
+packets. Freeing a buffer on fused ingress permits projection/fusion overlap;
+no raw or normalized-before-RoPE external write is permitted. `input_done`
+means the projected ingress finished, not that final fusion or cache writes
+finished. The decoder still must establish that latter publication fence.
+
 ## CSR ABI
 
 Aligned 32-bit reads ignore wstrb. Writes require 0xf; unsupported offsets,

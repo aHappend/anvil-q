@@ -3,8 +3,10 @@
 ## Current state
 
 This is an incomplete Designer implementation, not a verified accelerator.
-Native mathematical, streaming, controller and CSR leaf sources are saved.
-The native decoder, memory integration and `anvil_qn1_top` are not yet present.
+Native mathematical, streaming, controller, CSR, memory scheduler, GEMV,
+ordinary normalization, attention, MLP and residual engines are saved.
+The native decoder and `anvil_qn1_top` are not yet present. The saved engines
+are not connected into an end-to-end accelerator.
 No native end-to-end inference, fusion overhead, synthesis, timing, PPA or HIL
 result is claimed. Acceptance requirements remain those in SPEC.md.
 
@@ -17,6 +19,13 @@ command then exited zero without diagnostics in
 which links the original receipt. Both record byte-identical parent copies.
 The roots checked were tensor_array, qknorm_rope, dual_think_ctrl, csr_perf and
 parameters, not a native top. No functional simulation or synthesis was run.
+
+The subsequent static-only elaboration of all saved engine roots exited zero
+without diagnostics using Icarus 12.0:
+`evidence/preparation/memory-arithmetic-static-20261102T175050Z-a28f1429/receipt.json`.
+It records the exact command, source hashes, tool output, settled child and
+byte-identical parent copies. This is not a simulation or synthesis result,
+and no native top was compiled.
 
 The parent consists of 26 original SystemVerilog files in
 `anvil_q3_reference/rtl/`. Copies in `rtl/anvil_q3_*.sv` preserve their bytes,
@@ -38,6 +47,17 @@ PPA cannot be reconstructed or claimed from intake.
 | anvil_qn1_qknorm_rope.sv | Per-head RMSNorm and split-half RoPE without external intermediate writeback |
 | anvil_qn1_dual_think_ctrl.sv | Token-first tree verification, marker/capacity cutoff and held batch publication |
 | anvil_qn1_csr_perf.sv | Counters, coherent snapshot, mode requests and host reference registers |
+| anvil_qn1_scalar.sv | Owned, held-response binary32 add/subtract/multiply/divide/sqrt service |
+| anvil_qn1_bank_scheduler.sv | Buffered bank requests, tagged response association, cancellation/fault drain |
+| anvil_qn1_gemv.sv | Group/weight/activation gathering and ascending-tile binary32 accumulation |
+| anvil_qn1_exp.sv | Exact represented-value range reduction and registered six-term E evaluation |
+| anvil_qn1_silu.sv | Registered E, numerator/denominator arithmetic and BF16 SiLU boundary |
+| anvil_qn1_rmsnorm.sv | Stream-captured hidden RMSNorm with synchronous local storage and balanced sum |
+| anvil_qn1_norm_memory.sv | Acknowledged scratch/gamma ingress and final normalized scratch writes |
+| anvil_qn1_attention.sv | Causal GQA, exact head reduction, two-pass external-cache softmax and context |
+| anvil_qn1_mlp.sv | Gate/up/down command orchestration and real BF16 SiLU-times-up scratch computation |
+| anvil_qn1_elementwise.sv | Acknowledged BF16 residual additions |
+| anvil_qn1_head_buffer.sv | Two ordered projected-head buffers feeding the fused leaf without raw writeback |
 
 The private arithmetic helpers have clock enable for streaming pipelines and
 flush for annulment. A four-stage helper computes from pre-edge operands on
@@ -78,10 +98,77 @@ output ownership holds all metadata and result/error through backpressure.
 Position zero selects identity coefficients; invalid positions or payloads
 produce an error-marked, zero-data head at the same 133-interval latency.
 
-The decoder must provide double-buffered projected-head capture outside the
-one-head leaf so projection can continue while normalization operates. No
-scratch write of raw Q/K or normalized-before-RoPE Q/K is permitted.
-That scheduler and buffering are outstanding, not supplied by this leaf alone.
+The two-buffer projected-head frontend captures complete heads in FIFO order.
+Each head retains its own Q/K designation, gamma, coefficients, layer and
+position. A fused-leaf ingress transfer releases that raw buffer, allowing
+projection to fill it while the leaf owns a different head. A following K
+projection may be configured after Q ingress finishes even if Q heads are
+still queued. Only final fused outputs may be written externally. The decoder
+must connect this frontend directly to its named qknorm_rope instance and
+arbitrate final scratch/KV writes alongside projection traffic. The buffers
+exist, but that overlap/integration is still outstanding.
+
+## Saved memory and numerical engines
+
+The bank scheduler owns QUEUE_DEPTH slots per bank. Each slot transitions
+through free, buffered request, accepted request and returned response.
+An independently registered issue owner pins each stalled bank payload.
+Responses match the stored 64-bit request tag and bank, including a valid
+same-edge request/response transfer. Completed scalar responses move into a
+held client response register; bank completion order need not be issue order.
+Client tags are returned without reinterpretation.
+
+External tags come from a configuration-initialized, nonwrapping serial
+counter which survives host reset. Reset annuls ownership without reusing a
+pre-reset tag; late pre-reset responses therefore cannot match new work.
+Cancellation and detected faults suppress new traffic, discard unaccepted
+requests/returned responses and drain accepted requests. Unknown responses do
+not release unrelated ownership. The scheduler exposes fault and drained,
+but top-level sequence invalidation, cancellation completion and recovery
+remain unimplemented. FPGA configuration initializes the serial once;
+the external memory bridge must share the device-configuration lifecycle.
+
+GEMV gathers zero/scale groups first, then active activation/weight lanes.
+Response tags select lane/type independently of bank order. AWQ zero and
+weight words use the parent eight-row nibble shifts. Scratch requests use
+layer/projection zero; AWQ requests use the real layer/projection, and tied-LM
+requests use layer/projection zero. Masked tails do not issue scalar requests.
+The shared-array interface supplies all 256 dynamic lanes and one tile tag;
+the returned partial is added to a binary32 accumulator in ascending input
+tile order, starting at positive zero. Projection row results are held and
+BF16-rounded. Tied-LM row results remain binary32. No bias request exists.
+GEMV currently waits for one tile result before gathering its next tile;
+no one-tile-per-cycle projection throughput is claimed.
+
+Ordinary norm uses synchronous raw/gamma RAM and a synchronous binary32 heap
+tree. It squares coordinates, initializes padded leaves to positive zero and
+computes adjacent balanced sums without reassociation. A scalar arithmetic
+service executes division, epsilon, square root, reciprocal and the separate
+BF16 x-scale/gamma boundaries. RAM writes/read registers have no asynchronous
+reset; reset ownership gates all use of their uninitialized contents. Its
+memory wrapper holds every normalized output until its scratch write response
+has acknowledged. Residuals similarly read both BF16 inputs, add in binary32,
+round to BF16 and await the destination write response.
+
+E range reduction repeatedly subtracts the exact integer significand of L
+from an exactly aligned input magnitude; it never floors a rounded quotient.
+The following multiple, residual, six Taylor terms, ordered sums, clamp and
+binary scaling use the specified RN32 boundaries. SiLU has its own BF16
+output boundary. MLP requests real gate/up/down GEMVs from the decoder's
+shared service and computes BF16 SiLU-gate times up before down projection.
+It does not contain a supplied-result oracle; its command service still needs
+the decoder connection.
+
+Attention owns one query head, one K/V head and HEAD_DIM binary32 numerator
+storage. It scans positions 0 through the commanded input position once to
+find the maximum and again to evaluate deterministic E and accumulate
+denominator/weighted values in increasing position order. Re-reading external
+K avoids MAX_SEQ_LEN-sized local score storage. The head dot tree has exactly
+HEAD_DIM leaves, not an extra 256-lane reduction that could alter signed zero.
+Score events come from actual completed binary32 dot/scale arithmetic. Context
+division and BF16 rounding produce a held, ascending-coordinate output stream.
+The caller must establish acknowledged current/accepted-path KV and fence its
+visibility; the attention leaf cannot create or certify cache ownership.
 
 ## Controller and integration obligations
 
@@ -128,8 +215,9 @@ anvil_qn1_top
   bank_scheduler
 ```
 
-The named decoder/attention/MLP/bank scheduler and their connections are still
-to be implemented. Merely wrapping the legacy decoder would be incorrect:
+Attention, MLP and bank scheduler sources now exist, but the named decoder and
+all required hierarchy connections are still to be implemented. Merely
+wrapping the legacy decoder would be incorrect:
 its Q extents, FP16/Q16 arithmetic, bias behavior, context limit and cache
 protocol are different.
 
@@ -162,12 +250,13 @@ speculative storage may cover at most four draft nodes.
 
 ## Remaining Designer work
 
-Implement the native banked tagged memory scheduler, streaming weight/activation
-prefetch and ordered GEMV accumulator; ordinary RMSNorm, deterministic E/SiLU,
-attention, MLP, residual and token-I/O engines; projection/head overlap and
-double buffering; the named decoder and native top. Wire complete logit frames,
-deferred-token continuation, cache publication/drain, all real CSR events and
-every production/compact parameter guard. Complete integration documentation,
-then perform at most a fast static elaboration and hand off to independent
-Verifier. Do not create verification models or simulation/synthesis harnesses
-as Designer.
+Implement embedding/tied-LM token-I/O orchestration and the named decoder/native
+top. Connect the existing memory engines and 256-lane array, load Q/K gamma and
+RoPE coefficients once per layer/position, overlap buffered Q/K capture and
+fusion with continued projection, and acknowledge final scratch/KV publication.
+Wire complete logit frames/argmax responses, deferred-token continuation,
+accepted-path cache ownership, cancellation/fault drain, all real CSR events
+and every production/compact parameter guard. Complete integration
+documentation, then perform at most a fast static elaboration and hand off to
+independent Verifier. Do not create verification models or simulation/synthesis
+harnesses as Designer.

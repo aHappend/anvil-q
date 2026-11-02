@@ -83,7 +83,7 @@ module anvil_qn1_gemv #(
     wire alu_ready, alu_valid, alu_error;
     wire [31:0] alu_data;
     anvil_qn1_scalar accumulator_add (
-      .clk(clk),.rst_n(rst_n),.flush(flush),
+      .clk(clk),.rst_n(rst_n),.flush(flush || state==FAULT),
       .in_valid(state==ACCUMULATE && !waiting),.in_ready(alu_ready),
       .in_op(3'd0),.in_a(accumulator),.in_b(partial),.in_error(1'b0),
       .out_valid(alu_valid),.out_ready(waiting),.out_data(alu_data),.out_error(alu_error)
@@ -99,8 +99,8 @@ module anvil_qn1_gemv #(
       !response_bad && !tensor_bad;
     assign req_kind=!req_valid ? 4'd0 : request_type==0 ? 4'd8 :
       request_type==1 ? 4'd1 : request_type==2 ? 4'd2 : request_type==3 ? 4'd3 : 4'd0;
-    assign req_layer=req_valid && request_type!=4 ? layer : 32'd0;
-    assign req_proj=req_valid && request_type!=4 ? projection : 3'd0;
+    assign req_layer=req_valid && request_type!=0 && request_type!=4 ? layer : 32'd0;
+    assign req_proj=req_valid && request_type!=0 && request_type!=4 ? projection : 3'd0;
     assign req_row=!req_valid ? 32'd0 : request_type==0 ? source_slot :
       request_type==1 ? base+{24'd0,request_index} :
       request_type==4 ? output_row : (base >> GS)+{24'd0,request_index};
