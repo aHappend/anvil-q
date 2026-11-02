@@ -1175,17 +1175,17 @@
       ]
     },
     "check:l1-smoke": {
-      "attempt_id": 31,
-      "duration_s": 40.73256479203701,
-      "stdout_preview": "L1 smoke: startup_probe.py\nL1 smoke: parameter_probe.py\nL1 smoke: descriptor_probe.py\nL1 smoke: top_smoke.py\nevidence/l1-smoke-20261102T194953154805Z/receipt.json\n",
+      "attempt_id": 35,
+      "duration_s": 42.64403012604453,
+      "stdout_preview": "L1 smoke: startup_probe.py\nL1 smoke: parameter_probe.py\nL1 smoke: descriptor_probe.py\nL1 smoke: top_smoke.py\nevidence/l1-smoke-20261102T222811317931Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-smoke-20261102T194953154805Z/receipt.json",
+          "path": "evidence/l1-smoke-20261102T222811317931Z/receipt.json",
           "data": {
             "suite": "l1-smoke",
             "cwd": ".",
-            "start_time": "2026-11-02T19:49:53.157203+00:00",
+            "start_time": "2026-11-02T22:28:11.322068+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -1266,7 +1266,7 @@
               "rtl/anvil_q4_token_io.sv": "387f84ec75fec88152d7d167b69e3cbf684e7f7e2a12b8a6822b4b998f09e908",
               "rtl/anvil_q4_top.sv": "45ea8bb82cea7f83439ec4b3753c1c30a6784c289282b1a1aeda03a9d5910360",
               "rtl/anvil_q4_umul64.sv": "ac66fd587c2238e8cffab0ae9ac71bbe660580f586fec51e1aaf6e2fb3a68c89",
-              "tests/README.md": "a345171b52463e0cad6b02c1a1b6e3b771f6317c94dbc9b08deecef89a77cce2",
+              "tests/README.md": "d98c5abc330fa27e4af6f842057e819e58b309144eacbcc761e89f5434fccc20",
               "tests/arithmetic_probe.py": "f1ff4d242b5d0fd87e459e8467eab8ad19539c0efa314496f49dbbf4ed5c243b",
               "tests/arithmetic_tb.sv": "42143764a6472d68e32a633710990e86de5587a4d91cd9d5b9858f7f915de888",
               "tests/benchmarks.py": "f11c97ffd2a9addfe6a4809a1c8c6e7e1d164683955d38cc5532b34b5b7c3f1b",
@@ -1274,15 +1274,15 @@
               "tests/cache_probe.py": "35f7093a5eb4d6ab13f113970bb454b2cb24194973bc646d197cb28248cc7315",
               "tests/cache_recovery_tb.sv": "7a2ef2f2daeb8375379e6d0516f1275a891d3c91e4b1eced3abcd05096a42eaa",
               "tests/cache_reference.py": "ae3ace8fc5f88fdf11949c8b7c2b08978dab176d8a4164e71a49544aea3ffa5a",
-              "tests/codec_equivalence.py": "c609e3f27e9ef85cefec57c82c9a66179ba8d7e6e5baf2e353ba60f780a02cbd",
+              "tests/codec_equivalence.py": "b6261940da4fe5b7dfe2bba9707da7de5b18fdf926e0b39fa2d27b9d209c0abd",
               "tests/codec_equivalence_tb.sv": "556214b9e22ca7a44b8373cb30923f0c6e6300d52f135bd70dca9f44012affd8",
               "tests/codec_lowering_probe.py": "3d8dce4667881b51875c37b1d7a7a04c660dcb744f0be6328dd00c8dca8a14e6",
               "tests/compat_synthesis_top.sv": "078392bb3e3d3f0aad2109bf908fe0581ec0e9374d081138d5e6cdaa2fc66356",
-              "tests/compatibility_probe.py": "f912dedbdf7779a64a5a922138a6b215f47900d885289ecb4c7f127c3c68a2c6",
+              "tests/compatibility_probe.py": "5c5f00038c1413e8f0434dae77b9fe73cfd9156e46421a85c4202300ceb8a95a",
               "tests/descriptor_probe.py": "14112b2487dc2c0b8442b0c0f9412631595f0cd7b31767c4dd94d2acf124776f",
               "tests/descriptor_tb.sv": "14b4aa8f85113edd8d38a8968f3c2765860f2e83816315e4647fa54cc0132415",
               "tests/descriptors.py": "92922dcbdc024c3da724b3629ad911f8d2df3a06e2ff270c041e94cc802f0f0a",
-              "tests/execution.py": "8e3318372ebb7c926d7416ffcd679c027a65763f9da017745a1da4318c8cbaab",
+              "tests/execution.py": "d524b782887ae82f31940282b56ca2f7a95b086bdd4a3ef45b42a789f4cf9a86",
               "tests/frontend_probe.py": "3b3b06e0add029060c46a290a493fb5108386f58f244172226e03b6cb512f1f0",
               "tests/full_shape_probe.py": "3eb0f8df782dea6cd15a9b5f778bb020601dac5888e14d7e4285c62cc5762063",
               "tests/full_shape_tb.sv": "7209ee2b30f161cd750d347c4fb11296cc5ab215b504b691a3d5c309daef3ca3",
@@ -1295,7 +1295,7 @@
               "tests/official-qwen-config.json": "ec0c1f5f875ad8bc1f78c5140c22dbdde1b55478442ad358e7a4d9ecf947a327",
               "tests/parameter_probe.py": "3eab7e8cfc2b2e70ca4cd4e848efc8e0601d240c000f89e185fa6b4d8704c2ce",
               "tests/portable.py": "92dfeef04ddf92e65dd8032fa02a17a365d58c848a30bfd04adb84190047aedc",
-              "tests/probe_receipt.py": "6f503d78472c142b062a2fa4a755792cc626855a6db8f32c273e88c37425353a",
+              "tests/probe_receipt.py": "804dc763f287d502f494e5a31f068c647bd2db71e006d1e436e4902cdfa7e2b5",
               "tests/protocol_probe.cpp": "3db1a6f7fb8005b9607cf38fa15fbf0e2f0bc9658388521e36f78e5d8b814e35",
               "tests/protocol_probe.py": "323314c95c8f0b29174814a3b65a967f0f7404c3d9a8032c017325ffb04bde53",
               "tests/scheduler_probe.cpp": "114dbeacfbaab73aa36a45ca785013c42a548404c8d0e27ad61fa455ef957ba8",
@@ -1305,16 +1305,17 @@
               "tests/startup_probe.py": "383a54c216a971f6be35e12169e481dcbe4cef9237b87fad81f59e6d8945ed2e",
               "tests/startup_tb.sv": "a83d30744d94849c378468ec9a87330ef300a838bd412db49658398804ad711e",
               "tests/switching_probe.py": "ea53c187ce431d847584507c73db4df334f8c0b7f42c0fe798161000a88d8c2b",
-              "tests/synthesis_probe.py": "2a9849b8ebe4f1e15052876712d3bcf0f63fda5cbec79924bbe23948c135d0e5",
-              "tests/system_matrix.py": "b4f1a5be5a599719ec634353c099157241b039fe8e1319ec5aacce109e151ae9",
+              "tests/synthesis_probe.py": "ed5aeeddf99132e79ddeb6731edbdb72fdb4a257b82f1344db8f58de49f44ae2",
+              "tests/system_matrix.py": "c3a829a9635c1e38a884f6cec4e6bc372e95fddf6c26c26c27c3c903fcd9894d",
               "tests/system_probe.py": "3f1c5a1b7e71631c4349141d1346b0721823464660353f9f6e4d7f12487f2eeb",
               "tests/tensor_probe.py": "c0e98d7b8b27351e61bbba5592895574df7ea8f2777af407d662f314a567da3d",
               "tests/tensor_tb.sv": "3241da21f30c11bd4a7ecafcde9891350550d7b8328842a1a5b3096c466544bc",
-              "tests/top_probe.cpp": "0674a56002f75e37b955e53a934d2a04873d89bbeb335acbe7a3c6771468e8a2",
+              "tests/top_probe.cpp": "d35b62fab8e75c519f245bd02a7a1619bc6cee1a6f4ea15ca5d6eb305a585223",
               "tests/top_smoke.py": "3b5094237ec19befd3cd4b6b4c80a38f45b640c94fb9b9b92e1813ceb5ba5404",
               "tests/top_smoke_tb.sv": "41f649b36e5e566fbac5370aaaa51308e0dc4a53131038f711dd95a04fbee8a9",
               "tests/transformer_reference.py": "3192842fd2cb509d78971b1ff2afe13a3aac42f031cad61967e7db8a0ad7206b",
-              "tests/verify.py": "2c85d3a0011e5cfd0beea58c236efd11a42818b5ace6d5d31c34794ba0092d8c"
+              "tests/verify.py": "2c85d3a0011e5cfd0beea58c236efd11a42818b5ace6d5d31c34794ba0092d8c",
+              "tests/verilator.vlt": "af872aed74efd82ec97b19b5bae0a448e7c7ff2848e24a4e88ac56b8603bb3de"
             },
             "commands": [
               {
@@ -1323,14 +1324,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:49:53.166781+00:00",
+                "start_time": "2026-11-02T22:28:11.339661+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-smoke-20261102T194953154805Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T194953154805Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-smoke-20261102T222811317931Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T222811317931Z/version.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:49:53.172468+00:00",
-                "elapsed_s": 0.005564759019762278
+                "end_time": "2026-11-02T22:28:11.345443+00:00",
+                "elapsed_s": 0.005554836010560393,
+                "user_cpu_s": 0.0,
+                "system_cpu_s": 0.003669
               },
               {
                 "argv": [
@@ -1338,14 +1342,17 @@
                   "tests/startup_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:49:53.172999+00:00",
-                "timeout_s": 2699.981841159053,
-                "stdout_path": "evidence/l1-smoke-20261102T194953154805Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T194953154805Z/check-0.stderr.txt",
+                "start_time": "2026-11-02T22:28:11.346260+00:00",
+                "timeout_s": 2699.971766519826,
+                "stdout_path": "evidence/l1-smoke-20261102T222811317931Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T222811317931Z/check-0.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:49:57.347313+00:00",
-                "elapsed_s": 4.174222533823922
+                "end_time": "2026-11-02T22:28:15.871517+00:00",
+                "elapsed_s": 4.52501822495833,
+                "user_cpu_s": 3.905893,
+                "system_cpu_s": 0.5634969999999999
               },
               {
                 "argv": [
@@ -1353,14 +1360,17 @@
                   "tests/parameter_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:49:57.349853+00:00",
-                "timeout_s": 2695.805063104024,
-                "stdout_path": "evidence/l1-smoke-20261102T194953154805Z/check-1.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T194953154805Z/check-1.stderr.txt",
+                "start_time": "2026-11-02T22:28:15.873748+00:00",
+                "timeout_s": 2695.444267323939,
+                "stdout_path": "evidence/l1-smoke-20261102T222811317931Z/check-1.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T222811317931Z/check-1.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:50:22.824295+00:00",
-                "elapsed_s": 25.47419666312635
+                "end_time": "2026-11-02T22:28:41.092845+00:00",
+                "elapsed_s": 25.21887714508921,
+                "user_cpu_s": 22.220561,
+                "system_cpu_s": 2.511721
               },
               {
                 "argv": [
@@ -1368,14 +1378,17 @@
                   "tests/descriptor_probe.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:50:22.828237+00:00",
-                "timeout_s": 2670.3267240379937,
-                "stdout_path": "evidence/l1-smoke-20261102T194953154805Z/check-2.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T194953154805Z/check-2.stderr.txt",
+                "start_time": "2026-11-02T22:28:41.095538+00:00",
+                "timeout_s": 2670.2225287589245,
+                "stdout_path": "evidence/l1-smoke-20261102T222811317931Z/check-2.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T222811317931Z/check-2.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:50:23.345671+00:00",
-                "elapsed_s": 0.5171785878483206
+                "end_time": "2026-11-02T22:28:41.662757+00:00",
+                "elapsed_s": 0.5669142890255898,
+                "user_cpu_s": 0.46925799999999995,
+                "system_cpu_s": 0.066967
               },
               {
                 "argv": [
@@ -1383,14 +1396,17 @@
                   "tests/top_smoke.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T19:50:23.348072+00:00",
-                "timeout_s": 2669.8068824280053,
-                "stdout_path": "evidence/l1-smoke-20261102T194953154805Z/check-3.stdout.txt",
-                "stderr_path": "evidence/l1-smoke-20261102T194953154805Z/check-3.stderr.txt",
+                "start_time": "2026-11-02T22:28:41.664823+00:00",
+                "timeout_s": 2669.653239196865,
+                "stdout_path": "evidence/l1-smoke-20261102T222811317931Z/check-3.stdout.txt",
+                "stderr_path": "evidence/l1-smoke-20261102T222811317931Z/check-3.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T19:50:33.738315+00:00",
-                "elapsed_s": 10.38997130189091
+                "end_time": "2026-11-02T22:28:53.757032+00:00",
+                "elapsed_s": 12.09192687808536,
+                "user_cpu_s": 11.686616999999998,
+                "system_cpu_s": 0.33688600000000024
               }
             ],
             "comparisons": {},
@@ -1400,29 +1416,29 @@
                 "command": [
                   "startup_probe.py"
                 ],
-                "receipt": "evidence/startup-20261102T194953241818Z/receipt.json"
+                "receipt": "evidence/startup-20261102T222811426670Z/receipt.json"
               },
               {
                 "command": [
                   "parameter_probe.py"
                 ],
-                "receipt": "evidence/parameters-20261102T194957420267Z/receipt.json"
+                "receipt": "evidence/parameters-20261102T222815956733Z/receipt.json"
               },
               {
                 "command": [
                   "descriptor_probe.py"
                 ],
-                "receipt": "evidence/descriptor-20261102T195022903599Z/receipt.json"
+                "receipt": "evidence/descriptor-20261102T222841184992Z/receipt.json"
               },
               {
                 "command": [
                   "top_smoke.py"
                 ],
-                "receipt": "evidence/token-smoke-20261102T195023425495Z/receipt.json"
+                "receipt": "evidence/token-smoke-20261102T222841755735Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T19:50:33.740100+00:00"
+            "end_time": "2026-11-02T22:28:53.759239+00:00"
           }
         }
       ]
