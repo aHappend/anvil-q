@@ -9,6 +9,9 @@ inside a blocking arithmetic wrapper. No hierarchical DUT observations are used.
 RMS intermediates are compared through separately driven public arithmetic
 interfaces; complete RMSNorm output comparisons belong to the memory leaf bench.
 These primitive checks alone do not certify the integrated RMSNorm datapath.
+For the fixed H=24, x=[1,0,...], gamma=65536 vector:
+u=1099511300096, root remainder=11184785, reciprocal remainder=1638400,
+and outputs=[256,0,...,0]. These are integer results, not approximations.
 """
 
 import argparse
@@ -96,6 +99,9 @@ def rms_discriminators():
     if (first["S"], first["M"], first["mean_remainder"], first["E"], first["d"]) != (
             1, 178956970, 16, (1 << 48)+178956970, 16777221):
         raise AssertionError("fixed nonintegral RMS construction disagrees with specification")
+    if (first["u"], first["root_remainder"], first["reciprocal_remainder"],
+        first["outputs"]) != (1099511300096, 11184785, 1638400, [256]+[0]*23):
+        raise AssertionError("fixed RMS reciprocal/output construction disagrees")
     return traces
 
 

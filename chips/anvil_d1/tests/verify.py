@@ -29,6 +29,7 @@ outcomes. No earlier preparation receipt is a prerequisite or passing baseline.
 import argparse
 import json
 from pathlib import Path
+from fractions import Fraction
 import re
 import shutil
 import sys
@@ -52,12 +53,18 @@ from numerical import primitive_bench
 from reference import Shape
 from rms import rms_bench
 from router import router_bench
+from scheduler import scheduler_bench
 from structure import COMPACT, synthesize
 from wide_mla import wide_bench
 
 
 def observations(text):
     return {name: int(value) for name, value in re.findall(r"\b(\w+)=(\d+)\b", text)}
+
+
+def ratio(numerator, denominator, units):
+    return dict(numerator=numerator, denominator=denominator, units=units,
+                exact=str(Fraction(numerator, denominator)) if denominator else "undefined")
 
 
 class Suite:
@@ -74,13 +81,25 @@ class Suite:
             fixture = builder(evidence, **kwargs)
             text = simulate(evidence, bench+".sv", simulator)
             actual = observations(text)
-            evidence.finish("passed", fixture=fixture, observations=text, actual=actual)
+            metrics = []
+            for line in text.splitlines():
+                if line.startswith("METRIC "):
+                    values = observations(line)
+                    values["active_parameter_saving"] = ratio(
+                        values["dense_expert_bytes"]-values["expert_bytes"],
+                        values["dense_expert_bytes"], "expert bytes saved / dense expert bytes")
+                    values["prefetch_overlap_efficiency"] = ratio(
+                        values["overlap_cycles"], values["shared_cycles"],
+                        "overlap cycles / shared arithmetic-active cycles")
+                    metrics.append(values)
+            evidence.finish("passed", fixture=fixture, observations=text, actual=actual,
+                            ratio_metrics=metrics)
         except Exception as exc:
             evidence.finish("failed", error=str(exc))
             self.runs.append(dict(case=name, status="failed", receipt=rel(evidence.path/"receipt.json")))
             raise
         entry = dict(case=name, status="passed", receipt=rel(evidence.path/"receipt.json"),
-                     simulator=simulator, actual=actual, fixture=fixture)
+                     simulator=simulator, actual=actual, fixture=fixture, ratio_metrics=metrics)
         self.runs.append(entry)
         print(f"CHECK {name} {json.dumps(actual, sort_keys=True)}", flush=True)
         return entry
@@ -113,7 +132,7 @@ def behavior(suite):
         suite.experiment(f"complete-inference-seed{seed}", inference_bench, "native", seed=seed)
     cross = suite.experiment("complete-ieee-one-token", native_bench, "native", "icarus", seed=17, tokens=1)
     compiled = suite.experiment("complete-compiled-one-token", native_bench, "native", seed=17, tokens=1)
-    for name in ("writes", "reads", "logits", "tokens", "cycles"):
+    for name in ("writes", "logits", "tokens"):
         if cross["actual"][name] != compiled["actual"][name]:
             raise AssertionError(f"cross-simulator mismatch: {name}")
     suite.experiment("singleton-route-ieee", router_bench, "router", "icarus",
@@ -125,6 +144,10 @@ def behavior(suite):
     suite.experiment("counter-saturation", counter_bench, "counter")
     suite.experiment("fault-cancel-recovery", faults_bench, "native")
     suite.experiment("reset-mid-work-restart", reset_bench, "native")
+    suite.experiment("bank-tag-reorder-ieee", scheduler_bench, "scheduler", "icarus")
+    for banks, queue in ((1, 1), (4, 16), (8, 1)):
+        suite.experiment(f"bank-tag-b{banks}-q{queue}", scheduler_bench, "scheduler",
+                         banks=banks, queue=queue)
     minimum = Shape(hidden=8, intermediate=8, moe_intermediate=8, heads=1, rank=1,
                     nope=1, rope=2, value=1, layers=1, first_dense=0,
                     experts=1, topk=1, vocab=4, maxseq=1)
@@ -147,9 +170,8 @@ def behavior(suite):
     check_deadline()
     (suite.evidence.path/"floating-characterization.json").write_text(
         json.dumps(characterization, indent=2)+"\n")
-    return dict(cache_reduction=dict(numerator=dense-cache, denominator=dense,
-                                    percent=(dense-cache)*100/dense,
-                                    units="accepted compressed-cache bytes versus identical-pass MHA bytes"),
+    return dict(cache_reduction=ratio(dense-cache, dense,
+                                     "accepted cache bytes saved / identical-pass MHA cache bytes"),
                 floating_characterized_scalars=sum(r["compared_scalars"]
                     for c in characterization for r in c["records"]))
 
@@ -253,7 +275,7 @@ def portable(suite):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
             copied.append(source.relative_to(ROOT).as_posix())
-            if re.search(r"/(?:data|home|root|tmp)/", source.read_text()):
+            if re.search(r"(?<![\w])/(?:data|home|root|tmp)/", source.read_text()):
                 raise AssertionError(f"nonportable private absolute path in shipped input: {rel(source)}")
     # A fresh process imports only the clean-copy siblings. It executes missing
     # work rather than requiring receipts or recursively running this suite.

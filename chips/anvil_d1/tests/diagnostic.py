@@ -298,20 +298,23 @@ def simulate(evidence, bench, simulator, source_root=None, extra_sources=()):
         exe = evidence.path / "simulation.vvp"
         evidence.run("compile", ["iverilog", "-g2012", "-Wall", "-s", "tb", "-o",
                                 rel(exe), *inputs, bench_path], ["iverilog", "-V"])
-        output = evidence.run("simulation", ["vvp", "simulation.vvp"], ["vvp", "-V"],
-                              cwd=evidence.path)
-        exe.unlink()
+        try:
+            output = evidence.run("simulation", ["vvp", "simulation.vvp"], ["vvp", "-V"],
+                                  cwd=evidence.path)
+        finally:
+            exe.unlink(missing_ok=True)
     else:
         obj = evidence.path / "obj_dir"
-        evidence.run("compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
-                                "--top-module", "tb", "-j", "2", "--Mdir", rel(obj),
-                                "-o", "simulation", *inputs, bench_path],
-                     ["verilator", "--version"])
         try:
+            evidence.run("compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
+                                    "--top-module", "tb", "-j", "2", "--Mdir", rel(obj),
+                                    "-o", "simulation", *inputs, bench_path],
+                         ["verilator", "--version"])
             output = evidence.run("simulation", ["./obj_dir/simulation"], ["verilator", "--version"],
                                   cwd=evidence.path)
         finally:
-            shutil.rmtree(obj)
+            if obj.exists():
+                shutil.rmtree(obj)
     text = output.read_text()
     if "SUMMARY " not in text:
         raise RuntimeError(f"simulator exited zero without comparisons: {rel(output)}")
