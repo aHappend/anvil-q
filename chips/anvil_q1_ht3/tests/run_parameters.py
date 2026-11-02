@@ -108,10 +108,62 @@ def parameter_case(directory, parameters, invalid=False):
     return dict(status="passed", invalid=False, coverage="source elaboration only")
 
 
+def leaf_cases(output):
+    results = []
+    for leaf, base, invalids, extremes in (
+        ("epilogue", dict(MAX_VECTOR=1, HEAD_DIM=2),
+         [("MAX_VECTOR", 0), ("MAX_VECTOR", 4865), ("HEAD_DIM", 0),
+          ("HEAD_DIM", 3), ("HEAD_DIM", 66)],
+         [dict(MAX_VECTOR=4864, HEAD_DIM=64)]),
+        ("attention", dict(NUM_Q_HEADS=1, NUM_KV_HEADS=1, HEAD_DIM=8,
+                           MAX_SEQ_LEN=1, TILE_TOKENS=128),
+         [("NUM_Q_HEADS", 0), ("NUM_Q_HEADS", 15), ("NUM_KV_HEADS", 0),
+          ("NUM_KV_HEADS", 3), ("NUM_KV_HEADS", 2), ("HEAD_DIM", 0),
+          ("HEAD_DIM", 3), ("HEAD_DIM", 66), ("MAX_SEQ_LEN", 0),
+          ("MAX_SEQ_LEN", 32769), ("TILE_TOKENS", 0), ("TILE_TOKENS", 129)],
+         [dict(NUM_Q_HEADS=14, NUM_KV_HEADS=2, HEAD_DIM=64,
+               MAX_SEQ_LEN=32768, TILE_TOKENS=1),
+          dict(NUM_Q_HEADS=3, NUM_KV_HEADS=1, HEAD_DIM=8,
+               MAX_SEQ_LEN=17, TILE_TOKENS=3)])):
+        jobs = [(base, False), *[(parameters, False) for parameters in extremes],
+                *[({**base, parameter: bad}, True) for parameter, bad in invalids]]
+        for parameters, invalid in jobs:
+            directory = output/f"leaf-{leaf}-{uuid.uuid4().hex[:8]}"
+            directory.mkdir()
+            top = leaf+"_parameter_tb"
+            binary = directory/"simulation.vvp"
+            try:
+                execute(["iverilog", "-g2012", "-Wall", "-s", top,
+                         *[f"-P{top}.{key}={value}" for key, value in parameters.items()],
+                         "-o", relative(binary),
+                         *[relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))],
+                         "tests/parameter_leaf_tb.sv"], directory, "compile", ["iverilog", "-V"])
+                try:
+                    text = execute(["vvp", relative(binary)], directory, "simulation",
+                                   ["iverilog", "-V"])
+                except RuntimeError:
+                    receipt = json.loads((directory/"simulation.receipt.json").read_text())
+                    text = (directory/"simulation.stdout.txt").read_text()
+                    if (not invalid or receipt["exit"] in (None, 0) or receipt["timed_out"]
+                            or "PARAMETER ERROR" not in text):
+                        raise
+                else:
+                    if invalid or f"SUMMARY legal {leaf} parameter elaboration" not in text:
+                        raise AssertionError("missing explicit parameter acceptance/rejection")
+                row = dict(status="passed", diagnostic=text.strip(),
+                           coverage="explicit rejection" if invalid else "elaboration only")
+            except (RuntimeError, AssertionError) as exc:
+                row = dict(status="failed", error=str(exc))
+            results.append(dict(id=f"leaf-{leaf}", parameters=parameters, invalid=invalid,
+                                path=relative(directory), **row))
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--diagnostic", action="store_true")
+    parser.add_argument("--leaf-only", action="store_true")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True,exist_ok=False)
@@ -119,8 +171,8 @@ def main():
                    start=timestamp(),timeout=remaining(),source_sha256=hashes(),tool_version=sys.version)
     results = []
     abi_hash = check_abi()
-    jobs = [("compact-csr-icarus",None,False)]
-    if not args.diagnostic:
+    jobs = [] if args.leaf_only else [("compact-csr-icarus",None,False)]
+    if not args.diagnostic and not args.leaf_only:
         jobs += [("compact-csr-verilator",None,False),
                  ("smallest",SMALL,False),("nonpower",NONPOWER,False),("default",DEFAULT,False)]
         for parameter,bad in (("NUM_LAYERS",0),("NUM_LAYERS",25),("HIDDEN_SIZE",0),
@@ -143,10 +195,12 @@ def main():
         except (RuntimeError,AssertionError) as exc:
             row = dict(status="failed",error=str(exc))
         results.append(dict(id=name,path=relative(directory),parameters=parameters,**row))
+    if not args.diagnostic:
+        results.extend(leaf_cases(output))
     result = dict(status="passed" if all(r["status"]=="passed" for r in results) else "failed",
                   runs=results,ordered_port_sha256=abi_hash,diagnostic=args.diagnostic,
-                  coverage_limits=["parameterized standalone epilogue/attention rejection matrix",
-                                   "TILE_BEATS/KV_WINDOW/FLASH_TILE legal cross matrix"])
+                  coverage_limits=["TILE_BEATS/KV_WINDOW/FLASH_TILE legal cross matrix"]
+                  if not args.leaf_only else [])
     with (output/"result.json").open("x") as out:
         json.dump(result,out,indent=2)
     receipt.update(exit=0 if result["status"]=="passed" else 1,end=timestamp(),

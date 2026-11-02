@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -17,6 +18,10 @@ def fixtures(path):
         for fmt in range(4):
             ks, vs = float_bits(0.125), float_bits(0.0625)
             out.write(f"{fmt} {ks:08x} {vs:08x}\n")
+            query_bits = [convert(float_bits((i % 7-3)/512), False) for i in range(128)]
+            query = [float_value(convert(bits, False, True)) for bits in query_bits]
+            for bits in query_bits:
+                out.write(f"{bits:04x}\n")
             stored = []
             for row in range(2):
                 keys, values = [], []
@@ -43,13 +48,24 @@ def fixtures(path):
                     for beat in range(beats):
                         out.write(f"{(packed >> (512*beat)) & ((1 << 512)-1):0128x}\n")
                 if fmt < 2:
-                    stored.append([float_value(convert(v, fmt == 1, True)) for v in values])
+                    stored.append(([float_value(convert(k, fmt == 1, True)) for k in keys],
+                                   [float_value(convert(v, fmt == 1, True)) for v in values]))
                 else:
-                    stored.append([(v-(1 << width) if v & (1 << (width-1)) else v)*
-                                   float_value(vs) for v in values])
-            # Zero queries make both scores zero; this is a real two-tile traversal,
-            # with a provisional/self request also serviced by the actual packed reader.
-            references[fmt] = [(a+b)*0.5 for a, b in zip(*stored)]
+                    signed = lambda code: code-(1 << width) if code & (1 << (width-1)) else code
+                    stored.append(([signed(k)*float_value(ks) for k in keys],
+                                   [signed(v)*float_value(vs) for v in values]))
+            expected = []
+            for head in range(2):
+                start = head*64
+                scores = [math.fsum(a*b for a, b in
+                                    zip(query[start:start+64], key[start:start+64]))/8
+                          for key, _ in stored]
+                probabilities = [math.exp(score-max(scores)) for score in scores]
+                denominator = math.fsum(probabilities)
+                expected.extend(math.fsum(p*value[j] for p, (_, value) in
+                                          zip(probabilities, stored))/denominator
+                                for j in range(start, start+64))
+            references[fmt] = expected
     return references
 
 
@@ -85,8 +101,7 @@ def run(output):
             metric = vector_check(actual[fmt][start:start+64], expected[fmt][start:start+64])
             vectors_checked.append(dict(format=fmt, head=head, metric=metric))
     return dict(status="passed", raw_summary=summary[0], vectors=vectors_checked,
-                coverage_limits=["packed-write failure/abort/reset and prefix-publication matrix",
-                                 "nonzero-query packed-cache attention"])
+                coverage_limits=["packed-write failure/abort/reset and prefix-publication matrix"])
 
 
 def main():

@@ -57,6 +57,13 @@ def dependencies(script):
         "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
         "tests/run_packed_cache.py": ["tests/reference.py", "tests/packed_cache_tb.sv"],
         "tests/run_compatibility.py": ["tests/reference.py", "tests/inference_tb.sv"],
+        "tests/run_performance.py": ["tests/reference.py", "tests/inference_tb.sv",
+                                     "tests/run_compatibility.py",
+                                     *[relative(p) for p in sorted(
+                                         ROOT.glob("anvil_q1_ht2_reference/rtl/*.sv"))]],
+        "tests/run_benchmarks.py": ["tests/official_inputs.json", "tests/official_reference.py",
+                                   "tests/acquire_public.py", "tests/reference.py",
+                                   "tests/run_compatibility.py"],
     }
     if script not in owned:
         return list(hashes())

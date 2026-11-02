@@ -35,9 +35,11 @@ def main():
             failures.append(str(exc))
             text = (output / "simulation.stdout.txt").read_text()
         summary = re.search(r"SUMMARY attention_restart accepts=(\d+) completions=(\d+) "
-                            r"fault_responses=(\d+) failures=(\d+)", text)
-        if not summary or tuple(map(int, summary.groups())) != (4, 4, 1, 0):
-            failures.append("four accepted commands must complete; fault and invalid errors are explicit")
+                            r"fault_responses=(\d+) failures=(\d+) abort_drains=(\d+) "
+                            r"reset_canceled=(\d+) zero_responses=(\d+)", text)
+        if not summary or tuple(map(int, summary.groups())) != (9, 8, 1, 0, 1, 1, 8):
+            failures.append("nine accepted commands require eight completions plus one "
+                            "reset cancellation, one aborted response drain and eight zero-latency responses")
     except (RuntimeError, AssertionError) as exc:
         failures.append(str(exc))
     finally:
