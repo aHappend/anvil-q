@@ -13,6 +13,7 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 CHECK_SECONDS = 2700
 INTERPRETED_SECONDS = 600
+DEFAULT_DEADLINE = time.time() + CHECK_SECONDS
 
 
 def relative(path, root=ROOT):
@@ -41,7 +42,7 @@ def clean_objects(directory):
 
 
 def remaining():
-    deadline = float(os.environ.get("HT3_CHECK_DEADLINE", time.time() + CHECK_SECONDS))
+    deadline = float(os.environ.get("HT3_CHECK_DEADLINE", DEFAULT_DEADLINE))
     return max(0.0, min(CHECK_SECONDS, deadline - time.time()))
 
 
@@ -69,26 +70,54 @@ def execute(argv, output, stem, version_argv, root=ROOT):
     exit_code = None
     try:
         with stdout.open("x") as out, stderr.open("x") as err:
-            if limit <= 0:
+            limit = min(limit, remaining())
+            if limit <= 5:
                 timed_out = True
-                err.write("Complete-check budget exhausted before launch.\n")
+                record.update(timeout=0, settlement_timeout=limit)
+                err.write("Complete-check execution budget exhausted before launch.\n")
             else:
+                settlement_seconds = min(5, limit)
+                execution_seconds = max(0, min(limit, remaining())-settlement_seconds)
+                record.update(timeout=execution_seconds,
+                              settlement_timeout=settlement_seconds)
+                end = start + execution_seconds
+                environment = dict(os.environ)
+                environment["HT3_CHECK_DEADLINE"] = str(
+                    time.time() + max(0, end-time.monotonic()))
                 process = subprocess.Popen(argv, cwd=root, stdout=out, stderr=err,
-                                           start_new_session=True)
-                end = start + min(limit, remaining())
-                while True:
-                    wait = end - time.monotonic()
-                    if wait <= 0:
-                        timed_out = True
-                        os.killpg(process.pid, signal.SIGKILL)
-                        process.wait()
-                        break
-                    try:
-                        exit_code = process.wait(timeout=min(30, wait))
-                        break
-                    except subprocess.TimeoutExpired:
-                        print(f"PROGRESS {stem} elapsed_s={time.monotonic()-start:.0f}",
-                              flush=True)
+                                           start_new_session=True, env=environment)
+                previous_handler = signal.getsignal(signal.SIGTERM)
+                ancestor_timeout = False
+
+                def cancel_child(signum, frame):
+                    nonlocal ancestor_timeout
+                    ancestor_timeout = True
+                    if process.poll() is None:
+                        os.killpg(process.pid, signal.SIGTERM)
+
+                signal.signal(signal.SIGTERM, cancel_child)
+                try:
+                    while True:
+                        wait = end - time.monotonic()
+                        if wait <= 0 or ancestor_timeout:
+                            timed_out = True
+                            if process.poll() is None:
+                                os.killpg(process.pid, signal.SIGTERM)
+                            try:
+                                exit_code = process.wait(timeout=settlement_seconds)
+                            except subprocess.TimeoutExpired:
+                                os.killpg(process.pid, signal.SIGKILL)
+                                exit_code = process.wait()
+                            break
+                        try:
+                            exit_code = process.wait(timeout=min(30, wait))
+                            timed_out = ancestor_timeout
+                            break
+                        except subprocess.TimeoutExpired:
+                            print(f"PROGRESS {stem} elapsed_s={time.monotonic()-start:.0f}",
+                                  flush=True)
+                finally:
+                    signal.signal(signal.SIGTERM, previous_handler)
     except OSError as exc:
         record["launch_error"] = f"{type(exc).__name__}: {exc}"
         if not stdout.exists():
