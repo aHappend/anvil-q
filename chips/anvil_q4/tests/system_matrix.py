@@ -40,7 +40,7 @@ def cases():
 
 
 def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
-                driver="top_probe.cpp", rtl_sources=None):
+                driver="top_probe.cpp", rtl_sources=None, profile=False):
     objects = experiment.directory / "compile-obj"
     packages = ["rtl/anvil_q3_00_pkg.sv", "rtl/anvil_q4_00_fp_pkg.sv"]
     rtl = packages + [experiment.rel(p) for p in sorted((ROOT/"rtl").glob("*.sv"))
@@ -53,7 +53,9 @@ def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
         "--top-module", "anvil_q4_top", "--Mdir", experiment.rel(objects),
         f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue_depth}",
         f"-GTILE_K={tile_k}", f"-GTILE_ROWS={tile_rows}",
-        "-CFLAGS", "-std=c++17", "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
+        "-CFLAGS", "-std=c++17" + (" -pg" if profile else ""),
+        *(["-LDFLAGS", "-pg"] if profile else []),
+        "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
         "-o", "top-sim", "tests/verilator.vlt", *rtl,
         str(Path("../../../../tests")/driver if
             experiment.directory.parent.name == "preparation" else
@@ -62,7 +64,7 @@ def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
     return objects / "top-sim"
 
 
-def execute_case(experiment, binary, options, index):
+def execute_case(experiment, binary, options, index, profile=False):
     identity = hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()[:12]
     directory = experiment.directory / f"case-{index}-{identity}"
     directory.mkdir()
@@ -72,12 +74,21 @@ def execute_case(experiment, binary, options, index):
         p.name: hashlib.sha256(p.read_bytes()).hexdigest()
         for p in directory.glob("*.txt")
     }
-    output = experiment.run([experiment.rel(binary), experiment.rel(directory)],
+    command = [experiment.rel(binary), experiment.rel(directory)]
+    if profile:
+        command = ["env", "GMON_OUT_PREFIX="+experiment.rel(directory/"gmon"), *command]
+    output = experiment.run(command,
                             f"simulation-{index}", timeout=600)
     expected = f"SUMMARY top tokens={geometry['tokens']} logits={geometry['expected_logits']} "
     if expected not in output:
         raise AssertionError(f"missing numerical summary for case {index}")
     geometry["summary"] = output[output.index("SUMMARY"):].splitlines()[0]
+    if profile:
+        dumps = sorted(directory.glob("gmon.*"))
+        if len(dumps) != 1:
+            raise AssertionError("missing unique execution profile")
+        experiment.run(["gprof", "-b", experiment.rel(binary), experiment.rel(dumps[0])],
+                       f"profile-{index}")
     return geometry
 
 
@@ -86,13 +97,20 @@ def main():
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--case", type=int, nargs="+")
     parser.add_argument("--repair-of", action="append", default=[])
+    parser.add_argument("--profile", action="store_true",
+                        help="retain a bounded gprof diagnostic for explicitly selected cases")
     args = parser.parse_args()
+    if args.profile and (not args.preparation or not args.case):
+        parser.error("--profile requires --preparation and --case")
     experiment = Experiment("system-matrix", args.preparation, args.repair_of)
     error = None
     try:
         experiment.receipt["tool_version"] = experiment.run(
             ["verilator", "--version"], "version").strip()
-        binary = compile_top(experiment)
+        if args.profile:
+            experiment.receipt["profiler_version"] = experiment.run(
+                ["gprof", "--version"], "profiler-version").splitlines()[0]
+        binary = compile_top(experiment, profile=args.profile)
         results = []
         experiment.receipt["cases"] = results
         for index, options in enumerate(cases()):
@@ -100,7 +118,7 @@ def main():
                 continue
             print(f"system case={index} seed={options['seed']} hidden="
                   f"{options['heads']*options['dimension']}", flush=True)
-            results.append(execute_case(experiment, binary, options, index))
+            results.append(execute_case(experiment, binary, options, index, args.profile))
             experiment.save()
         if not results:
             raise AssertionError("no system cases executed")

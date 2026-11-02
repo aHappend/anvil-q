@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import resource
 import signal
 import shutil
 import subprocess
@@ -63,6 +64,7 @@ class Experiment:
             "stderr_path": self.rel(self.directory / (stem + ".stderr.txt")),
         }
         start = time.monotonic()
+        usage_start = resource.getrusage(resource.RUSAGE_CHILDREN)
         with (ROOT / record["stdout_path"]).open("wb") as out, (
                 ROOT / record["stderr_path"]).open("wb") as err:
             try:
@@ -96,6 +98,9 @@ class Experiment:
                 err.write(str(exc).encode())
                 record.update(exit_code=127, timed_out=False)
         record.update(end_time=self.now(), elapsed_s=time.monotonic() - start)
+        usage_end = resource.getrusage(resource.RUSAGE_CHILDREN)
+        record.update(user_cpu_s=usage_end.ru_utime-usage_start.ru_utime,
+                      system_cpu_s=usage_end.ru_stime-usage_start.ru_stime)
         self.receipt["commands"].append(record)
         self.save()
         if record["timed_out"] or (
