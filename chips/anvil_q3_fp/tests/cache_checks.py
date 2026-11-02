@@ -26,6 +26,7 @@ def check(evidence, seed=17, exhaustive=False, simulator="iverilog"):
                            [pack(Fraction(3, 32), fmt)[0]] * count,
                            [pack(Fraction(-3, 32), fmt)[0]] * count]
             for values in groups:
+                evidence.ensure_budget()
                 words = encode(values, fmt, mode, fp8, affine)
                 decoded = decode(words, len(values), fmt, mode, fp8, affine)
                 cases += [(0, dtype, len(values), values, words, 0),

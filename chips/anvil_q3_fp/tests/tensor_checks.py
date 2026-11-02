@@ -44,6 +44,7 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
             rng = random.Random(seed)
             memory, weights, qs, zs, scales = {}, {}, {}, {}, {}
             for projection in range(7):
+                evidence.ensure_budget()
                 rows = head_dim if projection in (1, 2) else intermediate if projection in (4, 5) else hidden
                 cols = intermediate if projection == 6 else hidden
                 weights[projection] = [[pack(Fraction(rng.randrange(-127, 128), 64), fmt)[0]
@@ -69,6 +70,7 @@ def check(evidence, seed=17, banks=1, tile_rows=3, tile_k=8, hidden=16, intermed
                                 zs[projection][row][group] << SHIFTS[row % 8]
                                 for row in range(base, min(base + 8, rows)))
                         for row in range(rows):
+                            evidence.ensure_budget()
                             memory[3, projection, group, row] = scales[projection][row][group]
             lines = [f"{dtype} {awq} {len(memory)} {7 * repeats}\n"]
             lines += [f"{kind:x} {proj:x} {row:08x} {col:08x} {value:08x}\n"

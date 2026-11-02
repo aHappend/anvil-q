@@ -11,7 +11,8 @@ from cache_reference import decode, encode
 class Fixture:
     def __init__(self, seed=17, fmt="bf16", hidden=16, intermediate=24,
                  heads=8, kv_heads=1, head_dim=2, layers=1, vocab=3, awq=False,
-                 cache_mode=0, fp8=0, affine=0):
+                 cache_mode=0, fp8=0, affine=0, check_budget=None):
+        self.check_budget = check_budget or (lambda: None)
         self.seed, self.fmt = seed, fmt
         self.h, self.i, self.qh, self.kh, self.d = hidden, intermediate, heads, kv_heads, head_dim
         self.layers, self.vocab = layers, vocab
@@ -21,9 +22,11 @@ class Fixture:
         self.weights = {}
         self.cache = {}
         for token in range(vocab):
+            self.check_budget()
             for col in range(hidden):
                 self.memory[(0, 0, 0, token, col)] = self.sample(16)
         for layer in range(layers):
+            self.check_budget()
             for kind in (5, 6, 7):
                 for col in range(hidden):
                     self.memory[(kind, 0 if kind == 7 else layer, 0, 0, col)] = (
@@ -31,7 +34,10 @@ class Fixture:
             for projection in range(7):
                 rows = kv_heads * head_dim if projection in (1, 2) else intermediate if projection in (4, 5) else hidden
                 cols = intermediate if projection == 6 else hidden
-                values = [[self.sample(256) for _ in range(cols)] for _ in range(rows)]
+                values = []
+                for _ in range(rows):
+                    self.check_budget()
+                    values.append([self.sample(256) for _ in range(cols)])
                 self.weights[layer, projection] = values
                 for col in range(cols):
                     for row in range(0, rows, 2):
@@ -43,6 +49,7 @@ class Fixture:
         if awq:
             shifts = [0, 16, 4, 20, 8, 24, 12, 28]
             for (layer, projection), values in self.weights.items():
+                self.check_budget()
                 rows, cols = len(values), len(values[0])
                 qs = [[self.rng.randrange(16) for _ in range(cols)] for _ in range(rows)]
                 zeros = [[self.rng.randrange(5, 11) for _ in range((cols + 7) // 8)] for _ in range(rows)]
@@ -101,6 +108,7 @@ class Fixture:
     def projection(self, values, layer, projection):
         result = []
         for row, weights in enumerate(self.weights[layer, projection]):
+            self.check_budget()
             total = 0
             for index in range(0, len(values), 8):
                 a = values[index:index + 8]
@@ -154,6 +162,7 @@ class Fixture:
         result = []
         root = sqrt(pack(Fraction(self.d))[0])[0]
         for head in range(self.qh):
+            self.check_budget()
             kv = head // 8
             scores = []
             for time in range(position + 1):
@@ -168,6 +177,7 @@ class Fixture:
             exponentials = [float_bits(math.exp(bits_float(binary("add", score, maximum ^ 0x80000000)[0])))
                             for score in scores]
             for component in range(self.d):
+                self.check_budget()
                 denominator, total = 0, 0
                 for time, exponential in enumerate(exponentials):
                     denominator = binary("add", denominator, exponential)[0]
@@ -194,6 +204,7 @@ class Fixture:
     def token(self, token=0, position=0):
         values = self.scratch(0, [self.memory[0, 0, 0, token, col] for col in range(self.h)])
         for layer in range(self.layers):
+            self.check_budget()
             normalized = self.norm(values, layer, 0)
             query = self.projection(normalized, layer, 0)
             key = self.projection(normalized, layer, 1)
@@ -244,6 +255,7 @@ class FP64Fixture(Fixture):
     def projection(self, values, layer, projection):
         result = []
         for row, weights in enumerate(self.weights[layer, projection]):
+            self.check_budget()
             total = sum(x * self.wide(w) for x, w in zip(values, weights))
             if projection < 3:
                 total += self.wide(self.memory[4, layer, projection, 0, row])
@@ -266,6 +278,7 @@ class FP64Fixture(Fixture):
         self.cache[layer, position] = list(key), list(value)
         result = []
         for head in range(self.qh):
+            self.check_budget()
             kv = head // 8
             scores = [sum(query[head * self.d + d] * self.cache[layer, t][0][kv * self.d + d]
                           for d in range(self.d)) / math.sqrt(self.d)
@@ -288,6 +301,7 @@ class FP64Fixture(Fixture):
     def token(self, token=0, position=0):
         values = [self.wide(self.memory[0, 0, 0, token, col]) for col in range(self.h)]
         for layer in range(self.layers):
+            self.check_budget()
             normalized = self.norm(values, layer, 0)
             query, key, value = [self.projection(normalized, layer, p) for p in range(3)]
             query, key = self.rope(query, position, 2), self.rope(key, position, 3)

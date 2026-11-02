@@ -16,6 +16,7 @@ def reuse_current_execution(function):
     signature = inspect.signature(function)
     @wraps(function)
     def checked(evidence, *args, **kwargs):
+        evidence.ensure_budget()
         bound = signature.bind(evidence, *args, **kwargs)
         bound.apply_defaults()
         identity = tuple((name, value) for name, value in bound.arguments.items() if name != "evidence")
@@ -49,12 +50,13 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
                   hidden=heads * head_dim, intermediate=intermediate, vocab=vocab)
     if awq_transition and (awq or tokens < 2):
         raise ValueError("Native-to-AWQ transition requires an initially native multi-token run")
-    fixture = Fixture(**config)
-    fp64 = FP64Fixture(**config)
+    fixture = Fixture(**config, check_budget=evidence.ensure_budget)
+    fp64 = FP64Fixture(**config, check_budget=evidence.ensure_budget)
     initial = dict(fixture.memory)
     second_image = None
-    awq_image = Fixture(**{**config, "awq": True}) if awq_transition else None
+    awq_image = Fixture(**{**config, "awq": True}, check_budget=evidence.ensure_budget) if awq_transition else None
     for position in range(tokens):
+        evidence.ensure_budget()
         if awq_transition and position == 1:
             for model in (fixture, fp64):
                 model.weights = awq_image.weights
@@ -137,6 +139,8 @@ def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=Fal
               "activation": fmt, "awq": awq, "native_to_awq_transition": awq_transition, "metrics_vs_fp64": metrics,
               "minimum_cosine": threshold, "tokens": observations}
     result["public_transaction_traffic"] = traffic
+    result["negative_gate_elements"] = sum(bool(value & 0x8000) for key, value in fixture.writes
+                                           if key[0] == 8 and key[3] == 9)
     (evidence.path / name / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
 

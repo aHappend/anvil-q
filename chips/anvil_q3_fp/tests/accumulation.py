@@ -17,6 +17,7 @@ def check(evidence, seed):
         for awq in (0, 1):
             tiles = 0
             for row in range(256):
+                evidence.ensure_budget()
                 length = LENGTHS[row % len(LENGTHS)]
                 total = 0
                 for base in range(0, length, 8):

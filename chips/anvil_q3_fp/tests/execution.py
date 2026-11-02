@@ -43,6 +43,7 @@ class Evidence:
         self._build_locks = {}
         self._integration_runs = {}
         self._integration_locks = {}
+        self._last_heartbeat = start
         base = ROOT / "evidence" / ("preparation" if preparation else "")
         self.path = base / f"{suite}-{timestamp()}"
         self.path.mkdir(parents=True, exist_ok=False)
@@ -59,7 +60,18 @@ class Evidence:
             (self.path / "receipt.json").write_text(json.dumps(self.record, indent=2) + "\n")
 
     def scope(self, name):
+        self.ensure_budget()
         return EvidenceScope(self, name)
+
+    def ensure_budget(self):
+        now = time.monotonic()
+        if now >= self.deadline:
+            raise TimeoutError("Whole-check 2700-second budget exhausted")
+        with self._lock:
+            if now - self._last_heartbeat >= 30:
+                print(f"PREPARING suite={self.record['suite']} remaining_s={int(self.deadline - now)}",
+                      flush=True)
+                self._last_heartbeat = now
 
     def run(self, argv, cwd=None, timeout=COMMAND_BUDGET_S, expect_failure=False):
         remaining = self.deadline - time.monotonic()
@@ -131,6 +143,8 @@ class Evidence:
         generated = {relative(path): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in self.path.rglob("*")
                      if path.is_file() and (path.suffix in (".sv", ".ys") or path.name == "vectors.txt")}
+        if status == "passed":
+            self.ensure_budget()
         self.record.update(status=status, ended_at=timestamp(), generated_inputs=generated, **details)
         self.write()
 
@@ -142,6 +156,8 @@ class EvidenceScope:
         self.path = parent.path / name
         self.path.mkdir()
         self.run = parent.run
+        self.ensure_budget = parent.ensure_budget
+        self.deadline = parent.deadline
         self._lock = parent._lock
         self._simulators = parent._simulators
         self._build_locks = parent._build_locks
@@ -151,6 +167,7 @@ class EvidenceScope:
 
 
 def icarus(evidence, name, testbench, rtl, files=None):
+    evidence.ensure_budget()
     directory = evidence.path / name
     directory.mkdir()
     (directory / "tb.sv").write_text(testbench)
@@ -162,6 +179,7 @@ def icarus(evidence, name, testbench, rtl, files=None):
 
 
 def verilator(evidence, name, testbench, rtl, files=None):
+    evidence.ensure_budget()
     directory = evidence.path / name
     directory.mkdir()
     # Icarus supplies the event-region startup check; Verilator has no #0 region.
@@ -184,6 +202,7 @@ def verilator(evidence, name, testbench, rtl, files=None):
 
 def compiled(evidence, name, testbench, rtl):
     """Build once per elaboration; each fixture still runs in a fresh process."""
+    evidence.ensure_budget()
     identity = hashlib.sha256((testbench + "\n" + "\n".join(rtl)).encode()).hexdigest()
     with evidence._lock:
         lock = evidence._build_locks.setdefault(identity, threading.Lock())
@@ -215,6 +234,7 @@ def _compile(evidence, name, testbench, rtl, identity):
 
 
 def run_compiled(evidence, binary, name, files):
+    evidence.ensure_budget()
     directory = evidence.path / name
     directory.mkdir()
     for filename, text in files.items():

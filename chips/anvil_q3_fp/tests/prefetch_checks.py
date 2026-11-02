@@ -15,6 +15,7 @@ def check(evidence, banks=8, projections=range(7), row_count=3, input_counts=(12
                        "rtl/anvil_q3_fp_mul.sv", "rtl/anvil_q3_fp_dot8.sv",
                        "rtl/anvil_q3_fp_weight_prefetcher.sv"])
     for projection in projections:
+        evidence.ensure_budget()
         ninput = 11008 if projection == 6 else 2048
         noutput = 256 if projection in (1, 2) else 11008 if projection in (4, 5) else 2048
         for dtype, fmt in enumerate(("bf16", "fp16")):
@@ -28,6 +29,7 @@ def check(evidence, banks=8, projections=range(7), row_count=3, input_counts=(12
                     return (row + group) & 15
                 for tile in range(2):
                     for bank in range(banks):
+                        evidence.ensure_budget()
                         output_base = bank * row_count if tile == 0 else noutput - (bank + 1) * row_count
                         count = input_counts[tile]
                         input_base = 0 if tile == 0 else ninput - count

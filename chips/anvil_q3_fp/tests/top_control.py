@@ -13,9 +13,9 @@ def replace_once(text, old, new):
 
 def check(evidence, banks=1, mode=0, fp8=0, affine=0):
     results = []
-    fixture = Fixture(cache_mode=mode, fp8=fp8, affine=affine)
+    fixture = Fixture(cache_mode=mode, fp8=fp8, affine=affine, check_budget=evidence.ensure_budget)
     initial = dict(fixture.memory)
-    fixture.token()
+    fixture.token(token=1)
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})
     text = "0 0 2 0\n"
     text += "".join(f"0 {key_bits(key):026x} {value:08x}\n" for key, value in sorted(initial.items()))
@@ -24,7 +24,9 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
     rtl = [relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))]
     rtl += ["anvil_q3_reference/rtl/anvil_q3_bank_scheduler.sv",
             "anvil_q3_reference/rtl/anvil_q3_mem_port.sv"]
-    for scenario in ("cancel-fill", "cancel-cache", "cancel-logit", "memory-fault", "cache-fault"):
+    for scenario in ("cancel-fill", "cancel-cache", "cancel-logit", "cancel-active",
+                     "cancel-result-hold", "memory-fault", "cache-fault", "active-fault"):
+        evidence.ensure_budget()
         tb = TOP_TB.replace("localparam B=1;", f"localparam B={banks}, VOCAB=3;")
         tb = tb.replace(".CACHE_MODE(0)", f".CACHE_MODE({mode}),.MODE1_FP8({fp8}),.INT4_ASYM({affine})")
         tb = tb.replace("integer low,high,middle,", """
@@ -80,7 +82,7 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
           end
           token_valid=accepted_token<TOKENS && (accepted_token==0 || completed_token==1);""")
         tb = replace_once(tb, "token_id=accepted_token%VOCAB; token_pos=accepted_token;",
-                          "token_id=0; token_pos=0;")
+                          "token_id=accepted_token==0 ? 0 : 1; token_pos=0;")
         tb = replace_once(tb, "new_sequence=accepted_token==0; token_phase=accepted_token>=2;",
                           "new_sequence=1; token_phase=0;")
         tb = replace_once(tb, "logit_ready=cycle%13<9;",
@@ -89,14 +91,27 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
           mem_rsp_valid[bank]=occupied[bank]!=0 && due[bank][queue_head[bank]]<=cycle;
           mem_rsp_error[bank]=mem_rsp_valid[bank] && queued_error[bank][queue_head[bank]];""")
         if scenario in ("cancel-cache", "cache-fault"):
-            tb = replace_once(tb, "mem_req_kind[bank*4+:4]==1", """
-              mem_req_write[bank] && (mem_req_kind[bank*4+:4]==9 ||
-                mem_req_kind[bank*4+:4]==10 || mem_req_kind[bank*4+:4]>=12)""")
-        is_fault = scenario in ("memory-fault", "cache-fault")
+            tb = replace_once(tb, "if (accepted_token==1 && !injected && mem_req_kind[bank*4+:4]==1) begin", """
+              if (accepted_token==1 && !injected && mem_req_write[bank] &&
+                (mem_req_kind[bank*4+:4]==9 || mem_req_kind[bank*4+:4]==10 ||
+                 mem_req_kind[bank*4+:4]>=12)) begin""")
+        if scenario in ("cancel-active", "active-fault"):
+            tb = replace_once(tb, "if (accepted_token==1 && !injected && mem_req_kind[bank*4+:4]==1) begin", """
+              if (accepted_token==1 && !injected && mem_req_write[bank] &&
+                mem_req_kind[bank*4+:4]==8 && mem_req_row[bank*32+:32]==2) begin""")
+        if scenario == "cancel-result-hold":
+            tb = replace_once(tb, "mem_req_ready[bank]=(cycle+bank)%7<5;", """
+              mem_req_ready[bank]=(cycle+bank)%7<5 &&
+                !(accepted_token==1 && mem_req_valid[bank] && mem_req_write[bank] &&
+                  mem_req_kind[bank*4+:4]==8 && mem_req_row[bank*32+:32]==2);""")
+        is_fault = scenario in ("memory-fault", "cache-fault", "active-fault")
         tb = tb.replace("@FAULT@", "queued_error[bank][queue_tail[bank]]=1; injected=1;"
                         if is_fault else "")
+        held_projection = """mem_req_valid[0] && !mem_req_ready[0] && mem_req_write[0] &&
+          mem_req_kind[0+:4]==8 && mem_req_row[0+:32]==2"""
         tb = tb.replace("@TRIGGER@", "1'b0" if is_fault else
-                        "logit_valid" if scenario == "cancel-logit" else "trigger")
+                        "logit_valid" if scenario == "cancel-logit" else
+                        held_projection if scenario == "cancel-result-hold" else "trigger")
         tb = tb.replace("@CANCELS@", "0" if is_fault else "1")
         name = f"control-{scenario}-b{banks}-m{mode}-f{fp8}-a{affine}"
         executable = compiled(evidence, name, tb, rtl)
@@ -109,7 +124,7 @@ def check(evidence, banks=1, mode=0, fp8=0, affine=0):
 
 def rejected_sequence(evidence, case, banks=1):
     """A valid token, a rejected command with no memory side effects, then restart."""
-    fixture = Fixture()
+    fixture = Fixture(check_budget=evidence.ensure_budget)
     initial = dict(fixture.memory)
     fixture.token()
     initial.update({key: value for key, value in fixture.memory.items() if key[0] == 11})

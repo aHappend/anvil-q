@@ -21,6 +21,8 @@ def conversions(evidence, seed=17):
     vectors = []
     for dtype, fmt in enumerate(("bf16", "fp16")):
         for value in range(65536):
+            if value % 256 == 0:
+                evidence.ensure_budget()
             wide = convert(value, fmt, "fp32", preserve_nan=True)[0]
             narrow, flags = convert(wide, "fp32", fmt)
             vectors.append(f"{dtype:x} {value:04x} {wide:08x} {narrow:04x} {flags:02x}\n")
@@ -125,6 +127,7 @@ def primitives(evidence, seed=17, count=4096, simulator="iverilog"):
     pairs = operation_vectors(seed, count, include_awq=True)
     results = {}
     for operation in ("add", "mul"):
+        evidence.ensure_budget()
         text = "".join(f"{a:08x} {b:08x} {value:08x} {flags:02x}\n"
                        for a, b in pairs for value, flags in [binary(operation, a, b)])
         tb = PRIMITIVE_TB.replace("@MODULE@", f"anvil_q3_fp_{operation}").replace(
@@ -250,6 +253,7 @@ def iterative(evidence, seed=17, count=4096):
     pairs = operation_vectors(seed, count)
     results = {}
     for operation in ("div", "sqrt"):
+        evidence.ensure_budget()
         text = "".join(f"{a:08x} {b:08x} {value:08x} {flags:02x}\n"
                        for a, b in pairs for value, flags in
                        [binary("div", a, b) if operation == "div" else sqrt(a)])
@@ -269,6 +273,8 @@ def dots(evidence, seed=17, count=256, simulator="iverilog"):
     for dtype, fmt in enumerate(("bf16", "fp16")):
         for awq in (0, 1):
             for index in range(count):
+                if index % 64 == 0:
+                    evidence.ensure_budget()
                 activations = [rng.randrange(65536) for _ in range(8)]
                 weights = [rng.randrange(65536) for _ in range(8)]
                 scales = [rng.randrange(0x7c00) for _ in range(8)]

@@ -9,6 +9,7 @@ from model import Fixture
 
 def check(evidence, head_dim=34, mode=0, fp8=0, affine=0, fmt="bf16", tokens=2):
     model = object.__new__(Fixture)
+    model.check_budget = evidence.ensure_budget
     model.fmt, model.d, model.qh, model.kh = fmt, head_dim, 16, 2
     model.cache_mode, model.fp8, model.affine = mode, fp8, affine
     model.memory, model.writes, model.cache = {}, [], {}

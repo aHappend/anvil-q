@@ -8,6 +8,8 @@ import integration
 
 
 def check(evidence, seed):
+    evidence.run(["python3", "-m", "py_compile",
+                  *[relative(path) for path in sorted((ROOT / "tests").glob("*.py"))]])
     commands = [["python3", "-c", f"print('{label}')"] for label in ("FIRST", "SECOND")]
     with ThreadPoolExecutor(max_workers=2) as executor:
         outputs = list(executor.map(evidence.run, commands))

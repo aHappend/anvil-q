@@ -168,13 +168,21 @@ def domain_metrics(run):
     parameters = run["parameters"]
     h, i, d = parameters["HIDDEN_SIZE"], parameters["INTERMEDIATE_SIZE"], parameters["HEAD_DIM"]
     layers, tokens, heads = parameters["NUM_LAYERS"], len(run["tokens"]), parameters["NUM_Q_HEADS"]
+    kv = heads // 8 * d
+    projection_multiplier = 3 if run["awq"] else 2
+    if run["native_to_awq_transition"]:
+        projection_tokens = 2 + 3 * (tokens - 1)
+    else:
+        projection_tokens = projection_multiplier * tokens
+    silu_operations = tokens * layers * 4 * i + run["negative_gate_elements"]
     operations = [
-        tokens * layers * 2 * (2 * h * h + 2 * h * (heads // 8) * d + 3 * h * i),
-        layers * sum(heads * d * 4 * (t + 1) for t in range(tokens)),
-        tokens * ((layers * 2 + 1) * h * 6 + layers * (h + heads // 8 * d) * 6 + layers * h * 2),
-        tokens * layers * (6 * h * i + 4 * i),
+        layers * projection_tokens * (2 * h * h + 2 * h * kv + 3 * h * i) +
+        tokens * layers * (h + 2 * kv),
+        layers * sum(heads * ((4 * d + 4) * (t + 1) + d) for t in range(tokens)),
+        tokens * ((layers * 2 + 1) * (4 * h + 4) + layers * (h + kv) * 3 + layers * h * 2),
+        layers * projection_tokens * 3 * h * i + silu_operations,
     ]
-    operations.append(sum(operations) - tokens * layers * 6 * h * i +
+    operations.append(sum(operations[:3]) + silu_operations +
                       tokens * parameters["VOCAB_SIZE"] * h * 2)
     results = []
     banks = parameters["BANKS"]
@@ -199,7 +207,9 @@ def domain_metrics(run):
                                            "overlapping domain traffic is not additive",
                         "accepted_token_to_done_cycles": [row["cycles"] for row in run["tokens"]],
                         "useful_operations": operations[index],
-                        "operation_definition": "algorithmic scalar multiply/add and nonlinear calls, not DSP instruction count",
+                        "operation_definition": "represented-model scalar add/multiply/divide/sqrt/exp calls; "
+                                                "AWQ includes dequantization multiply; excludes redundant QK recomputation, "
+                                                "comparisons and format conversion, not DSP instruction count",
                         "transferred_bytes": total_bytes, "metadata_bytes": metadata,
                         "padding_bytes": padding,
                         "payload_bytes": total_bytes - metadata - padding,
