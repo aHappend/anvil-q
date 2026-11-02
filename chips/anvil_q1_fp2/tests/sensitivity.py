@@ -46,9 +46,11 @@ class Variant:
 
 
 def sensitivity(run, root, compile_and_run, simulate_pipeline, tensor_vectors,
-                unary_vectors, simulate_commands, simulate_ddr, simulate_csr):
+                unary_vectors, simulate_commands, simulate_ddr, simulate_csr, names=None):
     results = []
     for name, source, before, after, kind, assertion in MUTATIONS:
+        if names is not None and name not in names:
+            continue
         original = (root / source).read_text()
         if original.count(before) != 1:
             raise AssertionError(f"{name}: mutation anchor must occur exactly once")
@@ -99,4 +101,7 @@ def sensitivity(run, root, compile_and_run, simulate_pipeline, tensor_vectors,
             run.receipt["comparisons"].append(results[-1])
         else:
             raise AssertionError(f"{name}: mutation escaped unchanged assertions")
+    expected = len(MUTATIONS) if names is None else len(set(names))
+    if not expected or len(results) != expected:
+        raise AssertionError("missing compiled and behaviorally rejected mutation cases")
     (run.path / "mutation-results.json").write_text(json.dumps(results, indent=2) + "\n")

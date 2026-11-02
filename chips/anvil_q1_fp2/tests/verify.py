@@ -24,7 +24,7 @@ from operators import simulate_commands  # noqa: E402
 from structure import synthesize  # noqa: E402
 from protocols import simulate_csr, simulate_ddr  # noqa: E402
 from architecture import GEOMETRIES, simulate_architecture  # noqa: E402
-from sensitivity import sensitivity  # noqa: E402
+from sensitivity import sensitivity, MUTATIONS  # noqa: E402
 from benchmarks import (  # noqa: E402
     rms_benchmark, stream_operator_benchmark, projection_benchmark, attention_benchmark,
 )
@@ -757,7 +757,11 @@ def main():
     parser.add_argument("--geometry", choices=["minimum", "nonpower", "multihead"])
     parser.add_argument("--leaf", action="append",
                         choices=["add", "multiply", "tensor", "rsqrt", "exp"])
+    parser.add_argument("--mutation", action="append",
+                        choices=[mutation[0] for mutation in MUTATIONS])
     args = parser.parse_args()
+    if args.mutation and args.probe != "sensitivity":
+        parser.error("--mutation is only valid for bounded sensitivity preparation probes")
     selected = args.suite or args.probe
     run = Run(f"fp2-{selected}", preparation=args.probe is not None, repair_of=args.repair_of)
     error = None
@@ -801,7 +805,8 @@ def main():
             synthesize(run, ROOT)
         elif selected == "sensitivity":
             sensitivity(run, ROOT, compile_and_run, simulate_pipeline, tensor_vectors,
-                        unary_vectors, simulate_commands, simulate_ddr, simulate_csr)
+                        unary_vectors, simulate_commands, simulate_ddr, simulate_csr,
+                        names=args.mutation)
         elif selected == "csr":
             for seed in map(int, args.seeds.split(",")):
                 for bits in (8, 64):
