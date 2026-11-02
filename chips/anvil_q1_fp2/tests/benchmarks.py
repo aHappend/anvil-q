@@ -87,6 +87,7 @@ def projection_benchmark(run, root, compile_and_run, mx, seed=17):
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
 module tb;
+  string fixture_root;
   reg clk=0,rst_n=0,cmd=0;
   always #5 clk=~clk;
   wire pready,pdone,perror,mem_req_valid,mem_req_write,mem_rsp_ready;
@@ -285,11 +286,12 @@ module tb;
     end
   endtask
   initial begin
-    $readmemh("{run.relative / stem / 'checkpoint-images' / 'activations.hex'}",x);
-    $readmemh("{run.relative / stem / 'checkpoint-images' / 'weights.hex'}",w);
-    $readmemh("{run.relative / stem / 'checkpoint-images' / 'beats.hex'}",packed_weights);
-    $readmemh("{run.relative / stem / 'checkpoint-images' / 'scales.hex'}",scale_plane);
-    $readmemh("{run.relative / stem / 'checkpoint-images' / 'expected.hex'}",expected);
+    if (!$value$plusargs("fixture=%s",fixture_root)) $fatal(1,"missing benchmark fixture");
+    $readmemh({{fixture_root,"/checkpoint-images/activations.hex"}},x);
+    $readmemh({{fixture_root,"/checkpoint-images/weights.hex"}},w);
+    $readmemh({{fixture_root,"/checkpoint-images/beats.hex"}},packed_weights);
+    $readmemh({{fixture_root,"/checkpoint-images/scales.hex"}},scale_plane);
+    $readmemh({{fixture_root,"/checkpoint-images/expected.hex"}},expected);
     owned[0]=0; owned[1]=0; delay_count[0]=0; delay_count[1]=0;
     repeat(2) @(posedge clk); @(negedge clk); rst_n=1; #1;
     for (run_index=0;run_index<2;run_index=run_index+1) begin
@@ -314,7 +316,8 @@ endmodule
 """)
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
-    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    compile_and_run(run, directory, bench, sources, "verilator", stem,
+                    arguments=[f"+fixture={run.relative / stem}"], cache=True)
     measured_cycles(run, stem, "tensor-mx" if mx else "tensor-bf16")
     run.receipt["comparisons"].append({
         "kind": "gemv-benchmark", "format": "mx" if mx else "bf16",
@@ -362,6 +365,7 @@ def attention_benchmark(run, root, compile_and_run, seed=17):
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
 module tb;
+  string fixture_root;
   reg clk=0,rst_n=0,cmd=0;
   always #5 clk=~clk;
   wire pready,pdone,perror,mem_req_valid,mem_req_write,mem_rsp_ready;
@@ -506,10 +510,11 @@ module tb;
     end
   endtask
   initial begin
-    $readmemh("{run.relative / stem / 'query.hex'}",q);
-    $readmemh("{run.relative / stem / 'keys.hex'}",k);
-    $readmemh("{run.relative / stem / 'values.hex'}",v);
-    fd=$fopen("{run.relative / stem / 'expected.txt'}","r");
+    if (!$value$plusargs("fixture=%s",fixture_root)) $fatal(1,"missing benchmark fixture");
+    $readmemh({{fixture_root,"/query.hex"}},q);
+    $readmemh({{fixture_root,"/keys.hex"}},k);
+    $readmemh({{fixture_root,"/values.hex"}},v);
+    fd=$fopen({{fixture_root,"/expected.txt"}},"r");
     if (!fd) $fatal(1,"attention fixture open");
     for (j=0;j<64;j=j+1) begin
       scan=$fscanf(fd,"%h %h\\n",s0,s1);
@@ -537,7 +542,8 @@ endmodule
 """)
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
-    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    compile_and_run(run, directory, bench, sources, "verilator", stem,
+                    arguments=[f"+fixture={run.relative / stem}"], cache=True)
     measured_cycles(run, stem, "attention")
     run.receipt["comparisons"].append({
         "kind": "attention-benchmark", "seed": seed, "head_dim": 64,
@@ -575,6 +581,7 @@ def rms_benchmark(run, root, compile_and_run, hidden=896, seed=None):
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
 module tb;
+  string fixture_root;
   reg clk=0,rst_n=0,cmd_valid=0;
   wire parent_cmd_ready,parent_done,parent_error;
   wire mem_req_valid,mem_req_write,mem_rsp_ready;
@@ -682,7 +689,8 @@ module tb;
     end
   endtask
   initial begin
-    file_handle=$fopen("{run.relative / stem / 'vectors.txt'}","r");
+    if (!$value$plusargs("fixture=%s",fixture_root)) $fatal(1,"missing benchmark fixture");
+    file_handle=$fopen({{fixture_root,"/vectors.txt"}},"r");
     if (!file_handle) $fatal(1,"benchmark fixture open");
     for (j=0;j<{hidden};j=j+1) begin
       scan=$fscanf(file_handle,"%h %h %h %h\\n",scanned0,scanned1,scanned2,scanned3);
@@ -712,7 +720,8 @@ endmodule
 """)
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
-    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    compile_and_run(run, directory, bench, sources, "verilator", stem,
+                    arguments=[f"+fixture={run.relative / stem}"], cache=True)
     measured_cycles(run, stem, "rmsnorm")
     run.receipt["comparisons"].append({
         "kind": "rmsnorm-benchmark", "hidden": hidden,
@@ -775,6 +784,7 @@ def stream_operator_benchmark(run, root, compile_and_run, kind, seed=None):
     bench = directory / "tb.sv"
     bench.write_text(f"""`timescale 1ns/1ps
 module tb;
+  string fixture_root;
   reg clk=0,rst_n=0,pcmd=0,fcmd=0,in_valid=0,in_last=0,out_ready=0;
   wire pready,pdone,perror,fready,in_ready,out_valid,out_last,fdone,ferror;
   wire [31:0] out_data;
@@ -910,7 +920,8 @@ module tb;
     end
   endtask
   initial begin
-    fd=$fopen("{run.relative / stem / 'vectors.txt'}","r");
+    if (!$value$plusargs("fixture=%s",fixture_root)) $fatal(1,"missing benchmark fixture");
+    fd=$fopen({{fixture_root,"/vectors.txt"}},"r");
     if (!fd) $fatal(1,"benchmark fixture open");
     for (j=0;j<{total};j=j+1) begin
       scan=$fscanf(fd,"%h %h %h %h %h\\n",s0,s1,s2,s3,s4);
@@ -941,7 +952,8 @@ endmodule
 """)
     sources = [str(path.relative_to(root)) for pattern in (
         "anvil_q1_fp_reference/rtl/*.sv", "rtl/*.sv") for path in sorted(root.glob(pattern))]
-    compile_and_run(run, directory, bench, sources, "verilator", stem)
+    compile_and_run(run, directory, bench, sources, "verilator", stem,
+                    arguments=[f"+fixture={run.relative / stem}"], cache=True)
     measured_cycles(run, stem, kind)
     run.receipt["comparisons"].append({
         "kind": kind + "-benchmark", "components": total * 4, "result": "passed",

@@ -799,13 +799,15 @@ def main():
         elif selected == "portable":
             portable(run)
         elif selected == "rms-benchmark":
-            rms_benchmark(run, ROOT, compile_and_run)
+            for seed in map(int, args.seeds.split(",")):
+                rms_benchmark(run, ROOT, compile_and_run, seed=seed)
         elif selected == "gemv-benchmark":
-            for mx in (False, True):
-                projection_benchmark(run, ROOT, compile_and_run, mx,
-                                     int(args.seeds.split(",")[0]))
+            for seed in map(int, args.seeds.split(",")):
+                for mx in (False, True):
+                    projection_benchmark(run, ROOT, compile_and_run, mx, seed)
         elif selected == "attention-benchmark":
-            attention_benchmark(run, ROOT, compile_and_run, int(args.seeds.split(",")[0]))
+            for seed in map(int, args.seeds.split(",")):
+                attention_benchmark(run, ROOT, compile_and_run, seed)
         elif selected == "compatibility":
             geometry = GEOMETRIES[("minimum", "nonpower", "multihead").index(
                 args.geometry or "minimum")]
@@ -817,10 +819,12 @@ def main():
                                            seed, enable, compact=args.compact,
                                            precisions=precisions)
         elif selected in ("rope-benchmark", "swiglu-benchmark"):
-            stream_operator_benchmark(
-                run, ROOT, compile_and_run,
-                "rope" if selected == "rope-benchmark" else "swiglu-residual",
-            )
+            for seed in map(int, args.seeds.split(",")):
+                stream_operator_benchmark(
+                    run, ROOT, compile_and_run,
+                    "rope" if selected == "rope-benchmark" else "swiglu-residual",
+                    seed=seed,
+                )
         elif selected == "top-errors":
             simulate_errors(run, ROOT, compile_and_run, args.simulator or "iverilog")
         elif selected == "portable-inner":
