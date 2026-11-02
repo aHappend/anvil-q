@@ -189,7 +189,7 @@ module anvil_q1_ht3_decoder #(
     reg [31:0] fetch_length;
     reg [63:0] fetch_offset;
     reg [32:0] fetch_absolute;
-    reg fetch_fp32, cache_valid, lookup_owned, scalar_owned;
+    reg fetch_fp32, cache_valid, lookup_owned, scalar_owned, epilogue_owned;
     reg [32:0] cache_address;
     reg [511:0] cache_data;
     reg [31:0] fetched_scale;
@@ -284,7 +284,7 @@ module anvil_q1_ht3_decoder #(
     wire [7:0] r_dma_beats;
     wire [1023:0] r_data;
     wire cancel = failed || abort_error || kv_store_error;
-    wire worker_error = p_error || e_error || a_error || mux_fault ||
+    wire worker_error = p_error || (epilogue_owned && e_error) || a_error || mux_fault ||
       kv_store_fault;
     wire scalar_request = run_n && state == FETCH_SEND && !cancel;
     wire scalar_response = r_valid && (state == FETCH_WAIT || state == FAIL_DRAIN);
@@ -601,11 +601,15 @@ module anvil_q1_ht3_decoder #(
         cache_data <= 0;
         lookup_owned <= 0;
         scalar_owned <= 0;
+        epilogue_owned <= 0;
       end else if (run_n) begin
         if (lookup_valid && lookup_ready) lookup_owned <= 1;
         if (lookup_rsp_valid && lookup_rsp_ready) lookup_owned <= 0;
         if (scalar_request && r_ready) scalar_owned <= 1;
         if (scalar_response) scalar_owned <= 0;
+        if ((state == NORM_COMMAND || state == E_COMMAND) && e_ready && !cancel)
+          epilogue_owned <= 1;
+        if (e_done) epilogue_owned <= 0;
         if ((abort_error || kv_store_error || worker_error || failed) &&
             state != IDLE && state != RESPONSE && state != COMPLETE &&
             state != FAIL_DRAIN) begin

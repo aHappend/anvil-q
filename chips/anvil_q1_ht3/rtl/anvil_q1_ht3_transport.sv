@@ -68,6 +68,7 @@ module anvil_q1_ht3_transport (
     (avm_readdatavalid && avm_writeresponsevalid);
   wire debt_push = physical_accept && !(debt_count == 0 && physical_last);
   wire debt_pop = physical_last && debt_count != 0;
+  wire [3:0] following_debt_read = debt_read + 4'd1;
   wire [5:0] prospective_debt = {1'b0,debt_count} +
     {5'b0,debt_push} - {5'b0,debt_pop};
   wire capture_response = ddr_run_n && recovered && physical_response;
@@ -150,7 +151,7 @@ module anvil_q1_ht3_transport (
     endcase
     if (physical_response) begin
       if (!physical_last) debt_remaining <= physical_remaining - 1'b1;
-      else if (debt_count > 1) debt_remaining <= debt_lengths[debt_read + 4'd1];
+      else if (debt_count > 1) debt_remaining <= debt_lengths[following_debt_read];
       else if (debt_push) debt_remaining <= held_write ? 8'd1 : held_beats;
       else debt_remaining <= 0;
     end else if (physical_accept && debt_count == 0)
