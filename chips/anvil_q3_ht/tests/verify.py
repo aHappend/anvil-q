@@ -324,8 +324,10 @@ module verify_top;
     end
   end
   task host_write_record(input integer index);
+    integer before_writes;
     begin
       @(negedge clk);
+      before_writes=written_beats;
       host_req_valid=1; host_req_write=1; host_req_address=image_address[index];
       host_req_wdata=image_data[index]; host_req_byteenable=64'hffffffffffffffff;
       @(posedge clk); while (!host_req_ready) @(posedge clk);
@@ -333,6 +335,8 @@ module verify_top;
       @(posedge clk); while (!host_rsp_valid) @(posedge clk);
       if (host_rsp_error !== 0 || host_rsp_rdata !== 0)
         $fatal(1,"HOST_WRITE_RESPONSE index=%0d",index);
+      if (written_beats!=before_writes+1 || model_ready!==0)
+        $fatal(1,"HOST_WRITE_COMPLETION_BEFORE_PLATFORM_ACCEPTANCE");
       @(negedge clk); host_rsp_ready=1;
       @(posedge clk);
       @(negedge clk); host_rsp_ready=0;
@@ -359,6 +363,66 @@ module verify_top;
       @(negedge clk); host_rsp_ready=1;
       @(posedge clk);
       @(negedge clk); host_rsp_ready=0;
+    end
+  endtask
+  integer host_edge_operations=0, extra_image_writes=0;
+  task host_edge_cases;
+    integer operation, before_reads, before_writes, pause;
+    reg write_request, expected_error;
+    reg [32:0] address;
+    reg [63:0] enables;
+    reg [511:0] data, expected_data;
+    begin
+      for (operation=0;operation<7;operation=operation+1) begin
+        write_request=operation==1 || operation==2 || operation==3 || operation==5;
+        expected_error=operation<2;
+        address=operation==0 ? 33'd1 : operation==1 ? 33'd3 :
+                operation>=5 ? 33'h1ffffffc0 : image_address[0];
+        enables=operation==2 ? 64'h5555555555555555 :
+                operation==3 ? 64'd0 : 64'hffffffffffffffff;
+        data=operation>=5 ? {16{32'hcafebabe}} : ~image_data[0];
+        if (operation==2)
+          for (pause=0;pause<64;pause=pause+1)
+            if (enables[pause]) data[pause*8+:8]=image_data[0][pause*8+:8];
+        expected_data=write_request || expected_error ? 512'd0 :
+                      operation==6 ? {16{32'hcafebabe}} : image_data[0];
+        @(negedge clk);
+        before_reads=read_commands; before_writes=written_beats;
+        host_req_valid=1; host_req_write=write_request;
+        host_req_address=address; host_req_wdata=data; host_req_byteenable=enables;
+        if (operation==2) model_commit=1;
+        @(posedge clk); while (!host_req_ready) @(posedge clk);
+        #1;
+        if (write_request && model_ready!==0)
+          $fatal(1,"HOST_WRITE_COMMIT_PRIORITY");
+        @(negedge clk); host_req_valid=0; model_commit=0;
+        @(posedge clk); while (!host_rsp_valid) @(posedge clk);
+        if (host_rsp_error!==expected_error || host_rsp_rdata!==expected_data ||
+            written_beats-before_writes!=(write_request && !expected_error ? 1 : 0) ||
+            read_commands-before_reads!=(!write_request && !expected_error ? 1 : 0))
+          $fatal(1,"HOST_EDGE_RESPONSE operation=%0d",operation);
+        if (operation==3) begin
+          @(negedge clk); model_commit=1;
+          @(posedge clk); #1;
+          if (model_ready!==1 || host_rsp_valid!==1 || host_req_ready!==0)
+            $fatal(1,"HOST_COMMIT_WITH_HELD_RESPONSE");
+          @(negedge clk); model_commit=0;
+        end
+        repeat(2) begin
+          @(posedge clk);
+          if (host_rsp_valid!==1 || host_rsp_error!==expected_error ||
+              host_rsp_rdata!==expected_data || host_req_ready!==0)
+            $fatal(1,"HOST_EDGE_HELD_RESPONSE");
+        end
+        @(negedge clk); host_rsp_ready=1;
+        @(posedge clk);
+        @(negedge clk); host_rsp_ready=0;
+        host_edge_operations=host_edge_operations+1;
+      end
+      extra_image_writes=2;
+      @(negedge clk); model_commit=1;
+      @(negedge clk); model_commit=0;
+      @(posedge clk); while (!token_ready) @(posedge clk);
     end
   endtask
   integer cancellations=0, rejected_tokens=0, readback_records=0, reset_recommits=0;
@@ -510,11 +574,13 @@ module verify_top;
     @TOKENS@
     if (compared!=@EXPECTED_COUNT@ || tokens!=@TOKEN_COUNT@ || queue_count!=0)
       $fatal(1,"INTEGRATION_COVERAGE");
-    if (readback_records!=IMAGE_RECORDS || reset_recommits!=1 || image_write_beats!=IMAGE_RECORDS)
+    if (readback_records!=IMAGE_RECORDS || reset_recommits!=1 ||
+        image_write_beats!=IMAGE_RECORDS+extra_image_writes)
       $fatal(1,"PERSISTENT_IMAGE_COVERAGE");
-    $display("INTEGRATION_PASS tokens=%0d compared=%0d reads=%0d beats=%0d writes=%0d readback=%0d reset_recommit=%0d cancellations=%0d rejected_tokens=%0d fault_completions=%0d",
+    $display("INTEGRATION_PASS tokens=%0d compared=%0d reads=%0d beats=%0d writes=%0d readback=%0d reset_recommit=%0d cancellations=%0d rejected_tokens=%0d fault_completions=%0d host_edges=%0d",
              tokens,compared,read_commands,returned_beats,written_beats,
-             readback_records,reset_recommits,cancellations,rejected_tokens,fault_completions);
+             readback_records,reset_recommits,cancellations,rejected_tokens,fault_completions,
+             host_edge_operations);
     for (i=0;i<9;i=i+1)
       $display("HT_TRAFFIC class=%0d read_bytes=%0d write_bytes=%0d",
                i,traffic_reads[i],traffic_writes[i]);
@@ -634,7 +700,7 @@ def integration(run, seed=17, banks=1, mode=0, tokens=1, layers=1, stress=False,
     parameters.update(overrides or {})
     token_commands = []
     if memory_fault:
-        token_commands += ["fault_token();"]
+        token_commands += ["host_edge_cases();", "fault_token();"]
     for index, (token, pos, fresh, phase) in enumerate(sequence):
         if tokens > 1 and index == 2 and not benchmark:
             token_commands += ["reject_token(0,2,0,0);", "cancel_token();"]
@@ -646,7 +712,8 @@ def integration(run, seed=17, banks=1, mode=0, tokens=1, layers=1, stress=False,
                            "if (cancellations!=1 || rejected_tokens!=4) "
                            '$fatal(1,"TOKEN_ERROR_COVERAGE");']
     if memory_fault:
-        token_commands += ['if (fault_completions!=1) $fatal(1,"MEMORY_FAULT_COVERAGE");']
+        token_commands += ['if (fault_completions!=1 || host_edge_operations!=7) '
+                           '$fatal(1,"MEMORY_FAULT_HOST_EDGE_COVERAGE");']
     replacements = dict(PARAMETERS=",".join(f".{key}({value})" for key, value in parameters.items()),
                         IMAGE_RECORDS=len(records), MEMORY_CAPACITY=len(records) + 1024,
                         ADDRESS_FILE=relative(addresses), DATA_FILE=relative(data),
@@ -743,6 +810,7 @@ def synthesis(run, noopt=False):
     parameters = Geometry().parameters() | dict(BANKS=1, TILE_K=16, TILE_ROWS=1,
                                                 TILE_SLOTS=3, KV_RESIDENT_GROUPS=3)
     synthesis_target(run, "integrated", "anvil_q3_ht_top", parameters, noopt)
+    synthesis_target(run, "production-integrated", "anvil_q3_ht_top", noopt=noopt)
     synthesis_target(run, "production-tensor", "anvil_q3_ht_tensor_array", noopt=noopt)
     synthesis_target(run, "production-prefetch", "anvil_q3_ht_ddr_prefetcher", noopt=noopt)
     for mode in range(3):
@@ -1091,7 +1159,7 @@ def main():
                                            "ddr-faults", "importer", "parent", "parameters",
                                            "reproduce",
                                            "benchmark-components", "benchmark-stream", "benchmark-cell", "cache-reuse", "synthesis",
-                                           "synthesis-compact", "frontend",
+                                           "synthesis-compact", "synthesis-production", "frontend",
                                                                               "frontend-variants", "frontend-parts"))
     entry.add_argument("--import-checkpoint", help="Project-relative local safetensors checkpoint")
     parser.add_argument("--checkpoint-revision", help="Explicit checkpoint repository revision")
@@ -1167,7 +1235,8 @@ def main():
             mutation_suite(run, only=args.mutation_class)
             run.finish()
             return 0
-        if args.probe in ("synthesis", "synthesis-compact", "frontend", "frontend-variants", "frontend-parts"):
+        if args.probe in ("synthesis", "synthesis-compact", "synthesis-production",
+                          "frontend", "frontend-variants", "frontend-parts"):
             run.tool("yosys")
             if args.probe == "synthesis":
                 synthesis(run, args.yosys_noopt)
@@ -1175,6 +1244,8 @@ def main():
                 synthesis_target(run, "integrated", "anvil_q3_ht_top",
                                  Geometry().parameters() | dict(BANKS=1, TILE_K=16,
                                  TILE_ROWS=1, TILE_SLOTS=3, KV_RESIDENT_GROUPS=3))
+            elif args.probe == "synthesis-production":
+                synthesis_target(run, "production-integrated", "anvil_q3_ht_top")
             elif args.probe == "frontend":
                 frontend_probe(run)
             elif args.probe == "frontend-variants":

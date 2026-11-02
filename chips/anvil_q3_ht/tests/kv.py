@@ -40,6 +40,8 @@ module verify_kv;
   reg pending=0, scratch_pending=0;
   reg [511:0] pending_data;
   reg [31:0] scratch_pending_data, rng=@SEED@;
+  reg inject_scratch_error=0, inject_memory_error=0, inject_record_error=0;
+  integer scratch_errors=0, memory_errors=0, record_errors=0;
   reg held=0;
   reg [610:0] held_request;
   function automatic [31:0] next_random(input [31:0] x);
@@ -68,9 +70,14 @@ module verify_kv;
       if (held) stalls=stalls+1;
       if (memory_rsp_valid) begin
         if (!pending || cycle<pending_due) $fatal(1,"KV_RETURN_OWNERSHIP");
+        if (memory_rsp_error) memory_errors=memory_errors+1;
+        if (inject_record_error) record_errors=record_errors+1;
         pending=0;
       end
-      if (scratch_rsp_valid && scratch_rsp_ready) scratch_pending=0;
+      if (scratch_rsp_valid && scratch_rsp_ready) begin
+        if (scratch_rsp_error) scratch_errors=scratch_errors+1;
+        scratch_pending=0;
+      end
       if (scratch_req_valid && scratch_req_ready) begin
         if (scratch_pending || scratch_req_slot<3 || scratch_req_slot>4 ||
             scratch_req_index>=HEADS*DIM)
@@ -114,8 +121,12 @@ module verify_kv;
       scratch_req_ready=rng[7:4]>=3;
       memory_rsp_valid=pending && cycle+1>=pending_due && rng[11:8]>=3;
       memory_rsp_rdata=memory_rsp_valid ? pending_data : 512'd0;
+      memory_rsp_error=memory_rsp_valid && inject_memory_error;
+      if (memory_rsp_valid && inject_record_error)
+        memory_rsp_rdata[MODE==0 ? 511 : 264]=1;
       scratch_rsp_valid=scratch_pending && cycle+1>=scratch_due;
       scratch_rsp_rdata=scratch_rsp_valid ? scratch_pending_data : 32'd0;
+      scratch_rsp_error=scratch_rsp_valid && inject_scratch_error;
     end
   end
   task operation(input integer op, input integer epoch_id, input integer layer_id,
@@ -166,13 +177,14 @@ module verify_kv;
     #1; reset_check();
     repeat(3) @(negedge clk); rst_n=1;
     @OPERATIONS@
-    if (writes!=WRITE_COUNT || scratch_reads!=SOURCE_COUNT || compared==0 ||
-        hits==0 || misses<2*RESIDENT || bypasses==0 || commits!=8 || rejected!=3 ||
-        epochs!=4 || stalls==0)
+    if (writes!=WRITE_COUNT || scratch_reads!=SOURCE_COUNT+1 || compared==0 ||
+        hits==0 || misses<2*RESIDENT || bypasses==0 || commits!=8 || rejected!=6 ||
+        epochs!=5 || stalls==0 || scratch_errors!=1 || memory_errors!=1 || record_errors!=1)
       $fatal(1,"KV_COVERAGE writes=%0d scratch=%0d compared=%0d hits=%0d misses=%0d epochs=%0d",
              writes,scratch_reads,compared,hits,misses,epochs);
-    $display("KV_HIERARCHY_PASS mode=%0d residency=%0d seed=@SEED@ dim=%0d writes=%0d reads=%0d compared=%0d hits=%0d misses=%0d bypasses=%0d commits=%0d rejected=%0d epochs=%0d stalls=%0d",
-             MODE,RESIDENT,DIM,writes,reads,compared,hits,misses,bypasses,commits,rejected,epochs,stalls);
+    $display("KV_HIERARCHY_PASS mode=%0d residency=%0d seed=@SEED@ dim=%0d writes=%0d reads=%0d compared=%0d hits=%0d misses=%0d bypasses=%0d commits=%0d rejected=%0d epochs=%0d stalls=%0d scratch_errors=%0d memory_errors=%0d malformed_records=%0d",
+             MODE,RESIDENT,DIM,writes,reads,compared,hits,misses,bypasses,commits,rejected,
+             epochs,stalls,scratch_errors,memory_errors,record_errors);
     $finish;
   end
 endmodule
@@ -192,6 +204,10 @@ def kv_bench(directory, relative, mode=0, resident=3, seed=17, dim=66):
 
     operation(1, 1, error=1, traffic=0)
     operations.append("invalidate();")
+    operations.append("inject_scratch_error=1;")
+    operation(0, 1, error=1, traffic=0)
+    operations.append('if (fault!==1) $fatal(1,"KV_SCRATCH_FAULT_PROPAGATION");')
+    operations.append("inject_scratch_error=0; invalidate();")
     for epoch in (1, 2):
         decoded = {}
         for layer in range(2):
@@ -223,12 +239,17 @@ def kv_bench(directory, relative, mode=0, resident=3, seed=17, dim=66):
                               traffic=1 if scan == 0 else -1)
                     operation(1 + which, epoch, layer, pos, head, index,
                               expected=values[index], traffic=0 if scan else -1)
+        injection = "inject_record_error" if epoch == 1 else "inject_memory_error"
+        operations.append(f"{injection}=1;")
+        operation(1, epoch, index=dim - 1, bypass=1, error=1, traffic=1)
+        operations.append('if (fault!==1) $fatal(1,"KV_BACKING_FAULT_PROPAGATION");')
+        operations.append(f"{injection}=0;")
         # Failed reads may not recover old committed data after invalidation.
         operations.append("invalidate();")
         operation(1, epoch, error=1, traffic=0)
         operations.append("invalidate();")
     # The last invalidation is redundant with the next epoch's clean state.
-    # Four invalidations: initial fault, epoch-1 visibility, its fault, epoch-2 visibility/fault.
+    # Fault recovery invalidates visibility before each subsequent epoch.
     operations.pop()
     paths = {}
     for name, values, width in (("source", sources, 32), ("writes", writes, 545)):
