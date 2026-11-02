@@ -96,6 +96,7 @@ module anvil_q1_ht3_transport (
   wire same_kind = prospective_debt == 0 ||
     command_data[617] == physical_writing;
   wire launch = command_valid && command_ready;
+  wire core_admission = available_sync || fault_sync;
   wire [10:0] next_reserved = {1'b0,reserved_beats} +
     (launch ? {3'b0,requested_responses} : 11'b0) -
     ((enqueue_response && response_source_ready) ? 11'd1 : 11'd0);
@@ -104,7 +105,7 @@ module anvil_q1_ht3_transport (
   anvil_q1_ht3_reset_sync u_ddr_reset(ddr_clk, rst_n, ddr_run_n);
   anvil_q1_ht3_async_fifo #(.WIDTH(618), .DEPTH(16)) u_commands (
     .source_clk(clk), .destination_clk(ddr_clk), .rst_n(rst_n),
-    .source_valid(core_run_n && req_valid && available_sync && !fault_sync),
+    .source_valid(core_run_n && req_valid && core_admission),
     .source_ready(command_source_ready),
     .source_data({req_write,req_address,req_burstcount,req_writedata,req_byteenable}),
     .destination_valid(command_valid), .destination_ready(command_ready),
@@ -117,7 +118,7 @@ module anvil_q1_ht3_transport (
     .destination_ready(core_run_n && rsp_ready),
     .destination_data(response_data), .source_used(response_used)
   );
-  assign req_ready = core_run_n && available_sync && !fault_sync && command_source_ready;
+  assign req_ready = core_run_n && core_admission && command_source_ready;
   assign rsp_valid = core_run_n && response_valid;
   assign rsp_write = rsp_valid && response_data[514];
   assign rsp_last = rsp_valid && response_data[513];

@@ -17,11 +17,14 @@ tensor block, the seven-mode epilogue, bounded tiled online attention,
 image-tagged provisional code storage, packed committed-cache readers/writers,
 a projection containing the physical tensor array, a reserved panel prefetch
 and queued DMA arbiter, and a cache controller connecting provisional storage
-to committed reads and code-preserving copies.
-There is not yet a connected HT3 top/decoder, extension scale/image controller,
-transactional prefix/branch executor or core/DDR transport. These blocks are
-not yet integrated into model execution. A standalone converter does not satisfy
-integrated store-to-subsequent-attention acceptance.
+to committed reads and code-preserving copies. The new decoder now connects
+the actual projection, `u_epilogue`, `u_flash_attn` and pre-provisional FP32
+store converter in the Qwen graph. The new execution controller connects that
+decoder to branch selection, transactional copies, committed-cache reads and
+held external results. Queued core/DDR transport, asynchronous FIFOs and the
+loader are also saved.
+The external HT3 top and extension CSR/descriptor/image-commit controller are
+still absent. These source hierarchies therefore are not a complete accelerator.
 The portable functional suite, synthesis, benchmarks, timing, hardware gates and
 product report have not run. No readiness or performance claim is made here.
 
@@ -245,7 +248,8 @@ stalled: scales are captured by arithmetic on its accepted input edge.
 Positive finite scales, including subnormals, are checked before that group's
 columns are submitted. Table-level padding, overlap, bounds, image ownership
 and projection-0..6-only override admission still belong to the missing image
-controller and decoder.
+controller. The connected decoder now selects each projection's subregion
+and captures the command's extension base/length/image ownership.
 
 Sparse down projection preserves the parent conservative behavior. The
 BF16 threshold predicate may predict a skipped column, but a nonzero encoded
@@ -333,13 +337,16 @@ prefetch-command and metadata-selection edges following the preceding panel
 transfer. Output stalls add their actual held interval. Abort/error cancels
 internal arithmetic, preserves any already held panel, drains the reader,
 prefetch and queued DMA obligations, and only then emits failed completion.
-No integrated model, fusion-transition or end-to-end cycle formula is claimed
-until decoder/top execution is connected.
+The decoder/execution recurrences below compose these local schedules.
+External top/CSR/image initialization remains unimplemented.
 
 ## Standalone fused epilogue
 
 `anvil_q1_ht3_epilogue_fusion` implements the admitted exact external
-epilogue interface and modes 0..6. It accepts a command, validates length,
+epilogue ports and modes 0..6. MAX_VECTOR and HEAD_DIM retain their specified
+defaults and ranges. An internal trailing CHECK_ENCODED parameter is legal
+0/1, default 1; it does not change ports or transaction stages.
+It accepts a command, validates length,
 slots and active RoPE positions, acquires exactly one ascending input stream,
 then executes the selected operations using private retained vectors.
 Input, auxiliary and gamma storage have MAX_VECTOR entries with synchronous
@@ -359,8 +366,15 @@ gates therefore do not request an overflowing exp(-g).
 
 Output replay is ascending. The FP32 stream is narrowed only for
 `out_encoded`; nonfinite active arithmetic and nonfinite narrowing output
-cause an explicit command error instead of usable output. This finite-output
-policy includes BF16/FP16 overflow. Output valid, index, slots and both payload
+cause an explicit command error instead of usable output with the default
+CHECK_ENCODED=1. This default finite-output policy includes BF16/FP16 overflow.
+The decoder uses CHECK_ENCODED=0 because its K and normalized-vector consumers
+take only FP32, and unused encoded output must not introduce an earlier
+quantized-store narrowing boundary. That integration checks every consumed
+encoded query/SwiGLU output itself; native K/V conversion and subsequent
+projection activation conversion check their own narrowing boundaries.
+No consumed nonfinite encoding is allowed, and FP32 nonfinite arithmetic is
+always rejected. Output valid, index, slots and both payload
 encodings hold until transfer. Abort drains any issued arithmetic. If an
 output is already held, it is retained until transfer before the aborted
 command completes with error. Successful `done` pulses after the last output
@@ -700,8 +714,8 @@ Invalid requests return explicit errors instead of issuing out-of-bounds DMA.
 
 ### Required producer, cache and packing integration
 
-The following remains mandatory at the still-missing integrated controller/
-decoder boundary; standalone cache modules do not complete these obligations:
+The following is connected by the decoder/execution source hierarchy.
+Image-commit validation and independent execution evidence remain outstanding:
 
 * K source is FP32 after projection, bias and complete split-half RoPE.
   V source is FP32 after projection and bias. Query encoding alone uses
@@ -763,9 +777,12 @@ or copy. Already displayed/accepted DDR transactions are drained by the
 adapters. A held public read/copy response retains all payload and error
 fields until transfer, even on later abort. Copy response is successful only
 after the writer's actual required responses retire successfully; it is not
-itself permission to advance the prefix. The missing execution controller
-must aggregate every selected node and layer, and publish prefix advancement
-transactionally after all copies succeed.
+itself permission to advance the prefix. The execution controller aggregates
+every selected node and layer and defers public prefix advancement until
+all copies succeed and the corresponding final output transfers.
+While cancellation is asserted, store readiness remains available to drain
+a held converter response; that transfer is not forwarded to provisional
+RAM and cannot establish completeness.
 
 ### Cache-controller no-stall cycle formulas
 
@@ -796,10 +813,10 @@ copy completion. Flush/abort completion waits for *all* previously reserved
 provisional/reader/writer responses; its bound is their remaining documented
 transaction bound plus externally imposed memory/output stalls.
 
-The FP32 producer-to-converter connection under the decoder, scale-table
-lookup ownership, branch selection and full commit/prefix executor remain
-unimplemented. Connected cache adapters alone do not satisfy the mandatory
-store-to-subsequent-attention model transaction.
+The decoder now supplies the FP32 producer-to-converter connection, captured
+per-layer/head scales and format/image tags. The execution controller connects
+branch selection and commit/prefix ownership. These connections are source
+implementation, not store-to-subsequent-attention acceptance evidence.
 
 ## Required integrated datapath
 
@@ -811,12 +828,13 @@ The graph is input norm -> Q/K/V -> Q/K RoPE -> attention -> output projection
 plus residual -> post-attention norm -> gate/up SwiGLU -> down projection
 plus residual, repeated per layer, then final norm and logits.
 
-The tensor is now connected under the actual HT3 projection. That projection,
-the epilogue, attention and cache controller must still be connected
-to the actual decoder/top; their presence alone is not model execution
-or a measured fusion improvement. Private replay costs are included in the
-standalone formulas. Shared-scratch operator-boundary round trips remain
-forbidden.
+The tensor is connected under the actual HT3 projection, which is connected
+to `anvil_q1_ht3_decoder`. That decoder literally instantiates `u_epilogue`
+and `u_flash_attn`; the execution controller connects their cache traffic
+to provisional and committed storage. The external top/image controller
+is still missing. Connected source alone is not model execution or a measured
+fusion improvement. Private replay costs are included in the formulas.
+Shared-scratch operator-boundary round trips remain forbidden.
 
 FlashAttention must preserve the parent attention ports plus KV format/scales,
 GQA, causal/ancestor masking and four-slot ownership. It uses two bounded tiles
@@ -832,6 +850,285 @@ remain unchanged; legacy format 3 stays invalid. INT8 override affects
 projections 0..6, not the inherited LM-head/embedding layouts. AWQ retains
 unsigned code-minus-zero, FP16 scales, BF16 dequantization and lane permutation
 `{lane[0],lane[2:1],2'b00}`.
+
+## Connected Qwen decoder and producer precision
+
+`anvil_q1_ht3_decoder` preserves the parent decoder's ordered port prefix,
+appending extension/image inputs, converted-store ownership/error outputs,
+and K/V scale association ports. TILE_BEATS and FLASH_TILE are trailing
+parameters. `anvil_q1_ht3_layout_pkg` computes legal geometry and all fixed
+scale counts/offsets at elaboration using bounded integer shift/subtract.
+Invalid decoder/execution geometry constructs only a diagnostic branch.
+
+Each command captures the four slots, positions, ancestor masks, query
+format, KV format, sparse policy and committed image/base/length. For each
+layer, actual DDR scale bytes are fetched in `(head,K-before-V)` order into
+four or fewer FP32 scale registers, checked positive finite, and retained
+through all projection, conversion and attention stalls. Weight scale
+subregions are `extension_base + 4*layer*WEIGHT_ENTRIES + projection_offset`;
+the whole weight portion precedes the layer/head K/V entries.
+
+The graph schedule is:
+
+| Producer | Direct epilogue acquisition | Real consumer |
+| --- | --- | --- |
+| Embedding architectural residual | Mode 1, layer-zero input gamma | Q/K/V activation bank |
+| Query projection plus bias | Mode 2, query positions | Encoded query bank and attention |
+| Key projection plus bias | Mode 2, key positions | FP32 key producer bank and store converter |
+| Value projection plus bias | No epilogue/narrowing | FP32 value producer bank and store converter |
+| Attention output projection | Mode 6 with architectural residual and current post-norm gamma | Gate/up activation bank |
+| Up projection | Mode 3, retained gate as `in_data`, new up as `in_aux` | Encoded down-projection activation bank |
+| Down projection | Mode 6 with residual and next layer input gamma, or final gamma | Next Q/K/V bank, or logits |
+| LM head | No epilogue | Held FP32 logits and independently selected argmax |
+
+Gate projection output is retained because the up projection occurs later.
+Query/key projection accumulators enter the epilogue row by row directly
+after bias; they do not round-trip through a pre-RoPE scratch vector.
+Residual/norm projections send raw accumulator and residual directly to mode
+6 with one acquisition. A parallel, identically rounded residual addition
+updates the architectural skip vector needed by the *next* residual
+connection; this is not a scratch readback between residual and normalization.
+Mode 6 privately computes its own residual/statistic/replay. No shared SRAM
+or DDR scratch access occurs at that operator boundary.
+
+Keys remain FP32 after complete key RoPE and values remain FP32 after bias
+until `u_store_converter` accepts them. Those producer banks exist only until
+the newly generated row is converted; neither self/ancestor nor committed
+attention can read them. The only provisional attention source is `u_kv`'s
+code-only bank. Node, layer, column, first/last, format and image travel through
+the actual converter output and are checked on retirement. Head/dimension
+counters select K/V scales without division. Quantized saturation does not
+evaluate an unused BF16/FP16 encoding; consumed native encodings still reject
+nonfinite narrowing.
+
+Decoder arithmetic errors are associated with owned transactions. In
+particular, an old sticky epilogue error cannot spuriously reject a later
+command before that later command can acquire the epilogue. Drain retires
+held projection, epilogue, attention, converter, scalar, lookup and DMA
+responses before returning a failed command.
+
+### Decoder no-stall cycle composition
+
+Use the local arithmetic/epilogue/projection/cache formulas above, with
+pre-edge transfers and post-edge state changes. These recurrences count
+the actual registered controller schedule, including private acquisition
+and replay. They do not assume a zero-latency external memory or descriptor
+source. Let F be a scalar-fetch *setup* edge. A cache hit executes its return
+state at F+2. A miss accepts the scalar-reader command at F+2; if its held
+response retires into the decoder at R, the scalar-fetch return state executes
+at R+2. This includes the FETCH_WORD edge and never substitutes a claimed
+return for a physical beat. The reader and each ordered DMA arbitration level
+use their documented one-register response offsets.
+
+For an initial normalization command accepted at E, synchronous residual
+read is E+1, gamma-fetch setup is E+2, gamma capture on a hit is E+4, and
+first epilogue input acceptance is E+5. With hit gammas, coordinate inputs
+are five edges apart; with a miss, insert exactly the additional return-state
+delay given above. Gamma is registered before the input-accepting edge.
+Apply the mode-1 final-output formula from the *actual* final input edge B.
+
+Projection command acceptance E is followed by synchronous source read.
+The projection preflight makes first activation acceptance E+4; subsequent
+decoder activations are two edges apart, so B=E+2*N+2 for N coordinates with
+no stalls. Compute/prefetch latency then follows the projection recurrence
+from its actual weight/activation transfers. Let O be the decoder's first
+observation edge of a held panel; its first ROW_BEGIN is O+1. The following
+row-to-row intervals include all row states on gamma/bias cache hits:
+
+| Row type | Next ROW_BEGIN minus current ROW_BEGIN |
+| --- | --- |
+| Inactive physical panel row | 2 |
+| Biased Q/K row into RoPE | 11 |
+| Biased V row into producer retention | 10 |
+| Residual/norm O or down row | 11 |
+| Gate retention | 3 |
+| Up row into SwiGLU, including synchronous gate read | 5 |
+| Ordinary logit emitted into executor RAM | 4 |
+| Batch argmax-only logit | 3 |
+
+Each scalar-fetch miss inserts its return-state delay beyond the hit case.
+An epilogue-input stall inserts its actual held edges, including initial
+RoPE divisibility validation if not yet finished. Inactive rows do not issue
+bias, norm, arithmetic or conversion. After row 63, the ROW_NEXT edge is
+followed by panel retirement at the next edge and PROJ_FINISH at the following
+edge. A nonfinal panel returns to observation; an epilogue-producing final
+panel enters E_OUTPUT, with ascending output checks and the epilogue's
+three-edge replay interval. E_FINISH executes one edge after final epilogue
+output transfer. For the rare case of a previously held first epilogue
+output, add the actual blocked interval rather than assuming it transferred
+before the decoder entered E_OUTPUT.
+
+After value projection, STORE_READ synchronously reads the full-FP32 pair;
+STORE_ISSUE is the next edge. For converter request A, store transfer is
+A+21 quantized or A+2 native. The next STORE_READ is one edge after that
+transfer and next request two edges after it. Thus consecutive active
+coordinates have initiation intervals **23 quantized / 4 native** in this
+integrated conservative schedule, not the leaf's 22/3. Each skipped slot
+adds two read/issue-state edges and submits no conversion. First/last coincide
+for singleton packets where applicable in leaf interfaces; top C is at least
+eight. Final store retirement is followed by STORE_SETTLE and then attention
+command, two edges later if the final active slot is slot 3; each trailing
+inactive slot adds two edges. Any store fault is drained, not counted as a
+complete usable row.
+
+Attention command E is followed by query-bank read at E+1 and first query
+acceptance E+2. Inputs are two edges apart, giving B=E+2*H. Compose FlashAttention
+from B using its tile-supply, native/quantized compute and output recurrences,
+with the actual `u_kv` response timing. ATTN_FINISH consumes its real done
+pulse before starting output projection; it does not equate the last output
+with retired fetch obligations.
+
+One ordinary decoder transaction is embedding acquisition, initial norm,
+then seven projections per layer with the five epilogue paths and attention
+shown in the graph table, followed by LM head. Inter-layer input norm and
+final norm are included in down's mode 6, not executed again as separate
+scratch phases. Summing these edge recurrences, actual descriptor/scalar
+service times and externally imposed stalls defines decoder completion.
+Projection MAC cycles, private epilogue replay, transition states, memory
+stalls and external output stalls must remain separately measured for the
+matched HT2/HT3 performance comparison.
+
+## Transactional execution, branch copies and prefix visibility
+
+`anvil_q1_ht3_execution` preserves the parent's ordered execution port prefix
+and adds captured KV format, INT8 override, extension base/length and image
+generation inputs. The real `u_decoder` connects to the real `u_kv`; their
+read requests share an ordered credited DMA arbiter, not an overwritable
+single-current-request counter. Descriptor lookups have a registered owner
+and held response. K and V descriptors are fetched together by layer, with
+the appropriate native/INT4/INT8 lengths and explicit bounds/nonoverlap checks.
+
+An ordinary token must match the current prefix position. Its logits are
+retained in synchronous architectural result RAM until every layer's
+provisional row is copied successfully. Batch admission preserves the
+parent's enabled-speculation/prefix exclusions. `u_tree` calculates ancestor
+positions and masks; `u_branch_select` walks the matching target path using
+the parent root code 4 and earliest matching child. Unselected branches
+never become committed-prefix sources. A mismatching next token uses the
+parent's correction execution with one fresh provisional slot and the
+privately reserved successfully copied prefix.
+
+Each selected node is copied in path/position order across every layer.
+`reserved_length` advances only after that node's final successful layer
+copy. Public prefix validity/length/next-target update only on the final
+ordinary logit transfer or successful batch commit transfer after *all*
+copies. Failure does not publish the reserved prefix. Already acknowledged
+DDR writes need no physical rollback because the older visible prefix does
+not include their positions. Image/new-sequence invalidation clears prefix
+ownership and drains accepted transactions.
+
+Displayed logit/commit channels retain valid and payload during backpressure,
+including later abort/invalidation. A held commit has frozen published
+payload/error separate from the command's later cancellation flag; retirement
+of an annulled held output cannot advance prefix or accepted-token statistics.
+Completion/error pulses occur after output/drain retirement. An ordinary
+fault produces completion/error; a batch fault publishes a held zero-count
+error commit before completion.
+
+### Execution cycle recurrences
+
+Command acceptance E enters MASK_SEND for batches or KV_BEGIN for ordinary
+tokens. Batch tree request is E+1, response first transfers E+3, and KV_BEGIN
+is E+4. Ordinary KV command transfers E+1. KV_SETTLE consumes one edge for
+command-error observation; decoder command is two edges after KV command.
+Use decoder completion/held-response timing above, not a synthetic fixed
+token latency.
+
+A descriptor request captured by the execution lookup arbiter at A is
+displayed externally after A and first accepts at A+1. If the external held
+response is consumed at R, the decoder/cache owner first consumes its
+registered result at R+1. The cache owner has separate key/value SEND/WAIT
+states and cannot overwrite a prior owner under stalls.
+
+After a decoder response, ordinary/correction COPY_SELECT executes next;
+a normal batch instead accepts branch-select request on that next edge,
+consumes its registered result two edges later, then executes COPY_SELECT.
+COPY_SELECT checks the selected node position, COPY_SEND accepts the real
+cache-controller command on the next edge once descriptors are resident.
+Apply the cache-controller copy formula for each layer. The edge retiring
+each successful copy selects the next layer's COPY_SEND, or the next node's
+COPY_SELECT after the final layer. Cache misses insert the two actual
+descriptor transactions. No reserved-prefix increment occurs on command
+admission or DDR request issue.
+
+After the last node, COPY_SELECT either starts correction KV_BEGIN, publishes
+batch COMMIT, or starts ordinary LOGIT_READ. An ordinary LOGIT_READ fetches
+one synchronous word; its LOGIT_EMIT transfer is one edge later. Subsequent
+words transfer every two edges with ready output. Final output transfer
+establishes COMPLETE after that edge, giving the one-cycle done/error pulse.
+COMMIT similarly establishes COMPLETE only on its acknowledged edge.
+The complete execution time is the sum of decoder calls (one plus an
+optional correction), tree/path selection, descriptor service, actual
+selected-node/layer copy times and output transfers. Reset/abort drain time
+is the remaining bound of each owned operation plus real external stalls;
+no finite unconditional DDR-response deadline is invented.
+
+## Queued CDC transport and loader
+
+`anvil_q1_ht3_async_fifo` has power-of-two DEPTH=2..512 and WIDTH=1..2048,
+default 512/515. Separate raw-reset release interlocks, registered Gray
+pointers and two-register pointer synchronizers isolate domains. Storage
+has synchronous source writes/destination reads with no RAM reset. One
+destination response register supports replacement on its retiring edge.
+Source occupancy is decoded from the synchronized Gray read pointer, never
+an unsynchronized counter. The mailbox uses held bundled data and synchronized
+request/acknowledgment toggles for loader ownership and results.
+
+`anvil_q1_ht3_transport` retains the parent ordered ports. A 16-entry command
+FIFO and 512-entry response FIFO replace the single-outstanding command
+mailbox. Before launching a bus request, it reserves the complete expected
+response count; response-FIFO source occupancy plus outstanding/held
+reserved beats cannot exceed 512. A persistent 16-entry physical debt ledger
+records every accepted transaction. Read bursts can be pipelined; writes
+remain single beat. Untagged Avalon responses are ordered, with one response
+kind active at a time. A change between read and write traffic waits until
+older physical debt retires. Simultaneous read and write response assertions,
+unowned responses or credit loss are explicit sticky protocol errors.
+
+The bus stage holds address, type, count, data and byte enables through
+waitrequest. With a resident same-kind successor and credits, accepting its
+predecessor and launching the successor on the same DDR edge keeps request
+valid continuously asserted: there is no controller-inserted PICK/SEND idle
+turnaround. Bandwidth starvation, credit waits and ordering exclusions
+remain real stalls, not advertised zero-stall operation.
+
+Physical debt is power-up initialized and survives logical reset, as in the
+parent transport. Reset flushes logical FIFO/client ownership and zeroes
+outputs; already accepted physical responses drain into the retained ledger
+without returning stale payload to a new epoch. Availability cannot recover
+until old debt is empty. Protocol fault is sticky across logical resets.
+After a fault, already queued logical requests retire as correctly counted
+error responses rather than silently vanishing. The transport also accepts
+remaining upstream drain requests after the synchronized fault, returning
+counted synthetic errors and no new physical traffic; the top's fatal-error
+admission gate must forbid new product commands. This prevents an upstream
+already displayed request from becoming permanently unacknowledgeable.
+Response numeric/bus errors
+remain tagged to their transaction and propagate through the ordered muxes.
+
+For source FIFO acceptance S, two destination synchronizer edges precede a
+synchronous RAM fetch; valid becomes visible after the fetch and first
+transfers on its following destination edge. Phase-dependent clock crossing
+is therefore counted in destination edges, never a fabricated fixed core
+latency. A transport launch at L first offers its bus request after L,
+transferable at L+1. For resident credited traffic, launches and bus
+acceptances can be consecutive DDR edges. Each returned beat enters the
+response FIFO on its actual return edge, then follows the same registered
+CDC/read/transfer recurrence. The explicit physical ledger supports a return
+on the accepting bus edge; it cannot cause a newly computed core response
+to transfer on that edge.
+
+`anvil_q1_ht3_image_loader` preserves the parent DDR-clock loader interface,
+including acquire/grant, held beats, last/error report and release ownership.
+It now uses raw resets at every child interlock and HT3 mailboxes. A granted
+upload invalidates image/prefix before any write. Alignment and the final
+33-bit record bound are checked before DMA. A beat is complete only after
+its real write response; last/report/release are separate ownership states.
+Its cycle recurrence is acquire mailbox -> grant mailbox -> beat mailbox ->
+WRITE/WRITE_WAIT -> result mailbox -> optional REPORT/release mailbox, with
+each mailbox's clock-crossing recurrence above. No local cable/device,
+simulation substitute, software dequantization or private runtime dependency
+is embedded in these RTL modules.
 
 ## Implementation and independent acceptance obligations
 

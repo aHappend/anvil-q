@@ -11,7 +11,11 @@ image-tagged provisional storage and packed DDR cache adapters are implemented
 in owned RTL. The HT3 projection now connects the 256-lane tensor to native,
 AWQ and signed-INT8 weight streams, a reserved prefetch and queued DMA arbiter.
 The HT3 cache controller connects code-only provisional storage to packed
-committed reads and copies. Decoder/top model execution is still missing.
+committed reads and copies. The new decoder connects the Qwen projection,
+fused epilogue, attention and FP32 store converter. The execution controller
+connects branch/correction processing, selected-node copies and transactional
+prefix/result publication. Queued CDC transport and the loader are saved.
+The external top and extension CSR/descriptor/image validation are still missing.
 No top-level substitution or wrapper around the parent's execution datapath
 has been introduced.
 
@@ -46,6 +50,15 @@ has been introduced.
 | `rtl/anvil_q1_ht3_burst_reader.sv` | Held one/two-beat metadata/weight acquisition, including same-edge memory returns |
 | `rtl/anvil_q1_ht3_projection.sv` | Connected physical tensor, native/AWQ/full-FP32 INT8 streams, row/group scale lookup and conservative sparse replay |
 | `rtl/anvil_q1_ht3_kv.sv` | Connected code-only provisional/committed cache ownership, selected-row copies and complete response drains |
+| `rtl/anvil_q1_ht3_01_layout_pkg.sv` | Elaboration-only geometry/group/scale-count/offset functions without divide/modulo operators |
+| `rtl/anvil_q1_ht3_decoder.sv` | Actual Qwen graph, direct projection epilogues, FP32 K/V producers, captured layer/head scales and pre-provisional conversion |
+| `rtl/anvil_q1_ht3_tree_mask.sv` | Registered four-node ancestor/position classification with inherited root-parent encoding |
+| `rtl/anvil_q1_ht3_spec_verifier.sv` | Hardware matching-target path selection and correction-token decision |
+| `rtl/anvil_q1_ht3_execution.sv` | Connected decoder/cache, captured image/format, selected-layer copies, private reservation and held prefix/result publication |
+| `rtl/anvil_q1_ht3_async_fifo.sv` | Synchronous dual-clock RAM, registered Gray ownership and credited command/response crossings |
+| `rtl/anvil_q1_ht3_mailbox.sv` | Held bundled-data request/acknowledgment crossing for loader ownership and responses |
+| `rtl/anvil_q1_ht3_transport.sv` | Queued Avalon issue, full-response reservations and reset-surviving physical debt drain |
+| `rtl/anvil_q1_ht3_image_loader.sv` | Inherited DDR-clock loader ABI using HT3 mailboxes, real write responses and ownership release |
 
 The FP helper structure and add alignment follow parent prior art, with a
 distinct HT3 namespace; no reference file is modified. HT3 multiply has the
@@ -84,36 +97,22 @@ converter contains no provisional FP32 cache and no dequantization path.
 
 ## Required integration still to implement
 
-1. Independently validate the implemented arithmetic/transcendental leaves,
-   standalone epilogue, tensor recurrence and dequantization; Designer has not
-   run functional simulation or synthesis.
-2. Connect the implemented projection under the actual decoder. Its
-   `u_tensor_array` already has the physical 256 lanes, full-FP32 INT8 weights,
-   AWQ narrowing and conservative sparse replay. Independent structural and
-   behavioral accounting remain pending.
-3. Build the real decoder graph using the implemented epilogue as `u_epilogue`.
-   The epilogue currently uses conservative serial SIMD schedules; demonstrate
-   required measured transition-cycle reduction and optimize those owned
-   schedules if necessary before claiming the performance requirement.
-4. Integrate the implemented `anvil_q1_ht3_flash_attn` as `u_flash_attn`, with
-   its native/quantized cache adapters and image/scale ownership.
-5. Connect full-FP32 post-RoPE K and post-projection/bias V to the implemented
-   converter. The new cache controller connects provisional ownership, store
-   completeness and packed committed reads/writes; connect its code stores and
-   captured image/scales to the decoder and transactional executor.
-   Do not retain a hidden FP32 provisional
-   alternative or requantize during commit.
-6. Implement extension CSR/image validation and immutable captured scale
+1. Implement extension CSR/image validation and immutable captured scale
    ownership, packed weight/cache descriptor lengths, bounds/overlap checks,
    padding validation, idle-only mutation and image/prefix invalidation.
-7. Integrate transactional batch/tree execution, commit/error drains,
-   source-compatible top ports/parameters, CDC-safe transport, ping-pong
-   prefetch credits and first-legal-opportunity bus issue.
-8. Document the complete integrated no-stall cycle formulas before Verifier
-   freezes temporal assertions. Current formulas cover implemented leaves,
-   conversion, tensor packets and standalone epilogue, not the missing
-   top/decoder schedules. Projection, queued DMA, cache controller, attention
-   and packed adapters now have their local transaction recurrences in SPEC.
+2. Implement the exact ordered external `anvil_q1_ht3_top` ports/parameters
+   and legacy control/status behavior, connecting the saved execution,
+   descriptor/image controller, loader, queued DMA and transport hierarchies.
+   Resolve native cache-format compatibility consistently at that top boundary.
+3. Finish top/CSR/image initialization cycle documentation. SPEC now includes
+   decoder acquisition, fused rows, integrated conversion, execution,
+   descriptor arbitration, CDC and loader cycle recurrences.
+4. Hand the completed sources to independent Verifier immediately. All
+   numerical/protocol, quantized-store-to-later-attention, parameter,
+   compatibility, benchmark/performance, mutation and synthesis obligations
+   remain unperformed. The current epilogue uses conservative serial SIMD
+   schedules; >60% measured transition-cycle reduction remains required,
+   not inferred from module naming or the removal of scratch accesses.
 
 ## Tiled attention and code-preserving cache
 
@@ -142,14 +141,16 @@ reader extracts codes from real returned DDR bytes and retains layer/head scales
 with its request. Attention performs the actual dequantization and reports
 overflow independently of successful finite write saturation.
 
-The new cache controller selects provisional/committed reads and copies a
+The cache controller selects provisional/committed reads and copies a
 selected complete row through the actual packed writer. It checks captured
 image/format ownership and retains supplied layer/head scales with read
-responses. It neither owns the missing extension-scale table nor advances
-transactional prefix validity. The branch/prefix executor, decoder FP32
-producer and converter-store wiring remain absent. These connected cache
-modules therefore do not demonstrate integrated store-to-subsequent-attention
-model execution and are not a functional or performance acceptance result.
+responses. The decoder reads actual extension-scale DDR bytes at layer begin,
+checks them and retains head/K/V association through conversion and reads.
+The execution controller advances private reservation only after all layers
+of a selected node copy successfully, and public prefix only after every
+copy and the final corresponding output transfer. It preserves the inherited
+correction traversal. These connections do not constitute executed
+store-to-subsequent-attention evidence or a functional/performance verdict.
 
 ## Projection and DMA reservations
 
@@ -174,9 +175,12 @@ with its owner and error. It can issue a next client request immediately when
 external ready and reservation credit permit, including same-edge final
 response retirement when full. It does not insert a PICK/SEND turnaround
 sequence or use a single overwritable response-length counter for multiple
-outstanding requests. This property is conditional on the eventual core/DDR
-transport supply: that transport is still missing, so no physical DMA
-turnaround, CDC, frequency or throughput result is claimed.
+outstanding requests. The saved core/DDR transport now uses a command FIFO,
+response FIFO, complete-return reservation and persistent physical debt
+ledger. It replaces its bus-stage request on the accepting edge for resident,
+credited same-kind traffic. No physical DMA turnaround, CDC, frequency or
+throughput result is claimed; external top wiring and independent checks
+are still pending.
 
 Sparse down projection avoids a real weight read only for a genuinely zero
 activation column and a finite committed image. Nonzero threshold predictions
@@ -208,8 +212,8 @@ tag pipelines advance through input bubbles and match both arithmetic
 latencies. Forwarding supplies a completed context on its same reuse edge.
 Reduction occurs only after the last in-flight product/accumulation retires.
 This sustains the architectural one-column-per-edge admission interval, but
-actual model utilization depends on decoder/top and core/DDR transport
-integration still missing.
+actual model utilization depends on the full top/image integration and
+independent execution/performance measurements still missing.
 
 ## Planned memory and streaming contracts
 
