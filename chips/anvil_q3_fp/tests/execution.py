@@ -8,6 +8,7 @@ import subprocess
 import time
 import sys
 import os
+import threading
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +39,10 @@ class Evidence:
         self.deadline = min(start + CHECK_BUDGET_S,
                             float(os.environ.get(DEADLINE_ENV, start + CHECK_BUDGET_S)))
         self._simulators = {}
+        self._lock = threading.RLock()
+        self._build_locks = {}
+        self._integration_runs = {}
+        self._integration_locks = {}
         base = ROOT / "evidence" / ("preparation" if preparation else "")
         self.path = base / f"{suite}-{timestamp()}"
         self.path.mkdir(parents=True, exist_ok=False)
@@ -50,7 +55,8 @@ class Evidence:
         self.write()
 
     def write(self):
-        (self.path / "receipt.json").write_text(json.dumps(self.record, indent=2) + "\n")
+        with self._lock:
+            (self.path / "receipt.json").write_text(json.dumps(self.record, indent=2) + "\n")
 
     def scope(self, name):
         return EvidenceScope(self, name)
@@ -61,16 +67,17 @@ class Evidence:
             raise TimeoutError("Whole-check 2700-second budget exhausted")
         timeout = min(timeout, COMMAND_BUDGET_S, remaining)
         directory = Path(cwd or ROOT)
-        number = len(self.record["commands"])
-        stdout = self.path / f"command-{number:03d}.stdout.txt"
-        stderr = self.path / f"command-{number:03d}.stderr.txt"
-        command = {
-            "argv": [str(arg) for arg in argv], "cwd": relative(directory),
-            "started_at": timestamp(), "timeout_s": timeout,
-            "stdout": relative(stdout), "stderr": relative(stderr), "timed_out": False,
-        }
-        self.record["commands"].append(command)
-        self.write()
+        with self._lock:
+            number = len(self.record["commands"])
+            stdout = self.path / f"command-{number:03d}.stdout.txt"
+            stderr = self.path / f"command-{number:03d}.stderr.txt"
+            command = {
+                "argv": [str(arg) for arg in argv], "cwd": relative(directory),
+                "started_at": timestamp(), "timeout_s": timeout,
+                "stdout": relative(stdout), "stderr": relative(stderr), "timed_out": False,
+            }
+            self.record["commands"].append(command)
+            self.write()
         start = time.monotonic()
         try:
             with stdout.open("w") as out, stderr.open("w") as err:
@@ -101,9 +108,10 @@ class Evidence:
             command["launch_error"] = str(error)
             raise
         finally:
-            command["ended_at"] = timestamp()
-            command["elapsed_s"] = time.monotonic() - start
-            self.write()
+            with self._lock:
+                command["ended_at"] = timestamp()
+                command["elapsed_s"] = time.monotonic() - start
+                self.write()
         if command["timed_out"] or ((command["exit_code"] == 0) == expect_failure):
             raise AssertionError(f"Tool execution failed: {relative(stdout)}, {relative(stderr)}")
         return stdout
@@ -134,7 +142,11 @@ class EvidenceScope:
         self.path = parent.path / name
         self.path.mkdir()
         self.run = parent.run
+        self._lock = parent._lock
         self._simulators = parent._simulators
+        self._build_locks = parent._build_locks
+        self._integration_runs = parent._integration_runs
+        self._integration_locks = parent._integration_locks
         self.scope = lambda child: EvidenceScope(self, child)
 
 
@@ -172,8 +184,15 @@ def verilator(evidence, name, testbench, rtl, files=None):
 
 def compiled(evidence, name, testbench, rtl):
     """Build once per elaboration; each fixture still runs in a fresh process."""
-    cache = getattr(evidence, "_simulators", {})
     identity = hashlib.sha256((testbench + "\n" + "\n".join(rtl)).encode()).hexdigest()
+    with evidence._lock:
+        lock = evidence._build_locks.setdefault(identity, threading.Lock())
+    with lock:
+        return _compile(evidence, name, testbench, rtl, identity)
+
+
+def _compile(evidence, name, testbench, rtl, identity):
+    cache = evidence._simulators
     if identity in cache:
         return cache[identity]
     directory = evidence.path / f"build-{name}-{identity[:12]}"

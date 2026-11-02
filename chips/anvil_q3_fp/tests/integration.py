@@ -2,10 +2,30 @@
 
 import json
 import re
+import inspect
+import threading
+from functools import wraps
 
 from execution import ROOT, compiled, icarus, relative, run_compiled
 from model import Fixture, FP64Fixture
 from metrics import compare
+
+
+def reuse_current_execution(function):
+    """Reuse only an already checked identical fixture within this invocation."""
+    signature = inspect.signature(function)
+    @wraps(function)
+    def checked(evidence, *args, **kwargs):
+        bound = signature.bind(evidence, *args, **kwargs)
+        bound.apply_defaults()
+        identity = tuple((name, value) for name, value in bound.arguments.items() if name != "evidence")
+        with evidence._lock:
+            lock = evidence._integration_locks.setdefault(identity, threading.Lock())
+        with lock:
+            if identity not in evidence._integration_runs:
+                evidence._integration_runs[identity] = function(evidence, *args, **kwargs)
+            return evidence._integration_runs[identity]
+    return checked
 
 
 def key_bits(key):
@@ -13,6 +33,7 @@ def key_bits(key):
     return (kind << 99) | (layer << 67) | (projection << 64) | (row << 32) | column
 
 
+@reuse_current_execution
 def smoke(evidence, seed=17, simulator="verilator", banks=1, fmt="bf16", awq=False, tokens=1,
           mode=0, fp8=0, affine=0, layers=1, heads=8, head_dim=2,
           intermediate=24, vocab=3, queue_depth=3, tile_k=8, tile_rows=3,
