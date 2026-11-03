@@ -73,11 +73,27 @@ valid stage is blocked. With no stall, II=1 and result latency follows the exact
 edge table in SPEC.md. Throughput is 64 products per advancing input cycle,
 not a claim of 64 delivered MACs per wall-clock cycle under DDR/consumer stalls.
 
-## Specialized FP32 multiplication
+## Range-derived FP32 addition and specialized multiplication
 
-The shared binary primitive uses elaboration-time branches: addition retains its
-576-bit exact signed grid and original pipeline, while multiplication carries a
-48-bit exact significand product with a signed exponent. A single finite product
+The shared binary primitive uses elaboration-time branches. Addition uses a
+279-bit exact signed grid in units of 2^-149. A finite FP32 operand is its
+24-bit significand shifted by exponent-field-minus-one for normals, or by zero
+for subnormals. The largest finite operand occupies bits 0..276; adding two
+same-sign maximum operands requires bit 277, with bit 278 reserved for sign.
+Coarse/fine placement, signed sum, absolute value and normalization all retain
+this complete grid, including every cancellation tail.
+
+For leading index h, a normal result has h>=23, biased exponent h-22 and
+rounding distance h-23. Subnormal results retain the grid integer directly:
+there are no fractional bits below the smallest FP32 subnormal, so their guard
+and sticky bits are zero. Normal results use all discarded bits for final RNE.
+The existing special-value metadata and packing preserve flags, signed zeros
+and canonical NaNs. Stage 0 captures operands; stages 1..8 retain significands,
+coarse placement, fine signed placement, sum, magnitude, leading index, rounding
+preparation and final packing respectively.
+
+Multiplication carries a 48-bit exact significand product with a signed exponent.
+A single finite product
 does not need wide signed alignment or cancellation logic. Its leading-bit
 selection, normalization, coarse/fine gradual-underflow shifts, rounding
 preparation, packing and final output are separate registered stages. Sticky bits
@@ -89,8 +105,10 @@ Both branches retain nine register stages, II=1 and the same global backpressure
 freeze. No ports, consumers or arithmetic operation boundaries change. The tensor
 still retains its complete 544-bit exact cancellation range.
 
-This repair addresses unnecessary wide multiplication machinery after a native
-fitter timeout. That timeout did not produce a timing netlist or critical path;
+These repairs remove unnecessary wide multiplication and addition machinery after
+native periphery-planning timeouts. The latest retained mapping estimate was
+332619 ALMs, 256811 registers and 661 DSPs before the addition repair; these
+are not fitted resources. The timeout did not produce a timing netlist or critical path;
 it is not a measured setup violation. Resource savings and 100 MHz timing remain
 unmeasured for the repaired design and require fresh native results. Existing
 pre-repair behavior and failed native evidence remain historical evidence, not
