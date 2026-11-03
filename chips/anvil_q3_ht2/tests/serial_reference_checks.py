@@ -41,6 +41,9 @@ def main():
             if [item.position for item in chain] != [1, 2, 3, 4] or (
                     [item.position for item in branch] != [1, 1, 2, 2]):
                 raise AssertionError("causal tree positions")
+            if len({item.logits for item in (prefix, *chain, *branch)}) <= 1 or (
+                    not any(record for key, record in prefix.records.items() if key[1] == 0)):
+                raise AssertionError("fixture has constant logits or entirely zero keys")
             for item in (prefix, *chain, *branch):
                 if len(item.records) != 36 * 2 * 2 or not any(item.records.values()) or (
                         any(not any(item.projections[layer * 7 + projection])
