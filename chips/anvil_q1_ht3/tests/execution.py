@@ -85,6 +85,11 @@ def failure_details(exc):
 
 
 def execute(argv, output, stem, version_argv, root=ROOT):
+    requested_argv = list(argv)
+    if root == ROOT and argv[0].startswith("evidence/"):
+        from campaign import artifact
+        executable = artifact(ROOT/argv[0])
+        argv = [relative(executable), *argv[1:]]
     stdout = output / f"{stem}.stdout.txt"
     stderr = output / f"{stem}.stderr.txt"
     receipt = output / f"{stem}.receipt.json"
@@ -97,6 +102,11 @@ def execute(argv, output, stem, version_argv, root=ROOT):
                   stdout=relative(stdout), stderr=relative(stderr),
                   timeout=limit, tool_version_argv=version_argv, launched=False,
                   budget_exhausted=False)
+    if argv != requested_argv:
+        record["requested_argv"] = requested_argv
+        record["executable_relocation"] = dict(
+            original=requested_argv[0], restored=argv[0],
+            sha256=hashlib.sha256(executable.read_bytes()).hexdigest())
     try:
         version = subprocess.run(version_argv, cwd=root, capture_output=True,
                                  text=True, timeout=min(INTERPRETED_SECONDS, remaining()))

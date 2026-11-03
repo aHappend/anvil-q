@@ -405,7 +405,14 @@ def run(output):
     retained_receipt.write_text("{}")
     reuse = output / f"synthetic-reused-case-{uuid.uuid4().hex[:12]}"
     reuse.mkdir()
-    with patch.object(Path, "glob", return_value=[retained_receipt]), \
+    original_glob = Path.glob
+
+    def retained_candidates(parent, pattern):
+        if parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
+            return iter([retained_receipt])
+        return original_glob(parent, pattern)
+
+    with patch.object(Path, "glob", retained_candidates), \
             patch("run_compatibility.validated_execution", return_value=("checked", {"synthetic": "hash"})), \
             patch("run_compatibility.remaining", side_effect=AssertionError("reuse needs no cold allocation")), \
             patch("run_compatibility.execute", side_effect=AssertionError("must not launch")):

@@ -58,10 +58,16 @@ def regression(output):
         restored_paths.append(relative(restored))
         assertions += 1
     restored_executable = campaign.artifact(executable)
-    observed = execute([relative(restored_executable)], directory, "restored-execution",
+    observed = execute([relative(executable)], directory, "restored-execution",
                        ["python3", "--version"])
     if observed != "synthetic lifecycle 17\n":
         raise AssertionError("restored executable bytes/mode changed")
+    assertions += 1
+    executed = json.loads((directory/"restored-execution.receipt.json").read_text())
+    if (executed["argv"] != [relative(restored_executable)]
+            or executed.get("requested_argv") != [relative(executable)]
+            or executed["executable_relocation"]["sha256"] != bindings[relative(executable)]):
+        raise AssertionError("actual relocated argv and original executable identity were lost")
     assertions += 1
     if campaign.canonical_argv([relative(restored_executable)]) != [relative(executable)]:
         raise AssertionError("relocated argv lost original artifact identity")
@@ -115,6 +121,29 @@ def regression(output):
             or malformed_record["files"][0]["sha256"] != digest(malformed)):
         raise AssertionError("malformed metadata lost its actual bytes or dependency error")
     assertions += 1
+    source = directory / "synthetic-source.py"
+    source.write_text("synthetic original source")
+    original_sha = digest(source)
+    campaign.preserve([source], "synthetic original source snapshot")
+    source.write_text("synthetic revised source")
+    source_receipt = directory / "source.receipt.json"
+    source_receipt.write_text(json.dumps(dict(source_sha256={relative(source): original_sha})))
+    source_manifest = campaign.preserve([source_receipt], "synthetic historical source closure")
+    source_record = json.loads(source_manifest.read_text())
+    if (not source_record["complete"] or source_record["unavailable_source_versions"]
+            or not any(r["path"] == relative(source) and r["sha256"] == original_sha
+                       for r in source_record["source_snapshots"])):
+        raise AssertionError("available exact historical source bytes were lost")
+    assertions += 1
+    unavailable_receipt = directory / "unavailable-source.receipt.json"
+    unavailable_receipt.write_text(json.dumps(dict(
+        source_sha256={relative(source): "0" * 64})))
+    unavailable_manifest = campaign.preserve([unavailable_receipt], "synthetic absent source")
+    unavailable = json.loads(unavailable_manifest.read_text())
+    if unavailable["complete"] or unavailable["unavailable_source_versions"] != [
+            dict(path=relative(source), sha256="0" * 64)]:
+        raise AssertionError("unavailable historical source bytes were manufactured")
+    assertions += 1
     row = dict(id="compact-mapped", status="not_started",
                failure_kind="execution_budget_unstarted", available_s=598.39, minimum_s=1800)
     budget = budget_summary([dict(id="synthesis", jobs=[row]),
@@ -144,6 +173,9 @@ def main():
         result = dict(status="passed" if record["complete"] else "incomplete",
                       manifest=relative(manifest), files=len(record["files"]),
                       missing_dependencies=record["missing_dependencies"],
+                      conflicting_dependencies=record["conflicting_dependencies"],
+                      unavailable_source_versions=record["unavailable_source_versions"],
+                      dependency_parse_errors=record["dependency_parse_errors"],
                       scope="actual retained bytes only; not independent rescoring or acceptance")
     else:
         result = regression(output)

@@ -14,7 +14,7 @@ from execution import ROOT, relative, timestamp
 STORE = ROOT / "evidence/campaign"
 _catalog = {}
 _restored = {}
-_loaded = False
+_known_manifests = set()
 _verified = {}
 _PROTECTED = {".vulcan", ".git", ".tooling", "VULCAN"}
 
@@ -47,21 +47,20 @@ def _read_manifest(path):
     manifest = json.loads(content)
     if manifest.get("schema") != 1:
         raise ValueError(f"unsupported campaign manifest: {relative(path)}")
-    for row in manifest["files"]:
+    for row in [*manifest["files"], *manifest.get("source_snapshots", [])]:
         if logical(row["path"]) != row["path"]:
             raise ValueError("noncanonical campaign dependency")
         object_path = ROOT / row["archive"]
         object_path.resolve().relative_to(STORE.resolve())
         _catalog.setdefault(row["path"], []).append((path, row))
+    _known_manifests.add(path)
     return manifest
 
 
 def _load():
-    global _loaded
-    if not _loaded:
-        for path in sorted(STORE.glob("campaign-*/manifest-*.json")):
+    for path in sorted(STORE.glob("campaign-*/manifest-*.json")):
+        if path not in _known_manifests:
             _read_manifest(path)
-        _loaded = True
 
 
 def _verify_archive(row):
@@ -196,6 +195,10 @@ def dependencies(paths):
                 if value.endswith("/checkpoint"):
                     pending.extend(ROOT / (value + suffix)
                                    for suffix in (".rtl.bin", ".host.bin"))
+                    continue
+                if (not candidate.is_file() and not candidate.suffix
+                        and "/compile-obj/" not in value
+                        and value not in expected and value not in source_versions):
                     continue
                 pending.append(candidate)
     conflicts = [dict(path=name, recorded_sha256=sorted(sha), actual_sha256=_sha(found[name]))
