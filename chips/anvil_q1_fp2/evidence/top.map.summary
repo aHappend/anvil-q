@@ -1,10 +1,10 @@
-Analysis & Synthesis Status : Successful - Tue Nov  3 04:41:30 2026
+Analysis & Synthesis Status : Successful - Tue Nov  3 06:37:07 2026
 Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
 Revision Name : top
 Top-level Entity Name : anvil_q1_fp2_top
 Family : Arria 10
 Logic utilization (in ALMs) : N/A
-Total registers : 256811
+Total registers : 226987
 Total pins : 0
 Total virtual pins : 1,598
 Total block memory bits : 729,836
