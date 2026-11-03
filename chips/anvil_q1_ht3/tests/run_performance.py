@@ -133,7 +133,9 @@ def performance_case(output, name, binary, binding, fmt, seed):
     with (directory/"case.json").open("x") as out:
         json.dump(record, out, indent=2)
     observation.update(image=json.loads((directory/"image-manifest.json").read_text())["sha256"],
-                       vectors=digest(vectors), case=relative(directory/"case.json"), reused=reused)
+                       vectors=digest(vectors), case=relative(directory/"case.json"), reused=reused,
+                       artifact_sha256={**artifacts, relative(directory/"case.json"):
+                                        digest(directory/"case.json")})
     return observation
 
 
