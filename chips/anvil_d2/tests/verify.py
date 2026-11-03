@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reference import bf16_to_q16, committed_block, dequantize, quantize_group
+from transformer_reference import Geometry, Target, WeightImage, argmax
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -174,6 +175,86 @@ def run_public_smoke(experiment):
         "raw_summary": output.strip(),
         "scope": "bounded protocol smoke, not nonzero transformer numerical coverage",
     }
+    experiment.save()
+
+
+def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3)):
+    directory = experiment.directory.relative_to(ROOT)
+    image = WeightImage(geometry, seed)
+    if any(mode & 1 for mode in modes):
+        image.add_mtp()
+    words = image.external_words(True)
+    fixture_directory = experiment.directory / "checkpoint-images"
+    fixture_directory.mkdir()
+    image_path = fixture_directory / "target-weights.txt"
+    absorption_path = experiment.directory / "absorption-expected.txt"
+    expected_path = experiment.directory / "cache-expected.txt"
+    commands_path = experiment.directory / "commands.txt"
+    image_path.write_text("".join(f"{address:026x} {word:08x}\n"
+                                 for address, word in sorted(words.items())))
+    absorption_path.write_text("".join(f"{address:026x} {word:08x}\n" for address, word in
+                                      sorted(image.expected_absorption.items())))
+    commands = []
+    expected = {}
+    for mode in modes:
+        target = Target(image, bool(mode & 2))
+        for token, position, fresh, phase, generate, limit in (
+                (1, 0, 1, 0, 0, 3), (2, 1, 0, 0, 0, 3),
+                (3, 2, 0, 1, 1, 3), (4, 6, 0, 1, 1, 1)):
+            logits = target.process(token)
+            outputs = logits
+            if generate:
+                outputs = []
+                for _ in range(limit):
+                    predicted = argmax(logits)
+                    outputs.append(predicted)
+                    logits = target.process(predicted)
+            command = len(commands)+1
+            # Select an EOS absent from this bounded continuation when possible.
+            eos = next((token_id for token_id in range(geometry.vocab-1, -1, -1)
+                        if token_id not in outputs), geometry.vocab-1) if generate else (
+                            geometry.vocab-1)
+            if generate and eos in outputs:
+                raise AssertionError("bounded model fixture must provide an unused EOS")
+            commands.append((command, mode, generate, token, position, fresh, phase,
+                             limit, eos, len(outputs), 0, outputs))
+            expected.update({(command << 103) | address: word
+                             for address, word in target.expected_cache_words().items()})
+    expected_path.write_text("".join(f"{address:034x} {word:08x}\n"
+                                    for address, word in sorted(expected.items())))
+    with commands_path.open("w") as stream:
+        for *header, outputs in commands:
+            stream.write(" ".join(map(str, header)) + "\n")
+            stream.writelines(f"{output & 0xFFFFFFFF:08x}\n" for output in outputs)
+    parameters = {
+        "HIDDEN": geometry.hidden, "LAYERS": geometry.layers, "HEADS": geometry.heads,
+        "RANK": geometry.rank, "NOPE": geometry.nope, "ROPE": geometry.rope,
+        "VALUE": geometry.value, "EXPERTS": geometry.experts, "TOPK": geometry.top_k,
+        "FIRST_DENSE": geometry.first_dense, "VOCAB": geometry.vocab,
+        "CAPACITY": geometry.capacity, "BANKS": geometry.banks, "QUEUE": geometry.queue,
+    }
+    sources = [str(p.relative_to(ROOT)) for pattern in (
+        "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
+    obj = directory / "target-obj"
+    experiment.execute(["verilator", "--version"], "verilator-version")
+    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                        "--top-module", "top_model_tb", "--Mdir", str(obj),
+                        "-o", "target-sim", *(f"-G{name}={value}" for name, value in parameters.items()),
+                        *sources, "tests/top_model_tb.sv"], "target-compile", 1200)
+    experiment.receipt["results"]["target-fixtures"] = {
+        "seed": seed, "geometry": geometry.__dict__, "modes": list(modes),
+        "commands": len(commands),
+        "oracle": "independent arbitrary-precision unabsorbed equations and exact fixed-point boundaries",
+        "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
+    }
+    experiment.save()
+    output = experiment.execute([str(obj / "target-sim"),
+                                 "+image=" + str(image_path.relative_to(ROOT)),
+                                 "+expected=" + str(expected_path.relative_to(ROOT)),
+                                 "+absorption=" + str(absorption_path.relative_to(ROOT)),
+                                 "+commands=" + str(commands_path.relative_to(ROOT))],
+                                "target-simulation", 600)
+    experiment.receipt["results"]["target-model"] = {"raw_summary": output.strip()}
     experiment.save()
 
 
@@ -404,7 +485,8 @@ def run_service_mutant(experiment, defect):
     run_service_probe(experiment, str(copied.relative_to(ROOT)), expect_mismatch=True)
 
 
-def run_verdict_probe(experiment, simulator):
+def run_verdict_probe(experiment, simulator, rtl="rtl/anvil_d2_mtp_verdict.sv",
+                      expect_mismatch=False):
     directory = experiment.directory.relative_to(ROOT)
     vectors = experiment.directory / "verdict-vectors.txt"
     cases = 0
@@ -435,7 +517,7 @@ def run_verdict_probe(experiment, simulator):
         experiment.execute(["iverilog", "-V"], "iverilog-version")
         binary = directory / "verdict.vvp"
         experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "verdict_tb", "-o",
-                            str(binary), "rtl/anvil_d2_mtp_verdict.sv", "tests/verdict_tb.sv"],
+                            str(binary), rtl, "tests/verdict_tb.sv"],
                            "verdict-compile")
         argv = ["vvp", str(binary)]
     else:
@@ -443,11 +525,25 @@ def run_verdict_probe(experiment, simulator):
         obj = directory / "verdict-obj"
         experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
                             "--top-module", "verdict_tb", "--Mdir", str(obj),
-                            "-o", "verdict-sim", "rtl/anvil_d2_mtp_verdict.sv",
+                            "-o", "verdict-sim", rtl,
                             "tests/verdict_tb.sv"], "verdict-compile", 1200)
         argv = [str(obj / "verdict-sim")]
-    output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
-                                "verdict-simulation")
+    try:
+        output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
+                                    "verdict-simulation")
+    except RuntimeError:
+        command = experiment.receipt["commands"][-1]
+        output = (ROOT / command["stdout"]).read_text() + (ROOT / command["stderr"]).read_text()
+        if not expect_mismatch or command.get("timed_out") or "VERDICT_MISMATCH" not in output:
+            raise
+        experiment.receipt["results"]["mutant"] = {
+            "rejected_by": "normal committed-block numerical/protocol scoreboard",
+            "raw_diagnostic": output.strip(),
+        }
+        experiment.save()
+        return
+    if expect_mismatch:
+        raise AssertionError("acceptance mutant survived normal committed-block scoreboard")
     experiment.receipt["results"]["verdict"] = {
         "cases": cases, "simulator": simulator, "raw_summary": output.strip(),
         "scope": "public-pin block publication unit; not native MTP-head prefix coverage",
@@ -455,12 +551,35 @@ def run_verdict_probe(experiment, simulator):
     experiment.save()
 
 
+def run_acceptance_mutant(experiment):
+    original = (ROOT / "rtl/anvil_d2_mtp_verdict.sv").read_text()
+    before, after = "else prefix_matches=0;", "else prefix_matches=1;"
+    if original.count(before) != 1:
+        raise AssertionError("acceptance mutation anchor must occur exactly once")
+    mutated = original.replace(before, after)
+    copied = experiment.directory / "anvil_d2_mtp_verdict.sv"
+    copied.write_text(mutated)
+    (experiment.directory / "mutant.diff").write_text("".join(difflib.unified_diff(
+        original.splitlines(True), mutated.splitlines(True),
+        fromfile="rtl/anvil_d2_mtp_verdict.sv", tofile="disposable/anvil_d2_mtp_verdict.sv")))
+    experiment.receipt["mutation"] = {
+        "defect": "acceptance-past-mismatch",
+        "original_sha256": hashlib.sha256(original.encode()).hexdigest(),
+        "mutated_sha256": hashlib.sha256(mutated.encode()).hexdigest(),
+        "diff": str((experiment.directory / "mutant.diff").relative_to(ROOT)),
+    }
+    experiment.save()
+    run_verdict_probe(experiment, "verilator", str(copied.relative_to(ROOT)),
+                      expect_mismatch=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", choices=["dequant", "quantizer", "bf16", "public-smoke",
                                          "synthesis-probe", "fp8-bias", "bf16-tie",
                                          "fp8-service", "byte-order", "scale-group",
-                                         "scale-invalidation", "verdict"],
+                                         "scale-invalidation", "verdict",
+                                         "acceptance-past-mismatch", "oracle", "target-model"],
                         required=True)
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
@@ -478,6 +597,8 @@ def main():
             run_dequant(experiment, args.simulator)
         elif args.probe == "public-smoke":
             run_public_smoke(experiment)
+        elif args.probe == "target-model":
+            run_target_model(experiment)
         elif args.probe == "synthesis-probe":
             run_synthesis_probe(experiment)
         elif args.probe in ("fp8-bias", "bf16-tie"):
@@ -488,6 +609,11 @@ def main():
             run_service_mutant(experiment, args.probe)
         elif args.probe == "verdict":
             run_verdict_probe(experiment, args.simulator)
+        elif args.probe == "acceptance-past-mismatch":
+            run_acceptance_mutant(experiment)
+        elif args.probe == "oracle":
+            experiment.execute(["python3", "-m", "unittest", "discover", "-s", "tests",
+                                "-p", "test_reference.py"], "oracle-unit-tests")
         else:
             run_numerical_leaf(experiment, args.probe, args.simulator)
     except Exception as error:
