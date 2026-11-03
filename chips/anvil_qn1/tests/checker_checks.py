@@ -262,3 +262,62 @@ def run_delivery_checker(run):
             "compact_profile1_counts": {
                 name: result[name] for name in ("extra_cycles", "compact_diagnostic", "profile")},
             "rejected_counterexamples": rejected, "cumulative_budget_properties": 6}
+
+
+def run_cache_failure_checker(run):
+    """Fault-inject cache reads only; this does not stand in for RTL execution."""
+    from unittest.mock import patch
+    import component_cache
+
+    stem = "memory-matrix-case00"
+    recovered = []
+    for error in (FileNotFoundError("injected missing receipt"),
+                  ValueError("injected malformed receipt")):
+        parent = SimpleNamespace(components=[], calls=0)
+
+        def execute(stem, operation):
+            parent.calls += 1
+            result = operation(parent)
+            parent.components.append({"status": "passed"})
+            return result
+
+        parent.component = execute
+        with patch.object(component_cache, "assess", side_effect=error):
+            result = component_cache.component(
+                parent, stem, lambda child: {"checker_only": True},
+                inputs=(), parameters={}, tools=(),
+                validate=lambda result: None)
+        if parent.calls != 1 or result != {"checker_only": True} or not (
+                parent.components[-1].get("prior_applicability")):
+            raise AssertionError("invalid cache receipt did not execute missing work exactly once")
+        recovered.append(type(error).__name__)
+    path = ROOT / "evidence/l1-memory-matrix-case00-20261103T101948Z-51f863e8/receipt.json"
+    from resume_checks import MODEL, TOOLS, memory_identity, orchestration_equivalence
+    assessment, result = assess(run, path, (*MODEL, "tests/memory_checks.py"),
+                                memory_identity(0), TOOLS,
+                                equivalence=orchestration_equivalence)
+    if not assessment["applicable"]:
+        raise AssertionError("complete case required for cache fault injection is stale")
+    parent = SimpleNamespace(components=[], calls=0)
+
+    def execute(stem, operation):
+        parent.calls += 1
+        result = operation(parent)
+        parent.components.append({"status": "passed"})
+        return result
+
+    parent.component = execute
+
+    def missing_external(*args):
+        raise FileNotFoundError("injected missing external executable receipt")
+
+    with patch.object(component_cache, "assess", return_value=(assessment, result)):
+        answer = component_cache.component(
+            parent, stem, lambda child: {"checker_only": True},
+            inputs=(), parameters={}, tools=(), validate=lambda result: None,
+            validate_retained=missing_external)
+    if parent.calls != 1 or answer != {"checker_only": True}:
+        raise AssertionError("missing retained executable did not execute fresh work")
+    recovered.append("missing external executable receipt")
+    return {"scope": "mocked cache-read/fallback unit checks, not RTL comparisons",
+            "recovered_faults": recovered, "real_tools_not_simulated": True}
