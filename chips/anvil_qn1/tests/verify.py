@@ -37,6 +37,8 @@ Executable coverage:
   integrated-marker: actual IDs 151667/151668, complete 151936-word frames,
           marker cutoff, deferred resubmission opposing an idle mode override,
           held commits, exact scratch/KV payloads and generated-token counters.
+  integrated-marker-fast: identical marker comparisons with the redundant
+          falling-clock evaluation deferred to the next settled input edge.
   prefill-marker: actual input markers, complete frames, no commit/draft transfer
           and no generated-token accounting.
   production-layer / fusion-profile: authored full-extent first-layer comparison
@@ -54,9 +56,9 @@ Executable coverage:
           coefficient comparisons and deterministic E/SiLU checks.
 
 Behavior, benchmark, defect and no-argument suite dispatchers remain
-incomplete; no whole-product acceptance is claimed. Production/boundary
-coarse-synthesis and compact isolated-reproduction dispatch are authored but
-their complete campaigns are not yet demonstrated.
+incomplete; no whole-product acceptance is claimed. The seven-case production/
+boundary coarse-synthesis campaign has executed successfully; it is not STA.
+Compact isolated reproduction is authored but its complete campaign is pending.
 The original controller
 structural-loop counterexample is retained; the repaired controller has a fresh
 successful structural receipt. No-argument dispatch remains
@@ -121,6 +123,7 @@ def main():
                                           "fusion-compact", "integrated-marker",
                                           "component-applicability",
                                           "layer-parallel-compact", "prefill-marker",
+                                          "integrated-marker-fast",
                                           "saved-behavior-applicability"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
@@ -146,10 +149,11 @@ def main():
         elif args.probe == "component-applicability":
             run.versions(("python3", "verilator", "g++", "make", "yosys"))
             results = historical_applicability(run)
-        elif args.probe == "integrated-marker":
+        elif args.probe in ("integrated-marker", "integrated-marker-fast"):
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_markers(run, opening=args.marker == "open",
-                                  threads=args.sim_threads, compiled=latest_marker_build())
+                                  threads=args.sim_threads, compiled=latest_marker_build(),
+                                  clock_optimized=args.probe == "integrated-marker-fast")
         elif args.probe in ("production-layer", "fusion-profile", "fusion-compact"):
             run.versions(("python3", "verilator", "g++", "make"))
             results = (run_layer(run, args.profile, threads=args.sim_threads)

@@ -315,14 +315,31 @@ int main(int argc,char** argv) {
 """
 
 
-def run_markers(run, opening=True, threads=1, compiled=None):
+def run_markers(run, opening=True, threads=1, compiled=None, clock_optimized=False):
     images = run.path / "checkpoint-images"
     result = marker_reference(images, opening)
     rope = [value for position in range(2)
             for pair in zip(*fp.coefficients(8, position)) for value in pair]
     (images / "rope.hex").write_text("".join(f"{value:08x}\n" for value in rope))
     driver = run.path / "marker_driver.cpp"
-    driver.write_text(MARKER_DRIVER)
+    text = MARKER_DRIVER
+    if clock_optimized:
+        from speculation_checks import replace_once
+
+        # Native RTL has no falling-clock event. Settle the low clock with the
+        # next inputs, not again immediately after the rising-edge evaluation.
+        for source in (ROOT / "rtl").glob("anvil_qn1_*.sv"):
+            if re.search(r"\bnegedge\s+clk\b", source.read_text()):
+                raise AssertionError("optimized transactor requires rising-edge-only RTL")
+        text = replace_once(text, "auto edge=[&] {",
+                            "auto edge=[&](bool low_settled=false) {\n"
+                            "      if (!low_settled) dut->eval();")
+        text = replace_once(
+            text, "dut->clk=0;dut->eval();context->timeInc(5);++cycle;",
+            "dut->clk=0;context->timeInc(5);++cycle;")
+        text = replace_once(text, "        edge();\n        if (transfer)",
+                            "        edge(true);\n        if (transfer)")
+    driver.write_text(text)
     objects = run.path / "obj-marker"
     sources = [relative(p) for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
     parameters = {"COMPACT": 1, "NUM_LAYERS": 1, "HIDDEN_SIZE": 8,
@@ -358,10 +375,10 @@ def run_markers(run, opening=True, threads=1, compiled=None):
     if len(records) != 1:
         raise AssertionError("missing/duplicate integrated marker comparisons")
     counts = list(map(int, records[0]))
-    if counts[:4] != [int(opening), 2 * VOCABULARY, 2, 0 if opening else 2]:
+    if counts[:5] != [int(opening), 2 * VOCABULARY, 2, 0 if opening else 2, 304]:
         raise AssertionError("integrated marker coverage incomplete")
     result.update({"counts": counts, "parameters": parameters, "compiled": compiled,
-                   "simulation_threads": threads,
+                   "simulation_threads": threads, "clock_optimized": clock_optimized,
                    "scope": "real marker commit, cutoff, deferred resubmission and CSR counts"})
     (run.path / "marker-reference.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
