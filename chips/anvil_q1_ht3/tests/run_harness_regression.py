@@ -20,6 +20,7 @@ from execution import (ROOT, ExecutionFailure, failure_details, hashes, relative
 from retention import artifacts_intact, digest, execution_logs_intact, validated_execution
 from run_mutations import trial
 from run_compatibility import resumable_case
+from run_synthesis import semantic_sources
 from official_reference import QwenFP64
 from official_scoring import likelihood, restore_state, save_state
 from verify import MINIMUM_ALLOCATIONS, child, schedule
@@ -28,6 +29,18 @@ import numpy as np
 
 def run(output):
     assertions = 0
+    filename = "anvil_q1_ht3_decoder.sv"
+    old = f"evidence/preparation/synthetic-old-abc/shard-123/frontend-sources/{filename}"
+    new = f"evidence/preparation/synthetic-new-def/shard-456/frontend-sources/{filename}"
+    command = f"select module/c:$shiftx${old}:0$42; techmap; "
+    expected = f"select module/c:$shiftx$<source>/{filename}:0$42; techmap; "
+    for path in (old, new):
+        frontend = dict(transformations=[dict(output=path)])
+        if semantic_sources(command, frontend) != expected:
+            raise AssertionError("reused RTLIL source locations changed synthesis cache identity")
+        if semantic_sources(command.replace(filename, "different.sv"), frontend) == expected:
+            raise AssertionError("synthesis normalization erased a different source selection")
+        assertions += 2
     names = ("netlist.json", "synthesis.stdout.txt", "synthesis.stderr.txt",
              "executable", "driver.cpp")
     artifacts = {}

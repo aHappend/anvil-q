@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 import sys
 import os
+import re
 import time
 import uuid
 
@@ -51,9 +52,18 @@ JOB_BUDGETS = {"default-hierarchy": 360, "compact-mapped": 1800,
                "epilogue_fusion": 90, "flash_attn": 90}
 
 
-def semantic_script(script, frontend, directory):
+def semantic_sources(script, frontend):
     for entry in frontend["transformations"]:
-        script = script.replace(entry["output"], f"<source>/{Path(entry['output']).name}")
+        name = Path(entry["output"]).name
+        canonical = f"<source>/{name}"
+        script = re.sub(r"evidence/[^\s:;]*/frontend-sources/" + re.escape(name) + r"(?=[:\s;]|$)",
+                        lambda match: canonical, script)
+        script = script.replace(entry["output"], canonical)
+    return script
+
+
+def semantic_script(script, frontend, directory):
+    script = semantic_sources(script, frontend)
     for name in ("statistics.json", "netlist.json"):
         script = script.replace(relative(directory / name), f"<output>/{name}")
     return script
@@ -258,22 +268,23 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
     for phase, commands in phases:
         commands += ("check -assert; select -assert-none "
                      "t:$dlatch t:$adlatch t:$_DLATCH_* t:$div t:$mod t:$divfloor t:$modfloor; ")
-        semantic = commands
-        for entry in frontend["transformations"]:
-            semantic = semantic.replace(entry["output"], f"<source>/{Path(entry['output']).name}")
+        semantic = semantic_sources(commands, frontend)
         identity = dict(schema=1, job=identifier, top=top, parameters=parameters,
                         phase=phase, commands=semantic, predecessor_sha256=predecessor_digest,
                         source_sha256=frontend["source_sha256"], tool_version=version,
                         frontend_sha256=hashes()["tests/yosys_frontend.py"])
         key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
         retained = None
-        for candidate in sorted(cache.glob(f"synthesis-{phase}-{key}-*")):
+        for candidate in sorted(cache.glob(f"synthesis-{phase}-*")):
             binding = candidate / "binding.json"
             if not binding.is_file():
                 continue
             record = json.loads(binding.read_text())
+            bound_identity = dict(record.get("identity", {}))
+            if isinstance(bound_identity.get("commands"), str):
+                bound_identity["commands"] = semantic_sources(bound_identity["commands"], frontend)
             phase_receipt = candidate / "synthesis.receipt.json"
-            if (record.get("identity") != identity or record.get("status") != "passed"
+            if (bound_identity != identity or record.get("status") != "passed"
                     or not phase_receipt.is_file()
                     or record.get("receipt") != relative(phase_receipt)):
                 continue
