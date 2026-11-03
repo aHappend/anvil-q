@@ -179,6 +179,20 @@ def require_complete_coverage(ledger):
         raise AssertionError("missing mandatory measured coverage: " + ", ".join(missing))
 
 
+def bind_mutation_control(ledger, control, mutant, fields):
+    for field in fields:
+        if field not in control or field not in mutant or control[field] != mutant[field]:
+            raise AssertionError(f"mutation/control mismatch: {field}")
+    if not (mutant.get("discrimination") or
+            mutant.get("observed", {}).get("discrimination")):
+        raise AssertionError("mutation did not discriminate the targeted defect")
+    if "receipt" not in control:
+        raise AssertionError("mutation control lacks an execution receipt")
+    mutant["control_receipt"] = control["receipt"]
+    mutant["control_matched_fields"] = list(fields)
+    ledger.save()
+
+
 def all_checks(ledger):
     performance_integration = None
     ledger.check("parameter-boundaries", run_parameters)
@@ -209,16 +223,23 @@ def all_checks(ledger):
                 "anvil_q3_ht2_private_scratch"):
         ledger.check(f"synthesis-{top}", run_synthesis, top)
     ledger.check("performance", run_performance, performance_integration)
+    controls = {row["name"]: row["result"] for row in ledger.data["cases"]}
+    tree_control = controls["tree-mode1-seed17"]
     for mutant in ("gqa", "sibling"):
-        ledger.check(f"mutation-{mutant}", run_tree, 1, 17, mutant=mutant)
-    ledger.check("mutation-atomic", run_atomic, 1, 17, mutant=True)
+        result = ledger.check(f"mutation-{mutant}", run_tree, 1, 17, mutant=mutant,
+                              residency=tree_control["residency"])
+        bind_mutation_control(ledger, tree_control, result,
+                              ("mode", "seed", "residency", "vector_sha256"))
+    atomic_mutant = ledger.check("mutation-atomic", run_atomic, 1, 17, mutant=True)
+    bind_mutation_control(ledger, controls["atomic-mode1-seed17"], atomic_mutant,
+                          ("mode", "seed", "record_sha256"))
     for name, function in (("broadcast", run_tile), ("rounding", run_arithmetic),
                            ("sparse", run_sparse)):
         control = ledger.check(f"control-{name}", function, "verilator", 17, True)
         mutant = ledger.check(f"mutation-{name}", function, "verilator", 17, True,
                               mutant=True)
-        if control["vector_sha256"] != mutant["vector_sha256"]:
-            raise AssertionError(f"mutation/control vectors differ: {name}")
+        bind_mutation_control(ledger, control, mutant,
+                              ("seed", "simulator", "vector_sha256"))
     ledger.check("clean-reproduction", clean_reproduction)
     require_complete_coverage(ledger)
 

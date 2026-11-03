@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import os
+import shlex
 import shutil
 import signal
 from datetime import datetime, timezone
@@ -213,6 +214,15 @@ def compile_verilator(run, name, argv, obj, executable):
         raise RuntimeError("missing Verilator compilation backend: verilator_bin")
     tools["verilator_bin"] = {
         "binary_sha256": hashlib.sha256(Path(backend).resolve().read_bytes()).hexdigest()}
+    if "--hierarchical" in argv:
+        # Split-package installations can export a data-only VERILATOR_ROOT
+        # into recursive make. Invoke the identified backend, not its launcher.
+        recursive_compiler = f"VM_HIER_VERILATOR={shlex.quote(backend)}"
+        if "-MAKEFLAGS" in argv:
+            index = argv.index("-MAKEFLAGS") + 1
+            argv[index] += " " + recursive_compiler
+        else:
+            argv.extend(["-MAKEFLAGS", recursive_compiler])
     normalized = []
     directory_index = argv.index("--Mdir") + 1
     for index, argument in enumerate(argv):
