@@ -14,6 +14,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
 
 
+INFERENCE_BUDGET = 360
+SYNTHESIS_BUDGET = 180
+SETTLEMENT_RESERVE = 30
+REPRODUCTION_BUDGET = INFERENCE_BUDGET + SYNTHESIS_BUDGET + SETTLEMENT_RESERVE
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
@@ -40,14 +46,16 @@ def main():
     with (output/"bundle-manifest.json").open("x") as out:
         json.dump(dict(source_sha256=bindings,bundle=relative(bundle)),out,indent=2)
     rows = []
-    for identifier,script,options in (
-            ("compact-inference","tests/run_compatibility.py",["--smoke"]),
-            ("compact-zero-latch","tests/run_synthesis.py",["--job", "compact-hierarchy"])):
+    for identifier,script,options,budget,reserve in (
+            ("compact-inference","tests/run_compatibility.py",["--smoke"],
+             INFERENCE_BUDGET, SYNTHESIS_BUDGET + SETTLEMENT_RESERVE),
+            ("compact-zero-latch","tests/run_synthesis.py",["--job", "compact-hierarchy"],
+             SYNTHESIS_BUDGET, SETTLEMENT_RESERVE)):
         child_path = f"evidence/reproduction-{uuid.uuid4().hex[:12]}"
         argv = ["python3",script,*options,"--output",child_path]
         deadline = os.environ.get("HT3_CHECK_DEADLINE")
-        allocation = 180 if identifier == "compact-inference" else 150
-        os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + min(remaining(), allocation))
+        allocation = max(0, min(budget, remaining() - reserve))
+        os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + allocation)
         try:
             execute(argv,output,identifier,["python3","--version"],root=bundle)
             result_path = bundle / child_path / "result.json"
@@ -56,6 +64,8 @@ def main():
             child = json.loads(result_path.read_text())
             if child.get("status") != "passed":
                 raise AssertionError("reproduction exited zero without passing observations")
+            if child.get("coverage_limits"):
+                raise AssertionError("reproduction observations have unresolved coverage")
             rows.append(dict(id=identifier,status="passed",result=relative(result_path),
                              coverage=child.get("coverage_limits",[])))
         except (RuntimeError,AssertionError) as exc:

@@ -19,6 +19,7 @@ from execution import (CHECK_SECONDS, ROOT, execute, failure_details, hashes,
                        nested_outcomes, relative, timestamp)
 from retention import find_result, inventory
 from run_synthesis import JOBS, JOB_BUDGETS
+from run_reproduction import REPRODUCTION_BUDGET
 
 
 SEEDS = (17, 89, 2026)
@@ -40,7 +41,6 @@ OBLIGATIONS = {
 
 TOOLS = {"python3": ["python3", "--version"], "iverilog": ["iverilog", "-V"],
          "verilator": ["verilator", "--version"], "yosys": ["yosys", "-V"]}
-REPRODUCTION_RESERVE = 360
 SETTLEMENT_RESERVE = 30
 SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
                  "parameters": 450, "attention_restart": 60,
@@ -200,7 +200,8 @@ def reconcile_coverage(rows):
 
 
 def schedule(has_retained_epilogue=False):
-    jobs = []
+    jobs = [("reproduction", ["tests/run_reproduction.py"],
+             REPRODUCTION_BUDGET, REPRODUCTION_BUDGET)]
     for suite in ("primitive", "quantizer"):
         for simulator, seed in [("icarus", 17), *[("verilator", s) for s in SEEDS]]:
             jobs.append((f"{suite}-{simulator}-seed{seed}",
@@ -221,8 +222,6 @@ def schedule(has_retained_epilogue=False):
         jobs.append((f"synthesis-{identifier}",
                      ["tests/run_synthesis.py", "--job", identifier],
                      JOB_BUDGETS[identifier], min(JOB_BUDGETS[identifier], 60)))
-    jobs.append(("reproduction", ["tests/run_reproduction.py"],
-                 REPRODUCTION_RESERVE, REPRODUCTION_RESERVE))
     return jobs
 
 
