@@ -27,8 +27,7 @@ module anvil_q4_fp_gqa_attention (
   input wire mem_rsp_error
 );
   import anvil_q4_fp_pkg::*;
-  localparam [5:0] IDLE=0, D_ISSUE=1, D_WAIT=2, ROOT_ISSUE=3, ROOT_WAIT=4,
-    INVERSE_ISSUE=5, INVERSE_WAIT=6, CACHE_WRITE=7, CACHE_WRITE_WAIT=8,
+  localparam [5:0] IDLE=0, SCALE_LOAD=1, CACHE_WRITE=7, CACHE_WRITE_WAIT=8,
     Q_READ=9, Q_WAIT=10, K_READ=11, K_WAIT=12, PRODUCT_ISSUE=13, PRODUCT_WAIT=14,
     ADD_ISSUE=15, ADD_WAIT=16, SCALE_ISSUE=17, SCALE_WAIT=18, SCORE_STORE=19,
     EXP_READ=20, EXP_READ_WAIT=21, SUB_ISSUE=22, SUB_WAIT=23,
@@ -43,6 +42,143 @@ module anvil_q4_fp_gqa_attention (
   reg [31:0] operand, inverse_scale, query_value, cache_value, product;
   reg [31:0] accumulator, maximum, total, working, weight;
   reg failed;
+  // RNE(1/sqrt(2*half_dimension)), with no rounded intermediate root.
+  function automatic [31:0] attention_scale(input [7:0] half_dimension);
+    begin
+      case (half_dimension)
+        8'd1: attention_scale=32'h3f3504f3;
+        8'd2: attention_scale=32'h3f000000;
+        8'd3: attention_scale=32'h3ed105ec;
+        8'd4: attention_scale=32'h3eb504f3;
+        8'd5: attention_scale=32'h3ea1e89b;
+        8'd6: attention_scale=32'h3e93cd3a;
+        8'd7: attention_scale=32'h3e88d677;
+        8'd8: attention_scale=32'h3e800000;
+        8'd9: attention_scale=32'h3e715bef;
+        8'd10: attention_scale=32'h3e64f92e;
+        8'd11: attention_scale=32'h3e5a514a;
+        8'd12: attention_scale=32'h3e5105ec;
+        8'd13: attention_scale=32'h3e48d2ab;
+        8'd14: attention_scale=32'h3e41848f;
+        8'd15: attention_scale=32'h3e3af4ba;
+        8'd16: attention_scale=32'h3e3504f3;
+        8'd17: attention_scale=32'h3e2f9d53;
+        8'd18: attention_scale=32'h3e2aaaab;
+        8'd19: attention_scale=32'h3e261d5f;
+        8'd20: attention_scale=32'h3e21e89b;
+        8'd21: attention_scale=32'h3e1e01b3;
+        8'd22: attention_scale=32'h3e1a5fb2;
+        8'd23: attention_scale=32'h3e16fb06;
+        8'd24: attention_scale=32'h3e13cd3a;
+        8'd25: attention_scale=32'h3e10d0c3;
+        8'd26: attention_scale=32'h3e0e00d5;
+        8'd27: attention_scale=32'h3e0b5948;
+        8'd28: attention_scale=32'h3e08d677;
+        8'd29: attention_scale=32'h3e067532;
+        8'd30: attention_scale=32'h3e0432a5;
+        8'd31: attention_scale=32'h3e020c52;
+        8'd32: attention_scale=32'h3e000000;
+        8'd33: attention_scale=32'h3dfc1764;
+        8'd34: attention_scale=32'h3df85b42;
+        8'd35: attention_scale=32'h3df4c867;
+        8'd36: attention_scale=32'h3df15bef;
+        8'd37: attention_scale=32'h3dee133e;
+        8'd38: attention_scale=32'h3deaebf5;
+        8'd39: attention_scale=32'h3de7e3ed;
+        8'd40: attention_scale=32'h3de4f92e;
+        8'd41: attention_scale=32'h3de229ed;
+        8'd42: attention_scale=32'h3ddf7483;
+        8'd43: attention_scale=32'h3ddcd76e;
+        8'd44: attention_scale=32'h3dda514a;
+        8'd45: attention_scale=32'h3dd7e0cf;
+        8'd46: attention_scale=32'h3dd584cd;
+        8'd47: attention_scale=32'h3dd33c2e;
+        8'd48: attention_scale=32'h3dd105ec;
+        8'd49: attention_scale=32'h3dcee116;
+        8'd50: attention_scale=32'h3dcccccd;
+        8'd51: attention_scale=32'h3dcac83f;
+        8'd52: attention_scale=32'h3dc8d2ab;
+        8'd53: attention_scale=32'h3dc6eb5a;
+        8'd54: attention_scale=32'h3dc511a3;
+        8'd55: attention_scale=32'h3dc344e6;
+        8'd56: attention_scale=32'h3dc1848f;
+        8'd57: attention_scale=32'h3dbfd012;
+        8'd58: attention_scale=32'h3dbe26eb;
+        8'd59: attention_scale=32'h3dbc889f;
+        8'd60: attention_scale=32'h3dbaf4ba;
+        8'd61: attention_scale=32'h3db96ace;
+        8'd62: attention_scale=32'h3db7ea74;
+        8'd63: attention_scale=32'h3db6734a;
+        8'd64: attention_scale=32'h3db504f3;
+        8'd65: attention_scale=32'h3db39f19;
+        8'd66: attention_scale=32'h3db2416a;
+        8'd67: attention_scale=32'h3db0eb96;
+        8'd68: attention_scale=32'h3daf9d53;
+        8'd69: attention_scale=32'h3dae565c;
+        8'd70: attention_scale=32'h3dad166c;
+        8'd71: attention_scale=32'h3dabdd46;
+        8'd72: attention_scale=32'h3daaaaab;
+        8'd73: attention_scale=32'h3da97e62;
+        8'd74: attention_scale=32'h3da85835;
+        8'd75: attention_scale=32'h3da737f0;
+        8'd76: attention_scale=32'h3da61d5f;
+        8'd77: attention_scale=32'h3da50855;
+        8'd78: attention_scale=32'h3da3f8a2;
+        8'd79: attention_scale=32'h3da2ee1d;
+        8'd80: attention_scale=32'h3da1e89b;
+        8'd81: attention_scale=32'h3da0e7f5;
+        8'd82: attention_scale=32'h3d9fec04;
+        8'd83: attention_scale=32'h3d9ef4a4;
+        8'd84: attention_scale=32'h3d9e01b3;
+        8'd85: attention_scale=32'h3d9d130e;
+        8'd86: attention_scale=32'h3d9c2896;
+        8'd87: attention_scale=32'h3d9b422c;
+        8'd88: attention_scale=32'h3d9a5fb2;
+        8'd89: attention_scale=32'h3d99810c;
+        8'd90: attention_scale=32'h3d98a61f;
+        8'd91: attention_scale=32'h3d97ced0;
+        8'd92: attention_scale=32'h3d96fb06;
+        8'd93: attention_scale=32'h3d962aa9;
+        8'd94: attention_scale=32'h3d955da2;
+        8'd95: attention_scale=32'h3d9493d9;
+        8'd96: attention_scale=32'h3d93cd3a;
+        8'd97: attention_scale=32'h3d9309af;
+        8'd98: attention_scale=32'h3d924925;
+        8'd99: attention_scale=32'h3d918b87;
+        8'd100: attention_scale=32'h3d90d0c3;
+        8'd101: attention_scale=32'h3d9018c6;
+        8'd102: attention_scale=32'h3d8f6381;
+        8'd103: attention_scale=32'h3d8eb0e0;
+        8'd104: attention_scale=32'h3d8e00d5;
+        8'd105: attention_scale=32'h3d8d534f;
+        8'd106: attention_scale=32'h3d8ca83f;
+        8'd107: attention_scale=32'h3d8bff97;
+        8'd108: attention_scale=32'h3d8b5948;
+        8'd109: attention_scale=32'h3d8ab544;
+        8'd110: attention_scale=32'h3d8a137d;
+        8'd111: attention_scale=32'h3d8973e8;
+        8'd112: attention_scale=32'h3d88d677;
+        8'd113: attention_scale=32'h3d883b1e;
+        8'd114: attention_scale=32'h3d87a1d2;
+        8'd115: attention_scale=32'h3d870a87;
+        8'd116: attention_scale=32'h3d867532;
+        8'd117: attention_scale=32'h3d85e1c7;
+        8'd118: attention_scale=32'h3d85503e;
+        8'd119: attention_scale=32'h3d84c08b;
+        8'd120: attention_scale=32'h3d8432a5;
+        8'd121: attention_scale=32'h3d83a682;
+        8'd122: attention_scale=32'h3d831c1a;
+        8'd123: attention_scale=32'h3d829362;
+        8'd124: attention_scale=32'h3d820c52;
+        8'd125: attention_scale=32'h3d8186e2;
+        8'd126: attention_scale=32'h3d81030a;
+        8'd127: attention_scale=32'h3d8080c1;
+        8'd128: attention_scale=32'h3d800000;
+        default: attention_scale=32'h7fc00000;
+      endcase
+    end
+  endfunction
+  wire [31:0] scale_value=attention_scale(dimension[8:1]);
   (* ramstyle="M20K", nomem2reg *) reg [31:0] scores [0:131071];
   reg [31:0] score_q;
   always @(posedge clk) begin
@@ -86,20 +222,16 @@ module anvil_q4_fp_gqa_attention (
   wire fp_ready, fp_valid, exp_ready, exp_valid;
   wire [31:0] fp_result, exp_result;
   wire [4:0] fp_flags, exp_flags;
-  wire fp_issue=state==D_ISSUE || state==ROOT_ISSUE || state==INVERSE_ISSUE ||
-    state==PRODUCT_ISSUE || state==ADD_ISSUE || state==SCALE_ISSUE ||
+  wire fp_issue=state==PRODUCT_ISSUE || state==ADD_ISSUE || state==SCALE_ISSUE ||
     state==SUB_ISSUE || state==TOTAL_ISSUE || state==NORM_ISSUE ||
     state==CONTEXT_MUL || state==CONTEXT_ADD;
-  wire fp_wait=state==D_WAIT || state==ROOT_WAIT || state==INVERSE_WAIT ||
-    state==PRODUCT_WAIT || state==ADD_WAIT || state==SCALE_WAIT ||
+  wire fp_wait=state==PRODUCT_WAIT || state==ADD_WAIT || state==SCALE_WAIT ||
     state==SUB_WAIT || state==TOTAL_WAIT || state==NORM_WAIT ||
     state==CONTEXT_MUL_WAIT || state==CONTEXT_ADD_WAIT;
-  wire [3:0] operation=state==D_ISSUE ? 4'd9 : state==ROOT_ISSUE ? 4'd4 :
-    state==INVERSE_ISSUE || state==NORM_ISSUE ? 4'd3 :
+  wire [3:0] operation=state==NORM_ISSUE ? 4'd3 :
     state==PRODUCT_ISSUE || state==SCALE_ISSUE || state==CONTEXT_MUL ? 4'd2 :
     state==SUB_ISSUE ? 4'd1 : 4'd0;
-  wire [31:0] left=state==D_ISSUE ? dimension :
-    state==INVERSE_ISSUE ? 32'h3f800000 : state==PRODUCT_ISSUE ? query_value :
+  wire [31:0] left=state==PRODUCT_ISSUE ? query_value :
     state==ADD_ISSUE || state==SCALE_ISSUE || state==CONTEXT_ADD ? accumulator :
     state==SUB_ISSUE || state==NORM_ISSUE ? working :
     state==TOTAL_ISSUE ? total : state==CONTEXT_MUL ? weight : operand;
@@ -147,14 +279,9 @@ module anvil_q4_fp_gqa_attention (
             cmd_pos>=context_capacity || context_capacity==0 ||
             cmd_pos!=committed_tokens || context_capacity>131072) begin
           failed<=1; state<=COMPLETE;
-        end else state<=D_ISSUE;
+        end else state<=SCALE_LOAD;
       end
-      D_ISSUE: if (fp_ready) state<=D_WAIT;
-      D_WAIT: if (fp_valid) begin operand<=fp_result; state<=ROOT_ISSUE; end
-      ROOT_ISSUE: if (fp_ready) state<=ROOT_WAIT;
-      ROOT_WAIT: if (fp_valid) begin operand<=fp_result; state<=INVERSE_ISSUE; end
-      INVERSE_ISSUE: if (fp_ready) state<=INVERSE_WAIT;
-      INVERSE_WAIT: if (fp_valid) begin inverse_scale<=fp_result; state<=CACHE_WRITE; end
+      SCALE_LOAD: begin inverse_scale<=scale_value; state<=CACHE_WRITE; end
       CACHE_WRITE: if (cache_cmd_ready) state<=CACHE_WRITE_WAIT;
       CACHE_WRITE_WAIT: if (cache_out_valid) state<=Q_READ;
       Q_READ: if (issue) state<=Q_WAIT;

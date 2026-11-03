@@ -52,6 +52,9 @@ backpressured transfer. Speculative results remain held until verify_ready.
 | BANKS=1 | Weight lanes contend fairly in the scheduler, not before it. |
 | Final tile/partial word | Mask tails; zero cache tail padding, preserve neighbors. |
 | Simultaneous completion and next issue | Respect leaf retirement bubble; no bypass. |
+| Attention command E0 | Capture validated even head_dim 2..256; enter SCALE_LOAD. |
+| Attention E1 | Register single-rounded FP32(1/sqrt(head_dim)) from constant lookup. |
+| Attention E2 | Earliest cache command transfer after scale registration. |
 | Successful descriptor commit | Only quiescent; invalidate sequence/prediction/cache generation. |
 | Failed descriptor commit | Preserve active descriptor and committed sequence. |
 | Speculative retirement and cancellation | Cancellation wins, no tentative commit. |
@@ -129,6 +132,8 @@ epsilon addition, FP32 sqrt, then rounded x*gamma divided by the root.
 Attention uses KV head=floor(query_head/ratio), ascending dimension products,
 FP32(1/sqrt(head_dim)) scaling, causal positions 0..current, max subtraction,
 ordered exp sum/division and ascending weighted-V accumulation.
+The scale is RNE applied once to the mathematical reciprocal square root,
+not FP32(1/FP32(sqrt(head_dim))) or FP32(sqrt(FP32(1/head_dim))).
 Split-half RoPE uses separately rounded products:
 y0=round(round(x0*cos)-round(x1*sin)),
 y1=round(round(x0*sin)+round(x1*cos)).

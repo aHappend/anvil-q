@@ -118,6 +118,30 @@ last partial word and never emits integer scales or escape payloads.
 FP8 conversion rounds directly from FP32, not through an FP16 intermediate.
 Attention's explicit ratio-position counter implements all ratios 1..8
 without division; its score storage uses synchronous RAM read/write ports.
+Attention scaling uses a 128-entry constant lookup for every legal even
+head dimension 2..256. Each entry is single-rounded RNE FP32(1/sqrt(d)),
+not a reciprocal of a rounded FP32 root or a square root of a rounded
+reciprocal. The accepted command registers d at E0; SCALE_LOAD registers
+the lookup result at E1 before cache work can transfer at E2. Reset clears
+the scale register, and flush takes priority over loading or using it.
+No arithmetic-leaf latency, memory interface or score accumulation order
+changes; only the former scale-preparation conversion/sqrt/divide sequence
+is replaced.
+
+The literals were derived using integer midpoint comparisons. For the
+normalized result exponent e, let N=2^(46-2e) and m=floor(sqrt(N/d)).
+Compare 4*N with d*(2*m+1)^2 to round m to nearest, retaining even m on
+equality, then pack the FP32 exponent and significand. This avoids
+host floating-point and intermediate rounding. Independent Verifier must
+check all entries and rerun the unchanged attention comparisons.
+The repair addresses the retained component-0 mismatch (expected bf7105bb,
+observed bf7105ba) in
+`evidence/preparation/attention-scale-20261103T022450000101Z/verilator-attention/receipt.json`
+and
+`evidence/preparation/attention-scale-20261103T022545973100Z/verilator-attention/receipt.json`.
+Those failed receipts remain unchanged; this explanation is not a passing
+functional result.
+
 Page validation also compares earlier live mappings against each scanned
 candidate, so duplicate aliases not involving the requested page are rejected.
 This intentionally bounded sequential scan uses no huge reset-time table:
