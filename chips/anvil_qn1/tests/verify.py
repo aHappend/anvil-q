@@ -67,8 +67,9 @@ from memory_checks import run_banked_top, run_memory_matrix
 from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
 from telemetry_checks import run_telemetry
 from context_checks import run_context
-from speculative_fault_checks import run_speculative_cancel_matrix
+from speculative_fault_checks import run_speculative_cancel_matrix, run_speculative_cancel
 from parent_checks import run_parent
+from reproduction_checks import run_reproduce, run_reproduction_child
 from model import Geometry
 import reference
 
@@ -90,7 +91,8 @@ def main():
                                           "attention-context", "attention-context-short",
                                           "speculative-cancel", "synthesis-production",
                                           "parent-reference", "synthesis-boundary",
-                                          "attention-context-sv-short"))
+                                          "attention-context-sv-short", "reproduce-child",
+                                          "isolation-smoke", "speculative-cancel-case"))
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
@@ -98,7 +100,16 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "attention-context-sv-short":
+        if args.probe == "speculative-cancel-case":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_speculative_cancel(run, args.fault)
+        elif args.probe == "isolation-smoke":
+            run.versions(("python3", "iverilog", "vvp"))
+            results = run_reproduce(run, child_probe="qk-compact")
+        elif args.probe == "reproduce-child":
+            run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+            results = run_reproduction_child(run)
+        elif args.probe == "attention-context-sv-short":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_context(run, positions=64, driver="sv")
         elif args.probe == "synthesis-boundary":
@@ -215,6 +226,9 @@ def main():
         elif args.suite == "synthesis":
             run.versions(("python3", "yosys"))
             results = run_synthesis(run)
+        elif args.suite == "reproduce":
+            run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
+            results = run_reproduce(run)
         else:
             raise NotImplementedError("L1 suite authoring is in progress; no passing result claimed")
         run.finish("passed", results)

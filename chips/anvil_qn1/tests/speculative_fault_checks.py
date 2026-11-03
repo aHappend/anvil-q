@@ -22,14 +22,16 @@ def speculative_cancel_bench():
     text = speculative_bench()
     text = replace_once(
         text, "reg new_evaluation=1;",
-        "reg new_evaluation=1,aborting=0,recovered=0;\n"
+        "reg new_evaluation=1,aborting=0,recovered=0,negative_test=0;\n"
         "  integer cancel_case=0,cancelled=0,cancel_edge=-1,commit_transfers=0;\n"
         "  integer cancelled_frames=0,cancelled_reads=0,stalled_commits=0,drained_responses=0;\n"
-        "  integer interrupted=0,queue_kind[0:63];")
+        "  integer interrupted=0,queue_kind[0:63],invalid_errors=0;")
     text = replace_once(
         text, "if (error!==0 || cancel_done!==0 || think_active!==configured_mode)",
-        "if (error!==0 || (!aborting && cancel_done!==0) || "
+        "if ((!negative_test && error!==0) || (!aborting && cancel_done!==0) || "
         "think_active!==configured_mode)")
+    text = replace_once(text, "if (token_valid && token_ready) begin",
+                        "if (!negative_test && token_valid && token_ready) begin")
     for kind in ("request", "logit", "commit"):
         text = replace_once(text, f"if (held_{kind} &&", f"if (!aborting && held_{kind} &&")
     text = replace_once(
@@ -42,6 +44,12 @@ def speculative_cancel_bench():
         "      end\n"
         "      if (aborting && (done!==0 || commit_valid!==0 || logit_valid!==0 || mem_req_valid!==0))\n"
         "        $fatal(1,\"SPEC_CANCEL_NEW_WORK\");\n"
+        "      if (negative_test) begin\n"
+        "        if ((^{error,done,commit_valid,logit_valid,mem_req_valid})===1'bx ||\n"
+        "            done!==0 || commit_valid!==0 || logit_valid!==0 || mem_req_valid!==0)\n"
+        "          $fatal(1,\"SPEC_CANCEL_INVALID_CONTINUATION_WORK\");\n"
+        "        if (error) invalid_errors=invalid_errors+1;\n"
+        "      end\n"
         "      if (commit_valid && !commit_ready) stalled_commits=stalled_commits+1;\n"
         "      if (commit_valid && commit_ready) commit_transfers=commit_transfers+1;\n"
         "      if (mem_rsp_valid && mem_rsp_ready) begin\n"
@@ -72,6 +80,19 @@ def speculative_cancel_bench():
         "        repeat (4) begin @(negedge clk);#3;end\n"
         "        if (token_ready!==1 || cancelled!=1 || think_active!==1)\n"
         "          $fatal(1,\"SPEC_CANCEL_MODE_OR_IDLE_RECOVERY\");\n"
+        "        negative_test=1;draft_seen=1;draft_valid=0;\n"
+        "        token_id=eval_tokens[1];token_pos=1;token_phase=1;\n"
+        "        new_sequence=0;token_valid=1;@(posedge clk);\n"
+        "        if (token_ready!==1) $fatal(1,\"SPEC_CANCEL_INVALID_HANDSHAKE\");\n"
+        "        #1;@(negedge clk);#3;token_valid=0;\n"
+        "        guard=0;\n"
+        "        while (!invalid_errors && guard<100) begin\n"
+        "          @(negedge clk);#3;guard=guard+1;\n"
+        "        end\n"
+        "        repeat (4) begin @(negedge clk);#3;end\n"
+        "        if (invalid_errors!=1 || token_ready!==1 || queued!=0)\n"
+        "          $fatal(1,\"SPEC_CANCEL_INVALID_CONTINUATION_NOT_REJECTED\");\n"
+        "        negative_test=0;\n"
         "        interrupted=interrupted+1;\n"
         "        // A new sequence abandons all physically written cancelled KV.\n"
         "        // No DUT reset or internal ownership modification is used.\n"
@@ -91,7 +112,7 @@ def speculative_cancel_bench():
         "    @(negedge clk);rst_n=1;")
     text = replace_once(
         text, '$display("SUMMARY transactions=%0d frames=%0d logits=%0d ',
-        "if (interrupted!=1 || !recovered || cancelled!=1)\n"
+        "if (interrupted!=1 || !recovered || cancelled!=1 || invalid_errors!=1)\n"
         "      $fatal(1,\"SPEC_CANCEL_RECOVERY_NOT_COMPARED\");\n"
         '$display("SPEC_CANCEL_SUMMARY case=%0d cancelled_frames=%0d cancelled_requests=%0d '
         'drained_responses=%0d commits_before_cancel=%0d recovery_frames=%0d recovery_transactions=%0d",\n'
