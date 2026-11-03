@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 import uuid
@@ -24,15 +25,27 @@ MEASUREMENT_RULES = {
     "consumer": "three-edge initial/per-logit stalls and every fifth cycle not ready",
     "tokens": "token0 fresh, token1 decode, token2 fresh; no untimed warm-up tokens",
     "image": "identical represented image bytes, descriptor order and precision",
+    "transition_start": "first accepted tensor-array FP32 panel of the eligible projection",
+    "transition_end": "first accepted coordinate/pair at its epilogue consumer",
+    "transition_paths": "Q/RoPE, K/RoPE, O/residual+norm, up/SwiGLU, down/residual+norm",
+    "transition_exclusions": (
+        "union of core edges with an asserted public memory request held by waitrequest, "
+        "test-memory queued response under its imposed delay, or stalled public logit; "
+        "subtract GEMV intervals from accepted first MAC beat through accepted panel"),
+    "transition_scope": (
+        "boundary acquisition latency, not epilogue arithmetic or end-to-end speedup; "
+        "public module-port bind monitors, no DUT internal state oracle"),
 }
 
 
-def simulation_sources(name):
+def simulation_sources(name, monitored=False):
     pattern = "anvil_q1_ht2_reference/rtl/*.sv" if name == "ht2" else "rtl/*.sv"
-    return [relative(p) for p in sorted(ROOT.glob(pattern))]+["tests/inference_tb.sv"]
+    return ([relative(p) for p in sorted(ROOT.glob(pattern))]+["tests/inference_tb.sv"]
+            + (["tests/performance_monitor.sv"] if monitored else []))
 
 
-def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name, vocab=3):
+def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name, vocab=3,
+                         monitored=False):
     """Admit only settled matching executions; independently rescore raw logits.
 
     Older aggregate failures can contain complete individual simulations. Their
@@ -51,7 +64,7 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
             or compile_record.get("tool_version", "").strip() != build["identity"]["tool_version"]
             or any(compile_record.get("source_sha256", {}).get(p) != current[p]
                    or build["identity"]["source_sha256"].get(p) != current[p]
-                   for p in simulation_sources(name))):
+                   for p in simulation_sources(name, monitored))):
         return None
     argv = record.get("argv", [])
     if (record.get("exit") != 0 or record.get("timed_out")
@@ -61,7 +74,7 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
             or argv[3] != f"+seed={seed}"
             or digest(binary) != build["binary_sha256"]
             or any(record.get("source_sha256", {}).get(p) != current[p]
-                   for p in simulation_sources(name))):
+                   for p in simulation_sources(name, monitored))):
         return None
     directory = path.parent
     if (argv[1] != f"+vectors={relative(directory/'vectors.txt')}"
@@ -78,6 +91,11 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
                 return None
     checked = check_case(directory, (ROOT/record["stdout"]).read_text(),
                          binding, fmt, seed, expected, vocab=vocab)
+    if monitored:
+        checked["transitions"] = transition_observations(
+            (ROOT/record["stdout"]).read_text(),
+            json.loads((vectors.parent/"image-manifest.json").read_text()),
+            len(expected))
     artifacts = [path, directory/"vectors.txt", directory/"observations.txt",
                  ROOT/record["stdout"], ROOT/record["stderr"], ROOT/binding,
                  compile_path, ROOT/compile_record["stdout"], ROOT/compile_record["stderr"],
@@ -90,7 +108,7 @@ def performance_case(output, name, binary, binding, fmt, seed):
     directory.mkdir()
     vectors, expected = fixture(directory, fmt, seed)
     current = hashes()
-    dependencies = [*simulation_sources(name), "tests/run_performance.py",
+    dependencies = [*simulation_sources(name, True), "tests/run_performance.py",
                     "tests/run_compatibility.py", "tests/reference.py", "tests/execution.py"]
     identity = dict(schema=1, generation=name, format=fmt, seed=seed,
                     source_sha256={p: current[p] for p in dependencies},
@@ -125,7 +143,8 @@ def performance_case(output, name, binary, binding, fmt, seed):
     for path in sorted(candidates_receipts, key=lambda p: p.stat().st_mtime, reverse=True):
         if path in rejected_receipts:
             continue
-        checked = validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name)
+        checked = validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name,
+                                       monitored=True)
         if checked is not None:
             simulation_receipt = path
             break
@@ -136,7 +155,7 @@ def performance_case(output, name, binary, binding, fmt, seed):
                 directory, "simulation", ["verilator", "--version"])
         simulation_receipt = directory/"simulation.receipt.json"
         checked = validated_simulation(simulation_receipt, binary, binding, vectors,
-                                       fmt, seed, expected, name)
+                                       fmt, seed, expected, name, monitored=True)
         if checked is None:
             raise AssertionError("fresh simulation failed execution/source/input binding")
     observation, artifacts = checked
@@ -168,7 +187,7 @@ def failure_classification(exc, name):
 
 def parent_compiled():
     paths = [relative(p) for p in sorted(ROOT.glob("anvil_q1_ht2_reference/rtl/*.sv"))]
-    paths.append("tests/inference_tb.sv")
+    paths.extend(["tests/inference_tb.sv", "tests/performance_monitor.sv"])
     current = hashes()
     identity = dict(source_sha256={p: current[p] for p in paths},
                     define="PARENT_HT2",
@@ -221,10 +240,90 @@ def measurements(parent, product):
     return records
 
 
+ELIGIBLE = {0: ("Q_to_RoPE", 2), 1: ("K_to_RoPE", 2),
+            3: ("O_to_residual_norm", 6), 5: ("up_to_SwiGLU", 3),
+            6: ("down_to_residual_norm", 6)}
+
+
+def transition_observations(text, manifest, tokens):
+    """Pair real port transfers by the fixture's public weight descriptors."""
+    descriptors = manifest["descriptors"]
+    by_address = {row[4]: row[3] for row in descriptors if row[1] == 1}
+    if set(by_address.values()) != set(range(7)):
+        raise AssertionError("transition image lacks all seven projection descriptors")
+    events = [tuple(map(int, (a, b)))+(kind, int(tag))
+              for a, b, kind, tag in re.findall(
+                  r"^PERF_EDGE (\d+) (\d+) (\w+) (\d+)$", text, re.MULTILINE)]
+    if not events:
+        raise AssertionError("no executed public transfer instrumentation")
+    # Commands precede their subsequent results. No counter is inferred from an FSM.
+    events.sort(key=lambda e: (e[0], e[2]))
+    current, producer, mac_start, token = None, None, None, -1
+    rows, commands = [], []
+    for cycle, excluded, kind, tag in events:
+        if kind == "projection":
+            projection = by_address.get(tag, 7)
+            if producer is not None and current in ELIGIBLE:
+                raise AssertionError("eligible producer has no matching consumer transfer")
+            if projection == 0:
+                token += 1
+            current, producer = projection, None
+            commands.append((token, projection))
+        elif kind == "mac_begin":
+            if mac_start is not None:
+                raise AssertionError("overlapping unretired MAC transaction")
+            mac_start = cycle
+        elif kind == "mac_end":
+            if mac_start is None or cycle <= mac_start:
+                raise AssertionError("MAC output without accepted producer work")
+            mac_start = None
+            if current in ELIGIBLE:
+                if producer is not None:
+                    raise AssertionError("transition compact fixture has multiple panels")
+                producer = (cycle, excluded)
+        elif kind == "consumer" and current in ELIGIBLE and producer is not None:
+            path, expected_op = ELIGIBLE[current]
+            if tag != expected_op or mac_start is not None:
+                raise AssertionError("wrong consumer operation or overlapping GEMV interval")
+            start, excluded_start = producer
+            imposed = excluded-excluded_start
+            elapsed = cycle-start
+            if elapsed <= 0 or not 0 <= imposed < elapsed:
+                raise AssertionError("invalid boundary latency/external-stall accounting")
+            rows.append(dict(token=token, projection=current, path=path,
+                             producer_edge=start, consumer_edge=cycle,
+                             elapsed_cycles=elapsed, excluded_cycles=imposed,
+                             gemv_cycles=0, transition_cycles=elapsed-imposed))
+            producer = None
+            current = None
+    if (commands != [(token, projection) for token in range(tokens) for projection in range(8)]
+            or {(r["token"], r["projection"]) for r in rows} !=
+               {(token, projection) for token in range(tokens) for projection in ELIGIBLE}
+            or len(rows) != tokens*len(ELIGIBLE) or mac_start is not None):
+        raise AssertionError("incomplete or duplicated eligible-path transfer coverage")
+    return rows
+
+
+def transition_measurements(parent, product):
+    old, new = parent["transitions"], product["transitions"]
+    if len(old) != len(new) or not old:
+        raise AssertionError("unmatched or empty eligible-path measurements")
+    rows = []
+    for a, b in zip(old, new):
+        if (a["token"], a["path"]) != (b["token"], b["path"]):
+            raise AssertionError("eligible path/producer association mismatch")
+        reduction = (a["transition_cycles"]-b["transition_cycles"])/a["transition_cycles"]
+        rows.append(dict(token=a["token"], path=a["path"], ht2=a, ht3=b,
+                         reduction=reduction, required_strictly_greater_than=0.60,
+                         status="passed" if reduction > 0.60 else "failed"))
+    return rows
+
+
 def run(output, diagnostic=False):
     binaries = {}
     rows = []
-    for name, builder in (("ht2", parent_compiled), ("ht3", compiled)):
+    for name, builder in (("ht2", parent_compiled),
+                          ("ht3", lambda: compiled(performance=True))):
         try:
             binaries[name] = builder()
         except (RuntimeError, AssertionError, ValueError, OSError) as exc:
@@ -244,15 +343,16 @@ def run(output, diagnostic=False):
                 old, new = observations["ht2"], observations["ht3"]
                 if (old["image"], old["vectors"]) != (new["image"], new["vectors"]):
                     raise AssertionError("performance workloads are not byte-identical")
-                rows.append(dict(status="passed", format=fmt, seed=seed,
+                transitions = transition_measurements(old, new)
+                rows.append(dict(status="passed" if all(
+                                     r["status"] == "passed" for r in transitions) else "failed",
+                                 format=fmt, seed=seed,
                                  image_sha256=new["image"], vector_sha256=new["vectors"],
-                                 observations=observations, tokens=measurements(old, new)))
+                                 observations=observations, tokens=measurements(old, new),
+                                 transitions=transitions))
     return dict(status="passed" if rows and all(r["status"] == "passed" for r in rows)
                 else "failed", runs=rows, measurement_rules=MEASUREMENT_RULES,
                 coverage_limits=[
-                    "eligible fused-path producer/consumer transition-cycle instrumentation "
-                    "and per-path >0.60 reduction assertion remain unimplemented; total "
-                    "token latency is not that metric",
                     "authentic historical five-domain fixtures unavailable in RTL-only intake"])
 
 

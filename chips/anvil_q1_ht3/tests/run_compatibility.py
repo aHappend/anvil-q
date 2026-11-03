@@ -215,8 +215,10 @@ def batch_fixture(directory, fmt, seed, count):
     return vectors, [complete[0], complete[-1]], batch, expected_batch
 
 
-def compiled(geometry=None):
+def compiled(geometry=None, performance=False):
     paths = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+["tests/inference_tb.sv"]
+    if performance:
+        paths.append("tests/performance_monitor.sv")
     current = hashes()
     identity = dict(source_sha256={p: current[p] for p in paths},
                     geometry=dict(L=1, H=8, I=8, Q=1, K=1, D=8, G=8, V=3, S=4))
