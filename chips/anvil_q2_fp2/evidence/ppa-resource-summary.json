@@ -1,8 +1,8 @@
 {
   "chip": "Anvil-Q2-FP2",
   "fitter_resources": {
-    "total_registers": 569512,
-    "block_memory_bits": 546240,
+    "total_registers": 139522,
+    "block_memory_bits": 976320,
     "dsp_blocks": 316,
     "virtual_pins": 2761
   },
