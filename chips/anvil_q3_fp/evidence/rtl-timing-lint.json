@@ -1,6 +1,6 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-11-03T10:17:33.720451+00:00",
+  "timestamp_utc": "2026-11-03T10:21:18.785924+00:00",
   "root": "/data/sufeng/anvil-q3-fp-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
@@ -27,7 +27,7 @@
     "rtl/anvil_q3_fp_swiglu_mlp.sv": "b65e80615c64ac7acb270b7f0ff8488bee9aef287de1e508fffdddf053910173",
     "rtl/anvil_q3_fp_tensor_array.sv": "20982f5159748cc981f232f1634d4b8f45b416ab82f8669e0a3b4a9fdd8d7e41",
     "rtl/anvil_q3_fp_token_io.sv": "128ab593b2529d6cdb109867aac4813231cef586f2c6e850576bd06315cdf07f",
-    "rtl/anvil_q3_fp_top.sv": "2692a28fcde5f48c2ac6380d6ed5806207d13b52ffe98ae6daf96d59d60328f6",
+    "rtl/anvil_q3_fp_top.sv": "fe58c67e2516582fa55798c60bc2084d1acd5fca95437f901ff83459126d34d4",
     "rtl/anvil_q3_fp_weight_prefetcher.sv": "697289fae6e1f6151d64fde9d2955e6dfc09f2f8b807f5cde3e685a5d4dc839f"
   },
   "netlist_sha256": {},
