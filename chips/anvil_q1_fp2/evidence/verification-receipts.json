@@ -2,13 +2,13 @@
   "chip": "Anvil-Q1-FP2",
   "passed_checks": {
     "check:behavior": {
-      "attempt_id": 21,
-      "duration_s": 2641.3983850439545,
-      "stdout_preview": "ile, 60s\nprogress: compatibility-h112-enable0-29-compile, 90s\nprogress: compatibility-h112-enable0-29-compile, 120s\nprogress: compatibility-h112-enable0-29-compile, 150s\nprogress: compatibility-h112-enable0-29-compile, 180s\nprogress: compatibility-h112-enable0-29-compile, 210s\nprogress: compatibility-h112-enable0-29-simulate, 30s\nprogress: compatibility-h112-enable0-29-simulate, 60s\nprogress: compatibility-h112-enable0-29-simulate, 90s\nprogress: compatibility-h112-enable0-29-simulate, 120s\nprogress: compatibility-h112-enable0-29-simulate, 150s\nprogress: compatibility-h112-enable0-29-simulate, 180s\nprogress: compatibility-h112-enable0-29-simulate, 210s\nprogress: compatibility-h112-enable0-29-simulate, 240s\nprogress: compatibility-h112-enable0-29-simulate, 270s\nprogress: compatibility-h112-enable0-29-simulate, 300s\nprogress: compatibility-h112-enable0-29-simulate, 330s\nprogress: compatibility-h112-enable0-29-simulate, 360s\nprogress: compatibility-h112-enable0-29-simulate, 390s\nprogress: compatibility-h112-enable0-29-simulate, 420s\nprogress: compatibility-h112-enable0-29-simulate, 450s\nprogress: compatibility-h112-enable0-29-simulate, 480s\nprogress: compatibility-h112-enable0-29-simulate, 510s\nprogress: compatibility-h112-enable0-29-simulate, 540s\nprogress: compatibility-h112-enable0-29-simulate, 570s\nprogress: compatibility-h112-enable0-29-simulate, 600s\nprogress: compatibility-h112-enable0-29-simulate, 630s\nreceipt: evidence/fp2-behavior-20261102T223536Z-c7f0bb93/receipt.json\n",
+      "attempt_id": 25,
+      "duration_s": 2628.6953709169757,
+      "stdout_preview": "mpile, 30s\nprogress: compatibility-h112-enable0-29-compile, 60s\nprogress: compatibility-h112-enable0-29-compile, 90s\nprogress: compatibility-h112-enable0-29-compile, 120s\nprogress: compatibility-h112-enable0-29-compile, 150s\nprogress: compatibility-h112-enable0-29-compile, 180s\nprogress: compatibility-h112-enable0-29-compile, 210s\nprogress: compatibility-h112-enable0-29-simulate, 30s\nprogress: compatibility-h112-enable0-29-simulate, 60s\nprogress: compatibility-h112-enable0-29-simulate, 90s\nprogress: compatibility-h112-enable0-29-simulate, 120s\nprogress: compatibility-h112-enable0-29-simulate, 150s\nprogress: compatibility-h112-enable0-29-simulate, 180s\nprogress: compatibility-h112-enable0-29-simulate, 210s\nprogress: compatibility-h112-enable0-29-simulate, 240s\nprogress: compatibility-h112-enable0-29-simulate, 270s\nprogress: compatibility-h112-enable0-29-simulate, 300s\nprogress: compatibility-h112-enable0-29-simulate, 330s\nprogress: compatibility-h112-enable0-29-simulate, 360s\nprogress: compatibility-h112-enable0-29-simulate, 390s\nprogress: compatibility-h112-enable0-29-simulate, 420s\nprogress: compatibility-h112-enable0-29-simulate, 450s\nprogress: compatibility-h112-enable0-29-simulate, 480s\nprogress: compatibility-h112-enable0-29-simulate, 510s\nprogress: compatibility-h112-enable0-29-simulate, 540s\nprogress: compatibility-h112-enable0-29-simulate, 570s\nprogress: compatibility-h112-enable0-29-simulate, 600s\nreceipt: evidence/fp2-behavior-20261102T233448Z-3b00db0b/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/receipt.json",
+          "path": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -19,7 +19,7 @@
               "17,29,71"
             ],
             "cwd": ".",
-            "started_at": "2026-11-02T22:35:36.008441+00:00",
+            "started_at": "2026-11-02T23:34:48.318816+00:00",
             "repair_of": "evidence/fp2-behavior-20261102T204248Z-2aea150c/receipt.json",
             "aggregate_budget_s": 2700,
             "interpreted_process_limit_s": 600,
@@ -78,7 +78,7 @@
               "tests/operators.py": "cb82f381d140891ad4dde1eb599e06712fab44b73f545259763becc1dd1289b2",
               "tests/protocols.py": "a783c55f95b2857b0ac2c7a565a59fb926aa2cbe2f3ac43e663d1b9b424301a2",
               "tests/reference.py": "dbe3ca20d542bbcd50957a4a90de086d929709c137968374bfe01acb89d0e8a6",
-              "tests/sensitivity.py": "40308f776f35b464db5cbe7f5f8e84566decd4767a078a34770051411031a099",
+              "tests/sensitivity.py": "39bb50ade6f5ad19ea7053d8305a1cfb9ca6d9a63b1cfc7ecadbf3b13f6c0b5c",
               "tests/structure.py": "1cf99cf49e947cc80e284c9ddd3b92c370ed619dda36366d590340d511bb9919",
               "tests/verify.py": "75a03f605bfc9aa2c59036c15a9256258f7bd1f69102459cbced70bf4360252b"
             },
@@ -89,17 +89,17 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.041275+00:00",
-                "timeout_s": 2699.9611205121037,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-iverilog.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-iverilog.stderr.txt",
+                "started_at": "2026-11-02T23:34:48.351715+00:00",
+                "timeout_s": 2699.9589928991627,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-iverilog.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-iverilog.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400020
+                  "leader_pid": 3935738
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.058989+00:00",
-                "elapsed_s": 0.01767826802097261
+                "ended_at": "2026-11-02T23:34:48.369607+00:00",
+                "elapsed_s": 0.017859276849776506
               },
               {
                 "argv": [
@@ -107,17 +107,17 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.059250+00:00",
+                "started_at": "2026-11-02T23:34:48.369881+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-vvp.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-vvp.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-vvp.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-vvp.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400025
+                  "leader_pid": 3935743
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.068194+00:00",
-                "elapsed_s": 0.008911043871194124
+                "ended_at": "2026-11-02T23:34:48.379012+00:00",
+                "elapsed_s": 0.00909742689691484
               },
               {
                 "argv": [
@@ -127,43 +127,43 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.068374+00:00",
-                "timeout_s": 2699.934016757179,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:48.379193+00:00",
+                "timeout_s": 2699.931510766037,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400026
+                  "leader_pid": 3935744
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.101493+00:00",
-                "elapsed_s": 0.03309054719284177
+                "ended_at": "2026-11-02T23:34:48.412523+00:00",
+                "elapsed_s": 0.033303542993962765
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.101663+00:00",
+                "started_at": "2026-11-02T23:34:48.412714+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400030
+                  "leader_pid": 3935748
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.216806+00:00",
-                "elapsed_s": 0.11511624790728092
+                "ended_at": "2026-11-02T23:34:48.528703+00:00",
+                "elapsed_s": 0.11596066411584616
               },
               {
                 "argv": [
@@ -173,43 +173,43 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.225738+00:00",
-                "timeout_s": 2699.77665777714,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:48.537513+00:00",
+                "timeout_s": 2699.7731949479785,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400031
+                  "leader_pid": 3935750
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.259398+00:00",
-                "elapsed_s": 0.033626700984314084
+                "ended_at": "2026-11-02T23:34:48.571361+00:00",
+                "elapsed_s": 0.03378789592534304
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.259678+00:00",
+                "started_at": "2026-11-02T23:34:48.571586+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400035
+                  "leader_pid": 3935754
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.375410+00:00",
-                "elapsed_s": 0.11569478106684983
+                "ended_at": "2026-11-02T23:34:48.687488+00:00",
+                "elapsed_s": 0.11586824199184775
               },
               {
                 "argv": [
@@ -219,43 +219,43 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_bfp_tensor_array.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.416330+00:00",
-                "timeout_s": 2699.5860659531318,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:48.728402+00:00",
+                "timeout_s": 2699.5823060290422,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400036
+                  "leader_pid": 3935763
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.532123+00:00",
-                "elapsed_s": 0.1157569969072938
+                "ended_at": "2026-11-02T23:34:48.794514+00:00",
+                "elapsed_s": 0.066091304179281
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:36.532335+00:00",
+                "started_at": "2026-11-02T23:34:48.794794+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400044
+                  "leader_pid": 3935767
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:36.949065+00:00",
-                "elapsed_s": 0.41670917998999357
+                "ended_at": "2026-11-02T23:34:49.211329+00:00",
+                "elapsed_s": 0.41650313092395663
               },
               {
                 "argv": [
@@ -265,43 +265,43 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:37.017953+00:00",
-                "timeout_s": 2698.984441522043,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:49.279942+00:00",
+                "timeout_s": 2699.030762251001,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400371
+                  "leader_pid": 3935824
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:37.051664+00:00",
-                "elapsed_s": 0.03366896905936301
+                "ended_at": "2026-11-02T23:34:49.313823+00:00",
+                "elapsed_s": 0.03384967101737857
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:37.051820+00:00",
+                "started_at": "2026-11-02T23:34:49.314003+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400375
+                  "leader_pid": 3935829
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:37.618819+00:00",
-                "elapsed_s": 0.5669766201172024
+                "ended_at": "2026-11-02T23:34:49.780420+00:00",
+                "elapsed_s": 0.46639338904060423
               },
               {
                 "argv": [
@@ -311,43 +311,43 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:37.622445+00:00",
-                "timeout_s": 2698.379950667033,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:49.783673+00:00",
+                "timeout_s": 2698.5270316801034,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400410
+                  "leader_pid": 3935835
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:37.656350+00:00",
-                "elapsed_s": 0.033868792932480574
+                "ended_at": "2026-11-02T23:34:49.817574+00:00",
+                "elapsed_s": 0.03387366607785225
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:37.656580+00:00",
+                "started_at": "2026-11-02T23:34:49.817791+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400415
+                  "leader_pid": 3935839
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:37.690351+00:00",
-                "elapsed_s": 0.03373456187546253
+                "ended_at": "2026-11-02T23:34:49.851364+00:00",
+                "elapsed_s": 0.03353564511053264
               },
               {
                 "argv": [
@@ -357,47 +357,47 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
                   "rtl/anvil_q1_fp2_epilogue_fusion.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:37.694182+00:00",
-                "timeout_s": 2698.308214599034,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:49.855300+00:00",
+                "timeout_s": 2698.455409005983,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400416
+                  "leader_pid": 3935841
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:37.809898+00:00",
-                "elapsed_s": 0.11567785916849971
+                "ended_at": "2026-11-02T23:34:49.920987+00:00",
+                "elapsed_s": 0.06565692508593202
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:37.810111+00:00",
+                "started_at": "2026-11-02T23:34:49.921228+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400425
+                  "leader_pid": 3935847
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:38.326732+00:00",
-                "elapsed_s": 0.5165883970912546
+                "ended_at": "2026-11-02T23:34:50.438219+00:00",
+                "elapsed_s": 0.5169716998934746
               },
               {
                 "argv": [
@@ -407,47 +407,47 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog/sim.vvp",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
                   "rtl/anvil_q1_fp2_flash_attn.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:38.329771+00:00",
-                "timeout_s": 2697.6726246532053,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:50.441501+00:00",
+                "timeout_s": 2697.8692082930356,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400441
+                  "leader_pid": 3935863
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:38.395716+00:00",
-                "elapsed_s": 0.06590794306248426
+                "ended_at": "2026-11-02T23:34:50.507731+00:00",
+                "elapsed_s": 0.06617861799895763
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog/sim.vvp",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog/sim.vvp",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:38.395928+00:00",
+                "started_at": "2026-11-02T23:34:50.507945+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400462
+                  "leader_pid": 3935867
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:39.063242+00:00",
-                "elapsed_s": 0.6672890789341182
+                "ended_at": "2026-11-02T23:34:51.175212+00:00",
+                "elapsed_s": 0.6672528930939734
               },
               {
                 "argv": [
@@ -457,7 +457,7 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog/sim.vvp",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -501,41 +501,41 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:39.077620+00:00",
-                "timeout_s": 2696.9247808849905,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:34:51.189931+00:00",
+                "timeout_s": 2697.1207826461177,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400487
+                  "leader_pid": 3935890
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:35:39.744749+00:00",
-                "elapsed_s": 0.6671066181734204
+                "ended_at": "2026-11-02T23:34:51.857524+00:00",
+                "elapsed_s": 0.6675540138967335
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog/sim.vvp",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog/sim.vvp",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog",
                   "+seed=17",
                   "+precision=1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:35:39.745039+00:00",
+                "started_at": "2026-11-02T23:34:51.857808+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-bf16-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-bf16-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3400525
+                  "leader_pid": 3935900
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:11.816191+00:00",
-                "elapsed_s": 32.071127864997834
+                "ended_at": "2026-11-02T23:35:20.986544+00:00",
+                "elapsed_s": 29.128836025018245
               },
               {
                 "argv": [
@@ -545,7 +545,7 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog/sim.vvp",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -589,41 +589,41 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:12.314948+00:00",
-                "timeout_s": 2663.6874538320117,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:35:21.453916+00:00",
+                "timeout_s": 2666.8567942301743,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3406483
+                  "leader_pid": 3940319
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:12.981958+00:00",
-                "elapsed_s": 0.6669809019658715
+                "ended_at": "2026-11-02T23:35:22.121170+00:00",
+                "elapsed_s": 0.6672242591157556
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog/sim.vvp",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog/sim.vvp",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog",
                   "+seed=17",
                   "+precision=3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:12.982245+00:00",
+                "started_at": "2026-11-02T23:35:22.121387+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h8-mx-17-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h8-mx-17-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3406525
+                  "leader_pid": 3940373
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:47.308205+00:00",
-                "elapsed_s": 34.32593601080589
+                "ended_at": "2026-11-02T23:35:56.898751+00:00",
+                "elapsed_s": 34.777349608018994
               },
               {
                 "argv": [
@@ -633,7 +633,7 @@
                   "-s",
                   "tb",
                   "-o",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog/sim.vvp",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog/sim.vvp",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -677,38 +677,38 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:47.317261+00:00",
-                "timeout_s": 2628.6851403759792,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog-compile.stderr.txt",
+                "started_at": "2026-11-02T23:35:56.907466+00:00",
+                "timeout_s": 2631.4032483701594,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3413962
+                  "leader_pid": 3947566
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:47.984692+00:00",
-                "elapsed_s": 0.6674058479256928
+                "ended_at": "2026-11-02T23:35:57.574932+00:00",
+                "elapsed_s": 0.6674306239001453
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog/sim.vvp"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog/sim.vvp"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:47.984976+00:00",
+                "started_at": "2026-11-02T23:35:57.575131+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/top-errors-iverilog-simulate.stderr.txt",
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/top-errors-iverilog-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3414233
+                  "leader_pid": 3947619
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:50.406783+00:00",
-                "elapsed_s": 2.421786243095994
+                "ended_at": "2026-11-02T23:35:59.996247+00:00",
+                "elapsed_s": 2.4211019130889326
               },
               {
                 "argv": [
@@ -716,17 +716,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:50.506540+00:00",
-                "timeout_s": 2625.4958556480706,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-verilator.stderr.txt",
+                "started_at": "2026-11-02T23:36:00.088220+00:00",
+                "timeout_s": 2628.2224857981782,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-verilator.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3414525
+                  "leader_pid": 3948678
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:50.623240+00:00",
-                "elapsed_s": 0.11653206800110638
+                "ended_at": "2026-11-02T23:36:00.204188+00:00",
+                "elapsed_s": 0.11592418607324362
               },
               {
                 "argv": [
@@ -734,17 +734,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:50.623692+00:00",
-                "timeout_s": 2625.3787034200504,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-g++.stderr.txt",
+                "started_at": "2026-11-02T23:36:00.204472+00:00",
+                "timeout_s": 2628.1062327101827,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-g++.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3414547
+                  "leader_pid": 3948703
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:50.629171+00:00",
-                "elapsed_s": 0.005446430994197726
+                "ended_at": "2026-11-02T23:36:00.209942+00:00",
+                "elapsed_s": 0.005438766907900572
               },
               {
                 "argv": [
@@ -752,17 +752,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:50.629217+00:00",
-                "timeout_s": 2625.3731833021156,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-make.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/version-make.stderr.txt",
+                "started_at": "2026-11-02T23:36:00.209980+00:00",
+                "timeout_s": 2628.1007278391626,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-make.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/version-make.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3414548
+                  "leader_pid": 3948704
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:50.634361+00:00",
-                "elapsed_s": 0.00510792713612318
+                "ended_at": "2026-11-02T23:36:00.215314+00:00",
+                "elapsed_s": 0.00530173210427165
               },
               {
                 "argv": [
@@ -777,42 +777,42 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:50.634591+00:00",
-                "timeout_s": 2625.367802433204,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:36:00.215499+00:00",
+                "timeout_s": 2628.0952048851177,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3414549
+                  "leader_pid": 3948705
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:58.217933+00:00",
-                "elapsed_s": 7.5833382941782475
+                "ended_at": "2026-11-02T23:36:06.696213+00:00",
+                "elapsed_s": 6.480707792099565
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:58.219814+00:00",
-                "timeout_s": 2617.7825837810524,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:36:06.698270+00:00",
+                "timeout_s": 2621.6124388971366,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3416384
+                  "leader_pid": 3949106
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:36:58.386705+00:00",
-                "elapsed_s": 0.16687058797106147
+                "ended_at": "2026-11-02T23:36:06.864624+00:00",
+                "elapsed_s": 0.16631454695016146
               },
               {
                 "argv": [
@@ -827,42 +827,42 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:36:58.481168+00:00",
-                "timeout_s": 2617.5212332981173,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:36:06.951058+00:00",
+                "timeout_s": 2621.359647911042,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3416640
+                  "leader_pid": 3949372
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:37:05.410113+00:00",
-                "elapsed_s": 6.928912153001875
+                "ended_at": "2026-11-02T23:36:13.581197+00:00",
+                "elapsed_s": 6.63012235914357
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:37:05.411281+00:00",
-                "timeout_s": 2610.591107194079,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:36:13.582630+00:00",
+                "timeout_s": 2614.7280782849994,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3417367
+                  "leader_pid": 3950109
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:37:05.577367+00:00",
-                "elapsed_s": 0.1660625848453492
+                "ended_at": "2026-11-02T23:36:13.748834+00:00",
+                "elapsed_s": 0.16616560914553702
               },
               {
                 "argv": [
@@ -877,42 +877,42 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_bfp_tensor_array.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:37:07.050442+00:00",
-                "timeout_s": 2608.9519492550753,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:36:16.162638+00:00",
+                "timeout_s": 2612.1480649029836,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3417695
+                  "leader_pid": 3950429
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:37:51.599899+00:00",
-                "elapsed_s": 44.54944682493806
+                "ended_at": "2026-11-02T23:36:56.804345+00:00",
+                "elapsed_s": 40.64169288892299
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:37:51.602411+00:00",
-                "timeout_s": 2564.399984268006,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:36:56.806499+00:00",
+                "timeout_s": 2571.5042044850998,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3426779
+                  "leader_pid": 3954782
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:37:52.771732+00:00",
-                "elapsed_s": 1.169296881183982
+                "ended_at": "2026-11-02T23:36:57.923717+00:00",
+                "elapsed_s": 1.1171966830734164
               },
               {
                 "argv": [
@@ -927,42 +927,42 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:37:52.979059+00:00",
-                "timeout_s": 2563.0233379821293,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:36:58.116710+00:00",
+                "timeout_s": 2570.1940001731273,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3427330
+                  "leader_pid": 3955340
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:37:59.108371+00:00",
-                "elapsed_s": 6.129282146925107
+                "ended_at": "2026-11-02T23:37:04.196429+00:00",
+                "elapsed_s": 6.079685495002195
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:37:59.109890+00:00",
-                "timeout_s": 2556.8925039770547,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:04.198055+00:00",
+                "timeout_s": 2564.112654014025,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3430187
+                  "leader_pid": 3956047
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:37:59.276280+00:00",
-                "elapsed_s": 0.16637003794312477
+                "ended_at": "2026-11-02T23:37:04.364473+00:00",
+                "elapsed_s": 0.16638040891848505
               },
               {
                 "argv": [
@@ -977,232 +977,232 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:37:59.332852+00:00",
-                "timeout_s": 2556.669543704018,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:37:04.419886+00:00",
+                "timeout_s": 2563.890820708126,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3430449
+                  "leader_pid": 3956574
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:05.862869+00:00",
-                "elapsed_s": 6.530003427993506
+                "ended_at": "2026-11-02T23:37:10.548776+00:00",
+                "elapsed_s": 6.1288867481052876
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:05.864563+00:00",
-                "timeout_s": 2550.1378519630525,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:10.550730+00:00",
+                "timeout_s": 2557.759983335156,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3432673
+                  "leader_pid": 3957011
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:05.980751+00:00",
-                "elapsed_s": 0.11616377206519246
+                "ended_at": "2026-11-02T23:37:10.667091+00:00",
+                "elapsed_s": 0.11632869997993112
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/13f02f6998b8441775ed03fbcd68c0cf9bb74afb0732d81e1d29945634335830",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/13f02f6998b8441775ed03fbcd68c0cf9bb74afb0732d81e1d29945634335830",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:06.110686+00:00",
-                "timeout_s": 2549.891718511004,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:10.761026+00:00",
+                "timeout_s": 2557.5496830751654,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3433063
+                  "leader_pid": 3957267
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:06.230851+00:00",
-                "elapsed_s": 0.12011613207869232
+                "ended_at": "2026-11-02T23:37:10.927380+00:00",
+                "elapsed_s": 0.16632232093252242
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/e8c4b31be9a40eac8c8099bd7ffdc4ff6358bf6a3e62eeefe370bd56ffb62be8",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/e8c4b31be9a40eac8c8099bd7ffdc4ff6358bf6a3e62eeefe370bd56ffb62be8",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:06.337436+00:00",
-                "timeout_s": 2549.6649602160323,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:11.007318+00:00",
+                "timeout_s": 2557.303387787193,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3433481
+                  "leader_pid": 3957561
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:06.503752+00:00",
-                "elapsed_s": 0.16628911579027772
+                "ended_at": "2026-11-02T23:37:11.173491+00:00",
+                "elapsed_s": 0.16614030208438635
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:08.940071+00:00",
-                "timeout_s": 2547.0623206750024,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:13.259142+00:00",
+                "timeout_s": 2555.051559905056,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3435163
+                  "leader_pid": 3958087
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:10.108136+00:00",
-                "elapsed_s": 1.1680515559855849
+                "ended_at": "2026-11-02T23:37:14.377051+00:00",
+                "elapsed_s": 1.1178889530710876
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/2f3aeebfb886f51590c61ba76fde00784298b7c3ec1537dc29f44063a9a237a9",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/2f3aeebfb886f51590c61ba76fde00784298b7c3ec1537dc29f44063a9a237a9",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:10.241075+00:00",
-                "timeout_s": 2545.761322631035,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:14.493754+00:00",
+                "timeout_s": 2553.816953698173,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3435647
+                  "leader_pid": 3958814
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:10.406925+00:00",
-                "elapsed_s": 0.1658241779077798
+                "ended_at": "2026-11-02T23:37:14.659988+00:00",
+                "elapsed_s": 0.16619999217800796
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/37061e475ce663f50b490f4991fc3466c0e2ff05f985948e762144c626fd4f98",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/37061e475ce663f50b490f4991fc3466c0e2ff05f985948e762144c626fd4f98",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:10.452831+00:00",
-                "timeout_s": 2545.5495654060505,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:14.710001+00:00",
+                "timeout_s": 2553.6007035591174,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3435981
+                  "leader_pid": 3959074
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:10.568660+00:00",
-                "elapsed_s": 0.11579403094947338
+                "ended_at": "2026-11-02T23:37:14.825956+00:00",
+                "elapsed_s": 0.11592318397015333
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/13f02f6998b8441775ed03fbcd68c0cf9bb74afb0732d81e1d29945634335830",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/13f02f6998b8441775ed03fbcd68c0cf9bb74afb0732d81e1d29945634335830",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:10.664398+00:00",
-                "timeout_s": 2545.337997624185,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/add-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:14.914685+00:00",
+                "timeout_s": 2553.3960186261684,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/add-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3436244
+                  "leader_pid": 3959334
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:10.780180+00:00",
-                "elapsed_s": 0.1157538469415158
+                "ended_at": "2026-11-02T23:37:15.030320+00:00",
+                "elapsed_s": 0.11560180480591953
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/e8c4b31be9a40eac8c8099bd7ffdc4ff6358bf6a3e62eeefe370bd56ffb62be8",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/e8c4b31be9a40eac8c8099bd7ffdc4ff6358bf6a3e62eeefe370bd56ffb62be8",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:10.869496+00:00",
-                "timeout_s": 2545.1328978000674,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/multiply-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:15.113914+00:00",
+                "timeout_s": 2553.196789762005,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/multiply-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3436505
+                  "leader_pid": 3959590
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:10.985261+00:00",
-                "elapsed_s": 0.11571035510860384
+                "ended_at": "2026-11-02T23:37:15.279952+00:00",
+                "elapsed_s": 0.16601224290207028
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:13.644758+00:00",
-                "timeout_s": 2542.3576497030444,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/tensor-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:17.751097+00:00",
+                "timeout_s": 2550.559605583083,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/tensor-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3437205
+                  "leader_pid": 3960095
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:14.813138+00:00",
-                "elapsed_s": 1.1683530190493912
+                "ended_at": "2026-11-02T23:37:18.919381+00:00",
+                "elapsed_s": 1.1682749961037189
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/2f3aeebfb886f51590c61ba76fde00784298b7c3ec1537dc29f44063a9a237a9",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/2f3aeebfb886f51590c61ba76fde00784298b7c3ec1537dc29f44063a9a237a9",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:14.962481+00:00",
-                "timeout_s": 2541.039913285058,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/rsqrt-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:19.041880+00:00",
+                "timeout_s": 2549.2688266769983,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/rsqrt-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3438434
+                  "leader_pid": 3960414
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:15.128252+00:00",
-                "elapsed_s": 0.16574499080888927
+                "ended_at": "2026-11-02T23:37:19.207953+00:00",
+                "elapsed_s": 0.16603658790700138
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/37061e475ce663f50b490f4991fc3466c0e2ff05f985948e762144c626fd4f98",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/37061e475ce663f50b490f4991fc3466c0e2ff05f985948e762144c626fd4f98",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:15.191301+00:00",
-                "timeout_s": 2540.811092789052,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/exp-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:19.250361+00:00",
+                "timeout_s": 2549.060345198028,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/exp-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3438698
+                  "leader_pid": 3960744
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:15.307789+00:00",
-                "elapsed_s": 0.11645676894113421
+                "ended_at": "2026-11-02T23:37:19.366174+00:00",
+                "elapsed_s": 0.11579925287514925
               },
               {
                 "argv": [
@@ -1217,39 +1217,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:15.332434+00:00",
-                "timeout_s": 2540.6699645731132,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:37:19.389377+00:00",
+                "timeout_s": 2548.9213335600216,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3438994
+                  "leader_pid": 3961006
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:21.560318+00:00",
-                "elapsed_s": 6.227846808033064
+                "ended_at": "2026-11-02T23:37:25.418466+00:00",
+                "elapsed_s": 6.029065345879644
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:21.560757+00:00",
-                "timeout_s": 2534.4416354540735,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:25.418932+00:00",
+                "timeout_s": 2542.891776327975,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3444701
+                  "leader_pid": 3961958
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:21.676726+00:00",
-                "elapsed_s": 0.11593519593589008
+                "ended_at": "2026-11-02T23:37:25.534689+00:00",
+                "elapsed_s": 0.11571556702256203
               },
               {
                 "argv": [
@@ -1264,39 +1264,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:21.692435+00:00",
-                "timeout_s": 2534.3099570330232,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:37:25.554882+00:00",
+                "timeout_s": 2542.755828090012,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3444962
+                  "leader_pid": 3962335
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:28.920959+00:00",
-                "elapsed_s": 7.228506669169292
+                "ended_at": "2026-11-02T23:37:31.132474+00:00",
+                "elapsed_s": 5.577577797928825
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:28.921236+00:00",
-                "timeout_s": 2527.0811545120087,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:31.132973+00:00",
+                "timeout_s": 2537.1777360641863,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3450359
+                  "leader_pid": 3963074
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:29.037342+00:00",
-                "elapsed_s": 0.11606874503195286
+                "ended_at": "2026-11-02T23:37:31.248988+00:00",
+                "elapsed_s": 0.11597545095719397
               },
               {
                 "argv": [
@@ -1311,39 +1311,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_ddr_pingpong.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:29.040514+00:00",
-                "timeout_s": 2526.9618767551146,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:37:31.252667+00:00",
+                "timeout_s": 2537.0580415111035,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3450617
+                  "leader_pid": 3963338
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:37.170013+00:00",
-                "elapsed_s": 8.129467380931601
+                "ended_at": "2026-11-02T23:37:38.534060+00:00",
+                "elapsed_s": 7.281378013081849
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:37.170290+00:00",
-                "timeout_s": 2518.8321009681094,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:38.534385+00:00",
+                "timeout_s": 2529.7763228220865,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3454838
+                  "leader_pid": 3963524
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:37.286825+00:00",
-                "elapsed_s": 0.11648948001675308
+                "ended_at": "2026-11-02T23:37:38.651052+00:00",
+                "elapsed_s": 0.11664111400023103
               },
               {
                 "argv": [
@@ -1358,46 +1358,46 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
                   "rtl/anvil_q1_fp2_epilogue_fusion.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:37.781623+00:00",
-                "timeout_s": 2518.2207745150663,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:37:39.130250+00:00",
+                "timeout_s": 2529.1804581449833,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3455377
+                  "leader_pid": 3964048
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:50.774139+00:00",
-                "elapsed_s": 12.992493655066937
+                "ended_at": "2026-11-02T23:37:52.875514+00:00",
+                "elapsed_s": 13.745623159920797
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:50.775850+00:00",
-                "timeout_s": 2505.226546250982,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:37:52.877435+00:00",
+                "timeout_s": 2515.433275117073,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3461615
+                  "leader_pid": 3965127
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:38:51.693745+00:00",
-                "elapsed_s": 0.9178716980386525
+                "ended_at": "2026-11-02T23:37:53.795416+00:00",
+                "elapsed_s": 0.9179560320917517
               },
               {
                 "argv": [
@@ -1412,46 +1412,46 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
                   "rtl/anvil_q1_fp2_flash_attn.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:38:51.992684+00:00",
-                "timeout_s": 2504.009714492131,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:37:54.076538+00:00",
+                "timeout_s": 2514.234172509983,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3461892
+                  "leader_pid": 3965419
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:39:05.740101+00:00",
-                "elapsed_s": 13.747387076960877
+                "ended_at": "2026-11-02T23:38:07.522726+00:00",
+                "elapsed_s": 13.446132110897452
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:39:05.741798+00:00",
-                "timeout_s": 2490.2605976751074,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:38:07.524390+00:00",
+                "timeout_s": 2500.7863178180996,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3466851
+                  "leader_pid": 3966621
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:39:07.060538+00:00",
-                "elapsed_s": 1.3188516511581838
+                "ended_at": "2026-11-02T23:38:08.943330+00:00",
+                "elapsed_s": 1.418908636085689
               },
               {
                 "argv": [
@@ -1466,46 +1466,46 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
                   "rtl/anvil_q1_fp2_flash_attn.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:39:07.338655+00:00",
-                "timeout_s": 2488.663742013043,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:38:09.230280+00:00",
+                "timeout_s": 2499.0804337211885,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3467442
+                  "leader_pid": 3966945
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:39:21.742459+00:00",
-                "elapsed_s": 14.403770512202755
+                "ended_at": "2026-11-02T23:38:25.130808+00:00",
+                "elapsed_s": 15.90051249298267
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:39:21.744225+00:00",
-                "timeout_s": 2474.2581698761787,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:38:25.132823+00:00",
+                "timeout_s": 2483.177887737984,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3472779
+                  "leader_pid": 3967409
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:39:23.113260+00:00",
-                "elapsed_s": 1.3690192641224712
+                "ended_at": "2026-11-02T23:38:26.502347+00:00",
+                "elapsed_s": 1.3695019239094108
               },
               {
                 "argv": [
@@ -1520,46 +1520,46 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_00_pkg.sv",
                   "rtl/anvil_q1_fp2_fp32_binary.sv",
                   "rtl/anvil_q1_fp2_fast_rsqrt.sv",
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_exp.sv",
                   "rtl/anvil_q1_fp2_flash_attn.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:39:23.398987+00:00",
-                "timeout_s": 2472.6034098539967,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:38:26.783888+00:00",
+                "timeout_s": 2481.5268219301943,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3473354
+                  "leader_pid": 3967693
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:39:37.796693+00:00",
-                "elapsed_s": 14.397676915163174
+                "ended_at": "2026-11-02T23:38:40.634252+00:00",
+                "elapsed_s": 13.850347802974284
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator/compile-obj/Vtb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator/vectors.txt",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:39:37.798297+00:00",
-                "timeout_s": 2458.2040985480417,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-17-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:38:40.636127+00:00",
+                "timeout_s": 2467.6745822101366,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-17-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3476868
+                  "leader_pid": 3969097
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:39:39.267138+00:00",
-                "elapsed_s": 1.4688258138485253
+                "ended_at": "2026-11-02T23:38:42.054811+00:00",
+                "elapsed_s": 1.418666835874319
               },
               {
                 "argv": [
@@ -1575,7 +1575,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -1619,40 +1619,40 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17/tb.sv",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17/tb.sv",
                   "../driver.cpp"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:39:39.384365+00:00",
-                "timeout_s": 2456.6180374210235,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17-compile.stderr.txt",
+                "started_at": "2026-11-02T23:38:42.169746+00:00",
+                "timeout_s": 2466.1409688391723,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3477738
+                  "leader_pid": 3969379
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:43:06.244799+00:00",
-                "elapsed_s": 206.86041233083233
+                "ended_at": "2026-11-02T23:42:10.057448+00:00",
+                "elapsed_s": 207.88766851997934
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:43:06.252976+00:00",
-                "timeout_s": 2249.7494161960203,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-17-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:42:10.068074+00:00",
+                "timeout_s": 2258.2426354950294,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3521355
+                  "leader_pid": 3980776
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:43:14.529837+00:00",
-                "elapsed_s": 8.27684115502052
+                "ended_at": "2026-11-02T23:42:18.454218+00:00",
+                "elapsed_s": 8.38611048902385
               },
               {
                 "argv": [
@@ -1668,7 +1668,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -1712,40 +1712,40 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17/tb.sv",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17/tb.sv",
                   "../driver.cpp"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:43:14.647521+00:00",
-                "timeout_s": 2241.3548708721064,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17-compile.stderr.txt",
+                "started_at": "2026-11-02T23:42:18.624354+00:00",
+                "timeout_s": 2249.6863604281098,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3523086
+                  "leader_pid": 3981777
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:46:43.987092+00:00",
-                "elapsed_s": 209.33954816497862
+                "ended_at": "2026-11-02T23:45:49.994845+00:00",
+                "elapsed_s": 211.3704549309332
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:46:43.996975+00:00",
-                "timeout_s": 2032.0054227591027,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-17-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:45:50.004683+00:00",
+                "timeout_s": 2038.3060263071675,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3559451
+                  "leader_pid": 3992072
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:46:48.423131+00:00",
-                "elapsed_s": 4.426130819134414
+                "ended_at": "2026-11-02T23:45:54.531284+00:00",
+                "elapsed_s": 4.526574802817777
               },
               {
                 "argv": [
@@ -1760,39 +1760,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:46:48.599678+00:00",
-                "timeout_s": 2027.402718583122,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:45:54.716947+00:00",
+                "timeout_s": 2033.59376088297,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3560047
+                  "leader_pid": 3992361
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:46:54.680717+00:00",
-                "elapsed_s": 6.081010319991037
+                "ended_at": "2026-11-02T23:46:00.645344+00:00",
+                "elapsed_s": 5.928363073850051
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:46:54.681074+00:00",
-                "timeout_s": 2021.3213220131584,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:00.645789+00:00",
+                "timeout_s": 2027.664919037139,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3560888
+                  "leader_pid": 3992723
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:46:54.797420+00:00",
-                "elapsed_s": 0.11630969890393317
+                "ended_at": "2026-11-02T23:46:00.761729+00:00",
+                "elapsed_s": 0.11590268183499575
               },
               {
                 "argv": [
@@ -1807,39 +1807,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:46:54.818692+00:00",
-                "timeout_s": 2021.18370427005,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:46:00.783177+00:00",
+                "timeout_s": 2027.5275329500437,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3561148
+                  "leader_pid": 3992979
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:01.500363+00:00",
-                "elapsed_s": 6.681655552936718
+                "ended_at": "2026-11-02T23:46:06.311303+00:00",
+                "elapsed_s": 5.5280999292153865
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:01.500836+00:00",
-                "timeout_s": 2014.5015603262,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:06.311721+00:00",
+                "timeout_s": 2021.998986208113,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3562451
+                  "leader_pid": 3993062
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:01.617272+00:00",
-                "elapsed_s": 0.11642394284717739
+                "ended_at": "2026-11-02T23:46:06.427924+00:00",
+                "elapsed_s": 0.11616665497422218
               },
               {
                 "argv": [
@@ -1854,153 +1854,153 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_ddr_pingpong.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:01.621241+00:00",
-                "timeout_s": 2014.3811567851808,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:46:06.431853+00:00",
+                "timeout_s": 2021.8788561981637,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3562709
+                  "leader_pid": 3993318
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:08.203780+00:00",
-                "elapsed_s": 6.582524638157338
+                "ended_at": "2026-11-02T23:46:13.664056+00:00",
+                "elapsed_s": 7.232179254991934
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:08.204131+00:00",
-                "timeout_s": 2007.7982652620412,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:13.664374+00:00",
+                "timeout_s": 2014.6463339531329,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3563154
+                  "leader_pid": 3993505
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:08.320174+00:00",
-                "elapsed_s": 0.11602815403603017
+                "ended_at": "2026-11-02T23:46:13.780607+00:00",
+                "elapsed_s": 0.11619579000398517
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/d405a5cfa659370cf6f8abb6b13c86649e20e1f583a6142f1d4051ffe37f3d0d",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/d405a5cfa659370cf6f8abb6b13c86649e20e1f583a6142f1d4051ffe37f3d0d",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:08.792562+00:00",
-                "timeout_s": 2007.209848754108,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:14.249512+00:00",
+                "timeout_s": 2014.0611919499934,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3563687
+                  "leader_pid": 3993843
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:09.710330+00:00",
-                "elapsed_s": 0.917709754081443
+                "ended_at": "2026-11-02T23:46:15.167386+00:00",
+                "elapsed_s": 0.9178301228675991
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/01c23b604c661c15d2f2f848930171880373f2645279f8404cb40821f9e8a04f",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/01c23b604c661c15d2f2f848930171880373f2645279f8404cb40821f9e8a04f",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:09.897812+00:00",
-                "timeout_s": 2006.1045790771022,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:15.356744+00:00",
+                "timeout_s": 2012.9539621041622,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3563949
+                  "leader_pid": 3994152
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:11.266691+00:00",
-                "elapsed_s": 1.3688685421366245
+                "ended_at": "2026-11-02T23:46:16.775226+00:00",
+                "elapsed_s": 1.4184663880150765
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/128c121002e947f54fd7cc8e8434e08f5af7dd6bca3fef42f59b211949906301",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/128c121002e947f54fd7cc8e8434e08f5af7dd6bca3fef42f59b211949906301",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:11.454396+00:00",
-                "timeout_s": 2004.5479989990126,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:16.964073+00:00",
+                "timeout_s": 2011.3466336920392,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3564240
+                  "leader_pid": 3994995
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:12.823220+00:00",
-                "elapsed_s": 1.36880450299941
+                "ended_at": "2026-11-02T23:46:18.332704+00:00",
+                "elapsed_s": 1.3686084819491953
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/128718b7970cd0b364dce2a1d5076dae7acbea9d6de290f784aaefb8f97504eb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-29-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/128718b7970cd0b364dce2a1d5076dae7acbea9d6de290f784aaefb8f97504eb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-29-verilator/vectors.txt",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:13.024980+00:00",
-                "timeout_s": 2002.9774140601512,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:18.530378+00:00",
+                "timeout_s": 2009.7803273841273,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3564518
+                  "leader_pid": 3995406
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:14.394098+00:00",
-                "elapsed_s": 1.3690984710119665
+                "ended_at": "2026-11-02T23:46:19.899335+00:00",
+                "elapsed_s": 1.3689357920084149
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/440d8578dbc03471185afc393f82d43e6d619240d654711f2e0b6fe354c5b11a",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-29",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/440d8578dbc03471185afc393f82d43e6d619240d654711f2e0b6fe354c5b11a",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-29",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:14.418954+00:00",
-                "timeout_s": 2001.583443194162,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-29-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:19.924610+00:00",
+                "timeout_s": 2008.3860987711232,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3564811
+                  "leader_pid": 3995751
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:22.403191+00:00",
-                "elapsed_s": 7.984204854816198
+                "ended_at": "2026-11-02T23:46:28.258812+00:00",
+                "elapsed_s": 8.3341830749996
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/16efa1c2aee5075e9df9c4cc0ef250be84af1c8b673b0c3d31c479a2a7a373c4",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-29",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/16efa1c2aee5075e9df9c4cc0ef250be84af1c8b673b0c3d31c479a2a7a373c4",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-29",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:22.427098+00:00",
-                "timeout_s": 1993.5752979821991,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-29-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:28.283223+00:00",
+                "timeout_s": 2000.0274861850776,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3566312
+                  "leader_pid": 3996163
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:27.204525+00:00",
-                "elapsed_s": 4.777491847984493
+                "ended_at": "2026-11-02T23:46:33.011869+00:00",
+                "elapsed_s": 4.728621555026621
               },
               {
                 "argv": [
@@ -2015,39 +2015,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:27.222826+00:00",
-                "timeout_s": 1988.7795706361067,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:46:33.030202+00:00",
+                "timeout_s": 1995.2805075291544,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3566988
+                  "leader_pid": 3996459
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:33.051813+00:00",
-                "elapsed_s": 5.828972875140607
+                "ended_at": "2026-11-02T23:46:39.059317+00:00",
+                "elapsed_s": 6.029092947021127
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:33.052134+00:00",
-                "timeout_s": 1982.950257786084,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-8-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:39.059742+00:00",
+                "timeout_s": 1989.2509662159719,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-8-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3568666
+                  "leader_pid": 3996745
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:33.168463+00:00",
-                "elapsed_s": 0.11633020802401006
+                "ended_at": "2026-11-02T23:46:39.176147+00:00",
+                "elapsed_s": 0.11636832193471491
               },
               {
                 "argv": [
@@ -2062,39 +2062,39 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:33.184485+00:00",
-                "timeout_s": 1982.8179080570117,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:46:39.197764+00:00",
+                "timeout_s": 1989.112945329165,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3568951
+                  "leader_pid": 3997001
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:39.265307+00:00",
-                "elapsed_s": 6.0808121100999415
+                "ended_at": "2026-11-02T23:46:45.176795+00:00",
+                "elapsed_s": 5.979010794078931
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:39.265774+00:00",
-                "timeout_s": 1976.7366226641461,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/csr-64-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:45.177120+00:00",
+                "timeout_s": 1983.133589222096,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/csr-64-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3570638
+                  "leader_pid": 3997097
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:39.381857+00:00",
-                "elapsed_s": 0.11607128498144448
+                "ended_at": "2026-11-02T23:46:45.293436+00:00",
+                "elapsed_s": 0.11627838481217623
               },
               {
                 "argv": [
@@ -2109,153 +2109,153 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator/compile-obj",
                   "rtl/anvil_q1_fp2_ddr_pingpong.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:39.385734+00:00",
-                "timeout_s": 1976.6166639530566,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:46:45.297452+00:00",
+                "timeout_s": 1983.0132574511226,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3570965
+                  "leader_pid": 3997359
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:47.420513+00:00",
-                "elapsed_s": 8.034946158062667
+                "ended_at": "2026-11-02T23:46:52.577130+00:00",
+                "elapsed_s": 7.279655468882993
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator/compile-obj/Vtb"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator/compile-obj/Vtb"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:47.421069+00:00",
-                "timeout_s": 1968.58132682601,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/ddr-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:52.577464+00:00",
+                "timeout_s": 1975.7332451371476,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/ddr-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3571453
+                  "leader_pid": 3997606
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:47.537308+00:00",
-                "elapsed_s": 0.11619742005132139
+                "ended_at": "2026-11-02T23:46:52.694007+00:00",
+                "elapsed_s": 0.1165051469579339
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/d405a5cfa659370cf6f8abb6b13c86649e20e1f583a6142f1d4051ffe37f3d0d",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/d405a5cfa659370cf6f8abb6b13c86649e20e1f583a6142f1d4051ffe37f3d0d",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:48.004180+00:00",
-                "timeout_s": 1967.998211764032,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/epilogue-3-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:53.208230+00:00",
+                "timeout_s": 1975.102476707194,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/epilogue-3-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3571842
+                  "leader_pid": 3997863
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:48.570911+00:00",
-                "elapsed_s": 0.5667232349514961
+                "ended_at": "2026-11-02T23:46:54.125953+00:00",
+                "elapsed_s": 0.9176828530617058
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/01c23b604c661c15d2f2f848930171880373f2645279f8404cb40821f9e8a04f",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/01c23b604c661c15d2f2f848930171880373f2645279f8404cb40821f9e8a04f",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:48.761563+00:00",
-                "timeout_s": 1967.2408465421759,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-1-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:54.314856+00:00",
+                "timeout_s": 1973.9958481541835,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-1-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3572246
+                  "leader_pid": 3998151
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:50.130371+00:00",
-                "elapsed_s": 1.3687867890112102
+                "ended_at": "2026-11-02T23:46:55.685429+00:00",
+                "elapsed_s": 1.3705617128871381
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/128c121002e947f54fd7cc8e8434e08f5af7dd6bca3fef42f59b211949906301",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/128c121002e947f54fd7cc8e8434e08f5af7dd6bca3fef42f59b211949906301",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:50.318048+00:00",
-                "timeout_s": 1965.68434299808,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-3-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:55.871202+00:00",
+                "timeout_s": 1972.4395029461011,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-3-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3572581
+                  "leader_pid": 3998427
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:51.686938+00:00",
-                "elapsed_s": 1.3688795620109886
+                "ended_at": "2026-11-02T23:46:57.240089+00:00",
+                "elapsed_s": 1.368880830006674
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/128718b7970cd0b364dce2a1d5076dae7acbea9d6de290f784aaefb8f97504eb",
-                  "+vectors=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-71-verilator/vectors.txt",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/128718b7970cd0b364dce2a1d5076dae7acbea9d6de290f784aaefb8f97504eb",
+                  "+vectors=evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-71-verilator/vectors.txt",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:51.874439+00:00",
-                "timeout_s": 1964.1279526751023,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/attention-16-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:57.428438+00:00",
+                "timeout_s": 1970.8822662851308,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/attention-16-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3573139
+                  "leader_pid": 3998703
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:47:53.243030+00:00",
-                "elapsed_s": 1.3685628508683294
+                "ended_at": "2026-11-02T23:46:58.848022+00:00",
+                "elapsed_s": 1.4195559180807322
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/440d8578dbc03471185afc393f82d43e6d619240d654711f2e0b6fe354c5b11a",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-71",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/440d8578dbc03471185afc393f82d43e6d619240d654711f2e0b6fe354c5b11a",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-71",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:47:53.265101+00:00",
-                "timeout_s": 1962.7372942401562,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable0-71-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:46:58.869537+00:00",
+                "timeout_s": 1969.4411707241088,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable0-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3573499
+                  "leader_pid": 3998981
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:48:01.199192+00:00",
-                "elapsed_s": 7.934069884940982
+                "ended_at": "2026-11-02T23:47:07.106731+00:00",
+                "elapsed_s": 8.23715657996945
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/16efa1c2aee5075e9df9c4cc0ef250be84af1c8b673b0c3d31c479a2a7a373c4",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-71",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/16efa1c2aee5075e9df9c4cc0ef250be84af1c8b673b0c3d31c479a2a7a373c4",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-71",
                   "+seed=71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:48:01.217221+00:00",
-                "timeout_s": 1954.7851731909905,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h8-enable1-71-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:47:07.124451+00:00",
+                "timeout_s": 1961.186254936969,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h8-enable1-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3574203
+                  "leader_pid": 3999316
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:48:06.845506+00:00",
-                "elapsed_s": 5.628250875044614
+                "ended_at": "2026-11-02T23:47:10.798459+00:00",
+                "elapsed_s": 3.673978643026203
               },
               {
                 "argv": [
@@ -2270,7 +2270,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -2314,60 +2314,60 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:48:07.130901+00:00",
-                "timeout_s": 1948.8714977030177,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:47:11.016351+00:00",
+                "timeout_s": 1957.2943545870949,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3576103
+                  "leader_pid": 3999609
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:50:45.121351+00:00",
-                "elapsed_s": 157.9904472581111
+                "ended_at": "2026-11-02T23:49:55.419929+00:00",
+                "elapsed_s": 164.40357166319154
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator",
                   "+seed=29",
                   "+precision=1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:50:45.129604+00:00",
-                "timeout_s": 1790.8727968879975,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-bf16-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:49:55.427559+00:00",
+                "timeout_s": 1792.8831632900983,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-bf16-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3594651
+                  "leader_pid": 4005625
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:51:12.215658+00:00",
-                "elapsed_s": 27.08601203816943
+                "ended_at": "2026-11-02T23:50:21.453898+00:00",
+                "elapsed_s": 26.026315299095586
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/9ea441a18d2e74dd5d4e62a5b228751ea1492fc052314d7d831eff928adbb580",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-mx-29-verilator",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/9ea441a18d2e74dd5d4e62a5b228751ea1492fc052314d7d831eff928adbb580",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-mx-29-verilator",
                   "+seed=29",
                   "+precision=3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:51:26.783501+00:00",
-                "timeout_s": 1749.2188871190883,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-mx-29-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h56-mx-29-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:50:36.049083+00:00",
+                "timeout_s": 1752.261616626056,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-mx-29-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h56-mx-29-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3600829
+                  "leader_pid": 4007479
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:51:58.954731+00:00",
-                "elapsed_s": 32.17122062505223
+                "ended_at": "2026-11-02T23:51:06.917187+00:00",
+                "elapsed_s": 30.86810952797532
               },
               {
                 "argv": [
@@ -2382,7 +2382,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -2426,60 +2426,60 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator/tb.sv"
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:51:59.929625+00:00",
-                "timeout_s": 1716.072776747169,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator-compile.stderr.txt",
+                "started_at": "2026-11-02T23:51:07.905864+00:00",
+                "timeout_s": 1720.4048526759725,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3607658
+                  "leader_pid": 4009614
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:54:43.975875+00:00",
-                "elapsed_s": 164.04621147899888
+                "ended_at": "2026-11-02T23:53:49.999934+00:00",
+                "elapsed_s": 162.0940401898697
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator",
                   "+seed=71",
                   "+precision=1"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:54:43.983673+00:00",
-                "timeout_s": 1552.0187240920495,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-bf16-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:53:50.007949+00:00",
+                "timeout_s": 1558.302759553073,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-bf16-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3639933
+                  "leader_pid": 4027358
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:56:06.998663+00:00",
-                "elapsed_s": 83.01496109017171
+                "ended_at": "2026-11-02T23:55:11.465716+00:00",
+                "elapsed_s": 81.4577410868369
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/build-cache/2d19de17ce673a70a81f78a4d9831742e5537ca5755e5dfc065ec131c9aff8d1",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-mx-71-verilator",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/build-cache/2d19de17ce673a70a81f78a4d9831742e5537ca5755e5dfc065ec131c9aff8d1",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-mx-71-verilator",
                   "+seed=71",
                   "+precision=3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:56:59.985206+00:00",
-                "timeout_s": 1416.0171965991613,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-mx-71-verilator-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/architecture-h112-mx-71-verilator-simulate.stderr.txt",
+                "started_at": "2026-11-02T23:56:04.601774+00:00",
+                "timeout_s": 1423.708929306129,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-mx-71-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/architecture-h112-mx-71-verilator-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3680451
+                  "leader_pid": 4043412
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T22:58:36.316082+00:00",
-                "elapsed_s": 96.3308665130753
+                "ended_at": "2026-11-02T23:57:46.493269+00:00",
+                "elapsed_s": 101.8914719489403
               },
               {
                 "argv": [
@@ -2495,7 +2495,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -2539,40 +2539,40 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17/tb.sv",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17/tb.sv",
                   "../driver.cpp"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T22:58:36.333706+00:00",
-                "timeout_s": 1319.6686908029951,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17-compile.stderr.txt",
+                "started_at": "2026-11-02T23:57:46.512453+00:00",
+                "timeout_s": 1321.798263937002,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3695289
+                  "leader_pid": 4050753
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:02:21.693921+00:00",
-                "elapsed_s": 225.36019198899157
+                "ended_at": "2026-11-03T00:01:31.208545+00:00",
+                "elapsed_s": 224.69624081719667
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17",
                   "+seed=17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:02:21.705404+00:00",
-                "timeout_s": 1094.2969934011344,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h56-enable0-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:01:31.219807+00:00",
+                "timeout_s": 1097.0909036861267,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h56-enable0-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3705853
+                  "leader_pid": 4068023
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:05:14.272233+00:00",
-                "elapsed_s": 172.56680179806426
+                "ended_at": "2026-11-03T00:04:26.891467+00:00",
+                "elapsed_s": 175.67162581090815
               },
               {
                 "argv": [
@@ -2588,7 +2588,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29/compile-obj",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -2632,40 +2632,40 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29/tb.sv",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29/tb.sv",
                   "../driver.cpp"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:05:14.450898+00:00",
-                "timeout_s": 921.551504506031,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29-compile.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29-compile.stderr.txt",
+                "started_at": "2026-11-03T00:04:27.065885+00:00",
+                "timeout_s": 921.2448287911247,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29-compile.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3723362
+                  "leader_pid": 4084233
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:08:49.880327+00:00",
-                "elapsed_s": 215.4293941440992
+                "ended_at": "2026-11-03T00:08:07.859455+00:00",
+                "elapsed_s": 220.79355447296984
               },
               {
                 "argv": [
-                  "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29",
+                  "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29",
                   "+seed=29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:08:49.891460+00:00",
-                "timeout_s": 706.110936793033,
-                "stdout": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-behavior-20261102T223536Z-c7f0bb93/compatibility-h112-enable0-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:08:07.870082+00:00",
+                "timeout_s": 700.440629319055,
+                "stdout": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-behavior-20261102T233448Z-3b00db0b/compatibility-h112-enable0-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3746228
+                  "leader_pid": 4102001
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:19:37.003145+00:00",
-                "elapsed_s": 647.1116633601487
+                "ended_at": "2026-11-03T00:18:36.642794+00:00",
+                "elapsed_s": 628.772668546997
               }
             ],
             "comparisons": [
@@ -3608,122 +3608,122 @@
               {
                 "case": "add-29-verilator",
                 "source_digest": "13f02f6998b8441775ed03fbcd68c0cf9bb74afb0732d81e1d29945634335830",
-                "binary_sha256": "cc1e426b7ca89d660dd3d9df281e66bb23ee4790d7b744866cf250c565999184"
+                "binary_sha256": "621a34feddc2b1e2cd05f6a671a3de90376045fb9fe0aa7606c14b2e72d7fb30"
               },
               {
                 "case": "multiply-29-verilator",
                 "source_digest": "e8c4b31be9a40eac8c8099bd7ffdc4ff6358bf6a3e62eeefe370bd56ffb62be8",
-                "binary_sha256": "09623b414d8590495aa37364494a0487f420221a9f948e46d57f06f4d2fa0c6b"
+                "binary_sha256": "7996ca5cb75f95d97df2c431f0eaeb3882bd0489ca9bf574fec66e4b3d62d86f"
               },
               {
                 "case": "tensor-29-verilator",
                 "source_digest": "1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
-                "binary_sha256": "415b5aba8d9b96cc490bab53d46291c1fc0bf6385708da9085ee4b44fb17ccaa"
+                "binary_sha256": "cd325de07c7a4569b4ec47318c4e534722ebf4cf266639e6fbb65fd1f7999a46"
               },
               {
                 "case": "rsqrt-29-verilator",
                 "source_digest": "2f3aeebfb886f51590c61ba76fde00784298b7c3ec1537dc29f44063a9a237a9",
-                "binary_sha256": "be1297b40a35d1d2c48061d8bd0bb09b4b3ee3b45f5b4075b6fb5049c1e5665a"
+                "binary_sha256": "3a83f43e8dfe3baa06ec9ebc3369072dd2f232def7f7cd4b2f8cdebc731fbcb9"
               },
               {
                 "case": "exp-29-verilator",
                 "source_digest": "37061e475ce663f50b490f4991fc3466c0e2ff05f985948e762144c626fd4f98",
-                "binary_sha256": "f2e8b8d9f8855cc732d1e1ccc148abb36c7bbed7dd406ded99d7114eae0d6e5d"
+                "binary_sha256": "c041828ce53b43e48654cc3d1d30a60f400aecb90cd38289dc4680ded3753018"
               },
               {
                 "case": "add-71-verilator",
                 "source_digest": "13f02f6998b8441775ed03fbcd68c0cf9bb74afb0732d81e1d29945634335830",
-                "binary_sha256": "cc1e426b7ca89d660dd3d9df281e66bb23ee4790d7b744866cf250c565999184"
+                "binary_sha256": "621a34feddc2b1e2cd05f6a671a3de90376045fb9fe0aa7606c14b2e72d7fb30"
               },
               {
                 "case": "multiply-71-verilator",
                 "source_digest": "e8c4b31be9a40eac8c8099bd7ffdc4ff6358bf6a3e62eeefe370bd56ffb62be8",
-                "binary_sha256": "09623b414d8590495aa37364494a0487f420221a9f948e46d57f06f4d2fa0c6b"
+                "binary_sha256": "7996ca5cb75f95d97df2c431f0eaeb3882bd0489ca9bf574fec66e4b3d62d86f"
               },
               {
                 "case": "tensor-71-verilator",
                 "source_digest": "1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
-                "binary_sha256": "415b5aba8d9b96cc490bab53d46291c1fc0bf6385708da9085ee4b44fb17ccaa"
+                "binary_sha256": "cd325de07c7a4569b4ec47318c4e534722ebf4cf266639e6fbb65fd1f7999a46"
               },
               {
                 "case": "rsqrt-71-verilator",
                 "source_digest": "2f3aeebfb886f51590c61ba76fde00784298b7c3ec1537dc29f44063a9a237a9",
-                "binary_sha256": "be1297b40a35d1d2c48061d8bd0bb09b4b3ee3b45f5b4075b6fb5049c1e5665a"
+                "binary_sha256": "3a83f43e8dfe3baa06ec9ebc3369072dd2f232def7f7cd4b2f8cdebc731fbcb9"
               },
               {
                 "case": "exp-71-verilator",
                 "source_digest": "37061e475ce663f50b490f4991fc3466c0e2ff05f985948e762144c626fd4f98",
-                "binary_sha256": "f2e8b8d9f8855cc732d1e1ccc148abb36c7bbed7dd406ded99d7114eae0d6e5d"
+                "binary_sha256": "c041828ce53b43e48654cc3d1d30a60f400aecb90cd38289dc4680ded3753018"
               },
               {
                 "case": "epilogue-3-29-verilator",
                 "source_digest": "d405a5cfa659370cf6f8abb6b13c86649e20e1f583a6142f1d4051ffe37f3d0d",
-                "binary_sha256": "b128361ba10c449fe0516dea99e91ca6c9539018a4c0677ae39ba27de99299da"
+                "binary_sha256": "8159996beeef286ccc1f2551abbbae61603c65efd013d569edc0502b6adf631d"
               },
               {
                 "case": "attention-1-29-verilator",
                 "source_digest": "01c23b604c661c15d2f2f848930171880373f2645279f8404cb40821f9e8a04f",
-                "binary_sha256": "5db7af7ed403641ab5cb6748ed97f1d24f969b2acbe81e33fc0ea3e28c495f48"
+                "binary_sha256": "f8e714b65e31de8684c899dbb25a07501baa677aa16a2d7af38e73e006ea3957"
               },
               {
                 "case": "attention-3-29-verilator",
                 "source_digest": "128c121002e947f54fd7cc8e8434e08f5af7dd6bca3fef42f59b211949906301",
-                "binary_sha256": "26fc569e42d4ff2cccb593e2209db4c891d887c73f68324b7c879d6f33c86d82"
+                "binary_sha256": "b9a347a46c4eb1a9db1875f0cce6bdf72c29a9b88c7994757039f17552edf2e6"
               },
               {
                 "case": "attention-16-29-verilator",
                 "source_digest": "128718b7970cd0b364dce2a1d5076dae7acbea9d6de290f784aaefb8f97504eb",
-                "binary_sha256": "87509d88b1163c221c75de2e1fbfb41d819763c07b8afbe8700d6e3e0451be4f"
+                "binary_sha256": "1aaab790367d001b5714a6b6b1d472e584e7b50b4fe322a2dc585917c73d372f"
               },
               {
                 "case": "compatibility-h8-enable0-29",
                 "source_digest": "440d8578dbc03471185afc393f82d43e6d619240d654711f2e0b6fe354c5b11a",
-                "binary_sha256": "072de65122765c4f7a079011b19c9b41a3bb53bb292e05cc32fda2c655d6f9a0"
+                "binary_sha256": "28113b847e467c981c2c7aedc2ba83282c0d7808ba222436ee696210e1dcd8a5"
               },
               {
                 "case": "compatibility-h8-enable1-29",
                 "source_digest": "16efa1c2aee5075e9df9c4cc0ef250be84af1c8b673b0c3d31c479a2a7a373c4",
-                "binary_sha256": "548af0f054b1f3ebb6b5e689401972e32c9676078034ed0e49bb0657e7dcb261"
+                "binary_sha256": "e026d6ddd178f10738da79c27db2ba058ef37f21b5de6f05edb32eb5f0f946fa"
               },
               {
                 "case": "epilogue-3-71-verilator",
                 "source_digest": "d405a5cfa659370cf6f8abb6b13c86649e20e1f583a6142f1d4051ffe37f3d0d",
-                "binary_sha256": "b128361ba10c449fe0516dea99e91ca6c9539018a4c0677ae39ba27de99299da"
+                "binary_sha256": "8159996beeef286ccc1f2551abbbae61603c65efd013d569edc0502b6adf631d"
               },
               {
                 "case": "attention-1-71-verilator",
                 "source_digest": "01c23b604c661c15d2f2f848930171880373f2645279f8404cb40821f9e8a04f",
-                "binary_sha256": "5db7af7ed403641ab5cb6748ed97f1d24f969b2acbe81e33fc0ea3e28c495f48"
+                "binary_sha256": "f8e714b65e31de8684c899dbb25a07501baa677aa16a2d7af38e73e006ea3957"
               },
               {
                 "case": "attention-3-71-verilator",
                 "source_digest": "128c121002e947f54fd7cc8e8434e08f5af7dd6bca3fef42f59b211949906301",
-                "binary_sha256": "26fc569e42d4ff2cccb593e2209db4c891d887c73f68324b7c879d6f33c86d82"
+                "binary_sha256": "b9a347a46c4eb1a9db1875f0cce6bdf72c29a9b88c7994757039f17552edf2e6"
               },
               {
                 "case": "attention-16-71-verilator",
                 "source_digest": "128718b7970cd0b364dce2a1d5076dae7acbea9d6de290f784aaefb8f97504eb",
-                "binary_sha256": "87509d88b1163c221c75de2e1fbfb41d819763c07b8afbe8700d6e3e0451be4f"
+                "binary_sha256": "1aaab790367d001b5714a6b6b1d472e584e7b50b4fe322a2dc585917c73d372f"
               },
               {
                 "case": "compatibility-h8-enable0-71",
                 "source_digest": "440d8578dbc03471185afc393f82d43e6d619240d654711f2e0b6fe354c5b11a",
-                "binary_sha256": "072de65122765c4f7a079011b19c9b41a3bb53bb292e05cc32fda2c655d6f9a0"
+                "binary_sha256": "28113b847e467c981c2c7aedc2ba83282c0d7808ba222436ee696210e1dcd8a5"
               },
               {
                 "case": "compatibility-h8-enable1-71",
                 "source_digest": "16efa1c2aee5075e9df9c4cc0ef250be84af1c8b673b0c3d31c479a2a7a373c4",
-                "binary_sha256": "548af0f054b1f3ebb6b5e689401972e32c9676078034ed0e49bb0657e7dcb261"
+                "binary_sha256": "e026d6ddd178f10738da79c27db2ba058ef37f21b5de6f05edb32eb5f0f946fa"
               },
               {
                 "case": "architecture-h56-mx-29-verilator",
                 "source_digest": "9ea441a18d2e74dd5d4e62a5b228751ea1492fc052314d7d831eff928adbb580",
-                "binary_sha256": "3add0cb8dda6fac3cded3da0fd7b7d622b5a65b2a7474e1f26b35611d25a0eb7"
+                "binary_sha256": "50f9583f96d25ca6a2ec295d955f32bbcbc1e5d88de6225cad45ca65ce6ce3fc"
               },
               {
                 "case": "architecture-h112-mx-71-verilator",
                 "source_digest": "2d19de17ce673a70a81f78a4d9831742e5537ca5755e5dfc065ec131c9aff8d1",
-                "binary_sha256": "4fde39909781ea8e51af117b8955b776bcd6fd852259f826dc936bb03e3e699b"
+                "binary_sha256": "0c5a70ffcd94a8cf1db3f45ed36ffa5f245cb2e5417426cd8e79d047b78940d0"
               }
             ],
             "coverage": {
@@ -3847,7 +3847,7 @@
                 "compiled seeded Verilator"
               ]
             },
-            "ended_at": "2026-11-02T23:19:37.173069+00:00",
+            "ended_at": "2026-11-03T00:18:36.776768+00:00",
             "exit_code": 0
           }
         }
