@@ -457,11 +457,13 @@ def run_layer(run, profile=1, normalization=True, compact=False, threads=1):
     return result
 
 
-def run_fusion_profile(run, profile=1, compact=False):
+def run_fusion_profile(run, profile=1, compact=False, threads=1):
     fused = run.component(f"layer-fused-profile{profile}",
-                          lambda child: run_layer(child, profile, compact=compact))
+                          lambda child: run_layer(child, profile, compact=compact,
+                                                   threads=threads))
     baseline = run.component(f"layer-rope-only-profile{profile}",
-                             lambda child: run_layer(child, profile, False, compact))
+                             lambda child: run_layer(child, profile, False, compact,
+                                                      threads=threads))
     if baseline["cycles"] <= 0 or fused["requests"] != baseline["requests"]:
         raise AssertionError("fusion comparison changed memory work")
     difference = fused["cycles"] - baseline["cycles"]

@@ -127,9 +127,11 @@ def main():
                                   threads=args.sim_threads, compiled=latest_marker_build())
         elif args.probe in ("production-layer", "fusion-profile", "fusion-compact"):
             run.versions(("python3", "verilator", "g++", "make"))
-            results = (run_layer(run, args.profile) if args.probe == "production-layer"
+            results = (run_layer(run, args.profile, threads=args.sim_threads)
+                       if args.probe == "production-layer"
                        else run_fusion_profile(run, args.profile,
-                                               compact=args.probe == "fusion-compact"))
+                                               compact=args.probe == "fusion-compact",
+                                               threads=args.sim_threads))
         elif args.probe == "speculative-cancel-case":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_speculative_cancel(run, args.fault)
