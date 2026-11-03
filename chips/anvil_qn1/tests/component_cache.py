@@ -133,6 +133,8 @@ def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None)
 
 def saved_behavior_applicability(run):
     """Assess existing behavior evidence without treating partial coverage as closure."""
+    from resume_checks import orchestration_equivalence
+
     groups = {
         "behavior-core": ("tests/behavior_checks.py", "tests/speculation_checks.py",
                           "tests/integration.py", "tests/model.py", "tests/reference.py"),
@@ -164,7 +166,8 @@ def saved_behavior_applicability(run):
                         "speculative-cancel") and not isinstance(expected.get("cases"), list):
                 continue
             assessment, _ = assess(
-                run, path, inputs, {}, ("python3", "verilator", "g++", "make"))
+                run, path, inputs, {}, ("python3", "verilator", "g++", "make"),
+                equivalence=orchestration_equivalence)
             assessments.append(assessment)
             if assessment["applicable"]:
                 break

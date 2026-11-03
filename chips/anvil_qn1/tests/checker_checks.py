@@ -29,6 +29,10 @@ def rejection(operation, label):
 
 def run_behavior_checker(run):
     complete = run_behavior_components(run)["components"]
+    from behavior_suite import fusion_components
+    from resume_checks import validate_marker_receipt
+
+    fusion = fusion_components(run)
     rejected = []
     for stem, validate in (
             ("behavior-core", validate_core), ("memory-matrix", validate_memory),
@@ -84,6 +88,30 @@ def run_behavior_checker(run):
         raise AssertionError("component accepted changed parameter/coverage identity")
     rejected.append("cache:changed-case-count")
 
+    markers = set()
+    for record in run.components:
+        path = ROOT / record["receipt"]
+        receipt_data = json.loads(path.read_text())
+        result = receipt_data.get("results", {})
+        binding = result.get("compiled", {}).get("binding", {})
+        if binding.get("parameters", {}).get("VOCAB_SIZE") != 151936:
+            continue
+        markers.add(("input_marker" in result, result["opening"]))
+        broken = copy.deepcopy(result)
+        broken["counts"][1] -= 1
+        rejected.append(rejection(
+            lambda broken=broken: validate_marker_receipt(run, path, receipt_data, broken),
+            f"marker:{'prefill' if 'input_marker' in result else 'generated'}:"
+            f"{result['opening']}:missing-word"))
+        broken_receipt = copy.deepcopy(receipt_data)
+        broken_receipt["transient_image_sha256"] = {}
+        rejected.append(rejection(
+            lambda: validate_marker_receipt(run, path, broken_receipt, result),
+            f"marker:{'prefill' if 'input_marker' in result else 'generated'}:"
+            f"{result['opening']}:missing-images"))
+    if markers != {(prefill, opening) for prefill in (False, True) for opening in (False, True)}:
+        raise AssertionError("marker retained-validation counterexamples are incomplete")
+
     measured = []
     candidates = sorted((ROOT / "evidence/preparation").glob("fusion-compact-*/receipt.json"))
     for path in candidates:
@@ -119,7 +147,8 @@ def run_behavior_checker(run):
     return {"scope": "checker-only negative tests; not RTL defect sensitivity or suite acceptance",
             "rejected_counterexamples": rejected, "rejected_count": len(rejected),
             "historical_measurement_rechecks": measured,
-            "protocol_components": sorted(complete)}
+            "protocol_components": sorted(complete),
+            "compact_fusion": fusion}
 
 
 def run_delivery_checker(run):

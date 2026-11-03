@@ -187,6 +187,8 @@ def prefill_case(run, opening):
 
 def run_behavior_components(run):
     """Protocol/numerical components, excluding the separate fusion comparisons."""
+    from resume_checks import orchestration_equivalence
+
     jobs = (
         ("behavior-core", run_behavior_core,
          (*SPECULATION, "tests/behavior_checks.py"), validate_core),
@@ -205,7 +207,9 @@ def run_behavior_components(run):
     results = {}
     for stem, operation, inputs, validate in jobs:
         results[stem] = component(run, stem, operation, inputs=inputs, parameters={},
-                                  tools=TOOLS, validate=validate)
+                                  tools=TOOLS, validate=validate,
+                                  equivalence=orchestration_equivalence,
+                                  aliases=("smoke-controller",) if stem == "controller" else ())
     results["attention-context"] = long_context(run)
     for opening in (True, False):
         suffix = "open" if opening else "close"
