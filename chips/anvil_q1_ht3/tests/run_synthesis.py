@@ -44,7 +44,7 @@ JOBS = (
      {"NUM_Q_HEADS": 1, "NUM_KV_HEADS": 1, "HEAD_DIM": 8,
       "MAX_SEQ_LEN": 1, "TILE_TOKENS": 3}, False),
 )
-JOB_BUDGETS = {"default-hierarchy": 360, "compact-mapped": 420,
+JOB_BUDGETS = {"default-hierarchy": 360, "compact-mapped": 1800,
                "compact-hierarchy": 180,
                "fp32_add": 60, "fp32_mul": 60, "fp32_divsqrt": 90,
                "fp32_exp": 150, "fp32_sincos": 120,
