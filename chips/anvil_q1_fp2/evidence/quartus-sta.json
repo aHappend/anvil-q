@@ -1,0 +1,71 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-11-03T00:46:03.472847+00:00",
+  "project_dir": "/data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "failed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 2,
+    "errors": [
+      "Error (10149): Verilog HDL Declaration error at anvil_q1_fp2_projection.sv(123): identifier \"n\" is already declared in the present scope File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_projection.sv Line: 123",
+      "Error (10112): Ignored design unit \"anvil_q1_fp2_projection\" at anvil_q1_fp2_projection.sv(1) due to previous errors File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_projection.sv Line: 1"
+    ],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 3,
+    "netlist_mode": null,
+    "clocks": [],
+    "wns_setup_ns": null,
+    "wns_hold_ns": null,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [],
+    "hold_paths": [],
+    "stderr_tail": [
+      "------------------------------------------------",
+      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
+      "",
+      "    while executing",
+      "\"create_timing_netlist -post_map\"",
+      "    (file \"vulcan_sta_mm5zjl32.tcl\" line 2)",
+      "------------------------------------------------"
+    ]
+  },
+  "detail": "quartus_map reported 2 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "quartus_slot_telemetry": {
+    "slot_index": 4,
+    "max_slots": 6,
+    "slot_wait_s": 0.002
+  },
+  "top_module": "anvil_q1_fp2_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "parameters": {
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 16,
+    "INTERMEDIATE_SIZE": 16,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 2,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "2d7de31b8319a5af676eab7519eb0e5631af8c4a0cd4090e285478f4512bb7ab",
+  "applicable": true
+}

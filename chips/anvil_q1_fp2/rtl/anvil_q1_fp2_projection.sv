@@ -119,8 +119,8 @@ module anvil_q1_fp2_projection #(
       assign decoded_quant[16*n+:16]=n<group_width ? quant_lane[n][15:0] : 16'd0;
       assign decode_flags[63+n]=n<group_width ? quant_lane[n][20:16] : 5'd0;
     end
-    for (genvar n=0;n<63;n=n+1) begin: quant_flags
-      assign decode_flags[n]=decode_flags[2*n+1] | decode_flags[2*n+2];
+    for (genvar flag_index=0;flag_index<63;flag_index=flag_index+1) begin: quant_flags
+      assign decode_flags[flag_index]=decode_flags[2*flag_index+1] | decode_flags[2*flag_index+2];
     end
   endgenerate
   anvil_q1_fp2_mx_quantize quantizer(
