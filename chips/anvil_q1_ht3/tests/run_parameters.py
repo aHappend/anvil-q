@@ -23,6 +23,20 @@ DEFAULT = dict(NUM_LAYERS=24,HIDDEN_SIZE=896,INTERMEDIATE_SIZE=4864,NUM_Q_HEADS=
                MAX_SEQ_LEN=32768,TILE_BEATS=256,KV_WINDOW=128,FLASH_TILE=16)
 
 
+def legal_cross():
+    beats, windows, tiles = (1, 3, 256), (1, 3, 128), (1, 3, 16, 128)
+    triples = [(beats[i % 3], windows[(i//3+i) % 3], tiles[i//3])
+               for i in range(12)]
+    for left, right, expected in ((0, 1, {(a,b) for a in beats for b in windows}),
+                                  (0, 2, {(a,b) for a in beats for b in tiles}),
+                                  (1, 2, {(a,b) for a in windows for b in tiles})):
+        if {(row[left], row[right]) for row in triples} != expected:
+            raise AssertionError("legal parameter schedule lost pairwise boundary coverage")
+    return [(f"legal-cross-b{b}-w{w}-f{f}",
+             {**SMALL, "TILE_BEATS": b, "KV_WINDOW": w, "FLASH_TILE": f,
+              "MAX_SEQ_LEN": 128 if w == 128 else 17}, False) for b,w,f in triples]
+
+
 def csr_vectors():
     rows = [(0x0000,0,0,0,0x02000001), (0x0154,0,0,0,0x03000003),
             (0x0100,0,0,0,0), (0x0104,0,0,0,0)]
@@ -164,6 +178,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--leaf-only", action="store_true")
+    parser.add_argument("--legal-matrix-only", action="store_true")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True,exist_ok=False)
@@ -171,10 +186,14 @@ def main():
                    start=timestamp(),timeout=remaining(),source_sha256=hashes(),tool_version=sys.version)
     results = []
     abi_hash = check_abi()
-    jobs = [] if args.leaf_only else [("compact-csr-icarus",None,False)]
-    if not args.diagnostic and not args.leaf_only:
+    if args.legal_matrix_only and (args.leaf_only or args.diagnostic):
+        parser.error("--legal-matrix-only cannot combine with --leaf-only/--diagnostic")
+    jobs = (legal_cross() if args.legal_matrix_only else [] if args.leaf_only
+            else [("compact-csr-icarus",None,False)])
+    if not args.diagnostic and not args.leaf_only and not args.legal_matrix_only:
         jobs += [("compact-csr-verilator",None,False),
                  ("smallest",SMALL,False),("nonpower",NONPOWER,False),("default",DEFAULT,False)]
+        jobs += legal_cross()
         for parameter,bad in (("NUM_LAYERS",0),("NUM_LAYERS",25),("HIDDEN_SIZE",0),
                               ("HIDDEN_SIZE",904),("INTERMEDIATE_SIZE",0),
                               ("INTERMEDIATE_SIZE",4872),("HEAD_DIM",7),
@@ -195,11 +214,12 @@ def main():
         except (RuntimeError,AssertionError) as exc:
             row = dict(status="failed",error=str(exc))
         results.append(dict(id=name,path=relative(directory),parameters=parameters,**row))
-    if not args.diagnostic:
+    if not args.diagnostic and not args.legal_matrix_only:
         results.extend(leaf_cases(output))
     result = dict(status="passed" if all(r["status"]=="passed" for r in results) else "failed",
                   runs=results,ordered_port_sha256=abi_hash,diagnostic=args.diagnostic,
-                  coverage_limits=["TILE_BEATS/KV_WINDOW/FLASH_TILE legal cross matrix"]
+                  coverage_limits=["functional TILE_BEATS/KV_WINDOW/FLASH_TILE cross matrix; "
+                                   "the legal boundary cross received source elaboration only"]
                   if not args.leaf_only else [])
     with (output/"result.json").open("x") as out:
         json.dump(result,out,indent=2)

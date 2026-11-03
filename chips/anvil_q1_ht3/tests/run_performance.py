@@ -42,6 +42,17 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
     record = json.loads(path.read_text())
     current = hashes()
     build = json.loads((ROOT/binding).read_text())
+    compile_path = ROOT/build["compile_receipt"]
+    if not compile_path.is_file():
+        return None
+    compile_record = json.loads(compile_path.read_text())
+    if (compile_record.get("exit") != 0 or compile_record.get("timed_out")
+            or compile_record.get("tool_version_exit") != 0
+            or compile_record.get("tool_version", "").strip() != build["identity"]["tool_version"]
+            or any(compile_record.get("source_sha256", {}).get(p) != current[p]
+                   or build["identity"]["source_sha256"].get(p) != current[p]
+                   for p in simulation_sources(name))):
+        return None
     argv = record.get("argv", [])
     if (record.get("exit") != 0 or record.get("timed_out")
             or record.get("tool_version_exit") != 0
@@ -59,16 +70,18 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
             or digest(directory/"vectors.txt") != digest(vectors)
             or not (directory/"observations.txt").is_file()):
         return None
-    for key in ("stdout", "stderr"):
-        artifact = ROOT/record[key]
-        if (not artifact.is_file()
-                or record.get("artifact_sha256", {}).get(record[key]) != digest(artifact)):
-            return None
+    for execution in (record, compile_record):
+        for key in ("stdout", "stderr"):
+            artifact = ROOT/execution[key]
+            if (not artifact.is_file()
+                    or execution.get("artifact_sha256", {}).get(execution[key]) != digest(artifact)):
+                return None
     checked = check_case(directory, (ROOT/record["stdout"]).read_text(),
                          binding, fmt, seed, expected)
     artifacts = [path, directory/"vectors.txt", directory/"observations.txt",
                  ROOT/record["stdout"], ROOT/record["stderr"], ROOT/binding,
-                 ROOT/build["compile_receipt"], binary]
+                 compile_path, ROOT/compile_record["stdout"], ROOT/compile_record["stderr"],
+                 binary]
     return checked, {relative(p): digest(p) for p in artifacts}
 
 

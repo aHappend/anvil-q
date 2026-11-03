@@ -358,6 +358,8 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
         if phase == "word" and identifier == "compact-mapped":
             netlist = json.loads((directory / "netlist.json").read_text())
             phases[1:2] = mapping_groups(netlist)
+            if through_phase and through_phase not in {name for name, _ in phases}:
+                raise ValueError(f"unknown synthesis diagnostic phase: {through_phase}")
         if through_phase == phase:
             return dict(id=identifier, status="passed", parameters=parameters,
                         mapped=False, diagnostic_only=True, phases=records,

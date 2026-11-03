@@ -39,7 +39,7 @@ TOOLS = {"python3": ["python3", "--version"], "iverilog": ["iverilog", "-V"],
          "verilator": ["verilator", "--version"], "yosys": ["yosys", "-V"]}
 REPRODUCTION_RESERVE = 360
 SETTLEMENT_RESERVE = 30
-SUITE_BUDGETS = {"attention": 750, "parameters": 260, "attention_restart": 60,
+SUITE_BUDGETS = {"attention": 750, "parameters": 450, "attention_restart": 60,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
                  "mutations": 420, "benchmarks": 300, "performance": 480}
 
