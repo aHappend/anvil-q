@@ -247,7 +247,7 @@ def checkpoint_image(output, bindings):
                     image=relative(payload), image_sha256=image["image_sha256"],
                     image_bytes=image["image_bytes"], reused=True)
     images = output/"checkpoint-images"
-    images.mkdir()
+    images.mkdir(exist_ok=True)
     directory = images/f"official-image-{uuid.uuid4().hex[:12]}"
     image = build(directory, ROOT/bindings["model.safetensors"]["path"], config, pin)
     manifest = directory/"image-manifest.json"
@@ -299,10 +299,10 @@ def score_executed(work, stream, bindings, output):
     return result
 
 
-def evaluate(output, works, bindings, image, stream_smoke=False, profile_chunks=None):
-    from official_stream import compiled, run_stream
+def evaluate(output, works, bindings, image, build, stream_smoke=False, profile_chunks=None):
+    from official_stream import run_stream
 
-    binary, binding = compiled(output)
+    binary, binding = build
     manifest = json.loads((ROOT/image["manifest"]).read_text())
     rows = []
     for index, work in enumerate(works[:1] if stream_smoke else works):
@@ -352,13 +352,18 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     try:
+        build = None
+        if not args.prepare_only:
+            from official_stream import compiled
+
+            build = compiled(output)
         works, bindings, failures = prepare(output)
         rows = []
         image = None
         if not args.prepare_only:
             if not failures:
                 image = checkpoint_image(output, bindings)
-                rows = evaluate(output, works, bindings, image, args.stream_smoke,
+                rows = evaluate(output, works, bindings, image, build, args.stream_smoke,
                                 args.profile_chunks)
         passed = not failures and (args.prepare_only or
                   (bool(rows) and all(r["status"] == "passed" for r in rows)))
