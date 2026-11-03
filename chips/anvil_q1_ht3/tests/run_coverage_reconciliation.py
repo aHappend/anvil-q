@@ -28,7 +28,8 @@ def main():
         versions = inventory(output, TOOLS)
         rows = [child(name, [f"tests/run_{name}.py", *options], output,
                       versions=versions)
-                for name, options in (("attention_restart", []), ("attention", ["--compact"]))]
+                for name, options in (("attention_restart", []), ("attention", ["--compact"]),
+                                      ("attention_timing", []))]
         negative = copy.deepcopy(rows)
         negative[0]["status"] = "failed"
         reconcile_coverage(negative)
@@ -38,10 +39,23 @@ def main():
         labels = rows[1].get("resolved_coverage", {}).get("labels", [])
         if set(labels) != {"abort/reset during accepted KV", "zero-latency KV response"}:
             raise AssertionError("current source-matched public assertions did not reconcile")
-        if "resident-tile handoff edge assertions" not in rows[1]["coverage_limits"]:
-            raise AssertionError("unexecuted resident-tile coverage was incorrectly closed")
+        if (rows[1].get("resident_tile_coverage", {}).get("cases") != 40
+                or rows[1]["resident_tile_coverage"]["handoffs"] != 60
+                or "resident-tile handoff edge assertions" in rows[1]["coverage_limits"]):
+            raise AssertionError("complete resident-tile observations did not reconcile")
+        missing = copy.deepcopy(negative)
+        missing[1] = {k: v for k, v in rows[1].items()
+                      if k not in ("resident_tile_coverage", "resolved_coverage")}
+        missing[1]["coverage_limits"] = list(rows[1]["reported_coverage_limits"])
+        missing[2]["status"] = "failed"
+        reconcile_coverage(missing)
+        if ("resident_tile_coverage" in missing[1]
+                or "resident-tile handoff edge assertions" not in missing[1]["coverage_limits"]):
+            raise AssertionError("failed timing evidence incorrectly closed resident coverage")
+        if "subnormal/extreme directed vectors" not in rows[1]["coverage_limits"]:
+            raise AssertionError("unexecuted numerical coverage was incorrectly closed")
         result = dict(status="passed", scope="cross-suite evidence reconciliation only",
-                      assertions=3, rows=rows)
+                      assertions=5, rows=rows)
     except (OSError, RuntimeError, AssertionError, ValueError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:

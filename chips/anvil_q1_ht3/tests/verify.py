@@ -162,15 +162,58 @@ def child(identifier, argv, output, budget=None, versions=None, reserve=0):
 
 def reconcile_coverage(rows):
     """Resolve cross-suite labels only from current, checked public observations."""
+    current = hashes()
+
+    def checked_result(row, script):
+        if (row is None or row["status"] not in ("passed", "incomplete")
+                or not row.get("receipt")):
+            return None
+        result_path = row.get("result_path", row.get("result"))
+        if not result_path:
+            return None
+        receipt = json.loads((ROOT/row["receipt"]).read_text())
+        if (receipt.get("timed_out") or receipt.get("exit") != 0
+                or any(receipt.get("source_sha256", {}).get(path) != current[path]
+                       for path in dependencies(script))):
+            return None
+        result = json.loads((ROOT/result_path).read_text())
+        return result if result.get("status") == "passed" else None
+
+    attention = next((r for r in rows if r["id"] == "attention"), None)
+    if checked_result(attention, "tests/run_attention.py") is None:
+        return
+    timing = next((r for r in rows if r["id"] == "attention_timing"
+                   and r["status"] == "passed"), None)
+    timing_result = checked_result(timing, "tests/run_attention_timing.py")
+    if timing_result is not None:
+        expected = {(d, t, c, f) for d, t in
+                    [(8, t) for t in (1, 3, 16, 128)] + [(64, 3)]
+                    for c in (2*t, 2*t+1) for f in range(4)}
+        runs = timing_result.get("runs", [])
+        observed = {(r.get("dimension"), r.get("tile"),
+                     r.get("context"), r.get("format")) for r in runs}
+        if (len(runs) == len(expected) and observed == expected
+                and all(r.get("status") == "passed"
+                        and r.get("resident_handoffs") == (r["context"]-1)//r["tile"]
+                        and len(r.get("output_cycles", [])) == r["dimension"]
+                        for r in runs)):
+            label = "resident-tile handoff edge assertions"
+            if label in attention.get("coverage_limits", []):
+                attention.setdefault("reported_coverage_limits",
+                                     list(attention["coverage_limits"]))
+                attention["coverage_limits"] = [s for s in attention["coverage_limits"]
+                                                if s != label]
+                attention["resident_tile_coverage"] = dict(
+                    label=label, check="attention_timing", receipt=timing["receipt"],
+                    result=timing.get("result_path", timing.get("result")),
+                    cases=len(runs), handoffs=sum(r["resident_handoffs"] for r in runs))
     restart = next((r for r in rows if r["id"] == "attention_restart"
                     and r["status"] == "passed"), None)
-    attention = next((r for r in rows if r["id"] == "attention"), None)
-    if restart is None or attention is None:
+    if restart is None:
         return
     result_path = restart.get("result_path", restart.get("result"))
     if not result_path:
         return
-    current = hashes()
     for row, script in ((restart, "tests/run_attention_restart.py"),
                         (attention, "tests/run_attention.py")):
         if not row.get("receipt"):
@@ -190,7 +233,7 @@ def reconcile_coverage(rows):
     resolved = [label for label in limits if label in covered]
     if not resolved:
         return
-    attention["reported_coverage_limits"] = limits
+    attention.setdefault("reported_coverage_limits", list(limits))
     attention["coverage_limits"] = [label for label in limits if label not in covered]
     attention["resolved_coverage"] = dict(
         labels=resolved, check="attention_restart", receipt=restart["receipt"],
