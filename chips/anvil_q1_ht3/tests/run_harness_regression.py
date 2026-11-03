@@ -14,9 +14,10 @@ import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, hashes, relative, remaining, timestamp
+from execution import ROOT, failure_details, hashes, relative, remaining, timestamp
 from retention import artifacts_intact, digest, execution_logs_intact
 from run_mutations import trial
+from run_compatibility import resumable_case
 from official_reference import QwenFP64
 from official_scoring import likelihood, restore_state, save_state
 from verify import MINIMUM_ALLOCATIONS, child, schedule
@@ -139,6 +140,66 @@ def run(output):
             os.environ.pop("HT3_CHECK_DEADLINE", None)
         else:
             os.environ["HT3_CHECK_DEADLINE"] = previous
+    cold = output / f"synthetic-cold-case-{uuid.uuid4().hex[:12]}"
+    cold.mkdir()
+    with patch("run_compatibility.validated_execution", return_value=None), \
+            patch("run_compatibility.remaining", return_value=23.985), \
+            patch("run_compatibility.execute", side_effect=AssertionError("must not launch")):
+        try:
+            resumable_case(cold, ROOT/"tests/synthetic-executable", "synthetic-binding",
+                           [cold/"vectors.txt"], [], "synthetic-unstarted-",
+                           lambda where, text: None)
+        except RuntimeError as exc:
+            if (failure_details(exc).get("failure_kind") != "execution_budget_unstarted"
+                    or exc.record["minimum_s"] != 120 or exc.record["launched"]):
+                raise AssertionError("cold-case refusal was not an explicit unstarted obligation")
+            assertions += 1
+        else:
+            raise AssertionError("insufficient residual time admitted a cold simulation")
+    admission = RuntimeError("synthetic execution admitted")
+    with patch("run_compatibility.validated_execution", return_value=None), \
+            patch("run_compatibility.remaining", return_value=120), \
+            patch("run_compatibility.execute", side_effect=admission) as launched:
+        try:
+            resumable_case(cold, ROOT/"tests/synthetic-executable", "synthetic-binding",
+                           [cold/"vectors.txt"], [], "synthetic-cold-boundary-",
+                           lambda where, text: None)
+        except RuntimeError as exc:
+            if exc is not admission or launched.call_count != 1:
+                raise AssertionError("useful cold allocation did not reach execution")
+            assertions += 1
+        else:
+            raise AssertionError("synthetic execution failure disappeared")
+    with patch("run_compatibility.validated_execution", return_value=None), \
+            patch("run_compatibility.remaining", return_value=120), \
+            patch("run_compatibility.execute", side_effect=AssertionError("must not launch")):
+        try:
+            resumable_case(cold, ROOT/"tests/synthetic-executable", "synthetic-binding",
+                           [cold/"vectors.txt"], [], "synthetic-cold-batch-",
+                           lambda where, text: None, minimum=180)
+        except RuntimeError as exc:
+            if (failure_details(exc).get("failure_kind") != "execution_budget_unstarted"
+                    or exc.record["minimum_s"] != 180):
+                raise AssertionError("batch did not retain its larger cold allocation")
+            assertions += 1
+        else:
+            raise AssertionError("short batch allocation was accepted")
+    retained_case = output / f"synthetic-retained-case-{uuid.uuid4().hex[:12]}"
+    retained_case.mkdir()
+    retained_receipt = retained_case/"simulation.receipt.json"
+    retained_receipt.write_text("{}")
+    reuse = output / f"synthetic-reused-case-{uuid.uuid4().hex[:12]}"
+    reuse.mkdir()
+    with patch.object(Path, "glob", return_value=[retained_receipt]), \
+            patch("run_compatibility.validated_execution", return_value=("checked", {"synthetic": "hash"})), \
+            patch("run_compatibility.remaining", side_effect=AssertionError("reuse needs no cold allocation")), \
+            patch("run_compatibility.execute", side_effect=AssertionError("must not launch")):
+        row = resumable_case(reuse, ROOT/"tests/synthetic-executable", "synthetic-binding",
+                             [reuse/"vectors.txt"], [], "synthetic-reused-",
+                             lambda where, text: dict(status="passed"))
+        if not row["reused"] or row["simulation_receipt"] != relative(retained_receipt):
+            raise AssertionError("settled observations were lost at a short remaining allocation")
+        assertions += 1
     seen = []
 
     def failed_baseline(argv, parent, stem, version, root):

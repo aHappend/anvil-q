@@ -473,6 +473,9 @@ def main():
         json.dump(result, out, indent=2)
     receipt.update(end=timestamp(), exit=int(result["status"]!="passed"),
                    result=relative(output/"result.json"), **nested_outcomes(output))
+    receipt["unstarted_cases"] = [r for r in rows
+                                 if r.get("failure_kind") == "execution_budget_unstarted"]
+    receipt["budget_exhausted"] |= bool(receipt["unstarted_cases"])
     receipt["timed_out"] = receipt["nested_timed_out"] or receipt["budget_exhausted"]
     with (output/"receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)

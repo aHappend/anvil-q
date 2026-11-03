@@ -237,6 +237,38 @@ def reconcile_coverage(rows):
                 if not packed["coverage_limits"]:
                     packed["status"] = "passed"
 
+    parameters = next((r for r in rows if r["id"] == "parameters"), None)
+    geometry = next((r for r in rows if r["id"] == "integrated_geometry"), None)
+    parameter_result = checked_result(parameters, "tests/run_parameters.py")
+    geometry_result = checked_result(geometry, "tests/run_integrated_geometry.py")
+    if parameter_result is not None and geometry_result is not None:
+        observed = []
+        for case in geometry_result.get("runs", []):
+            metrics, measurements = case.get("metrics", []), case.get("measurements", [])
+            if (case.get("status") != "passed" or not metrics
+                    or len(metrics) != len(measurements)
+                    or any(m.get("cosine", 0) < 0.9999 for m in metrics)):
+                continue
+            observed.append(dict(id=case["id"], geometry=case["geometry"],
+                                 format=case["format"], seed=case["seed"],
+                                 compared_tokens=len(metrics),
+                                 simulation_receipt=case["simulation_receipt"]))
+        exercised = {(r["geometry"]["TB"], r["geometry"]["KW"], r["geometry"]["FT"])
+                     for r in observed}
+        elaborated = {(r["parameters"]["TILE_BEATS"], r["parameters"]["KV_WINDOW"],
+                       r["parameters"]["FLASH_TILE"])
+                      for r in parameter_result.get("runs", [])
+                      if r["id"].startswith("legal-cross-") and r["status"] == "passed"}
+        parameters["functional_parameter_coverage"] = dict(
+            check="integrated_geometry", receipt=geometry["receipt"], cases=observed,
+            tile_beats=sorted({b for b, _, _ in exercised}),
+            kv_window=sorted({w for _, w, _ in exercised}),
+            flash_tile=sorted({f for _, _, f in exercised}),
+            exercised_triples=[list(v) for v in sorted(exercised)],
+            elaborated_cross_triples_without_functional_observation=[
+                list(v) for v in sorted(elaborated-exercised)],
+            scope="checked inference tuples only; source elaboration is not functional coverage")
+
     attention = next((r for r in rows if r["id"] == "attention"), None)
     if checked_result(attention, "tests/run_attention.py") is None:
         return

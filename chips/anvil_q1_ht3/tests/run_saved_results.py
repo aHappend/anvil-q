@@ -12,12 +12,16 @@ from retention import find_result, inventory, validated_result
 from verify import TOOLS, dependencies, reconcile_coverage
 
 
-def run(output):
+SUITES = ("integrated_geometry", "parameters", "mutations", "packed_cache",
+          "packed_top", "stream_checkpoint", "performance", "attention_timing",
+          "compatibility")
+
+
+def run(output, suites=SUITES):
     versions = inventory(output, TOOLS)
     rows = []
     assertions = 0
-    for name in ("integrated_geometry", "parameters", "mutations", "packed_cache",
-                 "packed_top", "stream_checkpoint", "performance"):
+    for name in suites:
         argv = ["python3", f"tests/run_{name}.py"]
         deps = dependencies(argv[1])
         retained = find_result(argv, deps, versions)
@@ -52,20 +56,43 @@ def run(output):
                                         else "passed"),
                          coverage_limits=retained["result"].get("coverage_limits", []),
                          receipt=retained["receipt"], result_path=retained["result_path"]))
-    negative = [dict(row) for row in rows]
-    for row in negative:
-        if row["id"] == "packed_top":
-            row["status"] = "failed"
-    reconcile_coverage(negative)
-    packed = next(r for r in negative if r["id"] == "packed_cache")
-    if "resolved_coverage" in packed:
-        raise AssertionError("failed packed-top matrix closed publication coverage")
+    if {"packed_top", "packed_cache"}.issubset(suites):
+        negative = [dict(row) for row in rows]
+        for row in negative:
+            if row["id"] == "packed_top":
+                row["status"] = "failed"
+        reconcile_coverage(negative)
+        packed = next(r for r in negative if r["id"] == "packed_cache")
+        if "resolved_coverage" in packed:
+            raise AssertionError("failed packed-top matrix closed publication coverage")
+        assertions += 1
     reconcile_coverage(rows)
-    packed = next(r for r in rows if r["id"] == "packed_cache")
-    if (packed.get("coverage_limits") or packed.get("resolved_coverage", {}).get("cases") != 10
-            or packed["status"] != "passed"):
-        raise AssertionError("observed packed-publication coverage did not reconcile")
-    assertions += 2
+    if {"packed_top", "packed_cache"}.issubset(suites):
+        packed = next(r for r in rows if r["id"] == "packed_cache")
+        if (packed.get("coverage_limits") or packed.get("resolved_coverage", {}).get("cases") != 10
+                or packed["status"] != "passed"):
+            raise AssertionError("observed packed-publication coverage did not reconcile")
+        assertions += 1
+    if {"integrated_geometry", "parameters"}.issubset(suites):
+        parameters = next(r for r in rows if r["id"] == "parameters")
+        coverage = parameters.get("functional_parameter_coverage", {})
+        cases = coverage.get("cases", [])
+        if (len(cases) != 8 or sum(r["compared_tokens"] for r in cases) != 24
+                or coverage["tile_beats"] != [1, 3, 256]
+                or coverage["kv_window"] != [1, 3]
+                or coverage["flash_tile"] != [1, 3, 16, 128]
+                or not parameters["coverage_limits"]
+                or not coverage["elaborated_cross_triples_without_functional_observation"]):
+            raise AssertionError("functional tuples were lost or elaboration became functional coverage")
+        negative = [dict(row) for row in rows]
+        for row in negative:
+            row.pop("functional_parameter_coverage", None)
+            if row["id"] == "integrated_geometry":
+                row["status"] = "failed"
+        reconcile_coverage(negative)
+        if any("functional_parameter_coverage" in row for row in negative):
+            raise AssertionError("failed geometry matrix published functional coverage")
+        assertions += 2
     return dict(status="passed", scope="retained observation validation, not new RTL execution",
                 assertions=assertions, rows=rows)
 
@@ -73,6 +100,8 @@ def run(output):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
+    parser.add_argument("--suite", choices=SUITES, action="append",
+                        help="validate only selected settled suites; never aggregate acceptance")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -80,7 +109,7 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     try:
-        result = run(output)
+        result = run(output, tuple(dict.fromkeys(args.suite)) if args.suite else SUITES)
     except (RuntimeError, ValueError, AssertionError, OSError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
