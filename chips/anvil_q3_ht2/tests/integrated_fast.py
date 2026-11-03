@@ -66,7 +66,9 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "--top-module", "anvil_q3_ht2_top", "--prefix", "Vintegrated",
-        "--Mdir", relative(obj), "-j", "2", "-CFLAGS", "-O3",
+        "--Mdir", relative(obj), "-j", "2",
+        "--output-split", "20000", "--output-split-cfuncs", "2000",
+        "-CFLAGS", "-O3", "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
         *[f"-G{name}={value}" for name, value in parameters.items()],
         *sources, driver.name], obj, "Vintegrated")
     try:

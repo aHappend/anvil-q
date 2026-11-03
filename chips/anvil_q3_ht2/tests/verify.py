@@ -65,7 +65,9 @@ class Ledger:
 
     def check(self, name, function, *args, **kwargs):
         directory = case_directory(self.run, name)
-        row = {"name": name, "directory": relative(directory), "status": "running"}
+        started = time.monotonic()
+        row = {"name": name, "directory": relative(directory), "status": "running",
+               "started_at": utc()}
         self.data["cases"].append(row)
         self.save()
         print(f"L1 {name}: {relative(directory)}", flush=True)
@@ -74,9 +76,10 @@ class Ledger:
             row["status"] = "passed"
         except Exception as error:
             row.update(status="failed", error=f"{type(error).__name__}: {error}")
-            self.save()
             raise
-        self.save()
+        finally:
+            row.update(finished_at=utc(), duration_s=time.monotonic() - started)
+            self.save()
         return row["result"]
 
     def finish(self):
