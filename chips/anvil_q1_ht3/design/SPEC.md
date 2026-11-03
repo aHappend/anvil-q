@@ -607,16 +607,18 @@ The exact compute-only interval is:
 
 | Cache format | H-A |
 | --- | --- |
-| Native BF16/FP16 | n*(33*D+60)+10*D+47 |
-| Quantized INT4/INT8 | n*(47*D+60)+10*D+47 |
+| Native BF16/FP16 | n*(33*D+59)+10*D+48 |
+| Quantized INT4/INT8 | n*(47*D+59)+10*D+48 |
 
 Score-coordinate read initiation intervals are 16 edges native and 23
 quantized, including two synchronous read/capture edges, dependent FP32
 multiply/add and optional dequantization. Score-token initiation intervals
 are respectively 16*D+8 and 23*D+8. The last score-store edge F is
 A+n*(score_coordinate_interval*D+8)-1. Alpha subtract/exp, l rescale and the
-whole-o rescale end at G=F+10*D+49. Each probability/value token then takes
-17*D+52 edges native or 24*D+52 quantized; H=G+n*that_interval-1.
+whole-o rescale end at G=F+10*D+49. The probability/value phase ends at
+H=G+n*(17*D+51) native or H=G+n*(24*D+51) quantized. The final O_RESCALE
+write and each nonfinal token's O_WRITE proceed directly to O_READ,
+without an intervening handoff edge.
 
 For a resident successor tile, A_next=H+1. For a nonresident successor,
 TILE_WAIT adds exactly the observed wait through publication/admission; the
