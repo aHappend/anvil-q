@@ -21,7 +21,6 @@ def main():
     parser.add_argument("--layers", type=int, default=36)
     parser.add_argument("--repair-of")
     parser.add_argument("--flat", action="store_true")
-    parser.add_argument("--netlist", action="store_true")
     parser.add_argument("--complete", action="store_true")
     parser.add_argument("--mode", type=int, choices=(1, 2), default=1)
     parser.add_argument("--seed", type=int, default=17)
@@ -35,7 +34,7 @@ def main():
                                    diagnostic=not args.complete, profile=args.profile,
                                    diagnostic_cycles=args.cycles,
                                    layers=args.layers, compact=args.compact,
-                                   flat=args.flat, netlist=args.netlist)
+                                   flat=args.flat)
     result = {"summary": summary}
     if args.profile:
         binary = next(run.glob("integrated-clock-driver-compile-binding-*.json"))

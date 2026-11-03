@@ -8,30 +8,6 @@ import shutil
 from integrated import generate
 from receipts import ROOT, cleanup_build, execute, relative, compile_verilator
 from serial_reference import Geometry, PackedImage, SerialModel
-from synthesis import synthesis_inputs
-
-
-def simulation_netlist(run, sources, mode, layers, compact):
-    """Optimize the actual elaborated RTL, retaining memories and all clocks."""
-    inputs = synthesis_inputs(run, sources)
-    netlist = run / "integrated-netlist.v"
-    script = run / "integrated-netlist.ys"
-    script.write_text("\n".join([
-        "read_verilog -defer -sv " +
-        f"-DHT2_TEST_CACHE_MODE={mode} -DHT2_TEST_LAYERS={layers} " +
-        ("-DHT2_COMPACT_MODEL " if compact else "") +
-        " ".join(inputs + ["tests/integrated_clock_tb.sv"]),
-        "hierarchy -check -top integrated_clock_tb",
-        "proc", "opt_expr", "opt_clean", "memory -nomap", "opt_clean",
-        "select anvil_q3_ht2_fp32_add anvil_q3_ht2_fp32_mul "
-        "anvil_q3_ht2_mac_lane anvil_q3_ht2_weight_decode",
-        "opt -full", "select *", "check -assert",
-        "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor",
-        "stat", f"write_verilog -noattr {relative(netlist)}", "",
-    ]))
-    result = execute(run, "simulation-netlist", ["yosys", "-s", relative(script)],
-                     ["yosys", "-V"])
-    return netlist, relative(result / "receipt.json")
 
 
 def generate_nonzero(run, mode, seed, layers=36, compact=False):
@@ -78,7 +54,7 @@ def generate_nonzero(run, mode, seed, layers=36, compact=False):
 
 def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
                          diagnostic_cycles=262144, layers=36, compact=False,
-                         flat=False, netlist=False):
+                         flat=False):
     model, vectors, lines, qreads = generate_nonzero(run, mode, seed, layers, compact)
     obj = run / "integrated-obj"
     obj.mkdir()
@@ -86,17 +62,10 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
     shutil.copyfile(ROOT / "tests/integrated_driver.cpp", driver)
     sources = [relative(path) for directory in ("anvil_q3_ht_reference/rtl", "rtl")
                for path in sorted((ROOT / directory).glob("*.sv"))]
-    netlist_receipt = None
-    if netlist:
-        generated, netlist_receipt = simulation_netlist(
-            run, sources, mode, layers, compact)
-        compile_sources = [relative(generated)]
-    else:
-        compile_sources = sources + ["tests/integrated_clock_tb.sv"]
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "-O3", "--expand-limit", "1024",
-        *(["--flatten"] if flat or netlist else [
+        *(["--flatten"] if flat else [
             "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt"]),
         "--top-module", "integrated_clock_tb", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
@@ -106,7 +75,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
         f"-DHT2_TEST_CACHE_MODE={mode}",
         f"-DHT2_TEST_LAYERS={layers}",
         *(["-DHT2_COMPACT_MODEL"] if compact else []),
-        *compile_sources, driver.name], obj, "Vintegrated")
+        *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
             os.path.relpath(executable, run), f"+vectors={vectors.name}",
@@ -140,9 +109,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
     compile_receipt = json.loads((ROOT / binding["compile_receipt"]).read_text())
     summary = {
         "mode": mode, "seed": seed, "layers": layers, "compact": compact,
-        "weight_lanes": 128,
-        "compiler_partition": "netlist" if netlist else "flat" if flat else "mac-lane",
-        "netlist_receipt": netlist_receipt,
+        "compiler_partition": "flat" if flat else "mac-lane",
         "diagnostic_only": diagnostic, "observed": observation,
         "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",
         "fixture": "independently decoded nonzero AWQ packed image and dense serial HT2 oracle",
