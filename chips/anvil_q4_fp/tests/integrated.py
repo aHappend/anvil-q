@@ -12,6 +12,20 @@ from evidence import ROOT, execute, new_run, relative, source_hashes
 from native_model import Fixture, descriptor
 
 
+class GreedyFixture(Fixture):
+    def __init__(self, words, weights):
+        self.greedy_weights = weights
+        super().__init__(words, tokens=[0, None, None], constant_profile=True)
+
+    def build_image(self):
+        super().build_image()
+        for row, weight in enumerate(self.greedy_weights):
+            self.lm_head[row] = [weight] + [0] * (self.words[8] - 1)
+            for col, value in enumerate(self.lm_head[row]):
+                self.initial[0, 0, 1, row, col] = value
+        self.constant_profile = False
+
+
 def command(step, *, draft=False, token1=0, accepted=0, error=False,
             action=0, targets=1, fresh=False, expectations=None):
     return {"draft": draft, "token0": step["token"], "token1": token1,
@@ -102,6 +116,23 @@ def run(preparation=False, repair_of=None):
     scenarios["capacity-one-rejection"] = [
         command(minimum.steps[0], draft=True, error=True, targets=0,
                 expectations=[{"writes": []}]), command(minimum.steps[0], fresh=True)]
+    for label, weights, expected_index in (
+            ("greedy-all-nan", [0x7fc0] * 5, 0),
+            ("greedy-leading-nan-negative-tie", [0x7fc0, 0xbf80, 0xff80, 0xbf80, 0x7fc0], 1),
+            ("greedy-infinity-tie", [0x7fc0, 0x7f80, 0x3f80, 0x7f80, 0xff80], 1),
+            ("greedy-zero-tie", [0, 0x8000, 0, 0x8000, 0], 0),
+            ("greedy-finite-tie", [0xbf80, 0x3f80, 0x3f80, 0, 0x7fc0], 1)):
+        directed = GreedyFixture(words, weights)
+        if directed.tokens[1:] != [expected_index, expected_index]:
+            raise AssertionError(f"Directed greedy reference does not discriminate: {label}")
+        case = directory / "checkpoint-images" / label
+        case.mkdir()
+        scenario_images[label] = directed.export(case)
+        steps = directed.steps
+        scenarios[label] = [
+            command(steps[0], fresh=True),
+            command(steps[1], draft=True, token1=steps[2]["token"], accepted=2,
+                    targets=2, expectations=steps[1:3])]
     obj = directory / "compile-obj"
     records = []
     try:
