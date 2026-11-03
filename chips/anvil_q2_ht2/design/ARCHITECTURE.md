@@ -299,8 +299,22 @@ The last validation `NEXT` edge prefetches descriptor zero, and each nonfinal
 `COPY` edge writes the prefetched descriptor while reading its successor.
 No copy stage or configuration response cycle is added.
 
+The overlap scanner's base/end/owner arrays each have one shared synchronous
+write enable, address and data path. `START` selects address zero and the cache
+reservation; `APPEND` selects the current range count and the validated
+candidate. Their mutually exclusive states select data before the single
+write assignment, rather than describing separate memory write ports.
+The registered `SCAN` read and its load/compare alternation are unchanged.
+These arrays remain unreset and are reachable only through the reset-protected
+state/count. Descriptor word-validity masks instead use one generated
+asynchronously reset process per entry, with the original accepted-write
+qualification. No procedural reset-loop index remains as inferred state.
+
 | Event sampled before edge n | State immediately after edge n |
 |---|---|
+| Available `START` | Cache reservation written at range zero; valid bounds enter `LOAD` with range count one, invalid bounds return error |
+| Available `SCAN`, unloaded and index below range count | Prior base/end/owner registered; comparison occurs at the following edge |
+| Available `APPEND` | Candidate written at the old range count; count advances and the next region/descriptor is selected |
 | Aligned shadow configuration read accepted | Response valid with selected registered word; unwritten words read zero |
 | Held configuration response | Word, validity mask and payload stay unchanged; no new shadow read |
 | Validation `LOAD` | Registered descriptor available to `CHECK_SEND` |
@@ -308,7 +322,20 @@ No copy stage or configuration response cycle is added.
 | Nonfinal `COPY` | Current descriptor written to inactive bank; next descriptor prefetched |
 | Final `COPY`, including one remaining entry | Last descriptor written; bank/mode/cache extent published together |
 | Reset | Public outputs zero; word-validity masks cleared, RAM contents unreset |
+| First post-reset edge without a request | Controller remains idle, masks remain clear; no range write or publication |
 | Annul/invalidate on a copy edge | No committed write or prefetch; no publication |
+
+`START`, `SCAN` and `APPEND` cannot coincide, so no range read/write collision
+policy is required. Annul/invalidate disables range access; reset asynchronously
+clears validity and prevents access even on an otherwise writing edge.
+The 33-bit bases, 34-bit exclusive ends, 11-bit owners and range-count widths
+are unchanged for every legal layer count. This inference repair addresses
+the reported multi-write-port and reset-loop-variable warnings; it does not
+establish that they exclusively caused the retained mapping timeout or prove
+RAM mapping, fit or timing closure. Independent configuration/reset/overlap/
+publication regressions and synthesis remain required. The verification-owned
+configuration lowering must recognize the generated validity processes instead
+of assuming the previous procedural reset-loop spelling.
 
 Configuration writes and shadow reads cannot coincide: configuration offers
 are serialized and blocked throughout validation. Descriptor response reads

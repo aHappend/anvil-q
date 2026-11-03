@@ -89,7 +89,6 @@ module anvil_q2_ht2_native_configuration #(
     reg [33:0] candidate_end, prior_end;
     reg [10:0] prior_owner;
     reg scan_loaded;
-    integer i;
 
     function automatic [511:0] visible_descriptor(
       input [511:0] value, input [15:0] mask);
@@ -132,6 +131,13 @@ module anvil_q2_ht2_native_configuration #(
     wire embedding_alias=index==1 && part==0 && prior_owner==0 &&
       descriptor==embedding_descriptor;
     wire validation_abort=annul || invalidate || validated_mode!=ht2_mode;
+    wire range_write=available && (state==START || state==APPEND);
+    wire [RW-1:0] range_write_address=state==START ? {RW{1'b0}} : range_count;
+    wire [32:0] range_write_base=state==START ? shadow_base : candidate_base;
+    wire [33:0] range_write_end=state==START ? configured_end : candidate_end;
+    wire [10:0] range_write_owner=state==START ? 11'h7ff : {index,part};
+    wire initialized_write=cfg_transfer && cfg_write && can_write && native_mode &&
+      cfg_addr[1:0]==0 && descriptor_address;
 
     anvil_q2_ht2_descriptor_check #(
       .NUM_LAYERS(NUM_LAYERS),.HIDDEN_SIZE(HIDDEN_SIZE),
@@ -180,20 +186,25 @@ module anvil_q2_ht2_native_configuration #(
       end
     end
 
+    for (genvar entry=0;entry<ENTRIES;entry=entry+1) begin: descriptor_validity
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) initialized[entry]<=0;
+        else if (initialized_write && cfg_index==entry)
+          initialized[entry][cfg_addr[5:2]]<=1;
+      end
+    end
+
     always @(posedge clk) begin
       if (shadow_read)
         shadow_read_mask<=initialized[shadow_read_address];
-      if (available && state==START) begin
-        range_base[0]<=shadow_base; range_end[0]<=configured_end;
-        range_owner[0]<=11'h7ff;
+      if (range_write) begin
+        range_base[range_write_address]<=range_write_base;
+        range_end[range_write_address]<=range_write_end;
+        range_owner[range_write_address]<=range_write_owner;
       end
       if (available && state==SCAN && !scan_loaded && scan_index<range_count) begin
         prior_base<=range_base[scan_index]; prior_end<=range_end[scan_index];
         prior_owner<=range_owner[scan_index];
-      end
-      if (available && state==APPEND) begin
-        range_base[range_count]<=candidate_base; range_end[range_count]<=candidate_end;
-        range_owner[range_count]<={index,part};
       end
     end
 
@@ -208,7 +219,6 @@ module anvil_q2_ht2_native_configuration #(
         index<=0; part<=0; region_count<=0; regions_base<=0; regions_end<=0;
         range_count<=0; scan_index<=0; candidate_base<=0; candidate_end<=0;
         scan_loaded<=0;
-        for (i=0;i<ENTRIES;i=i+1) initialized[i]<=0;
       end else begin
         changed<=0;
         if (response_valid && cfg_rsp_ready) response_valid<=0;
@@ -230,8 +240,7 @@ module anvil_q2_ht2_native_configuration #(
             if (cfg_addr[1:0]!=0) response_error<=1;
             else if (cfg_write) begin
               if (!can_write || !native_mode) response_error<=1;
-              else if (descriptor_address)
-                initialized[cfg_index][cfg_addr[5:2]]<=1;
+              else if (descriptor_address) begin end
               else case (cfg_addr)
                 16'h0008: case (cfg_wdata)
                   0: begin end
