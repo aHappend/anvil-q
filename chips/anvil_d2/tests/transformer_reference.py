@@ -192,7 +192,7 @@ class WeightImage:
                                     15, layer, projection, (head << 28)+row_index,
                                     column*3+word)] = (coefficient >> (word*32)) & 0xFFFFFFFF
 
-    def add_mtp(self):
+    def add_mtp(self, fixture="random"):
         g = self.geometry
         native = WeightImage(replace(g, layers=4, first_dense=0), self.seed+1000)
         rng = random.Random(self.seed+2000)
@@ -204,6 +204,10 @@ class WeightImage:
                      for _ in range(2)]
             projection = [[rng.randrange(-8192, 8193) for _ in range(2*g.hidden)]
                           for _ in range(g.hidden)]
+            if fixture == "reject-first" and head == 0:
+                projection = [[1]*g.hidden + [
+                    -65536 if column == row else 0 for column in range(g.hidden)]
+                              for row in range(g.hidden)]
             self.mtp_projections.append((gains, projection))
             for role, values in enumerate(gains, 1):
                 for column, value in enumerate(values):

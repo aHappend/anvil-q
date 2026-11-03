@@ -20,6 +20,7 @@ from reference import bf16_to_q16, committed_block, dequantize, quantize_group
 from transformer_reference import Geometry, Target, WeightImage, argmax, matvec, rms
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECK_DEADLINE = time.monotonic()+2700
 
 
 def timestamp():
@@ -51,7 +52,7 @@ class Experiment:
         (self.directory / "receipt.json").write_text(json.dumps(self.receipt, indent=2) + "\n")
 
     def execute(self, argv, name, timeout=600):
-        timeout = min(timeout, max(1, 2700-(time.monotonic()-self.started_monotonic)))
+        timeout = min(timeout, max(1, CHECK_DEADLINE-time.monotonic()))
         if Path(argv[0]).name == "vvp":
             timeout = min(timeout, 600)
         relative = self.directory.relative_to(ROOT)
@@ -199,11 +200,11 @@ def run_public_smoke(experiment, boundaries=False):
 
 
 def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3),
-                     override=None, expect_mismatch=False):
+                     override=None, expect_mismatch=False, mtp_fixture="random"):
     directory = experiment.directory.relative_to(ROOT)
     image = WeightImage(geometry, seed)
     if any(mode & 1 for mode in modes):
-        image.add_mtp()
+        image.add_mtp(mtp_fixture)
     words = image.external_words(True)
     fixture_directory = experiment.directory / "checkpoint-images"
     fixture_directory.mkdir()
@@ -266,6 +267,7 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
                         *sources, "tests/top_model_tb.sv"], "target-compile", 1200)
     experiment.receipt["results"]["target-fixtures"] = {
         "seed": seed, "geometry": geometry.__dict__, "modes": list(modes),
+        "mtp_fixture": mtp_fixture,
         "commands": len(commands),
         "oracle": "independent arbitrary-precision unabsorbed equations and exact fixed-point boundaries",
         "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
@@ -276,7 +278,8 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
                                      "+image=" + str(image_path.relative_to(ROOT)),
                                      "+expected=" + str(expected_path.relative_to(ROOT)),
                                      "+absorption=" + str(absorption_path.relative_to(ROOT)),
-                                     "+commands=" + str(commands_path.relative_to(ROOT))],
+                                     "+commands=" + str(commands_path.relative_to(ROOT)),
+                                     *(["+require-rejection"] if mtp_fixture=="reject-first" else [])],
                                     "target-simulation", 1800)
     except RuntimeError:
         command = experiment.receipt["commands"][-1]
@@ -417,7 +420,8 @@ def run_target_mutant(experiment, defect):
     }
     experiment.save()
     run_target_model(experiment, Geometry(layers=2), modes=(1,),
-                     override={path: str(copied.relative_to(ROOT))}, expect_mismatch=True)
+                     override={path: str(copied.relative_to(ROOT))}, expect_mismatch=True,
+                     mtp_fixture="reject-first")
 
 
 def run_numerical_leaf(experiment, leaf, simulator):
@@ -475,7 +479,7 @@ def run_numerical_leaf(experiment, leaf, simulator):
     experiment.save()
 
 
-def run_synthesis_probe(experiment):
+def run_synthesis_probe(experiment, configuration="compact"):
     directory = experiment.directory.relative_to(ROOT)
     sources = [str(p.relative_to(ROOT)) for pattern in (
         "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
@@ -487,11 +491,16 @@ def run_synthesis_probe(experiment):
         "VOCAB_SIZE": 4, "MAX_SEQ_LEN": 12, "BANKS": 2,
         "QUEUE_DEPTH": 3, "TILE_K": 8, "TILE_ROWS": 1,
     }
+    if configuration == "minimum":
+        parameters.update(KV_LORA_RANK=1, QK_NOPE_HEAD_DIM=1, V_HEAD_DIM=1,
+                          BANKS=1, QUEUE_DEPTH=1, MAX_SEQ_LEN=1)
+    elif configuration == "production":
+        parameters = {}
     script = experiment.directory / "integrated.ys"
     commands = [
         "read_verilog -sv " + " ".join(sources),
-        "chparam " + " ".join(f"-set {key} {value}" for key, value in parameters.items()) +
-        " anvil_d2_top",
+        *(["chparam " + " ".join(f"-set {key} {value}" for key, value in parameters.items()) +
+           " anvil_d2_top"] if parameters else []),
         "hierarchy -check -top anvil_d2_top",
         "proc", "opt_expr", "opt_clean", "check -noinit -assert",
         "memory -nomap", "opt_clean", "check -noinit -assert", "stat",
@@ -525,10 +534,11 @@ def run_synthesis_probe(experiment):
         assert any(isinstance(bit, int) for connections in top["cells"][instance][
             "connections"].values() for bit in connections), f"constant {instance}"
     experiment.receipt["results"]["synthesis-probe"] = {
-        "parameters": parameters, "sequential_cell_definitions": sequential,
+        "configuration": configuration, "parameters": parameters,
+        "sequential_cell_definitions": sequential,
         "memory_definition_bits": memory_bits,
         "cell_definition_counts": cell_counts,
-        "scope": "compact integrated synthesis; not physical timing/PPA or full geometry matrix",
+        "scope": "integrated RAM-preserving generic synthesis; not physical timing/PPA",
     }
     experiment.save()
 
@@ -797,22 +807,80 @@ def run_acceptance_mutant(experiment):
                       expect_mismatch=True)
 
 
+def run_suite(experiment, suite):
+    def component(stem, operation):
+        child = Experiment("d2-" + suite + "-" + stem)
+        path = str((child.directory / "receipt.json").relative_to(ROOT))
+        experiment.receipt.setdefault("component_receipts", []).append(path)
+        experiment.save()
+        try:
+            operation(child)
+        except Exception as error:
+            child.finish(False, str(error))
+            raise
+        else:
+            child.finish(True)
+        finally:
+            child.cleanup_intermediates()
+        if time.monotonic()-experiment.started_monotonic >= 2700:
+            raise TimeoutError("whole-check 2700-second execution budget exhausted")
+
+    if suite == "numerical":
+        component("reference", lambda e: e.execute(
+            ["python3", "-m", "unittest", "discover", "-s", "tests",
+             "-p", "test_reference.py"], "oracle-unit-tests"))
+        for simulator in ("icarus", "verilator"):
+            component("dequant-" + simulator, lambda e, s=simulator: run_dequant(e, s))
+        for leaf in ("quantizer", "bf16"):
+            component(leaf, lambda e, kind=leaf: run_numerical_leaf(e, kind, "icarus"))
+        component("fp8-service", run_service_probe)
+        component("native-heads", run_head_model)
+        component("routed-target", lambda e: run_target_model(
+            e, Geometry(layers=2), modes=(0, 2)))
+    elif suite == "defects":
+        component("dequant-control", lambda e: run_dequant(e, "verilator"))
+        component("service-control", run_service_probe)
+        component("verdict-control", lambda e: run_verdict_probe(e, "verilator"))
+        component("head-control", run_head_model)
+        component("target-control", lambda e: run_target_model(
+            e, Geometry(layers=2), modes=(1,), mtp_fixture="reject-first"))
+        for defect in ("fp8-bias", "bf16-tie"):
+            component(defect, lambda e, d=defect: run_dequant_mutant(e, d))
+        for defect in ("byte-order", "scale-group", "scale-invalidation"):
+            component(defect, lambda e, d=defect: run_service_mutant(e, d))
+        component("mtp-alignment", run_alignment_mutant)
+        component("acceptance-past-mismatch", run_acceptance_mutant)
+        for defect in ("causal-mask", "rejected-kv"):
+            component(defect, lambda e, d=defect: run_target_mutant(e, d))
+    elif suite == "synthesis":
+        for configuration in ("minimum", "compact", "production"):
+            component(configuration, lambda e, config=configuration: run_synthesis_probe(e, config))
+        component("parameters", run_parameter_probe)
+    else:
+        raise ValueError(f"unknown suite {suite}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", choices=["dequant", "quantizer", "bf16", "public-smoke",
+    operation = parser.add_mutually_exclusive_group(required=True)
+    operation.add_argument("--suite", choices=["numerical", "defects", "synthesis"])
+    operation.add_argument("--probe", choices=["dequant", "quantizer", "bf16", "public-smoke",
                                          "synthesis-probe", "fp8-bias", "bf16-tie",
                                          "fp8-service", "byte-order", "scale-group",
                                          "scale-invalidation", "verdict",
                                          "acceptance-past-mismatch", "oracle", "target-model",
                                          "public-boundaries", "native-head", "mtp-alignment",
-                                         "parameters", "causal-mask", "rejected-kv"],
-                        required=True)
+                                         "parameters", "causal-mask", "rejected-kv"])
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
     parser.add_argument("--seed", type=int, default=17)
+    parser.add_argument("--mode", type=int, action="append", choices=[0, 1, 2, 3])
+    parser.add_argument("--mtp-fixture", choices=["random", "reject-first"], default="random")
+    parser.add_argument("--configuration", choices=["minimum", "compact", "production"],
+                        default="compact")
     args = parser.parse_args()
-    experiment = Experiment("d2-" + args.probe, preparation=True)
+    experiment = Experiment("d2-" + (args.probe or args.suite), preparation=bool(args.probe))
     if args.repair_of:
         prior = Path(args.repair_of)
         if prior.is_absolute() or ".." in prior.parts or not (ROOT / prior).is_file():
@@ -821,7 +889,9 @@ def main():
         experiment.save()
     try:
         experiment.execute(["python3", "--version"], "python-version")
-        if args.probe == "dequant":
+        if args.suite:
+            run_suite(experiment, args.suite)
+        elif args.probe == "dequant":
             run_dequant(experiment, args.simulator)
         elif args.probe == "public-smoke":
             run_public_smoke(experiment)
@@ -830,7 +900,9 @@ def main():
         elif args.probe == "target-model":
             geometry = (Geometry(layers=2) if args.geometry == "routed" else
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
-            run_target_model(experiment, geometry, seed=args.seed)
+            run_target_model(experiment, geometry, seed=args.seed,
+                             modes=tuple(args.mode) if args.mode is not None else (0, 1, 2, 3),
+                             mtp_fixture=args.mtp_fixture)
         elif args.probe == "native-head":
             run_head_model(experiment)
         elif args.probe == "mtp-alignment":
@@ -840,7 +912,7 @@ def main():
         elif args.probe in ("causal-mask", "rejected-kv"):
             run_target_mutant(experiment, args.probe)
         elif args.probe == "synthesis-probe":
-            run_synthesis_probe(experiment)
+            run_synthesis_probe(experiment, args.configuration)
         elif args.probe in ("fp8-bias", "bf16-tie"):
             run_dequant_mutant(experiment, args.probe)
         elif args.probe == "fp8-service":
