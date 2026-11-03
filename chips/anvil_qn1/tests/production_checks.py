@@ -467,7 +467,7 @@ def run_fusion_profile(run, profile=1, compact=False, threads=1):
     if baseline["cycles"] <= 0 or fused["requests"] != baseline["requests"]:
         raise AssertionError("fusion comparison changed memory work")
     difference = fused["cycles"] - baseline["cycles"]
-    if not compact and 100 * difference >= 2 * baseline["cycles"]:
+    if 100 * difference >= 2 * baseline["cycles"]:
         raise AssertionError(f"fusion overhead >=2%: fused={fused['cycles']}, "
                              f"without_norm={baseline['cycles']}")
     return {"profile": profile, "fused": fused, "without_norm": baseline,

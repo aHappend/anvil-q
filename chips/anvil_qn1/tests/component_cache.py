@@ -5,6 +5,7 @@ normally. Reused receipts are never edited; each new parent records why unrelate
 source changes do not affect that component.
 """
 
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -16,7 +17,7 @@ COMMON = ("rtl/*.sv", "design/SPEC.md", "design/ARCHITECTURE.md", "README.md",
           "tests/execution.py")
 
 
-def assess(run, path, inputs, parameters, tools, ancestors=()):
+def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None):
     path = Path(path).resolve()
     if path in ancestors or len(ancestors) >= 32:
         raise ValueError(f"cyclic/excessively nested component receipt: {relative(path)}")
@@ -32,9 +33,20 @@ def assess(run, path, inputs, parameters, tools, ancestors=()):
     changed = {name: {"recorded": recorded.get(name), "current": run.hashes.get(name)}
                for name in set(recorded) | set(run.hashes)
                if recorded.get(name) != run.hashes.get(name)}
-    if selected & changed.keys():
+    equivalent = {}
+    if equivalence is not None:
+        for name in sorted(selected & changed.keys()):
+            record = equivalence(run, path, receipt, name)
+            if record is not None:
+                equivalent[name] = record
+    missing = {name for name in selected if
+               name not in recorded or name not in run.hashes}
+    if missing:
+        reasons.append("missing component source bindings: " + ",".join(sorted(missing)))
+    changed_dependencies = selected & changed.keys() - equivalent.keys()
+    if changed_dependencies:
         reasons.append("changed component dependencies: " +
-                       ",".join(sorted(selected & changed.keys())))
+                       ",".join(sorted(changed_dependencies)))
     for tool in tools:
         old = receipt.get("tool_versions", {}).get(tool)
         new = getattr(run, "tool_versions", {}).get(tool)
@@ -91,6 +103,7 @@ def assess(run, path, inputs, parameters, tools, ancestors=()):
             "reasons": reasons, "declared_dependencies": sorted(selected),
             "parameters": parameters, "tools": list(tools),
             "executed_work_commands": executed, "children": children,
+            "equivalent_sources": equivalent,
             "changed_unrelated_sources": {
                 name: value for name, value in sorted(changed.items()) if name not in selected},
             "receipt_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}, results
@@ -142,7 +155,8 @@ def saved_behavior_applicability(run):
                                     if not items or not items[-1]["applicable"]]}
 
 
-def component(run, stem, operation, *, inputs, parameters, tools, validate):
+def component(run, stem, operation, *, inputs, parameters, tools, validate,
+              equivalence=None):
     candidates = []
     for parent in (ROOT / "evidence/preparation", ROOT / "evidence"):
         if parent.is_dir():
@@ -150,7 +164,8 @@ def component(run, stem, operation, *, inputs, parameters, tools, validate):
             candidates.extend(parent.glob(f"l1-{stem}-*/receipt.json"))
     assessments = []
     for path in sorted(set(candidates), key=lambda p: p.stat().st_mtime, reverse=True):
-        assessment, results = assess(run, path, inputs, parameters, tools)
+        assessment, results = assess(run, path, inputs, parameters, tools,
+                                     equivalence=equivalence)
         assessments.append(assessment)
         if assessment["applicable"]:
             try:
@@ -163,8 +178,12 @@ def component(run, stem, operation, *, inputs, parameters, tools, validate):
                 run.components.append({"receipt": relative(path), "status": "passed",
                                        "reused": True, "applicability": assessment})
                 return results
-    result = run.component(stem, operation)
-    validate(result)
+    def checked(child):
+        result = operation(child)
+        validate(result)
+        return result
+
+    result = run.component(stem, checked)
     run.components[-1]["reused"] = False
     run.components[-1]["prior_applicability"] = assessments
     return result
@@ -243,6 +262,67 @@ def latest_marker_build():
     return None
 
 
+def marker_source_equivalence(run, path, receipt, name):
+    """Bind the original completed driver, not a later optional clock recipe."""
+    if name != "tests/marker_checks.py":
+        return None
+    old = path.parent / "source" / name
+    if (not old.is_file() or hashlib.sha256(old.read_bytes()).hexdigest() !=
+            receipt.get("source_sha256", {}).get(name)):
+        return None
+
+    def definitions(source):
+        nodes = ast.parse(source).body
+        return [ast.dump(node, include_attributes=False) for node in nodes
+                if not isinstance(node, ast.FunctionDef) or node.name != "run_markers"]
+
+    if definitions(old.read_text()) != definitions((ROOT / name).read_text()):
+        return None
+    result = receipt.get("results")
+    if not isinstance(result, dict):
+        return None
+    binding = result.get("compiled", {}).get("binding", {})
+    from marker_checks import MARKER_DRIVER
+    driver = path.parent / "marker_driver.cpp"
+    expected = hashlib.sha256(MARKER_DRIVER.encode()).hexdigest()
+    if (not driver.is_file() or hashlib.sha256(driver.read_bytes()).hexdigest() != expected or
+            receipt.get("artifact_sha256", {}).get("marker_driver.cpp") != expected or
+            binding.get("driver_sha256") != expected):
+        return None
+    expected_parameters = {
+        "COMPACT": 1, "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+        "NUM_Q_HEADS": 2, "NUM_KV_HEADS": 1, "HEAD_DIM": 8, "VOCAB_SIZE": 151936,
+        "MAX_SEQ_LEN": 4, "GROUP_SIZE": 8, "BANKS": 8, "QUEUE_DEPTH": 3}
+    rtl = {name: digest for name, digest in run.hashes.items()
+           if name.startswith("rtl/anvil_qn1_") and name.endswith(".sv")}
+    if (binding.get("parameters") != expected_parameters or
+            binding.get("rtl_sha256") != rtl or
+            binding.get("simulation_threads") != result.get("simulation_threads") or
+            binding.get("tool_versions") != {
+                tool: run.tool_versions[tool] for tool in ("verilator", "g++", "make")}):
+        return None
+    simulation = [c for c in receipt.get("commands", [])
+                  if Path(c.get("stdout", "")).name == "marker-simulation.stdout.txt"]
+    expected_argv = [result["compiled"]["binary"],
+                     relative(path.parent / "checkpoint-images"),
+                     str(int(result["opening"])), str(result["simulation_threads"])]
+    if len(simulation) != 1 or simulation[0].get("argv") != expected_argv:
+        return None
+    output = ROOT / simulation[0]["stdout"]
+    import re
+    matches = re.findall(
+        r"^MARKER_SUMMARY opening=(\d+) frames=2 logits=(\d+) commits=(\d+) "
+        r"drafts=(\d+) compared_writes=(\d+) requests=(\d+) cycles=(\d+)$",
+        output.read_text(), re.M)
+    if len(matches) != 1 or list(map(int, matches[0])) != result.get("counts"):
+        return None
+    return {"basis": "identical module definitions except run_markers wrapper; "
+                     "exact original C++ driver, RTL, parameters, tools and raw summary",
+            "snapshot_sha256": receipt["source_sha256"][name],
+            "current_sha256": run.hashes[name], "driver_sha256": expected,
+            "simulation_argv": expected_argv}
+
+
 def marker_case(run, opening):
     from marker_checks import run_markers
 
@@ -257,9 +337,9 @@ def marker_case(run, opening):
                                   compiled=latest_marker_build(), clock_optimized=True),
         inputs=("tests/reference.py", "tests/model.py", "tests/marker_checks.py"),
         parameters={"opening": opening, "target": 151667 if opening else 151668,
-                    "vocabulary": 151936, "simulation_threads": 8,
-                    "clock_optimized": True},
-        tools=("python3", "verilator", "g++", "make"), validate=validate)
+                    "vocabulary": 151936, "simulation_threads": 8},
+        tools=("python3", "verilator", "g++", "make"), validate=validate,
+        equivalence=marker_source_equivalence)
 
 
 def marker_applicability(run, opening):

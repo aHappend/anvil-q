@@ -57,8 +57,9 @@ Executable coverage:
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
           coefficient comparisons and deterministic E/SiLU checks.
 
-Behavior, benchmark, defect and no-argument suite dispatchers remain
-incomplete; no whole-product acceptance is claimed. The seven-case production/
+Behavior now orchestrates source-bound protocol components and requires all three
+exact-profile strict fusion measurements. Benchmark, defect and no-argument suite
+dispatchers remain incomplete; no whole-product acceptance is claimed. The seven-case production/
 boundary coarse-synthesis campaign has executed successfully; it is not STA.
 The source-only dual-simulator compact reproduction campaign has also executed.
 The original controller
@@ -86,6 +87,7 @@ from numerical_checks import run_numerical
 from synthesis_checks import (run_synthesis_probe, run_controller_synthesis,
                               run_synthesis_case, run_synthesis)
 from behavior_checks import run_behavior_core
+from behavior_suite import run_behavior, run_behavior_components
 from memory_checks import run_banked_top, run_memory_matrix
 from fault_checks import run_fault_case, run_fault_matrix, FAULT_CASES
 from telemetry_checks import run_telemetry
@@ -127,7 +129,7 @@ def main():
                                           "layer-parallel-compact", "prefill-marker",
                                           "integrated-marker-fast",
                                           "saved-behavior-applicability",
-                                          "marker-applicability"))
+                                          "marker-applicability", "behavior-components"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
                         help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
@@ -139,7 +141,10 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "marker-applicability":
+        if args.probe == "behavior-components":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_behavior_components(run)
+        elif args.probe == "marker-applicability":
             run.versions(("python3", "verilator", "g++", "make"))
             results = marker_applicability(run, opening=args.marker == "open")
         elif args.probe == "saved-behavior-applicability":
@@ -290,6 +295,9 @@ def main():
         elif args.suite == "numerical":
             run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
             results = run_numerical(run)
+        elif args.suite == "behavior":
+            run.versions(("python3", "verilator", "g++", "make", "yosys"))
+            results = run_behavior(run)
         elif args.suite == "synthesis":
             run.versions(("python3", "yosys"))
             results = run_synthesis(run)
