@@ -37,7 +37,8 @@ def relative(path):
     return str(Path(path).relative_to(ROOT))
 
 
-def execute(directory, argv, timeout=600, repair_of=None):
+def execute(directory, argv, timeout=600, repair_of=None, expect_failure=False,
+            extra_inputs=()):
     """Every invocation has its own immutable receipt and raw log pair."""
     directory.mkdir(parents=True, exist_ok=True)
     if any(directory.iterdir()):
@@ -61,6 +62,13 @@ def execute(directory, argv, timeout=600, repair_of=None):
                "tool_version": {"argv": version_argv, "exit_code": version.returncode,
                                 "stdout": relative(directory / "tool-version.stdout.txt"),
                                 "stderr": relative(directory / "tool-version.stderr.txt")}}
+    experiment_inputs = {}
+    for argument in list(argv) + list(extra_inputs):
+        candidate = str(argument).split("=", 1)[-1] if str(argument).startswith("+") else str(argument)
+        path = ROOT / candidate
+        if path.is_file() and path.suffix in (".sv", ".cpp", ".py", ".txt", ".ys", ".json"):
+            experiment_inputs[relative(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+    receipt["experiment_input_sha256"] = experiment_inputs
     if repair_of:
         receipt["repair_of"] = repair_of
     start = time.monotonic()
@@ -90,6 +98,11 @@ def execute(directory, argv, timeout=600, repair_of=None):
             receipt.update(end_time=timestamp(), duration_s=time.monotonic() - start,
                            exit_code=process.returncode)
             (directory / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    if process.returncode or receipt["timed_out"]:
+    if receipt["timed_out"]:
+        raise RuntimeError(f"Child timed out; receipt: {relative(directory / 'receipt.json')}")
+    if expect_failure:
+        if process.returncode == 0:
+            raise RuntimeError(f"Expected defect rejection absent: {relative(directory / 'receipt.json')}")
+    elif process.returncode:
         raise RuntimeError(f"Child failed; receipt: {relative(directory / 'receipt.json')}")
     return receipt
