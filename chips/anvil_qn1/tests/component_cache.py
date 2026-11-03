@@ -113,3 +113,45 @@ def long_context(run):
         parameters={"positions": 40960, "head": 31, "q_heads": 32, "kv_heads": 8,
                     "head_dimension": 128, "driver": "cpp"},
         tools=("python3", "verilator", "g++", "make"), validate=validate)
+
+
+def historical_applicability(run):
+    from synthesis_checks import run_synthesis_case
+
+    context = long_context(run)
+    parameters = {
+        "PROFILE": 3, "BANKS": 8, "QUEUE_DEPTH": 16, "COMPACT": 1,
+        "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+        "NUM_Q_HEADS": 4, "NUM_KV_HEADS": 1, "HEAD_DIM": 128,
+        "VOCAB_SIZE": 8, "MAX_SEQ_LEN": 16, "GROUP_SIZE": 8}
+
+    def validate(result):
+        if result.get("top_scheduler_combinational_scc") != 0:
+            raise AssertionError("missing cross-boundary zero-SCC assertion")
+        for stage in ("hierarchy", "synthesis"):
+            record = result[stage]
+            if (record["dynamic_lanes"] != 256 or not record["state_cells"] or
+                    any(record[name] != 0 for name in
+                        ("latches", "combinational_div_mod", "unresolved_blackboxes"))):
+                raise AssertionError("missing live-lane/state/no-latch synthesis comparisons")
+        for name in ("hierarchy_netlist", "synthesized_netlist"):
+            record = result[name]
+            path = Path(record["file"])
+            if path.is_absolute() or ".." in path.parts:
+                raise AssertionError("nonportable retained synthesis netlist")
+            file = ROOT / path
+            if (not file.is_file() or
+                    hashlib.sha256(file.read_bytes()).hexdigest() != record["compressed_sha256"]):
+                raise AssertionError("missing/changed retained synthesis netlist")
+
+    synthesis = component(
+        run, "synthesis-boundary",
+        lambda child: run_synthesis_case(child, compact=True, banks=8, queue=16,
+                                         head_dim=128, q_heads=4),
+        inputs=("tests/synthesis_checks.py",),
+        parameters={"parameters": parameters, "production": False},
+        tools=("python3", "yosys"), validate=validate)
+    return {"attention_positions": context["positions"],
+            "attention_reads": context["counts"][2],
+            "synthesis_parameters": synthesis["parameters"],
+            "scope": "explicit historical component applicability, not whole-product acceptance"}
