@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-03T08:42:45.375427+00:00",
+  "timestamp_utc": "2026-11-03T11:56:11.403136+00:00",
   "project_dir": "/data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -10,17 +10,20 @@
   "map_summary": {
     "exists": true,
     "path": "/data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
-    "error_count": 2,
-    "errors": [
-      "Error (12006): Node instance \"parameters_ok\" instantiates undefined entity \"anvil_q1_parameters\". Ensure that required library paths are specified correctly, define the specified entity, or change the instantiation. If this entity represents Intel FPGA or third-party IP, generate the synthesis files for the IP. File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_top.sv Line: 118",
-      "Error (12006): Node instance \"compatibility_decoder\" instantiates undefined entity \"anvil_q1_fp_top\". Ensure that required library paths are specified correctly, define the specified entity, or change the instantiation. If this entity represents Intel FPGA or third-party IP, generate the synthesis files for the IP. File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_top.sv Line: 153"
-    ],
+    "error_count": 0,
+    "errors": [],
     "lpm_divide_error_count": 0,
     "lpm_divide_errors": [],
     "warning_10268_count": 0,
     "warning_10268": [],
-    "uninferred_ram_count": 0,
-    "uninferred_rams": []
+    "uninferred_ram_count": 5,
+    "uninferred_rams": [
+      "Info (276007): RAM logic \"anvil_q1_fp2_ddr_pingpong:ddr_pingpong|layers\" is uninferred due to asynchronous read logic File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_ddr_pingpong.sv Line: 40",
+      "Info (276007): RAM logic \"anvil_q1_fp2_ddr_pingpong:ddr_pingpong|rows\" is uninferred due to asynchronous read logic File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_ddr_pingpong.sv Line: 40",
+      "Info (276007): RAM logic \"anvil_q1_fp2_ddr_pingpong:ddr_pingpong|columns\" is uninferred due to asynchronous read logic File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_ddr_pingpong.sv Line: 40",
+      "Info (276007): RAM logic \"anvil_q1_fp2_ddr_pingpong:ddr_pingpong|write_data\" is uninferred due to asynchronous read logic File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_ddr_pingpong.sv Line: 41",
+      "Info (276007): RAM logic \"anvil_q1_fp2_ddr_pingpong:ddr_pingpong|strobes\" is uninferred due to asynchronous read logic File: /data/sufeng/anvil-q1-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q1_fp2_ddr_pingpong.sv Line: 42"
+    ]
   },
   "sta_summary": {
     "exit_code": 3,
@@ -37,15 +40,17 @@
     "hold_paths": [],
     "stderr_tail": [
       "------------------------------------------------",
-      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
+      "ERROR: Can't run TimeQuest Timing Analyzer (quartus_sta) -- Periphery placement (quartus_fit --plan) failed or was not run. Run I/O Assignment Analysis (quartus_fit --plan) successfully before running the TimeQuest analyzer (create_timing_netlist -post_map).",
       "",
       "    while executing",
       "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_jh91_dpv.tcl\" line 2)",
+      "    (file \"vulcan_sta_c5boiryb.tcl\" line 2)",
       "------------------------------------------------"
     ]
   },
-  "detail": "quartus_map reported 2 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "detail": "quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "fit_mode": "plan_plus_post_map_sta",
+  "fit_timed_out": true,
   "quartus_slot_telemetry": {
     "slot_index": 2,
     "max_slots": 6,
@@ -55,17 +60,23 @@
   "clock_port": "clk",
   "clock_period_ns": 10.0,
   "target_frequency_mhz": 100.0,
+  "fitter_resource_summary": {
+    "total_registers": 298283,
+    "block_memory_bits": 728940,
+    "dsp_blocks": 661,
+    "virtual_pins": 1598
+  },
   "parameters": {
     "VOCAB_SIZE": 16,
-    "HIDDEN_SIZE": 16,
-    "INTERMEDIATE_SIZE": 16,
+    "HIDDEN_SIZE": 56,
+    "INTERMEDIATE_SIZE": 56,
     "NUM_LAYERS": 2,
-    "NUM_Q_HEADS": 2,
+    "NUM_Q_HEADS": 7,
     "NUM_KV_HEADS": 1,
     "HEAD_DIM": 8,
     "GROUP_SIZE": 8,
     "MAX_SEQ_LEN": 8
   },
-  "source_sha256": "19b3c6ecdef753b001b49f981715a6ccff7645301335d60b6f423186bb8be0c8",
+  "source_sha256": "f78fae524b4610076ed4b3a2d21ad327577cff35bbc14487e617d7a78ac5e959",
   "applicable": true
 }
