@@ -13,21 +13,43 @@ def flatten_configuration(text, filename):
     }[filename]
     bit_access = "initialized[{cfg_index,cfg_addr[5:2]}]"
     word_access = "initialized[{" + read_index + ",4'b0000}+:16]"
+    native = filename == "anvil_q2_ht2_native_configuration.sv"
     replacements = [
         ("reg [15:0] initialized [0:ENTRIES-1];",
          "reg [16*ENTRIES-1:0] initialized;"),
-        ("initialized[cfg_index][cfg_addr[5:2]]", bit_access),
         (f"initialized[{read_index}]", word_access),
     ]
+    if native:
+        validity_process = """    for (genvar entry=0;entry<ENTRIES;entry=entry+1) begin: descriptor_validity
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) initialized[entry]<=0;
+        else if (initialized_write && cfg_index==entry)
+          initialized[entry][cfg_addr[5:2]]<=1;
+      end
+    end"""
+        packed_process = validity_process.replace(
+            "initialized[entry]<=0;", "initialized[16*entry+:16]<=0;").replace(
+            "initialized[entry][cfg_addr[5:2]]",
+            "initialized[16*entry+cfg_addr[5:2]]")
+        if text.count(validity_process) != 1:
+            raise RuntimeError(f"unrecognized configuration validity process: {filename}")
+        replacements.append((validity_process, packed_process))
+    else:
+        replacements.append(("initialized[cfg_index][cfg_addr[5:2]]", bit_access))
     for old, new in replacements:
         if old not in text:
             raise RuntimeError(f"unrecognized configuration storage syntax: {filename}")
         text = text.replace(old, new)
-    text, resets = re.subn(
-        r"for \(i=0;\s*i<ENTRIES;\s*i=i\+1\) initialized\[i\]<=0;",
-        "initialized<=0;", text)
-    remaining = text.replace(bit_access, "").replace(word_access, "")
-    if resets != 1 or re.search(r"\binitialized\s*\[", remaining):
+    if native:
+        remaining = text.replace(packed_process, "").replace(word_access, "")
+    else:
+        text, resets = re.subn(
+            r"for \(i=0;\s*i<ENTRIES;\s*i=i\+1\) initialized\[i\]<=0;",
+            "initialized<=0;", text)
+        if resets != 1:
+            raise RuntimeError(f"unrecognized configuration reset: {filename}")
+        remaining = text.replace(bit_access, "").replace(word_access, "")
+    if re.search(r"\binitialized\s*\[", remaining):
         raise RuntimeError(f"unrecognized configuration reset/index: {filename}")
     return text
 
@@ -75,8 +97,10 @@ def expand_packages(run, root, source_paths):
         "operation": ("replace wildcard imports with verbatim package bodies; omit package units; "
                       "lower int'(x) to $signed(32'(x)); flatten only the asynchronous-reset "
                       "16-bit initialized register arrays in both configuration modules, "
-                      "with index {row,word} and whole-vector reset; retain parent index reads "
-                      "and native synchronous shadow_read_address reads at their original edges"),
+                      "with parent index {row,word} and whole-vector reset; retain native "
+                      "generated per-entry asynchronous resets and conditional bit writes as "
+                      "disjoint packed slices, and synchronous shadow_read_address reads "
+                      "at their original edges"),
         "bindings": bindings,
     }
     run.save()
