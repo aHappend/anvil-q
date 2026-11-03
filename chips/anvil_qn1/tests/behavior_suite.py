@@ -7,7 +7,7 @@ layer/fusion measurements below.
 """
 
 from behavior_checks import run_behavior_core
-from component_cache import component, long_context, marker_case
+from component_cache import component, long_context, marker_case, marker_source_equivalence
 from control_checks import controller_scenarios, run_controller
 from fault_checks import FAULT_CASES, run_fault_matrix
 from memory_checks import run_memory_matrix
@@ -171,12 +171,12 @@ def prefill_case(run, opening):
                 "missing prefill marker/no-generated-token comparisons")
 
     return component(
-        run, "prefill-marker", lambda child: run_prefill_marker(child, opening),
+        run, "prefill-marker", lambda child: run_prefill_marker(child, opening, threads=4),
         inputs=("tests/prefill_marker_checks.py", "tests/marker_checks.py",
                 "tests/speculation_checks.py", "tests/model.py", "tests/reference.py"),
         parameters={"opening": opening, "input_marker": 151667 if opening else 151668,
-                    "simulation_threads": 8},
-        tools=TOOLS, validate=validate)
+                    "simulation_threads": 4},
+        tools=TOOLS, validate=validate, equivalence=marker_source_equivalence)
 
 
 def run_behavior_components(run):

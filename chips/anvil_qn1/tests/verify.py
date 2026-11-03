@@ -129,7 +129,8 @@ def main():
                                           "layer-parallel-compact", "prefill-marker",
                                           "integrated-marker-fast",
                                           "saved-behavior-applicability",
-                                          "marker-applicability", "behavior-components"))
+                                          "marker-applicability", "behavior-components",
+                                          "behavior-checker"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
                         help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
@@ -141,7 +142,11 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "behavior-components":
+        if args.probe == "behavior-checker":
+            from checker_checks import run_behavior_checker
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_behavior_checker(run)
+        elif args.probe == "behavior-components":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_behavior_components(run)
         elif args.probe == "marker-applicability":

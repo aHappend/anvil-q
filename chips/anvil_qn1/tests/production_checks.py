@@ -457,6 +457,24 @@ def run_layer(run, profile=1, normalization=True, compact=False, threads=1):
     return result
 
 
+def measured_fusion_delta(fused, baseline):
+    if (type(fused["cycles"]) is not int or type(baseline["cycles"]) is not int or
+            fused["cycles"] <= 0 or baseline["cycles"] <= 0 or
+            fused["requests"] != baseline["requests"]):
+        raise AssertionError("fusion comparison changed memory work")
+    for field in ("profile", "geometry", "parameters", "simulation_threads",
+                  "measurement", "memory"):
+        if fused.get(field) != baseline.get(field):
+            raise AssertionError(f"fusion comparison changed {field}")
+    if fused["normalization"] is not True or baseline["normalization"] is not False:
+        raise AssertionError("fusion comparison requires normalized and RoPE-only executions")
+    difference = fused["cycles"] - baseline["cycles"]
+    if 100 * difference >= 2 * baseline["cycles"]:
+        raise AssertionError(f"fusion overhead >=2%: fused={fused['cycles']}, "
+                             f"without_norm={baseline['cycles']}")
+    return difference
+
+
 def run_fusion_profile(run, profile=1, compact=False, threads=1):
     fused = run.component(f"layer-fused-profile{profile}",
                           lambda child: run_layer(child, profile, compact=compact,
@@ -464,12 +482,7 @@ def run_fusion_profile(run, profile=1, compact=False, threads=1):
     baseline = run.component(f"layer-rope-only-profile{profile}",
                              lambda child: run_layer(child, profile, False, compact,
                                                       threads=threads))
-    if baseline["cycles"] <= 0 or fused["requests"] != baseline["requests"]:
-        raise AssertionError("fusion comparison changed memory work")
-    difference = fused["cycles"] - baseline["cycles"]
-    if 100 * difference >= 2 * baseline["cycles"]:
-        raise AssertionError(f"fusion overhead >=2%: fused={fused['cycles']}, "
-                             f"without_norm={baseline['cycles']}")
+    difference = measured_fusion_delta(fused, baseline)
     return {"profile": profile, "fused": fused, "without_norm": baseline,
             "extra_cycles": difference,
             "overhead_percent": 100 * difference / baseline["cycles"],

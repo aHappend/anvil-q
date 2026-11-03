@@ -43,7 +43,7 @@ def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None)
                name not in recorded or name not in run.hashes}
     if missing:
         reasons.append("missing component source bindings: " + ",".join(sorted(missing)))
-    changed_dependencies = selected & changed.keys() - equivalent.keys()
+    changed_dependencies = (selected & changed.keys()) - equivalent.keys()
     if changed_dependencies:
         reasons.append("changed component dependencies: " +
                        ",".join(sorted(changed_dependencies)))
@@ -170,7 +170,7 @@ def component(run, stem, operation, *, inputs, parameters, tools, validate,
         if assessment["applicable"]:
             try:
                 validate(results)
-            except AssertionError as error:
+            except (AssertionError, KeyError, TypeError, ValueError) as error:
                 assessment["applicable"] = False
                 assessment["reasons"].append(f"retained comparison/artifact invalid: {error}")
                 print(f"COMPONENT_STALE {relative(path)}: {error}", flush=True)
@@ -283,10 +283,26 @@ def marker_source_equivalence(run, path, receipt, name):
         return None
     binding = result.get("compiled", {}).get("binding", {})
     from marker_checks import MARKER_DRIVER
-    driver = path.parent / "marker_driver.cpp"
-    expected = hashlib.sha256(MARKER_DRIVER.encode()).hexdigest()
+    prefill = "input_marker" in result
+    if prefill:
+        from prefill_marker_checks import prefill_driver
+        text = prefill_driver()
+        driver_name = "prefill_marker_driver.cpp"
+        simulation_name = "prefill-marker-simulation.stdout.txt"
+        summary_pattern = (
+            r"^PREFILL_MARKER_SUMMARY opening=(\d+) frames=1 logits=(\d+) commits=(\d+) "
+            r"drafts=(\d+) compared_writes=(\d+) requests=(\d+) cycles=(\d+)$")
+    else:
+        text = MARKER_DRIVER
+        driver_name = "marker_driver.cpp"
+        simulation_name = "marker-simulation.stdout.txt"
+        summary_pattern = (
+            r"^MARKER_SUMMARY opening=(\d+) frames=2 logits=(\d+) commits=(\d+) "
+            r"drafts=(\d+) compared_writes=(\d+) requests=(\d+) cycles=(\d+)$")
+    driver = path.parent / driver_name
+    expected = hashlib.sha256(text.encode()).hexdigest()
     if (not driver.is_file() or hashlib.sha256(driver.read_bytes()).hexdigest() != expected or
-            receipt.get("artifact_sha256", {}).get("marker_driver.cpp") != expected or
+            receipt.get("artifact_sha256", {}).get(driver_name) != expected or
             binding.get("driver_sha256") != expected):
         return None
     expected_parameters = {
@@ -302,18 +318,17 @@ def marker_source_equivalence(run, path, receipt, name):
                 tool: run.tool_versions[tool] for tool in ("verilator", "g++", "make")}):
         return None
     simulation = [c for c in receipt.get("commands", [])
-                  if Path(c.get("stdout", "")).name == "marker-simulation.stdout.txt"]
+                  if Path(c.get("stdout", "")).name == simulation_name]
     expected_argv = [result["compiled"]["binary"],
                      relative(path.parent / "checkpoint-images"),
                      str(int(result["opening"])), str(result["simulation_threads"])]
     if len(simulation) != 1 or simulation[0].get("argv") != expected_argv:
         return None
     output = ROOT / simulation[0]["stdout"]
+    if not output.is_file():
+        return None
     import re
-    matches = re.findall(
-        r"^MARKER_SUMMARY opening=(\d+) frames=2 logits=(\d+) commits=(\d+) "
-        r"drafts=(\d+) compared_writes=(\d+) requests=(\d+) cycles=(\d+)$",
-        output.read_text(), re.M)
+    matches = re.findall(summary_pattern, output.read_text(), re.M)
     if len(matches) != 1 or list(map(int, matches[0])) != result.get("counts"):
         return None
     return {"basis": "identical module definitions except run_markers wrapper; "
