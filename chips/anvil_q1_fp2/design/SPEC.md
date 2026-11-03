@@ -689,6 +689,17 @@ embedding/output head -> logits. All intermediate slots described above are
 internal FP32 vector RAM, not external kind-8 transfers. The full weights and
 KV history remain external.
 
+Architectural vector storage is banked by its 15 logical slots, each with
+MAX_VECTOR FP32 words, one synchronous read port and one full-word write port.
+The source bank reads vector_index (including the query-group offset); all other
+banks read index. Auxiliary/residual consumers share a bank read when they
+select the same slot. During query loading the source is slot 2 and the unused
+auxiliary/residual slots are 0, so no bank needs two independent read addresses.
+Embedding, epilogue, projection and attention writes are mutually exclusive
+graph phases and select one common slot/index/data write port. Bank output
+selection retains the existing FEED_READ/FEED_LATCH and QUERY_READ/QUERY_LATCH
+edge schedule. No memory contents are reset.
+
 Optimized scalar requests are reads of kind 4 (Q/K/V bias), kinds 5/6/7
 (gamma) and kind 11 (RoPE); no optimized weight or history fetch uses scalar
 transport. Bias and gamma retain the parent native BF16-in-low-halfword ABI,
@@ -706,6 +717,16 @@ tile contains up to 64 output columns and up to 64 input rows. Weight DDR
 reads preserve kind-12 input-row/output-column orientation; each fetched row
 has independent Group-32 scales across its output columns. The local transposed
 tile feeds one 64-input reduction per output column into the tensor.
+
+The weight tile has 64 independent 16-bit banks, one per input lane, each
+containing 64 output columns. An accepted reader component writes one complete
+word in the bank selected by weight_row; every bank synchronously reads
+dot_column. Concatenating their registered outputs preserves lane ordering
+without a variable partial-word RAM write. The sum RAM uses one muxed write
+address/data/enable for tile clear or ordered tensor retirement; result
+retirement has priority, although these states are disjoint in legal execution.
+Both memories retain their existing synchronous read latency and DOT/RESULT
+read/latch schedule. Masks still exclude unwritten tail lanes.
 
 This orientation matters: the input-axis dot can cross 64 distinct weight-row
 scales. Two tensor scale bytes cannot describe them. Consequently MX transport
@@ -761,6 +782,7 @@ reuse a live external DDR ID.
 | Final operand stalled | Hold feeder x/aux/residual/last and index. No operation completes before the final transfer. |
 | Projection singleton/tail | One input/output and partial groups follow the same states; lane masks suppress stale tile entries. Architectural legal geometry still requires multiples of eight. |
 | Projection tensor issue | Synchronous activation/tile/sum reads precede valid; ordered result count selects the accumulator bank, independently of issue count. A new input group waits for every prior result. |
+| Bank read plus write | Registered RAM reads observe pre-edge contents. No consumer uses a colliding read: graph phases separate vector writes from operand feeds, and weight loading/clearing precede tensor issue. Tensor retirement targets an already-issued column, not a column awaiting its first read in that group. |
 | Final projection/epilogue output | Store internal result and count the transfer. Wait for the leaf's delayed done before advancing the graph. |
 | Final KV write | Acknowledgment, not request acceptance, completes the stored data/scale group. |
 | Optimized final logit stalled | Synchronous RAM result is latched; hold logit index/data until accepted. No next token is accepted. |

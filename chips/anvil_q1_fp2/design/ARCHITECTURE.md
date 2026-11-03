@@ -284,6 +284,17 @@ precede tensor issue; every prior result retires before the next input group
 can read its accumulator bank. Ragged input groups mask unused tile bits.
 Output-head weights instead retain vocabulary-row/hidden-column orientation.
 
+RAM-inference repair banks the weight tile into 64 full-word 16-bit memories,
+indexed by output column and enabled by input lane. Their synchronous reads
+form the unchanged 1024-bit tensor operand. This replaces a variable-position
+16-bit write into a 1024-bit RAM word. The sum bank merges clear and result
+retirement into a single write address/data/enable, rather than describing
+separately addressed write ports. Result retirement wins the mux; legal states
+do not overlap clear and retirement. Neither repair changes issue/retire
+ordering, FP32 rounding boundaries, latency or tail masks. Per-lane M20K banking
+can waste physical block capacity; include that overhead in physical resource
+measurements, not just the 65536 stored weight bits.
+
 MX weight scales are per matrix row along output columns, so an input-axis
 dot has more than two independent weight scales. The streaming reader decodes
 those scales to exact specified BF16 operands before tile storage. Activation
@@ -305,6 +316,24 @@ logits remain buffered until the complete token succeeds. A group failure drains
 the shared reader before operator abort; scalar/reader/writer faults complete
 only after their response ownership has settled. The reset bridge must discard
 old-epoch responses, as required by the external protocol.
+
+The architectural vector store is split into 15 slot banks instead of one
+three-read/four-write memory. Each bank has one synchronous registered read
+and one full-word write; a common producer mux selects embedding, epilogue,
+projection or group output. Graph phases make these producers exclusive.
+All ordinary consumers use the same component index, including source/auxiliary
+or source/residual pairs. Only query loading offsets the source index; it reads
+slot 2 while unused auxiliary/residual selectors address slot 0. Bank output
+muxes therefore preserve the three operand values without replicating the
+complete store or adding feeder states. Logit storage and success-before-output
+ownership are unchanged. RAM contents remain unreset and are consumed only
+after their owning graph stage writes them.
+
+These storage changes address retained Quartus Warning 10999 for decoder
+vectors and projection weights/sums. They do not establish successful M20K
+mapping, timing or PPA: independent synthesis and complete native source staging
+must establish those results. A zero parsed uninferred-RAM count cannot
+override explicit raw mapping warnings.
 
 ULP telemetry samples actual FP32-to-BF16 rounding for projection inputs,
 history writes and queries. These mutually exclusive schedule phases cannot

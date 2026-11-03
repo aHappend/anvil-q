@@ -77,7 +77,7 @@ module anvil_q1_fp2_decoder_control #(
   output wire [31:0] ulp_distance
 );
   localparam MAX_VECTOR=INTERMEDIATE_SIZE>HIDDEN_SIZE ? INTERMEDIATE_SIZE : HIDDEN_SIZE;
-  localparam VB=$clog2(15*MAX_VECTOR);
+  localparam VB=MAX_VECTOR>1 ? $clog2(MAX_VECTOR) : 1;
   localparam LB=VOCAB_SIZE>1 ? $clog2(VOCAB_SIZE) : 1;
   localparam GROUP_HEADS=NUM_Q_HEADS/(NUM_KV_HEADS>0 ? NUM_KV_HEADS : 1);
   localparam GROUP_WIDTH=GROUP_HEADS*HEAD_DIM;
@@ -99,14 +99,17 @@ module anvil_q1_fp2_decoder_control #(
   reg [1:0] operation;
   reg [3:0] config_kind;
   reg is_projection, is_epilogue, is_writer;
-  (* ramstyle = "M20K", nomem2reg *) reg [31:0] vectors [0:15*MAX_VECTOR-1];
   (* ramstyle = "M20K", nomem2reg *) reg [31:0] logits [0:VOCAB_SIZE-1];
-  reg [31:0] vector_q, auxiliary_q, residual_q, logit_q;
+  wire [31:0] vector_bank_q [0:14];
+  wire [31:0] vector_q=vector_bank_q[source_slot];
+  wire [31:0] auxiliary_q=vector_bank_q[auxiliary_slot];
+  wire [31:0] residual_q=vector_bank_q[residual_slot];
+  reg [31:0] logit_q;
+  reg vector_write;
+  reg [3:0] vector_write_slot;
+  reg [31:0] vector_write_index, vector_write_data;
   wire [31:0] vector_index=(state==QUERY_READ || state==QUERY_LATCH ||
     state==QUERY_SEND) ? group_head*GROUP_WIDTH+index : index;
-  wire [31:0] source_address=source_slot*MAX_VECTOR+vector_index;
-  wire [31:0] auxiliary_address=auxiliary_slot*MAX_VECTOR+index;
-  wire [31:0] residual_address=residual_slot*MAX_VECTOR+index;
   wire feed_last=index+1==length;
   wire need_config=is_epilogue && (operation==0 || operation==1);
   wire [31:0] rope_column=query_component<HEAD_DIM/2 ?
@@ -354,20 +357,37 @@ module anvil_q1_fp2_decoder_control #(
       default: begin end
     endcase
   end
+  always @* begin
+    vector_write=0; vector_write_slot=0; vector_write_index=0; vector_write_data=0;
+    if (group_transfer) begin
+      vector_write=1; vector_write_slot=5;
+      vector_write_index=group_head*GROUP_WIDTH+group_out_head*HEAD_DIM+group_out_component;
+      vector_write_data=group_out_data;
+    end else if (projection_transfer && step!=19) begin
+      vector_write=1; vector_write_slot=target_slot;
+      vector_write_index=projection_index; vector_write_data=projection_data;
+    end else if (ep_transfer) begin
+      vector_write=1; vector_write_slot=target_slot;
+      vector_write_index=received; vector_write_data=ep_out_data;
+    end else if (operators_rst_n && state==EMBED && embed_valid) begin
+      vector_write=1; vector_write_slot=0;
+      vector_write_index=received; vector_write_data={embed_data,16'd0};
+    end
+  end
+  generate for (genvar slot=0;slot<15;slot=slot+1) begin: vector_banks
+    (* ramstyle = "M20K", nomem2reg *) reg [31:0] vectors [0:MAX_VECTOR-1];
+    reg [31:0] read_q;
+    wire [31:0] read_index=source_slot==slot ? vector_index : index;
+    assign vector_bank_q[slot]=read_q;
+    always @(posedge clk) begin
+      if (rst_n && vector_write && vector_write_slot==slot)
+        vectors[vector_write_index[VB-1:0]]<=vector_write_data;
+      read_q<=vectors[read_index[VB-1:0]];
+    end
+  end endgenerate
   always @(posedge clk) begin
-    vector_q<=vectors[source_address[VB-1:0]];
-    auxiliary_q<=vectors[auxiliary_address[VB-1:0]];
-    residual_q<=vectors[residual_address[VB-1:0]];
     logit_q<=logits[index[LB-1:0]];
-    if (operators_rst_n && state==EMBED && embed_valid)
-      vectors[received[VB-1:0]]<={embed_data,16'd0};
-    if (ep_transfer) vectors[VB'(target_slot*MAX_VECTOR+received)]<=ep_out_data;
-    if (projection_transfer && step!=19)
-      vectors[VB'(target_slot*MAX_VECTOR+projection_index)]<=projection_data;
     if (projection_transfer && step==19) logits[projection_index[LB-1:0]]<=projection_data;
-    if (group_transfer)
-      vectors[VB'(5*MAX_VECTOR+group_head*GROUP_WIDTH+
-        group_out_head*HEAD_DIM+group_out_component)]<=group_out_data;
   end
   always @(posedge clk) begin
     if (!rst_n) begin

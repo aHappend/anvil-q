@@ -1,6 +1,6 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-11-03T08:35:47.843946+00:00",
+  "timestamp_utc": "2026-11-03T08:47:16.594873+00:00",
   "root": "/data/sufeng/anvil-q1-fp2-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
@@ -11,7 +11,7 @@
     "rtl/anvil_q1_fp2_bfp_tensor_array.sv": "f7d109f92c7897c7a0d3bf31332791b2131c2a90ba334f1e985e6aed92dcc594",
     "rtl/anvil_q1_fp2_ddr_pingpong.sv": "4f6b4c13d956dca1e30fe93fd761b48dcb7ba44e277acc871332cc638b9ba453",
     "rtl/anvil_q1_fp2_ddr_read_stream.sv": "197d9ef07a47ca660299e3dd7431d3ce15e61f888a6ee782f1fa91e23e438ea3",
-    "rtl/anvil_q1_fp2_decoder_control.sv": "5d0838ecaa416241eec7885f09e62e53de37411659e179e263ad6752c4adea80",
+    "rtl/anvil_q1_fp2_decoder_control.sv": "6eb59436c68fb8b2535d37a455370cc03438cbb88af8a94fe2bb2ee993c9efd8",
     "rtl/anvil_q1_fp2_epilogue_fusion.sv": "4b4344767384804b11e7becf777748e5c6e0d0b0f3e3e804b83a9c3fc2efe1eb",
     "rtl/anvil_q1_fp2_exp.sv": "85233cb60954a93f63d3ccbf15789c0764d76d220a1eb5f9dbe5f36e5a3d4707",
     "rtl/anvil_q1_fp2_fast_rsqrt.sv": "e9f531cbd4233979299f2f367adac32ecca36a17a146bb40d4af54254965ee2c",
@@ -21,7 +21,7 @@
     "rtl/anvil_q1_fp2_kv_reader.sv": "32af0ffd35cd1a8046f16f17d3254195694be3904710ba7d4efafe55ce7f2f6e",
     "rtl/anvil_q1_fp2_kv_writer.sv": "65bc865e03eb65e415b10f5217ee5c83777254a8b0c274b5f68bda4fb7978717",
     "rtl/anvil_q1_fp2_mx_quantize.sv": "33fee8ab01749c38ea93a85f02e436fad0a3e014de388822a0c0bc88398e6f7e",
-    "rtl/anvil_q1_fp2_projection.sv": "7b6ee4f9f0352e12134629462f4d72fcb677672709f08fa8c1c0588c5a774060",
+    "rtl/anvil_q1_fp2_projection.sv": "7afe6152f07045fd5d95be722b0931f551513e6b45503b69f470c54b7a501be9",
     "rtl/anvil_q1_fp2_reciprocal.sv": "a6195264c1aa087742eae8e8489061dbe0e8270bcd04d4345601f83c2c57c83e",
     "rtl/anvil_q1_fp2_telemetry_csr.sv": "eca8a27751b9ece5eac2cd049165e087ae150cd6ac6fe3a2dc167c605ab4d1a2",
     "rtl/anvil_q1_fp2_top.sv": "b225547f6e495bce6ed0b40d69541702515bb33ec26a4ff57c852daaf403915b"

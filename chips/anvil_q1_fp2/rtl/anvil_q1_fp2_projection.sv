@@ -61,11 +61,11 @@ module anvil_q1_fp2_projection #(
   reg [31:0] layer, inputs, outputs, received, group_index, output_base;
   reg [31:0] input_base, weight_row, weight_column, dot_column, retired;
   reg [31:0] emit_column, tile_width, group_width, payload, bias;
-  reg [1023:0] gathered, activation, weight_q, activation_q;
+  reg [1023:0] gathered, activation, activation_q;
+  wire [1023:0] weight_q;
   reg [31:0] accumulator_q;
   reg [4:0] flags;
   (* ramstyle = "M20K", nomem2reg *) reg [1023:0] activations [0:GROUPS-1];
-  (* ramstyle = "M20K", nomem2reg *) reg [1023:0] weights [0:63];
   (* ramstyle = "M20K", nomem2reg *) reg [31:0] sums [0:63];
   wire [20:0] converted=anvil_q1_fp2_pkg::fp32_to_bf16(in_data);
   wire quant_valid;
@@ -84,6 +84,11 @@ module anvil_q1_fp2_projection #(
   wire [31:0] add_result;
   wire [4:0] add_status;
   wire reader_transfer=reader_valid && state==WEIGHT_LOAD;
+  wire sum_result_write=tensor_result_valid && (state==DOT_READ ||
+    state==DOT_LATCH || state==DOT_SEND || state==DOT_WAIT);
+  wire sum_write=rst_n && (state==CLEAR || sum_result_write);
+  wire [5:0] sum_write_address=sum_result_write ? retired[5:0] : dot_column[5:0];
+  wire [31:0] sum_write_data=sum_result_write ? tensor_result : 32'd0;
   wire [31:0] roundtrip={converted[15:0],16'd0};
   wire [31:0] ordered_input=in_data[31] ? ~in_data : in_data ^ 32'h80000000;
   wire [31:0] ordered_roundtrip=roundtrip[31] ? ~roundtrip : roundtrip ^ 32'h80000000;
@@ -147,18 +152,23 @@ module anvil_q1_fp2_projection #(
     .clk(clk),.rst_n(rst_n),.in_valid(state==BIAS_ADD),.in_ready(add_ready),
     .out_ready(1'b1),.a(payload),.b(bias),.out_valid(add_valid),
     .result(add_result),.status(add_status));
+  generate for (genvar lane=0;lane<64;lane=lane+1) begin: weight_banks
+    (* ramstyle = "M20K", nomem2reg *) reg [15:0] weights [0:63];
+    reg [15:0] read_q;
+    assign weight_q[16*lane+:16]=read_q;
+    always @(posedge clk) begin
+      if (rst_n && reader_transfer && weight_row[5:0]==lane)
+        weights[weight_column[5:0]]<=reader_data;
+      read_q<=weights[dot_column[5:0]];
+    end
+  end endgenerate
   always @(posedge clk) begin
     if (rst_n && state==STORE)
       activations[group_index[GB-1:0]]<=gathered;
     activation_q<=activations[group_index[GB-1:0]];
-    if (reader_transfer)
-      weights[weight_column[5:0]][16*weight_row[5:0]+:16]<=reader_data;
-    weight_q<=weights[dot_column[5:0]];
     accumulator_q<=sums[(state==RESULT_READ || state==RESULT_LATCH) ?
       emit_column[5:0] : dot_column[5:0]];
-    if (rst_n && state==CLEAR) sums[dot_column[5:0]]<=0;
-    if (rst_n && tensor_result_valid && (state==DOT_READ || state==DOT_LATCH ||
-        state==DOT_SEND || state==DOT_WAIT)) sums[retired[5:0]]<=tensor_result;
+    if (sum_write) sums[sum_write_address]<=sum_write_data;
   end
   always @(posedge clk) begin
     if (!rst_n) begin
