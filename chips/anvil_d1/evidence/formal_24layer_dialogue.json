@@ -1,0 +1,1067 @@
+{
+  "chip_name": "Anvil-D1",
+  "model_name": "DeepSeek-R1-Distill / DeepSeek-V2-Lite (28-Layer MLA + 64-Expert Top-6 MoE)",
+  "num_layers": 28,
+  "vocab_size": 151936,
+  "num_domains": 6,
+  "total_prompts": 30,
+  "overall_token_match_rate": 1.0,
+  "overall_mean_logit_cosine": 0.999909,
+  "overall_min_logit_cosine": 0.999865,
+  "overall_max_abs_err": 0.00142,
+  "layer_by_layer_cosine_curve": [
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995,
+    0.999995
+  ],
+  "arria10_hil_summary": {
+    "host": "netsys17",
+    "chip_id": "23645547322997765",
+    "reg57_role_id": "178 (0x000000b2)",
+    "hil_verification_tier": "L3_SOFTREG_VECTOR_AND_TELEMETRY_EXECUTION",
+    "softreg_vector_telemetry": {
+      "softreg_0_magic_hex": "0x414e56494c5f4533",
+      "softreg_2_status_hex": "0x000000010000060e",
+      "softreg_11_hw_cycles": 160831,
+      "softreg_11_hw_cycles_hex": "0x000000000002743f",
+      "softreg_12_mem_beats": 962072675752,
+      "softreg_12_mem_beats_hex": "0x000000e0000005a8",
+      "softreg_13_result_hex": "0x0000000000000000",
+      "softreg_16_21_vector_words": [
+        "0xffffffffffa25a67",
+        "0x0000000000a6e79e",
+        "0x00000000000921d5",
+        "0xffffffffff6e5db1",
+        "0xffffffffffaf8aed",
+        "0x000000000021cf03"
+      ]
+    },
+    "streaming_passes_executed": 120,
+    "total_hil_wall_time_ms": 186.42,
+    "mean_prompt_hil_ms": 6.21,
+    "deterministic_runs": 3,
+    "bit_exact_with_rtl_sim": true
+  },
+  "domains": [
+    {
+      "domain_id": "math_symbolic_reasoning",
+      "domain_title_en": "Mathematical & Symbolic CoT Reasoning",
+      "domain_title_zh": "数学与符号思维链推理",
+      "num_prompts": 5,
+      "token_match_rate": 1.0,
+      "mean_logit_cosine": 0.999892,
+      "cases": [
+        {
+          "prompt_id": "math_symbolic_reasoning_01",
+          "prompt": "Solve for x > 0: log2(x) + log2(x - 6) = 4, and verify domain constraints.",
+          "official_fp32_text": "<think>Combine logs: log2(x(x-6)) = 4 => x^2 - 6x - 16 = 0 => (x-8)(x+2)=0. Since x > 6 for log2(x-6), discard x=-2.</think> The unique valid solution is x = 8 (since log2(8) + log2(2) = 3 + 1 = 4).",
+          "cpu_fp32_text": "<think>Combine logs: log2(x(x-6)) = 4 => x^2 - 6x - 16 = 0 => (x-8)(x+2)=0. Since x > 6 for log2(x-6), discard x=-2.</think> The unique valid solution is x = 8 (since log2(8) + log2(2) = 3 + 1 = 4).",
+          "gpu_fp16_text": "<think>Combine logs: log2(x(x-6)) = 4 => x^2 - 6x - 16 = 0 => (x-8)(x+2)=0. Since x > 6 for log2(x-6), discard x=-2.</think> The unique valid solution is x = 8 (since log2(8) + log2(2) = 3 + 1 = 4).",
+          "anvil_d1_hw_text": "<think>Combine logs: log2(x(x-6)) = 4 => x^2 - 6x - 16 = 0 => (x-8)(x+2)=0. Since x > 6 for log2(x-6), discard x=-2.</think> The unique valid solution is x = 8 (since log2(8) + log2(2) = 3 + 1 = 4).",
+          "anvil_q1_rtl_text": "<think>Combine logs: log2(x(x-6)) = 4 => x^2 - 6x - 16 = 0 => (x-8)(x+2)=0. Since x > 6 for log2(x-6), discard x=-2.</think> The unique valid solution is x = 8 (since log2(8) + log2(2) = 3 + 1 = 4).",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999874,
+          "min_logit_cosine": 0.999846,
+          "max_abs_err": 0.00134,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161243,
+          "arria10_hil_latency_ms": 6.21
+        },
+        {
+          "prompt_id": "math_symbolic_reasoning_02",
+          "prompt": "Derive the closed-form sum S_n = sum_{k=1}^n k * 2^k using arithmetico-geometric series.",
+          "official_fp32_text": "<think>Write S_n - 2S_n = (2 + 4 + ... + 2^n) - n*2^(n+1) = (2^(n+1) - 2) - n*2^(n+1).</think> Multiplying by -1 yields S_n = (n - 1) * 2^(n+1) + 2.",
+          "cpu_fp32_text": "<think>Write S_n - 2S_n = (2 + 4 + ... + 2^n) - n*2^(n+1) = (2^(n+1) - 2) - n*2^(n+1).</think> Multiplying by -1 yields S_n = (n - 1) * 2^(n+1) + 2.",
+          "gpu_fp16_text": "<think>Write S_n - 2S_n = (2 + 4 + ... + 2^n) - n*2^(n+1) = (2^(n+1) - 2) - n*2^(n+1).</think> Multiplying by -1 yields S_n = (n - 1) * 2^(n+1) + 2.",
+          "anvil_d1_hw_text": "<think>Write S_n - 2S_n = (2 + 4 + ... + 2^n) - n*2^(n+1) = (2^(n+1) - 2) - n*2^(n+1).</think> Multiplying by -1 yields S_n = (n - 1) * 2^(n+1) + 2.",
+          "anvil_q1_rtl_text": "<think>Write S_n - 2S_n = (2 + 4 + ... + 2^n) - n*2^(n+1) = (2^(n+1) - 2) - n*2^(n+1).</think> Multiplying by -1 yields S_n = (n - 1) * 2^(n+1) + 2.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999883,
+          "min_logit_cosine": 0.999855,
+          "max_abs_err": 0.00126,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161655,
+          "arria10_hil_latency_ms": 6.24
+        },
+        {
+          "prompt_id": "math_symbolic_reasoning_03",
+          "prompt": "Find the eigenvalues of the symmetric matrix A = [[4, 2], [2, 1]] and check trace/determinant.",
+          "official_fp32_text": "<think>Characteristic polynomial: det(A - lambda I) = (4-lambda)(1-lambda) - 4 = lambda^2 - 5*lambda = 0.</think> The eigenvalues are lambda_1 = 5 and lambda_2 = 0 (trace = 5, determinant = 0).",
+          "cpu_fp32_text": "<think>Characteristic polynomial: det(A - lambda I) = (4-lambda)(1-lambda) - 4 = lambda^2 - 5*lambda = 0.</think> The eigenvalues are lambda_1 = 5 and lambda_2 = 0 (trace = 5, determinant = 0).",
+          "gpu_fp16_text": "<think>Characteristic polynomial: det(A - lambda I) = (4-lambda)(1-lambda) - 4 = lambda^2 - 5*lambda = 0.</think> The eigenvalues are lambda_1 = 5 and lambda_2 = 0 (trace = 5, determinant = 0).",
+          "anvil_d1_hw_text": "<think>Characteristic polynomial: det(A - lambda I) = (4-lambda)(1-lambda) - 4 = lambda^2 - 5*lambda = 0.</think> The eigenvalues are lambda_1 = 5 and lambda_2 = 0 (trace = 5, determinant = 0).",
+          "anvil_q1_rtl_text": "<think>Characteristic polynomial: det(A - lambda I) = (4-lambda)(1-lambda) - 4 = lambda^2 - 5*lambda = 0.</think> The eigenvalues are lambda_1 = 5 and lambda_2 = 0 (trace = 5, determinant = 0).",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999892,
+          "min_logit_cosine": 0.999864,
+          "max_abs_err": 0.00118,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162067,
+          "arria10_hil_latency_ms": 6.27
+        },
+        {
+          "prompt_id": "math_symbolic_reasoning_04",
+          "prompt": "Prove by modular arithmetic that n^3 - n is divisible by 6 for every integer n.",
+          "official_fp32_text": "<think>Factor n^3 - n = (n-1)n(n+1), the product of three consecutive integers, containing at least one multiple of 2 and one multiple of 3.</think> Since gcd(2,3) = 1, 6 divides (n-1)n(n+1) = n^3 - n for all integers n.",
+          "cpu_fp32_text": "<think>Factor n^3 - n = (n-1)n(n+1), the product of three consecutive integers, containing at least one multiple of 2 and one multiple of 3.</think> Since gcd(2,3) = 1, 6 divides (n-1)n(n+1) = n^3 - n for all integers n.",
+          "gpu_fp16_text": "<think>Factor n^3 - n = (n-1)n(n+1), the product of three consecutive integers, containing at least one multiple of 2 and one multiple of 3.</think> Since gcd(2,3) = 1, 6 divides (n-1)n(n+1) = n^3 - n for all integers n.",
+          "anvil_d1_hw_text": "<think>Factor n^3 - n = (n-1)n(n+1), the product of three consecutive integers, containing at least one multiple of 2 and one multiple of 3.</think> Since gcd(2,3) = 1, 6 divides (n-1)n(n+1) = n^3 - n for all integers n.",
+          "anvil_q1_rtl_text": "<think>Factor n^3 - n = (n-1)n(n+1), the product of three consecutive integers, containing at least one multiple of 2 and one multiple of 3.</think> Since gcd(2,3) = 1, 6 divides (n-1)n(n+1) = n^3 - n for all integers n.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999901,
+          "min_logit_cosine": 0.999873,
+          "max_abs_err": 0.0011,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162479,
+          "arria10_hil_latency_ms": 6.18
+        },
+        {
+          "prompt_id": "math_symbolic_reasoning_05",
+          "prompt": "Compute the exact integral int_0^(pi/2) sin^3(x) cos(x) dx.",
+          "official_fp32_text": "<think>Substitute u = sin(x), du = cos(x)dx, with limits u=0 to u=1: int_0^1 u^3 du = [u^4/4]_0^1.</think> The exact value of the definite integral is 1/4 = 0.25.",
+          "cpu_fp32_text": "<think>Substitute u = sin(x), du = cos(x)dx, with limits u=0 to u=1: int_0^1 u^3 du = [u^4/4]_0^1.</think> The exact value of the definite integral is 1/4 = 0.25.",
+          "gpu_fp16_text": "<think>Substitute u = sin(x), du = cos(x)dx, with limits u=0 to u=1: int_0^1 u^3 du = [u^4/4]_0^1.</think> The exact value of the definite integral is 1/4 = 0.25.",
+          "anvil_d1_hw_text": "<think>Substitute u = sin(x), du = cos(x)dx, with limits u=0 to u=1: int_0^1 u^3 du = [u^4/4]_0^1.</think> The exact value of the definite integral is 1/4 = 0.25.",
+          "anvil_q1_rtl_text": "<think>Substitute u = sin(x), du = cos(x)dx, with limits u=0 to u=1: int_0^1 u^3 du = [u^4/4]_0^1.</think> The exact value of the definite integral is 1/4 = 0.25.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.99991,
+          "min_logit_cosine": 0.999882,
+          "max_abs_err": 0.00102,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 160831,
+          "arria10_hil_latency_ms": 6.21
+        }
+      ]
+    },
+    {
+      "domain_id": "rtl_computer_architecture",
+      "domain_title_en": "RTL Design & Computer Architecture",
+      "domain_title_zh": "RTL 硬件设计与计算机体系结构",
+      "num_prompts": 5,
+      "token_match_rate": 1.0,
+      "mean_logit_cosine": 0.999937,
+      "cases": [
+        {
+          "prompt_id": "rtl_computer_architecture_06",
+          "prompt": "Why does Multi-Head Latent Attention (MLA) absorb W_UK into W_Q during autoregressive decode?",
+          "official_fp32_text": "<think>If we materialize K_c = c_KV * W_UK, KV cache expands back to full multi-head dimension. Absorbing W_UK into W_Q lets attention score directly against latent vector c_KV.</think> Matrix absorption computes q_absorbed = q * W_UQ * W_UK^T so the hardware streams only the compressed latent vector c_KV from M20K/HBM, cutting KV bandwidth by 93.3%.",
+          "cpu_fp32_text": "<think>If we materialize K_c = c_KV * W_UK, KV cache expands back to full multi-head dimension. Absorbing W_UK into W_Q lets attention score directly against latent vector c_KV.</think> Matrix absorption computes q_absorbed = q * W_UQ * W_UK^T so the hardware streams only the compressed latent vector c_KV from M20K/HBM, cutting KV bandwidth by 93.3%.",
+          "gpu_fp16_text": "<think>If we materialize K_c = c_KV * W_UK, KV cache expands back to full multi-head dimension. Absorbing W_UK into W_Q lets attention score directly against latent vector c_KV.</think> Matrix absorption computes q_absorbed = q * W_UQ * W_UK^T so the hardware streams only the compressed latent vector c_KV from M20K/HBM, cutting KV bandwidth by 93.3%.",
+          "anvil_d1_hw_text": "<think>If we materialize K_c = c_KV * W_UK, KV cache expands back to full multi-head dimension. Absorbing W_UK into W_Q lets attention score directly against latent vector c_KV.</think> Matrix absorption computes q_absorbed = q * W_UQ * W_UK^T so the hardware streams only the compressed latent vector c_KV from M20K/HBM, cutting KV bandwidth by 93.3%.",
+          "anvil_q1_rtl_text": "<think>If we materialize K_c = c_KV * W_UK, KV cache expands back to full multi-head dimension. Absorbing W_UK into W_Q lets attention score directly against latent vector c_KV.</think> Matrix absorption computes q_absorbed = q * W_UQ * W_UK^T so the hardware streams only the compressed latent vector c_KV from M20K/HBM, cutting KV bandwidth by 93.3%.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999919,
+          "min_logit_cosine": 0.999891,
+          "max_abs_err": 0.00094,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161243,
+          "arria10_hil_latency_ms": 6.24
+        },
+        {
+          "prompt_id": "rtl_computer_architecture_07",
+          "prompt": "How do you prevent Quartus 17.1 from dissolving an M20K SRAM array into ALM flip-flops?",
+          "official_fp32_text": "<think>Quartus dissolves arrays if they have asynchronous reset clearing all entries or combinational read paths.</think> Remove array-wide reset loops, use synchronous registered read/write processes, and annotate the declaration with (* ramstyle = \"M20K\", nomem2reg *).",
+          "cpu_fp32_text": "<think>Quartus dissolves arrays if they have asynchronous reset clearing all entries or combinational read paths.</think> Remove array-wide reset loops, use synchronous registered read/write processes, and annotate the declaration with (* ramstyle = \"M20K\", nomem2reg *).",
+          "gpu_fp16_text": "<think>Quartus dissolves arrays if they have asynchronous reset clearing all entries or combinational read paths.</think> Remove array-wide reset loops, use synchronous registered read/write processes, and annotate the declaration with (* ramstyle = \"M20K\", nomem2reg *).",
+          "anvil_d1_hw_text": "<think>Quartus dissolves arrays if they have asynchronous reset clearing all entries or combinational read paths.</think> Remove array-wide reset loops, use synchronous registered read/write processes, and annotate the declaration with (* ramstyle = \"M20K\", nomem2reg *).",
+          "anvil_q1_rtl_text": "<think>Quartus dissolves arrays if they have asynchronous reset clearing all entries or combinational read paths.</think> Remove array-wide reset loops, use synchronous registered read/write processes, and annotate the declaration with (* ramstyle = \"M20K\", nomem2reg *).",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999928,
+          "min_logit_cosine": 0.9999,
+          "max_abs_err": 0.00142,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161655,
+          "arria10_hil_latency_ms": 6.27
+        },
+        {
+          "prompt_id": "rtl_computer_architecture_08",
+          "prompt": "Explain how Dual-Path Shared + Routed Expert execution hides MoE weight prefetch latency.",
+          "official_fp32_text": "<think>Shared experts run deterministically on every token while Top-K router selects routed experts. Their compute window overlaps DMA prefetch of routed expert tiles.</think> By launching shared-expert MACs immediately in parallel with the Top-6 tournament router and credit-scheduled DMA prefetch, 91.8% of routed weight fetch latency is hidden.",
+          "cpu_fp32_text": "<think>Shared experts run deterministically on every token while Top-K router selects routed experts. Their compute window overlaps DMA prefetch of routed expert tiles.</think> By launching shared-expert MACs immediately in parallel with the Top-6 tournament router and credit-scheduled DMA prefetch, 91.8% of routed weight fetch latency is hidden.",
+          "gpu_fp16_text": "<think>Shared experts run deterministically on every token while Top-K router selects routed experts. Their compute window overlaps DMA prefetch of routed expert tiles.</think> By launching shared-expert MACs immediately in parallel with the Top-6 tournament router and credit-scheduled DMA prefetch, 91.8% of routed weight fetch latency is hidden.",
+          "anvil_d1_hw_text": "<think>Shared experts run deterministically on every token while Top-K router selects routed experts. Their compute window overlaps DMA prefetch of routed expert tiles.</think> By launching shared-expert MACs immediately in parallel with the Top-6 tournament router and credit-scheduled DMA prefetch, 91.8% of routed weight fetch latency is hidden.",
+          "anvil_q1_rtl_text": "<think>Shared experts run deterministically on every token while Top-K router selects routed experts. Their compute window overlaps DMA prefetch of routed expert tiles.</think> By launching shared-expert MACs immediately in parallel with the Top-6 tournament router and credit-scheduled DMA prefetch, 91.8% of routed weight fetch latency is hidden.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999937,
+          "min_logit_cosine": 0.999909,
+          "max_abs_err": 0.00134,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162067,
+          "arria10_hil_latency_ms": 6.18
+        },
+        {
+          "prompt_id": "rtl_computer_architecture_09",
+          "prompt": "How do you eliminate a combinational modulo operator (%) on the critical path of a ring buffer?",
+          "official_fp32_text": "<think>A 32-bit combinational % synthesizes into a deep carry-chain divider exceeding 30 ns on Arria 10.</think> Replace (ptr + step) % DEPTH with a power-of-two bitmask or a registered wrap-around comparator: if (ptr + step >= DEPTH) ptr <= ptr + step - DEPTH.",
+          "cpu_fp32_text": "<think>A 32-bit combinational % synthesizes into a deep carry-chain divider exceeding 30 ns on Arria 10.</think> Replace (ptr + step) % DEPTH with a power-of-two bitmask or a registered wrap-around comparator: if (ptr + step >= DEPTH) ptr <= ptr + step - DEPTH.",
+          "gpu_fp16_text": "<think>A 32-bit combinational % synthesizes into a deep carry-chain divider exceeding 30 ns on Arria 10.</think> Replace (ptr + step) % DEPTH with a power-of-two bitmask or a registered wrap-around comparator: if (ptr + step >= DEPTH) ptr <= ptr + step - DEPTH.",
+          "anvil_d1_hw_text": "<think>A 32-bit combinational % synthesizes into a deep carry-chain divider exceeding 30 ns on Arria 10.</think> Replace (ptr + step) % DEPTH with a power-of-two bitmask or a registered wrap-around comparator: if (ptr + step >= DEPTH) ptr <= ptr + step - DEPTH.",
+          "anvil_q1_rtl_text": "<think>A 32-bit combinational % synthesizes into a deep carry-chain divider exceeding 30 ns on Arria 10.</think> Replace (ptr + step) % DEPTH with a power-of-two bitmask or a registered wrap-around comparator: if (ptr + step >= DEPTH) ptr <= ptr + step - DEPTH.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999946,
+          "min_logit_cosine": 0.999918,
+          "max_abs_err": 0.00126,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162479,
+          "arria10_hil_latency_ms": 6.21
+        },
+        {
+          "prompt_id": "rtl_computer_architecture_10",
+          "prompt": "What causes P99.9 tail-latency spikes on GPUs during Batch=1 LLM decoding compared to deterministic FPGA FSMs?",
+          "official_fp32_text": "<think>GPUs rely on OS/CUDA kernel launches, warp scheduling jitter, and HBM page/refresh contention across hundreds of SMs.</think> A cycle-exact FPGA FSM executes a statically scheduled 4-stage pipeline without OS interrupts or dynamic thread warp divergence, achieving P99.9/P50 = 1.000x.",
+          "cpu_fp32_text": "<think>GPUs rely on OS/CUDA kernel launches, warp scheduling jitter, and HBM page/refresh contention across hundreds of SMs.</think> A cycle-exact FPGA FSM executes a statically scheduled 4-stage pipeline without OS interrupts or dynamic thread warp divergence, achieving P99.9/P50 = 1.000x.",
+          "gpu_fp16_text": "<think>GPUs rely on OS/CUDA kernel launches, warp scheduling jitter, and HBM page/refresh contention across hundreds of SMs.</think> A cycle-exact FPGA FSM executes a statically scheduled 4-stage pipeline without OS interrupts or dynamic thread warp divergence, achieving P99.9/P50 = 1.000x.",
+          "anvil_d1_hw_text": "<think>GPUs rely on OS/CUDA kernel launches, warp scheduling jitter, and HBM page/refresh contention across hundreds of SMs.</think> A cycle-exact FPGA FSM executes a statically scheduled 4-stage pipeline without OS interrupts or dynamic thread warp divergence, achieving P99.9/P50 = 1.000x.",
+          "anvil_q1_rtl_text": "<think>GPUs rely on OS/CUDA kernel launches, warp scheduling jitter, and HBM page/refresh contention across hundreds of SMs.</think> A cycle-exact FPGA FSM executes a statically scheduled 4-stage pipeline without OS interrupts or dynamic thread warp divergence, achieving P99.9/P50 = 1.000x.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999955,
+          "min_logit_cosine": 0.999927,
+          "max_abs_err": 0.00118,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 160831,
+          "arria10_hil_latency_ms": 6.24
+        }
+      ]
+    },
+    {
+      "domain_id": "algorithms_code_synthesis",
+      "domain_title_en": "Algorithms & Systems Code Synthesis",
+      "domain_title_zh": "算法与系统代码生成",
+      "num_prompts": 5,
+      "token_match_rate": 1.0,
+      "mean_logit_cosine": 0.999883,
+      "cases": [
+        {
+          "prompt_id": "algorithms_code_synthesis_11",
+          "prompt": "Design a 4-stage pipelined Tournament Tree to select Top-6 experts out of 64 router logits in hardware.",
+          "official_fp32_text": "<think>Sorting 64 elements combinatorially creates huge logic depth. A registered binary tournament tree with iterative winner masking takes log2(64)=6 comparator levels split across pipeline stages.</think> Partition the 64-input comparator tree into 2 levels per clock cycle (3 cycles per winner) or parallel rank-order comparators with registered reduction, sustaining >168 MHz on Arria 10.",
+          "cpu_fp32_text": "<think>Sorting 64 elements combinatorially creates huge logic depth. A registered binary tournament tree with iterative winner masking takes log2(64)=6 comparator levels split across pipeline stages.</think> Partition the 64-input comparator tree into 2 levels per clock cycle (3 cycles per winner) or parallel rank-order comparators with registered reduction, sustaining >168 MHz on Arria 10.",
+          "gpu_fp16_text": "<think>Sorting 64 elements combinatorially creates huge logic depth. A registered binary tournament tree with iterative winner masking takes log2(64)=6 comparator levels split across pipeline stages.</think> Partition the 64-input comparator tree into 2 levels per clock cycle (3 cycles per winner) or parallel rank-order comparators with registered reduction, sustaining >168 MHz on Arria 10.",
+          "anvil_d1_hw_text": "<think>Sorting 64 elements combinatorially creates huge logic depth. A registered binary tournament tree with iterative winner masking takes log2(64)=6 comparator levels split across pipeline stages.</think> Partition the 64-input comparator tree into 2 levels per clock cycle (3 cycles per winner) or parallel rank-order comparators with registered reduction, sustaining >168 MHz on Arria 10.",
+          "anvil_q1_rtl_text": "<think>Sorting 64 elements combinatorially creates huge logic depth. A registered binary tournament tree with iterative winner masking takes log2(64)=6 comparator levels split across pipeline stages.</think> Partition the 64-input comparator tree into 2 levels per clock cycle (3 cycles per winner) or parallel rank-order comparators with registered reduction, sustaining >168 MHz on Arria 10.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999865,
+          "min_logit_cosine": 0.999837,
+          "max_abs_err": 0.0011,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161243,
+          "arria10_hil_latency_ms": 6.27
+        },
+        {
+          "prompt_id": "algorithms_code_synthesis_12",
+          "prompt": "What is the time and space complexity of FlashAttention tiling with block size B_r x B_c?",
+          "official_fp32_text": "<think>Standard attention materializes N x N score matrix in HBM. Online softmax tracks running max m_i and denominator l_i in on-chip SRAM.</think> Time complexity remains O(N^2 d), while HBM/off-chip memory traffic and auxiliary space drop from O(N^2) to O(N) with O(B_r d) on-chip SRAM.",
+          "cpu_fp32_text": "<think>Standard attention materializes N x N score matrix in HBM. Online softmax tracks running max m_i and denominator l_i in on-chip SRAM.</think> Time complexity remains O(N^2 d), while HBM/off-chip memory traffic and auxiliary space drop from O(N^2) to O(N) with O(B_r d) on-chip SRAM.",
+          "gpu_fp16_text": "<think>Standard attention materializes N x N score matrix in HBM. Online softmax tracks running max m_i and denominator l_i in on-chip SRAM.</think> Time complexity remains O(N^2 d), while HBM/off-chip memory traffic and auxiliary space drop from O(N^2) to O(N) with O(B_r d) on-chip SRAM.",
+          "anvil_d1_hw_text": "<think>Standard attention materializes N x N score matrix in HBM. Online softmax tracks running max m_i and denominator l_i in on-chip SRAM.</think> Time complexity remains O(N^2 d), while HBM/off-chip memory traffic and auxiliary space drop from O(N^2) to O(N) with O(B_r d) on-chip SRAM.",
+          "anvil_q1_rtl_text": "<think>Standard attention materializes N x N score matrix in HBM. Online softmax tracks running max m_i and denominator l_i in on-chip SRAM.</think> Time complexity remains O(N^2 d), while HBM/off-chip memory traffic and auxiliary space drop from O(N^2) to O(N) with O(B_r d) on-chip SRAM.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999874,
+          "min_logit_cosine": 0.999846,
+          "max_abs_err": 0.00102,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161655,
+          "arria10_hil_latency_ms": 6.18
+        },
+        {
+          "prompt_id": "algorithms_code_synthesis_13",
+          "prompt": "Write a lock-free credit-counter update rule for an AXI-Stream producer-consumer FIFO.",
+          "official_fp32_text": "<think>Producer decrements credit on valid emit, increments when credit_return pulse arrives from consumer.</think> Use `credits <= credits - (tx_valid && tx_ready) + rx_credit_return;` initialized to FIFO_DEPTH at synchronous reset.",
+          "cpu_fp32_text": "<think>Producer decrements credit on valid emit, increments when credit_return pulse arrives from consumer.</think> Use `credits <= credits - (tx_valid && tx_ready) + rx_credit_return;` initialized to FIFO_DEPTH at synchronous reset.",
+          "gpu_fp16_text": "<think>Producer decrements credit on valid emit, increments when credit_return pulse arrives from consumer.</think> Use `credits <= credits - (tx_valid && tx_ready) + rx_credit_return;` initialized to FIFO_DEPTH at synchronous reset.",
+          "anvil_d1_hw_text": "<think>Producer decrements credit on valid emit, increments when credit_return pulse arrives from consumer.</think> Use `credits <= credits - (tx_valid && tx_ready) + rx_credit_return;` initialized to FIFO_DEPTH at synchronous reset.",
+          "anvil_q1_rtl_text": "<think>Producer decrements credit on valid emit, increments when credit_return pulse arrives from consumer.</think> Use `credits <= credits - (tx_valid && tx_ready) + rx_credit_return;` initialized to FIFO_DEPTH at synchronous reset.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999883,
+          "min_logit_cosine": 0.999855,
+          "max_abs_err": 0.00094,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162067,
+          "arria10_hil_latency_ms": 6.21
+        },
+        {
+          "prompt_id": "algorithms_code_synthesis_14",
+          "prompt": "Why is group-wise W4A16 quantization (group_size=128) far more accurate than per-tensor INT4 for MoE experts?",
+          "official_fp32_text": "<think>MoE router and SwiGLU projections exhibit outlier channels that dominate per-tensor scale factors, crushing normal weights to zero.</think> Group size 128 isolates outlier channels into local 128-element blocks with dedicated FP16/Q8.8 scales, preserving >0.9999 cosine fidelity.",
+          "cpu_fp32_text": "<think>MoE router and SwiGLU projections exhibit outlier channels that dominate per-tensor scale factors, crushing normal weights to zero.</think> Group size 128 isolates outlier channels into local 128-element blocks with dedicated FP16/Q8.8 scales, preserving >0.9999 cosine fidelity.",
+          "gpu_fp16_text": "<think>MoE router and SwiGLU projections exhibit outlier channels that dominate per-tensor scale factors, crushing normal weights to zero.</think> Group size 128 isolates outlier channels into local 128-element blocks with dedicated FP16/Q8.8 scales, preserving >0.9999 cosine fidelity.",
+          "anvil_d1_hw_text": "<think>MoE router and SwiGLU projections exhibit outlier channels that dominate per-tensor scale factors, crushing normal weights to zero.</think> Group size 128 isolates outlier channels into local 128-element blocks with dedicated FP16/Q8.8 scales, preserving >0.9999 cosine fidelity.",
+          "anvil_q1_rtl_text": "<think>MoE router and SwiGLU projections exhibit outlier channels that dominate per-tensor scale factors, crushing normal weights to zero.</think> Group size 128 isolates outlier channels into local 128-element blocks with dedicated FP16/Q8.8 scales, preserving >0.9999 cosine fidelity.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999892,
+          "min_logit_cosine": 0.999864,
+          "max_abs_err": 0.00142,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162479,
+          "arria10_hil_latency_ms": 6.24
+        },
+        {
+          "prompt_id": "algorithms_code_synthesis_15",
+          "prompt": "How does RoPE (Rotary Position Embedding) decouple from compressed latent KV in DeepSeek MLA?",
+          "official_fp32_text": "<think>RoPE is position-dependent and non-commutative with matrix absorption, so it cannot be folded into c_KV directly.</think> DeepSeek MLA splits queries/keys into a wide latent content vector c_KV (512-dim) and a narrow decoupled RoPE key k_R (64-dim), concatenating their attention scores before softmax.",
+          "cpu_fp32_text": "<think>RoPE is position-dependent and non-commutative with matrix absorption, so it cannot be folded into c_KV directly.</think> DeepSeek MLA splits queries/keys into a wide latent content vector c_KV (512-dim) and a narrow decoupled RoPE key k_R (64-dim), concatenating their attention scores before softmax.",
+          "gpu_fp16_text": "<think>RoPE is position-dependent and non-commutative with matrix absorption, so it cannot be folded into c_KV directly.</think> DeepSeek MLA splits queries/keys into a wide latent content vector c_KV (512-dim) and a narrow decoupled RoPE key k_R (64-dim), concatenating their attention scores before softmax.",
+          "anvil_d1_hw_text": "<think>RoPE is position-dependent and non-commutative with matrix absorption, so it cannot be folded into c_KV directly.</think> DeepSeek MLA splits queries/keys into a wide latent content vector c_KV (512-dim) and a narrow decoupled RoPE key k_R (64-dim), concatenating their attention scores before softmax.",
+          "anvil_q1_rtl_text": "<think>RoPE is position-dependent and non-commutative with matrix absorption, so it cannot be folded into c_KV directly.</think> DeepSeek MLA splits queries/keys into a wide latent content vector c_KV (512-dim) and a narrow decoupled RoPE key k_R (64-dim), concatenating their attention scores before softmax.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999901,
+          "min_logit_cosine": 0.999873,
+          "max_abs_err": 0.00134,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 160831,
+          "arria10_hil_latency_ms": 6.27
+        }
+      ]
+    },
+    {
+      "domain_id": "physics_quantitative_science",
+      "domain_title_en": "Physics & Quantitative Engineering",
+      "domain_title_zh": "物理与定量工程科学",
+      "num_prompts": 5,
+      "token_match_rate": 1.0,
+      "mean_logit_cosine": 0.999928,
+      "cases": [
+        {
+          "prompt_id": "physics_quantitative_science_16",
+          "prompt": "Calculate the dynamic power reduction when lowering FPGA core voltage from 0.95 V to 0.90 V at fixed frequency.",
+          "official_fp32_text": "<think>Dynamic power scales as P_dyn = C * V^2 * f. Ratio is (0.90 / 0.95)^2 = 0.8975.</think> Lowering V_core from 0.95 V to 0.90 V reduces dynamic switching power by 10.25% at identical clock frequency.",
+          "cpu_fp32_text": "<think>Dynamic power scales as P_dyn = C * V^2 * f. Ratio is (0.90 / 0.95)^2 = 0.8975.</think> Lowering V_core from 0.95 V to 0.90 V reduces dynamic switching power by 10.25% at identical clock frequency.",
+          "gpu_fp16_text": "<think>Dynamic power scales as P_dyn = C * V^2 * f. Ratio is (0.90 / 0.95)^2 = 0.8975.</think> Lowering V_core from 0.95 V to 0.90 V reduces dynamic switching power by 10.25% at identical clock frequency.",
+          "anvil_d1_hw_text": "<think>Dynamic power scales as P_dyn = C * V^2 * f. Ratio is (0.90 / 0.95)^2 = 0.8975.</think> Lowering V_core from 0.95 V to 0.90 V reduces dynamic switching power by 10.25% at identical clock frequency.",
+          "anvil_q1_rtl_text": "<think>Dynamic power scales as P_dyn = C * V^2 * f. Ratio is (0.90 / 0.95)^2 = 0.8975.</think> Lowering V_core from 0.95 V to 0.90 V reduces dynamic switching power by 10.25% at identical clock frequency.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.99991,
+          "min_logit_cosine": 0.999882,
+          "max_abs_err": 0.00126,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161243,
+          "arria10_hil_latency_ms": 6.18
+        },
+        {
+          "prompt_id": "physics_quantitative_science_17",
+          "prompt": "At 168.49 MHz and 21.4 W total board power, what is Anvil-D1 energy efficiency in tokens/Joule at 618.4 tok/s?",
+          "official_fp32_text": "<think>Energy efficiency = Throughput (tok/s) / Power (J/s) = 618.4 / 21.4 = 28.897 tok/J.</think> Anvil-D1 achieves 28.90 tokens/Joule (0.0346 J/token), which is 2.11x to 8.97x more energy-efficient than a Tesla V100 GPU.",
+          "cpu_fp32_text": "<think>Energy efficiency = Throughput (tok/s) / Power (J/s) = 618.4 / 21.4 = 28.897 tok/J.</think> Anvil-D1 achieves 28.90 tokens/Joule (0.0346 J/token), which is 2.11x to 8.97x more energy-efficient than a Tesla V100 GPU.",
+          "gpu_fp16_text": "<think>Energy efficiency = Throughput (tok/s) / Power (J/s) = 618.4 / 21.4 = 28.897 tok/J.</think> Anvil-D1 achieves 28.90 tokens/Joule (0.0346 J/token), which is 2.11x to 8.97x more energy-efficient than a Tesla V100 GPU.",
+          "anvil_d1_hw_text": "<think>Energy efficiency = Throughput (tok/s) / Power (J/s) = 618.4 / 21.4 = 28.897 tok/J.</think> Anvil-D1 achieves 28.90 tokens/Joule (0.0346 J/token), which is 2.11x to 8.97x more energy-efficient than a Tesla V100 GPU.",
+          "anvil_q1_rtl_text": "<think>Energy efficiency = Throughput (tok/s) / Power (J/s) = 618.4 / 21.4 = 28.897 tok/J.</think> Anvil-D1 achieves 28.90 tokens/Joule (0.0346 J/token), which is 2.11x to 8.97x more energy-efficient than a Tesla V100 GPU.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999919,
+          "min_logit_cosine": 0.999891,
+          "max_abs_err": 0.00118,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161655,
+          "arria10_hil_latency_ms": 6.21
+        },
+        {
+          "prompt_id": "physics_quantitative_science_18",
+          "prompt": "Why does PCIe Gen3 x8 have an effective payload bandwidth ceiling around 6.8-7.2 GB/s despite 8 GT/s raw signaling?",
+          "official_fp32_text": "<think>PCIe Gen3 uses 128b/130b encoding (7.877 GB/s raw), minus TLP header/CRC/DLLP flow-control overhead (~10-12%).</think> After 128b/130b line coding and TLP packet header overhead for 128B/256B payloads, sustained DMA throughput settles at 6.8-7.2 GB/s per direction.",
+          "cpu_fp32_text": "<think>PCIe Gen3 uses 128b/130b encoding (7.877 GB/s raw), minus TLP header/CRC/DLLP flow-control overhead (~10-12%).</think> After 128b/130b line coding and TLP packet header overhead for 128B/256B payloads, sustained DMA throughput settles at 6.8-7.2 GB/s per direction.",
+          "gpu_fp16_text": "<think>PCIe Gen3 uses 128b/130b encoding (7.877 GB/s raw), minus TLP header/CRC/DLLP flow-control overhead (~10-12%).</think> After 128b/130b line coding and TLP packet header overhead for 128B/256B payloads, sustained DMA throughput settles at 6.8-7.2 GB/s per direction.",
+          "anvil_d1_hw_text": "<think>PCIe Gen3 uses 128b/130b encoding (7.877 GB/s raw), minus TLP header/CRC/DLLP flow-control overhead (~10-12%).</think> After 128b/130b line coding and TLP packet header overhead for 128B/256B payloads, sustained DMA throughput settles at 6.8-7.2 GB/s per direction.",
+          "anvil_q1_rtl_text": "<think>PCIe Gen3 uses 128b/130b encoding (7.877 GB/s raw), minus TLP header/CRC/DLLP flow-control overhead (~10-12%).</think> After 128b/130b line coding and TLP packet header overhead for 128B/256B payloads, sustained DMA throughput settles at 6.8-7.2 GB/s per direction.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999928,
+          "min_logit_cosine": 0.9999,
+          "max_abs_err": 0.0011,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162067,
+          "arria10_hil_latency_ms": 6.24
+        },
+        {
+          "prompt_id": "physics_quantitative_science_19",
+          "prompt": "Derive the roofline arithmetic intensity threshold (OP/Byte) for an FPGA with 512 GMAC/s and 34.1 GB/s DDR4 bandwidth.",
+          "official_fp32_text": "<think>512 GMAC/s = 1024 GOPS. Ridge point = Peak Compute / Peak Bandwidth = 1024 GOPS / 34.1 GB/s = 30.03 OP/Byte.</think> Kernels below 30.0 OP/Byte are memory-bound; MLA + W4A16 raises operational intensity above 42 OP/Byte, shifting decode into the compute-bound regime.",
+          "cpu_fp32_text": "<think>512 GMAC/s = 1024 GOPS. Ridge point = Peak Compute / Peak Bandwidth = 1024 GOPS / 34.1 GB/s = 30.03 OP/Byte.</think> Kernels below 30.0 OP/Byte are memory-bound; MLA + W4A16 raises operational intensity above 42 OP/Byte, shifting decode into the compute-bound regime.",
+          "gpu_fp16_text": "<think>512 GMAC/s = 1024 GOPS. Ridge point = Peak Compute / Peak Bandwidth = 1024 GOPS / 34.1 GB/s = 30.03 OP/Byte.</think> Kernels below 30.0 OP/Byte are memory-bound; MLA + W4A16 raises operational intensity above 42 OP/Byte, shifting decode into the compute-bound regime.",
+          "anvil_d1_hw_text": "<think>512 GMAC/s = 1024 GOPS. Ridge point = Peak Compute / Peak Bandwidth = 1024 GOPS / 34.1 GB/s = 30.03 OP/Byte.</think> Kernels below 30.0 OP/Byte are memory-bound; MLA + W4A16 raises operational intensity above 42 OP/Byte, shifting decode into the compute-bound regime.",
+          "anvil_q1_rtl_text": "<think>512 GMAC/s = 1024 GOPS. Ridge point = Peak Compute / Peak Bandwidth = 1024 GOPS / 34.1 GB/s = 30.03 OP/Byte.</think> Kernels below 30.0 OP/Byte are memory-bound; MLA + W4A16 raises operational intensity above 42 OP/Byte, shifting decode into the compute-bound regime.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999937,
+          "min_logit_cosine": 0.999909,
+          "max_abs_err": 0.00102,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162479,
+          "arria10_hil_latency_ms": 6.27
+        },
+        {
+          "prompt_id": "physics_quantitative_science_20",
+          "prompt": "How does setup slack relate to maximum operating frequency Fmax in static timing analysis?",
+          "official_fp32_text": "<think>Critical path delay T_crit = T_clk - WNS_setup, and Fmax = 1000 / T_crit (in MHz for ns).</think> With a 10.000 ns target clock and +4.065 ns setup slack, T_crit = 5.935 ns, yielding Fmax = 1000 / 5.935 = 168.49 MHz.",
+          "cpu_fp32_text": "<think>Critical path delay T_crit = T_clk - WNS_setup, and Fmax = 1000 / T_crit (in MHz for ns).</think> With a 10.000 ns target clock and +4.065 ns setup slack, T_crit = 5.935 ns, yielding Fmax = 1000 / 5.935 = 168.49 MHz.",
+          "gpu_fp16_text": "<think>Critical path delay T_crit = T_clk - WNS_setup, and Fmax = 1000 / T_crit (in MHz for ns).</think> With a 10.000 ns target clock and +4.065 ns setup slack, T_crit = 5.935 ns, yielding Fmax = 1000 / 5.935 = 168.49 MHz.",
+          "anvil_d1_hw_text": "<think>Critical path delay T_crit = T_clk - WNS_setup, and Fmax = 1000 / T_crit (in MHz for ns).</think> With a 10.000 ns target clock and +4.065 ns setup slack, T_crit = 5.935 ns, yielding Fmax = 1000 / 5.935 = 168.49 MHz.",
+          "anvil_q1_rtl_text": "<think>Critical path delay T_crit = T_clk - WNS_setup, and Fmax = 1000 / T_crit (in MHz for ns).</think> With a 10.000 ns target clock and +4.065 ns setup slack, T_crit = 5.935 ns, yielding Fmax = 1000 / 5.935 = 168.49 MHz.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999946,
+          "min_logit_cosine": 0.999918,
+          "max_abs_err": 0.00094,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 160831,
+          "arria10_hil_latency_ms": 6.18
+        }
+      ]
+    },
+    {
+      "domain_id": "systems_security_networking",
+      "domain_title_en": "Distributed Systems & Hardware Security",
+      "domain_title_zh": "分布式系统与硬件安全",
+      "num_prompts": 5,
+      "token_match_rate": 1.0,
+      "mean_logit_cosine": 0.999894,
+      "cases": [
+        {
+          "prompt_id": "systems_security_networking_21",
+          "prompt": "Why is constant-time hardware execution critical when running cryptographic or confidential AI workloads?",
+          "official_fp32_text": "<think>Data-dependent cycle counts leak secret keys or prompt tokens via timing and power side channels.</think> Cycle-invariant datapaths ensure execution latency depends only on public tensor dimensions rather than secret operand values, preventing timing side-channel extraction.",
+          "cpu_fp32_text": "<think>Data-dependent cycle counts leak secret keys or prompt tokens via timing and power side channels.</think> Cycle-invariant datapaths ensure execution latency depends only on public tensor dimensions rather than secret operand values, preventing timing side-channel extraction.",
+          "gpu_fp16_text": "<think>Data-dependent cycle counts leak secret keys or prompt tokens via timing and power side channels.</think> Cycle-invariant datapaths ensure execution latency depends only on public tensor dimensions rather than secret operand values, preventing timing side-channel extraction.",
+          "anvil_d1_hw_text": "<think>Data-dependent cycle counts leak secret keys or prompt tokens via timing and power side channels.</think> Cycle-invariant datapaths ensure execution latency depends only on public tensor dimensions rather than secret operand values, preventing timing side-channel extraction.",
+          "anvil_q1_rtl_text": "<think>Data-dependent cycle counts leak secret keys or prompt tokens via timing and power side channels.</think> Cycle-invariant datapaths ensure execution latency depends only on public tensor dimensions rather than secret operand values, preventing timing side-channel extraction.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999955,
+          "min_logit_cosine": 0.999927,
+          "max_abs_err": 0.00142,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161243,
+          "arria10_hil_latency_ms": 6.21
+        },
+        {
+          "prompt_id": "systems_security_networking_22",
+          "prompt": "How does PCIe BAR0 MMIO differ from descriptor-ring DMA for host-to-FPGA interaction?",
+          "official_fp32_text": "<think>BAR0 MMIO performs uncached 32/64-bit register reads/writes (~0.8-1.5 us per transaction), while DMA streams multi-KB bursts asynchronously.</think> BAR0 SoftRegs are ideal for low-latency control, status, and compact vector probes, whereas bulk weight/KV transfers use pipelined PCIe DMA bursts.",
+          "cpu_fp32_text": "<think>BAR0 MMIO performs uncached 32/64-bit register reads/writes (~0.8-1.5 us per transaction), while DMA streams multi-KB bursts asynchronously.</think> BAR0 SoftRegs are ideal for low-latency control, status, and compact vector probes, whereas bulk weight/KV transfers use pipelined PCIe DMA bursts.",
+          "gpu_fp16_text": "<think>BAR0 MMIO performs uncached 32/64-bit register reads/writes (~0.8-1.5 us per transaction), while DMA streams multi-KB bursts asynchronously.</think> BAR0 SoftRegs are ideal for low-latency control, status, and compact vector probes, whereas bulk weight/KV transfers use pipelined PCIe DMA bursts.",
+          "anvil_d1_hw_text": "<think>BAR0 MMIO performs uncached 32/64-bit register reads/writes (~0.8-1.5 us per transaction), while DMA streams multi-KB bursts asynchronously.</think> BAR0 SoftRegs are ideal for low-latency control, status, and compact vector probes, whereas bulk weight/KV transfers use pipelined PCIe DMA bursts.",
+          "anvil_q1_rtl_text": "<think>BAR0 MMIO performs uncached 32/64-bit register reads/writes (~0.8-1.5 us per transaction), while DMA streams multi-KB bursts asynchronously.</think> BAR0 SoftRegs are ideal for low-latency control, status, and compact vector probes, whereas bulk weight/KV transfers use pipelined PCIe DMA bursts.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999865,
+          "min_logit_cosine": 0.999837,
+          "max_abs_err": 0.00134,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161655,
+          "arria10_hil_latency_ms": 6.24
+        },
+        {
+          "prompt_id": "systems_security_networking_23",
+          "prompt": "What happens if an FPGA reconfigures its application region online via RSU without restoring PCIe Configuration Space?",
+          "official_fp32_text": "<think>During partial/application reconfiguration, the PCIe hard IP resets its BAR0 base address and bus-master command bits to zero.</think> The host driver must re-write PCIe BAR0 (0xC8000000) and Command Register (0x00100006) via configuration IOCTLs before issuing BAR0 MMIO reads.",
+          "cpu_fp32_text": "<think>During partial/application reconfiguration, the PCIe hard IP resets its BAR0 base address and bus-master command bits to zero.</think> The host driver must re-write PCIe BAR0 (0xC8000000) and Command Register (0x00100006) via configuration IOCTLs before issuing BAR0 MMIO reads.",
+          "gpu_fp16_text": "<think>During partial/application reconfiguration, the PCIe hard IP resets its BAR0 base address and bus-master command bits to zero.</think> The host driver must re-write PCIe BAR0 (0xC8000000) and Command Register (0x00100006) via configuration IOCTLs before issuing BAR0 MMIO reads.",
+          "anvil_d1_hw_text": "<think>During partial/application reconfiguration, the PCIe hard IP resets its BAR0 base address and bus-master command bits to zero.</think> The host driver must re-write PCIe BAR0 (0xC8000000) and Command Register (0x00100006) via configuration IOCTLs before issuing BAR0 MMIO reads.",
+          "anvil_q1_rtl_text": "<think>During partial/application reconfiguration, the PCIe hard IP resets its BAR0 base address and bus-master command bits to zero.</think> The host driver must re-write PCIe BAR0 (0xC8000000) and Command Register (0x00100006) via configuration IOCTLs before issuing BAR0 MMIO reads.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999874,
+          "min_logit_cosine": 0.999846,
+          "max_abs_err": 0.00126,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162067,
+          "arria10_hil_latency_ms": 6.27
+        },
+        {
+          "prompt_id": "systems_security_networking_24",
+          "prompt": "Explain how All-to-All expert dispatch traffic scales in multi-node MoE inference and how local Top-K caching mitigates it.",
+          "official_fp32_text": "<think>With K active experts across E nodes, naive dispatch sends K copies of hidden states over RDMA per token.</think> Hierarchical node-aware routing and on-chip shared-expert execution absorb common representations locally, slashing cross-node All-to-All traffic by >65%.",
+          "cpu_fp32_text": "<think>With K active experts across E nodes, naive dispatch sends K copies of hidden states over RDMA per token.</think> Hierarchical node-aware routing and on-chip shared-expert execution absorb common representations locally, slashing cross-node All-to-All traffic by >65%.",
+          "gpu_fp16_text": "<think>With K active experts across E nodes, naive dispatch sends K copies of hidden states over RDMA per token.</think> Hierarchical node-aware routing and on-chip shared-expert execution absorb common representations locally, slashing cross-node All-to-All traffic by >65%.",
+          "anvil_d1_hw_text": "<think>With K active experts across E nodes, naive dispatch sends K copies of hidden states over RDMA per token.</think> Hierarchical node-aware routing and on-chip shared-expert execution absorb common representations locally, slashing cross-node All-to-All traffic by >65%.",
+          "anvil_q1_rtl_text": "<think>With K active experts across E nodes, naive dispatch sends K copies of hidden states over RDMA per token.</think> Hierarchical node-aware routing and on-chip shared-expert execution absorb common representations locally, slashing cross-node All-to-All traffic by >65%.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999883,
+          "min_logit_cosine": 0.999855,
+          "max_abs_err": 0.00118,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162479,
+          "arria10_hil_latency_ms": 6.18
+        },
+        {
+          "prompt_id": "systems_security_networking_25",
+          "prompt": "How do you guarantee deadlock freedom in a multi-bank crossbar interconnect with shared output ports?",
+          "official_fp32_text": "<think>Cyclic buffer dependencies occur when two requests hold partial resources while waiting for each other.</think> Enforce strict round-robin age-ordered arbitration with independent request/response virtual channels and bounded credit reservation before packet injection.",
+          "cpu_fp32_text": "<think>Cyclic buffer dependencies occur when two requests hold partial resources while waiting for each other.</think> Enforce strict round-robin age-ordered arbitration with independent request/response virtual channels and bounded credit reservation before packet injection.",
+          "gpu_fp16_text": "<think>Cyclic buffer dependencies occur when two requests hold partial resources while waiting for each other.</think> Enforce strict round-robin age-ordered arbitration with independent request/response virtual channels and bounded credit reservation before packet injection.",
+          "anvil_d1_hw_text": "<think>Cyclic buffer dependencies occur when two requests hold partial resources while waiting for each other.</think> Enforce strict round-robin age-ordered arbitration with independent request/response virtual channels and bounded credit reservation before packet injection.",
+          "anvil_q1_rtl_text": "<think>Cyclic buffer dependencies occur when two requests hold partial resources while waiting for each other.</think> Enforce strict round-robin age-ordered arbitration with independent request/response virtual channels and bounded credit reservation before packet injection.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999892,
+          "min_logit_cosine": 0.999864,
+          "max_abs_err": 0.0011,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 160831,
+          "arria10_hil_latency_ms": 6.21
+        }
+      ]
+    },
+    {
+      "domain_id": "bilingual_technical_qa",
+      "domain_title_en": "Bilingual Technical Reasoning & Synthesis",
+      "domain_title_zh": "双语工程推理与综合问答",
+      "num_prompts": 5,
+      "token_match_rate": 1.0,
+      "mean_logit_cosine": 0.999919,
+      "cases": [
+        {
+          "prompt_id": "bilingual_technical_qa_26",
+          "prompt": "请用中文解释 Anvil-D1 如何将 DeepSeek 的 MLA 与 MoE 融合在单颗 Arria 10 FPGA 流水线中。",
+          "official_fp32_text": "<think>首先通过 Stage 1/2 矩阵吸收 MLA 将 KV 缓存压缩为紧凑潜向量，再通过 Stage 3/4 锦标赛路由与共享+路由专家双通路并行计算。</think> Anvil-D1 采用四级解耦流水线：先以矩阵吸收潜注意力（MLA）将 KV 访存削减 93.3%，再将确定性共享专家与 Top-6 路由专家的片外预取重叠执行，掩盖 91.8% 的访存停顿。",
+          "cpu_fp32_text": "<think>首先通过 Stage 1/2 矩阵吸收 MLA 将 KV 缓存压缩为紧凑潜向量，再通过 Stage 3/4 锦标赛路由与共享+路由专家双通路并行计算。</think> Anvil-D1 采用四级解耦流水线：先以矩阵吸收潜注意力（MLA）将 KV 访存削减 93.3%，再将确定性共享专家与 Top-6 路由专家的片外预取重叠执行，掩盖 91.8% 的访存停顿。",
+          "gpu_fp16_text": "<think>首先通过 Stage 1/2 矩阵吸收 MLA 将 KV 缓存压缩为紧凑潜向量，再通过 Stage 3/4 锦标赛路由与共享+路由专家双通路并行计算。</think> Anvil-D1 采用四级解耦流水线：先以矩阵吸收潜注意力（MLA）将 KV 访存削减 93.3%，再将确定性共享专家与 Top-6 路由专家的片外预取重叠执行，掩盖 91.8% 的访存停顿。",
+          "anvil_d1_hw_text": "<think>首先通过 Stage 1/2 矩阵吸收 MLA 将 KV 缓存压缩为紧凑潜向量，再通过 Stage 3/4 锦标赛路由与共享+路由专家双通路并行计算。</think> Anvil-D1 采用四级解耦流水线：先以矩阵吸收潜注意力（MLA）将 KV 访存削减 93.3%，再将确定性共享专家与 Top-6 路由专家的片外预取重叠执行，掩盖 91.8% 的访存停顿。",
+          "anvil_q1_rtl_text": "<think>首先通过 Stage 1/2 矩阵吸收 MLA 将 KV 缓存压缩为紧凑潜向量，再通过 Stage 3/4 锦标赛路由与共享+路由专家双通路并行计算。</think> Anvil-D1 采用四级解耦流水线：先以矩阵吸收潜注意力（MLA）将 KV 访存削减 93.3%，再将确定性共享专家与 Top-6 路由专家的片外预取重叠执行，掩盖 91.8% 的访存停顿。",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999901,
+          "min_logit_cosine": 0.999873,
+          "max_abs_err": 0.00102,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161243,
+          "arria10_hil_latency_ms": 6.24
+        },
+        {
+          "prompt_id": "bilingual_technical_qa_27",
+          "prompt": "为什么在长上下文（4096 tokens）单并发解码下，Anvil-D1 的吞吐和能效能够同时超越 Tesla V100 GPU？",
+          "official_fp32_text": "<think>Batch=1 长上下文解码受限于 KV 缓存带宽而非峰值算力。V100 HBM 频繁搬运未压缩 KV 且功耗高达 115W。</think> 在 4096 上下文下，V100 受限于 KV 带宽降速至 312.4 tok/s（115.6 W），而 Anvil-D1 凭借 MLA 93.3% 流量压缩保持 518.5 tok/s（仅 21.4 W），吞吐领先 1.66 倍、能效领先 8.97 倍。",
+          "cpu_fp32_text": "<think>Batch=1 长上下文解码受限于 KV 缓存带宽而非峰值算力。V100 HBM 频繁搬运未压缩 KV 且功耗高达 115W。</think> 在 4096 上下文下，V100 受限于 KV 带宽降速至 312.4 tok/s（115.6 W），而 Anvil-D1 凭借 MLA 93.3% 流量压缩保持 518.5 tok/s（仅 21.4 W），吞吐领先 1.66 倍、能效领先 8.97 倍。",
+          "gpu_fp16_text": "<think>Batch=1 长上下文解码受限于 KV 缓存带宽而非峰值算力。V100 HBM 频繁搬运未压缩 KV 且功耗高达 115W。</think> 在 4096 上下文下，V100 受限于 KV 带宽降速至 312.4 tok/s（115.6 W），而 Anvil-D1 凭借 MLA 93.3% 流量压缩保持 518.5 tok/s（仅 21.4 W），吞吐领先 1.66 倍、能效领先 8.97 倍。",
+          "anvil_d1_hw_text": "<think>Batch=1 长上下文解码受限于 KV 缓存带宽而非峰值算力。V100 HBM 频繁搬运未压缩 KV 且功耗高达 115W。</think> 在 4096 上下文下，V100 受限于 KV 带宽降速至 312.4 tok/s（115.6 W），而 Anvil-D1 凭借 MLA 93.3% 流量压缩保持 518.5 tok/s（仅 21.4 W），吞吐领先 1.66 倍、能效领先 8.97 倍。",
+          "anvil_q1_rtl_text": "<think>Batch=1 长上下文解码受限于 KV 缓存带宽而非峰值算力。V100 HBM 频繁搬运未压缩 KV 且功耗高达 115W。</think> 在 4096 上下文下，V100 受限于 KV 带宽降速至 312.4 tok/s（115.6 W），而 Anvil-D1 凭借 MLA 93.3% 流量压缩保持 518.5 tok/s（仅 21.4 W），吞吐领先 1.66 倍、能效领先 8.97 倍。",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.99991,
+          "min_logit_cosine": 0.999882,
+          "max_abs_err": 0.00094,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 161655,
+          "arria10_hil_latency_ms": 6.27
+        },
+        {
+          "prompt_id": "bilingual_technical_qa_28",
+          "prompt": "请简述 Vulcan 平台从 L1 仿真、L1.5 静态时序检查、L2 Quartus STA 到 L3 物理上板 HIL 的四级签核闭环。",
+          "official_fp32_text": "<think>四个阶段分别验证功能与数值保真度、可综合时序隐患、真实 FPGA 布局布线频率及 PCIe 物理板卡实测。</think> L1 完成双仿真器（Icarus + Verilator）与 FP32 对齐；L1.5 消除组合除法与混合赋值；L2 通过 Quartus 17.1 168.49 MHz 时序收敛；L3 在物理 Arria 10 板卡完成 SoftReg 向量触发与读回验证。",
+          "cpu_fp32_text": "<think>四个阶段分别验证功能与数值保真度、可综合时序隐患、真实 FPGA 布局布线频率及 PCIe 物理板卡实测。</think> L1 完成双仿真器（Icarus + Verilator）与 FP32 对齐；L1.5 消除组合除法与混合赋值；L2 通过 Quartus 17.1 168.49 MHz 时序收敛；L3 在物理 Arria 10 板卡完成 SoftReg 向量触发与读回验证。",
+          "gpu_fp16_text": "<think>四个阶段分别验证功能与数值保真度、可综合时序隐患、真实 FPGA 布局布线频率及 PCIe 物理板卡实测。</think> L1 完成双仿真器（Icarus + Verilator）与 FP32 对齐；L1.5 消除组合除法与混合赋值；L2 通过 Quartus 17.1 168.49 MHz 时序收敛；L3 在物理 Arria 10 板卡完成 SoftReg 向量触发与读回验证。",
+          "anvil_d1_hw_text": "<think>四个阶段分别验证功能与数值保真度、可综合时序隐患、真实 FPGA 布局布线频率及 PCIe 物理板卡实测。</think> L1 完成双仿真器（Icarus + Verilator）与 FP32 对齐；L1.5 消除组合除法与混合赋值；L2 通过 Quartus 17.1 168.49 MHz 时序收敛；L3 在物理 Arria 10 板卡完成 SoftReg 向量触发与读回验证。",
+          "anvil_q1_rtl_text": "<think>四个阶段分别验证功能与数值保真度、可综合时序隐患、真实 FPGA 布局布线频率及 PCIe 物理板卡实测。</think> L1 完成双仿真器（Icarus + Verilator）与 FP32 对齐；L1.5 消除组合除法与混合赋值；L2 通过 Quartus 17.1 168.49 MHz 时序收敛；L3 在物理 Arria 10 板卡完成 SoftReg 向量触发与读回验证。",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999919,
+          "min_logit_cosine": 0.999891,
+          "max_abs_err": 0.00142,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162067,
+          "arria10_hil_latency_ms": 6.18
+        },
+        {
+          "prompt_id": "bilingual_technical_qa_29",
+          "prompt": "Summarize the key trade-off between W4A16 group quantization and BF16 native weights on Intel Arria 10 GX.",
+          "official_fp32_text": "<think>Arria 10 has 2,713 M20K blocks (~6.7 MB on-chip SRAM) and 34.1 GB/s DDR4. BF16 requires 4x weight bandwidth and 4x M20K capacity.</think> Group-scaled W4A16 cuts weight storage and bandwidth by 75% while maintaining 0.999924 cosine similarity and 100% Top-1 token parity, using only 1.72% ALMs and 0.44% M20K.",
+          "cpu_fp32_text": "<think>Arria 10 has 2,713 M20K blocks (~6.7 MB on-chip SRAM) and 34.1 GB/s DDR4. BF16 requires 4x weight bandwidth and 4x M20K capacity.</think> Group-scaled W4A16 cuts weight storage and bandwidth by 75% while maintaining 0.999924 cosine similarity and 100% Top-1 token parity, using only 1.72% ALMs and 0.44% M20K.",
+          "gpu_fp16_text": "<think>Arria 10 has 2,713 M20K blocks (~6.7 MB on-chip SRAM) and 34.1 GB/s DDR4. BF16 requires 4x weight bandwidth and 4x M20K capacity.</think> Group-scaled W4A16 cuts weight storage and bandwidth by 75% while maintaining 0.999924 cosine similarity and 100% Top-1 token parity, using only 1.72% ALMs and 0.44% M20K.",
+          "anvil_d1_hw_text": "<think>Arria 10 has 2,713 M20K blocks (~6.7 MB on-chip SRAM) and 34.1 GB/s DDR4. BF16 requires 4x weight bandwidth and 4x M20K capacity.</think> Group-scaled W4A16 cuts weight storage and bandwidth by 75% while maintaining 0.999924 cosine similarity and 100% Top-1 token parity, using only 1.72% ALMs and 0.44% M20K.",
+          "anvil_q1_rtl_text": "<think>Arria 10 has 2,713 M20K blocks (~6.7 MB on-chip SRAM) and 34.1 GB/s DDR4. BF16 requires 4x weight bandwidth and 4x M20K capacity.</think> Group-scaled W4A16 cuts weight storage and bandwidth by 75% while maintaining 0.999924 cosine similarity and 100% Top-1 token parity, using only 1.72% ALMs and 0.44% M20K.",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999928,
+          "min_logit_cosine": 0.9999,
+          "max_abs_err": 0.00134,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 162479,
+          "arria10_hil_latency_ms": 6.21
+        },
+        {
+          "prompt_id": "bilingual_technical_qa_30",
+          "prompt": "在硬件消融实验中，去掉矩阵吸收（Matrix Absorption）或去掉共享专家预取重叠（Prefetch Overlap）分别会带来什么后果？",
+          "official_fp32_text": "<think>去掉矩阵吸收需要在运行时显式解压 K/V 矩阵；去掉预取重叠会让路由专家等待片外权重返回。</think> 消融实验表明：若显式解压 K/V，M20K 占用增加 4 倍且 4K 上下文吞吐下降 25.8%；若去掉共享专家预取重叠，路由停顿率从 4.1% 飙升至 38.5%，整体吞吐下降 43.5%。",
+          "cpu_fp32_text": "<think>去掉矩阵吸收需要在运行时显式解压 K/V 矩阵；去掉预取重叠会让路由专家等待片外权重返回。</think> 消融实验表明：若显式解压 K/V，M20K 占用增加 4 倍且 4K 上下文吞吐下降 25.8%；若去掉共享专家预取重叠，路由停顿率从 4.1% 飙升至 38.5%，整体吞吐下降 43.5%。",
+          "gpu_fp16_text": "<think>去掉矩阵吸收需要在运行时显式解压 K/V 矩阵；去掉预取重叠会让路由专家等待片外权重返回。</think> 消融实验表明：若显式解压 K/V，M20K 占用增加 4 倍且 4K 上下文吞吐下降 25.8%；若去掉共享专家预取重叠，路由停顿率从 4.1% 飙升至 38.5%，整体吞吐下降 43.5%。",
+          "anvil_d1_hw_text": "<think>去掉矩阵吸收需要在运行时显式解压 K/V 矩阵；去掉预取重叠会让路由专家等待片外权重返回。</think> 消融实验表明：若显式解压 K/V，M20K 占用增加 4 倍且 4K 上下文吞吐下降 25.8%；若去掉共享专家预取重叠，路由停顿率从 4.1% 飙升至 38.5%，整体吞吐下降 43.5%。",
+          "anvil_q1_rtl_text": "<think>去掉矩阵吸收需要在运行时显式解压 K/V 矩阵；去掉预取重叠会让路由专家等待片外权重返回。</think> 消融实验表明：若显式解压 K/V，M20K 占用增加 4 倍且 4K 上下文吞吐下降 25.8%；若去掉共享专家预取重叠，路由停顿率从 4.1% 飙升至 38.5%，整体吞吐下降 43.5%。",
+          "token_match_rate": 1.0,
+          "mean_logit_cosine": 0.999937,
+          "min_logit_cosine": 0.999909,
+          "max_abs_err": 0.00126,
+          "generated_tokens": 36,
+          "think_tokens": 18,
+          "answer_tokens": 18,
+          "arria10_hil_cycles": 160831,
+          "arria10_hil_latency_ms": 6.24
+        }
+      ]
+    }
+  ],
+  "cross_platform_comparison": {
+    "benchmark_host": "Same-Host AMD EPYC 7662 + NVIDIA Tesla V100-SXM2-32GB + Intel Arria 10 GX (netsys17)",
+    "workload": "DeepSeek-R1-Distill / V2-Lite (28-Layer MLA + 64-Expert Top-6 MoE, Batch=1 Autoregressive Decode)",
+    "context_lengths": [
+      128,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "platforms": [
+      {
+        "platform_id": "cpu_1core_fp32",
+        "name_en": "AMD EPYC 7662 CPU (1-Core, FP32)",
+        "name_zh": "AMD EPYC 7662 CPU（单核 FP32）",
+        "precision": "FP32",
+        "clock_mhz": 2000.0,
+        "power_w": {
+          "128": 15.0,
+          "512": 15.0,
+          "1024": 15.0,
+          "2048": 15.0,
+          "4096": 15.0
+        },
+        "tok_per_s": {
+          "128": 41.2,
+          "512": 31.8,
+          "1024": 23.5,
+          "2048": 14.6,
+          "4096": 8.1
+        },
+        "ms_per_tok": {
+          "128": 24.27,
+          "512": 31.45,
+          "1024": 42.55,
+          "2048": 68.49,
+          "4096": 123.46
+        },
+        "tok_per_j": {
+          "128": 2.75,
+          "512": 2.12,
+          "1024": 1.57,
+          "2048": 0.97,
+          "4096": 0.54
+        },
+        "p999_p50_jitter": {
+          "128": 1.42,
+          "512": 1.48,
+          "1024": 1.55,
+          "2048": 1.64,
+          "4096": 1.79
+        }
+      },
+      {
+        "platform_id": "cpu_8core_bf16",
+        "name_en": "AMD EPYC 7662 CPU (8-Core, AVX2 BF16)",
+        "name_zh": "AMD EPYC 7662 CPU（8核 AVX2 BF16）",
+        "precision": "BF16/FP32",
+        "clock_mhz": 2000.0,
+        "power_w": {
+          "128": 65.0,
+          "512": 65.0,
+          "1024": 65.0,
+          "2048": 65.0,
+          "4096": 65.0
+        },
+        "tok_per_s": {
+          "128": 198.4,
+          "512": 164.2,
+          "1024": 128.5,
+          "2048": 86.4,
+          "4096": 51.2
+        },
+        "ms_per_tok": {
+          "128": 5.04,
+          "512": 6.09,
+          "1024": 7.78,
+          "2048": 11.57,
+          "4096": 19.53
+        },
+        "tok_per_j": {
+          "128": 3.05,
+          "512": 2.53,
+          "1024": 1.98,
+          "2048": 1.33,
+          "4096": 0.79
+        },
+        "p999_p50_jitter": {
+          "128": 1.36,
+          "512": 1.41,
+          "1024": 1.49,
+          "2048": 1.58,
+          "4096": 1.71
+        }
+      },
+      {
+        "platform_id": "gpu_v100_fp16",
+        "name_en": "NVIDIA Tesla V100-32GB GPU (Native FP16)",
+        "name_zh": "NVIDIA Tesla V100-32GB GPU（原生 FP16）",
+        "precision": "FP16",
+        "clock_mhz": 1530.0,
+        "power_w": {
+          "128": 52.1,
+          "512": 61.4,
+          "1024": 74.8,
+          "2048": 94.2,
+          "4096": 115.6
+        },
+        "tok_per_s": {
+          "128": 712.0,
+          "512": 648.5,
+          "1024": 562.0,
+          "2048": 438.0,
+          "4096": 312.4
+        },
+        "ms_per_tok": {
+          "128": 1.4,
+          "512": 1.54,
+          "1024": 1.78,
+          "2048": 2.28,
+          "4096": 3.2
+        },
+        "tok_per_j": {
+          "128": 13.67,
+          "512": 10.56,
+          "1024": 7.51,
+          "2048": 4.65,
+          "4096": 2.7
+        },
+        "p999_p50_jitter": {
+          "128": 1.28,
+          "512": 1.31,
+          "1024": 1.35,
+          "2048": 1.42,
+          "4096": 1.51
+        }
+      },
+      {
+        "platform_id": "gpu_v100_w4a16_sw",
+        "name_en": "NVIDIA Tesla V100-32GB GPU (W4A16-SW Dequant)",
+        "name_zh": "NVIDIA Tesla V100-32GB GPU（W4A16 软解量化）",
+        "precision": "W4A16-SW",
+        "clock_mhz": 1530.0,
+        "power_w": {
+          "128": 39.2,
+          "512": 41.5,
+          "1024": 44.1,
+          "2048": 46.8,
+          "4096": 49.6
+        },
+        "tok_per_s": {
+          "128": 189.6,
+          "512": 176.4,
+          "1024": 158.2,
+          "2048": 134.8,
+          "4096": 106.5
+        },
+        "ms_per_tok": {
+          "128": 5.27,
+          "512": 5.67,
+          "1024": 6.32,
+          "2048": 7.42,
+          "4096": 9.39
+        },
+        "tok_per_j": {
+          "128": 4.84,
+          "512": 4.25,
+          "1024": 3.59,
+          "2048": 2.88,
+          "4096": 2.15
+        },
+        "p999_p50_jitter": {
+          "128": 1.34,
+          "512": 1.37,
+          "1024": 1.4,
+          "2048": 1.45,
+          "4096": 1.52
+        }
+      },
+      {
+        "platform_id": "fpga_anvil_q2_dense",
+        "name_en": "Anvil-Q2 Dense GQA FPGA Baseline (154.08 MHz)",
+        "name_zh": "Anvil-Q2 稠密 GQA FPGA 基线（154.08 MHz）",
+        "precision": "W4A16 + Q16.16",
+        "clock_mhz": 154.08,
+        "power_w": {
+          "128": 19.8,
+          "512": 19.8,
+          "1024": 19.8,
+          "2048": 19.8,
+          "4096": 19.8
+        },
+        "tok_per_s": {
+          "128": 318.4,
+          "512": 296.2,
+          "1024": 268.5,
+          "2048": 224.0,
+          "4096": 168.2
+        },
+        "ms_per_tok": {
+          "128": 3.14,
+          "512": 3.38,
+          "1024": 3.72,
+          "2048": 4.46,
+          "4096": 5.95
+        },
+        "tok_per_j": {
+          "128": 16.08,
+          "512": 14.96,
+          "1024": 13.56,
+          "2048": 11.31,
+          "4096": 8.49
+        },
+        "p999_p50_jitter": {
+          "128": 1.0,
+          "512": 1.0,
+          "1024": 1.0,
+          "2048": 1.0,
+          "4096": 1.0
+        }
+      },
+      {
+        "platform_id": "fpga_anvil_d1_mla_moe",
+        "name_en": "Anvil-D1 Matrix-Absorbed MLA + Top-6 MoE FPGA (168.49 MHz)",
+        "name_zh": "Anvil-D1 矩阵吸收 MLA + Top-6 MoE FPGA（168.49 MHz）",
+        "precision": "W4A16 + Q16.16 Latent",
+        "clock_mhz": 168.49,
+        "power_w": {
+          "128": 21.4,
+          "512": 21.4,
+          "1024": 21.4,
+          "2048": 21.4,
+          "4096": 21.4
+        },
+        "tok_per_s": {
+          "128": 618.4,
+          "512": 604.2,
+          "1024": 588.6,
+          "2048": 561.2,
+          "4096": 518.5
+        },
+        "ms_per_tok": {
+          "128": 1.62,
+          "512": 1.66,
+          "1024": 1.7,
+          "2048": 1.78,
+          "4096": 1.93
+        },
+        "tok_per_j": {
+          "128": 28.9,
+          "512": 28.23,
+          "1024": 27.5,
+          "2048": 26.22,
+          "4096": 24.23
+        },
+        "p999_p50_jitter": {
+          "128": 1.0,
+          "512": 1.0,
+          "1024": 1.0,
+          "2048": 1.0,
+          "4096": 1.0
+        }
+      }
+    ]
+  },
+  "ablation_studies": {
+    "attention_kv_compression_ablation": [
+      {
+        "variant": "A1-Base: Standard Dense MHA (16Q / 16KV, Uncompressed)",
+        "kv_bw_gbps_at_4k": 14.82,
+        "kv_traffic_saving_pct": 0.0,
+        "m20k_blocks": 184,
+        "tok_per_s_at_4k": 112.4,
+        "mean_cosine": 0.999961
+      },
+      {
+        "variant": "A1-GQA: Grouped-Query Attention (16Q / 4KV Heads)",
+        "kv_bw_gbps_at_4k": 3.71,
+        "kv_traffic_saving_pct": 75.0,
+        "m20k_blocks": 64,
+        "tok_per_s_at_4k": 268.2,
+        "mean_cosine": 0.999942
+      },
+      {
+        "variant": "A1-MLA-Decomp: Latent KV (d_kv=512) w/ Explicit K/V Up-Projection",
+        "kv_bw_gbps_at_4k": 1.24,
+        "kv_traffic_saving_pct": 91.6,
+        "m20k_blocks": 48,
+        "tok_per_s_at_4k": 384.6,
+        "mean_cosine": 0.999928
+      },
+      {
+        "variant": "A1-MLA-Absorbed (Anvil-D1 Ours): Matrix-Absorbed Latent KV + Decoupled RoPE",
+        "kv_bw_gbps_at_4k": 0.99,
+        "kv_traffic_saving_pct": 93.3,
+        "m20k_blocks": 12,
+        "tok_per_s_at_4k": 518.5,
+        "mean_cosine": 0.999924
+      }
+    ],
+    "moe_routing_prefetch_ablation": [
+      {
+        "variant": "A2-Dense: Equivalent Dense FFN (100% Parameters Active/Token)",
+        "active_mac_ratio_pct": 100.0,
+        "routed_stall_rate_pct": 64.2,
+        "latency_ms_per_tok": 5.84,
+        "tok_per_s_at_128": 171.2
+      },
+      {
+        "variant": "A2-MoE-Serial: Top-6 Sparse MoE w/o Shared-Expert Overlap",
+        "active_mac_ratio_pct": 18.7,
+        "routed_stall_rate_pct": 38.5,
+        "latency_ms_per_tok": 2.86,
+        "tok_per_s_at_128": 349.7
+      },
+      {
+        "variant": "A2-MoE-Credit: Top-6 Sparse MoE + Credit-Scheduled DMA Only",
+        "active_mac_ratio_pct": 18.7,
+        "routed_stall_rate_pct": 16.4,
+        "latency_ms_per_tok": 2.14,
+        "tok_per_s_at_128": 467.3
+      },
+      {
+        "variant": "A2-MoE-Overlap (Anvil-D1 Ours): Shared-Expert Execution + Routed Prefetch Overlap",
+        "active_mac_ratio_pct": 18.7,
+        "routed_stall_rate_pct": 4.1,
+        "latency_ms_per_tok": 1.62,
+        "tok_per_s_at_128": 618.4
+      }
+    ],
+    "precision_area_ablation": [
+      {
+        "variant": "A3-FP16: Native FP16 Weights & Activations",
+        "alms_used": 28420,
+        "dsp_blocks": 128,
+        "m20k_blocks": 312,
+        "mean_cosine": 0.999982,
+        "top1_token_parity_pct": 100.0
+      },
+      {
+        "variant": "A3-INT8: Symmetric W8A8 Fixed-Point",
+        "alms_used": 9140,
+        "dsp_blocks": 32,
+        "m20k_blocks": 148,
+        "mean_cosine": 0.99841,
+        "top1_token_parity_pct": 93.3
+      },
+      {
+        "variant": "A3-W4A16-Tensor: Per-Tensor W4A16 (No Group Scales)",
+        "alms_used": 6890,
+        "dsp_blocks": 16,
+        "m20k_blocks": 64,
+        "mean_cosine": 0.99612,
+        "top1_token_parity_pct": 86.7
+      },
+      {
+        "variant": "A3-W4A16-Q16.16 (Anvil-D1 Ours): Group-128 W4A16 + Q16.16 Latent MLA",
+        "alms_used": 7328,
+        "dsp_blocks": 6,
+        "m20k_blocks": 12,
+        "mean_cosine": 0.999924,
+        "top1_token_parity_pct": 100.0
+      }
+    ],
+    "pipeline_retiming_ablation": [
+      {
+        "stage": "Stage 0: Unpipelined Combinational MLA + 64-Way Top-K Tree",
+        "critical_path_ns": 14.82,
+        "setup_slack_ns": -4.82,
+        "fmax_mhz": 67.48,
+        "status": "VIOLATED"
+      },
+      {
+        "stage": "Stage 1: Pipelined Matrix-Absorbed Latent MAC Array",
+        "critical_path_ns": 10.94,
+        "setup_slack_ns": -0.94,
+        "fmax_mhz": 91.41,
+        "status": "VIOLATED"
+      },
+      {
+        "stage": "Stage 2: Registered Tournament Top-6 Sorter + Reciprocal Norm",
+        "critical_path_ns": 7.68,
+        "setup_slack_ns": 2.32,
+        "fmax_mhz": 130.21,
+        "status": "MET (100 MHz)"
+      },
+      {
+        "stage": "Stage 3 (Shipped Anvil-D1): 4-Stage Decoupled MLA/Router/Dispatch/Combine",
+        "critical_path_ns": 5.935,
+        "setup_slack_ns": 4.065,
+        "fmax_mhz": 168.49,
+        "status": "MET (+149.7% Fmax)"
+      }
+    ]
+  }
+}
