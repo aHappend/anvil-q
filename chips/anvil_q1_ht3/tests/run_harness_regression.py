@@ -2,6 +2,8 @@
 
 import argparse
 import ast
+from contextlib import redirect_stdout
+import io
 import json
 import math
 import os
@@ -50,6 +52,56 @@ def run(output):
     omitted = {p: sha for p, sha in artifacts.items() if not p.endswith("driver.cpp")}
     if artifacts_intact(omitted, artifacts):
         raise AssertionError("omitted required driver accepted")
+    assertions += 1
+    import run_benchmarks
+
+    events = []
+    synthetic = output / f"synthetic-benchmark-{uuid.uuid4().hex[:12]}"
+
+    def compilation(directory):
+        events.append("compile")
+        if (directory / "synthetic-public-input").exists():
+            raise AssertionError("reclaimable public input was acquired before compilation")
+        return "synthetic-binary", "synthetic-binding"
+
+    def acquisition(directory):
+        events.append("acquire")
+        (directory / "synthetic-public-input").write_text("synthetic input")
+        return [dict(task="synthetic", id="scheduling-only")], {}, []
+
+    def image(directory, bindings):
+        events.append("image")
+        if not (directory / "synthetic-public-input").is_file():
+            raise AssertionError("post-build acquisition missing")
+        return dict(image="synthetic-input")
+
+    def evaluation(directory, works, bindings, payload, build, smoke, chunks):
+        events.append("execute")
+        if build != ("synthetic-binary", "synthetic-binding"):
+            raise AssertionError("compiled build was not passed to execution")
+        return [dict(task="synthetic", id="scheduling-only", status="incomplete")]
+
+    with patch("official_stream.compiled", side_effect=compilation), \
+            patch("run_benchmarks.prepare", side_effect=acquisition), \
+            patch("run_benchmarks.checkpoint_image", side_effect=image), \
+            patch("run_benchmarks.evaluate", side_effect=evaluation), \
+            patch.object(sys, "argv", ["tests/run_benchmarks.py", "--stream-smoke",
+                                      "--output", relative(synthetic)]), \
+            redirect_stdout(io.StringIO()):
+        exit_code = run_benchmarks.main()
+    if exit_code != 1 or events != ["compile", "acquire", "image", "execute"]:
+        raise AssertionError("benchmark lifecycle reordered inputs or concealed incomplete execution")
+    assertions += 1
+    events.clear()
+    with patch("official_stream.compiled", side_effect=AssertionError("must not compile")), \
+            patch("run_benchmarks.prepare", side_effect=acquisition), \
+            patch("run_benchmarks.evaluate", side_effect=AssertionError("must not execute")), \
+            patch.object(sys, "argv", ["tests/run_benchmarks.py", "--prepare-only",
+                                      "--output", relative(output / f"prepare-{uuid.uuid4().hex[:12]}")]), \
+            redirect_stdout(io.StringIO()):
+        exit_code = run_benchmarks.main()
+    if exit_code != 0 or events != ["acquire"]:
+        raise AssertionError("input-only mode no longer excludes RTL compilation/execution")
     assertions += 1
     previous = os.environ.get("HT3_CHECK_DEADLINE")
     try:
