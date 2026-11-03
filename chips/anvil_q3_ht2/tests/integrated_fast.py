@@ -6,10 +6,43 @@ import shutil
 
 from integrated import generate
 from receipts import ROOT, cleanup_build, execute, relative, compile_verilator
+from serial_reference import Geometry, PackedImage, SerialModel
 
 
-def run_fast_integration(run, mode, diagnostic=False):
-    model, vectors, lines, qreads = generate(run)
+def generate_nonzero(run, mode, seed):
+    model, vectors, lines, qreads = generate(run, nonzero=True, seed=seed, varied=True)
+    geometry = Geometry()
+    oracle = SerialModel(PackedImage(model), geometry, mode)
+    priming = oracle.evaluate(1, 0)
+    chain = oracle.evaluate_tree(15, [3, 3, 3, 3], [4, 0, 1, 2], (priming,))
+    branch = oracle.evaluate_tree(15, [3, 1, 3, 3], [4, 4, 0, 1], (priming, *chain))
+    if any(item.argmax != 3 for item in (priming, *chain, *branch)):
+        raise AssertionError("independent fixture does not produce the targeted greedy path")
+    committed = (priming, *chain, branch[0], branch[2])
+    expected_records = {}
+    for token in committed:
+        for (layer, value, head, group), record in token.records.items():
+            groups = (geometry.head_dim + oracle.capacity - 1) // oracle.capacity
+            index = (((layer * 2 + value) * geometry.maximum + token.position) *
+                     geometry.kv_heads + head) * groups + group
+            expected_records[0x100000000 + index * 64] = record
+    address_vectors = vectors.read_text()
+    vectors.write_text("\n".join(f"{value & 0xffffffff:x}" for value in priming.logits) +
+                       "\n" + address_vectors + f"{len(expected_records)}\n" +
+                       "\n".join(f"{address:x} {record:x}"
+                                 for address, record in sorted(expected_records.items())) + "\n")
+    (run / "oracle-fixture.json").write_text(json.dumps({
+        "mode": mode, "seed": seed, "geometry": vars(geometry),
+        "priming_logits": priming.logits, "chain_argmax": [item.argmax for item in chain],
+        "branch_argmax": [item.argmax for item in branch],
+        "expected_committed_records": len(expected_records),
+        "scope": "expected values only; not DUT comparison counts",
+    }, indent=2) + "\n")
+    return model, vectors, lines, qreads
+
+
+def run_fast_integration(run, mode, seed=17, diagnostic=False):
+    model, vectors, lines, qreads = generate_nonzero(run, mode, seed)
     obj = run / "integrated-obj"
     obj.mkdir()
     driver = obj / "integrated_driver.cpp"
@@ -47,14 +80,19 @@ def run_fast_integration(run, mode, diagnostic=False):
         if observation["evaluated_tokens"] != 1 or any(
                 line.startswith("RESULT ") for line in raw):
             raise AssertionError("malformed diagnostic-only observation")
-    elif observation["model_lines"] != lines or observation["qweight_reads"] != 4 * qreads or (
-            observation["evaluated_tokens"], observation["committed_tokens"]) != (13, 7):
+    elif observation["model_lines"] != lines or observation["qweight_reads"] != 3 * qreads or (
+            observation["evaluated_tokens"], observation["committed_tokens"]) != (9, 7) or (
+            observation.get("nonzero_projection_comparisons", 0) <= 0 or
+            observation.get("compared_tree_shapes") != ["chain", "branch"]):
         raise AssertionError("incomplete integrated-model accounting")
     receipt = json.loads((result / "receipt.json").read_text())
     summary = {
-        "mode": mode, "diagnostic_only": diagnostic, "observed": observation,
-        "functional_result": "incomplete" if diagnostic else "constant-model-smoke",
-        "fixture": "independent constant embedding, zero AWQ deltas, nonzero head",
+        "mode": mode, "seed": seed, "diagnostic_only": diagnostic, "observed": observation,
+        "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",
+        "fixture": "independently decoded nonzero AWQ packed image and dense serial HT2 oracle",
+        "nonzero_projection_comparisons":
+            observation.get("nonzero_projection_comparisons", 0),
+        "compared_tree_shapes": observation.get("compared_tree_shapes", []),
         "model_sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "simulation_duration_s": receipt["duration_s"],

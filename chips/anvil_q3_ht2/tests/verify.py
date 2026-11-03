@@ -190,7 +190,8 @@ def all_checks(ledger):
             ledger.check(f"atomic-mode{mode}-seed{seed}", run_atomic, mode, seed)
     for mode in (1, 2):
         ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
-        ledger.check(f"integrated-mode{mode}", run_fast_integration, mode)
+        for seed in SEEDS:
+            ledger.check(f"integrated-mode{mode}-seed{seed}", run_fast_integration, mode, seed)
         for top in ("anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention",
                     "anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):
             ledger.check(f"synthesis-{top}-mode{mode}", run_synthesis, top, mode)
