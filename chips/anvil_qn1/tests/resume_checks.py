@@ -165,6 +165,194 @@ def memory_case(run, index):
         equivalence=orchestration_equivalence, validate_retained=validate_memory_receipt)
 
 
+def usable_build(run, result):
+    compiled = result.get("compiled")
+    if not isinstance(compiled, dict):
+        return None
+    binding = compiled.get("binding", {})
+    if (binding.get("source_sha256") != run.hashes or
+            binding.get("tool_versions") != run.tool_versions):
+        return None
+    binary = ROOT / compiled["binary"]
+    receipt_path = binary.parent.parent / "receipt.json"
+    if not binary.is_file() or not receipt_path.is_file():
+        return None
+    receipt = json.loads(receipt_path.read_text())
+    digest = receipt.get("artifact_sha256", {}).get(
+        binary.relative_to(receipt_path.parent).as_posix())
+    if receipt.get("status") != "passed" or hashlib.sha256(binary.read_bytes()).hexdigest() != digest:
+        return None
+    return compiled
+
+
+def validate_case_receipt(run, path, receipt, result, *, bench_name, bench_text,
+                          simulation_name, expected_argv, summary_pattern, inputs):
+    """Validate a simulation checkpoint and its separately retained build owner."""
+    bench = path.parent / bench_name
+    require(bench.is_file() and bench.read_text() == bench_text,
+            "retained checkpoint bench differs from current computational bench")
+    simulations = [c for c in receipt["commands"]
+                   if Path(c["stdout"]).name == simulation_name]
+    require(len(simulations) == 1 and simulations[0]["argv"] == expected_argv and
+            simulations[0]["cwd"] == ".", "retained checkpoint simulation argv mismatch")
+    output = (ROOT / simulations[0]["stdout"]).read_text()
+    matches = re.findall(summary_pattern, output, re.M)
+    require(len(matches) == 1 and list(map(int, matches[0])) == result["counts"],
+            "retained checkpoint raw summary/counts mismatch")
+    compiled = result["compiled"]
+    binding = compiled["binding"]
+    require(binding["bench_sha256"] == hashlib.sha256(bench_text.encode()).hexdigest(),
+            "retained compiled bench identity mismatch")
+    require(all(binding["tool_versions"].get(tool) == run.tool_versions[tool]
+                for tool in TOOLS), "retained compiled tool identity mismatch")
+    binary = ROOT / compiled["binary"]
+    owner_path = binary.parent.parent / "receipt.json"
+    owner = receipt if owner_path == path else json.loads(owner_path.read_text())
+    if owner_path != path:
+        assessment, _ = assess(run, owner_path, inputs, {}, TOOLS,
+                               equivalence=orchestration_equivalence)
+        require(assessment["applicable"], "compiled checkpoint owner is stale/incomplete")
+    require(binding["source_sha256"] == owner["source_sha256"],
+            "compiled checkpoint source binding differs from its execution owner")
+    key = binary.relative_to(owner_path.parent).as_posix()
+    require(binary.is_file() and hashlib.sha256(binary.read_bytes()).hexdigest() ==
+            owner.get("artifact_sha256", {}).get(key), "missing/corrupted compiled checkpoint")
+    compiles = [c for c in owner["commands"] if c["argv"][0] == "verilator"]
+    require(len(compiles) == 1 and
+            compiles[0]["argv"][-1] == relative(owner_path.parent / bench_name) and
+            all(f"-G{k}={v}" in compiles[0]["argv"]
+                for k, v in binding["parameters"].items()),
+            "missing/mismatched retained build parameters")
+
+
+def validate_fault_case(result, kind):
+    from fault_checks import FAULT_CASES
+    require(result.get("kind") == kind and result.get("case") == FAULT_CASES[kind],
+            "fault scenario identity mismatch")
+    counts = result["counts"]
+    require(result["geometry"] == vars(Geometry()) and
+            (result["seed"], result["banks"], result["queue"]) == (17, 8, 3) and
+            len(counts) == 7 and
+            counts[:4] == [kind, 4 if kind == 8 else 3, 2 if kind <= 8 else 1,
+                           int(kind >= 9 and kind != 14)] and
+            counts[5:] == [int(kind == 13), 16] and counts[4] >= 0 and
+            (kind not in (9, 11) or counts[4] > 0),
+            "missing fault/drain/publication/recovery comparisons")
+
+
+def fault_receipt(run, path, receipt, result):
+    from fault_checks import fault_bench
+    from integration import generate_images
+
+    validate_case_receipt(
+        run, path, receipt, result, bench_name="fault_top_tb.sv", bench_text=fault_bench(),
+        simulation_name=f"fault-{result['kind']:02d}-simulation.stdout.txt",
+        expected_argv=[result["compiled"]["binary"],
+                       f"+images={relative(path.parent / 'checkpoint-images')}",
+                       f"+fault={result['kind']}"],
+        summary_pattern=(
+            r"^FAULT_SUMMARY kind=(\d+) successes=(\d+) errors=(\d+) cancels=(\d+) "
+            r"drain_responses=(\d+) commits_before_abort=(\d+) recovery_frames=2 "
+            r"recovery_logits=(\d+)$"),
+        inputs=(*MODEL, "tests/speculation_checks.py", "tests/memory_checks.py",
+                "tests/fault_checks.py"))
+    with tempfile.TemporaryDirectory(prefix="official-image-", dir=run.path) as directory:
+        images = Path(directory) / "checkpoint-images"
+        records = generate_images(images, Geometry(), 17, 2)
+        expected = {f"checkpoint-images/{file.name}":
+                    hashlib.sha256(file.read_bytes()).hexdigest()
+                    for file in images.glob("*.hex")}
+    require(records == result["reference"] and
+            receipt.get("transient_image_sha256") == expected,
+            "fault checkpoint sequential model/image mismatch")
+
+
+def fault_matrix(run):
+    from behavior_suite import validate_faults
+    from fault_checks import FAULT_CASES, run_fault_case
+
+    compiled, results = None, []
+    for kind in FAULT_CASES:
+        result = component(
+            run, f"fault-case{kind:02d}",
+            lambda child, kind=kind: run_fault_case(child, kind, compiled=compiled),
+            inputs=(*MODEL, "tests/speculation_checks.py", "tests/memory_checks.py",
+                    "tests/fault_checks.py"),
+            parameters={"kind": kind, "case": FAULT_CASES[kind],
+                        "geometry": vars(Geometry()), "seed": 17, "banks": 8, "queue": 3},
+            tools=TOOLS, validate=lambda result, kind=kind: validate_fault_case(result, kind),
+            equivalence=orchestration_equivalence, validate_retained=fault_receipt)
+        compiled = usable_build(run, result) or compiled
+        results.append(result)
+    result = {"cases": results, "case_count": len(results), "recovery_frames": 2 * len(results),
+              "scope": "banked direct-decoder fault/cancel/recovery; speculative cancellation separate"}
+    validate_faults(result)
+    return result
+
+
+def validate_speculative_case(result, kind):
+    from speculative_fault_checks import SPECULATIVE_CANCEL_CASES
+
+    require(result["kind"] == kind and result["case"] == SPECULATIVE_CANCEL_CASES[kind] and
+            result["geometry"] == vars(Geometry()) and result["seed"] == 17,
+            "speculative cancellation scenario identity mismatch")
+    counts = result["counts"]
+    require(len(counts) == 7 and counts[0] == kind and counts[1] > 0 and counts[2] > 0 and
+            counts[3] >= 0 and
+            counts[4:] == [int(kind == 5), len(result["evaluations"]),
+                           len(result["transactions"])],
+            "missing speculative cancellation/publication/recovery comparisons")
+
+
+def speculative_receipt(run, path, receipt, result):
+    from speculative_fault_checks import speculative_cancel_bench
+    from speculation_checks import speculation_images
+
+    validate_case_receipt(
+        run, path, receipt, result, bench_name="speculative_cancel_tb.sv",
+        bench_text=speculative_cancel_bench(),
+        simulation_name="speculative-cancel-simulation.stdout.txt",
+        expected_argv=[result["compiled"]["binary"],
+                       f"+images={relative(path.parent / 'checkpoint-images')}",
+                       f"+cancel-case={result['kind']}"],
+        summary_pattern=(
+            r"^SPEC_CANCEL_SUMMARY case=(\d+) cancelled_frames=(\d+) cancelled_requests=(\d+) "
+            r"drained_responses=(\d+) commits_before_cancel=(\d+) recovery_frames=(\d+) "
+            r"recovery_transactions=(\d+)$"),
+        inputs=(*MODEL, "tests/speculation_checks.py", "tests/speculative_fault_checks.py"))
+    with tempfile.TemporaryDirectory(prefix="official-image-", dir=run.path) as directory:
+        images = Path(directory) / "checkpoint-images"
+        evaluations, transactions = speculation_images(images, Geometry(), 17, 4)
+        expected = {f"checkpoint-images/{file.name}":
+                    hashlib.sha256(file.read_bytes()).hexdigest()
+                    for file in images.glob("*.hex")}
+    require(evaluations == result["evaluations"] and transactions == result["transactions"] and
+            receipt.get("transient_image_sha256") == expected,
+            "speculative checkpoint sequential model/image mismatch")
+
+
+def speculative_cancel_matrix(run):
+    from behavior_suite import validate_speculative_cancels
+    from speculative_fault_checks import SPECULATIVE_CANCEL_CASES, run_speculative_cancel
+
+    compiled, results = None, []
+    for kind in SPECULATIVE_CANCEL_CASES:
+        result = component(
+            run, f"speculative-cancel-case{kind}",
+            lambda child, kind=kind: run_speculative_cancel(child, kind, compiled=compiled),
+            inputs=(*MODEL, "tests/speculation_checks.py", "tests/speculative_fault_checks.py"),
+            parameters={"kind": kind, "case": SPECULATIVE_CANCEL_CASES[kind],
+                        "geometry": vars(Geometry()), "seed": 17},
+            tools=TOOLS, validate=lambda result, kind=kind: validate_speculative_case(result, kind),
+            equivalence=orchestration_equivalence, validate_retained=speculative_receipt)
+        compiled = usable_build(run, result) or compiled
+        results.append(result)
+    result = {"cases": results, "case_count": len(results),
+              "recovery_frames": sum(len(r["evaluations"]) for r in results)}
+    validate_speculative_cancels(result)
+    return result
+
+
 def run_resume_checker(run):
     """Read-only retained-case assessment plus in-memory negative counterexamples."""
     from behavior_suite import SPECULATION, validate_core

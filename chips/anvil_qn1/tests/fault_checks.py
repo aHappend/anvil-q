@@ -328,14 +328,6 @@ def run_fault_case(run, kind, compiled=None, geometry=Geometry(), seed=17,
 
 
 def run_fault_matrix(run):
-    compiled = None
-    results = []
-    for kind in FAULT_CASES:
-        result = run.component(
-            f"fault-case{kind:02d}",
-            lambda child, kind=kind: run_fault_case(child, kind, compiled=compiled))
-        compiled = result["compiled"]
-        results.append(result)
-    return {"cases": results, "case_count": len(results),
-            "recovery_frames": len(results) * 2,
-            "scope": "banked direct-decoder fault/cancel/recovery; speculative cancellation separate"}
+    from resume_checks import fault_matrix
+
+    return fault_matrix(run)

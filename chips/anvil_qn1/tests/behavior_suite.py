@@ -60,6 +60,9 @@ def validate_core(result):
 
 
 def validate_memory(result):
+    from resume_checks import validate_memory_matrix
+
+    validate_memory_matrix(result)
     cases = result.get("cases", [])
     require(len(cases) == 6 and
             {(c["banks"], c["queue_depth"]) for c in cases} ==

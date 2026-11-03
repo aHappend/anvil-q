@@ -192,13 +192,6 @@ def run_speculative_cancel(run, kind=2, compiled=None, seed=17):
 
 
 def run_speculative_cancel_matrix(run):
-    compiled = None
-    results = []
-    for kind in SPECULATIVE_CANCEL_CASES:
-        result = run.component(
-            f"speculative-cancel-case{kind}",
-            lambda child, kind=kind: run_speculative_cancel(child, kind, compiled=compiled))
-        compiled = result["compiled"]
-        results.append(result)
-    return {"cases": results, "case_count": len(results),
-            "recovery_frames": sum(len(r["evaluations"]) for r in results)}
+    from resume_checks import speculative_cancel_matrix
+
+    return speculative_cancel_matrix(run)
