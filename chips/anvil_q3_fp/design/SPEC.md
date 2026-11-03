@@ -146,7 +146,7 @@ Scheduler clients, ingress fairness, queue depths, low-bit bank routing, unique
 responses and flush/drain remain real RTL behavior. Keep the two independent
 prefetch slots EMPTY/FILLING/READY/ACTIVE and overlap filling with consuming.
 
-The top inserts one elastic request register for every client before
+The top inserts a two-slot request FIFO for every client before
 `bank_scheduler`: weight-fetch clients `0..BANKS-1` and scalar clients
 `BANKS..BANKS+8`, including RoPE at `BANKS+2`. This does not change module
 ports or scheduler queue depth. A producer request
@@ -158,7 +158,20 @@ scheduler path. Registered addresses and scheduler-facing valid do not depend
 combinationally on producer failure or core flush. Payload may remain present
 without valid; only valid transfers establish scheduler ownership.
 
-The register retains accepted reads/writes independently of later producer-local
+Each slot samples producer payload on every edge while locally unowned, even
+without producer valid. Acceptance locks the selected slot; only ownership and
+the read/write pointers depend on handshakes or flush. Payload capture enables
+therefore depend only on registered local ownership, not core flush, producer
+valid or scheduler ready. Prefetch request fields are reset-gated but not
+valid/flush-gated; fields without valid are not transactions.
+
+Ready requires a free slot at the pre-edge sample; it does not anticipate a
+scheduler retirement. With one slot owned, retire/refill on the same edge
+preserves one queued request and supports one transfer per clock. With both
+slots owned, a retirement restores producer credit for the following cycle,
+not the retirement edge. FIFO ordering is independent of scheduler backpressure.
+
+The FIFO retains accepted reads/writes independently of later producer-local
 fault/flush gating, until forwarded or annulled by top-level core flush.
 All existing error propagation remains active. Core flush immediately
 suppresses producer readiness and clears staged ownership on the edge, with
@@ -277,8 +290,10 @@ E0 is the rising edge accepting pre-edge valid && ready.
 | Prefetch RAM fill plus active read | Independent owned slots may write/read concurrently; held beat disables replacement read |
 | Any client request accepted at E0 | Registered payload/valid visible post-E0; earliest scheduler acceptance E1 |
 | Any client request held | Entire payload remains unchanged until scheduler acceptance or top-level flush; producer-local faults cannot rewrite it |
-| Any client request retire/refill | Forward old request and accept replacement on the same edge; each owns its own response |
-| Client stage empty, scheduler stalled | Accept one request independently; backpressure further requests while occupied |
+| Client FIFO has one request, retire/refill | Forward old request and accept replacement into the other slot on the same edge; each owns its own response |
+| Client FIFO empty, scheduler stalled | Accept up to two requests independently; backpressure while both slots are owned |
+| Client FIFO full, scheduler retires | No producer acceptance on that edge; released slot is available next cycle |
+| Unowned request slot | Speculatively sample producer payload regardless of valid/flush; only an accepted handshake establishes ownership |
 | Client stage plus cancel/core flush | Producer readiness suppressed; scheduler flush/draining suppresses admission; clear staged valid on the edge before any refill; scheduler-owned requests still drain |
 | Client stage reset / first post-reset edge | Reset clears payload/ownership; after release an empty stage may accept, but cannot forward before E1 |
 | Client stage, BANKS=1 / QUEUE_DEPTH=1 or 3 | One independent register per weight or scalar client; no pointers or power-of-two depth assumption |

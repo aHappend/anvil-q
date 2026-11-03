@@ -15,10 +15,10 @@
     "device": "10AX115N2F45E1SG",
     "netlist_mode": "post_fit",
     "target_frequency_mhz": 100.0,
-    "fmax_mhz": 93.27,
-    "critical_path_delay_ns": 10.722,
-    "wns_setup_ns": -0.722,
-    "wns_hold_ns": 0.034
+    "fmax_mhz": 92.4,
+    "critical_path_delay_ns": 10.823,
+    "wns_setup_ns": -0.823,
+    "wns_hold_ns": 0.037
   },
   "verification_tiers": {}
 }

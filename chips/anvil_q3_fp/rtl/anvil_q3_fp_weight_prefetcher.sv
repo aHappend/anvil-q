@@ -215,12 +215,12 @@ module anvil_q3_fp_weight_prefetch_bank #(
   assign beat_tile_last=beat_valid && read_final;
   assign c_req_valid=rst_n && !flush && !failed && request_state;
   assign c_req_write=1'b0;
-  assign c_req_kind=!c_req_valid ? 4'd0 : fill_state==F_Q_REQ ? 4'd1 :
+  assign c_req_kind=!rst_n ? 4'd0 : fill_state==F_Q_REQ ? 4'd1 :
     fill_state==F_Z_REQ ? 4'd2 : 4'd3;
-  assign c_req_layer=c_req_valid ? layer[fill_select] : 32'd0;
-  assign c_req_proj=c_req_valid ? projection[fill_select] : 3'd0;
-  assign c_req_row=!c_req_valid ? 32'd0 : fill_state==F_Q_REQ ? fill_global_input : group_index;
-  assign c_req_col=!c_req_valid ? 32'd0 : !format_awq[fill_select] ? fill_global_row>>1 :
+  assign c_req_layer=rst_n ? layer[fill_select] : 32'd0;
+  assign c_req_proj=rst_n ? projection[fill_select] : 3'd0;
+  assign c_req_row=!rst_n ? 32'd0 : fill_state==F_Q_REQ ? fill_global_input : group_index;
+  assign c_req_col=!rst_n ? 32'd0 : !format_awq[fill_select] ? fill_global_row>>1 :
     fill_state==F_S_REQ ? fill_global_row : fill_global_row>>3;
   assign c_req_wdata=32'd0;
   assign c_rsp_ready=rst_n && !flush && !failed;

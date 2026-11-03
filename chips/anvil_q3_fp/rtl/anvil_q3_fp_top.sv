@@ -66,28 +66,46 @@ module anvil_q3_fp_top #(
   wire [CLIENTS*32-1:0] scheduler_req_row, scheduler_req_col, scheduler_req_wdata;
   genvar client;
   generate for (client=0;client<CLIENTS;client=client+1) begin: request_staging
-    reg pending;
-    reg [135:0] payload;
-    wire replace_request=!pending || scheduler_req_ready[client];
-    assign c_req_ready[client]=rst_n && !core_flush && replace_request;
+    reg [1:0] owned;
+    reg read_slot, write_slot;
+    reg [135:0] payload0, payload1;
+    wire [135:0] incoming_payload={c_req_write[client],c_req_kind[client*4+:4],
+      c_req_layer[client*32+:32],c_req_proj[client*3+:3],
+      c_req_row[client*32+:32],c_req_col[client*32+:32],
+      c_req_wdata[client*32+:32]};
+    wire [135:0] payload=read_slot ? payload1 : payload0;
+    wire accept_request=c_req_valid[client] && c_req_ready[client];
+    wire retire_request=scheduler_req_valid[client] && scheduler_req_ready[client];
+    assign c_req_ready[client]=rst_n && !core_flush && !owned[write_slot];
     // Scheduler flush/draining suppresses admission without a route-input mux.
-    assign scheduler_req_valid[client]=rst_n && pending;
+    assign scheduler_req_valid[client]=rst_n && owned[read_slot];
     assign {scheduler_req_write[client],scheduler_req_kind[client*4+:4],
       scheduler_req_layer[client*32+:32],scheduler_req_proj[client*3+:3],
       scheduler_req_row[client*32+:32],scheduler_req_col[client*32+:32],
       scheduler_req_wdata[client*32+:32]}=payload;
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin
-        pending<=0; payload<=0;
+        payload0<=0; payload1<=0;
+      end else begin
+        // Empty slots sample speculatively; ownership alone locks their payload.
+        if (!owned[0]) payload0<=incoming_payload;
+        if (!owned[1]) payload1<=incoming_payload;
+      end
+    end
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        owned<=0; read_slot<=0; write_slot<=0;
       end else if (core_flush) begin
-        pending<=0;
-      end else if (replace_request) begin
-        pending<=c_req_valid[client];
-        if (c_req_valid[client])
-          payload<={c_req_write[client],c_req_kind[client*4+:4],
-            c_req_layer[client*32+:32],c_req_proj[client*3+:3],
-            c_req_row[client*32+:32],c_req_col[client*32+:32],
-            c_req_wdata[client*32+:32]};
+        owned<=0; read_slot<=0; write_slot<=0;
+      end else begin
+        if (retire_request) begin
+          owned[read_slot]<=0;
+          read_slot<=!read_slot;
+        end
+        if (accept_request) begin
+          owned[write_slot]<=1;
+          write_slot<=!write_slot;
+        end
       end
     end
   end endgenerate

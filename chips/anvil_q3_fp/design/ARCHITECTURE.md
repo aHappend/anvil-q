@@ -153,12 +153,23 @@ encoding private byte pointers.
 The top's `request_staging[client]` registers isolate every producer from
 scheduler bank routing and ingress arbitration: weight-fetch clients
 `0..BANKS-1` and scalar clients `BANKS..BANKS+8`, including RoPE at `BANKS+2`.
-Each holds one valid bit and the complete 136-bit request payload. Producer
-acceptance transfers ownership to this register; scheduler acceptance
-transfers it onward. An empty register accepts independently of scheduler
-backpressure, and a forwarded request may be replaced on the same edge.
-Held payload is not recomputed from producer validity or local flush.
-The ordered response path remains direct.
+Each is a two-slot FIFO with two local ownership bits, one-bit read/write
+pointers and two complete 136-bit payload registers. An unowned slot samples
+producer payload speculatively on every edge, independently of valid, flush
+and scheduler ready. Producer acceptance locks the write slot; scheduler
+acceptance releases the read slot. Owned payload is never rewritten, including
+on its retirement edge. Only the small ownership/pointer controller sees
+handshake and flush conditions. The ordered response path remains direct.
+
+Producer ready uses pre-edge free-slot credit, not combinational scheduler
+arbitration feedback. One occupied slot permits simultaneous retire/refill
+into different slots, sustaining one request per clock without downstream
+stall. Two occupied slots backpressure the producer; retiring one restores
+credit on the next cycle. An empty FIFO accepts two requests even when the
+scheduler stalls. Read/write pointers wrap explicitly between slots 0 and 1,
+independently of BANKS or the unchanged scheduler QUEUE_DEPTH (including 1
+and non-power-of-two 3). Each client has independent credits, preserving
+all-bank concurrency.
 
 The weight boundary addressed the retained native 10 ns setup failure
 (-0.426 ns setup WNS, +0.037 ns hold WNS): the reported path ran from tensor
@@ -172,6 +183,18 @@ clients terminates their producer fault/address cones at request registers.
 Scheduler routing now uses only registered payload and valid ownership,
 without redundant combinational core-flush gating. These are structural
 repairs, not claims of new timing closure or production-default physical PPA.
+
+The subsequent retained post-fit result at 10 ns was still failing:
+setup WNS -0.823 ns, hold WNS +0.037 ns, with `ABORT_FLUSH` reaching
+`request_staging[7].payload[115]`. The original single-slot capture enable
+still combined core flush, producer valid and scheduler ready. The two-slot
+ownership scheme replaces that enable rather than adding another copy of
+the same staging. Prefetch layer/projection/address/kind outputs now depend
+on reset and descriptor/fill state, not flush-dependent request valid.
+This also removes flush from the measured payload's data-input cone.
+Payload bits on invalid cycles are deliberately unspecified except during
+reset; only handshakes establish transaction ownership. No physical timing
+improvement is claimed until fresh post-fit STA.
 
 Every request gains one unstalled clock between producer acceptance and
 scheduler eligibility. Accepted weight staging is retained; scalar reads and
