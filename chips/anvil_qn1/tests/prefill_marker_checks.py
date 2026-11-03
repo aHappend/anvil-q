@@ -78,23 +78,20 @@ def run_prefill_marker(run, opening=True, threads=8):
         receipt = json.loads(path.read_text())
         if receipt["status"] != "passed":
             continue
-        candidate = receipt["results"]["compiled"]
+        candidate = receipt.get("results", {}).get("compiled")
+        if candidate is None:
+            continue
         binary = ROOT / candidate["binary"]
         if (candidate["binding"] == binding and binary.is_file() and
-                hashlib.sha256(binary.read_bytes()).hexdigest() == candidate["binary_sha256"]):
+                hashlib.sha256(binary.read_bytes()).hexdigest() == candidate["binary_sha256"] and
+                candidate.get("optimization") ==
+                "OPT_FAST=-O3 OPT_SLOW=-O3 OPT_GLOBAL=-O3"):
             compiled = candidate
             break
     if compiled is None:
-        objects = run.path / "obj-prefill-marker"
-        run.execute(["verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-                     "-j", "2", "--threads", str(threads), "-CFLAGS", "-O3",
-                     "--top-module", "anvil_qn1_top",
-                     *[f"-G{k}={v}" for k, v in parameters.items()],
-                     "--Mdir", relative(objects), "-o", "simulate", *sources,
-                     "../prefill_marker_driver.cpp"], "prefill-marker-compile")
-        binary = objects / "simulate"
-        compiled = {"binary": relative(binary), "binding": binding,
-                    "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest()}
+        from marker_builds import marker_build
+
+        compiled = marker_build(run, driver.read_text(), binding, prefill=True)
     output = run.execute([compiled["binary"], relative(images),
                           str(int(opening)), str(threads)], "prefill-marker-simulation")
     records = re.findall(r"^PREFILL_MARKER_SUMMARY opening=(\d+) frames=1 logits=(\d+) "

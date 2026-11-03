@@ -144,7 +144,7 @@ def main():
                                           "benchmark-case", "mutation-case",
                                           "resume-checker", "memory-case", "checkpoint-checker",
                                           "benchmark-domain", "defects-resume",
-                                          "fusion-checkpoints"))
+                                          "fusion-checkpoints", "campaign-checker"))
     parser.add_argument("--case-index", type=int, choices=range(6), default=0)
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
@@ -158,7 +158,11 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "checkpoint-checker":
+        if args.probe == "campaign-checker":
+            from campaign_checkpoints import run_campaign_checker
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_campaign_checker(run)
+        elif args.probe == "checkpoint-checker":
             from resume_checks import run_checkpoint_checker
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_checkpoint_checker(run)

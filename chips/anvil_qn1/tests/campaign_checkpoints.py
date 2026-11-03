@@ -278,3 +278,46 @@ def defects_campaign(run):
               "required_mutants": list(MUTANTS), "detected_count": len(detections)}
     require_complete(result, "defects")
     return result
+
+
+def run_campaign_checker(run):
+    """Revalidate all case checkpoints, then reject damaged in-memory summaries."""
+    import copy
+    from benchmark_checks import DOMAINS
+    from checker_checks import rejection
+    from suite_dispatch import require_complete
+
+    domains = {name: benchmark_domain(run, name) for name in DOMAINS}
+    defects = defects_campaign(run)
+    rejected = []
+    for domain, result in domains.items():
+        for index in range(8):
+            broken = copy.deepcopy(result)
+            del broken["cases"][index]
+            rejected.append(rejection(
+                lambda broken=broken, domain=domain: require_complete(
+                    broken, f"benchmark-{domain}"), f"{domain}:missing-case-{index}"))
+        for case in result["cases"]:
+            for field in ("fixture", "family", "seed", "thinking", "measurements",
+                          "compared_frames", "generated_tokens", "decode_cycles"):
+                broken = copy.deepcopy(case)
+                broken[field] = [] if field == "measurements" else None
+                rejected.append(rejection(
+                    lambda broken=broken, case=case: validate_benchmark_case(
+                        broken, case["fixture"], case["family"], case["seed"], case["thinking"]),
+                    f"{domain}:{case['fixture']['id']}:{case['thinking']}:changed-{field}"))
+    for result in defects["detections"]:
+        for field in ("mutant", "detected", "checker_exit", "compilation_exit",
+                      "comparison_diagnostics"):
+            broken = copy.deepcopy(result)
+            broken[field] = 0 if field == "checker_exit" else None
+            rejected.append(rejection(
+                lambda broken=broken, name=result["mutant"]: validate_detection(broken, name),
+                f"mutant:{result['mutant']}:changed-{field}"))
+    return {"scope": "checkpoint/checker diagnostics, not mandatory suite acceptance",
+            "domains": {name: {"frames": value["compared_frames"],
+                              "words": value["compared_logit_words"],
+                              "modes": value["modes"]} for name, value in domains.items()},
+            "detected_mutants": [r["mutant"] for r in defects["detections"]],
+            "rejected_counterexamples": rejected,
+            "executed_new_cases": sum(not c.get("reused") for c in run.components)}

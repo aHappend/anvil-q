@@ -371,11 +371,11 @@ def marker_case(run, opening):
 
     return component(
         run, "integrated-marker",
-        lambda child: run_markers(child, opening=opening, threads=1,
+        lambda child: run_markers(child, opening=opening, threads=8,
                                   compiled=latest_marker_build(), clock_optimized=True),
         inputs=("tests/reference.py", "tests/model.py", "tests/marker_checks.py"),
         parameters={"opening": opening, "target": 151667 if opening else 151668,
-                    "vocabulary": 151936, "simulation_threads": 1},
+                    "vocabulary": 151936, "simulation_threads": 8},
         tools=("python3", "verilator", "g++", "make"), validate=validate,
         equivalence=marker_source_equivalence)
 

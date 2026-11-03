@@ -174,11 +174,11 @@ def prefill_case(run, opening):
                 "missing prefill marker/no-generated-token comparisons")
 
     return component(
-        run, "prefill-marker", lambda child: run_prefill_marker(child, opening, threads=1),
+        run, "prefill-marker", lambda child: run_prefill_marker(child, opening, threads=8),
         inputs=("tests/prefill_marker_checks.py", "tests/marker_checks.py",
                 "tests/speculation_checks.py", "tests/model.py", "tests/reference.py"),
         parameters={"opening": opening, "input_marker": 151667 if opening else 151668,
-                    "simulation_threads": 1},
+                    "simulation_threads": 8},
         tools=TOOLS, validate=validate, equivalence=marker_source_equivalence)
 
 

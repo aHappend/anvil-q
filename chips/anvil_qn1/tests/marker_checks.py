@@ -340,7 +340,6 @@ def run_markers(run, opening=True, threads=1, compiled=None, clock_optimized=Fal
         text = replace_once(text, "        edge();\n        if (transfer)",
                             "        edge(true);\n        if (transfer)")
     driver.write_text(text)
-    objects = run.path / "obj-marker"
     sources = [relative(p) for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
     parameters = {"COMPACT": 1, "NUM_LAYERS": 1, "HIDDEN_SIZE": 8,
                   "INTERMEDIATE_SIZE": 8, "NUM_Q_HEADS": 2, "NUM_KV_HEADS": 1,
@@ -354,19 +353,14 @@ def run_markers(run, opening=True, threads=1, compiled=None, clock_optimized=Fal
     if compiled is not None:
         binary = ROOT / compiled["binary"]
         if (compiled.get("binding") != binding or not binary.is_file() or
-                hashlib.sha256(binary.read_bytes()).hexdigest() != compiled["binary_sha256"]):
+                hashlib.sha256(binary.read_bytes()).hexdigest() != compiled["binary_sha256"] or
+                compiled.get("optimization") != "OPT_FAST=-O3 OPT_SLOW=-O3 OPT_GLOBAL=-O3"):
             print("MARKER_BUILD_STALE: recompiling current source/driver/parameters", flush=True)
             compiled = None
     if compiled is None:
-        run.execute(["verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-                     "-j", "2", "--threads", str(threads), "-CFLAGS", "-O3",
-                     "--top-module", "anvil_qn1_top",
-                     *[f"-G{k}={v}" for k, v in parameters.items()],
-                     "--Mdir", relative(objects), "-o", "simulate", *sources,
-                     "../marker_driver.cpp"], "marker-compile")
-        binary = objects / "simulate"
-        compiled = {"binary": relative(binary), "binding": binding,
-                    "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest()}
+        from marker_builds import marker_build
+
+        compiled = marker_build(run, text, binding)
     output = run.execute([compiled["binary"], relative(images),
                           str(int(opening)), str(threads)], "marker-simulation")
     records = re.findall(r"^MARKER_SUMMARY opening=(\d+) frames=2 logits=(\d+) "
