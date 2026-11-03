@@ -201,6 +201,19 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
     tool_receipts = []
     for path in children:
         record = json.loads(path.read_text())
+        if mutation_campaign:
+            for ancestor in path.parents:
+                if ancestor == directory:
+                    break
+                if (ancestor/"bundle-manifest.json").is_file():
+                    record = dict(record)
+                    for key in ("stdout", "stderr"):
+                        if key in record:
+                            record[key] = relative(ancestor/record[key])
+                    record["artifact_sha256"] = {
+                        relative(ancestor/p): sha
+                        for p, sha in record.get("artifact_sha256", {}).items()}
+                    break
         if "tool_version_argv" not in record:
             continue
         tool = Path(record["tool_version_argv"][0]).name
