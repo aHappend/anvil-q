@@ -153,6 +153,11 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
     if any(receipt.get("source_sha256", {}).get(p) != current.get(p)
            for p in dependencies):
         return None
+    mutation_campaign = len(argv) > 1 and argv[1] == "tests/run_mutations.py"
+    if mutation_campaign:
+        from run_mutations import validated_campaign
+        if not validated_campaign(result, dependencies, versions):
+            return None
     children = list(directory.rglob("*.receipt.json"))
     tool_receipts = []
     for path in children:
@@ -164,8 +169,20 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
             return None
         if record.get("tool_version", "").strip() != versions[tool]:
             return None
-        if record.get("timed_out") or record.get("exit") != 0:
-            # Explicit nonzero illegal-parameter rejection is not reusable here.
+        if not execution_logs_intact(record):
+            return None
+        expected_rejection = False
+        if len(argv) > 1 and argv[1] == "tests/run_parameters.py":
+            for row in result.get("runs", []):
+                if (row.get("invalid") and row.get("status") == "passed"
+                        and path.parent == ROOT/row["path"]
+                        and path.name in ("rejection.receipt.json", "simulation.receipt.json")
+                        and record.get("exit") not in (0, None)
+                        and "PARAMETER ERROR" in (ROOT/record["stdout"]).read_text()):
+                    expected_rejection = True
+                    break
+        if record.get("timed_out") or (record.get("exit") != 0 and not (
+                expected_rejection or mutation_campaign)):
             return None
         for key in ("stdout", "stderr"):
             artifact = ROOT / record[key]
@@ -173,8 +190,8 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
                 return None
             if record.get("artifact_sha256", {}).get(record[key]) != digest(artifact):
                 return None
-        if any(record.get("source_sha256", {}).get(p) != current.get(p)
-               for p in dependencies):
+        if not mutation_campaign and any(record.get("source_sha256", {}).get(p) != current.get(p)
+                                        for p in dependencies):
             return None
         tool_receipts.append(relative(path))
     if not tool_receipts:

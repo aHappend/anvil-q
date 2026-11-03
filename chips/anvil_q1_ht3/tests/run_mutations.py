@@ -10,6 +10,7 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
+from retention import artifacts_intact, digest
 
 
 MUTATIONS = (
@@ -124,6 +125,41 @@ def rejection(child, result, marker, root):
     return dict(kind="independent FP64 vector assertion", failures=failures)
 
 
+def validated_campaign(result, dependencies, versions):
+    if (result.get("selected") is not None or result.get("expected_mutations") != 5
+            or not artifacts_intact(result.get("artifact_sha256", {}))):
+        return False
+    expected = {mutation[0]: mutation for mutation in MUTATIONS}
+    rows = result.get("runs", [])
+    if len(rows) != 5 or {r.get("id") for r in rows} != set(expected):
+        return False
+    current = hashes()
+    for row in rows:
+        mutation = expected[row["id"]]
+        if row.get("status") != "passed":
+            return False
+        manifest_path = ROOT/row["delta_manifest"]
+        manifest = json.loads(manifest_path.read_text())
+        root = manifest_path.parent
+        if (len(manifest.get("changes", [])) != 1
+                or any(manifest.get("source_sha256", {}).get(p) != current[p]
+                       for p in dependencies)):
+            return False
+        change = manifest["changes"][0]
+        _, _, filename, before, after, marker = mutation
+        original = (ROOT/"rtl"/filename).read_text()
+        if (change.get("path") != f"rtl/{filename}" or change.get("before") != before
+                or change.get("after") != after or original.count(before) != 1
+                or (root/change["path"]).read_text() != original.replace(before, after, 1)):
+            return False
+        baseline_path, mutant_path = ROOT/row["baseline"], ROOT/row["mutant_result"]
+        baseline, mutant = (json.loads(p.read_text()) for p in (baseline_path, mutant_path))
+        if baseline.get("status") != "passed" or mutant.get("status") != "failed":
+            return False
+        rejection(mutant_path.parent, mutant, marker, root)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
@@ -161,6 +197,11 @@ def main():
                   runs=rows, selected=args.case, expected_mutations=1 if args.case else 5)
     if len(rows) != result["expected_mutations"]:
         result["status"] = "failed"
+    if result["status"] == "passed":
+        result["artifact_sha256"] = {
+            relative(p): digest(p) for p in output.rglob("*")
+            if p.is_file() and "__pycache__" not in p.parts
+            and p.suffix not in (".o", ".a", ".gch")}
     with (output/"result.json").open("x") as out:
         json.dump(result, out, indent=2)
     receipt.update(end=timestamp(), exit=int(result["status"]!="passed"),

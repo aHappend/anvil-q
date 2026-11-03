@@ -29,6 +29,7 @@ OBLIGATIONS = {
     "attention": "online FP64 attention, formats, masks, tiles, long context and stalls",
     "attention_timing": "frozen no-stall attention edges with observed resident tile supply",
     "packed_cache": "FP32 store conversion, packed writes/readback and subsequent attention",
+    "packed_top": "quantized-cache decode/publication and fault invalidation at public top",
     "compatibility": "integrated inference, CSR/loader/descriptor/batch/reset/error matrix",
     "integrated_geometry": "functional smallest/nonpower/H64, native formats and GQA",
     "parameters": "legal extrema/default elaboration and explicit illegal diagnostics",
@@ -46,6 +47,7 @@ SETTLEMENT_RESERVE = 30
 SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
                  "parameters": 450, "attention_restart": 60,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
+                 "packed_top": 480,
                  "integrated_geometry": 1500,
                  "mutations": 420, "stream_checkpoint": 360,
                  "benchmarks": 1800, "performance": 900}
@@ -54,6 +56,7 @@ MINIMUM_ALLOCATIONS = {
     "parameters": 240, "mutations": 240, "stream_checkpoint": 300,
     "benchmarks": 360, "performance": 300, "compatibility": 300,
     "packed_cache": 120, "attention": 180, "attention_timing": 90,
+    "packed_top": 360,
 }
 
 
@@ -70,6 +73,8 @@ def dependencies(script):
         "tests/run_attention_restart.py": ["tests/attention_restart_tb.sv"],
         "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
         "tests/run_packed_cache.py": ["tests/reference.py", "tests/packed_cache_tb.sv"],
+        "tests/run_packed_top.py": ["tests/reference.py", "tests/inference_tb.sv",
+                                   "tests/run_compatibility.py", "tests/retention.py"],
         "tests/run_compatibility.py": ["tests/reference.py", "tests/inference_tb.sv",
                                       "tests/retention.py"],
         "tests/run_integrated_geometry.py": ["tests/reference.py", "tests/inference_tb.sv",
@@ -209,6 +214,28 @@ def reconcile_coverage(rows):
             return None
         result = json.loads((ROOT/result_path).read_text())
         return result if result.get("status") == "passed" else None
+
+    packed = next((r for r in rows if r["id"] == "packed_cache"), None)
+    packed_top = next((r for r in rows if r["id"] == "packed_top"), None)
+    packed_result = checked_result(packed, "tests/run_packed_cache.py")
+    top_result = checked_result(packed_top, "tests/run_packed_top.py")
+    if packed_result is not None and top_result is not None:
+        expected = {(fmt, probe) for fmt in (2, 3) for probe in
+                    ("success", "read_error", "write_error", "new_sequence", "reset")}
+        observed = top_result.get("runs", [])
+        if (len(observed) == 10 and {(r["format"], r["probe"]) for r in observed} == expected
+                and all(r["status"] == "passed" for r in observed)
+                and packed_result.get("faults") == dict(
+                    dma_errors=4, abort_drains=4, reset_debts=4,
+                    poisoned_rows=4, flush_invalidations=4)):
+            label = "integrated quantized-cache prefix-publication matrix"
+            if label in packed.get("coverage_limits", []):
+                packed["reported_coverage_limits"] = list(packed["coverage_limits"])
+                packed["coverage_limits"] = [s for s in packed["coverage_limits"] if s != label]
+                packed["resolved_coverage"] = dict(label=label, check="packed_top",
+                                                  receipt=packed_top["receipt"], cases=10)
+                if not packed["coverage_limits"]:
+                    packed["status"] = "passed"
 
     attention = next((r for r in rows if r["id"] == "attention"), None)
     if checked_result(attention, "tests/run_attention.py") is None:
