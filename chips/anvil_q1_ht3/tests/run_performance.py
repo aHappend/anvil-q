@@ -88,12 +88,15 @@ def performance_case(output, name, binary, binding, fmt, seed):
         candidates.extend(parent.glob(f"*/performance-*/*{name}-format{fmt}-seed{seed}-*/case.json"))
         candidates.extend(parent.glob(f"*/shard-*/*{name}-format{fmt}-seed{seed}-*/case.json"))
     candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    rejected_receipts = set()
     for candidate in candidates:
         cached = json.loads(candidate.read_text())
-        if (cached.get("identity") != identity or cached.get("status") != "passed"
-                or not all((ROOT/p).is_file() and digest(ROOT/p) == sha
-                           for p, sha in cached.get("artifact_sha256", {}).items())
-                or not cached.get("artifact_sha256")):
+        intact = bool(cached.get("artifact_sha256")) and all(
+            (ROOT/p).is_file() and digest(ROOT/p) == sha
+            for p, sha in cached.get("artifact_sha256", {}).items())
+        if not intact and cached.get("simulation_receipt"):
+            rejected_receipts.add(ROOT/cached["simulation_receipt"])
+        if cached.get("identity") != identity or cached.get("status") != "passed" or not intact:
             continue
         candidates_receipts = [ROOT/cached["simulation_receipt"]]
         break
@@ -107,6 +110,8 @@ def performance_case(output, name, binary, binding, fmt, seed):
                 f"*/shard-*/*{name}-format{fmt}-seed{seed}-*/simulation.receipt.json"))
     checked = None
     for path in sorted(candidates_receipts, key=lambda p: p.stat().st_mtime, reverse=True):
+        if path in rejected_receipts:
+            continue
         checked = validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name)
         if checked is not None:
             simulation_receipt = path

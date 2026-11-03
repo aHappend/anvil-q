@@ -217,7 +217,9 @@ def mapping_groups(netlist):
                 compact = (
                     f"opt_expr {module}/t:$_*; opt_clean {module}; "
                     f"setattr -unset src {module}/t:$_* {module}/w:$*; "
-                    f"rename -enumerate {module}/t:$_* {module}/w:$*; "
+                    f"rename -enumerate "
+                    + (f"-pattern _ht3map{part}_%_ " if part > 15 else "")
+                    + f"{module}/t:$_* {module}/w:$*; "
                     if part >= 15 else "")
                 phases.append((f"gates-{index:02d}-map-{part:02d}",
                                f"select -set decoder_cells {selection}; "
