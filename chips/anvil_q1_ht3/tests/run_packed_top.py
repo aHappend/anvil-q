@@ -171,7 +171,7 @@ def run(output):
                         raise AssertionError("failed packed execution did not reject prefix decode")
                     observation = dict(status="passed", public_summary=marker,
                                        invalid_prefix_rejected=probe != "reset")
-                rows.append(dict(format=fmt, probe=probe, **observation,
+                rows.append(dict(observation, format=fmt, query_format=0, probe=probe,
                                  receipt=relative(directory/"simulation.receipt.json")))
             except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                 rows.append(dict(format=fmt, probe=probe, status="failed", error=str(exc)))
