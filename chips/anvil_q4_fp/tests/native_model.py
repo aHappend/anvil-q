@@ -9,6 +9,7 @@ import random
 
 from attention import attention
 from ieee import convert, exp_frozen, operation, pack, sqrt_round
+from images import export_static, load
 
 
 @lru_cache(maxsize=262144)
@@ -202,13 +203,18 @@ class Fixture:
             self.logits.extend(self.gemv(self.lm_head, final))
 
     def export(self, directory):
+        source_manifest = export_static(directory / "checkpoint-images",
+                                        self.words, self.initial, self.seed)
+        actual_initial = load(source_manifest)
+        if actual_initial != self.initial:
+            raise AssertionError("Exported binary image differs from source tensor tuples")
         fixture = directory / "native-image.txt"
         with fixture.open("w") as stream:
             stream.write(" ".join(f"{word:x}" for word in self.words) + "\n")
             stream.write(f"{len(self.tokens)}\n")
             stream.write(" ".join(f"{token:x}" for token in self.tokens) + "\n")
-            stream.write(f"{len(self.initial)}\n")
-            for key, value in sorted(self.initial.items()):
+            stream.write(f"{len(actual_initial)}\n")
+            for key, value in sorted(actual_initial.items()):
                 stream.write(" ".join(f"{v:x}" for v in (*key, value)) + "\n")
             stream.write(f"{len(self.writes)}\n")
             for key, value in self.writes:
@@ -219,6 +225,8 @@ class Fixture:
             "schema": 1, "layout": 1, "synthetic": True, "checkpoint": None,
             "seed": self.seed, "descriptor_words": self.words,
             "tokens": self.tokens, "image_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
+            "source_manifest": "checkpoint-images/manifest.json",
+            "source_manifest_sha256": hashlib.sha256(source_manifest.read_bytes()).hexdigest(),
             "expected_logits": len(self.logits), "expected_writes": len(self.writes),
             "write_kinds": dict(Counter(key[0] for key, _ in self.writes)),
             "rope_generation": "synthetic rational unit circle t=position*(pair+1)/16",

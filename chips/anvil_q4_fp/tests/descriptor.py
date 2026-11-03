@@ -8,26 +8,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence import execute, new_run, relative, source_hashes
+from images import valid_native
 from native_model import descriptor
-
-
-def valid_native(w, banks):
-    positive = lambda bits: not (bits >> 31) and bits & 0x7fffffff and (
-        (bits >> 23) & 255) != 255
-    power = lambda value: value > 0 and value & (value - 1) == 0
-    return bool(
-        len(w) == 32 and all(type(value) is int and 0 <= value < 2**32 for value in w)
-        and w[:2] == [2, 5] and w[2] in (0, 1) and w[3:5] == [0, 0]
-        and w[5] in (0, 1, 2) and power(w[6]) and w[6] <= banks
-        and 1 <= w[7] <= 64 and 2 <= w[8] <= 8192
-        and 1 <= w[9] <= 32768 and 1 <= w[10] <= 128 and 1 <= w[11] <= 128
-        and 2 <= w[12] <= 256 and w[12] % 2 == 0
-        and 1 <= w[13] <= 262144 and 1 <= w[14] <= 131072 and w[15] == 1
-        and w[16] in (0, 1) and positive(w[17]) and positive(w[18])
-        and power(w[19]) and w[19] <= 32 and 1 <= w[20] <= 131072
-        and w[21] == 0 and 1 <= w[22] <= 8 and w[23] == 1
-        and w[24:] == [0] * 8 and w[8] == w[10] * w[12]
-        and w[10] == w[11] * w[22] and w[19] * w[20] >= w[14])
 
 
 def cases(banks):

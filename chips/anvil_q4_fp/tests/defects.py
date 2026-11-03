@@ -75,10 +75,8 @@ def protocol_mutants(preparation=False, categories=None):
             cache_fixture(image)
             fixture_args = [f"+vectors={relative(image)}"]
         elif label == "native-quantization-bypass":
-            images = directory / "checkpoint-images"
-            images.mkdir(exist_ok=True)
             image = Fixture(descriptor(banks=1, dimension=2, intermediate=3,
-                                       vocabulary=3, context=3), tokens=1).export(images)
+                                       vocabulary=3, context=3), tokens=1).export(directory)
         for variant in ("clean", "mutated"):
             stem = f"{label}-{variant}"
             child = directory / f"{stem}-sources"
