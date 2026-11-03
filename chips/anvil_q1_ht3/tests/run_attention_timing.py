@@ -24,7 +24,7 @@ def expected_cycles(context, dimension, tile, fmt):
     for index, count in enumerate(lengths):
         if index:
             last_release += 1
-        last_release += count*(interval*dimension+60)+10*dimension+47
+        last_release += count*(interval*dimension+59)+10*dimension+48
     return [last_release+71*(index+1) for index in range(dimension)], last_release+71*dimension+1
 
 
@@ -41,7 +41,7 @@ def check_residency(lines, context, dimension, tile, fmt):
             if int(supply[index][2])+2 >= release:
                 raise AssertionError("successor tile was not supplied before preceding release")
             release += 1
-        release += count*(interval*dimension+60)+10*dimension+47
+        release += count*(interval*dimension+59)+10*dimension+48
     return len(lengths)-1
 
 
@@ -118,12 +118,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--diagnostic", action="store_true")
+    parser.add_argument("--repair-of", action="append", default=[])
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
     receipt = dict(argv=["python3", "tests/run_attention_timing.py", *sys.argv[1:]], cwd=".",
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
+    receipt["repair_of"] = args.repair_of
     rows = []
     for dimension, tile in ([(8,3)] if args.diagnostic else
                             [(8,t) for t in (1,3,16,128)]+[(64,3)]):

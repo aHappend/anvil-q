@@ -15,7 +15,8 @@ import time
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import CHECK_SECONDS, ROOT, execute, hashes, relative, timestamp
+from execution import (CHECK_SECONDS, ROOT, execute, failure_details, hashes,
+                       nested_outcomes, relative, timestamp)
 from retention import find_result, inventory
 from run_synthesis import JOBS, JOB_BUDGETS
 
@@ -61,7 +62,8 @@ def dependencies(script):
         "tests/run_attention_restart.py": ["tests/attention_restart_tb.sv"],
         "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
         "tests/run_packed_cache.py": ["tests/reference.py", "tests/packed_cache_tb.sv"],
-        "tests/run_compatibility.py": ["tests/reference.py", "tests/inference_tb.sv"],
+        "tests/run_compatibility.py": ["tests/reference.py", "tests/inference_tb.sv",
+                                      "tests/retention.py"],
         "tests/run_integrated_geometry.py": ["tests/reference.py", "tests/inference_tb.sv",
                                             "tests/run_compatibility.py",
                                             "tests/run_performance.py", "tests/retention.py"],
@@ -143,7 +145,15 @@ def child(identifier, argv, output, budget=None, versions=None, reserve=0):
         return dict(id=identifier, status="passed", result=relative(result_path),
                     receipt=relative(output / f"{identifier}.receipt.json"))
     except (RuntimeError, AssertionError) as exc:
+        receipt_path = output / f"{identifier}.receipt.json"
+        nested = {}
+        if receipt_path.is_file():
+            record = json.loads(receipt_path.read_text())
+            nested = {key: record[key] for key in
+                      ("nested_timed_out", "budget_exhausted", "timed_out_receipts",
+                       "unstarted_receipts") if key in record}
         return dict(id=identifier, status="failed", error=str(exc),
+                    **failure_details(exc), **nested,
                     receipt=relative(output / f"{identifier}.receipt.json"),
                     result=relative(directory / "result.json"))
     finally:

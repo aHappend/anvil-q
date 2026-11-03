@@ -23,6 +23,57 @@ def normalize_argv(argv):
     return argv
 
 
+def validated_execution(path, binary, binding, sources, inputs, options):
+    """Validate a settled compiled case before rescoring its public output."""
+    path = Path(path)
+    if not path.is_file():
+        return None
+    directory = path.parent
+    build = json.loads((ROOT/binding).read_text())
+    compile_path = ROOT/build["compile_receipt"]
+    if not compile_path.is_file():
+        return None
+    record = json.loads(path.read_text())
+    compilation = json.loads(compile_path.read_text())
+    current = hashes()
+    identity = build["identity"]
+    if digest(binary) != build["binary_sha256"]:
+        return None
+    expected_argv = [relative(binary), f"+vectors={relative(directory/inputs[0].name)}",
+                     f"+observations={relative(directory/'observations.txt')}", *options]
+    if len(inputs) > 1:
+        expected_argv.append(f"+batch={relative(directory/inputs[1].name)}")
+    if record.get("argv") != expected_argv or not (directory/"observations.txt").is_file():
+        return None
+    for fresh in inputs:
+        retained = directory/fresh.name
+        if not retained.is_file() or digest(retained) != digest(fresh):
+            return None
+    artifacts = [path, ROOT/binding, binary, compile_path, directory/"observations.txt",
+                 *[directory/p.name for p in inputs]]
+    for execution in (record, compilation):
+        if (execution.get("exit") != 0 or execution.get("timed_out")
+                or execution.get("tool_version_exit") != 0
+                or execution.get("tool_version", "").strip() != identity["tool_version"]
+                or any(execution.get("source_sha256", {}).get(p) != current[p]
+                       or identity["source_sha256"].get(p) != current[p] for p in sources)):
+            return None
+        for key in ("stdout", "stderr"):
+            artifact = ROOT/execution[key]
+            if (not artifact.is_file()
+                    or execution.get("artifact_sha256", {}).get(execution[key]) != digest(artifact)):
+                return None
+            artifacts.append(artifact)
+    ledger = directory/"case.json"
+    if ledger.is_file():
+        prior = json.loads(ledger.read_text()).get("artifact_sha256", {})
+        if not prior or any(not (ROOT/p).is_file() or digest(ROOT/p) != sha
+                            for p, sha in prior.items()):
+            return None
+    return ((ROOT/record["stdout"]).read_text(),
+            {relative(p): digest(p) for p in artifacts})
+
+
 def inventory(output, tools):
     versions = {}
     for tool, argv in tools.items():

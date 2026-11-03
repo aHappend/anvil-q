@@ -53,6 +53,33 @@ def remaining():
     return max(0.0, min(CHECK_SECONDS, deadline - time.time()))
 
 
+def nested_outcomes(directory):
+    timed_out, unstarted = [], []
+    for path in directory.rglob("*.receipt.json"):
+        record = json.loads(path.read_text())
+        if not record.get("timed_out"):
+            continue
+        launched = record.get("launched", record.get("exit") is not None
+                              or record.get("timeout", 0) > 0)
+        (timed_out if launched else unstarted).append(relative(path))
+    return dict(nested_timed_out=bool(timed_out), budget_exhausted=bool(unstarted),
+                timed_out_receipts=timed_out, unstarted_receipts=unstarted)
+
+
+def failure_details(exc):
+    if not isinstance(exc, ExecutionFailure):
+        return dict(failure_kind=("numerical_or_protocol_assertion"
+                                  if isinstance(exc, AssertionError)
+                                  else "verification_or_input_failure"))
+    record = exc.record
+    launched = record.get("launched", record.get("exit") is not None
+                          or record.get("timeout", 0) > 0)
+    return dict(failure_kind=("execution_budget_unstarted" if not launched
+                              else "execution_timeout" if exc.timed_out
+                              else "simulation_or_tool_failure"),
+                process_timed_out=bool(exc.timed_out and launched), launched=launched)
+
+
 def execute(argv, output, stem, version_argv, root=ROOT):
     stdout = output / f"{stem}.stdout.txt"
     stderr = output / f"{stem}.stderr.txt"
@@ -64,7 +91,8 @@ def execute(argv, output, stem, version_argv, root=ROOT):
     record = dict(argv=argv, cwd="." if root == ROOT else relative(root),
                   start=timestamp(), source_sha256=hashes(root),
                   stdout=relative(stdout), stderr=relative(stderr),
-                  timeout=limit, tool_version_argv=version_argv)
+                  timeout=limit, tool_version_argv=version_argv, launched=False,
+                  budget_exhausted=False)
     try:
         version = subprocess.run(version_argv, cwd=root, capture_output=True,
                                  text=True, timeout=min(INTERPRETED_SECONDS, remaining()))
@@ -80,7 +108,7 @@ def execute(argv, output, stem, version_argv, root=ROOT):
             limit = min(limit, remaining())
             if limit <= 5:
                 timed_out = True
-                record.update(timeout=0, settlement_timeout=limit)
+                record.update(timeout=0, settlement_timeout=limit, budget_exhausted=True)
                 err.write("Complete-check execution budget exhausted before launch.\n")
             else:
                 settlement_seconds = min(5, limit)
@@ -93,6 +121,7 @@ def execute(argv, output, stem, version_argv, root=ROOT):
                     time.time() + max(0, end-time.monotonic()))
                 process = subprocess.Popen(argv, cwd=root, stdout=out, stderr=err,
                                            start_new_session=True, env=environment)
+                record["launched"] = True
                 previous_handler = signal.getsignal(signal.SIGTERM)
                 ancestor_timeout = False
 
@@ -131,10 +160,15 @@ def execute(argv, output, stem, version_argv, root=ROOT):
             stdout.write_text("")
         if not stderr.exists():
             stderr.write_text(record["launch_error"] + "\n")
-    record.update(exit=exit_code, timed_out=timed_out, end=timestamp(),
+    record.update(exit=exit_code, timed_out=timed_out,
+                  process_timed_out=timed_out and record["launched"], end=timestamp(),
                   duration_s=time.monotonic()-start,
                   artifact_sha256={relative(p): hashlib.sha256(p.read_bytes()).hexdigest()
                                    for p in (stdout, stderr)})
+    if "--output" in argv:
+        nested_directory = root/argv[argv.index("--output")+1]
+        if nested_directory.is_dir():
+            record.update(nested_outcomes(nested_directory))
     with receipt.open("x") as out:
         json.dump(record, out, indent=2)
         out.write("\n")

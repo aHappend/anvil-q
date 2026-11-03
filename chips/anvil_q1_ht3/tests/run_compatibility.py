@@ -16,8 +16,10 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, clean_objects, execute, hashes, relative, remaining, timestamp
+from execution import (ROOT, clean_objects, execute, failure_details, hashes,
+                       nested_outcomes, relative, remaining, timestamp)
 from reference import convert, encode, float_bits, float_value
+from retention import validated_execution
 
 
 def logit_check(actual, reference):
@@ -253,17 +255,51 @@ def compiled(geometry=None):
 
 
 def run_case(directory, binary, binding, fmt, seed, smoke=False, batch_count=None):
-    options, expected_batch = [], None
+    expected_batch = None
     if batch_count is None:
         vectors, expected = fixture(directory, fmt, seed, smoke)
     else:
         vectors, expected, batch, expected_batch = batch_fixture(directory, fmt, seed, batch_count)
-        options = [f"+batch={relative(batch)}"]
-    observations = directory/"observations.txt"
-    text = execute([relative(binary), f"+vectors={relative(vectors)}",
-                    f"+observations={relative(observations)}", f"+seed={seed}", *options],
-                   directory, "simulation", ["verilator", "--version"])
-    return check_case(directory, text, binding, fmt, seed, expected, expected_batch)
+    inputs = [vectors] if batch_count is None else [vectors, batch]
+    prefix = (f"batch{batch_count}-seed{seed}-" if batch_count is not None
+              else f"format{fmt}-seed{seed}-")
+    return resumable_case(directory, binary, binding, inputs, [f"+seed={seed}"], prefix,
+                          lambda where, text: check_case(where, text, binding, fmt, seed,
+                                                         expected, expected_batch))
+
+
+def resumable_case(directory, binary, binding, inputs, options, prefix, checker):
+    sources = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+["tests/inference_tb.sv"]
+    candidates = []
+    for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
+        candidates.extend(parent.glob(f"*/*/{prefix}*/simulation.receipt.json"))
+        candidates.extend(parent.glob(f"*/{prefix}*/simulation.receipt.json"))
+    for path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
+        checked = validated_execution(path, binary, binding, sources, inputs, options)
+        if checked is None:
+            continue
+        text, artifacts = checked
+        observation = checker(path.parent, text)
+        reused = True
+        break
+    else:
+        argv = [relative(binary), f"+vectors={relative(inputs[0])}",
+                f"+observations={relative(directory/'observations.txt')}", *options]
+        if len(inputs) > 1:
+            argv.append(f"+batch={relative(inputs[1])}")
+        execute(argv, directory, "simulation", ["verilator", "--version"])
+        path = directory/"simulation.receipt.json"
+        checked = validated_execution(path, binary, binding, sources, inputs, options)
+        if checked is None:
+            raise AssertionError("fresh compatibility simulation has invalid provenance")
+        text, artifacts = checked
+        observation = checker(directory, text)
+        reused = False
+    result = dict(**observation, reused=reused, simulation_receipt=relative(path),
+                  artifact_sha256=artifacts)
+    with (directory/"case.json").open("x") as out:
+        json.dump(result, out, indent=2)
+    return result
 
 
 def check_case(directory, text, binding, fmt, seed, expected, expected_batch=None, vocab=3):
@@ -312,11 +348,15 @@ def check_case(directory, text, binding, fmt, seed, expected, expected_batch=Non
 
 def control_case(directory, binary, binding, probe, fmt=0, seed=17):
     vectors, expected = fixture(directory, fmt, seed, smoke=True)
-    observations = directory/"observations.txt"
     options = ["+sparse=3f80"] if probe == "sparse" else [f"+probe={probe}"]
-    text = execute([relative(binary), f"+vectors={relative(vectors)}",
-                    f"+observations={relative(observations)}", f"+seed={seed}", *options],
-                   directory, "simulation", ["verilator", "--version"])
+    return resumable_case(
+        directory, binary, binding, [vectors], [f"+seed={seed}", *options],
+        f"control-{probe}-format{fmt}-seed{seed}-",
+        lambda where, text: check_control(where, text, binding, probe, fmt, seed, expected))
+
+
+def check_control(directory, text, binding, probe, fmt, seed, expected):
+    observations = directory/"observations.txt"
     if probe in ("sparse", "ownership"):
         checked = check_case(directory, text, binding, fmt, seed, expected)
         if probe == "sparse":
@@ -350,6 +390,7 @@ def controls(output, binary, binding):
             rows.append(control_case(directory, binary, binding, probe, fmt, seed))
         except (RuntimeError, AssertionError, ValueError, OSError) as exc:
             rows.append(dict(status="failed", probe=probe, format=fmt, seed=seed,
+                             **failure_details(exc),
                              error=f"{type(exc).__name__}: {exc}", directory=relative(directory)))
     return rows
 
@@ -360,12 +401,14 @@ def main():
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--batch-only", action="store_true")
     parser.add_argument("--controls-only", action="store_true")
+    parser.add_argument("--repair-of", action="append", default=[])
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
     receipt = dict(argv=["python3", "tests/run_compatibility.py", *sys.argv[1:]], cwd=".",
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
+    receipt["repair_of"] = args.repair_of
     rows = []
     try:
         binary, binding = compiled()
@@ -379,6 +422,7 @@ def main():
                                          args.smoke or args.controls_only))
                 except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                     rows.append(dict(status="failed", format=fmt, seed=seed,
+                                     **failure_details(exc),
                                      error=f"{type(exc).__name__}: {exc}",
                                      directory=relative(directory)))
         if not args.smoke and not args.controls_only:
@@ -389,12 +433,14 @@ def main():
                     rows.append(run_case(directory, binary, binding, 0, seed, batch_count=count))
                 except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                     rows.append(dict(status="failed", batch_count=count, seed=seed,
+                                     **failure_details(exc),
                                      error=f"{type(exc).__name__}: {exc}",
                                      directory=relative(directory)))
         if not args.smoke and not args.batch_only:
             rows.extend(controls(output, binary, binding))
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
-        rows.append(dict(status="failed", error=f"{type(exc).__name__}: {exc}"))
+        rows.append(dict(status="failed", **failure_details(exc),
+                         error=f"{type(exc).__name__}: {exc}"))
     limits = []
     if not args.smoke:
         limits.append("authentic historical five-domain fixtures unavailable in supplied RTL-only intake")
@@ -408,9 +454,8 @@ def main():
     with (output/"result.json").open("x") as out:
         json.dump(result, out, indent=2)
     receipt.update(end=timestamp(), exit=int(result["status"]!="passed"),
-                   result=relative(output/"result.json"),
-                   timed_out=any(json.loads(p.read_text()).get("timed_out", False)
-                                 for p in output.rglob("*.receipt.json")))
+                   result=relative(output/"result.json"), **nested_outcomes(output))
+    receipt["timed_out"] = receipt["nested_timed_out"] or receipt["budget_exhausted"]
     with (output/"receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
     print(json.dumps(result), flush=True)
