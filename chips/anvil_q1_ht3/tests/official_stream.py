@@ -22,6 +22,7 @@ from retention import artifacts_intact, digest, execution_logs_intact
 TOP = "anvil_q1_ht3_top"
 DRIVER = "tests/official_stream.cpp"
 DEPENDENCIES = [DRIVER, "tests/official_stream.py", "tests/execution.py"]
+COMPILE_OPTIONS = ["-O3", "-CFLAGS", "-O3"]
 SUMMARY = re.compile(
     r"^SHARD cycles=(\d+) state=(\d+) accepted=(\d+) completed=(\d+) "
     r"current_logits=(\d+) reads=(\d+) writes=(\d+) debt=(\d+) csr=(\d+) "
@@ -40,7 +41,8 @@ def compiled(output, parameters=None):
                       ["verilator", "--version"]).strip()
     identity = dict(schema=1, top=TOP, parameters=parameters or {},
                     source_sha256={p: current[p] for p in [*sources, *DEPENDENCIES]},
-                    tool_version=version, savable=True, public_pins_only=True)
+                    tool_version=version, savable=True, public_pins_only=True,
+                    compile_options=COMPILE_OPTIONS)
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
     cache = ROOT/"evidence/compiled"
     cache.mkdir(parents=True, exist_ok=True)
@@ -64,7 +66,8 @@ def compiled(output, parameters=None):
     objects.mkdir(parents=True)
     shutil.copyfile(ROOT/DRIVER, objects/"driver.cpp")
     execute(["verilator", "--cc", "--exe", "--build", "--savable",
-             "-Wno-fatal", "-j", "2", "--top-module", TOP, "--Mdir", relative(objects),
+             "-Wno-fatal", "-j", "2", *COMPILE_OPTIONS,
+             "--top-module", TOP, "--Mdir", relative(objects),
              *[f"-G{k}={v}" for k, v in (parameters or {}).items()],
              *sources, "driver.cpp"], directory, "compile", ["verilator", "--version"])
     binary = objects/f"V{TOP}"

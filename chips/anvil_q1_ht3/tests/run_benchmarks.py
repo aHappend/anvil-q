@@ -258,54 +258,13 @@ def checkpoint_image(output, bindings):
 
 def score_executed(work, stream, bindings, output):
     """Score only actual completed RTL vectors, never reference-only substitutes."""
-    import numpy as np
+    from official_scoring import reference_rows
 
     tokenizer = Tokenizer(ROOT/bindings["tokenizer.json"]["path"])
     checkpoint = Checkpoint(ROOT/bindings["model.safetensors"]["path"])
     config = json.loads((ROOT/bindings["config.json"]["path"]).read_text())
-    oracles = {name: QwenFP64(config, checkpoint, represented)
-               for name, represented in (("native", False), ("represented_image", True))}
     actual_positions = {int(p): record for p, record in stream["observations"].items()}
-    rows = []
-    for position, token in enumerate(work["token_ids"][:-1]):
-        if not actual_positions or position > max(actual_positions):
-            break
-        if remaining() < 45:
-            break
-        references = {name: model.step(token) for name, model in oracles.items()}
-        if position not in actual_positions:
-            if position % 16 == 0:
-                print(f"REFERENCE_PROGRESS task={work['task']} id={work['id']} "
-                      f"position={position}", flush=True)
-            continue
-        captured = actual_positions[position]
-        path = ROOT/captured["path"]
-        if digest(path) != captured["sha256"]:
-            raise AssertionError("official RTL logit capture changed before scoring")
-        actual = np.fromfile(path, dtype="<f4").astype(np.float64)
-        if actual.shape != (151936,):
-            raise AssertionError("official RTL scored vector is not full vocabulary")
-        target = work["token_ids"][position+1]
-        comparisons = {}
-        for name, reference in references.items():
-            path = output/f"reference-{name}-{position}.f64"
-            with path.open("xb") as out:
-                reference.astype("<f8").tofile(out)
-            try:
-                metric = scored_position(actual.tolist(), reference.tolist(), target)
-                comparisons[name] = dict(status="passed", **metric)
-            except AssertionError as exc:
-                comparisons[name] = dict(status="failed", error=str(exc),
-                                         required_cosine=0.9999)
-            comparisons[name].update(reference=relative(path), reference_sha256=digest(path))
-        # Likelihood remains an actual-output metric even when numerical acceptance fails.
-        maximum = float(actual.max())
-        nll = maximum+math.log(math.fsum(math.exp(float(x)-maximum) for x in actual))-float(actual[target])
-        rows.append(dict(position=position, shifted_target=target, actual=captured,
-                         comparisons=comparisons, nll=nll, greedy_token=int(actual.argmax())))
-        print(f"SCORED_PROGRESS task={work['task']} id={work['id']} position={position} "
-              f"native={comparisons['native']['status']} "
-              f"represented={comparisons['represented_image']['status']}", flush=True)
+    rows, continuation = reference_rows(work, stream, bindings, config, checkpoint)
     passed = (stream["status"] == "passed" and
               [r["position"] for r in rows] == work["scored_positions"] and
               all(c["status"] == "passed" for r in rows for c in r["comparisons"].values()))
@@ -318,7 +277,8 @@ def score_executed(work, stream, bindings, output):
                   decoding="greedy next-token predictions on the official teacher-forced context; "
                            "not an autoregressive sampled completion",
                   quantization="native BF16 weights/cache; no INT4/INT8 weight quantization",
-                  reference_comparisons=["native FP64", "represented-image FP64"])
+                  reference_comparisons=["native FP64", "represented-image FP64"],
+                  reference_continuation=continuation)
     result["pending_reference_positions"] = sorted(set(actual_positions) -
                                                   {r["position"] for r in rows})
     if rows and work["task"] == "wikitext" and len(rows) == work["scored_tokens"]:
@@ -335,7 +295,7 @@ def score_executed(work, stream, bindings, output):
     return result
 
 
-def evaluate(output, works, bindings, image, stream_smoke=False):
+def evaluate(output, works, bindings, image, stream_smoke=False, profile_chunks=None):
     from official_stream import compiled, run_stream
 
     binary, binding = compiled(output)
@@ -353,7 +313,8 @@ def evaluate(output, works, bindings, image, stream_smoke=False):
         try:
             stream = run_stream(directory, image, manifest["descriptors"],
                                 evaluated["token_ids"][:-1],
-                                set(evaluated["scored_positions"]), 151936, binary, binding)
+                                set(evaluated["scored_positions"]), 151936, binary, binding,
+                                max_new_chunks=profile_chunks)
             scored = score_executed(evaluated, stream, bindings, directory)
             row = dict(task=work["task"], id=work["id"], status=scored["status"],
                        tokens=len(evaluated["token_ids"])-1,
@@ -376,7 +337,11 @@ def main():
     mode.add_argument("--prepare-only", action="store_true")
     mode.add_argument("--stream-smoke", action="store_true",
                         help="full-Qwen first-token RTL diagnostic, not official task acceptance")
+    parser.add_argument("--profile-chunks", type=int,
+                        help="bounded setup throughput diagnostic; requires --stream-smoke")
     args = parser.parse_args()
+    if args.profile_chunks is not None and (not args.stream_smoke or args.profile_chunks < 1):
+        parser.error("--profile-chunks requires --stream-smoke and a positive count")
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
     receipt = dict(argv=["python3", "tests/run_benchmarks.py", *sys.argv[1:]], cwd=".",
@@ -389,7 +354,8 @@ def main():
         if not args.prepare_only:
             if not failures:
                 image = checkpoint_image(output, bindings)
-                rows = evaluate(output, works, bindings, image, args.stream_smoke)
+                rows = evaluate(output, works, bindings, image, args.stream_smoke,
+                                args.profile_chunks)
         passed = not failures and (args.prepare_only or
                   (bool(rows) and all(r["status"] == "passed" for r in rows)))
         result = dict(status="passed" if passed else "failed",

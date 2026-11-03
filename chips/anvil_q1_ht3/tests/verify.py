@@ -83,10 +83,26 @@ def dependencies(script):
         "tests/run_benchmarks.py": ["tests/official_inputs.json", "tests/official_reference.py",
                                    "tests/acquire_public.py", "tests/reference.py",
                                    "tests/run_compatibility.py", "tests/official_image.py",
-                                   "tests/official_stream.py", "tests/official_stream.cpp"],
+                                   "tests/official_stream.py", "tests/official_stream.cpp",
+                                   "tests/official_scoring.py", "tests/retention.py"],
+        "tests/run_stream_checkpoint.py": ["tests/official_stream.py",
+                                          "tests/official_stream.cpp", "tests/reference.py",
+                                          "tests/run_compatibility.py", "tests/retention.py"],
+        "tests/run_parameters.py": ["tests/top_csr_tb.sv", "tests/parameter_leaf_tb.sv",
+                                    *[relative(p) for p in sorted(
+                                        ROOT.glob("anvil_q1_ht2_reference/rtl/*.sv"))]],
+        "tests/run_synthesis.py": ["tests/yosys_frontend.py", "tests/retention.py"],
+        "tests/run_mutations.py": ["tests/run_mutation_case.py", "tests/run_packed_cache.py",
+                                  "tests/packed_cache_tb.sv", "tests/run_epilogue.py",
+                                  "tests/epilogue_tb.sv", "tests/run_attention.py",
+                                  "tests/attention_tb.sv", "tests/reference.py",
+                                  "tests/retention.py"],
     }
     if script not in owned:
         return list(hashes())
+    if script in ("tests/run_compatibility.py", "tests/run_integrated_geometry.py",
+                  "tests/run_performance.py"):
+        owned[script] = [*owned[script], "tests/retention.py"]
     return sources + shared + [script] + owned[script]
 
 

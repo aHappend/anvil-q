@@ -199,6 +199,7 @@ def find_result(argv, dependencies, versions, allow_failure=False):
     candidates = []
     for result_path in (ROOT / "evidence/l1").glob("run-*/*/result.json"):
         candidates.append(result_path)
+    candidates.extend((ROOT/"evidence/preparation").glob("*/shard-*/result.json"))
     for result_path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
         bound = validated_result(result_path, argv, dependencies, versions, allow_failure)
         if bound is not None:

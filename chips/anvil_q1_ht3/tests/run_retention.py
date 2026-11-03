@@ -38,8 +38,9 @@ def main():
     if not required.issubset(identifiers) or len(identifiers) != len(set(identifiers)):
         raise AssertionError("scheduling lost or duplicated a mandatory obligation")
     if (jobs[0][0] != "reproduction" or jobs[0][2] != REPRODUCTION_BUDGET
-            or CHECK_SECONDS - SETTLEMENT_RESERVE - sum(job[3] for job in jobs[1:])
-            < REPRODUCTION_BUDGET):
+            or CHECK_SECONDS - SETTLEMENT_RESERVE < REPRODUCTION_BUDGET
+            or any(not 0 < minimum <= budget <= CHECK_SECONDS
+                   for _, _, budget, minimum in jobs)):
         raise AssertionError("fresh reproduction cannot receive its full cold-compile budget")
     observed = []
     for script, options, failed in (

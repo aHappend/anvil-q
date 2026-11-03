@@ -197,7 +197,7 @@ class QwenFP64:
     def boundary(self, x):
         return narrow_bf16(x) if self.represented else x
 
-    def step(self, token):
+    def step(self, token, emit_logits=True):
         c, w, p = self.c, self.weights, self.position
         if p >= c["max_position_embeddings"] or not 0 <= token < c["vocab_size"]:
             raise ValueError("official model token/position outside contract")
@@ -238,6 +238,9 @@ class QwenFP64:
             hidden = self.boundary(gate*sigmoid*up)
             x = x+w.tensor(prefix+"mlp.down_proj.weight") @ hidden
         final = self.boundary(self.norm(x, w.tensor("model.norm.weight")))
+        if not emit_logits:
+            self.position += 1
+            return None
         logits = np.empty(c["vocab_size"], dtype=np.float64)
         for start in range(0, len(logits), 1024):
             logits[start:start+1024] = w.tensor("model.embed_tokens.weight",
