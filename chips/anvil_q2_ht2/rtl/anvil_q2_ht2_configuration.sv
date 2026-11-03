@@ -62,7 +62,7 @@ module anvil_q2_ht2_configuration #(
     .legacy_cfg_rsp_ready(forwarded_rsp_ready),.legacy_cfg_rdata(forwarded_rdata),
     .legacy_cfg_error(forwarded_error)
   );
-  anvil_q2_ht_configuration #(
+  anvil_q2_ht2_legacy_configuration #(
     .NUM_LAYERS(NUM_LAYERS),.HIDDEN_SIZE(HIDDEN_SIZE),
     .INTERMEDIATE_SIZE(INTERMEDIATE_SIZE),.NUM_Q_HEADS(NUM_Q_HEADS),
     .NUM_KV_HEADS(NUM_KV_HEADS),.HEAD_DIM(HEAD_DIM),.GROUP_SIZE(GROUP_SIZE),

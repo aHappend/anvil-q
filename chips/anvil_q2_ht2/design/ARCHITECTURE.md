@@ -27,9 +27,9 @@ Native scalar, vector, rotate-half pair and transactional-cache attention
 operators are connected by that sequencer.
 A native shared-memory adapter reuses the parent DDR
 arbitrator for one weight stream and three acknowledged single-beat clients.
-A connected configuration subsystem routes
-legacy requests to the unchanged parent and native requests to a separately
-validated atomic descriptor bank. A connected weight path expands required
+A connected configuration subsystem routes legacy requests to a project-owned
+RAM-oriented parent adaptation and native requests to a separately validated
+atomic descriptor bank. The reference RTL remains immutable. A connected weight path expands required
 metadata groups and feeds the sparse DMA through one shared read interface
 with explicit ordered memory ownership. Neither
 subsystem has independent execution evidence yet.
@@ -58,6 +58,8 @@ Naming a leaf or subsystem is not evidence that the top uses it.
 | `anvil_q2_ht2_descriptor_check.sv` | Registered native descriptor shape, format, stride, extent and region checks |
 | `anvil_q2_ht2_native_configuration.sv` | Shadow/committed banks, cache reservation, overlap scanning and atomic native descriptor publication |
 | `anvil_q2_ht2_configuration.sv` | Connected mode adapter and legacy/native configuration routing |
+| `anvil_q2_ht2_legacy_configuration.sv` | Parent-compatible controller with synchronous 32-bit shadow banks, reset validity, COPY prefetch and one range write port |
+| `anvil_q2_ht2_legacy_top.sv` | Parent top adaptation binding the repaired controller into actual legacy execution; unchanged datapath/control connections |
 | `anvil_q2_ht2_metadata_tile.sv` | Exact slot-union group selection, cached metadata reads and per-lane expansion |
 | `anvil_q2_ht2_weight_path.sv` | Eight ordered independently prepared tile contexts, local decoders, shared W2 cache, registered sixteen-client/eight-owner read arbitration and ordered owner drainage |
 | `anvil_q2_ht2_payload_prefetch.sv` | Context-local exact needed-beat gather, isolated image, W2 beat reuse and cancellation drainage through the shared arbiter |
@@ -106,7 +108,6 @@ iverilog -g2012 -t null \
   -s anvil_q2_ht2_rope_pair \
   -s anvil_q2_ht2_scalar_reader \
   rtl/*.sv \
-  anvil_q2_ht_reference/rtl/anvil_q2_ht_configuration.sv \
   anvil_q2_ht_reference/rtl/anvil_q2_ht_ddr_fabric.sv
 ```
 
@@ -267,9 +268,57 @@ response until consumption. Cancel on that edge wins over publication.
 
 ### Configuration and shared weight loading
 
+#### Legacy configuration repair boundary
+
+The retained diagnosis
+`evidence/preparation/parent-configuration-inference-20261103T143717Z-81c55ba0/receipt.json`
+reports failed parent shadow/range RAM inference, not a proven cause of the
+whole-top timeout. The project-owned `anvil_q2_ht2_legacy_top` adapts the parent
+top only to bind `anvil_q2_ht2_legacy_configuration` into the actual
+`legacy_product` instance. The immutable parent top remains available for
+independent comparison. Legacy descriptors, arithmetic, validation order,
+overlap/embedding-alias checks and external interfaces remain unchanged.
+
+The legacy controller uses sixteen fixed 32-bit shadow RAM banks with one
+shared synchronous read address. Resettable word-validity registers mask
+unwritten RAM without resetting payload storage. The existing committed RAM
+retains its fixed-width synchronous ports. START and APPEND select one range
+write tuple; SCAN retains its registered load/compare alternation.
+
+The following cycle/degenerate-boundary table fixes the repair contract before
+implementation. Transfers are sampled from pre-edge valid/ready; registered
+results appear immediately after that edge.
+
+| Pre-edge event | Post-edge behavior |
+|---|---|
+| Aligned descriptor CSR read accepted at n | RAM word and mask, response word selector and response validity register at n; selected word is visible after n, with no added wait edge |
+| CSR write accepted | Only the addressed word and its validity bit change; the write response is zero |
+| Held CSR response | Read data, mask and word selector hold; no new request, validation or shadow read can start |
+| LOAD | Shadow descriptor and mask register; unchanged SHAPE validation consumes them at the next edge |
+| Final NEXT | Descriptor zero is prefetched while index becomes zero and state becomes COPY |
+| Nonfinal COPY | Current prefetched descriptor writes the inactive committed bank, and its successor is prefetched |
+| Final COPY | Final descriptor writes, active bank flips, and loaded/mode/cache fields publish together |
+| SCAN with unloaded prior range | Prior range registers load; overlap comparison remains on the following edge |
+| START or APPEND | Exactly one write to each range array, at zero or the old range count respectively |
+| Asynchronous reset, including an otherwise publishing edge | Public outputs and validity clear; no publication; unreset payload RAM is inaccessible |
+| First post-reset edge without a request | Idle readiness, empty masks and no write/publication |
+| Annul on LOAD/COPY/START/APPEND/SCAN | No new RAM access or publication; an active validation returns the parent's error response, independently pending descriptor response is annulled |
+| Simultaneous CSR/descriptor requests | Shadow and committed read ports are independent; accepted descriptor responses retain the parent's timing |
+| Single remaining COPY entry | First/final write uses the already prefetched word and publishes once |
+| One layer, singleton legal dimensions, non-power-of-two entry count | Still 32 or more descriptor entries; explicit terminal comparisons, never masked entry-count wrap |
+
+CSR writes cannot coincide with shadow reads because responses serialize CSR
+requests and validation blocks requests. Annul wins over publication. Reset
+clears per-entry validity with fixed generated ownership rather than a
+procedural reset-loop variable. This is an inference-oriented implementation
+change, not verified equivalence or measured physical closure. Independent
+parent-versus-adaptation CSR/validation/publication checks and fresh isolated
+RAM mapping are required before attributing any physical-build improvement.
+
 The mode-control adapter implements the three HT2 extension addresses.
-The new configuration wrapper connects its forwarded requests to the unchanged
-parent configuration in legacy mode, or to the native controller otherwise.
+The configuration wrapper connects its forwarded requests to the project-owned
+legacy configuration adaptation in legacy mode, or to the native controller
+otherwise.
 One adapter owner spans the request/response lifetime, including cancelled
 response drainage. Native BF16/K=1 are reset defaults. Native legacy-selector
 shadows remain readable/writable but cannot override HT2_MODE's selected

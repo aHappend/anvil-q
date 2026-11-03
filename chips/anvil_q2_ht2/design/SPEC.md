@@ -50,11 +50,20 @@ configuration transactions. A forwarded request owns the downstream response
 until it is captured or drained after cancellation. Invalid writes never
 partially update mode/K.
 
-`anvil_q2_ht2_configuration` now connects this adapter to the unchanged parent
-configuration controller in legacy mode and to a separate native controller
-otherwise. It remains an internal configuration subsystem. The product top
-uses the same mode adapter with the complete unchanged parent product for
-legacy execution, rather than instantiating a second parent configuration bank.
+`anvil_q2_ht2_configuration` connects this adapter to the project-owned
+`anvil_q2_ht2_legacy_configuration` in legacy mode and to a separate native
+controller otherwise. It remains an internal configuration subsystem. The
+product top uses the same mode adapter with `anvil_q2_ht2_legacy_top` for legacy
+execution, rather than instantiating a second legacy configuration bank.
+That top is a source adaptation of the immutable parent: it binds the
+RAM-oriented legacy controller and expresses the same legal Q/KV head ratio
+without division. All other parent datapath/control connections remain intact.
+The controller banks shadow words, shares a synchronous read port among CSR,
+LOAD and COPY prefetch, and normalizes range writes. Its public CSR response
+still appears immediately after the accepting edge; held responses, zero masks,
+validation order and atomic committed-bank publication retain parent semantics.
+See the legacy repair cycle table in `ARCHITECTURE.md`. These compatibility
+requirements require independent comparison; source adaptation is not proof.
 Every mode-bit change invalidates native descriptor publication; legacy
 configuration is reset on a mode change or explicit configuration invalidation.
 Software must revalidate the model after changing mode, and rewrite legacy

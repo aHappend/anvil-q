@@ -223,7 +223,7 @@ module anvil_q2_ht2_top #(
       .desc_rsp_valid(desc_rsp_valid),.desc_rsp_ready(desc_rsp_ready),
       .desc_rsp_data(desc_data),.desc_rsp_error(desc_rsp_error)
     );
-    anvil_q2_ht_top #(
+    anvil_q2_ht2_legacy_top #(
       .NUM_LAYERS(NUM_LAYERS),.HIDDEN_SIZE(HIDDEN_SIZE),
       .INTERMEDIATE_SIZE(INTERMEDIATE_SIZE),.NUM_Q_HEADS(NUM_Q_HEADS),
       .NUM_KV_HEADS(NUM_KV_HEADS),.HEAD_DIM(HEAD_DIM),.GROUP_SIZE(GROUP_SIZE),
