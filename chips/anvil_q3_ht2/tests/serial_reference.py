@@ -160,20 +160,20 @@ class SerialModel:
                     (geometry.hidden, geometry.intermediate),
                     (geometry.hidden, geometry.intermediate),
                     (geometry.intermediate, geometry.hidden)):
-                if outputs % 8:
-                    raise ValueError("packed-image oracle requires whole AWQ row words")
+                packed_outputs = ((outputs + 7) // 8) * 8
+                stride = packed_outputs // 2
                 groups = inputs // geometry.group
                 weights = tuple(tuple(unpack_rows(int.from_bytes(image.read(
-                    offsets[0] + column * (outputs // 2), outputs // 2), "little"), outputs))
+                    offsets[0] + column * stride, stride), "little"), packed_outputs)[:outputs])
                     for column in range(inputs))
                 zeros = tuple(tuple(unpack_rows(int.from_bytes(image.read(
-                    offsets[1] + group * (outputs // 2), outputs // 2), "little"), outputs))
+                    offsets[1] + group * stride, stride), "little"), packed_outputs)[:outputs])
                     for group in range(groups))
                 scales = tuple(image.halves(offsets[2] + group * outputs * 2, outputs)
                                for group in range(groups))
                 projections.append(Matrix(weights, zeros, scales, geometry.group))
-                for region, count in enumerate((inputs * outputs // 2,
-                                               groups * outputs // 2,
+                for region, count in enumerate((inputs * stride,
+                                               groups * stride,
                                                groups * outputs * 2)):
                     offsets[region] += ((count + 63) // 64) * 64
             self.matrices.append(tuple(projections))

@@ -10,10 +10,11 @@ from receipts import ROOT, cleanup_build, execute, relative, compile_verilator
 from serial_reference import Geometry, PackedImage, SerialModel
 
 
-def generate_nonzero(run, mode, seed, layers=36):
+def generate_nonzero(run, mode, seed, layers=36, compact=False):
     model, vectors, lines, qreads = generate(
-        run, layers=layers, nonzero=True, seed=seed, varied=True)
-    geometry = Geometry(layers=layers)
+        run, layers=layers, nonzero=True, seed=seed, varied=True, compact=compact)
+    geometry = (Geometry(layers=layers, hidden=16, kv_heads=1, head_dim=2)
+                if compact else Geometry(layers=layers))
     oracle = SerialModel(PackedImage(model), geometry, mode)
     priming = oracle.evaluate(1, 0)
     chain = oracle.evaluate_tree(15, [3, 3, 3, 3], [4, 0, 1, 2], (priming,))
@@ -36,7 +37,8 @@ def generate_nonzero(run, mode, seed, layers=36):
                        "\n".join(f"{address:x}" for address in
                                  traffic["ffn_metadata_addresses"]) + "\n")
     vectors.write_text("\n".join(f"{value & 0xffffffff:x}" for value in priming.logits) +
-                       "\n" + address_vectors + traffic_vectors +
+                       f"\n{geometry.hidden} {geometry.kv_heads}\n" +
+                       address_vectors + traffic_vectors +
                        f"{len(expected_records)}\n" +
                        "\n".join(f"{address:x} {record:x}"
                                  for address, record in sorted(expected_records.items())) + "\n")
@@ -51,8 +53,8 @@ def generate_nonzero(run, mode, seed, layers=36):
 
 
 def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
-                         diagnostic_cycles=262144, layers=36):
-    model, vectors, lines, qreads = generate_nonzero(run, mode, seed, layers)
+                         diagnostic_cycles=262144, layers=36, compact=False):
+    model, vectors, lines, qreads = generate_nonzero(run, mode, seed, layers, compact)
     obj = run / "integrated-obj"
     obj.mkdir()
     driver = obj / "integrated_driver.cpp"
@@ -70,6 +72,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
         *(["-CFLAGS", "-pg", "-LDFLAGS", "-pg"] if profile else []),
         f"-DHT2_TEST_CACHE_MODE={mode}",
         f"-DHT2_TEST_LAYERS={layers}",
+        *(["-DHT2_COMPACT_MODEL"] if compact else []),
         *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
@@ -103,7 +106,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
     binding = json.loads(bindings[0].read_text())
     compile_receipt = json.loads((ROOT / binding["compile_receipt"]).read_text())
     summary = {
-        "mode": mode, "seed": seed, "layers": layers,
+        "mode": mode, "seed": seed, "layers": layers, "compact": compact,
         "diagnostic_only": diagnostic, "observed": observation,
         "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",
         "fixture": "independently decoded nonzero AWQ packed image and dense serial HT2 oracle",

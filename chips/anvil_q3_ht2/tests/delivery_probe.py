@@ -92,11 +92,13 @@ def worker(run, focus):
             ledger.check("clean-reproduction", clean_reproduction)
         elif focus == "integration-boundary":
             ledger.check("integrated-one-layer-mode1", run_fast_integration, 1, 17,
-                         layers=1)
+                         layers=1, compact=True)
         elif focus == "integration":
-            integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
+            integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17,
+                                      compact=True)
             ledger.check("performance", run_performance, integrated)
-            ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
+            ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29,
+                         compact=True)
         elif focus == "compatibility":
             ledger.check("compatibility-mode2", run_compatibility, 2)
             ledger.check("compatibility-mode1", run_compatibility, 1)

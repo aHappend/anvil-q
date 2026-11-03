@@ -13,10 +13,13 @@ from receipts import ROOT, execute, new_run, relative, cleanup_build
 from reference import pack_rows, nearest_div
 
 
-def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary=8):
+def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary=8,
+             compact=False):
     if not 1 <= vocabulary <= 8:
         raise ValueError("compact fixture vocabulary must be between one and eight")
-    hidden, intermediate, kvdim, group, maximum = 64, 8, 8, 8, 8
+    hidden, intermediate, kvdim, group, maximum = (
+        (16, 8, 2, 8, 8) if compact else (64, 8, 8, 8, 8))
+    head_dim = 2 if compact else 4
     image = {}
 
     def store(address, data):
@@ -36,19 +39,20 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary
                 (hidden, hidden), (hidden, kvdim), (hidden, kvdim), (hidden, hidden),
                 (hidden, intermediate), (hidden, intermediate), (intermediate, hidden))):
             groups = inputs // group
+            packed_outputs = ((outputs + 7) // 8) * 8
             zeros = [[(row * 3 + g * 5 + layer + projection + seed - 17) & 15
-                      for row in range(outputs)] for g in range(groups)]
+                      for row in range(packed_outputs)] for g in range(groups)]
             qweight = b"".join(pack_rows(
                 [(value + 1) & 15 for value in zeros[column // group]]
                 if nonzero else zeros[column // group]).to_bytes(
-                outputs // 2, "little") for column in range(inputs))
-            qzero = b"".join(pack_rows(row).to_bytes(outputs // 2, "little")
+                packed_outputs // 2, "little") for column in range(inputs))
+            qzero = b"".join(pack_rows(row).to_bytes(packed_outputs // 2, "little")
                              for row in zeros)
             scales = (b"\x00\x14" if nonzero else b"\x00\x3c") * (groups * outputs)
             for region, data in enumerate((qweight, qzero, scales)):
                 store(offsets[region], data)
                 if region == 0:
-                    qreads.extend((offsets[0] + column * (outputs // 2)) & ~63
+                    qreads.extend((offsets[0] + column * (packed_outputs // 2)) & ~63
                                   for column in range(inputs))
                     qprojections.extend([projection] * inputs)
                 elif projection >= 4:
@@ -64,7 +68,7 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary
         rotations = ((1 << 30, 0), (0, 1 << 30), (-(1 << 30), 0), (0, -(1 << 30)))
         store(0x6e000000, b"".join(
             coefficient.to_bytes(4, "little", signed=True)
-            for position in range(maximum) for _ in range(2)
+            for position in range(maximum) for _ in range(head_dim // 2)
             for coefficient in rotations[position % 4]))
     else:
         # Zero projected Q/K makes these bounded coefficients immaterial.
