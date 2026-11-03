@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-03T09:25:34.567077+00:00",
+  "timestamp_utc": "2026-11-03T10:17:28.892491+00:00",
   "project_dir": "/data/sufeng/anvil-q3-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -10,11 +10,8 @@
   "map_summary": {
     "exists": true,
     "path": "/data/sufeng/anvil-q3-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
-    "error_count": 2,
-    "errors": [
-      "Error (10917): SystemVerilog $fatal at anvil_q3_fp_parameters.sv(41): 1ANVIL_Q3_FP PARAMETER ERROR: dimensions, modes or address bounds File: /data/sufeng/anvil-q3-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q3_fp_parameters.sv Line: 41",
-      "Error (12152): Can't elaborate user hierarchy \"anvil_q3_fp_parameters:parameters_ok\" File: /data/sufeng/anvil-q3-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q3_fp_top.sv Line: 69"
-    ],
+    "error_count": 0,
+    "errors": [],
     "lpm_divide_error_count": 0,
     "lpm_divide_errors": [],
     "warning_10268_count": 0,
@@ -23,31 +20,310 @@
     "uninferred_rams": []
   },
   "sta_summary": {
-    "exit_code": 3,
-    "netlist_mode": null,
-    "clocks": [],
-    "wns_setup_ns": null,
-    "wns_hold_ns": null,
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": -0.426,
+    "wns_hold_ns": 0.037,
     "unconstrained_setup_paths": 0,
     "unconstrained_functional_endpoints": 0,
     "unapproved_timing_exceptions": 0,
-    "failing_setup_count": 0,
+    "failing_setup_count": 20,
     "failing_hold_count": 0,
-    "setup_paths": [],
-    "hold_paths": [],
-    "stderr_tail": [
-      "------------------------------------------------",
-      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
-      "",
-      "    while executing",
-      "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_44_1j741.tcl\" line 2)",
-      "------------------------------------------------"
-    ]
+    "setup_paths": [
+      {
+        "slack_ns": -0.426,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.416,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.402,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.392,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.388,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.387,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.385,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.377,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.377,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][3]"
+      },
+      {
+        "slack_ns": -0.377,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][0]"
+      },
+      {
+        "slack_ns": -0.371,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "state.ABORT_FLUSH",
+        "to_node": "anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.367,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][3]"
+      },
+      {
+        "slack_ns": -0.367,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][0]"
+      },
+      {
+        "slack_ns": -0.365,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "state.COMPLETE",
+        "to_node": "anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.363,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.363,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      },
+      {
+        "slack_ns": -0.363,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][4]"
+      },
+      {
+        "slack_ns": -0.363,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][1]"
+      },
+      {
+        "slack_ns": -0.363,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[23][2]"
+      },
+      {
+        "slack_ns": -0.359,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "state.ABORT_FLUSH",
+        "to_node": "anvil_q3_bank_scheduler:bank_scheduler|successor[20][3]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.037,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[6].storage|head|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[6].storage|head"
+      },
+      {
+        "slack_ns": 0.037,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[3].dot8|anvil_q3_fp_vector:multiply|valid[1]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[3].dot8|anvil_q3_fp_vector:multiply|valid[1]"
+      },
+      {
+        "slack_ns": 0.037,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[2].dot8|anvil_q3_fp_vector:reduce0|anvil_q3_fp_add:operators[0].sum.leaf|valid0|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[2].dot8|anvil_q3_fp_vector:reduce0|anvil_q3_fp_add:operators[0].sum.leaf|valid0"
+      },
+      {
+        "slack_ns": 0.038,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[4].storage|head|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[4].storage|head"
+      },
+      {
+        "slack_ns": 0.038,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[7].accumulator|valid[0]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[7].accumulator|valid[0]"
+      },
+      {
+        "slack_ns": 0.038,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[4].accumulator|valid[0]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[4].accumulator|valid[0]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_swiglu_mlp:mlp|anvil_q3_fp_elementwise:silu_product|anvil_q3_fp_silu:silu|anvil_q3_fp_divider:divide|state.ITERATE|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_swiglu_mlp:mlp|anvil_q3_fp_elementwise:silu_product|anvil_q3_fp_silu:silu|anvil_q3_fp_divider:divide|state.ITERATE"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[1].storage|all_read|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[1].storage|all_read"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|engines[1].meta_tail[0]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|engines[1].meta_tail[0]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[2].accumulator|meta0[0]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[2].accumulator|meta0[0]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[5].dot8|anvil_q3_fp_vector:awq_prefix|anvil_q3_fp_mul:operators[2].product.leaf|valid2|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[5].dot8|anvil_q3_fp_vector:awq_prefix|anvil_q3_fp_mul:operators[2].product.leaf|valid2"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gqa_attention:attention|anvil_q3_fp_kv_cache:kv_cache|decoding[1]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gqa_attention:attention|anvil_q3_fp_kv_cache:kv_cache|decoding[1]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[6].dot8|anvil_q3_fp_vector:multiply|anvil_q3_fp_mul:operators[3].product.leaf|valid1|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[6].dot8|anvil_q3_fp_vector:multiply|anvil_q3_fp_mul:operators[3].product.leaf|valid1"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[6].dot8|anvil_q3_fp_vector:multiply|anvil_q3_fp_mul:operators[3].product.leaf|valid2|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[6].dot8|anvil_q3_fp_vector:multiply|anvil_q3_fp_mul:operators[3].product.leaf|valid2"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[6].dot8|anvil_q3_fp_vector:multiply|anvil_q3_fp_mul:operators[2].product.leaf|valid2|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[6].dot8|anvil_q3_fp_vector:multiply|anvil_q3_fp_mul:operators[2].product.leaf|valid2"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[5].dot8|anvil_q3_fp_vector:awq_prefix|anvil_q3_fp_mul:operators[2].product.leaf|valid0|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[5].dot8|anvil_q3_fp_vector:awq_prefix|anvil_q3_fp_mul:operators[2].product.leaf|valid0"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_rmsnorm:final_norm",
+        "to_node": "state.EPS_ADD|anvil_q3_fp_rmsnorm:final_norm|state.EPS_ADD"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[1].storage|fill_select|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_weight_prefetcher:weight_prefetcher|anvil_q3_fp_weight_prefetch_bank:banks[1].storage|fill_select"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[5].dot8|mode_awq|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_dot8:engines[5].dot8|mode_awq"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q3_fp_decoder_layer:decoder",
+        "to_node": "anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[5].accumulator|valid[1]|anvil_q3_fp_decoder_layer:decoder|anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|anvil_q3_fp_vector:engines[5].accumulator|valid[1]"
+      }
+    ],
+    "stderr_tail": []
   },
-  "detail": "quartus_map reported 2 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "detail": "Setup WNS -0.426 ns < 0.000 ns (worst path: anvil_q3_fp_decoder_layer:decoder -> anvil_q3_fp_gemv:gemv|anvil_q3_fp_tensor_array:tensor_array|failed|anvil_q3_bank_scheduler:bank_scheduler|successor[20][3])",
   "quartus_slot_telemetry": {
-    "slot_index": 1,
+    "slot_index": 4,
     "max_slots": 6,
     "slot_wait_s": 0.002
   },
@@ -55,17 +331,30 @@
   "clock_port": "clk",
   "clock_period_ns": 10.0,
   "target_frequency_mhz": 100.0,
+  "fmax_mhz": 95.91,
+  "critical_path_delay_ns": 10.426,
+  "fitter_resource_summary": {
+    "alms_used": 122842,
+    "alms_total": 427200,
+    "alms_pct": "29 %",
+    "total_registers": 80756,
+    "block_memory_bits": 8192,
+    "m20k_ram_blocks": 64,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 139,
+    "virtual_pins": 2550
+  },
   "parameters": {
-    "PROFILE": 1,
+    "PROFILE": 3,
     "VOCAB_SIZE": 16,
-    "HIDDEN_SIZE": 16,
-    "INTERMEDIATE_SIZE": 16,
+    "HIDDEN_SIZE": 64,
+    "INTERMEDIATE_SIZE": 64,
     "NUM_LAYERS": 2,
-    "NUM_Q_HEADS": 2,
+    "NUM_Q_HEADS": 8,
     "NUM_KV_HEADS": 1,
     "HEAD_DIM": 8,
     "GROUP_SIZE": 8,
-    "CACHE_BLOCK": 8,
+    "CACHE_BLOCK": 1,
     "TILE_K": 8,
     "TILE_ROWS": 2,
     "MAX_SEQ_LEN": 8

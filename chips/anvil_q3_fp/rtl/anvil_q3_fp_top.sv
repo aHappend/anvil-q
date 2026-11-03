@@ -59,6 +59,50 @@ module anvil_q3_fp_top #(
   wire [CLIENTS*32-1:0] c_req_row, c_req_col, c_req_wdata;
   wire [CLIENTS-1:0] c_rsp_valid, c_rsp_error, c_rsp_ready;
   wire [CLIENTS*32-1:0] c_rsp_rdata;
+  wire [CLIENTS-1:0] scheduler_req_valid, scheduler_req_ready, scheduler_req_write;
+  wire [CLIENTS*4-1:0] scheduler_req_kind;
+  wire [CLIENTS*32-1:0] scheduler_req_layer;
+  wire [CLIENTS*3-1:0] scheduler_req_proj;
+  wire [CLIENTS*32-1:0] scheduler_req_row, scheduler_req_col, scheduler_req_wdata;
+  genvar client;
+  generate for (client=0;client<CLIENTS;client=client+1) begin: request_staging
+    if (client<SB) begin: weight
+      reg pending;
+      reg [135:0] payload;
+      wire replace_request=!pending || scheduler_req_ready[client];
+      assign c_req_ready[client]=rst_n && !core_flush && replace_request;
+      assign scheduler_req_valid[client]=rst_n && !core_flush && pending;
+      assign {scheduler_req_write[client],scheduler_req_kind[client*4+:4],
+        scheduler_req_layer[client*32+:32],scheduler_req_proj[client*3+:3],
+        scheduler_req_row[client*32+:32],scheduler_req_col[client*32+:32],
+        scheduler_req_wdata[client*32+:32]}=payload;
+      // Local faults cannot change an accepted address before scheduler capture.
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+          pending<=0; payload<=0;
+        end else if (core_flush) begin
+          pending<=0; payload<=0;
+        end else if (replace_request) begin
+          pending<=c_req_valid[client];
+          if (c_req_valid[client])
+            payload<={c_req_write[client],c_req_kind[client*4+:4],
+              c_req_layer[client*32+:32],c_req_proj[client*3+:3],
+              c_req_row[client*32+:32],c_req_col[client*32+:32],
+              c_req_wdata[client*32+:32]};
+        end
+      end
+    end else begin: direct
+      assign c_req_ready[client]=scheduler_req_ready[client];
+      assign scheduler_req_valid[client]=c_req_valid[client];
+      assign scheduler_req_write[client]=c_req_write[client];
+      assign scheduler_req_kind[client*4+:4]=c_req_kind[client*4+:4];
+      assign scheduler_req_layer[client*32+:32]=c_req_layer[client*32+:32];
+      assign scheduler_req_proj[client*3+:3]=c_req_proj[client*3+:3];
+      assign scheduler_req_row[client*32+:32]=c_req_row[client*32+:32];
+      assign scheduler_req_col[client*32+:32]=c_req_col[client*32+:32];
+      assign scheduler_req_wdata[client*32+:32]=c_req_wdata[client*32+:32];
+    end
+  end endgenerate
   anvil_q3_fp_parameters #(
     .PROFILE(PROFILE),.NUM_LAYERS(NUM_LAYERS),.HIDDEN_SIZE(HIDDEN_SIZE),
     .INTERMEDIATE_SIZE(INTERMEDIATE_SIZE),.NUM_Q_HEADS(NUM_Q_HEADS),.NUM_KV_HEADS(NUM_KV_HEADS),
@@ -123,9 +167,11 @@ module anvil_q3_fp_top #(
   anvil_q3_bank_scheduler #(.BANKS(BANKS),.CLIENTS(CLIENTS),.QUEUE_DEPTH(QUEUE_DEPTH)) bank_scheduler (
     .clk(clk),.rst_n(rst_n),.flush(scheduler_flush),
     .idle(scheduler_idle),.drain_done(scheduler_drained),.fault(scheduler_fault),
-    .c_req_valid(c_req_valid),.c_req_ready(c_req_ready),.c_req_write(c_req_write),
-    .c_req_kind(c_req_kind),.c_req_layer(c_req_layer),.c_req_proj(c_req_proj),
-    .c_req_row(c_req_row),.c_req_col(c_req_col),.c_req_wdata(c_req_wdata),
+    .c_req_valid(scheduler_req_valid),.c_req_ready(scheduler_req_ready),
+    .c_req_write(scheduler_req_write),.c_req_kind(scheduler_req_kind),
+    .c_req_layer(scheduler_req_layer),.c_req_proj(scheduler_req_proj),
+    .c_req_row(scheduler_req_row),.c_req_col(scheduler_req_col),
+    .c_req_wdata(scheduler_req_wdata),
     .c_rsp_valid(c_rsp_valid),.c_rsp_error(c_rsp_error),.c_rsp_ready(c_rsp_ready),.c_rsp_rdata(c_rsp_rdata),
     .mem_req_valid(mem_req_valid),.mem_req_ready(mem_req_ready),
     .mem_req_write(mem_req_write),.mem_req_kind(mem_req_kind),

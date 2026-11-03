@@ -148,6 +148,41 @@ Mode 0 packs two raw elements; lossy modes use eight words per allocated
 block plus one metadata word. Requests retain logical addressing rather than
 encoding private byte pointers.
 
+### Registered weight-request boundary
+
+The top's `request_staging[client].weight` registers isolate weight-fetch
+clients `0..BANKS-1` from scheduler bank routing and ingress arbitration.
+Each holds one valid bit and the complete 136-bit request payload. Producer
+acceptance transfers ownership to this register; scheduler acceptance
+transfers it onward. An empty register accepts independently of scheduler
+backpressure, and a forwarded request may be replaced on the same edge.
+Held payload is not recomputed from producer validity or local flush.
+The response path and all scalar clients remain direct.
+
+This boundary addresses the retained native 10 ns setup failure
+(-0.426 ns setup WNS, +0.037 ns hold WNS): the reported path ran from tensor
+`failed` through prefetch request gating/address generation into scheduler
+`successor[20][3]`, not through a floating-point multiplier. With staging,
+that producer cone terminates at the request register; scheduler routing
+uses registered addresses and valid ownership. This is a structural repair,
+not a claim of new timing closure.
+
+Every native weight read and every AWQ q/z/scale read gains one unstalled
+clock between prefetch acceptance and scheduler eligibility. No response
+stage or arithmetic stage is added. Registers are independent across banks;
+the two tile slots and fill/consume overlap are unchanged. Measured command
+latency and bandwidth must be refreshed rather than reusing historical L1
+measurements.
+
+Local faults still propagate through the existing completion path and cannot
+rewrite an accepted staged read. Until top-level abort, such a read may be
+forwarded, but cannot create a write or resurrect tile ownership. Cancel and
+top-level core flush combinationally suppress stage input readiness and output
+valid, then clear staged ownership at the edge. The unchanged scheduler alone
+drains already accepted external transactions; unforwarded staged requests
+are annulled. Reset clears both payload and valid. This avoids delaying flush
+or masking errors to shorten the timing path.
+
 ## Cache hierarchy
 
 The cache controller owns committed positions and epochs. Bounded group
