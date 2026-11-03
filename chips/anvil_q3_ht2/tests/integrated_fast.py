@@ -49,7 +49,8 @@ def generate_nonzero(run, mode, seed):
     return model, vectors, lines, qreads
 
 
-def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False):
+def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
+                         diagnostic_cycles=262144):
     model, vectors, lines, qreads = generate_nonzero(run, mode, seed)
     obj = run / "integrated-obj"
     obj.mkdir()
@@ -59,7 +60,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False):
                for path in sorted((ROOT / directory).glob("*.sv"))]
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-        "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt",
+        "--flatten", "-O3",
         "--top-module", "integrated_clock_tb", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
@@ -71,7 +72,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False):
         result = execute(run, "integrated-clock-driver-simulate", [
             os.path.relpath(executable, run), f"+vectors={vectors.name}",
             f"+model={model.relative_to(run)}",
-            *(["+sample_cycles=16384"] if diagnostic else []),
+            *([f"+sample_cycles={diagnostic_cycles}"] if diagnostic else []),
             *(["+profile"] if profile else [])],
             ["verilator", "--version"], cwd=run)
     finally:
