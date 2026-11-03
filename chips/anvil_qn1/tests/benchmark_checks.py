@@ -25,6 +25,7 @@ from speculation_checks import replace_once, speculative_bench
 
 
 DOMAINS = ("gsm8k", "humaneval", "mmlu", "boolq", "hellaswag")
+FIXTURE_MANIFEST_SHA256 = "c722fcfd8acfd1c4895762fc33c1ce36c969f69d5a64520a3e67f5eef7132aed"
 ATTRIBUTION = {
     "gsm8k": {
         "authors": "Cobbe et al., OpenAI, GSM8K (2021)",
@@ -98,6 +99,15 @@ def fixture_manifest(domain):
          "attribution": ATTRIBUTION[domain]}
         for identifier, text in FIXTURES[domain]
     ]
+
+
+def check_fixture_manifest():
+    manifest = {domain: fixture_manifest(domain) for domain in DOMAINS}
+    digest = hashlib.sha256(json.dumps(
+        manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != FIXTURE_MANIFEST_SHA256:
+        raise AssertionError("fixed domain fixture/attribution manifest changed")
+    return manifest
 
 
 def compact_tokens(text, vocabulary=8):
@@ -216,6 +226,9 @@ def benchmark_bench():
 
 
 def run_benchmark_case(run, fixture, family, seed, thinking, compiled=None):
+    manifest = check_fixture_manifest()
+    if fixture not in [record for records in manifest.values() for record in records]:
+        raise AssertionError("benchmark case is not an immutable real-domain fixture")
     geometry = Geometry(q_heads=4 if family == 3 else 2)
     images = run.path / "checkpoint-images"
     prompt, evaluations, transactions = benchmark_images(images, fixture, geometry, seed, thinking)
@@ -255,7 +268,8 @@ def run_benchmark_case(run, fixture, family, seed, thinking, compiled=None):
     if output.count(expected) != 1:
         raise AssertionError("missing benchmark full-frame/KV comparisons")
     decode = [r for r in counts if r[1] == 1]
-    result = {"fixture": fixture, "family": family, "geometry": vars(geometry),
+    result = {"fixture": fixture, "fixture_manifest_sha256": FIXTURE_MANIFEST_SHA256,
+              "family": family, "geometry": vars(geometry),
               "prompt_tokens": prompt, "seed": seed, "thinking": thinking,
               "evaluations": evaluations, "transactions": transactions,
               "measurements": counts, "decode_cycles": sum(r[3] for r in decode),
@@ -273,6 +287,7 @@ def run_benchmark_case(run, fixture, family, seed, thinking, compiled=None):
 def run_benchmark(run, domain):
     if domain not in DOMAINS:
         raise ValueError(f"unknown benchmark domain: {domain}")
+    check_fixture_manifest()
     results, builds = [], {}
     for index, fixture in enumerate(fixture_manifest(domain)):
         family = (1, 2, 3, 3)[index]
@@ -288,6 +303,7 @@ def run_benchmark(run, domain):
             {r["geometry"]["q_heads"] for r in results} != {2, 4}):
         raise AssertionError("missing domain/family/mode benchmark coverage")
     return {"domain": domain, "scope": __doc__, "cases": results,
+            "fixture_manifest_sha256": FIXTURE_MANIFEST_SHA256,
             "fixture_count": 4, "compared_frames": sum(r["compared_frames"] for r in results),
             "compared_logit_words": sum(r["compared_logit_words"] for r in results),
             "modes": {str(int(mode)): {

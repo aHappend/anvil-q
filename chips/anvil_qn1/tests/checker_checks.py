@@ -5,6 +5,7 @@ simulations. Counterexamples are in-memory copies; retained evidence is read-onl
 """
 
 import copy
+import hashlib
 import json
 from types import SimpleNamespace
 
@@ -131,13 +132,14 @@ def run_delivery_checker(run):
     import time
     from unittest.mock import patch
     import budget
-    from benchmark_checks import DOMAINS, benchmark_bench, compact_tokens, fixture_manifest
+    from benchmark_checks import (DOMAINS, benchmark_bench, compact_tokens,
+                                  check_fixture_manifest)
     from behavior_suite import MODEL, validate_fusion
     from component_cache import component
     from production_checks import run_fusion_profile
     from defect_checks import MUTANTS
     from speculation_checks import replace_once
-    from suite_dispatch import jobs
+    from suite_dispatch import jobs, require_complete, tools_for
 
     parsed = []
     for path in sorted((ROOT / "tests").glob("*.py")):
@@ -147,6 +149,16 @@ def run_delivery_checker(run):
     dispatch_names = [name for name, _ in jobs()]
     if len(dispatch_names) != 11 or len(set(dispatch_names)) != 11:
         raise AssertionError("default dispatch omitted/duplicated a suite")
+    dispatch_rejections = [
+        rejection(lambda name=name: require_complete({}, name), f"dispatch:empty-{name}")
+        for name in dispatch_names
+    ]
+    for domain in DOMAINS:
+        dispatch_rejections.append(rejection(
+            lambda domain=domain: require_complete({"domain": domain}, f"benchmark-{domain}"),
+            f"dispatch:single-case-is-not-suite-{domain}"))
+    if any(not tools_for(name) for name in dispatch_names):
+        raise AssertionError("missing per-suite prerequisite tools")
     mutation_recipes = {}
     for name, (source, kind, substitutions, diagnostics) in MUTANTS.items():
         original = (ROOT / source).read_text()
@@ -156,7 +168,7 @@ def run_delivery_checker(run):
         if changed == original or not diagnostics:
             raise AssertionError(f"empty mutation recipe: {name}")
         mutation_recipes[name] = {"source": source, "oracle": kind}
-    fixtures = {domain: fixture_manifest(domain) for domain in DOMAINS}
+    fixtures = check_fixture_manifest()
     for domain, records in fixtures.items():
         if (len(records) != 4 or len({r["id"] for r in records}) != 4 or
                 len({tuple(compact_tokens(r["description"])) for r in records}) != 4):
@@ -179,6 +191,16 @@ def run_delivery_checker(run):
             pass
         else:
             raise AssertionError("expired check created another child/output")
+    from concurrent.futures import ThreadPoolExecutor
+    worker = budget.Run.__new__(budget.Run)
+    worker.commands = []
+    with patch.object(budget.BaseRun, "execute", return_value="thread-clock-checked"), \
+            patch.object(budget.signal, "setitimer",
+                         side_effect=AssertionError("worker altered the process alarm")):
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            answer = executor.submit(worker.execute, ["python3", "--version"], "thread-clock").result()
+        if answer != "thread-clock-checked":
+            raise AssertionError("worker lost cumulative-budget execution")
     candidates = sorted((ROOT / "evidence/preparation").glob("fusion-compact-*/receipt.json"),
                         key=lambda p: p.stat().st_mtime, reverse=True)
     applicable = None
@@ -220,7 +242,10 @@ def run_delivery_checker(run):
     return {"scope": "source/checker diagnostics and compact fusion component, not full behavior",
             "parsed_sources": parsed, "fixtures": fixtures,
             "default_dispatch": dispatch_names, "mutation_recipes": mutation_recipes,
+            "dispatch_counterexamples": dispatch_rejections,
+            "fixture_manifest_sha256": hashlib.sha256(json.dumps(
+                fixtures, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
             "compact_profile1_applicability": applicable,
             "compact_profile1_counts": {
                 name: result[name] for name in ("extra_cycles", "compact_diagnostic", "profile")},
-            "rejected_counterexamples": rejected, "cumulative_budget_properties": 4}
+            "rejected_counterexamples": rejected, "cumulative_budget_properties": 5}

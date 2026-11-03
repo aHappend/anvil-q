@@ -17,6 +17,14 @@ COMMON = ("rtl/*.sv", "design/SPEC.md", "design/ARCHITECTURE.md", "README.md",
           "tests/execution.py")
 
 
+def artifact_digest(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for data in iter(lambda: file.read(1048576), b""):
+            digest.update(data)
+    return digest.hexdigest()
+
+
 def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None):
     path = Path(path).resolve()
     if path in ancestors or len(ancestors) >= 32:
@@ -82,6 +90,16 @@ def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None)
                 reasons.append(f"missing retained {field}")
             elif hashlib.sha256(artifact.read_bytes()).hexdigest() != digest:
                 reasons.append(f"changed retained {field}")
+    for name, digest in receipt.get("artifact_sha256", {}).items():
+        item = Path(name)
+        if item.is_absolute() or ".." in item.parts:
+            reasons.append("nonportable retained component artifact")
+            continue
+        if any(part.startswith("obj-") for part in item.parts):
+            continue
+        artifact = path.parent / item
+        if not artifact.is_file() or artifact_digest(artifact) != digest:
+            reasons.append(f"missing/changed retained component artifact {name}")
     children = []
     for child in receipt.get("components", []):
         name = Path(child.get("receipt", ""))

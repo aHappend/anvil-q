@@ -8,6 +8,7 @@ This changes execution limits, not arithmetic or retained-component applicabilit
 from contextlib import contextmanager
 from pathlib import Path
 import signal
+import threading
 import time
 
 import execution
@@ -59,7 +60,8 @@ class Run(BaseRun):
             raise BudgetExceeded(f"whole-check budget exhausted before {name}")
         if Path(str(argv[0])).name == "vvp":
             allowance = min(allowance, 600)
-        timer = signal.setitimer(signal.ITIMER_REAL, 0)
+        main_thread = threading.current_thread() is threading.main_thread()
+        timer = signal.setitimer(signal.ITIMER_REAL, 0) if main_thread else (0, 0)
         first_command = len(self.commands)
         try:
             return super().execute(argv, name, timeout=min(timeout, allowance), **kwargs)
@@ -70,6 +72,13 @@ class Run(BaseRun):
                 signal.setitimer(signal.ITIMER_REAL, max(0.001, remaining()))
 
     def finish(self, status, results=None, error=None):
+        if threading.current_thread() is not threading.main_thread():
+            if remaining(retention=True) <= 0:
+                raise BudgetExceeded("whole-check retention deadline exceeded")
+            if remaining() <= 0:
+                status, results, error = "failed", None, "whole-check preparation deadline exceeded"
+            super().finish(status, results, error)
+            return status
         timer = signal.setitimer(signal.ITIMER_REAL, 0)
         try:
             retention_allowance = remaining(retention=True)
