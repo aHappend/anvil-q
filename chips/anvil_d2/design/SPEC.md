@@ -369,6 +369,88 @@ acknowledgements or command completion. The future engine/controller must
 drain/materialize the final emitted token before the public COMPLETE.
 No top-level engine-result input is authorized by this internal component.
 
+### Target-lane and speculative-cache implementation boundary
+
+`anvil_d2_target_lanes` contains four native target decoders. Its internal
+command captures epoch, first absolute candidate position, packed input
+tokens (lane 0 in bits 31:0), active-lane count 1..4, phase, FP8 mode and
+whether the one-lane invocation forwards the ordinary public logit
+stream. Multi-lane commands cannot forward public logits. It performs
+embedding, every native layer, final normalization and shared output
+projection. Target predictions are held until the engine accepts them.
+Target hidden vectors remain available through an internal indexed
+ready/valid read interface until explicit release.
+
+The connected `anvil_d2_verify_cache` owns raw and effective candidate
+K/V in synchronous RAM, with four rows per layer, independent of
+MAX_SEQ_LEN. Its layer command must precede decoder issue. Layer zero
+starts a new private block; subsequent layers must have the same epoch,
+positions, active lanes and precision and appear in order. Illegal
+commands or malformed cache accesses latch an explicit fault, requiring
+the future top's abort/drain path.
+
+| Target/cache phase or edge | Effect |
+|---|---|
+| IDLE command handshake | Validate all active token IDs, positions and lane count; capture once |
+| EMBED / WAIT | Launch all active shared-embedding paths and wait for every completion |
+| LAYER_PREPARE | Establish private candidate ownership before issuing decoders |
+| DECODER / WAIT | Launch active decoder instances concurrently; retain independent arithmetic state |
+| CAPTURE cache write handshake | Write only the writer's private row; register its local acknowledgement |
+| Last private K/V capture | Wait for every lane's complete latent and RoPE vectors |
+| FP8 group conversion | Quantize real latent sources and store dequantized BF16/Q16.16 consumers; leave RoPE raw |
+| BARRIER | Wait until every active lane presents its initial row-0/component-0 read |
+| GATHER read handshake | Accept matching cache requests together only from causally eligible lanes |
+| Prefix request/response | Fetch one real committed value; capture returned data before broadcast |
+| Candidate read | Synchronous private-RAM access; no external speculative publication |
+| BROADCAST stall | Hold each lane's response until that lane accepts; do not refetch or retire twice |
+| First-pass tail | Hold early lanes' second-pass starts; finish all first-pass windows first |
+| Second pass | Restart the block at row zero with separate per-lane maxima, normalization and accumulators |
+| Layer completion | Advance only after both cache passes and every active decoder complete |
+| Final norm / projection | Preserve parent numerical boundaries; choose greatest logit, smallest ID on ties |
+| RESULT / HOLD | Hold actual predictions and hidden storage; no next command before release |
+| Commit handshake | Copy only the requested leading materialized rows, in layer/lane/component order |
+| Final commit acknowledgement | Publish internal commit_done; no public command completion is implied |
+| Hidden read handshake | Registered local-RAM response, held until accepted; invalid lane/index returns error |
+| Release handshake | Require successful commit, no pending hidden response and idle local/cache ownership |
+| Reset/flush | Annul private ownership, responses and unpublished results; do not clear bulk RAM |
+
+During the attention window, the participating mask for row r is exactly
+the active lanes satisfying `r<=first_pos+lane`. A future-lane read or
+write mismatch fails explicitly rather than changing the causal mask.
+Committed-prefix reads use a single shared request and independently
+held lane responses. This is not four serial invocations of a target top.
+The first-pass/second-pass rendezvous preserves the unchanged parent
+MLA's two-pass softmax arithmetic.
+
+Private raw sources and FP8 effective consumers are separate memories.
+Commit copies original raw Q16.16 sources so the connected group service
+reproduces original quantization, including the group maximum and tail,
+instead of choosing a new scale from already rounded consumer values.
+Only commit may publish candidate K/V externally. A terminally truncated
+verdict must supply its visible materialized-prefix count; the cache must
+not be committed using a longer, unpublished draft prefix.
+
+`anvil_d2_lane_memory` implements each lane's live scratch layout:
+
+| Logical local tensor | Row / extent |
+|---|---|
+| Kind 8, projection 0 | Rows 0,1,7,8,14, each H words |
+| Kind 15, projection 7 | Rows 3,4, each H words |
+| Kind 15, projection 7 | Rows 5,7, each NUM_Q_HEADS*KV_LORA_RANK words |
+| Kind 15, projection 7 | Row 6, NUM_Q_HEADS*QK_ROPE_HEAD_DIM words |
+| Kind 15, projection 7 | Row 8, max(INTERMEDIATE_SIZE,MOE_INTERMEDIATE_SIZE+HIDDEN_SIZE,ROUTED_EXPERTS) words |
+
+No truncated-address aliasing is permitted for an invalid local access.
+The adapter acknowledges it with an explicit error and zero data.
+Layer-local scratch is reusable only because the lane controller imposes
+the full decoder layer barrier; hidden row 0 persists across that barrier.
+Weights, wide absorbed coefficients and committed cache retain parent
+logical identities outside this local scratch map.
+
+These connected target components do not yet implement native MTP draft
+heads, the public generation controller or `anvil_d2_top`. Their static
+elaboration is not numerical, behavioral, synthesis or timing acceptance.
+
 Use bounded queues, tagged bank arbitration and explicit owner/epoch
 tracking. Associate responses by tag, never arrival order. Unknown,
 duplicate and wrong-epoch responses cannot update live transactions.
@@ -426,6 +508,54 @@ it is 132/256, not half. Required >=2x reductions against actual D1 apply
 SEPARATELY to matched, nontrivial latent and routed-expert workloads,
 including scales, padding, retries and refetches. Do not claim this for
 singleton tails. Logical transfer bytes are not measured DDR4 bus traffic.
+
+### Scalar native FP8 adaptation boundary
+
+`anvil_d2_fp8_adapter` accepts 1..32 native scalar clients, preserving one
+outstanding request per client and independent passthrough responses.
+With FP8 disabled it preserves logical external tensor requests. With
+FP8 enabled it converts actual latent components (kind 15, projection 3,
+col<KV_LORA_RANK) and routed-expert matrix reads (kind 15, projection 5).
+Routed expert identity is row bits 31:25, matrix identity bits 24:23 and
+matrix output row bits 22:0. Matrix 0/1 have H input columns; matrix 2 has
+MOE_INTERMEDIATE_SIZE. Bias matrix identity 3 and shared/dense experts
+remain signed32; RoPE cache columns remain unchanged.
+
+The group-command base is the component with its low seven bits cleared.
+Count is min(128,actual matrix/latent row length minus base). No group
+extends into another row, projection or expert. The connected `fp8`
+service returns actual dequantized Q16.16 consumers. A bounded 16-group
+decoded RAM working set holds complete owner keys, not just scales.
+Residency becomes valid only after all ordered elements and successful
+service completion. All resident validity clears on flush/fault.
+
+| Adapter boundary | Effect |
+|---|---|
+| Transformed scalar read accepted | Capture owner, full logical group key and requested element |
+| Decoded group hit | Synchronous RAM read, then held scalar response |
+| Group miss | Invalidate victim, request/fetch/dequantize full actual group and validate every output index/last |
+| Group completion | Publish complete resident ownership, then return the requested Q16.16 element |
+| First latent group write | Require group-aligned column; capture source and group identity |
+| Intermediate latent scalar write | Capture exact next component and return registered RAM-ownership acknowledgement |
+| Intervening weight read from same writer | Pass through while waiting for the group's next component; do not deadlock tensor computation |
+| Final latent scalar captured | Start real group quantization/packed writes and scale write |
+| Final scalar acknowledgement | Wait until the group service completes all required external acknowledgements |
+| New latent write | Invalidate matching decoded group before accepting replacement sources |
+| Transformed memory/numeric/protocol fault | Return explicit failed scalar response, invalidate all decoded owners and latch fault |
+| Flush/reset or idle precision-mode change | Top must invalidate adapter and group-service ownership together |
+| Passthrough response stall | Preserve its independent owner/data/error until actual acceptance |
+
+Intermediate write acknowledgements are owned capture, not a claim that
+the group's DDR writes have completed. The final group acknowledgement
+and top-level drain are mandatory before successful command completion.
+Passthrough transactions retain scheduler tag ownership outside this
+adapter. No bandwidth savings result follows merely from this mapping;
+the independent suites must measure accepted external transfers,
+including scales, padding, refetches and unchanged tensors.
+
+The adapter exposes an internal group interface for connection to the
+literal top-level `fp8` instance. That final top-level connection remains
+an implementation obligation, not a claim of completed inference.
 
 ### FP8 group service implementation boundary
 

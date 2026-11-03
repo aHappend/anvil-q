@@ -16,14 +16,20 @@ The unchanged parent directory is input provenance, not a passing baseline.
 | `rtl/anvil_d2_fp8_mla_moe.sv` | Connected group quantization/packed memory writes and cache/expert prefetch/dequantized read service |
 | `rtl/anvil_d2_mtp_projection.sv` | On-chip previous-hidden/embedding RMS normalization and independently weighted H by 2H input projection |
 | `rtl/anvil_d2_mtp_verdict.sv` | Longest-prefix correction, terminal truncation and registered held block publication |
+| `rtl/anvil_d2_lane_memory.sv` | Independent synchronous target-lane hidden/query/FFN scratch, local arbitration and response ownership |
+| `rtl/anvil_d2_fp8_adapter.sv` | Scalar native-cache/routed-matrix adaptation to real group transactions, including buffered writes and a bounded decoded working set |
+| `rtl/anvil_d2_verify_cache.sv` | Isolated candidate K/V, per-layer write barrier, causal two-pass cache broadcast and prefix-only acknowledged commit |
+| `rtl/anvil_d2_target_lanes.sv` | Four concurrent native decoder datapaths, per-layer barriers, final normalization/shared output projection and target argmax |
 
 These components do not yet constitute `anvil_d2_top`,
-or `anvil_d2_mtp_engine`. The FP8 group service is implemented, but its
-connection to native MLA/MoE consumers is not. Required integration,
-four causal target lanes, head transformers, shared committed-prefix
-broadcast, speculative cache ownership/materialization and a completed
-Quartus source manifest remain design work. Do not infer implemented
-generation from configuration registers or the publication leaf alone.
+or `anvil_d2_mtp_engine`. The four-lane target subsystem now connects
+unchanged native arithmetic to lane-local scratch and an isolated
+candidate cache. The scalar FP8 adapter and group service still require
+top-level connection to those consumers and the tagged scheduler. Native
+head transformers, the complete generation/final-materialization
+controller and a completed Quartus source manifest remain design work.
+Do not infer implemented generation from these subsystems or the
+publication leaf alone.
 No functional, synthesis, timing, hardware or speedup result is claimed.
 
 ## Frozen boundaries
@@ -139,8 +145,8 @@ finite endpoint to 448. No NaN code is generated.
 
 The group service packs indices 0..3 into byte lanes 0..3 and zero-pads
 only the final external word. A logical row of 129 elements requires
-commands 128 and 1 with separately addressed scales. The still-required
-decoder adapter derives those commands from actual tensor shapes.
+commands 128 and 1 with separately addressed scales. The scalar adapter
+derives those commands from actual latent/routed-matrix shapes.
 Row/layer/expert/projection identity is held in the service, not stored
 implicitly in this numerical leaf.
 
@@ -165,10 +171,11 @@ The input projection tensor map is implemented: kind 12, layer
 NUM_LAYERS+head, projections 0/1/2 for concatenation/hidden gain/embedding
 gain. The native head transformer map must still be finalized without
 aliasing those tensors, shared token tensors, cache or scratch. Exactly
-four target lanes need separate query/softmax/context state, immutable
-committed-prefix broadcasts and explicit per-layer causal K/V barriers.
-Use bounded RAM scratch, not full-model register arrays. A serial
-parent-top wrapper cannot satisfy this design.
+four target lanes are instantiated in `anvil_d2_target_lanes`, with
+separate query/softmax/context state, committed-prefix broadcasts and
+explicit per-layer causal K/V barriers. They have not yet been connected
+inside an MTP engine or functionally exercised. Scratch uses bounded
+synchronous RAM, not full-model register arrays.
 
 Speculative cache ownership must separate unpublished lane data from the
 committed frontier. Verdict precedes publish; output handshakes advance
@@ -245,8 +252,9 @@ quantization by consuming the original signed32 input.
 Expert commands select projection 5 and accept arbitrary legal binary32
 scales. Matrix/bias/routed/shared classification and actual group lengths
 must come from the future native adapter; the service cannot infer them
-from an arbitrary row number. Raw parent per-element requests are not
-yet adapted into these commands. On any failure both records invalidate,
+from an arbitrary row number. raw parent per-element requests are adapted by `anvil_d2_fp8_adapter`;
+the final consumer/adapter/service connection remains a top-level
+integration obligation. On any failure both records invalidate,
 arithmetic flushes, a failed completion publishes once, and FAULTED
 requires explicit flush/reset.
 
@@ -282,3 +290,102 @@ the anchor/correction or terminally discarded drafts. Publication
 completion is deliberately separate from public command completion:
 the latter still needs target materialization and acknowledged writes.
 This leaf alone does not establish native MTP computation or generation.
+
+## Concurrent target subsystem
+
+`anvil_d2_target_lanes` instantiates exactly four unchanged native decoder
+layers, four final RMSNorm units and four shared-embedding/output
+projection datapaths. Each lane executes one token's whole decoder
+graph, not a lane-specific token lookup. Commands select one to four
+active lanes for ordinary target work and bounded speculative tails.
+Inactive lanes issue no commands. For each layer, all active decoders
+launch before the controller waits for their completions; no lane
+starts the next layer until all active decoders and the cache barrier
+finish the current one.
+
+Each lane's `anvil_d2_lane_memory` intercepts kind-8 hidden slots and
+kind-15/projection-7 scratch. It maps only live vector extents:
+five H-wide hidden slots; two H-wide residual branch results;
+heads*rank query and context vectors; heads*RoPE rotary queries;
+and one FFN/router vector of maximum required width. A single
+round-robin synchronous scratch port acknowledges writes and registers
+reads. Weight, absorbed-coefficient and cache transactions retain their
+logical identities. Invalid local rows/columns return an explicit error
+rather than aliasing a truncated RAM address. The RAM has no asynchronous
+reset or bulk initialization.
+
+The target subsystem exports 29 untagged memory clients: seven per lane
+and one shared cache client. Per-lane cache requests are intercepted
+before these exported ports. The other exported ports include real
+native weights and independently scheduled expert prefetch. The D2 bank
+scheduler can support these clients concurrently; the future top must
+connect the adapter/service and remaining native-head clients within its
+32-client limit.
+
+`anvil_d2_verify_cache` stores four candidate rows per layer in separate
+raw and effective synchronous RAMs. Raw candidate K/V never reaches
+external committed addresses during verification. Each active lane must
+write its own exact row in component order. After all rows are complete,
+FP8 mode quantizes each actual latent group and runs the same
+FP8-to-BF16-to-Q16.16 boundary as committed reads. RoPE is never included
+in a latent scale group or relabeled as compressed traffic.
+
+All active lanes must reach the first cache read before the registered
+attention barrier releases. For each cache row/component, the cache
+collects matching requests from exactly the lanes whose causal windows
+include that row. Committed-prefix data is fetched once and broadcast;
+candidate data is read from private RAM and broadcast only to eligible
+lanes. Responses remain independently held until every participating
+lane retires its copy. A future candidate is never in an earlier lane's
+request mask. The parent MLA uses two passes (maxima, then normalized
+context); early lanes' second-pass requests wait while later lanes
+finish the first pass, before the whole block restarts at row zero.
+
+Once all layer results are available, the subsystem publishes held
+target argmax tokens with smallest-ID tie breaking. It retains all lane
+hidden vectors for engine reads, without exposing test-only top pins.
+An internal commit command copies only the selected leading candidate
+rows and waits for every external write acknowledgement. It copies raw
+Q16.16 sources, so a connected FP8 adapter chooses the same original
+group scale/payload rather than requantizing a rounded consumer value.
+Rejected rows remain private and are invalidated on release/new block
+or flush. The caller must compute the commit count from the
+terminal-truncated verdict, never from untruncated matching drafts.
+
+The one-lane option can process a supplied seed or materialize a final
+correction. This is an implementation primitive, not a replacement for
+four-lane verification. The still-required generation controller owns
+public command classification, visible retirement, next-position rules,
+final materialization, cancellation/drain and COMPLETE.
+
+## Native scalar FP8 adaptation
+
+`anvil_d2_fp8_adapter` compresses only actual kind-15/projection-3 latent
+components below KV_LORA_RANK, and routed-expert matrix reads at
+projection 5. Parent row encoding retains expert bits 31:25, matrix
+bits 24:23 and output-row bits 22:0. Matrix 0/1 columns span H; matrix 2
+columns span MOE_INTERMEDIATE_SIZE. Bias rows (matrix 3), shared/dense
+experts and RoPE pass through unchanged.
+
+A latent write group captures ordered Q16.16 elements. Intermediate
+scalar acknowledgements mean owned RAM capture; the group's last
+scalar acknowledgement waits for packed payload and scale writes to
+complete. Between captures, the same native client can still read its
+uncompressed projection weights; blocking those intervening reads would
+deadlock native tensor execution. Unrelated passthrough clients retain
+independent outstanding ownership.
+
+Reads identify the whole actual group and consume the group service's
+Q16.16 output, not the original external signed32 tensor. A 16-group
+bounded decoded working set preserves full epoch/layer/row/base/count/
+cache-or-expert identities. New fills invalidate the victim before
+capture and become resident only after exact ordered output and service
+completion. A held scalar response cannot be overwritten by replacement.
+This working set accommodates multiple expert tile rows instead of
+refetching a full group for every scalar. Measured bandwidth thresholds
+remain independent verification obligations, not a resource-count claim.
+
+The top must connect this adapter's group interface to its literal `fp8`
+instance, and flush both on cancellation, epoch reset and an idle
+precision-mode change. An adapter failure requires abort/drain of
+accepted tagged memory, not reuse of captured partial groups.
