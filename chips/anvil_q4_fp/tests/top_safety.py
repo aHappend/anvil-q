@@ -24,7 +24,7 @@ def run(preparation=False, repair_of=None):
         parameters = [f"-Ptop_safety_tb.{name}={value}" for name, value in
                       zip(("BANKS", "QUEUE_DEPTH", "TILE_K", "TILE_ROWS"), values)]
         execute(directory / f"{label}-compile", [
-            "iverilog", "-g2012", "-s", "top_safety_tb", *parameters,
+            "iverilog", "-g2012", "-Wall", "-s", "top_safety_tb", *parameters,
             "-o", relative(binary),
             *[relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))],
             "tests/top_safety_tb.sv"], timeout=60)
@@ -37,6 +37,22 @@ def run(preparation=False, repair_of=None):
                 simulation / "stderr.txt").read_text()
             if "PARAMETER ERROR" not in raw or "SUMMARY top_safety" in raw:
                 raise AssertionError(f"Illegal geometry not diagnosed before work: {label}")
+    for lanes, tile_k in ((1, 1), (3, 3), (16, 128), (0, 1), (17, 1),
+                          (-1, 1), (1, 0), (1, 129), (1, -1)):
+        label = f"tensor-lanes-{lanes}-k-{tile_k}"
+        binary = directory / f"{label}.vvp"
+        legal = 1 <= lanes <= 16 and 1 <= tile_k <= 128
+        execute(directory / f"{label}-compile", [
+            "iverilog", "-g2012", "-Wall", "-s", "tensor_parameter_tb",
+            f"-Ptensor_parameter_tb.LANES={lanes}", f"-Ptensor_parameter_tb.TILE_K={tile_k}",
+            "-o", relative(binary), "rtl/anvil_q4_00_fp_pkg.sv", "rtl/anvil_q4_fp32.sv",
+            "rtl/anvil_q4_fp_tensor_array.sv", "tests/tensor_parameter_tb.sv"])
+        simulation = directory / f"{label}-simulation"
+        execute(simulation, ["vvp", relative(binary)], expect_failure=not legal)
+        if not legal:
+            raw = (simulation / "stdout.txt").read_text() + (simulation / "stderr.txt").read_text()
+            if "PARAMETER ERROR" not in raw or "SUMMARY tensor_parameter" in raw:
+                raise AssertionError(f"Illegal tensor geometry not diagnosed: {label}")
     print(f"Top safety receipts: {relative(directory)}", flush=True)
     return directory
 

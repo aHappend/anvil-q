@@ -13,7 +13,8 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 SELECTORS = ("rtl/*.sv", "design/*.md", "tests/*",
              "anvil_q4_reference/rtl/*.sv")
-DEADLINE = None
+DEADLINE = (time.monotonic() + float(os.environ["ANVIL_DEADLINE_UNIX"]) - time.time()
+            if "ANVIL_DEADLINE_UNIX" in os.environ else None)
 
 
 def timestamp():
@@ -78,10 +79,15 @@ def execute(directory, argv, timeout=600, repair_of=None, expect_failure=False,
     if repair_of:
         receipt["repair_of"] = repair_of
     start = time.monotonic()
+    child_env = os.environ.copy()
+    # Nested Python helpers settle their own tools before the enclosing watchdog.
+    child_deadline = time.time() + max(0.01, timeout - 15)
+    child_env["ANVIL_DEADLINE_UNIX"] = str(child_deadline)
+    receipt["child_deadline_unix"] = child_deadline
     with (directory / "stdout.txt").open("w") as out, (
             directory / "stderr.txt").open("w") as err:
         process = subprocess.Popen(argv, cwd=ROOT, stdout=out, stderr=err,
-                                   start_new_session=True)
+                                   start_new_session=True, env=child_env)
         try:
             while True:
                 try:

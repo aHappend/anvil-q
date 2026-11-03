@@ -13,11 +13,12 @@ import evidence
 
 
 SUITES = ("numerics", "behavior", "compatibility", "defects", "synthesis", "delivery")
+INHERITED_DEADLINE = evidence.DEADLINE
 
 
 def run_suite(suite):
     start = time.monotonic()
-    evidence.DEADLINE = start + 2700
+    evidence.DEADLINE = min(start + 2700, INHERITED_DEADLINE or float("inf"))
     directory = new_run(f"suite-{suite}")
     records = []
 

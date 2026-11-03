@@ -116,13 +116,16 @@ def profile(directory, parent_profile):
                                 "1+(bank+row+col)%5; logit-ready cycle%13>=4"},
         "scope": "measured zero-weight synthetic traffic profile, not checkpoint performance "
                  "or a trained-weight quality comparison; parent cache is lossless BF16",
+        "arithmetic_counter_definition": "all accepted FP32 leaf operations, including "
+                  "conversions; flight cycles sum public accepted-to-retired ownership "
+                  "over those leaves; tensor counters are additionally reported separately",
         "cases": records}, indent=2) + "\n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preparation", action="store_true")
-    parser.add_argument("--mode", type=int, choices=(1, 2, 3, 4))
+    parser.add_argument("--mode", type=int, choices=(1, 2, 3, 4), action="append")
     parser.add_argument("--repair-of")
     args = parser.parse_args()
-    run(args.preparation, (args.mode,) if args.mode else (1, 2, 3, 4), args.repair_of)
+    run(args.preparation, tuple(args.mode) if args.mode else (1, 2, 3, 4), args.repair_of)
