@@ -1,14 +1,11 @@
 {
   "chip": "Anvil-Q2-FP2",
-  "fitter_resources": {},
-  "timing": {
-    "device": "10AX115N2F45E1SG",
-    "netlist_mode": null,
-    "target_frequency_mhz": 100.0,
-    "fmax_mhz": null,
-    "critical_path_delay_ns": null,
-    "wns_setup_ns": null,
-    "wns_hold_ns": null
+  "fitter_resources": {
+    "total_registers": 569512,
+    "block_memory_bits": 546240,
+    "dsp_blocks": 316,
+    "virtual_pins": 2761
   },
+  "timing": {},
   "verification_tiers": {}
 }

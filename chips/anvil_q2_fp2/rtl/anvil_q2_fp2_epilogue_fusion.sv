@@ -18,9 +18,8 @@ module anvil_q2_fp2_epilogue_fusion (
   reg [31:0] tag, element_index, gate, up, exp_saved, inverse_saved, reciprocal_length;
   reg first, last, pass_valid, pass_error;
   reg [31:0] pass_data;
-  (* ramstyle = "M20K", nomem2reg *) reg [31:0] rms_x [0:8959];
-  (* ramstyle = "M20K", nomem2reg *) reg [31:0] rms_gamma [0:8959];
-  reg [31:0] rms_x_q, rms_gamma_q;
+  (* ramstyle = "logic", nomem2reg *) reg [31:0] rms_x [0:8959];
+  (* ramstyle = "logic", nomem2reg *) reg [31:0] rms_gamma [0:8959];
   wire selected_valid;
   wire [31:0] selected_data, selected_pair;
   wire selected_error;
@@ -77,7 +76,6 @@ module anvil_q2_fp2_epilogue_fusion (
     .out_valid(inverse_valid),.out_ready(enable),
     .out_data(inverse_data),.out_error(inverse_error));
   wire norm_issue=busy && mode==0 && (inverse_valid || replaying);
-  wire [13:0] rms_raddr=(norm_issue && enable) ? (replay_index+14'd1) : replay_index;
   wire [31:0] replay_inverse=inverse_valid ? inverse_data : inverse_saved;
   reg [31:0] gamma_delay [0:2];
   reg [13:0] index_delay [0:5];
@@ -87,7 +85,7 @@ module anvil_q2_fp2_epilogue_fusion (
   anvil_q2_fp2_mul3 rms_normalize(
     .clk(clk),.rst_n(rst_n),.flush(clear_pipeline),.enable(enable),
     .in_valid(norm_issue),.in_error(rms_failed || inverse_error),
-    .in_a(rms_x_q),.in_b(replay_inverse),
+    .in_a(rms_x[replay_index]),.in_b(replay_inverse),
     .out_valid(normalized_valid),.out_data(normalized_data),
     .out_error(normalized_error));
   anvil_q2_fp2_mul3 rms_apply_gamma(
@@ -201,7 +199,7 @@ module anvil_q2_fp2_epilogue_fusion (
         for (i=1;i<3;i=i+1) gamma_delay[i]<=gamma_delay[i-1];
         for (i=1;i<6;i=i+1) index_delay[i]<=index_delay[i-1];
         if (norm_issue) begin
-          gamma_delay[0]<=rms_gamma_q;
+          gamma_delay[0]<=rms_gamma[replay_index];
           index_delay[0]<=replay_index;
           if (inverse_valid) inverse_saved<=inverse_data;
           if (replay_index==length-1'b1) replaying<=0;
@@ -219,6 +217,8 @@ module anvil_q2_fp2_epilogue_fusion (
             pass_error<=(&in_a[30:23]);
           end
           if (valid_rms) begin
+            rms_x[in_index[13:0]]<=in_a;
+            rms_gamma[in_index[13:0]]<=in_gamma;
             spacing<=3;
             expected_index<=in_index[13:0]+1'b1;
             collecting<=!in_last;
@@ -237,13 +237,5 @@ module anvil_q2_fp2_epilogue_fusion (
         end
       end
     end
-  end
-  always @(posedge clk) begin
-    if (rst_n && !(flush || finishing) && enable && accepted && valid_rms) begin
-      rms_x[in_index[13:0]]<=in_a;
-      rms_gamma[in_index[13:0]]<=in_gamma;
-    end
-    rms_x_q<=rms_x[rms_raddr];
-    rms_gamma_q<=rms_gamma[rms_raddr];
   end
 endmodule
