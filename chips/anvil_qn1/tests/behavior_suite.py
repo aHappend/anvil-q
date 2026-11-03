@@ -122,7 +122,17 @@ def validate_telemetry(result):
     counts = result["counts"]
     generated = sum(len(t["generated"]) for t in result["transactions"])
     drafts = sum(len(t["nodes"]) for t in result["transactions"])
-    accepted = sum(len(t["generated"]) - 1 for t in result["transactions"])
+    accepted = 0
+    for transaction in result["transactions"]:
+        parent = 4
+        for token in transaction["generated"]:
+            children = [index for index, (node, ancestor) in
+                        enumerate(zip(transaction["nodes"], transaction["parents"]))
+                        if node == token and ancestor == parent]
+            if not children:
+                break
+            accepted += 1
+            parent = children[0]
     require(len(result["transactions"]) == 3 and counts[0] == 45 and
             counts[1] == counts[2] + counts[3] and counts[1] > 0 and
             counts[4:] == [generated, 0, drafts,
