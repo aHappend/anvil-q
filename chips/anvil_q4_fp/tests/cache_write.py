@@ -33,7 +33,7 @@ def sources(fmt):
     return pool
 
 
-def fixture(path):
+def fixture(path, compact=False):
     cases = []
     cursors = [0, 0, 0]
     formats = ("bf16", "fp16", "fp8")
@@ -95,6 +95,8 @@ def fixture(path):
             add(encoding, 2, 4, 6, fault)
     if cursors[2] < len(pools[2]):
         raise AssertionError("FP8 midpoint source coverage is incomplete")
+    if compact:
+        cases = cases[:2]
     with path.open("w") as stream:
         stream.write(f"{len(cases)}\n")
         for case in cases:
@@ -106,27 +108,40 @@ def fixture(path):
                 stream.write(" ".join(f"{word:08x}" for word in case[key]) + "\n")
     return {"cases": len(cases), "valid_cases": sum(not c["fault"] for c in cases),
             "negative_cases": sum(bool(c["fault"]) for c in cases),
-            "source_counts": dict(zip(formats, cursors)),
+            "source_counts": {
+                fmt: sum(len(case["sources"]) for case in cases
+                         if case["format"] == encoding and not case["fault"])
+                for encoding, fmt in enumerate(formats)},
             "fp8_midpoint_pool": len(pools[2]),
             "oracle": "independent exact rational RNE, canonical NaNs"}
 
 
-def run(preparation=False):
+def run(preparation=False, repair_of=None, icarus_smoke=False):
     directory = new_run("cache-write", preparation)
     image = directory / "cache-write-vectors.txt"
-    coverage = fixture(image)
+    coverage = fixture(image, compact=icarus_smoke)
     (directory / "reference.json").write_text(json.dumps({
         "source_sha256": source_hashes(), **coverage}, indent=2) + "\n")
     obj = directory / "compile-obj"
+    inputs = ["rtl/anvil_q4_00_fp_pkg.sv", "rtl/anvil_q4_fp32.sv",
+              "rtl/anvil_q4_fp_mem_port.sv", "rtl/anvil_q4_fp_kv_cache.sv",
+              "tests/cache_write_tb.sv"]
     try:
-        execute(directory / "verilator-compile", [
-            "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
-            "--top-module", "cache_write_tb", "--Mdir", relative(obj),
-            "rtl/anvil_q4_00_fp_pkg.sv", "rtl/anvil_q4_fp32.sv",
-            "rtl/anvil_q4_fp_mem_port.sv", "rtl/anvil_q4_fp_kv_cache.sv",
-            "tests/cache_write_tb.sv"])
-        execute(directory / "verilator-cache-write", [
-            relative(obj / "Vcache_write_tb"), f"+vectors={relative(image)}"])
+        if icarus_smoke:
+            binary = directory / "cache-write.vvp"
+            execute(directory / "iverilog-compile", [
+                "iverilog", "-g2012", "-s", "cache_write_tb", "-o",
+                relative(binary), *inputs])
+            command = ["vvp", relative(binary)]
+            label = "icarus-cache-write"
+        else:
+            execute(directory / "verilator-compile", [
+                "verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                "--top-module", "cache_write_tb", "--Mdir", relative(obj), *inputs])
+            command = [relative(obj / "Vcache_write_tb")]
+            label = "verilator-cache-write"
+        execute(directory / label, [*command, f"+vectors={relative(image)}"],
+                repair_of=repair_of, timeout=60 if icarus_smoke else 600)
     finally:
         if obj.exists():
             shutil.rmtree(obj)
@@ -137,5 +152,7 @@ def run(preparation=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preparation", action="store_true")
+    parser.add_argument("--repair-of")
+    parser.add_argument("--icarus-smoke", action="store_true")
     args = parser.parse_args()
-    run(args.preparation)
+    run(args.preparation, args.repair_of, args.icarus_smoke)

@@ -86,26 +86,14 @@ def run(preparation=False, repair_of=None):
     return directory
 
 
-def run_matrix(preparation=False, repair_of=None):
-    """All legal dimensions and GQA head mappings, with public-pin comparisons."""
+def matrix_vectors(fixture, dimensions=range(2, 257, 2)):
     import random
-    import re
-
-    directory = new_run("attention-matrix", preparation)
-    scales = {dimension: sqrt_round(Fraction(1, dimension))[0]
-              for dimension in range(2, 257, 2)}
-    # This additional source check binds every ROM entry to exact midpoint
-    # comparisons. The functional oracle below still uses only public pins.
-    text = (ROOT / "rtl/anvil_q4_fp_gqa_attention.sv").read_text()
-    entries = re.findall(r"8'd(\d+): attention_scale=32'h([0-9a-fA-F]+);", text)
-    observed = {2 * int(index): int(bits, 16) for index, bits in entries}
-    if len(entries) != 128 or observed != scales:
-        raise AssertionError("attention ROM differs from independently rounded scales")
-    fixture = directory / "matrix-image.txt"
+    dimensions = tuple(dimensions)
     records = []
     with fixture.open("w") as stream:
-        stream.write("128\n")
-        for dimension, scale in scales.items():
+        stream.write(f"{len(dimensions)}\n")
+        for dimension in dimensions:
+            scale = sqrt_round(Fraction(1, dimension))[0]
             ratio = (dimension // 2 - 1) % 8 + 1
             kv_heads = 2
             query_heads = kv_heads * ratio
@@ -130,6 +118,23 @@ def run_matrix(preparation=False, repair_of=None):
                             "kv_heads": kv_heads, "query_heads": query_heads,
                             "scale": f"{scale:08x}",
                             "compared_outputs": query_heads * dimension})
+    return records
+
+
+def run_matrix(preparation=False, repair_of=None):
+    """All legal dimensions and GQA head mappings, with public-pin comparisons."""
+    import re
+
+    directory = new_run("attention-matrix", preparation)
+    scales = {dimension: sqrt_round(Fraction(1, dimension))[0]
+              for dimension in range(2, 257, 2)}
+    text = (ROOT / "rtl/anvil_q4_fp_gqa_attention.sv").read_text()
+    entries = re.findall(r"8'd(\d+): attention_scale=32'h([0-9a-fA-F]+);", text)
+    observed = {2 * int(index): int(bits, 16) for index, bits in entries}
+    if len(entries) != 128 or observed != scales:
+        raise AssertionError("attention ROM differs from independently rounded scales")
+    fixture = directory / "matrix-image.txt"
+    records = matrix_vectors(fixture)
     (directory / "reference.json").write_text(json.dumps({
         "source_sha256": source_hashes(), "synthetic": True,
         "rounding": "exact integer sqrt and rational midpoint comparisons",
