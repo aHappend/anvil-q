@@ -180,25 +180,29 @@ def run_dequant(experiment, simulator, rtl="rtl/anvil_d2_fp8_dequant.sv",
     experiment.save()
 
 
-def run_public_smoke(experiment, boundaries=False):
+def run_public_smoke(experiment, boundaries=False, interrupts=False):
     directory = experiment.directory.relative_to(ROOT)
     obj = directory / "public-obj"
     sources = [str(p.relative_to(ROOT)) for pattern in (
         "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
     experiment.execute(["verilator", "--version"], "verilator-version")
-    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
+    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
                         "--top-module", "top_smoke_tb", "--Mdir", str(obj),
                         "-o", "public-sim", *(["-GCAPACITY=5"] if boundaries else []),
                         *sources, "tests/top_smoke_tb.sv"],
                        "public-compile", 1200)
-    output = experiment.execute([str(obj / "public-sim")] + (["+boundaries"] if boundaries else []),
+    output = experiment.execute([str(obj / "public-sim")] +
+                                (["+boundaries"] if boundaries else
+                                 ["+interrupts"] if interrupts else []),
                                 "public-simulation", 1200)
     experiment.receipt["results"]["public-smoke"] = {
         "geometry": {"hidden": 8, "layers": 1, "banks": 2, "queue_depth": 3},
         "weight_fixture": "all-zero tensors; FP8 missing scales positive one",
         "oracle": "zero output projection gives zero logits and greedy token zero",
         "raw_summary": output.strip(),
-        "scope": ("four-mode EOS, zero-capacity and terminal shortening" if boundaries else
+        "scope": ("public cancellation at draft, verify, publish and memory drain; "
+                  "bus error and sequence invalidation" if interrupts else
+                  "four-mode EOS, zero-capacity and terminal shortening" if boundaries else
                   "bounded protocol smoke, not nonzero transformer numerical coverage"),
     }
     experiment.save()
@@ -918,7 +922,8 @@ def run_benchmark(experiment, component):
             output = child.receipt["results"]["target-model"]["raw_summary"]
             measurements = result_rows(output, "COMMAND_RESULT")
             transfers = {row["command"]: row for row in result_rows(output, "TRANSFER_RESULT")}
-            if len(measurements) != 8 or len(transfers) != 8:
+            counters = {row["command"]: row for row in result_rows(output, "COUNTER_RESULT")}
+            if len(measurements) != 8 or len(transfers) != 8 or len(counters) != 8:
                 raise AssertionError("benchmark missing command/transfer measurements")
             baseline = next(row for row in measurements if row["mode"] == 0 and row["generation"])
             expectations = child.receipt["results"]["target-fixtures"]["command_expectations"]
@@ -926,6 +931,7 @@ def run_benchmark(experiment, component):
                                if row["mode"] == 0 and row["generation"])
             for row in measurements:
                 row.update(transfers[row["command"]])
+                row.update(counters[row["command"]])
                 row.update(domain_id=domain["id"], seed=seed,
                            phase="generation" if row["generation"] else "prefill",
                            receipt=str((child.directory / "receipt.json").relative_to(ROOT)))
@@ -940,6 +946,8 @@ def run_benchmark(experiment, component):
                     actual_tokens = next(entry["expected"] for entry in expectations
                                          if entry["command"] == row["command"])
                     row["tokens_differ_from_uncompressed"] = actual_tokens != base_tokens
+                    row["accepted_proposed_ratio"] = (
+                        row["accepted"]/row["proposed"] if row["proposed"] else None)
                 rows.append(row)
             experiment.receipt["results"]["benchmark_rows"] = rows
             experiment.save()
@@ -991,9 +999,19 @@ def run_reproduction(experiment):
     experiment.save()
 
 
+def run_prefix_matrix(component):
+    compiled = None
+    for prefix in range(5):
+        _, compiled = component(
+            f"native-prefix{prefix}", lambda e, p=prefix: run_target_model(
+                e, modes=(1,), mtp_fixture=f"prefix{p}", compiled=compiled,
+                command_sequence=((1, 0, 1, 0, 0, 5), (3, 1, 0, 1, 1, 5))))
+
+
 def run_suite(experiment, suite):
     def component(stem, operation):
-        child = Experiment("d2-" + suite + "-" + stem)
+        child = Experiment("d2-" + suite + "-" + stem,
+                           preparation=experiment.directory.parent.name == "preparation")
         path = str((child.directory / "receipt.json").relative_to(ROOT))
         experiment.receipt.setdefault("component_receipts", []).append(path)
         experiment.save()
@@ -1027,6 +1045,7 @@ def run_suite(experiment, suite):
         experiment.save()
         component("public-smoke", run_public_smoke)
         component("public-boundaries", lambda e: run_public_smoke(e, boundaries=True))
+        component("public-interrupts", lambda e: run_public_smoke(e, interrupts=True))
         for simulator in ("icarus", "verilator"):
             component("verdict-" + simulator, lambda e, s=simulator: run_verdict_probe(e, s))
         component("nonzero-four-mode", run_target_model)
@@ -1035,6 +1054,7 @@ def run_suite(experiment, suite):
         for banks, queue in ((1, 1), (2, 3), (4, 16), (8, 1)):
             component(f"scheduler-b{banks}-q{queue}",
                       lambda e, b=banks, q=queue: run_scheduler(e, b, q))
+        run_prefix_matrix(component)
     elif suite == "defects":
         component("dequant-control", lambda e: run_dequant(e, "verilator"))
         component("service-control", run_service_probe)
@@ -1066,6 +1086,8 @@ def run_suite(experiment, suite):
         run_benchmark(experiment, component)
     elif suite == "reproduce":
         run_reproduction(experiment)
+    elif suite == "native-prefixes":
+        run_prefix_matrix(component)
     else:
         raise ValueError(f"unknown suite {suite}")
 
@@ -1082,7 +1104,7 @@ def main():
                                          "acceptance-past-mismatch", "oracle", "target-model",
                                          "public-boundaries", "native-head", "mtp-alignment",
                                          "parameters", "causal-mask", "rejected-kv",
-                                         "scheduler"])
+                                         "scheduler", "public-interrupts", "native-prefixes"])
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
@@ -1114,6 +1136,10 @@ def main():
             run_public_smoke(experiment)
         elif args.probe == "public-boundaries":
             run_public_smoke(experiment, boundaries=True)
+        elif args.probe == "public-interrupts":
+            run_public_smoke(experiment, interrupts=True)
+        elif args.probe == "native-prefixes":
+            run_suite(experiment, "native-prefixes")
         elif args.probe == "target-model":
             geometry = (Geometry(layers=2) if args.geometry == "routed" else
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
