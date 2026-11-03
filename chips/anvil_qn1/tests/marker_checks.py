@@ -82,12 +82,13 @@ static std::vector<U> load(const std::string& path) {
 struct Response { L tag;U data; };
 int main(int argc,char** argv) {
   try {
-    check(argc==3,"marker driver arguments");std::string prefix=argv[1];
+    check(argc==4,"marker driver arguments");std::string prefix=argv[1];
     bool opening=std::stoul(argv[2]);const U target=opening ? 151667:151668;
+    U threads=std::stoul(argv[3]);
     const U vocabulary=151936,MAX=16,KD=8;
     const std::array<U,2> host={opening ? 3U:151667U,target};
     auto embedding=load(prefix+"/embeddings.hex"),reference=load(prefix+"/scratch.hex");
-    auto logits=load(prefix+"/logits.hex");
+    auto logits=load(prefix+"/logits.hex"),rope=load(prefix+"/rope.hex");
     check(embedding.size()==24 && reference.size()==480 && logits.size()==6,
           "marker reference extents");
     auto embed=[&](U row,U col)->U {
@@ -99,6 +100,7 @@ int main(int argc,char** argv) {
         row==151668 ? logits[tx*3+2]:0;
     };
     auto context=std::make_unique<VerilatedContext>();
+    context->threads(threads);
     auto dut=std::make_unique<Vanvil_qn1_top>(context.get());
     dut->clk=0;dut->rst_n=0;dut->cancel=0;dut->token_valid=0;
     dut->new_sequence=0;dut->token_phase=1;dut->token_id=0;dut->token_pos=0;
@@ -254,9 +256,7 @@ int main(int argc,char** argv) {
             }
             case 11:
               check(row==tx && col<8,"marker coefficient address");
-              // Zero Q/K are rotation-invariant; actual coefficient images are
-              // supplied below, not an identity substitution at nonzero p.
-              data=0;throw std::runtime_error("missing marker coefficient image");
+              data=rope[row*8+col];break;
             default: throw std::runtime_error("marker forbidden memory kind");
           }
           L tag=L(dut->mem_req_tag[2*b])|(L(dut->mem_req_tag[2*b+1])<<32);
@@ -315,33 +315,43 @@ int main(int argc,char** argv) {
 """
 
 
-def run_markers(run, opening=True):
+def run_markers(run, opening=True, threads=1, compiled=None):
     images = run.path / "checkpoint-images"
     result = marker_reference(images, opening)
     rope = [value for position in range(2)
             for pair in zip(*fp.coefficients(8, position)) for value in pair]
     (images / "rope.hex").write_text("".join(f"{value:08x}\n" for value in rope))
     driver = run.path / "marker_driver.cpp"
-    text = MARKER_DRIVER.replace(
-        'auto logits=load(prefix+"/logits.hex");',
-        'auto logits=load(prefix+"/logits.hex"),rope=load(prefix+"/rope.hex");')
-    text = text.replace(
-        'data=0;throw std::runtime_error("missing marker coefficient image");',
-        'data=rope[row*8+col];break;')
-    driver.write_text(text)
+    driver.write_text(MARKER_DRIVER)
     objects = run.path / "obj-marker"
     sources = [relative(p) for p in sorted((ROOT / "rtl").glob("anvil_qn1_*.sv"))]
     parameters = {"COMPACT": 1, "NUM_LAYERS": 1, "HIDDEN_SIZE": 8,
                   "INTERMEDIATE_SIZE": 8, "NUM_Q_HEADS": 2, "NUM_KV_HEADS": 1,
                   "HEAD_DIM": 8, "VOCAB_SIZE": VOCABULARY, "MAX_SEQ_LEN": 4,
                   "GROUP_SIZE": 8, "BANKS": 8, "QUEUE_DEPTH": 3}
-    run.execute(["verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-                 "-j", "2", "-CFLAGS", "-O3", "--top-module", "anvil_qn1_top",
-                 *[f"-G{k}={v}" for k, v in parameters.items()],
-                 "--Mdir", relative(objects), "-o", "simulate", *sources,
-                 "../marker_driver.cpp"], "marker-compile")
-    output = run.execute([relative(objects / "simulate"), relative(images),
-                          str(int(opening))], "marker-simulation")
+    binding = {"driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
+               "parameters": parameters, "simulation_threads": threads,
+               "rtl_sha256": {name: run.hashes[name] for name in sources},
+               "tool_versions": {name: run.tool_versions[name]
+                                 for name in ("verilator", "g++", "make")}}
+    if compiled is not None:
+        binary = ROOT / compiled["binary"]
+        if (compiled.get("binding") != binding or not binary.is_file() or
+                hashlib.sha256(binary.read_bytes()).hexdigest() != compiled["binary_sha256"]):
+            print("MARKER_BUILD_STALE: recompiling current source/driver/parameters", flush=True)
+            compiled = None
+    if compiled is None:
+        run.execute(["verilator", "--cc", "--exe", "--build", "-Wno-fatal",
+                     "-j", "2", "--threads", str(threads), "-CFLAGS", "-O3",
+                     "--top-module", "anvil_qn1_top",
+                     *[f"-G{k}={v}" for k, v in parameters.items()],
+                     "--Mdir", relative(objects), "-o", "simulate", *sources,
+                     "../marker_driver.cpp"], "marker-compile")
+        binary = objects / "simulate"
+        compiled = {"binary": relative(binary), "binding": binding,
+                    "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest()}
+    output = run.execute([compiled["binary"], relative(images),
+                          str(int(opening)), str(threads)], "marker-simulation")
     records = re.findall(r"^MARKER_SUMMARY opening=(\d+) frames=2 logits=(\d+) "
                          r"commits=(\d+) drafts=(\d+) compared_writes=(\d+) "
                          r"requests=(\d+) cycles=(\d+)$", output, re.M)
@@ -350,7 +360,8 @@ def run_markers(run, opening=True):
     counts = list(map(int, records[0]))
     if counts[:4] != [int(opening), 2 * VOCABULARY, 2, 0 if opening else 2]:
         raise AssertionError("integrated marker coverage incomplete")
-    result.update({"counts": counts, "parameters": parameters,
+    result.update({"counts": counts, "parameters": parameters, "compiled": compiled,
+                   "simulation_threads": threads,
                    "scope": "real marker commit, cutoff, deferred resubmission and CSR counts"})
     (run.path / "marker-reference.json").write_text(json.dumps(result, indent=2) + "\n")
     return result

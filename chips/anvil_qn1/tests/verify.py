@@ -123,7 +123,8 @@ def main():
             results = historical_applicability(run)
         elif args.probe == "integrated-marker":
             run.versions(("python3", "verilator", "g++", "make"))
-            results = run_markers(run, opening=args.marker == "open")
+            results = run_markers(run, opening=args.marker == "open",
+                                  threads=args.sim_threads)
         elif args.probe in ("production-layer", "fusion-profile", "fusion-compact"):
             run.versions(("python3", "verilator", "g++", "make"))
             results = (run_layer(run, args.profile) if args.probe == "production-layer"
