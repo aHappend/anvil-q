@@ -915,12 +915,15 @@ def run_target_lanes(experiment):
     images = experiment.directory / "checkpoint-images"
     images.mkdir()
     image_path = images / "lane-weights.txt"
+    target = Target(image)
+    for token in (5, 6):
+        target.process(token)
+    initial_memory = {**image.words, **target.expected_cache_words()}
     image_path.write_text("".join(f"{address:026x} {word:08x}\n"
-                                 for address, word in sorted(image.words.items())))
+                                 for address, word in sorted(initial_memory.items())))
     absorption_path = experiment.directory / "lane-absorption.txt"
     absorption_path.write_text("".join(f"{address:026x} {word:08x}\n" for address, word in
                                       sorted(image.expected_absorption.items())))
-    target = Target(image)
     result_path = experiment.directory / "lane-results.txt"
     with result_path.open("w") as stream:
         for token in (1, 2, 3, 4):
@@ -947,7 +950,8 @@ def run_target_lanes(experiment):
                                 "lanes-simulation")
     experiment.receipt["results"]["target-lanes"] = {
         "seed": 233, "geometry": image.geometry.__dict__, "raw_summary": output.strip(),
-        "oracle": "independent sequential target, four distinct tokens, two layers",
+        "oracle": "independent sequential target, two committed prefix tokens, "
+                  "four distinct candidate tokens, two layers",
         "scope": "public unit interface: exact hidden/KV/tokens, held results, registered "
                  "commit/release, simultaneous four-lane query-weight transfers per layer",
     }
@@ -1258,6 +1262,7 @@ def main():
         elif args.probe == "target-model":
             geometry = (Geometry(layers=2) if args.geometry == "routed" else
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
+            geometry = replace(geometry, banks=args.banks, queue=args.queue)
             run_target_model(experiment, geometry, seed=args.seed,
                              modes=tuple(args.mode) if args.mode is not None else (0, 1, 2, 3),
                              mtp_fixture=args.mtp_fixture,
