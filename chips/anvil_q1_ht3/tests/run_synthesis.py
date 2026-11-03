@@ -314,7 +314,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             reserve = (90 if identifier == "compact-mapped" else 30) if phase != "abc" else 0
             if through_phase == phase:
                 reserve = 0
-            minimum = (240 if identifier == "compact-mapped" and phase != "abc"
+            minimum = (240 if identifier == "compact-mapped" and phase == "word"
                        else 60 if identifier == "compact-mapped"
                        else 30 if phase == "abc" else 0)
             if "rename -enumerate" in commands:
