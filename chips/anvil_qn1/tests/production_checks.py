@@ -185,10 +185,12 @@ LAYER_DRIVER = r"""
 #include "Vanvil_qn1_top.h"
 #include "verilated.h"
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <deque>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -206,10 +208,11 @@ static std::vector<U> load(const std::string& path) {
 struct Response { L tag; U data; };
 int main(int argc,char** argv) {
   try {
-    check(argc==8,"layer driver arguments");
+    check(argc==9,"layer driver arguments");
     const std::string images=argv[1];
     const U H=std::stoul(argv[2]),I=std::stoul(argv[3]),QH=std::stoul(argv[4]);
     const U KH=std::stoul(argv[5]),D=std::stoul(argv[6]),G=std::stoul(argv[7]);
+    const U threads=std::stoul(argv[8]);
     const U QD=QH*D,KD=KH*D,MAX=std::max(I,std::max(H,QD));
     const std::array<U,7> inputs={H,H,H,QD,H,H,I};
     const std::array<U,7> outputs={QD,KD,KD,H,I,I,H};
@@ -226,6 +229,7 @@ int main(int argc,char** argv) {
     L accepted_cycle=0,last_write_response=0;
     const std::array<U,8> shifts={0,16,4,20,8,24,12,28};
     auto context=std::make_unique<VerilatedContext>();
+    context->threads(threads);
     auto dut=std::make_unique<Vanvil_qn1_top>(context.get());
     dut->clk=0;dut->rst_n=0;dut->cancel=0;dut->token_valid=0;
     dut->new_sequence=0;dut->token_phase=0;dut->token_id=3;dut->token_pos=0;
@@ -247,6 +251,7 @@ int main(int argc,char** argv) {
     };
     edge();edge();dut->rst_n=1;dut->eval();
     bool started=false,finished=false;
+    auto last_progress=std::chrono::steady_clock::now();
     while (!finished) {
       dut->token_valid=!started;dut->new_sequence=!started;
       dut->mem_rsp_valid=0;
@@ -350,8 +355,12 @@ int main(int argc,char** argv) {
       }
       if (finished) break;
       edge();++cycles;
-      if (cycles%10000000==0) std::cout<<"LAYER_PROGRESS cycles="<<cycles
-        <<" requests="<<requests<<std::endl;
+      if ((cycles&4095)==0 && std::chrono::steady_clock::now()-last_progress>
+          std::chrono::seconds(30)) {
+        std::cout<<"LAYER_PROGRESS cycles="<<cycles<<" requests="<<requests
+          <<" compared_writes="<<compared<<std::endl;
+        last_progress=std::chrono::steady_clock::now();
+      }
     }
     check(started && cycles>accepted_cycle && key_writes==KD && value_writes==KD,
           "layer input/KV coverage");
@@ -381,7 +390,7 @@ int main(int argc,char** argv) {
 """
 
 
-def run_layer(run, profile=1, normalization=True, compact=False):
+def run_layer(run, profile=1, normalization=True, compact=False, threads=1):
     g = (Geometry(layers=2, vocabulary=8) if compact else PROFILES[profile])
     initial, scratch = layer_reference(g, normalization)
     images = run.path / "checkpoint-images"
@@ -417,13 +426,14 @@ def run_layer(run, profile=1, normalization=True, compact=False):
                   "GROUP_SIZE": g.group}
     objects = run.path / "obj-layer"
     run.execute(["verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-                 "-j", "2", "-CFLAGS", "-O3", "--top-module", "anvil_qn1_top",
+                 "-j", "2", "--threads", str(threads),
+                 "-CFLAGS", "-O3", "--top-module", "anvil_qn1_top",
                  *[f"-G{k}={v}" for k, v in parameters.items()],
                  "--Mdir", relative(objects), "-o", "simulate", *sources,
                  "../layer_driver.cpp"], "layer-compile")
     output = run.execute([relative(objects / "simulate"), relative(images),
                           str(g.hidden), str(g.intermediate), str(g.q_heads),
-                          str(g.kv_heads), str(g.head_dim), str(g.group)],
+                          str(g.kv_heads), str(g.head_dim), str(g.group), str(threads)],
                          "layer-simulation")
     records = re.findall(r"^LAYER_SUMMARY cycles=(\d+) requests=(\d+) "
                          r"compared_writes=(\d+) key_writes=(\d+) "
@@ -439,6 +449,7 @@ def run_layer(run, profile=1, normalization=True, compact=False):
               "cycles": cycles, "requests": requests, "compared_writes": compared,
               "key_writes": keys, "value_writes": values, "image_sha256": image_hashes,
               "compact_diagnostic": compact, "parameters": parameters,
+              "simulation_threads": threads,
               "scope": "one real decoder layer, all seven projections and two residuals",
               "measurement": "token acceptance to first unaccepted next-layer scratch read",
               "memory": "eager-ready, one-cycle external tagged responses, eight banks"}

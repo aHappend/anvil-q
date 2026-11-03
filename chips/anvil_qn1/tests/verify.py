@@ -103,8 +103,10 @@ def main():
                                           "isolation-smoke", "speculative-cancel-case",
                                           "production-layer", "fusion-profile",
                                           "fusion-compact", "integrated-marker",
-                                          "component-applicability"))
+                                          "component-applicability",
+                                          "layer-parallel-compact"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
+    parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1)
     parser.add_argument("--marker", choices=("open", "close"), default="open")
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
@@ -113,7 +115,10 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "component-applicability":
+        if args.probe == "layer-parallel-compact":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_layer(run, compact=True, threads=args.sim_threads)
+        elif args.probe == "component-applicability":
             run.versions(("python3", "verilator", "g++", "make", "yosys"))
             results = historical_applicability(run)
         elif args.probe == "integrated-marker":
