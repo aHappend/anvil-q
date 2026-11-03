@@ -1,0 +1,19 @@
+Fitter Status : Successful - Tue Nov  3 03:30:02 2026
+Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+Revision Name : top
+Top-level Entity Name : anvil_q2_fp2_top
+Family : Arria 10
+Device : 10AX115N2F45E1SG
+Timing Models : Final
+Logic utilization (in ALMs) : 187,088 / 427,200 ( 44 % )
+  * Logic utilization warning : A large number of ALMs contain virtual pins and count towards logic utilization
+  * ALMs containing virtual pins : 1,381 / 427,200 ( < 1 % )
+Total registers : 137867
+Total pins : 0 / 992 ( 0 % )
+Total virtual pins : 2,761
+Total block memory bits : 976,320 / 55,562,240 ( 2 % )
+Total RAM Blocks : 105 / 2,713 ( 4 % )
+Total DSP Blocks : 316 / 1,518 ( 21 % )
+Total HSSI RX channels : 0 / 48 ( 0 % )
+Total HSSI TX channels : 0 / 48 ( 0 % )
+Total PLLs : 0 / 112 ( 0 % )
