@@ -77,7 +77,7 @@ from parent_checks import run_parent
 from reproduction_checks import run_reproduce, run_reproduction_child
 from production_checks import run_layer, run_fusion_profile
 from marker_checks import run_markers
-from component_cache import historical_applicability
+from component_cache import historical_applicability, latest_marker_build
 from model import Geometry
 import reference
 
@@ -124,7 +124,7 @@ def main():
         elif args.probe == "integrated-marker":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_markers(run, opening=args.marker == "open",
-                                  threads=args.sim_threads)
+                                  threads=args.sim_threads, compiled=latest_marker_build())
         elif args.probe in ("production-layer", "fusion-profile", "fusion-compact"):
             run.versions(("python3", "verilator", "g++", "make"))
             results = (run_layer(run, args.profile) if args.probe == "production-layer"

@@ -161,3 +161,35 @@ def historical_applicability(run):
             "attention_reads": context["counts"][2],
             "synthesis_parameters": synthesis["parameters"],
             "scope": "explicit historical component applicability, not whole-product acceptance"}
+
+
+def latest_marker_build():
+    paths = []
+    for parent in (ROOT / "evidence/preparation", ROOT / "evidence"):
+        if parent.is_dir():
+            paths.extend(parent.glob("*integrated-marker-*/receipt.json"))
+    for path in sorted(paths, key=lambda p: p.stat().st_mtime, reverse=True):
+        receipt = json.loads(path.read_text())
+        if receipt.get("status") == "passed":
+            result = receipt.get("results", {})
+            if isinstance(result, dict) and result.get("compiled"):
+                return result["compiled"]
+    return None
+
+
+def marker_case(run, opening):
+    from marker_checks import run_markers
+
+    def validate(result):
+        if result.get("counts", [])[:5] != [
+                int(opening), 303872, 2, 0 if opening else 2, 304]:
+            raise AssertionError("incomplete marker frames/commits/KV/counter comparisons")
+
+    return component(
+        run, "integrated-marker",
+        lambda child: run_markers(child, opening=opening, threads=8,
+                                  compiled=latest_marker_build()),
+        inputs=("tests/reference.py", "tests/model.py", "tests/marker_checks.py"),
+        parameters={"opening": opening, "target": 151667 if opening else 151668,
+                    "vocabulary": 151936, "simulation_threads": 8},
+        tools=("python3", "verilator", "g++", "make"), validate=validate)
