@@ -11,6 +11,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import urllib.parse
 import uuid
@@ -19,7 +20,7 @@ import zipfile
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from acquire_public import fetch
-from execution import ROOT, hashes, relative, remaining, timestamp
+from execution import ROOT, ExecutionFailure, hashes, relative, remaining, timestamp
 from official_reference import Checkpoint, QwenFP64, Tokenizer, perplexity, scored_position
 
 
@@ -230,6 +231,7 @@ def checkpoint_image(output, bindings):
     config = ROOT/bindings["config.json"]["path"]
     current = hashes()
     candidates = []
+    missing = []
     for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
         candidates.extend(parent.glob(
             "*/*/checkpoint-images/official-image-*/image-manifest.json"))
@@ -240,6 +242,9 @@ def checkpoint_image(output, bindings):
                 or any(image.get("source_sha256", {}).get(p) != current[p] for p in DEPENDENCIES)):
             continue
         payload = ROOT/image["image"]
+        if not payload.is_file():
+            missing.append((path, image))
+            continue
         if (not payload.is_file() or payload.stat().st_size != image["image_bytes"]
                 or digest(payload) != image["image_sha256"]):
             continue
@@ -251,9 +256,57 @@ def checkpoint_image(output, bindings):
     directory = images/f"official-image-{uuid.uuid4().hex[:12]}"
     image = build(directory, ROOT/bindings["model.safetensors"]["path"], config, pin)
     manifest = directory/"image-manifest.json"
+    for previous_manifest, previous in missing:
+        if (previous["image_sha256"] != image["image_sha256"]
+                or previous["image_bytes"] != image["image_bytes"]
+                or previous["descriptors"] != image["descriptors"]):
+            continue
+        with (ROOT/image["image"]).open("rb") as source:
+            recovery = restore_image(source, previous, output,
+                                     dict(regenerated_manifest=relative(manifest),
+                                          previous_manifest=relative(previous_manifest)))
+        return dict(manifest=relative(previous_manifest),
+                    manifest_sha256=digest(previous_manifest), image=previous["image"],
+                    image_sha256=previous["image_sha256"], image_bytes=previous["image_bytes"],
+                    reused=False, regeneration=recovery)
     return dict(manifest=relative(manifest), manifest_sha256=digest(manifest),
                 image=image["image"], image_sha256=image["image_sha256"],
                 image_bytes=image["image_bytes"], reused=False)
+
+
+def stream_digest(source):
+    source.seek(0)
+    sha = hashlib.sha256()
+    while block := source.read(1024*1024):
+        sha.update(block)
+    source.seek(0)
+    return sha.hexdigest()
+
+
+def restore_image(source, image, output, cause):
+    """Regenerate only a missing reclaimable payload, never a receipt or observation."""
+    payload = ROOT/image["image"]
+    payload.resolve().relative_to(ROOT)
+    if "checkpoint-images" not in payload.parts or payload.name != "image.bin":
+        raise ValueError("image regeneration is restricted to checkpoint-images/*/image.bin")
+    if stream_digest(source) != image["image_sha256"]:
+        raise AssertionError("pinned image differs from the original checked payload")
+    start = timestamp()
+    payload.parent.mkdir(parents=True, exist_ok=True)
+    with payload.open("xb") as destination:
+        shutil.copyfileobj(source, destination, length=1024*1024)
+    source.seek(0)
+    if (payload.stat().st_size != image["image_bytes"]
+            or digest(payload) != image["image_sha256"]):
+        raise AssertionError("regenerated image does not match the original hash/length")
+    record = dict(kind="reclaimed generated input recovery", image=image["image"],
+                  image_sha256=image["image_sha256"], image_bytes=image["image_bytes"],
+                  start=start, end=timestamp(), cause=cause,
+                  scope="identical input bytes only; no simulation or acceptance result")
+    path = output/f"image-recovery-{uuid.uuid4().hex[:12]}.json"
+    with path.open("x") as out:
+        json.dump(record, out, indent=2)
+    return relative(path)
 
 
 def score_executed(work, stream, bindings, output):
@@ -300,6 +353,17 @@ def score_executed(work, stream, bindings, output):
 
 
 def evaluate(output, works, bindings, image, build, stream_smoke=False, profile_chunks=None):
+    payload = ROOT/image["image"]
+    with payload.open("rb") as source:
+        if (stream_digest(source) != image["image_sha256"]
+                or os.fstat(source.fileno()).st_size != image["image_bytes"]):
+            raise AssertionError("pinned image no longer matches the checked input")
+        return evaluate_pinned(output, works, bindings, image, build, source,
+                               stream_smoke, profile_chunks)
+
+
+def evaluate_pinned(output, works, bindings, image, build, source,
+                    stream_smoke=False, profile_chunks=None):
     from official_stream import run_stream
 
     binary, binding = build
@@ -315,16 +379,42 @@ def evaluate(output, works, bindings, image, build, stream_smoke=False, profile_
                              scored_positions=[0], scored_tokens=1,
                              shifted_targets=work["token_ids"][1:2])
         try:
-            stream = run_stream(directory, image, manifest["descriptors"],
-                                evaluated["token_ids"][:-1],
-                                set(evaluated["scored_positions"]), 151936, binary, binding,
-                                max_new_chunks=profile_chunks)
+            recoveries = []
+            while True:
+                attempt = directory/f"stream-attempt-{uuid.uuid4().hex[:12]}"
+                attempt.mkdir()
+                try:
+                    stream = run_stream(attempt, image, manifest["descriptors"],
+                                        evaluated["token_ids"][:-1],
+                                        set(evaluated["scored_positions"]), 151936, binary, binding,
+                                        max_new_chunks=profile_chunks)
+                    break
+                except (FileNotFoundError, ExecutionFailure) as exc:
+                    payload = ROOT/image["image"]
+                    if payload.exists() or remaining() < 90:
+                        raise
+                    if isinstance(exc, FileNotFoundError):
+                        if Path(exc.filename).resolve() != payload.resolve():
+                            raise
+                        cause = dict(missing_input=image["image"], error=str(exc))
+                    else:
+                        record = exc.record
+                        argv = record.get("argv", [])
+                        if (record.get("timed_out") or "--image" not in argv
+                                or argv[argv.index("--image")+1] != image["image"]
+                                or (ROOT/record["stderr"]).read_text().strip() !=
+                                   "OFFICIAL_STREAM_FAILURE cannot open pinned memory image"):
+                            raise
+                        cause = dict(failed_simulation=record["stdout"].replace(
+                            ".stdout.txt", ".receipt.json"), error=str(exc))
+                    recoveries.append(restore_image(source, image, directory, cause))
             scored = score_executed(evaluated, stream, bindings, directory)
             row = dict(task=work["task"], id=work["id"], status=scored["status"],
                        tokens=len(evaluated["token_ids"])-1,
                        required_scored_positions=evaluated["scored_tokens"],
-                       stream=relative(directory/"stream-result.json"),
-                       stream_summary=stream["summary"], scoring=scored)
+                       stream=relative(attempt/"stream-result.json"),
+                       stream_summary=stream["summary"], scoring=scored,
+                       input_recoveries=recoveries)
         except (OSError, RuntimeError, AssertionError, ValueError, KeyError) as exc:
             row = dict(task=work["task"], id=work["id"], status="failed",
                        error=f"{type(exc).__name__}: {exc}", directory=relative(directory))

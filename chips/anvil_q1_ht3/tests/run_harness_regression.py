@@ -3,6 +3,7 @@
 import argparse
 import ast
 from contextlib import redirect_stdout
+import errno
 import io
 import json
 import math
@@ -14,7 +15,8 @@ import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, failure_details, hashes, relative, remaining, timestamp
+from execution import (ROOT, ExecutionFailure, failure_details, hashes, relative,
+                       remaining, timestamp)
 from retention import artifacts_intact, digest, execution_logs_intact
 from run_mutations import trial
 from run_compatibility import resumable_case
@@ -103,6 +105,66 @@ def run(output):
         exit_code = run_benchmarks.main()
     if exit_code != 0 or events != ["acquire"]:
         raise AssertionError("input-only mode no longer excludes RTL compilation/execution")
+    assertions += 1
+    image_directory = output/"checkpoint-images"/f"official-image-{uuid.uuid4().hex[:12]}"
+    image_directory.mkdir(parents=True)
+    payload = image_directory/"image.bin"
+    payload.write_bytes(b"synthetic pinned input; not a model")
+    manifest = image_directory/"image-manifest.json"
+    manifest.write_text(json.dumps(dict(descriptors=[])))
+    image_record = dict(image=relative(payload), image_sha256=digest(payload),
+                        image_bytes=payload.stat().st_size, manifest=relative(manifest))
+    expected_image = payload.read_bytes()
+    stream_calls = []
+
+    def reclaim_then_resume(directory, image, *args, **kwargs):
+        stream_calls.append(directory)
+        if len(stream_calls) <= 2:
+            payload.unlink()
+            if len(stream_calls) == 1:
+                raise FileNotFoundError(errno.ENOENT, "synthetic input reclamation",
+                                        str(payload.resolve()))
+            stderr = directory/"simulation.stderr.txt"
+            stderr.write_text("OFFICIAL_STREAM_FAILURE cannot open pinned memory image\n")
+            stdout = directory/"simulation.stdout.txt"
+            stdout.write_text("")
+            raise ExecutionFailure("synthetic child input reclamation",
+                                   dict(argv=["synthetic", "--image", image["image"]],
+                                        timed_out=False, exit=1, launched=True,
+                                        stderr=relative(stderr), stdout=relative(stdout)))
+        if payload.read_bytes() != expected_image:
+            raise AssertionError("pinned input was not restored byte-for-byte")
+        result = dict(status="incomplete", summary=dict(complete=0))
+        (directory/"stream-result.json").write_text(json.dumps(result))
+        return result
+
+    work = dict(task="synthetic", id="lifetime-only", token_ids=[0, 1],
+                scored_positions=[0], scored_tokens=1)
+    with patch("official_stream.run_stream", side_effect=reclaim_then_resume), \
+            patch("run_benchmarks.score_executed", return_value=dict(status="incomplete")):
+        rows = run_benchmarks.evaluate(output, [work], {}, image_record,
+                                      ("synthetic-binary", "synthetic-binding"))
+    if (len(stream_calls) != 3 or rows[0]["status"] != "incomplete"
+            or len(rows[0]["input_recoveries"]) != 2
+            or payload.read_bytes() != expected_image):
+        raise AssertionError("input recovery lost an attempt, changed bytes or fabricated completion")
+    assertions += 1
+    with payload.open("rb") as source:
+        try:
+            run_benchmarks.restore_image(source, image_record, output, dict(synthetic=True))
+        except FileExistsError:
+            assertions += 1
+        else:
+            raise AssertionError("input recovery overwrote an existing artifact")
+    with patch("official_stream.run_stream", side_effect=ExecutionFailure(
+            "synthetic numerical failure",
+            dict(argv=["synthetic", "--image", image_record["image"]],
+                 timed_out=False, exit=1, launched=True))), \
+            patch("run_benchmarks.score_executed", side_effect=AssertionError("must not score")):
+        rows = run_benchmarks.evaluate(output, [work], {}, image_record,
+                                      ("synthetic-binary", "synthetic-binding"))
+    if rows[0]["status"] != "failed" or "synthetic numerical failure" not in rows[0]["error"]:
+        raise AssertionError("input recovery concealed a non-input execution failure")
     assertions += 1
     previous = os.environ.get("HT3_CHECK_DEADLINE")
     try:
