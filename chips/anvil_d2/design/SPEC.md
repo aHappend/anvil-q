@@ -281,8 +281,141 @@ RoPE/expanded unrelated tensors must not be relabeled latent savings.
 MTP-only parameters use kind 12, layer NUM_LAYERS+head_index, head_index
 0..3. Projection 0 is H by 2H concatenation, projection 1 hidden RMS gain,
 projection 2 embedding RMS gain. Native decoder tensor roles and remaining
-head parameter projections must be finalized without live-address overlap
-before integration. Shared embeddings/output retain parent identities.
+head parameter projections use the map below. Shared embeddings/output
+retain parent identities.
+
+### Native draft transformer mapping and private context
+
+The four native MTP transformers use the native decoder arithmetic with
+independently addressed attention, residual and routed/shared-MoE weights.
+All four additional heads are MoE layers, beyond FIRST_DENSE_LAYERS in
+the target stack. This does not change the target dense-layer parameter.
+The physical arithmetic may be reused sequentially between depths; weights
+and absorption ownership are indexed by depth, never implicitly tied.
+
+All entries below have kind 12 and layer NUM_LAYERS+head. The row/column
+encoding is a tensor identity, not a byte-address multiplication.
+
+| Projection | Row | Column / tensor |
+|---|---|---|
+| 0 | output component | hidden-first 2H concatenation input component |
+| 1, 2 | 0 | hidden/embedding input RMS gain component |
+| 3 | 0, 1, 2 | attention, FFN, final-output RMS gain component |
+| 4 | native MLA raw row, high nibble 0..6 | Native raw MLA matrix column, unchanged |
+| 4 | `0x70000000 + expert` | H-component router affinity row |
+| 4 | `0x80000000 + absolute_position` | RoPE cosine/sine pair components |
+| 5 | `{expert[6:0],matrix[1:0],output_row[22:0]}` | Native gate/up/down matrix (matrix 0/1/2), or bias (matrix 3, col 0/1/2) |
+| 6 | absolute candidate position | Head-private committed latent then RoPE components |
+| 7 | `{query_head[3:0],matrix_b,27-bit_output_row}` | Three-word exact signed-96 absorbed coefficient; A uses matrix_b=0, B uses 1 |
+
+Router/rotary prefixes do not overlap raw MLA rows. The new absorbed B tag
+uses row bit 27; legal native output dimensions use only bits 10:0.
+Shared token weights keep kind 0, layer/projection 0. Head hidden, query
+and FFN scratch remains local and does not occupy these external rows.
+FP8 routed matrices retain projection 5, use kinds 13/14 and the same
+NUM_LAYERS+head and encoded expert row; bias rows are not compressed.
+MTP-private latent context is separate from target latent context and is
+not counted as target-cache compression.
+
+Head d's first valid hidden state is at absolute position d+1, formed
+from the previous-depth state one position earlier and the actual token
+at that position. The reused native decoder runs relative position
+`absolute_position-(head+1)` so its causal scan has no nonexistent
+leading states. Translate its cache row and RoPE table row back to
+absolute positions. Do not shift the RoPE angle or include dummy prefix
+keys in the softmax denominator.
+
+Maintain a contiguous committed frontier per head, initialized to d+1.
+Before speculation the generation controller must warm every applicable
+head over actual committed context. A speculative diagonal additionally
+needs the earlier-position states of later heads: execute the triangular
+dependency graph, not four unrelated decoder commands. Retain bounded
+previous-depth hidden vectors for that replay. These are integration
+obligations, not permission to read an uninitialized head prefix.
+
+`anvil_d2_draft_cache` holds at most four private candidate rows per head
+in synchronous RAM. A head command must append exactly at its committed
+frontier plus current private count. Writes capture all latent/RoPE
+components in order before causal reads. Reads below the frontier go to
+the head-private committed store; reads at/above it use captured RAM.
+Only explicit commit-through-position writes private rows to external
+memory and advances each head frontier after acknowledgements. Commit
+discards all remaining private suffix rows. Ordinary head release keeps
+private rows for the following dependent head execution. Flush invalidates
+both committed ownership and private ownership and requires a new epoch.
+
+| Draft-cache boundary / edge | Effect |
+|---|---|
+| Reset / first release edge | Zero handshakes, then arm only; RAM contents are not validity |
+| Head command handshake | Capture epoch/depth/absolute position; reject discontinuity, overflow or fifth private row |
+| Latent/RoPE write handshake | Synchronous private RAM write; registered acknowledgement, never external publication |
+| Last component write | Finish capture only after its response retires; reads then become legal |
+| Private read handshake | Synchronous RAM read, held registered response |
+| Committed-prefix read | One owned external request, registered consumer response after acceptance |
+| Head release | Require complete capture and no response/work pending; increment private row count |
+| Commit handshake | Freeze all heads; select only rows at/before committed through-position |
+| Commit write response | Advance word/row/frontier only after successful acknowledgement |
+| Commit completion | Discard unselected suffixes, pulse done separately, then return idle |
+| Flush/error during request | Annul local ownership; shared tagged transport must drain accepted requests |
+| Rank 1 / MAX_SEQ_LEN 1 | CW remains at least 3; no valid head position exists at sequence length 1 |
+
+The native head execution schedule is projection command/capture ->
+projection output/local writes -> private-cache command -> decoder ->
+final RMS -> shared vocabulary projection/greedy selection -> held hidden
+stream -> result -> release. Complete h_next is the decoder residual
+output (scratch row 0), not final normalized output row 14. Predictions
+use row 14 and smallest-ID logit tie breaking. Completion and cache release
+must wait for the full hidden stream; downstream stalls cannot overwrite
+the hidden vector. Memory/arithmetic errors annul unpublished head results
+and latch a fault until flush. No public externally fabricated prediction
+or verdict port is introduced by this internal head interface.
+
+`anvil_d2_draft_sequence` sequences that datapath. An append command
+supplies one actual target-materialized token and its H-component hidden
+stream in contiguous position order. At position p execute each head
+d with p>=d+1, using the retained previous-position depth-(d-1) hidden
+(target hidden for d=0) and the actual token at p. A new-sequence append
+requires position 0 and resets head-cache ownership. Append commits its
+actual head K/V only after all computations succeed, then atomically
+replaces the retained hidden history. This eager priming is required when
+MTP is active; a controller enabling MTP on existing unprimed context must
+replay its real token/target history before requesting a speculative block.
+It must not pretend absent head state is zero or an already warmed cache.
+
+A speculate command uses the retained committed context, a real target
+anchor token at its next position and proposed depth 0..4. For column c,
+execute heads c..K-1 where their first legal position has been reached.
+Head c's prediction is the next diagonal proposal; later heads supply
+the earlier causal states required at the next column. Column 0 consumes
+committed prior-depth history; later columns consume the preceding column's
+prior-depth hidden, never a future-column state. Two alternating 4H RAM
+banks suffice. At K=4 and a mature prefix this executes ten transformer
+passes (4+3+2+1), not four independent token lookups.
+
+The correctness-first implementation discards **all** temporary head K/V
+before publishing draft results; subsequent accepted-token append commands
+recompute actual head state from the committed history. This costs replay
+cycles and is not a speculative speedup claim. It prevents rejection from
+publishing any head suffix and handles EOS/limit truncation without
+rollback writes. Target candidate K/V commit remains independent.
+
+| Draft sequencer state / edge | Effect |
+|---|---|
+| IDLE append handshake | Validate new sequence at 0, or exact epoch/next position |
+| RESTART | Flush head/cache ownership for a new sequence; do not clear RAM |
+| INPUT | Capture exactly H materialized target hidden components |
+| SELECT | Select legal next native depth; skip only mathematically absent leading states |
+| HEAD_COMMAND | Handshake with native head; freeze selected depth/token/position |
+| SOURCE_READ / SOURCE_FEED | Registered history RAM read followed by held input handshake |
+| HEAD_OUTPUT | Capture residual hidden stream with exact index/last checks |
+| HEAD_RESULT | Record diagonal prediction; next column token is that computed prediction |
+| COMMIT / WAIT | Append acknowledges actual head rows; speculate commits only through the old context, discarding private suffix |
+| COPY_READ / COPY_WRITE | Copy complete append staging into retained history without exposing a partial frontier |
+| RESULT stall | Hold packed computed proposals and count; committed history is unchanged |
+| COMPLETE | One-cycle operation done; next command starts only in following idle |
+| Reset/flush/error | Annul unpublished results; error invalidates continuation and requires a new sequence |
+| Depth 0 / first context at 0 | No head executes for zero proposals; first append has only target hidden |
+| Sequence tail | Reject any command that would compute or propose an out-of-range absolute position |
 
 ### MTP input projection implementation boundary
 

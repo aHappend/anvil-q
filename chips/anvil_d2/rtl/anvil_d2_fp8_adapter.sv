@@ -1,7 +1,7 @@
 module anvil_d2_fp8_adapter #(
   parameter integer CLIENTS=7, NUM_LAYERS=27, HIDDEN_SIZE=2048,
   parameter integer KV_LORA_RANK=512, MOE_INTERMEDIATE_SIZE=1408,
-  parameter integer ROUTED_EXPERTS=64, MAX_SEQ_LEN=32768,
+  parameter integer ROUTED_EXPERTS=64, MAX_SEQ_LEN=32768, MTP_K=4,
   localparam integer SC=CLIENTS>=1 && CLIENTS<=32 ? CLIENTS : 1
 ) (
   input wire clk, rst_n, flush, fp8_enable,
@@ -45,7 +45,7 @@ module anvil_d2_fp8_adapter #(
         KV_LORA_RANK<1 || KV_LORA_RANK>512 || MOE_INTERMEDIATE_SIZE<8 ||
         MOE_INTERMEDIATE_SIZE>1408 || (MOE_INTERMEDIATE_SIZE & 7)!=0 ||
         ROUTED_EXPERTS<1 || ROUTED_EXPERTS>64 ||
-        MAX_SEQ_LEN<1 || MAX_SEQ_LEN>32768) begin: invalid_parameters
+        MAX_SEQ_LEN<1 || MAX_SEQ_LEN>32768 || MTP_K!=4) begin: invalid_parameters
       initial $fatal(1,"ANVIL_D2 PARAMETER ERROR: FP8 scalar adapter geometry");
       assign idle=0;
       assign fault=0;
@@ -140,12 +140,13 @@ module anvil_d2_fp8_adapter #(
       always @* begin
         transformed=0; expert_address=0;
         for (n=0;n<SC;n=n+1) begin
-          expert_address[n]=s_req_kind[n*4+:4]==15 && s_req_proj[n*3+:3]==5 &&
+          expert_address[n]=(s_req_kind[n*4+:4]==15 || s_req_kind[n*4+:4]==12) &&
+            s_req_proj[n*3+:3]==5 &&
             s_req_row[n*32+25+:7]<ROUTED_EXPERTS &&
             s_req_row[n*32+23+:2]!=3 && !s_req_write[n];
-          transformed[n]=fp8_enable && s_req_kind[n*4+:4]==15 &&
-            ((s_req_proj[n*3+:3]==3 && s_req_col[n*32+:32]<KV_LORA_RANK) ||
-             expert_address[n]);
+          transformed[n]=fp8_enable &&
+            ((s_req_kind[n*4+:4]==15 && s_req_proj[n*3+:3]==3 &&
+              s_req_col[n*32+:32]<KV_LORA_RANK) || expert_address[n]);
         end
         found=0; selected=owner; candidate=0; ready_local=0;
         if (enabled && !failed) begin
@@ -174,7 +175,10 @@ module anvil_d2_fp8_adapter #(
         selected_base={s_req_col[selected*32+7+:25],7'd0};
         remaining=selected_cols-selected_base;
         selected_count=remaining>128 ? 9'd128 : remaining[8:0];
-        selected_legal=s_req_layer[selected*32+:32]<NUM_LAYERS &&
+        selected_legal=(s_req_kind[selected*4+:4]==12 ?
+          (expert_address[selected] && s_req_layer[selected*32+:32]>=NUM_LAYERS &&
+           s_req_layer[selected*32+:32]<NUM_LAYERS+MTP_K) :
+          s_req_layer[selected*32+:32]<NUM_LAYERS) &&
           s_req_col[selected*32+:32]<selected_cols &&
           (expert_address[selected] ?
             {9'd0,s_req_row[selected*32+:23]}<selected_rows :

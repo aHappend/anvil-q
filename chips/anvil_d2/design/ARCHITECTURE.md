@@ -20,14 +20,19 @@ The unchanged parent directory is input provenance, not a passing baseline.
 | `rtl/anvil_d2_fp8_adapter.sv` | Scalar native-cache/routed-matrix adaptation to real group transactions, including buffered writes and a bounded decoded working set |
 | `rtl/anvil_d2_verify_cache.sv` | Isolated candidate K/V, per-layer write barrier, causal two-pass cache broadcast and prefix-only acknowledged commit |
 | `rtl/anvil_d2_target_lanes.sv` | Four concurrent native decoder datapaths, per-layer barriers, final normalization/shared output projection and target argmax |
+| `rtl/anvil_d2_draft_cache.sv` | Four private candidate rows per native head, contiguous committed frontiers, causal reads and acknowledged explicit commit/discard |
+| `rtl/anvil_d2_draft_head.sv` | Native RMS/concatenation -> transformer MLA/residual/MoE -> shared vocabulary projection, independently addressed by head |
+| `rtl/anvil_d2_draft_sequence.sv` | Actual-token head-history priming, sequential triangular speculative graph and private-head rollback |
 
 These components do not yet constitute `anvil_d2_top`,
 or `anvil_d2_mtp_engine`. The four-lane target subsystem now connects
 unchanged native arithmetic to lane-local scratch and an isolated
 candidate cache. The scalar FP8 adapter and group service still require
 top-level connection to those consumers and the tagged scheduler. Native
-head transformers, the complete generation/final-materialization
-controller and a completed Quartus source manifest remain design work.
+head transformers and their sequential dependency graph now exist in
+the draft subsystem. Its connection to target context/verification,
+the complete generation/final-materialization controller and a completed
+Quartus source manifest remain design work.
 Do not infer implemented generation from these subsystems or the
 publication leaf alone.
 No functional, synthesis, timing, hardware or speedup result is claimed.
@@ -62,9 +67,10 @@ actual target latent write group
 
 The numerical leaves are now connected within the FP8 group service and
 the parent arithmetic is connected within the MTP input projection.
-Neither path is yet integrated with a complete native target/MTP decoder.
-The system-level arrows remain integration obligations. Preserve literal
-top instances `mtp` and `fp8` on integration.
+The numerical and native draft/target paths are not yet integrated with
+one another or the public controller. The system-level arrows remain
+integration obligations. Preserve literal top instances `mtp` and `fp8`
+on integration.
 
 ## FP8 dequant datapath
 
@@ -169,8 +175,11 @@ registers do not depend on parent snapshots or future product reports.
 
 The input projection tensor map is implemented: kind 12, layer
 NUM_LAYERS+head, projections 0/1/2 for concatenation/hidden gain/embedding
-gain. The native head transformer map must still be finalized without
-aliasing those tensors, shared token tensors, cache or scratch. Exactly
+gain. The native head transformer map is now fixed in SPEC.md: projection 3
+holds its three decoder RMS gains, projection 4 separates raw MLA/router/
+rotary rows, projection 5 retains encoded expert matrices/biases,
+projection 6 owns committed head context and projection 7 separates
+wide absorbed A/B matrices with row bit 27. Exactly
 four target lanes are instantiated in `anvil_d2_target_lanes`, with
 separate query/softmax/context state, committed-prefix broadcasts and
 explicit per-layer causal K/V barriers. They have not yet been connected
@@ -278,8 +287,8 @@ Three synchronous RAMs hold H previous-hidden, 2H normalized and H
 projected words. Parent leaf memory requests for those intermediates
 are served locally with registered responses, including write
 acknowledgements. Only embedding and gain/projection weight reads reach
-the external client. The projected hidden stream is an input to a
-still-required native transformer head, not a predicted token.
+the external client. The projected hidden stream now feeds `anvil_d2_draft_head`'s native
+transformer; the projection leaf alone is not a predicted token.
 
 `anvil_d2_mtp_verdict` captures internally computed anchor/draft/target
 results, selects only the longest matching draft prefix and its first
