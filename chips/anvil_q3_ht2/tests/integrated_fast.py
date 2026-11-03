@@ -48,7 +48,7 @@ def generate_nonzero(run, mode, seed):
     return model, vectors, lines, qreads
 
 
-def run_fast_integration(run, mode, seed=17, diagnostic=False):
+def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False):
     model, vectors, lines, qreads = generate_nonzero(run, mode, seed)
     obj = run / "integrated-obj"
     obj.mkdir()
@@ -63,14 +63,16 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
         "-CFLAGS", "-O3", "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
+        *(["-CFLAGS", "-pg", "-LDFLAGS", "-pg"] if profile else []),
         f"-DHT2_TEST_CACHE_MODE={mode}",
         *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
-            relative(executable), f"+vectors={relative(vectors)}",
-            f"+model={relative(model)}",
-            *(["+sample_cycles=16384"] if diagnostic else [])],
-            ["verilator", "--version"])
+            str(executable.relative_to(run)), f"+vectors={vectors.name}",
+            f"+model={model.relative_to(run)}",
+            *(["+sample_cycles=16384"] if diagnostic else []),
+            *(["+profile"] if profile else [])],
+            ["verilator", "--version"], cwd=run)
     finally:
         cleanup_build(obj)
     raw = (result / "stdout.txt").read_text().splitlines()
