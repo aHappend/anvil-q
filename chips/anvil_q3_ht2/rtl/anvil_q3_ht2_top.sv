@@ -54,14 +54,15 @@ module anvil_q3_ht2_top #(
   localparam [127:0] KD=128'(NUM_KV_HEADS)*128'(HEAD_DIM);
   localparam CAP=CACHE_MODE==2 ? 64 : CACHE_MODE==1 ? 32 : 16;
   function automatic [127:0] packed_extent(input integer kind);
-    reg [127:0] n, m, bytes, total;
+    reg [127:0] n, m, packed_stride, bytes, total;
     begin
       total=0;
       for (integer p=0;p<7;p=p+1) begin
         n=p==6 ? I : H;
         m=p==1 || p==2 ? KD : p==4 || p==5 ? I : H;
-        if (kind==0) bytes=n*(m>>1);
-        else if (kind==1) bytes=(n>>$clog2(GS))*(m>>1);
+        packed_stride=((m+7)>>3)<<2;
+        if (kind==0) bytes=n*packed_stride;
+        else if (kind==1) bytes=(n>>$clog2(GS))*packed_stride;
         else bytes=(n>>$clog2(GS))*m*2;
         total=total+((bytes+63)&128'hffffffffffffffffffffffffffffffc0);
       end

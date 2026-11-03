@@ -82,6 +82,7 @@ module anvil_q3_ht2_projection_metadata #(
     wire [63:0] remaining={32'd0,cmd_outputs}-{32'd0,cmd_row_base};
     wire [31:0] command_rows=remaining>128 ? 32'd128 : remaining[31:0];
     wire [63:0] command_last={32'd0,cmd_row_base}+{32'd0,command_rows}-1;
+    wire [63:0] command_zero_stride=(({32'd0,cmd_outputs}+64'd7)>>3)<<2;
 
     assign cmd_ready=running && !failed && !memory_rsp_valid &&
       (state==IDLE || state==READY);
@@ -207,14 +208,14 @@ module anvil_q3_ht2_projection_metadata #(
                 rows<=command_rows;
                 groups<=({32'd0,cmd_inputs}+GROUP_SIZE-1)>>GSHIFT;
                 zero_words<=(command_last>>3)-({32'd0,cmd_row_base}>>3)+1;
-                zero_stride<=cmd_outputs>>1;
+                zero_stride<=command_zero_stride[31:0];
                 zero_base<=cmd_qzeros_base; scale_base<=cmd_scales_base;
                 zero_bytes<=(({32'd0,cmd_inputs}+GROUP_SIZE-1)>>GSHIFT) *
-                  {32'd0,(cmd_outputs>>1)};
+                  command_zero_stride;
                 scale_bytes<=(({32'd0,cmd_inputs}+GROUP_SIZE-1)>>GSHIFT) *
                   ({32'd0,cmd_outputs}<<1);
                 command_bad<=cmd_inputs==0 || cmd_inputs>MAX_INPUTS ||
-                  cmd_outputs==0 || cmd_outputs[2:0]!=0 ||
+                  cmd_outputs==0 ||
                   cmd_row_base>=cmd_outputs ||
                   cmd_qzeros_base[5:0]!=0 || cmd_scales_base[5:0]!=0 ||
                   cmd_qzeros_base<33'h060000000 ||

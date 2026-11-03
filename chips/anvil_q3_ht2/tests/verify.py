@@ -167,6 +167,7 @@ def require_complete_coverage(ledger):
             rows.get(f"tile-seed{seed}", {}).get("observed", {}).get(
                 "max_consecutive_beats", 0) >= 64 for seed in SEEDS),
         "complete_nonzero_36_layer_chain_and_branch_both_modes": all(
+            rows.get(f"integrated-mode{mode}-seed{seed}", {}).get("layers") == 36 and
             rows.get(f"integrated-mode{mode}-seed{seed}", {}).get(
                 "nonzero_projection_comparisons", 0) > 0 and
             rows.get(f"integrated-mode{mode}-seed{seed}", {}).get(

@@ -170,6 +170,18 @@ destination scratch slot. Projection IDs 0..2 read compatible FP16 biases
 after FP32-to-Q16 conversion, then perform the parent's saturating Q16 bias
 addition. IDs 3..6 have no bias.
 
+True output rows `M` are distinct from packed storage capacity. Each qweight
+column and qzero group occupies `ceil(M/8)*4` bytes, including for legal
+K/V widths 2, 4 and 6. Each scale group occupies exactly `M*2` bytes.
+Matrix allocations alone are rounded to 64 bytes; these allocations determine
+all later projection and layer offsets, including the top-level extent guards.
+Bias dimensions, scratch writes and numerical row masks always use true `M`.
+The integration adapter passes `ceil(M/8)*8` as the sparse DMA's storage
+output count, preserving that module's multiple-of-eight public contract.
+It intersects the DMA descriptor with the true-row mask before commanding
+the MAC and checking its result. Packed padding never activates a MAC row,
+requires a scale or bias, or generates a scratch write.
+
 The DMA's optional elaboration parameter `RETAIN_SCAN=1` is internal
 integration functionality; its default zero preserves the frozen standalone
 ingestion protocol. Retention is valid only after successful completion, for
@@ -206,6 +218,10 @@ keep/last fields together to the literal tile MAC.
 | Projection boundary | Behavior |
 | --- | --- |
 | Command transfer | Latch controls; flush previous local arithmetic/scan/metadata ownership before setup. |
+| Handshake edge | Sample pre-edge valid and ready; post-edge state and counters describe only the accepted transfer. |
+| Reset/first released edge | Reset suppresses public outputs; an idle released edge cannot issue traffic without an accepted command. |
+| K/V width 2, 4 or 6 | Use one packed word per column/group, compact true-row scales and biases, and exactly M writes per active candidate. |
+| Packed descriptor transfer | Intersect its capacity mask with true rows on the same descriptor handshake; save that exact MAC mask for result validation. No added pipeline stage. |
 | First block | One shared scratch read and FP16 conversion per column; descriptor only after complete scan. |
 | Later block | Same scanned activation/mask banks; revalidate row block, then descriptor without activation reads. |
 | Metadata command | Widened zero/scale extent products, rounding, then base-plus-end checks in separate registered states. |

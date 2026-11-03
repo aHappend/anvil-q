@@ -103,8 +103,17 @@ candidate banks. It derives the parent's exact seven-matrix image offsets
 from widened elaboration constants, then registers layer products, matrix
 offsets and region-base additions separately. Its scratch slot mapping is
 identical to the parent: 1->2/3/4, 5->6, 8->9/10 and 11->12.
-Each 128-row tile uses the DMA's retained-count/tail-mask descriptor,
-consumed by the literal `tile_batch_mac`.
+Qweight columns and qzero groups use `ceil(true_outputs/8)*4` bytes,
+matching the parent image mapper even for two-row K/V projections. Scales
+remain compact at `true_outputs*2` bytes per group, and each complete matrix
+allocation is rounded to 64 bytes before later projection/layer offsets are
+summed. The top's region-capacity guards use the same packed extents.
+Each 128-row tile uses the DMA's retained-count descriptor. An integration
+adapter gives the DMA rounded packed-row capacity (a multiple of eight),
+then intersects its descriptor with the true output-row mask consumed by
+the literal `tile_batch_mac`. Only true rows receive numerical work, scales,
+biases and scratch writes; a two-row K/V projection writes exactly two
+results per active candidate. The standalone sparse DMA contract is unchanged.
 
 The first row block converts one common-mask scratch read per logical column
 through four Q16-to-FP16 helpers. The DMA retains these activation/mask banks
@@ -117,7 +126,10 @@ DMA defaults retain their original ingestion contract.
 The literal `resident_metadata` loads all image-backed group records for the
 owned row block. Containing packed qzero words are assembled in 17 bounded
 source-word banks, then global AWQ nibbles are normalized into local packed
-rows. Natural-row scales are captured with a bounded 32-half line selector
+rows. The metadata loader accepts true positive output counts, computes the
+rounded packed-word qzero group stride separately from the compact scale
+group stride, and bounds both full allocations before reads.
+Natural-row scales are captured with a bounded 32-half line selector
 per bank. One zero and one scale RAM bank per row provide synchronous resident
 queries; query data cannot be visible until all groups load. Tail rows are zero,
 and invalid active scales fault explicitly. Metadata uses aligned physical

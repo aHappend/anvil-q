@@ -47,11 +47,12 @@ module anvil_q3_ht2_projection #(
     matrix_outputs=p==1 || p==2 ? KD : p==4 || p==5 ? I : H;
   endfunction
   function automatic [127:0] matrix_bytes(input integer kind, p);
-    reg [127:0] n,m,bytes;
+    reg [127:0] n,m,packed_stride,bytes;
     begin
       n=matrix_inputs(p); m=matrix_outputs(p);
-      if (kind==1) bytes=n*(m>>1);
-      else if (kind==2) bytes=((n+GS-1)>>GSHIFT)*(m>>1);
+      packed_stride=((m+7)>>3)<<2;
+      if (kind==1) bytes=n*packed_stride;
+      else if (kind==2) bytes=((n+GS-1)>>GSHIFT)*packed_stride;
       else bytes=((n+GS-1)>>GSHIFT)*m*2;
       matrix_bytes=(bytes+63)&128'hffffffffffffffffffffffffffffffc0;
     end
@@ -122,6 +123,7 @@ module anvil_q3_ht2_projection #(
     reg [63:0] qw_count,meta_count,bias_count,activation_count,retained_count,skip_count;
     reg [63:0] selected_qw_offset,selected_qz_offset,selected_sc_offset;
     wire [31:0] block_rows=outputs-row_base<128 ? outputs-row_base : 32'd128;
+    wire [31:0] packed_outputs=32'((({32'd0,outputs}+64'd7)>>3)<<3);
     wire running=rst_n && !flush;
     wire unit_flush=flush || state==LOCAL_FLUSH || state==FAIL_FLUSH;
     wire active=running && !unit_flush && !failed &&
@@ -130,6 +132,7 @@ module anvil_q3_ht2_projection #(
     wire dma_done,dma_error,dma_idle,dma_drained,dma_fault;
     wire [31:0] dma_columns,dma_weight_column,dma_scanned,dma_skipped,dma_issued;
     wire [127:0] dma_row_mask;
+    wire [127:0] true_row_mask, tile_row_mask;
     wire [511:0] dma_weight;
     wire [63:0] dma_activation;
     wire [3:0] dma_keep;
@@ -185,6 +188,11 @@ module anvil_q3_ht2_projection #(
       !scratch_pending && !bias_pending;
     wire signed [31:0] decoded_bias=anvil_q3_pkg::f16_q16(bias_f16);
     integer t;
+
+    for (genvar r=0;r<128;r=r+1) begin: true_rows
+      assign true_row_mask[r]=r<block_rows;
+    end
+    assign tile_row_mask=dma_row_mask & true_row_mask;
 
     always @* begin
       classification_bad=state==BIAS_DECODE && anvil_q3_pkg::f16_invalid(bias_f16);
@@ -281,7 +289,7 @@ module anvil_q3_ht2_projection #(
       .clk(clk),.rst_n(rst_n),.flush(unit_flush),
       .cmd_valid(active && state==DMA_COMMAND),.cmd_ready(dma_cmd_ready),
       .cmd_epoch(epoch),.cmd_layer(layer),.cmd_proj(projection),
-      .cmd_qweight_base(qweight_base),.cmd_output_count(outputs),.cmd_row_base(row_base),
+      .cmd_qweight_base(qweight_base),.cmd_output_count(packed_outputs),.cmd_row_base(row_base),
       .cmd_columns(inputs),.cmd_token_mask(token_mask),
       .cmd_sparse_enable(sparse),.cmd_threshold_f16(threshold),
       .act_valid(active && state==ACT_FEED),.act_ready(dma_act_ready),
@@ -327,7 +335,7 @@ module anvil_q3_ht2_projection #(
       .cmd_valid(active && state==DESCRIPTOR && dma_tile_valid),.cmd_ready(mac_cmd_ready),
       .cmd_epoch(epoch),.cmd_layer(layer),.cmd_proj(projection),
       .cmd_row_base(row_base),.cmd_columns(dma_columns),
-      .cmd_token_mask(token_mask),.cmd_row_mask(dma_row_mask),
+      .cmd_token_mask(token_mask),.cmd_row_mask(tile_row_mask),
       .in_valid(active && state==META_RETURN && dma_weight_valid &&
         meta_valid && !meta_operand_error),.in_ready(mac_in_ready),
       .in_column(dma_weight_column),.in_qweight(dma_weight),.in_qzero(meta_zero),
@@ -483,7 +491,7 @@ module anvil_q3_ht2_projection #(
               else begin input_column<=input_column+1'b1; state<=ACT_REQUEST; end
             end
             DESCRIPTOR: if (descriptor_fire) begin
-              dma_row_mask_saved<=dma_row_mask;
+              dma_row_mask_saved<=tile_row_mask;
               retained_count<=retained_count+{32'd0,dma_columns};
               skip_count<=skip_count+{32'd0,dma_skipped};
               if (dma_columns==0) state<=RESULT_WAIT;

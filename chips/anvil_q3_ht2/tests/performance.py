@@ -107,7 +107,7 @@ def measure_sustained(run):
 
 
 def complete_ffn(integration):
-    if integration.get("diagnostic_only") or integration.get(
+    if integration.get("layers") != 36 or integration.get("diagnostic_only") or integration.get(
             "functional_result") != "nonzero-model-compared":
         raise AssertionError("whole-FFN measurement needs completed numerical integration")
     transactions = [dict(row) for row in integration["observed"].get("transactions", [])]

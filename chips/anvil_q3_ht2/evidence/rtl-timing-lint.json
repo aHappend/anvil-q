@@ -1,6 +1,6 @@
 {
   "gate": "rtl-timing-lint",
-  "timestamp_utc": "2026-11-03T07:01:44.699632+00:00",
+  "timestamp_utc": "2026-11-03T09:46:27.768921+00:00",
   "root": "/data/sufeng/anvil-q3-ht2-line/workspace/project",
   "status": "passed",
   "max_comb_div_width": 0,
@@ -20,8 +20,8 @@
     "rtl/anvil_q3_ht2_kv_stage.sv": "a9a582a49aa95eba1b0d7d51f333454d66ef5e7f48b9fb02b48a986c757f4463",
     "rtl/anvil_q3_ht2_mac_lane.sv": "963b10a3a0e3a9d2d9830d8ba1b013a2712306b8dc984e5b1ea58571582e2ea2",
     "rtl/anvil_q3_ht2_private_scratch.sv": "cbd622796c41d9f592567f166dc2af6ab0eb885ae5f7ca4b0d18f1acdac15194",
-    "rtl/anvil_q3_ht2_projection.sv": "255799b05241e62e87b3018a14e0a4e8d61944e70bb2d0a235ef4e27047db785",
-    "rtl/anvil_q3_ht2_projection_metadata.sv": "88c064df57f63940f290ac3ec05eb295bb1d367f482be8d78f7e1adc9eda55b5",
+    "rtl/anvil_q3_ht2_projection.sv": "58e2944bb3342b48dd32c0990745d0246d108177e91971a69738a3053f61bb43",
+    "rtl/anvil_q3_ht2_projection_metadata.sv": "c8d4f5600e71b69fb164b21ee6629ead5251ab55120b3b87b541e5a63725af42",
     "rtl/anvil_q3_ht2_q16_to_f16.sv": "64514c3b7ac54482efff17496b2100c16a4caa4b6e193fc657a44acae7ce6faf",
     "rtl/anvil_q3_ht2_scalar_adapter.sv": "2d563cfa17ecfec3c2e16030bbb4fafd12fa00c151c913a18093f8e1ab931e7f",
     "rtl/anvil_q3_ht2_scratch_arbiter.sv": "8e8d497535547308cd50c13fb2e49a4290a013609cb713b6f521e4c5dd3e1312",
@@ -29,7 +29,7 @@
     "rtl/anvil_q3_ht2_spec_verifier.sv": "c39bb7264125709e27a479c7b6c62950a7a3041db73e1d53655697fdde1140d8",
     "rtl/anvil_q3_ht2_tile_batch_mac.sv": "99f988838bb87ca4b60d2dd067f97bbcefd80ee3e246b6f74327244f799dc87b",
     "rtl/anvil_q3_ht2_token_io.sv": "dcc2aac16e52cf0c09eec63fdd030eccfd284199a7fb9f181303c2a6ee48022c",
-    "rtl/anvil_q3_ht2_top.sv": "e083368cac5a8d4b894585705cca265485d7a08c4be8eee3805186c3532866f1",
+    "rtl/anvil_q3_ht2_top.sv": "6270b1f3dc7479ba3a531760fe23c4b30e72aafe172bbd7a83106f5bcb88d406",
     "rtl/anvil_q3_ht2_tree_attention.sv": "80d0d0f22a56adfca60e06823e9a830d09982a7a97eb5bbe3d7352f026b75b2a",
     "rtl/anvil_q3_ht2_weight_decode.sv": "4b419f4c48b57f1b44d0e63973c6f2fbcba6baeb8acb31f8baf4c15b893ad6cc"
   },
