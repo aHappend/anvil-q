@@ -27,8 +27,15 @@ def generate_nonzero(run, mode, seed):
                      geometry.kv_heads + head) * groups + group
             expected_records[0x100000000 + index * 64] = record
     address_vectors = vectors.read_text()
+    traffic = json.loads((run / "traffic-layout.json").read_text())
+    traffic_vectors = (str(len(traffic["qweight_projection"])) + "\n" +
+                       " ".join(map(str, traffic["qweight_projection"])) + "\n" +
+                       str(len(traffic["ffn_metadata_addresses"])) + "\n" +
+                       "\n".join(f"{address:x}" for address in
+                                 traffic["ffn_metadata_addresses"]) + "\n")
     vectors.write_text("\n".join(f"{value & 0xffffffff:x}" for value in priming.logits) +
-                       "\n" + address_vectors + f"{len(expected_records)}\n" +
+                       "\n" + address_vectors + traffic_vectors +
+                       f"{len(expected_records)}\n" +
                        "\n".join(f"{address:x} {record:x}"
                                  for address, record in sorted(expected_records.items())) + "\n")
     (run / "oracle-fixture.json").write_text(json.dumps({

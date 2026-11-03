@@ -20,7 +20,9 @@ def run_compatibility(run, mode):
     binary = compile_verilator(run, "compatibility-compile", [
         "verilator", "--binary", "--timing", "-Wno-fatal",
         "--top-module", "compatibility_tb", f"-GCACHE_MODE={mode}",
-        "--Mdir", relative(obj), "-j", "2", *sources, "tests/compatibility_tb.sv"],
+        "--Mdir", relative(obj), "-j", "2",
+        "--output-split", "20000", "--output-split-cfuncs", "2000",
+        "-CFLAGS", "-O3", *sources, "tests/compatibility_tb.sv"],
         obj, "Vcompatibility_tb")
     try:
         result = execute(run, "compatibility-simulate",

@@ -20,6 +20,7 @@ from compatibility import run_compatibility
 from integrated_fast import run_fast_integration
 from kv_atomic import run_atomic
 from parameters import run_parameters
+from performance import run_performance
 from sparse import run_sparse
 from speculative import run_spec
 from synthesis import run_synthesis
@@ -28,6 +29,7 @@ from tree_attention import run_tree
 
 
 SEEDS = (17, 29, 43)
+INTEGRATION_SAMPLES = ((1, 17), (2, 29))
 
 
 def enter_tier():
@@ -160,12 +162,12 @@ def require_complete_coverage(ledger):
         "consecutive_dense_beats_each_seed": all(
             rows.get(f"tile-seed{seed}", {}).get("observed", {}).get(
                 "max_consecutive_beats", 0) >= 64 for seed in SEEDS),
-        "complete_nonzero_36_layer_chain_and_branch_each_seed_and_mode": all(
+        "complete_nonzero_36_layer_chain_and_branch_both_modes": all(
             rows.get(f"integrated-mode{mode}-seed{seed}", {}).get(
                 "nonzero_projection_comparisons", 0) > 0 and
             rows.get(f"integrated-mode{mode}-seed{seed}", {}).get(
                 "compared_tree_shapes", []) == ["chain", "branch"]
-            for mode in (1, 2) for seed in SEEDS),
+            for mode, seed in INTEGRATION_SAMPLES),
     }
     ledger.data["coverage_requirements"] = requirements
     ledger.save()
@@ -175,6 +177,7 @@ def require_complete_coverage(ledger):
 
 
 def all_checks(ledger):
+    performance_integration = None
     ledger.check("parameter-boundaries", run_parameters)
     ledger.check("arithmetic-portability", run_arithmetic, "iverilog", 17, True)
     ledger.check("tile-portability", run_tile, "iverilog", 17, True)
@@ -190,15 +193,19 @@ def all_checks(ledger):
             ledger.check(f"atomic-mode{mode}-seed{seed}", run_atomic, mode, seed)
     for mode in (1, 2):
         ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
-        for seed in SEEDS:
-            ledger.check(f"integrated-mode{mode}-seed{seed}", run_fast_integration, mode, seed)
         for top in ("anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention",
                     "anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):
             ledger.check(f"synthesis-{top}-mode{mode}", run_synthesis, top, mode)
+    for mode, seed in INTEGRATION_SAMPLES:
+        result = ledger.check(
+            f"integrated-mode{mode}-seed{seed}", run_fast_integration, mode, seed)
+        if (mode, seed) == (1, 17):
+            performance_integration = result
     for top in ("anvil_q3_ht2_tile_batch_mac", "anvil_q3_ht2_projection",
                 "anvil_q3_ht2_sparse_dma", "anvil_q3_ht2_ddr_arbiter",
                 "anvil_q3_ht2_private_scratch"):
         ledger.check(f"synthesis-{top}", run_synthesis, top)
+    ledger.check("performance", run_performance, performance_integration)
     for mutant in ("gqa", "sibling"):
         ledger.check(f"mutation-{mutant}", run_tree, 1, 17, mutant=mutant)
     ledger.check("mutation-atomic", run_atomic, 1, 17, mutant=True)

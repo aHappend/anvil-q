@@ -27,6 +27,8 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
 
     offsets = [0, 0x60000000, 0x64000000]
     qreads = []
+    qprojections = []
+    ffn_metadata = set()
     for layer in range(layers):
         for projection, (inputs, outputs) in enumerate((
                 (hidden, hidden), (hidden, kvdim), (hidden, kvdim), (hidden, hidden),
@@ -46,6 +48,10 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
                 if region == 0:
                     qreads.extend((offsets[0] + column * (outputs // 2)) & ~63
                                   for column in range(inputs))
+                    qprojections.extend([projection] * inputs)
+                elif projection >= 4:
+                    ffn_metadata.update(range(offsets[region],
+                                             offsets[region] + ((len(data) + 63) & ~63), 64))
                 offsets[region] += (len(data) + 63) & ~63
         half_array(0x6c000000 + layer * (hidden + 2 * kvdim) * 2,
                    [(0x1400, 0x9400, 0)[(row + layer) % 3]
@@ -86,6 +92,10 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
         f"{value & 0xffffffff:x}" for value in expected) + "\n") +
                        str(len(qreads)) + "\n" +
                        "\n".join(f"{address:x}" for address in qreads) + "\n")
+    (run / "traffic-layout.json").write_text(json.dumps({
+        "qweight_projection": qprojections,
+        "ffn_metadata_addresses": sorted(ffn_metadata),
+    }, indent=2) + "\n")
     return model, vectors, len(image), len(qreads)
 
 
