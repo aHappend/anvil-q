@@ -17,16 +17,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", action="store_true")
     parser.add_argument("--cycles", type=int, default=262144)
+    parser.add_argument("--compact", action="store_true")
+    parser.add_argument("--layers", type=int, default=36)
+    parser.add_argument("--repair-of")
+    parser.add_argument("--flat", action="store_true")
     args = parser.parse_args()
-    if args.cycles <= 0:
-        parser.error("--cycles must be positive")
+    if args.cycles <= 0 or not 1 <= args.layers <= 36:
+        parser.error("cycles must be positive and layers must be in 1..36")
     enter_tier()
-    run = new_run("integration-profile", preparation=True, repair_of=(
-        "evidence/preparation/delivery-producers-20261103T044347301602Z/"
-        "changed-producers-20261103T044347350047Z/receipt.json"))
+    run = new_run("integration-profile", preparation=True, repair_of=args.repair_of)
     print(f"Profile evidence: {relative(run)}", flush=True)
     summary = run_fast_integration(run, 1, 17, diagnostic=True, profile=args.profile,
-                                   diagnostic_cycles=args.cycles)
+                                   diagnostic_cycles=args.cycles,
+                                   layers=args.layers, compact=args.compact,
+                                   flat=args.flat)
     result = {"summary": summary}
     if args.profile:
         binary = next(run.glob("integrated-clock-driver-compile-binding-*.json"))
