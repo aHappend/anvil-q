@@ -83,6 +83,9 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     }
     if (run / "repair-of.json").is_file():
         receipt["repair_of"] = json.loads((run / "repair-of.json").read_text())
+    with (location / "started.json").open("x") as stream:
+        json.dump(receipt, stream, indent=2)
+        stream.write("\n")
     started = time.monotonic()
     process = None
     previous_sigterm = signal.getsignal(signal.SIGTERM)

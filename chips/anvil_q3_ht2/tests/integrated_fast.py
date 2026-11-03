@@ -22,7 +22,7 @@ def simulation_netlist(run, sources, mode, layers, compact):
         ("-DHT2_COMPACT_MODEL " if compact else "") +
         " ".join(inputs + ["tests/integrated_clock_tb.sv"]),
         "hierarchy -check -top integrated_clock_tb",
-        "proc", "flatten", "opt", "memory -nomap", "opt -full", "check -assert",
+        "proc", "opt", "memory -nomap", "opt -full", "check -assert",
         "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor",
         "stat", f"write_verilog -noattr {relative(netlist)}", "",
     ]))
