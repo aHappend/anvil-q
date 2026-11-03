@@ -75,6 +75,7 @@ from context_checks import run_context
 from speculative_fault_checks import run_speculative_cancel_matrix, run_speculative_cancel
 from parent_checks import run_parent
 from reproduction_checks import run_reproduce, run_reproduction_child
+from production_checks import run_layer, run_fusion_profile
 from model import Geometry
 import reference
 
@@ -97,7 +98,10 @@ def main():
                                           "speculative-cancel", "synthesis-production",
                                           "parent-reference", "synthesis-boundary",
                                           "attention-context-sv-short", "reproduce-child",
-                                          "isolation-smoke", "speculative-cancel-case"))
+                                          "isolation-smoke", "speculative-cancel-case",
+                                          "production-layer", "fusion-profile",
+                                          "fusion-compact"))
+    parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
     args = parser.parse_args()
@@ -105,7 +109,12 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "speculative-cancel-case":
+        if args.probe in ("production-layer", "fusion-profile", "fusion-compact"):
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = (run_layer(run, args.profile) if args.probe == "production-layer"
+                       else run_fusion_profile(run, args.profile,
+                                               compact=args.probe == "fusion-compact"))
+        elif args.probe == "speculative-cancel-case":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_speculative_cancel(run, args.fault)
         elif args.probe == "isolation-smoke":
