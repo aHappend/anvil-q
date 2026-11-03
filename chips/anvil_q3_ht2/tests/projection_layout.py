@@ -12,6 +12,12 @@ from receipts import ROOT, cleanup_build, compile_verilator, execute, relative
 from reference import half, pack_rows, q16_to_half, single_to_q16, tile_sum
 
 
+def compact_parameters():
+    return {"NUM_LAYERS": 3, "HIDDEN_SIZE": 16, "INTERMEDIATE_SIZE": 24,
+            "NUM_Q_HEADS": 8, "NUM_KV_HEADS": 1, "HEAD_DIM": 2,
+            "GROUP_SIZE": 8, "VOCAB_SIZE": 4, "MAX_SEQ_LEN": 8, "BANKS": 1}
+
+
 def fixture(run, kv_heads):
     hidden, intermediate, group, layers = 16 * kv_heads, 24, 8, 3
     kv_rows = 2 * kv_heads
@@ -158,15 +164,24 @@ def run_projection_layout(run, kv_heads=1):
 
 
 if __name__ == "__main__":
+    import argparse
     from receipts import new_run
+    from synthesis import run_synthesis
     from verify import Ledger, enter_tier
 
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repair-of")
+    parser.add_argument("--synthesis-only", action="store_true")
+    args = parser.parse_args()
     enter_tier()
-    run = new_run("projection-layout", preparation=True, repair_of=(
-        "evidence/preparation/projection-minimum-gqa-20261103T093924270016Z/"
-        "projection-boundary-simulate-20261103T093931792354Z/receipt.json"))
+    run = new_run("projection-layout", preparation=True, repair_of=args.repair_of)
     ledger = Ledger(run, "projection-layout-preparation")
     print(f"Projection layout evidence: {relative(run)}", flush=True)
-    for heads in (1, 2, 3):
-        ledger.check(f"kvheads{heads}", run_projection_layout, heads)
+    if args.synthesis_only:
+        for mode in (1, 2):
+            ledger.check(f"minimum-gqa-top-mode{mode}", run_synthesis,
+                         "anvil_q3_ht2_top", mode, compact_parameters())
+    else:
+        for heads in (1, 2, 3):
+            ledger.check(f"kvheads{heads}", run_projection_layout, heads)
     ledger.finish()

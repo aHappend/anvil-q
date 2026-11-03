@@ -22,7 +22,7 @@ from kv_atomic import run_atomic
 from parameters import run_parameters
 from performance import run_performance
 from projection_boundary import run_projection_boundary
-from projection_layout import run_projection_layout
+from projection_layout import compact_parameters, run_projection_layout
 from sparse import run_sparse
 from speculative import run_spec
 from synthesis import run_synthesis
@@ -95,6 +95,7 @@ class Ledger:
 
 
 def compact_reproduction(ledger):
+    ledger.check("minimum-gqa-projection", run_projection_boundary)
     ledger.check("arithmetic-portability", run_arithmetic, "iverilog", 17, True)
     ledger.check("aligned-public-ddr", run_sparse, "iverilog", 17, True)
     for mode in (1, 2):
@@ -215,6 +216,8 @@ def all_checks(ledger):
             ledger.check(f"greedy-mode{mode}-seed{seed}", run_spec, mode, seed)
             ledger.check(f"atomic-mode{mode}-seed{seed}", run_atomic, mode, seed)
     for mode in (1, 2):
+        ledger.check(f"synthesis-minimum-gqa-mode{mode}", run_synthesis,
+                     "anvil_q3_ht2_top", mode, compact_parameters())
         ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
         for top in ("anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention",
                     "anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):

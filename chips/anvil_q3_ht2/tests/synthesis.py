@@ -107,13 +107,14 @@ def run_synthesis(run, top, mode=1, parameters=None):
     cached = top in ("anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier",
                      "anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention")
     inputs = synthesis_inputs(run, inputs)
+    overrides = {"CACHE_MODE": mode} if cached else {}
+    overrides.update(parameters or {})
     netlist = run / f"{top}.json"
     script = run / f"{top}.ys"
     script.write_text("\n".join([
         f"read_verilog -defer -sv {' '.join(inputs)}",
-        *([f"chparam -set CACHE_MODE {mode} {top}"] if cached else []),
-        *[f"chparam -set {name} {value} {top}"
-          for name, value in (parameters or {}).items()],
+        *(["chparam " + " ".join(f"-set {name} {value}" for name, value in
+                                overrides.items()) + f" {top}"] if overrides else []),
         f"hierarchy -check -top {top}", "proc", "opt_expr", "opt_clean",
         "check -assert", "memory -nomap", "opt_clean", "check -assert",
         "select -assert-none t:$dlatch t:$adlatch t:$div t:$mod t:$divfloor t:$modfloor",
