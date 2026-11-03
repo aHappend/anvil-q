@@ -1136,6 +1136,12 @@ def run_prefix_matrix(component, compiled=None):
                 command_sequence=((1, 0, 1, 0, 0, 5), (3, 1, 0, 1, 1, 5))))
 
 
+def run_medium_integration(experiment):
+    return run_target_model(
+        experiment, Geometry(hidden=64, layers=2, banks=4, queue=16), modes=(0,),
+        command_sequence=((1, 0, 1, 0, 0, 1), (3, 1, 0, 1, 1, 1)))
+
+
 def run_suite(experiment, suite, probe_seed=17):
     def component(stem, operation):
         child = Experiment("d2-" + suite + "-" + stem,
@@ -1191,9 +1197,7 @@ def run_suite(experiment, suite, probe_seed=17):
         for hidden in (8, 64, 2048):
             component(f"rms-h{hidden}", lambda e, h=hidden: run_rms(e, h))
         component("causal-four-lanes", run_target_lanes)
-        component("medium-integrated", lambda e: run_target_model(
-            e, Geometry(hidden=64, layers=2, banks=4, queue=16), modes=(0,),
-            command_sequence=((1, 0, 1, 0, 0, 1), (3, 1, 0, 1, 1, 1))))
+        component("medium-integrated", run_medium_integration)
     elif suite == "defects":
         component("dequant-control", lambda e: run_dequant(e, "verilator"))
         component("service-control", run_service_probe)
@@ -1247,7 +1251,7 @@ def main():
                                          "parameters", "causal-mask", "rejected-kv",
                                          "scheduler", "public-interrupts", "native-prefixes",
                                          "rms", "parent-prerequisites", "target-lanes",
-                                         "benchmark-cell"])
+                                         "benchmark-cell", "medium-integrated"])
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
@@ -1308,6 +1312,8 @@ def main():
             run_rms(experiment, args.hidden, args.simulator)
         elif args.probe == "target-lanes":
             run_target_lanes(experiment)
+        elif args.probe == "medium-integrated":
+            run_medium_integration(experiment)
         elif args.probe == "parent-prerequisites":
             run_parent_comparison(experiment)
         elif args.probe in ("causal-mask", "rejected-kv"):
