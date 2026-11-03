@@ -35,6 +35,7 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
                 "--top-module", top, "--Mdir", relative(obj),
                 "-CFLAGS", flags,
                 *[relative(path) for path in sorted(source_directory.glob("*.sv"))],
+                "tests/arithmetic_observer.sv",
                 os.path.relpath(ROOT / "tests/compatibility_sim.cpp", obj)], timeout=1800)
         for mode in modes:
             fixture = directory / f"descriptor-mode-{mode}.txt"
@@ -61,6 +62,8 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
                             "integrated_cycles": observed["integrated"]["cycles"],
                             "transactions": observed["parent"]["reads"] +
                                             observed["parent"]["writes"]})
+            if mode == 4:
+                parent_profile = observed["parent"]["normal_profile"]
     finally:
         for obj in objects.values():
             if obj.exists():
@@ -69,8 +72,51 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
         "source_sha256": source_hashes(), "synthetic": True,
         "cases": records, "comparison": "exact per-bank tuple/value order; opaque tags checked locally",
     }, indent=2) + "\n")
+    if 4 in modes:
+        profile(directory, parent_profile)
     print(f"Compatibility receipts: {relative(directory)}", flush=True)
     return directory
+
+
+def profile(directory, parent_profile):
+    from behavior import build
+    from native_model import Fixture, descriptor
+
+    records = []
+    obj = directory / "profile-compile-obj"
+    try:
+        binary = build(directory / "native-profile", obj, 16, 16, 128, 3)
+        for cache in (0, 2):
+            case = directory / "checkpoint-images" / f"profile-cache-{cache}"
+            case.mkdir(parents=True)
+            words = descriptor(banks=8, element=1, cache=cache, dimension=8,
+                               intermediate=8, vocabulary=3, context=4, page_tokens=1)
+            words[17] = 0x49742400
+            image = Fixture(words, tokens=[1, 1], constant_profile=True).export(case)
+            observed = case / "observed.json"
+            execute(directory / f"profile-cache-{cache}", [
+                relative(binary), relative(image), relative(observed), "--profile"],
+                timeout=600)
+            native = json.loads(observed.read_text())
+            if not native["arithmetic_operations"] or not parent_profile["arithmetic_operations"]:
+                raise AssertionError("Profile requires actual arithmetic issue observations")
+            records.append({"native_cache_format": cache, "native": native,
+                            "parent_lossless": parent_profile})
+    finally:
+        if obj.exists():
+            shutil.rmtree(obj)
+    (directory / "profile.json").write_text(json.dumps({
+        "source_sha256": source_hashes(), "synthetic": True,
+        "workload": {"layers": 1, "hidden": 8, "intermediate": 8, "query_heads": 1,
+                     "kv_heads": 1, "head_dim": 8, "vocabulary": 3, "tokens": [1, 1],
+                     "weights": "all zero", "embedding": "all 0.5",
+                     "gamma": "all 1.0", "bias": "all zero", "rope": "identity",
+                     "element_format": "FP16", "parent_mode": 4,
+                     "service": "bank-ready (cycle+3*bank)%11>=3; FIFO reply delay "
+                                "1+(bank+row+col)%5; logit-ready cycle%13>=4"},
+        "scope": "measured zero-weight synthetic traffic profile, not checkpoint performance "
+                 "or a trained-weight quality comparison; parent cache is lossless BF16",
+        "cases": records}, indent=2) + "\n")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("probe", choices=("fp32", "exp", "attention", "attention-matrix",
                                          "tensor", "native", "native-large", "synthesis",
-                                         "arithmetic", "compatibility"))
+                                         "arithmetic", "compatibility", "integrated",
+                                         "geometries", "delivery", "profile"))
     parser.add_argument("--repair-of")
     args = parser.parse_args()
     commands = {
@@ -26,6 +27,10 @@ if __name__ == "__main__":
         "synthesis": ["python3", "tests/synthesis.py", "--preparation", "--singleton"],
         "arithmetic": ["python3", "tests/numerics.py", "--arithmetic", "--preparation"],
         "compatibility": ["python3", "tests/compatibility.py", "--preparation"],
+        "integrated": ["python3", "tests/integrated.py", "--preparation"],
+        "geometries": ["python3", "tests/behavior.py", "--geometries", "--preparation"],
+        "delivery": ["python3", "tests/delivery.py", "--preparation"],
+        "profile": ["python3", "tests/compatibility.py", "--mode", "4", "--preparation"],
     }
     execute(new_run(f"{args.probe}-launch", preparation=True),
             commands[args.probe], timeout=2700, repair_of=args.repair_of)

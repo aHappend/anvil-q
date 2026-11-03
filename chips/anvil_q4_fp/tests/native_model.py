@@ -36,9 +36,11 @@ def descriptor(*, banks=16, element=0, cache=0, layers=1, dimension=2,
 class Fixture:
     """Only mutable DUT writes populate scratch/cache in the simulator."""
 
-    def __init__(self, words, seed=17, tokens=2, *, epoch=1, pages=None):
+    def __init__(self, words, seed=17, tokens=2, *, epoch=1, pages=None,
+                 constant_profile=False):
         self.words = words
         self.seed = seed
+        self.constant_profile = constant_profile
         self.tokens = ([((seed + 3 * index) % words[13]) for index in range(tokens)]
                        if isinstance(tokens, int) else list(tokens))
         self.initial = {}
@@ -60,7 +62,10 @@ class Fixture:
         return pack(Fraction(numerator, denominator), self.format)[0]
 
     def tensor(self, kind, layer, projection, rows, columns, *, gamma=False):
-        data = [[pack(Fraction(self.rng.randrange(24, 41), 32), self.format)[0]
+        data = [[pack(Fraction(1) if gamma else
+                      Fraction(1, 2) if kind==0 and projection==0 else Fraction(0),
+                      self.format)[0] if self.constant_profile else
+                 pack(Fraction(self.rng.randrange(24, 41), 32), self.format)[0]
                  if gamma else self.number(8 if kind == 0 and projection == 0 else 64)
                  for _ in range(columns)] for _ in range(rows)]
         for row, vector in enumerate(data):
@@ -93,12 +98,13 @@ class Fixture:
             for pair in range(w[12] // 2):
                 # Synthetic supplied unit-circle tables, exact rationals rounded
                 # once. No checkpoint/scaled-Llama measurement is implied.
-                t = Fraction(position * (pair + 1), 16)
+                t = Fraction(0) if self.constant_profile else Fraction(position * (pair + 1), 16)
                 table.extend((pack((1-t*t)/(1+t*t))[0], pack(2*t/(1+t*t))[0]))
             self.rope[position] = table
             for col, value in enumerate(table):
                 self.initial[11, 1, 0, position, col] = value
-        for page, physical in enumerate(self.pages):
+        logical_pages = (w[14] + w[19] - 1) // w[19]
+        for page, physical in enumerate(self.pages[:logical_pages]):
             self.initial[15, self.epoch, 0, page, 0] = 0x80000000 | physical
 
     def widen(self, value):
@@ -217,11 +223,12 @@ class Fixture:
         from ieee import decode
         best, value = 0, None
         for index, bits in enumerate(logits):
-            _, kind, number = decode(bits)
+            sign, kind, number = decode(bits)
             if kind == "nan":
                 continue
-            if value is None or number > value:
-                best, value = index, number
+            ordered = ((0 if sign else 2), Fraction(0)) if kind == "inf" else (1, number)
+            if value is None or ordered > value:
+                best, value = index, ordered
         return best
 
     def export(self, directory):
@@ -246,6 +253,8 @@ class Fixture:
         manifest = {
             "schema": 1, "layout": 1, "synthetic": True, "checkpoint": None,
             "seed": self.seed, "descriptor_words": self.words,
+            "sequence_epoch": self.epoch, "physical_page_mapping": self.pages,
+            "constant_zero_weight_profile": self.constant_profile,
             "tokens": self.tokens, "image_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
             "source_manifest": "checkpoint-images/manifest.json",
             "source_manifest_sha256": hashlib.sha256(source_manifest.read_bytes()).hexdigest(),

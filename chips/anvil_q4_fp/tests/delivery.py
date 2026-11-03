@@ -63,9 +63,14 @@ def worker():
     import behavior
     import defects
     import synthesis
+    import images
     from native_model import descriptor
 
     records = {}
+    image_directory = new_run("image-loader")
+    execute(image_directory / "manifest-integrity", [
+        "python3", "tests/images.py", "--output", relative(image_directory)])
+    records["image_integrity"] = relative(image_directory)
     records["native"] = relative(behavior.run(
         banks=1, queue=1, tile_rows=3, tile_k=3, tokens=1,
         words=descriptor(banks=1, intermediate=3, vocabulary=3, context=1, page_tokens=1)))

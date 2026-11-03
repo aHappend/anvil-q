@@ -67,7 +67,7 @@ def run_suite(suite):
         elif suite == "defects":
             import defects
             check("IEEE-rounding-and-flags", defects.numerical_mutants)
-            check("seven-protocol-and-native-mutants", defects.protocol_mutants)
+            check("protocol-commit-rollback-and-native-mutants", defects.protocol_mutants)
         elif suite == "synthesis":
             import synthesis
             check("three-geometries-no-latch-and-lane-connectivity", synthesis.run)

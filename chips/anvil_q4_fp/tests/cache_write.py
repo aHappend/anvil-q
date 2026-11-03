@@ -39,10 +39,9 @@ def fixture(path, compact=False):
     formats = ("bf16", "fp16", "fp8")
     pools = [sources(fmt) for fmt in formats]
 
-    def add(encoding, page_size, position, kd, fault=0):
+    def add(encoding, page_size, position, kd, fault=0, physical_pages=16):
         logical_pages = position // page_size + 1
-        physical_pages = 16
-        maps = [0x80000000 | (15 - page) for page in range(logical_pages)]
+        maps = [0x80000000 | (physical_pages - 1 - page) for page in range(logical_pages)]
         protected = []
         if fault == 1:
             maps[-1] &= 0x7fffffff
@@ -93,6 +92,7 @@ def fixture(path, compact=False):
                     add(encoding, page_size, position, kd)
         for fault in range(1, 9):
             add(encoding, 2, 4, 6, fault)
+        add(encoding, 32, 31, 10, physical_pages=131072)
     if cursors[2] < len(pools[2]):
         raise AssertionError("FP8 midpoint source coverage is incomplete")
     if compact:

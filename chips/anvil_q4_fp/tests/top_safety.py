@@ -13,6 +13,7 @@ def run(preparation=False, repair_of=None):
     geometries = (
         ("legal-minimum", (1, 1, 1, 1)),
         ("banks-zero", (0, 1, 1, 1)), ("banks-nonpower", (3, 1, 1, 1)),
+        ("banks-immediate-upper", (17, 1, 1, 1)),
         ("banks-large", (32, 1, 1, 1)), ("queue-zero", (1, 0, 1, 1)),
         ("queue-large", (1, 17, 1, 1)), ("k-zero", (1, 1, 0, 1)),
         ("k-large", (1, 1, 129, 1)), ("rows-zero", (1, 1, 1, 0)),
