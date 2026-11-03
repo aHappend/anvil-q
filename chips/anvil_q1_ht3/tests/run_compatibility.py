@@ -213,11 +213,13 @@ def batch_fixture(directory, fmt, seed, count):
     return vectors, [complete[0], complete[-1]], batch, expected_batch
 
 
-def compiled():
+def compiled(geometry=None):
     paths = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+["tests/inference_tb.sv"]
     current = hashes()
     identity = dict(source_sha256={p: current[p] for p in paths},
                     geometry=dict(L=1, H=8, I=8, Q=1, K=1, D=8, G=8, V=3, S=4))
+    if geometry is not None:
+        identity["geometry"] = dict(geometry)
     cache = ROOT/"evidence/compiled"
     cache.mkdir(parents=True, exist_ok=True)
     version_dir = cache/f"inference-version-{uuid.uuid4().hex[:12]}"
@@ -239,6 +241,7 @@ def compiled():
     objects = directory/"compile-obj"
     execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
              "--top-module", "inference_tb", "--Mdir", relative(objects),
+             *[f"-G{key}={value}" for key, value in (geometry or {}).items()],
              *paths], directory, "compile", ["verilator", "--version"])
     binary = objects/"Vinference_tb"
     with (directory/"binding.json").open("x") as out:
@@ -263,14 +266,14 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False, batch_count=Non
     return check_case(directory, text, binding, fmt, seed, expected, expected_batch)
 
 
-def check_case(directory, text, binding, fmt, seed, expected, expected_batch=None):
+def check_case(directory, text, binding, fmt, seed, expected, expected_batch=None, vocab=3):
     """Recheck complete public observations, including retained simulations."""
     observations = directory/"observations.txt"
     match = re.search(r"SUMMARY inference format=(\d+) tokens=(\d+) logits=(\d+) "
                       r"csr=(\d+) csr_holds=(\d+) output_stalls=(\d+) reads=(\d+) "
                       r"writes=(\d+) bus_waits=(\d+) max_debt=(\d+)", text)
     if (not match or int(match[1]) != fmt or int(match[2]) != len(expected) or
-            int(match[3]) != 3*len(expected) or any(int(match[j]) == 0 for j in range(4, 11))):
+            int(match[3]) != vocab*len(expected) or any(int(match[j]) == 0 for j in range(4, 11))):
         raise AssertionError("incomplete integrated inference observation summary")
     actual = [[] for _ in expected]
     cycles = []
