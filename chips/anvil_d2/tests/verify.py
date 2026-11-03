@@ -52,7 +52,10 @@ class Experiment:
         (self.directory / "receipt.json").write_text(json.dumps(self.receipt, indent=2) + "\n")
 
     def execute(self, argv, name, timeout=600):
-        timeout = min(timeout, max(1, CHECK_DEADLINE-time.monotonic()))
+        remaining = CHECK_DEADLINE-time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("whole-check 2700-second execution budget exhausted")
+        timeout = min(timeout, remaining)
         if Path(argv[0]).name == "vvp":
             timeout = min(timeout, 600)
         relative = self.directory.relative_to(ROOT)
