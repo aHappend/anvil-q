@@ -12,7 +12,7 @@ from evidence import ROOT, execute, new_run, relative, source_hashes
 
 
 def lower_packages(destination):
-    """Lexical package scoping only; retain all RTL logic and parameters."""
+    """Equivalent syntax lowering for Yosys 0.33, without RTL substitutions."""
     packages, modules = {}, []
     for path in sorted((ROOT / "rtl").glob("*.sv")):
         text = path.read_text()
@@ -35,6 +35,22 @@ def lower_packages(destination):
                     text[end_header:])
         for name in packages:
             text = text.replace(name + "::", "")
+        text = re.sub(r"\binteger'\((\w+)\)", r"$signed(32'(\1))", text)
+        signed_ports = []
+
+        def signed_port(match):
+            name = f"__yosys_signed_port_{len(signed_ports)}"
+            expression = match[2]
+            signed_ports.append(
+                f"wire signed [$bits({expression})-1:0] {name};\n"
+                f"assign {name}=$signed({expression});\n")
+            return f".{match[1]}({name})"
+
+        # Older Yosys returns an unsigned wire for a width-preserving $signed
+        # cell argument, then asserts on its own AST signedness invariant.
+        text = re.sub(r"\.(\w+)\(\$signed\(([^()]*)\)\)", signed_port, text)
+        if signed_ports:
+            text = text.replace("endmodule", "\n" + "".join(signed_ports) + "\nendmodule")
         result.append(f"// Source: {relative(path)}\n{text}")
     destination.write_text("\n".join(result))
 
@@ -107,7 +123,7 @@ def inspect(netlist, geometry):
             "cell_types": dict(counts)}
 
 
-def run(preparation=False, geometries=None):
+def run(preparation=False, geometries=None, repair_of=None):
     directory = new_run("synthesis", preparation)
     lowered = directory / "package-lowered.sv"
     lower_packages(lowered)
@@ -118,15 +134,17 @@ def run(preparation=False, geometries=None):
         destination = directory / f"netlist-{index}.json"
         script = directory / f"script-{index}.ys"
         script.write_text(
-            f"read_verilog -sv {relative(lowered)}\n"
+            f"read_verilog -sv -noopt -defer {relative(lowered)}\n"
             "hierarchy -check -top anvil_q4_fp_top "
             f"-chparam BANKS {banks} -chparam QUEUE_DEPTH {queue} "
             f"-chparam TILE_K {tile_k} -chparam TILE_ROWS {rows}\n"
             "proc\nopt_expr\nopt_clean\ncheck -assert -noinit\n"
             "memory -nomap\nopt_clean\ncheck -assert -noinit\n"
             f"write_json {relative(destination)}\n")
-        execute(directory / f"yosys-{index}", ["yosys", "-Q", "-T", "-s", relative(script)],
-                timeout=1800)
+        execute(directory / f"yosys-{index}", [
+            "yosys", "-Q", "-T", "-L", relative(directory / f"yosys-{index}.log"),
+            "-s", relative(script)],
+                timeout=1800, repair_of=repair_of)
         records.append(inspect(json.loads(destination.read_text()), geometry))
     (directory / "observed.json").write_text(json.dumps({
         "source_sha256": source_hashes(), "geometries": records,
@@ -139,5 +157,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--singleton", action="store_true")
+    parser.add_argument("--repair-of")
     args = parser.parse_args()
-    run(args.preparation, [(1, 1, 1, 1)] if args.singleton else None)
+    run(args.preparation, [(1, 1, 1, 1)] if args.singleton else None, args.repair_of)

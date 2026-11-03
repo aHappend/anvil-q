@@ -21,16 +21,18 @@ DIRECTED = (0, 0x80000000, 1, 2, 0x007fffff, 0x00800000, 0x00800001,
             0x33000000, 0x3f7fffff, 0x80800000)
 
 
-def cases(compact=False):
+def cases(compact=False, arithmetic_only=False):
     for op in range(16):
         for a in DIRECTED:
             for b in DIRECTED if op < 4 else (0,):
                 yield op, a, b
     for seed in (17, 89, 2026):
         rng = random.Random(seed)
-        for op in range(10):
+        for op in range(5 if arithmetic_only else 10):
             for _ in range(32 if compact else 4096):
                 yield op, rng.getrandbits(32), rng.getrandbits(32)
+    if arithmetic_only:
+        return
     for op in (5, 6):
         for a in range(0, 65536, 257 if compact else 1):
             yield op, a, 0
@@ -54,10 +56,10 @@ def cases(compact=False):
                 yield op, bits | sign, 0
 
 
-def vectors(path, compact=False):
+def vectors(path, compact=False, arithmetic_only=False):
     counts = {}
     with path.open("w") as stream:
-        for op, a, b in cases(compact):
+        for op, a, b in cases(compact, arithmetic_only):
             result, flags = operation(op, a, b)
             stream.write(f"{op:x} {a:08x} {b:08x} {result:08x} {flags:02x}\n")
             counts[str(op)] = counts.get(str(op), 0) + 1
@@ -103,11 +105,11 @@ def exponential_vectors(path, compact=False):
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
-def run(compact=False, preparation=False):
+def run(compact=False, preparation=False, arithmetic_only=False):
     oracle_self_test()
     directory = new_run("numerics-compact" if compact else "numerics", preparation)
     vector_path = directory / "fp32-vectors.txt"
-    manifest = vectors(vector_path, compact)
+    manifest = vectors(vector_path, compact, arithmetic_only)
     manifest["source_sha256"] = source_hashes()
     (directory / "vectors.json").write_text(json.dumps(manifest, indent=2) + "\n")
     inputs = ["rtl/anvil_q4_00_fp_pkg.sv", "rtl/anvil_q4_fp32.sv", "tests/fp32_tb.sv"]
@@ -161,5 +163,9 @@ if __name__ == "__main__":
     parser.add_argument("--compact", action="store_true")
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--exp", action="store_true")
+    parser.add_argument("--arithmetic", action="store_true")
     args = parser.parse_args()
-    (run_exp if args.exp else run)(args.compact, args.preparation)
+    if args.exp:
+        run_exp(args.compact, args.preparation)
+    else:
+        run(args.compact, args.preparation, args.arithmetic)
