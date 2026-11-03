@@ -96,6 +96,8 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
             (ROOT/record["stdout"]).read_text(),
             json.loads((vectors.parent/"image-manifest.json").read_text()),
             len(expected))
+        checked["scheduler_telemetry"] = scheduler_observations(
+            (ROOT/record["stdout"]).read_text(), len(expected))
     artifacts = [path, directory/"vectors.txt", directory/"observations.txt",
                  ROOT/record["stdout"], ROOT/record["stderr"], ROOT/binding,
                  compile_path, ROOT/compile_record["stdout"], ROOT/compile_record["stderr"],
@@ -243,6 +245,27 @@ def measurements(parent, product):
 ELIGIBLE = {0: ("Q_to_RoPE", 2), 1: ("K_to_RoPE", 2),
             3: ("O_to_residual_norm", 6), 5: ("up_to_SwiGLU", 3),
             6: ("down_to_residual_norm", 6)}
+
+
+def scheduler_observations(text, tokens):
+    """Retain passive diagnostics separately from the public-transfer oracle."""
+    rows = [dict(token=i, phase_edges={}) for i in range(tokens)]
+    for token, state, edges in re.findall(
+            r"^PERF_SCHED token=(\d+) state=(\d+) edges=(\d+)$", text, re.MULTILINE):
+        token, state, edges = map(int, (token, state, edges))
+        if token >= tokens or state in rows[token]["phase_edges"] or edges <= 0:
+            raise AssertionError("invalid or duplicate scheduler diagnostic bin")
+        rows[token]["phase_edges"][state] = edges
+    ended = [(int(t), int(e)) for t, e in re.findall(
+        r"^PERF_SCHED_END token=(\d+) edges=(\d+)$", text, re.MULTILINE)]
+    if [t for t, _ in ended] != list(range(tokens)):
+        raise AssertionError("missing scheduler diagnostic completion")
+    for row, (_, edges) in zip(rows, ended):
+        if sum(row["phase_edges"].values()) != edges or not edges:
+            raise AssertionError("scheduler diagnostic histogram accounting")
+        row.update(total_edges=edges,
+                   scope="passive decoder state histogram; not the public-transfer oracle")
+    return rows
 
 
 def transition_observations(text, manifest, tokens):
