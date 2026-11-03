@@ -210,7 +210,10 @@ def run_public_smoke(experiment, boundaries=False, interrupts=False):
 
 def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3),
                      override=None, expect_mismatch=False, mtp_fixture="random",
-                     command_sequence=None, domain=0, compiled=None):
+                     command_sequence=None, domain=0, compiled=None, parent=False):
+    if parent and (tuple(modes) != (0,) or any(
+            command[4] for command in (command_sequence or ()))):
+        raise ValueError("unchanged parent consumes single-token/logit commands only")
     directory = experiment.directory.relative_to(ROOT)
     image = WeightImage(geometry, seed)
     if any(mode & 1 for mode in modes):
@@ -266,6 +269,7 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
         "VALUE": geometry.value, "EXPERTS": geometry.experts, "TOPK": geometry.top_k,
         "FIRST_DENSE": geometry.first_dense, "VOCAB": geometry.vocab,
         "CAPACITY": geometry.capacity, "BANKS": geometry.banks, "QUEUE": geometry.queue,
+        "PARENT": int(parent),
     }
     sources = [str(p.relative_to(ROOT)) for pattern in (
         "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
@@ -273,7 +277,7 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
         sources = [override.get(path, path) for path in sources]
     obj = directory / "target-obj"
     if compiled is not None and (
-            compiled["geometry"] != geometry.__dict__ or
+            compiled["geometry"] != geometry.__dict__ or compiled["parent"] != parent or
             compiled["source_sha256"] != experiment.receipt["source_sha256"] or
             not (ROOT / compiled["binary"]).is_file()):
         experiment.receipt["rebuilt_stale_prerequisite"] = compiled["receipt"]
@@ -297,6 +301,7 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
         "oracle": "independent arbitrary-precision unabsorbed equations and exact fixed-point boundaries",
         "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
         "domain": domain,
+        "parent": parent,
         "command_expectations": [
             {"command": header[0], "mode": header[1], "generation": bool(header[2]),
              "token": header[3], "position": header[4], "expected": outputs}
@@ -333,6 +338,7 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
     experiment.save()
     return {
         "binary": str(binary), "geometry": geometry.__dict__,
+        "parent": parent,
         "source_sha256": experiment.receipt["source_sha256"],
         "receipt": str((experiment.directory / "receipt.json").relative_to(ROOT)),
     }
@@ -979,10 +985,12 @@ def run_parent_comparison(experiment):
                         *(item for key, value in parameters.items()
                           for item in ("-P", f"anvil_d1_top.{key}={value}")),
                         "-o", str(binary), *sources], "unchanged-parent-compile")
+    run_target_model(experiment, parent=True, modes=(0,), command_sequence=(
+        (1, 0, 1, 0, 0, 1), (2, 1, 0, 0, 0, 1), (3, 2, 0, 1, 0, 1),
+        (4, 3, 0, 1, 0, 1)))
     if not all(observations.values()):
         raise FileNotFoundError("original parent dependencies/historical handoff missing; "
                                 "see parent_prerequisites in receipt")
-    raise NotImplementedError("restored parent requires a native public-pin differential transactor")
 
 
 def result_rows(output, prefix):
@@ -990,10 +998,15 @@ def result_rows(output, prefix):
             for line in output.splitlines() if line.startswith(prefix + " ")]
 
 
-def run_benchmark(experiment, component):
+def run_benchmark(experiment, component, compact_probe=False):
     manifest_path = ROOT / "tests/benchmark_manifest.json"
     manifest = json.loads(manifest_path.read_text())
-    (experiment.directory / "benchmark-manifest.json").write_bytes(manifest_path.read_bytes())
+    if compact_probe:
+        manifest["domains"] = manifest["domains"][:1]
+        manifest["seeds"] = manifest["seeds"][:1]
+        experiment.receipt["probe_scope"] = "one benchmark cell, not five-domain closure"
+    (experiment.directory / "benchmark-manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n")
     geometry = Geometry(**manifest["geometry"])
     compiled = None
     rows = []
@@ -1039,14 +1052,15 @@ def run_benchmark(experiment, component):
                 rows.append(row)
             experiment.receipt["results"]["benchmark_rows"] = rows
             experiment.save()
-    if len(rows) != 5*3*4*2:
+    if len(rows) != (8 if compact_probe else 5*3*4*2):
         raise AssertionError("five-domain/three-seed/four-mode measurement matrix incomplete")
     experiment.receipt["results"]["measurement_scope"] = (
         "accepted logical 32-bit memory transfers, including scales/refetches; "
         "simulation cycles at assumed 100MHz, not measured DDR4 bursts or physical timing; "
         "compact tails do not establish the matched full-group >=2x bandwidth requirement")
     experiment.save()
-    run_parent_comparison(experiment)
+    if not compact_probe:
+        run_parent_comparison(experiment)
 
 
 def run_reproduction(experiment):
@@ -1146,6 +1160,9 @@ def run_suite(experiment, suite):
         for hidden in (8, 64, 2048):
             component(f"rms-h{hidden}", lambda e, h=hidden: run_rms(e, h))
         component("causal-four-lanes", run_target_lanes)
+        component("medium-integrated", lambda e: run_target_model(
+            e, Geometry(hidden=64, layers=2, banks=4, queue=16), modes=(0,),
+            command_sequence=((1, 0, 1, 0, 0, 1), (3, 1, 0, 1, 1, 1))))
     elif suite == "defects":
         component("dequant-control", lambda e: run_dequant(e, "verilator"))
         component("service-control", run_service_probe)
@@ -1179,6 +1196,8 @@ def run_suite(experiment, suite):
         run_reproduction(experiment)
     elif suite == "native-prefixes":
         run_prefix_matrix(component)
+    elif suite == "benchmark-cell":
+        run_benchmark(experiment, component, compact_probe=True)
     else:
         raise ValueError(f"unknown suite {suite}")
 
@@ -1196,7 +1215,8 @@ def main():
                                          "public-boundaries", "native-head", "mtp-alignment",
                                          "parameters", "causal-mask", "rejected-kv",
                                          "scheduler", "public-interrupts", "native-prefixes",
-                                         "rms", "parent-prerequisites", "target-lanes"])
+                                         "rms", "parent-prerequisites", "target-lanes",
+                                         "benchmark-cell"])
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
@@ -1233,6 +1253,8 @@ def main():
             run_public_smoke(experiment, interrupts=True)
         elif args.probe == "native-prefixes":
             run_suite(experiment, "native-prefixes")
+        elif args.probe == "benchmark-cell":
+            run_suite(experiment, "benchmark-cell")
         elif args.probe == "target-model":
             geometry = (Geometry(layers=2) if args.geometry == "routed" else
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
