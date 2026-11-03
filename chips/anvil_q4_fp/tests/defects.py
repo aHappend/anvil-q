@@ -12,7 +12,7 @@ from evidence import ROOT, execute, new_run, relative, source_hashes
 from numerics import vectors
 
 
-def protocol_mutants(preparation=False, categories=None):
+def protocol_mutants(preparation=False, categories=None, repair_of=None):
     from attention import matrix_vectors
     from cache_write import fixture as cache_fixture
     from native_model import Fixture, descriptor
@@ -124,7 +124,7 @@ def protocol_mutants(preparation=False, categories=None):
                 execute(directory / f"{stem}-simulation", [
                     relative(obj / f"V{top}"), *args], timeout=300,
                     expect_failure=variant == "mutated",
-                    extra_inputs=[*inputs, image])
+                    extra_inputs=[*inputs, image], repair_of=repair_of)
                 record = {
                     "category": label, "variant": variant,
                     "receipt": relative(directory / f"{stem}-simulation/receipt.json"),
@@ -215,8 +215,9 @@ if __name__ == "__main__":
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--protocol", action="store_true")
     parser.add_argument("--category", action="append")
+    parser.add_argument("--repair-of")
     args = parser.parse_args()
     if args.protocol or args.category:
-        protocol_mutants(args.preparation, args.category)
+        protocol_mutants(args.preparation, args.category, args.repair_of)
     else:
         numerical_mutants(args.preparation)

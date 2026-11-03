@@ -83,6 +83,25 @@ def run(preparation=False, repair_of=None):
     scenarios["bad-new-sequence-position"] = [
         initial, command(s[1], fresh=True, error=True, targets=0,
                          expectations=[{"writes": []}]), command(s[1])]
+    scenario_images = {}
+    collision = Fixture(words, tokens=[2, None, None])
+    collision.initial.update({key: value for key, value in replacement.initial.items()
+                              if key[0]==15})
+    collision.initial[15, 2, 0, 0, 0] = 0x80000009
+    collision_dir = directory / "checkpoint-images/protected-collision"
+    collision_dir.mkdir()
+    scenario_images["protected-page-collision"] = collision.export(collision_dir)
+    scenarios["protected-page-collision"] = [
+        initial, command(r[0], draft=True, fresh=True, token1=r[1]["token"],
+                         error=True, targets=1), command(s[1])]
+    minimum = Fixture(descriptor(banks=1, dimension=2, intermediate=1,
+                                 vocabulary=1, context=1, page_tokens=1, bias=0), tokens=1)
+    minimum_dir = directory / "checkpoint-images/capacity-one"
+    minimum_dir.mkdir()
+    scenario_images["capacity-one-rejection"] = minimum.export(minimum_dir)
+    scenarios["capacity-one-rejection"] = [
+        command(minimum.steps[0], draft=True, error=True, targets=0,
+                expectations=[{"writes": []}]), command(minimum.steps[0], fresh=True)]
     obj = directory / "compile-obj"
     records = []
     try:
@@ -97,7 +116,7 @@ def run(preparation=False, repair_of=None):
             script, observed = directory / f"{label}.txt", directory / f"{label}.json"
             write_script(script, commands)
             execute(directory / label, [
-                relative(obj / "Vanvil_q4_fp_top"), relative(image),
+                relative(obj / "Vanvil_q4_fp_top"), relative(scenario_images.get(label, image)),
                 relative(script), relative(observed)], timeout=600, repair_of=repair_of)
             records.append({"case": label, "observed": json.loads(observed.read_text()),
                             "receipt": relative(directory / label / "receipt.json")})

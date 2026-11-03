@@ -57,6 +57,7 @@ def run_suite(suite):
             check("Icarus-cache-smoke", cache_write.run, icarus_smoke=True)
             check("scheduler-sixteen-banks", scheduler.run)
             check("scheduler-singleton-conflicts", scheduler.run, banks=1, queue=1)
+            check("scheduler-sixteen-slot-conflicts", scheduler.run, banks=1, queue=16)
             check("speculation-public-leaf", speculative.run)
             check("integrated-speculation-drain-rollback", integrated.run)
             check("48-format-cache-GQA-crosses", behavior.run_matrix)

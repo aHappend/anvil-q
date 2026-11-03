@@ -18,7 +18,7 @@ def run(preparation=False, banks=16, queue=3, repair_of=None):
             "verilator", "--cc", "--exe", "--build", "-Wno-fatal", "-j", "2",
             "--top-module", "anvil_q4_fp_bank_scheduler", "--Mdir", relative(obj),
             f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue}",
-            "-CFLAGS", f"-std=c++17 -DBANKS={banks}",
+            "-CFLAGS", f"-std=c++17 -DBANKS={banks} -DQUEUE_DEPTH={queue}",
             "rtl/anvil_q4_fp_bank_scheduler.sv",
             os.path.relpath(ROOT / "tests/scheduler_sim.cpp", obj)])
         execute(directory / "verilator-scheduler", [
