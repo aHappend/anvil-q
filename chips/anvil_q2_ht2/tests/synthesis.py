@@ -29,8 +29,11 @@ def flatten_configuration(text, filename):
     end"""
         packed_process = validity_process.replace(
             "initialized[entry]<=0;", "initialized[16*entry+:16]<=0;").replace(
-            "initialized[entry][cfg_addr[5:2]]",
-            "initialized[16*entry+cfg_addr[5:2]]")
+            "          initialized[entry][cfg_addr[5:2]]<=1;",
+            "          for (integer initialized_word=0;initialized_word<16;\n"
+            "               initialized_word=initialized_word+1)\n"
+            "            if (cfg_addr[5:2]==initialized_word)\n"
+            "              initialized[16*entry+initialized_word]<=1;")
         if text.count(validity_process) != 1:
             raise RuntimeError(f"unrecognized configuration validity process: {filename}")
         replacements.append((validity_process, packed_process))

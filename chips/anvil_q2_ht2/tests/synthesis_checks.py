@@ -30,8 +30,11 @@ def execute(run, root, source_paths):
                  "for (i=0; i<ENTRIES; i=i+1) initialized[i]<=0;")
         if native:
             expected = expected.replace(reset, "initialized[16*entry+:16]<=0;").replace(
-                "initialized[entry][cfg_addr[5:2]]",
-                "initialized[16*entry+cfg_addr[5:2]]")
+                "          initialized[entry][cfg_addr[5:2]]<=1;",
+                "          for (integer initialized_word=0;initialized_word<16;\n"
+                "               initialized_word=initialized_word+1)\n"
+                "            if (cfg_addr[5:2]==initialized_word)\n"
+                "              initialized[16*entry+initialized_word]<=1;")
             write_access = "initialized[entry][cfg_addr[5:2]]"
         else:
             expected = expected.replace(reset, "initialized<=0;")
@@ -97,8 +100,8 @@ def execute(run, root, source_paths):
     for name, old, new in (
         ("reset-mask", "initialized[16*entry+:16]<=0;",
          "initialized[16*entry+:16]<=16'hffff;"),
-        ("word-bit-order", "initialized[16*entry+cfg_addr[5:2]]",
-         "initialized[16*entry+(15-cfg_addr[5:2])]"),
+        ("word-bit-order", "initialized[16*entry+initialized_word]",
+         "initialized[16*entry+(15-initialized_word)]"),
         ("write-enable", "initialized_write && cfg_index==entry",
          "!initialized_write && cfg_index==entry"),
     ):
