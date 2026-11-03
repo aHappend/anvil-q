@@ -260,3 +260,10 @@ def marker_case(run, opening):
                     "vocabulary": 151936, "simulation_threads": 8,
                     "clock_optimized": True},
         tools=("python3", "verilator", "g++", "make"), validate=validate)
+
+
+def marker_applicability(run):
+    results = [marker_case(run, opening) for opening in (True, False)]
+    return {"scope": "source-bound marker component reuse, not whole-product acceptance",
+            "opening_counts": results[0]["counts"],
+            "closing_counts": results[1]["counts"]}

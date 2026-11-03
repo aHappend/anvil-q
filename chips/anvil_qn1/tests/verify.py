@@ -50,6 +50,8 @@ Executable coverage:
           historical long-context and D128 synthesis components, not fresh execution.
   saved-behavior-applicability: recursively assess retained behavior components,
           including descendant executions; this does not certify coverage closure.
+  marker-applicability: validate and reuse complete source-bound opening/closing
+          marker results, executing missing or stale cases rather than skipping them.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
@@ -58,7 +60,7 @@ Executable coverage:
 Behavior, benchmark, defect and no-argument suite dispatchers remain
 incomplete; no whole-product acceptance is claimed. The seven-case production/
 boundary coarse-synthesis campaign has executed successfully; it is not STA.
-Compact isolated reproduction is authored but its complete campaign is pending.
+The source-only dual-simulator compact reproduction campaign has also executed.
 The original controller
 structural-loop counterexample is retained; the repaired controller has a fresh
 successful structural receipt. No-argument dispatch remains
@@ -94,7 +96,7 @@ from reproduction_checks import run_reproduce, run_reproduction_child
 from production_checks import run_layer, run_fusion_profile
 from marker_checks import run_markers
 from component_cache import (historical_applicability, latest_marker_build,
-                             saved_behavior_applicability)
+                             saved_behavior_applicability, marker_applicability)
 from prefill_marker_checks import run_prefill_marker
 from model import Geometry
 import reference
@@ -124,7 +126,8 @@ def main():
                                           "component-applicability",
                                           "layer-parallel-compact", "prefill-marker",
                                           "integrated-marker-fast",
-                                          "saved-behavior-applicability"))
+                                          "saved-behavior-applicability",
+                                          "marker-applicability"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
                         help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
@@ -136,7 +139,10 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "saved-behavior-applicability":
+        if args.probe == "marker-applicability":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = marker_applicability(run)
+        elif args.probe == "saved-behavior-applicability":
             run.versions(("python3", "verilator", "g++", "make"))
             results = saved_behavior_applicability(run)
         elif args.probe == "prefill-marker":
