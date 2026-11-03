@@ -307,11 +307,56 @@ def check_case(directory, text, binding, fmt, seed, expected, expected_batch=Non
                 raw_summary=match[0], binary_binding=binding, batches=batches)
 
 
+def control_case(directory, binary, binding, probe, fmt=0, seed=17):
+    vectors, expected = fixture(directory, fmt, seed, smoke=True)
+    observations = directory/"observations.txt"
+    options = ["+sparse=3f80"] if probe == "sparse" else [f"+probe={probe}"]
+    text = execute([relative(binary), f"+vectors={relative(vectors)}",
+                    f"+observations={relative(observations)}", f"+seed={seed}", *options],
+                   directory, "simulation", ["verilator", "--version"])
+    if probe in ("sparse", "ownership"):
+        checked = check_case(directory, text, binding, fmt, seed, expected)
+        if probe == "sparse":
+            summary = re.search(r"PROBE sparse threshold=00003f80 eligible=(\d+)", text)
+            if summary is None or int(summary[1]) <= 0:
+                raise AssertionError("nonzero sparse policy had no observed eligible bytes")
+        else:
+            summary = re.search(r"PROBE ownership rejected_writes=5 "
+                                r"loader_exclusions=3 outstanding=(\d+)", text)
+            if summary is None or int(summary[1]) <= 0:
+                raise AssertionError("ownership exclusions lacked outstanding public traffic")
+    else:
+        faults = int(probe in ("read_error", "write_error"))
+        summary = f"SUMMARY inference_probe mode={probe} canceled=1 faults={faults} logits=0 debt=0"
+        if text.count(summary) != 1 or observations.read_text().strip():
+            raise AssertionError("missing fault/cancellation summary or unexpected logits")
+        checked = dict(status="passed", format=fmt, seed=seed, binary_binding=binding,
+                       fault_responses=faults, canceled_commands=1, final_memory_debt=0,
+                       raw_summary=summary)
+    return dict(**checked, probe=probe, directory=relative(directory))
+
+
+def controls(output, binary, binding):
+    rows = []
+    for probe, fmt, seed in [("sparse", fmt, seed) for fmt, seed in enumerate((17, 89, 2026))] + [
+            ("ownership", 0, 89), ("read_error", 0, 17), ("write_error", 0, 89),
+            ("new_sequence", 0, 2026), ("reset", 0, 17)]:
+        directory = output/f"control-{probe}-format{fmt}-seed{seed}-{uuid.uuid4().hex[:8]}"
+        directory.mkdir()
+        try:
+            rows.append(control_case(directory, binary, binding, probe, fmt, seed))
+        except (RuntimeError, AssertionError, ValueError, OSError) as exc:
+            rows.append(dict(status="failed", probe=probe, format=fmt, seed=seed,
+                             error=f"{type(exc).__name__}: {exc}", directory=relative(directory)))
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--batch-only", action="store_true")
+    parser.add_argument("--controls-only", action="store_true")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -321,17 +366,19 @@ def main():
     rows = []
     try:
         binary, binding = compiled()
-        for seed in (() if args.batch_only else (17,) if args.smoke else (17, 89, 2026)):
-            for fmt in ((0,) if args.smoke else range(3)):
+        for seed in (() if args.batch_only else (17,) if args.smoke or args.controls_only
+                     else (17, 89, 2026)):
+            for fmt in ((0,) if args.smoke or args.controls_only else range(3)):
                 directory = output/f"format{fmt}-seed{seed}-{uuid.uuid4().hex[:8]}"
                 directory.mkdir()
                 try:
-                    rows.append(run_case(directory, binary, binding, fmt, seed, args.smoke))
+                    rows.append(run_case(directory, binary, binding, fmt, seed,
+                                         args.smoke or args.controls_only))
                 except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                     rows.append(dict(status="failed", format=fmt, seed=seed,
                                      error=f"{type(exc).__name__}: {exc}",
                                      directory=relative(directory)))
-        if not args.smoke:
+        if not args.smoke and not args.controls_only:
             for count, seed in ((1, 17), (4, 89), (4, 2026)):
                 directory = output/f"batch{count}-seed{seed}-{uuid.uuid4().hex[:8]}"
                 directory.mkdir()
@@ -341,14 +388,14 @@ def main():
                     rows.append(dict(status="failed", batch_count=count, seed=seed,
                                      error=f"{type(exc).__name__}: {exc}",
                                      directory=relative(directory)))
+        if not args.smoke and not args.batch_only:
+            rows.extend(controls(output, binary, binding))
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
         rows.append(dict(status="failed", error=f"{type(exc).__name__}: {exc}"))
     result = dict(status="passed" if rows and all(r["status"]=="passed" for r in rows) else "failed",
                   runs=rows, checkpoint="independent compact synthetic image, not official model",
                   coverage_limits=[] if args.smoke else [
                       "H>=64 integrated inference and legal geometry extrema",
-                      "nonzero sparse threshold and injected bus errors",
-                      "reset/abort during accepted inference and loader/CSR ownership collisions",
                       "authentic historical five-domain fixtures unavailable in supplied RTL-only intake"])
     with (output/"result.json").open("x") as out:
         json.dump(result, out, indent=2)
