@@ -1,10 +1,10 @@
 {
   "chip": "Anvil-Q3-FP",
   "fitter_resources": {
-    "alms_used": 122574,
+    "alms_used": 123134,
     "alms_total": 427200,
     "alms_pct": "29 %",
-    "total_registers": 81637,
+    "total_registers": 82369,
     "block_memory_bits": 8192,
     "m20k_ram_blocks": 64,
     "m20k_ram_blocks_total": 2713,
