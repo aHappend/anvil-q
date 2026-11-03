@@ -60,7 +60,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
                for path in sorted((ROOT / directory).glob("*.sv"))]
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-        "--flatten", "-O3",
+        "--flatten", "-O3", "--expand-limit", "1024",
         "--top-module", "integrated_clock_tb", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
