@@ -251,7 +251,8 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
          f"hierarchy -check -top {top}; proc; opt_expr; opt_clean; check -assert; "
          "memory -nomap; opt_clean; opt -fast; wreduce; alumacc; opt_clean; "),
         ("gates", "techmap; opt_expr; opt_merge; opt_clean; "),
-        ("abc", "abc -fast; opt_clean; "),
+        ("abc", ("techmap; opt_clean -purge; abc -fast; opt_clean -purge; "
+                 if identifier == "compact-mapped" else "abc -fast; opt_clean; ")),
     ]
     predecessor = None
     predecessor_digest = None

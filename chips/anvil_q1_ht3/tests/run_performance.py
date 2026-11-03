@@ -142,7 +142,9 @@ def performance_case(output, name, binary, binding, fmt, seed):
 def failure_classification(exc, name):
     if isinstance(exc, ExecutionFailure):
         if exc.timed_out:
-            return ("execution_budget_timeout" if exc.record.get("launched", True)
+            launched = exc.record.get("launched", exc.record.get("exit") is not None
+                                      or exc.record.get("timeout", 0) > 0)
+            return ("execution_budget_timeout" if launched
                     else "execution_budget_unstarted")
         return "simulation_or_tool_failure"
     if isinstance(exc, AssertionError):

@@ -142,6 +142,45 @@ def child(identifier, argv, output, budget=None, versions=None, reserve=0):
         os.environ["HT3_CHECK_DEADLINE"] = deadline
 
 
+def reconcile_coverage(rows):
+    """Resolve cross-suite labels only from current, checked public observations."""
+    restart = next((r for r in rows if r["id"] == "attention_restart"
+                    and r["status"] == "passed"), None)
+    attention = next((r for r in rows if r["id"] == "attention"), None)
+    if restart is None or attention is None:
+        return
+    result_path = restart.get("result_path", restart.get("result"))
+    if not result_path:
+        return
+    current = hashes()
+    for row, script in ((restart, "tests/run_attention_restart.py"),
+                        (attention, "tests/run_attention.py")):
+        if not row.get("receipt"):
+            return
+        receipt = json.loads((ROOT/row["receipt"]).read_text())
+        if (receipt.get("timed_out") or receipt.get("exit") != 0
+                or any(receipt.get("source_sha256", {}).get(path) != current[path]
+                       for path in dependencies(script))):
+            return
+    result = json.loads((ROOT/result_path).read_text())
+    expected = ("SUMMARY attention_restart accepts=9 completions=8 fault_responses=1 "
+                "failures=0 abort_drains=1 reset_canceled=1 zero_responses=8")
+    if result.get("status") != "passed" or expected not in result.get("observations", []):
+        return
+    covered = {"abort/reset during accepted KV", "zero-latency KV response"}
+    limits = attention.get("coverage_limits", [])
+    resolved = [label for label in limits if label in covered]
+    if not resolved:
+        return
+    attention["reported_coverage_limits"] = limits
+    attention["coverage_limits"] = [label for label in limits if label not in covered]
+    attention["resolved_coverage"] = dict(
+        labels=resolved, check="attention_restart", receipt=restart["receipt"],
+        result=result_path, observations=expected)
+    if attention["status"] == "incomplete" and not attention["coverage_limits"]:
+        attention["status"] = "passed"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="evidence/l1")
@@ -206,6 +245,7 @@ def main():
                          jobs=synthesis_rows))
         rows.append(child("reproduction", ["tests/run_reproduction.py"], output,
                           budget=REPRODUCTION_RESERVE, reserve=SETTLEMENT_RESERVE))
+        reconcile_coverage(rows)
     except (OSError, ValueError, AssertionError) as exc:
         rows.append(dict(id="aggregate", status="failed",
                          error=f"{type(exc).__name__}: {exc}"))

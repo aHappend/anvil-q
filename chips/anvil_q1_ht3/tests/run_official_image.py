@@ -5,14 +5,13 @@ import io
 import json
 from pathlib import Path
 import sys
-import uuid
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, hashes, relative, remaining, timestamp
-from official_image import build, check_panel, layout, panel_bytes
-from run_benchmarks import prepare
+from official_image import check_panel, panel_bytes
+from run_benchmarks import checkpoint_image, prepare
 
 
 def self_test():
@@ -60,13 +59,9 @@ def main():
             _, bindings, failures = prepare(output)
             if failures:
                 raise AssertionError(f"official input acquisition failed: {failures}")
-            pin = json.loads((ROOT/"tests/official_inputs.json").read_text())
-            images = output/"checkpoint-images"
-            images.mkdir()
-            result = build(images/f"official-image-{uuid.uuid4().hex[:12]}",
-                           ROOT/bindings["model.safetensors"]["path"],
-                           ROOT/bindings["config.json"]["path"],
-                           pin["model"]["files"]["model.safetensors"])
+            result = dict(status="passed",
+                          scope="source-bound official image validation, not RTL inference",
+                          **checkpoint_image(output, bindings))
     except (OSError, RuntimeError, AssertionError, ValueError, KeyError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
