@@ -28,6 +28,23 @@ def expected_cycles(context, dimension, tile, fmt):
     return [last_release+71*(index+1) for index in range(dimension)], last_release+71*dimension+1
 
 
+def check_residency(lines, context, dimension, tile, fmt):
+    supply = [line.split() for line in lines if line.startswith("P ")]
+    lengths = [min(tile, context-start) for start in range(0, context, tile)]
+    if len(supply)!=len(lengths) or [int(row[1]) for row in supply]!=list(range(len(lengths))):
+        raise AssertionError("missing or duplicate observed tile-supply completions")
+    first = lengths[0]
+    release = dimension+137+first*(dimension+1)+4+int(first<tile)
+    interval = 47 if fmt>=2 else 33
+    for index, count in enumerate(lengths):
+        if index:
+            if int(supply[index][2])+2 >= release:
+                raise AssertionError("successor tile was not supplied before preceding release")
+            release += 1
+        release += count*(interval*dimension+60)+10*dimension+47
+    return len(lengths)-1
+
+
 def compiled(dimension, tile):
     cache = ROOT/"evidence/compiled"
     cache.mkdir(parents=True, exist_ok=True)
@@ -82,14 +99,17 @@ def run_case(directory, binary, binding, context, dimension, tile, fmt):
                              f"frozen query/root/inverse/start edge={dimension+140}")
     output_cycles, done_cycle = expected_cycles(context, dimension, tile, fmt)
     lines = observations.read_text().splitlines()
-    if len(lines)!=dimension+1 or lines[-1]!=f"D {done_cycle}":
+    handoffs = check_residency(lines,context,dimension,tile,fmt)
+    outputs = [line for line in lines if line.startswith("O ")]
+    if (len(outputs)!=dimension or
+            len(lines)!=dimension+(context+tile-1)//tile+1 or lines[-1]!=f"D {done_cycle}"):
         raise AssertionError(f"attention done edge: observed={lines[-1:]}, expected={done_cycle}")
-    for index, (line, cycle) in enumerate(zip(lines, output_cycles)):
+    for index, (line, cycle) in enumerate(zip(outputs, output_cycles)):
         if line != f"O {index} {0x3f800000:032x} {cycle}":
             raise AssertionError(f"attention output edge: observed={line}, "
                                  f"expected_index={index}, expected_cycle={cycle}")
     return dict(status="passed", context=context, dimension=dimension, tile=tile,
-                format=fmt, resident_handoffs=(context-1)//tile,
+                format=fmt, resident_handoffs=handoffs,
                 output_cycles=output_cycles, done_cycle=done_cycle, binary_binding=binding,
                 raw_summary=expected)
 

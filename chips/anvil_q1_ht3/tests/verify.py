@@ -25,6 +25,7 @@ OBLIGATIONS = {
     "transcendental": "IEEE exp, sin/cos, divide/sqrt; approximation and latency matrix",
     "attention_restart": "KV response fault drains; legal and immediate-invalid next commands complete",
     "attention": "online FP64 attention, formats, masks, tiles, long context and stalls",
+    "attention_timing": "frozen no-stall attention edges with observed resident tile supply",
     "packed_cache": "FP32 store conversion, packed writes/readback and subsequent attention",
     "compatibility": "integrated inference, CSR/loader/descriptor/batch/reset/error matrix",
     "integrated_geometry": "functional smallest/nonpower/H64, native formats and GQA",
@@ -40,7 +41,8 @@ TOOLS = {"python3": ["python3", "--version"], "iverilog": ["iverilog", "-V"],
          "verilator": ["verilator", "--version"], "yosys": ["yosys", "-V"]}
 REPRODUCTION_RESERVE = 360
 SETTLEMENT_RESERVE = 30
-SUITE_BUDGETS = {"attention": 750, "parameters": 450, "attention_restart": 60,
+SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
+                 "parameters": 450, "attention_restart": 60,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
                  "integrated_geometry": 1500,
                  "mutations": 420, "benchmarks": 300, "performance": 480}
@@ -55,6 +57,7 @@ def dependencies(script):
                               "tests/quantizer_tb.sv"],
         "tests/run_epilogue.py": ["tests/reference.py", "tests/epilogue_tb.sv"],
         "tests/run_attention.py": ["tests/reference.py", "tests/attention_tb.sv"],
+        "tests/run_attention_timing.py": ["tests/attention_timing_tb.sv", "tests/retention.py"],
         "tests/run_attention_restart.py": ["tests/attention_restart_tb.sv"],
         "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
         "tests/run_packed_cache.py": ["tests/reference.py", "tests/packed_cache_tb.sv"],
