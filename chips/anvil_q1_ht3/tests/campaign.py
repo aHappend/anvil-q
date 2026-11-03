@@ -147,7 +147,7 @@ def canonical_argv(argv):
 def dependencies(paths):
     """Capture existing JSON-declared files, recording missing obligations explicitly."""
     pending = list(paths)
-    found, missing, expected, parse_errors = {}, set(), {}, []
+    found, missing, expected, source_versions, parse_errors = {}, set(), {}, {}, []
     while pending:
         requested = Path(pending.pop())
         name = logical(requested)
@@ -175,7 +175,8 @@ def dependencies(paths):
                     bindings = value.get(field)
                     if isinstance(bindings, dict):
                         for dependency, sha in bindings.items():
-                            expected.setdefault(dependency, set()).add(sha)
+                            target = source_versions if field == "source_sha256" else expected
+                            target.setdefault(dependency, set()).add(sha)
                 values.extend(value.keys())
                 values.extend(value.values())
             elif isinstance(value, list):
@@ -200,14 +201,14 @@ def dependencies(paths):
     conflicts = [dict(path=name, recorded_sha256=sorted(sha), actual_sha256=_sha(found[name]))
                  for name, sha in sorted(expected.items())
                  if name in found and (len(sha) != 1 or _sha(found[name]) not in sha)]
-    return found, sorted(missing), conflicts, parse_errors
+    return found, sorted(missing), conflicts, parse_errors, source_versions
 
 
 def preserve(paths, label):
     """Archive a dependency closure, round-trip checking every complete actual byte."""
     start = timestamp()
     _load()
-    files, missing, conflicts, parse_errors = dependencies(paths)
+    files, missing, conflicts, parse_errors, source_versions = dependencies(paths)
     rows = []
     for name, path in sorted(files.items()):
         sha = _sha(path)
@@ -232,12 +233,27 @@ def preserve(paths, label):
         if _sha(path) != sha:
             raise ValueError(f"artifact changed during retention: {name}")
         rows.append(row)
+    snapshots, unavailable_versions = [], []
+    for name, versions in sorted(source_versions.items()):
+        for sha in sorted(versions):
+            snapshot = next((row for row in rows
+                             if row["path"] == name and row["sha256"] == sha), None)
+            if snapshot is None:
+                snapshot = next((row for _, row in _catalog.get(name, [])
+                                 if row["sha256"] == sha), None)
+            if snapshot is None:
+                unavailable_versions.append(dict(path=name, sha256=sha))
+            else:
+                _verify_archive(snapshot)
+                snapshots.append(snapshot)
     directory = STORE / f"campaign-{uuid.uuid4().hex[:12]}"
     directory.mkdir(parents=True, exist_ok=False)
     manifest = dict(schema=1, label=label, start=start, end=timestamp(),
-                    complete=not missing and not conflicts and not parse_errors,
+                    complete=not missing and not conflicts and not parse_errors
+                             and not unavailable_versions,
                     missing_dependencies=missing, dependency_parse_errors=parse_errors,
                     conflicting_dependencies=conflicts,
+                    source_snapshots=snapshots, unavailable_source_versions=unavailable_versions,
                     roots=[logical(p) for p in paths], files=rows,
                     retention="gzip complete bytes; original paths and modes preserved; "
                               "restoration only to fresh project-owned destinations")

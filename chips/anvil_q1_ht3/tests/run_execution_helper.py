@@ -9,7 +9,8 @@ import time
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, execute, hashes, relative, remaining, timestamp
+from execution import (ROOT, execute, failure_details, hashes, nested_outcomes,
+                       relative, remaining, timestamp)
 
 
 def main():
@@ -33,8 +34,9 @@ def main():
         try:
             execute(argv,directory,"expired",["python3","--version"])
         except RuntimeError as exc:
-            if not getattr(exc, "timed_out", False) or exc.record["exit"] is not None:
-                raise AssertionError("timeout propagation lost the child execution outcome") from exc
+            if (getattr(exc, "timed_out", False) or exc.record["exit"] is not None
+                    or failure_details(exc)["failure_kind"] != "execution_budget_unstarted"):
+                raise AssertionError("unstarted allocation was mislabeled as a process timeout") from exc
             comparisons += 1
         else:
             raise AssertionError("expired budget incorrectly reported command success")
@@ -44,8 +46,14 @@ def main():
         else:
             os.environ["HT3_CHECK_DEADLINE"] = previous
     record = json.loads((directory/"expired.receipt.json").read_text())
-    if not record["timed_out"] or record["exit"] is not None or record["timeout"] != 0:
+    if (record["timed_out"] or record["exit"] is not None or record["timeout"] != 0
+            or record["launched"] or not record["budget_exhausted"]):
         raise AssertionError("expired-budget receipt is not explicit and truthful")
+    comparisons += 1
+    outcomes = nested_outcomes(directory)
+    if (outcomes["nested_timed_out"] or not outcomes["budget_exhausted"]
+            or outcomes["unstarted_receipts"] != [relative(directory/"expired.receipt.json")]):
+        raise AssertionError("unstarted receipt disappeared from enclosing budget metadata")
     comparisons += 1
     if (ROOT/marker).exists():
         raise AssertionError("expired-budget command actually launched")

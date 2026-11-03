@@ -3,13 +3,12 @@
 import argparse
 import json
 from pathlib import Path
-import subprocess
 import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import campaign
-from execution import ROOT, hashes, relative, remaining, timestamp
+from execution import ROOT, execute, hashes, relative, remaining, timestamp
 from retention import artifacts_intact, digest
 from verify import budget_summary
 
@@ -59,9 +58,9 @@ def regression(output):
         restored_paths.append(relative(restored))
         assertions += 1
     restored_executable = campaign.artifact(executable)
-    observed = subprocess.run([str(restored_executable)], cwd=ROOT, capture_output=True,
-                              text=True, check=True)
-    if observed.stdout != "synthetic lifecycle 17\n" or observed.stderr:
+    observed = execute([relative(restored_executable)], directory, "restored-execution",
+                       ["python3", "--version"])
+    if observed != "synthetic lifecycle 17\n":
         raise AssertionError("restored executable bytes/mode changed")
     assertions += 1
     if campaign.canonical_argv([relative(restored_executable)]) != [relative(executable)]:
@@ -101,6 +100,20 @@ def regression(output):
         raise AssertionError("missing dependency manufactured a complete archive")
     if campaign.available(missing):
         raise AssertionError("missing dependency manufactured bytes")
+    assertions += 1
+    metadata = directory / "scalar-hash.json"
+    metadata.write_text(json.dumps(dict(source_sha256="synthetic scalar provenance")))
+    scalar = campaign.preserve([metadata], "synthetic scalar hash metadata")
+    if not json.loads(scalar.read_text())["complete"]:
+        raise AssertionError("scalar provenance metadata was treated as a dependency map")
+    assertions += 1
+    malformed = directory / "malformed.json"
+    malformed.write_text("synthetic malformed JSON bytes; preserve failure diagnostics")
+    malformed_manifest = campaign.preserve([malformed], "synthetic malformed metadata")
+    malformed_record = json.loads(malformed_manifest.read_text())
+    if (malformed_record["complete"] or len(malformed_record["dependency_parse_errors"]) != 1
+            or malformed_record["files"][0]["sha256"] != digest(malformed)):
+        raise AssertionError("malformed metadata lost its actual bytes or dependency error")
     assertions += 1
     row = dict(id="compact-mapped", status="not_started",
                failure_kind="execution_budget_unstarted", available_s=598.39, minimum_s=1800)
