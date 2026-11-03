@@ -26,6 +26,7 @@ def timestamp():
 
 class Experiment:
     def __init__(self, stem, preparation=False):
+        self.started_monotonic = time.monotonic()
         suffix = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
         self.directory = ROOT / "evidence" / ("preparation" if preparation else "verification") / (
             stem + "-" + suffix)
@@ -48,6 +49,9 @@ class Experiment:
         (self.directory / "receipt.json").write_text(json.dumps(self.receipt, indent=2) + "\n")
 
     def execute(self, argv, name, timeout=600):
+        timeout = min(timeout, max(1, 2700-(time.monotonic()-self.started_monotonic)))
+        if Path(argv[0]).name == "vvp":
+            timeout = min(timeout, 600)
         relative = self.directory.relative_to(ROOT)
         record = {"argv": argv, "cwd": ".", "started_at": timestamp(),
                   "timeout_s": timeout,
@@ -60,9 +64,20 @@ class Experiment:
             with (ROOT / record["stdout"]).open("w") as stdout, (
                     ROOT / record["stderr"]).open("w") as stderr:
                 try:
-                    result = subprocess.run(argv, cwd=ROOT, stdout=stdout, stderr=stderr,
-                                            timeout=timeout, check=False)
-                    record["exit_code"] = result.returncode
+                    process = subprocess.Popen(argv, cwd=ROOT, stdout=stdout, stderr=stderr)
+                    deadline = start+timeout
+                    while True:
+                        try:
+                            exit_code = process.wait(timeout=min(30, max(0.01, deadline-time.monotonic())))
+                            break
+                        except subprocess.TimeoutExpired:
+                            if time.monotonic() >= deadline:
+                                process.kill()
+                                process.wait()
+                                raise
+                            print(f"progress: {name} executing ({int(time.monotonic()-start)}s)",
+                                  flush=True)
+                    record["exit_code"] = exit_code
                     record["timed_out"] = False
                 except subprocess.TimeoutExpired:
                     record["exit_code"] = None
@@ -72,8 +87,8 @@ class Experiment:
             record["ended_at"] = timestamp()
             record["duration_s"] = time.monotonic() - start
             self.save()
-        if result.returncode:
-            raise RuntimeError(f"{name} exited {result.returncode}; see {record['stdout']} "
+        if exit_code:
+            raise RuntimeError(f"{name} exited {exit_code}; see {record['stdout']} "
                                f"and {record['stderr']}")
         return (ROOT / record["stdout"]).read_text()
 
@@ -157,7 +172,7 @@ def run_dequant(experiment, simulator, rtl="rtl/anvil_d2_fp8_dequant.sv",
     experiment.save()
 
 
-def run_public_smoke(experiment):
+def run_public_smoke(experiment, boundaries=False):
     directory = experiment.directory.relative_to(ROOT)
     obj = directory / "public-obj"
     sources = [str(p.relative_to(ROOT)) for pattern in (
@@ -165,15 +180,18 @@ def run_public_smoke(experiment):
     experiment.execute(["verilator", "--version"], "verilator-version")
     experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
                         "--top-module", "top_smoke_tb", "--Mdir", str(obj),
-                        "-o", "public-sim", *sources, "tests/top_smoke_tb.sv"],
+                        "-o", "public-sim", *(["-GCAPACITY=5"] if boundaries else []),
+                        *sources, "tests/top_smoke_tb.sv"],
                        "public-compile", 1200)
-    output = experiment.execute([str(obj / "public-sim")], "public-simulation", 1200)
+    output = experiment.execute([str(obj / "public-sim")] + (["+boundaries"] if boundaries else []),
+                                "public-simulation", 1200)
     experiment.receipt["results"]["public-smoke"] = {
         "geometry": {"hidden": 8, "layers": 1, "banks": 2, "queue_depth": 3},
         "weight_fixture": "all-zero tensors; FP8 missing scales positive one",
         "oracle": "zero output projection gives zero logits and greedy token zero",
         "raw_summary": output.strip(),
-        "scope": "bounded protocol smoke, not nonzero transformer numerical coverage",
+        "scope": ("four-mode EOS, zero-capacity and terminal shortening" if boundaries else
+                  "bounded protocol smoke, not nonzero transformer numerical coverage"),
     }
     experiment.save()
 
@@ -579,10 +597,13 @@ def main():
                                          "synthesis-probe", "fp8-bias", "bf16-tie",
                                          "fp8-service", "byte-order", "scale-group",
                                          "scale-invalidation", "verdict",
-                                         "acceptance-past-mismatch", "oracle", "target-model"],
+                                         "acceptance-past-mismatch", "oracle", "target-model",
+                                         "public-boundaries"],
                         required=True)
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
+    parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
+    parser.add_argument("--seed", type=int, default=17)
     args = parser.parse_args()
     experiment = Experiment("d2-" + args.probe, preparation=True)
     if args.repair_of:
@@ -597,8 +618,12 @@ def main():
             run_dequant(experiment, args.simulator)
         elif args.probe == "public-smoke":
             run_public_smoke(experiment)
+        elif args.probe == "public-boundaries":
+            run_public_smoke(experiment, boundaries=True)
         elif args.probe == "target-model":
-            run_target_model(experiment)
+            geometry = (Geometry(layers=2) if args.geometry == "routed" else
+                        Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
+            run_target_model(experiment, geometry, seed=args.seed)
         elif args.probe == "synthesis-probe":
             run_synthesis_probe(experiment)
         elif args.probe in ("fp8-bias", "bf16-tie"):
