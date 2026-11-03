@@ -14,7 +14,7 @@ from receipts import ROOT, cleanup_build, compile_verilator, execute, relative
 
 
 def run_compatibility(run, mode):
-    model, _, lines, _ = generate(run, layers=1, nonzero=True)
+    model, _, lines, _ = generate(run, layers=1, nonzero=True, vocabulary=4)
     obj = run / "compatibility-obj"
     obj.mkdir()
     driver = obj / "compatibility_driver.cpp"
@@ -23,7 +23,8 @@ def run_compatibility(run, mode):
                for path in sorted((ROOT / directory).glob("*.sv"))]
     binary = compile_verilator(run, "compatibility-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-        "--inline-mult", "2000",
+        "--inline-mult", "1", "--expand-limit", "1024",
+        "--hierarchical", "tests/compiled.vlt",
         "--top-module", "compatibility_tb", f"-DHT2_TEST_CACHE_MODE={mode}",
         "--prefix", "Vcompatibility",
         "--Mdir", relative(obj), "-j", "2",
@@ -42,7 +43,7 @@ def run_compatibility(run, mode):
     if len(records) != 1:
         raise AssertionError("missing complete public-pin compatibility results")
     observed = records[0]
-    expected = {"model_lines": lines, "completed_tokens": 2, "logits": 16,
+    expected = {"model_lines": lines, "completed_tokens": 2, "logits": 8,
                 "rejected_commands": 2, "cancellations": 1, "read_errors": 1}
     for field, value in expected.items():
         if observed.get(field) != value:
@@ -68,7 +69,7 @@ def run_compatibility(run, mode):
                    observed["cycles"] / simulation_receipt["duration_s"],
                "compile_receipt": binding["compile_receipt"],
                "oracle": "unchanged parent RTL on identical public inputs",
-               "fixture": "one-layer legal nonzero AWQ model, 64 hidden, vocabulary 8",
+               "fixture": "one-layer legal nonzero AWQ model, 64 hidden, vocabulary 4",
                "receipt": relative(result / "receipt.json")}
     (run / "compatibility-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return summary

@@ -43,7 +43,16 @@ def run_cache_path(run):
 def worker(run, focus):
     ledger = Ledger(run, "changed-delivery-producers-preparation")
     try:
-        if focus == "residual":
+        if focus == "compacted":
+            ledger.check("tile-portability", run_tile, "iverilog", 17, True)
+            ledger.check("sparse-portability", run_sparse, "iverilog", 17, True)
+            for seed in (17, 29, 43):
+                ledger.check(f"tile-seed{seed}", run_tile, "verilator", seed, False)
+                ledger.check(f"sparse-seed{seed}", run_sparse, "verilator", seed, False)
+            ledger.check("sustained-physical-bandwidth", measure_sustained)
+            ledger.check("compatibility-mode1", run_compatibility, 1)
+            ledger.check("compatibility-mode2", run_compatibility, 2)
+        elif focus == "residual":
             ledger.check("integration-cached-path", run_cache_path)
             ledger.check("sustained-physical-bandwidth", measure_sustained)
             for mode in (1, 2):
@@ -100,7 +109,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--_worker-run", help=argparse.SUPPRESS)
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
-    parser.add_argument("--focus", choices=("all", "compatibility", "integration", "residual"),
+    parser.add_argument("--focus", choices=("all", "compatibility", "integration", "residual",
+                                          "compacted"),
                         default="all")
     args = parser.parse_args()
     enter_tier()

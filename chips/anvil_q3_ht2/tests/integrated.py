@@ -13,8 +13,10 @@ from receipts import ROOT, execute, new_run, relative, cleanup_build
 from reference import pack_rows, nearest_div
 
 
-def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
-    hidden, intermediate, kvdim, group, vocabulary, maximum = 64, 8, 8, 8, 8, 8
+def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary=8):
+    if not 1 <= vocabulary <= 8:
+        raise ValueError("compact fixture vocabulary must be between one and eight")
+    hidden, intermediate, kvdim, group, maximum = 64, 8, 8, 8, 8
     image = {}
 
     def store(address, data):
@@ -71,7 +73,7 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
         0x3800 + ((token * 17 + row * 5 + seed) % 256) if varied else 0x3c00
         for token in range(vocabulary) for row in range(hidden)])
     head = [0xbc00, 0xb800, 0, 0x3c00, 0x3800, 0x3400, 0xb400, 0]
-    half_array(0xc0000000, [weight for weight in head for _ in range(hidden)])
+    half_array(0xc0000000, [weight for weight in head[:vocabulary] for _ in range(hidden)])
     images = run / "checkpoint-images"
     images.mkdir()
     model = images / "model-lines.txt"
@@ -86,7 +88,7 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
     normalized = nearest_div(65536 * 65536 * reciprocal, 1 << 48)
     weights_q16 = [-65536, -32768, 0, 65536, 32768, 16384, -16384, 0]
     expected = [nearest_div(hidden * normalized * weight, 65536)
-                for weight in weights_q16]
+                for weight in weights_q16[:vocabulary]]
     vectors = run / "integration-vectors.txt"
     vectors.write_text(("" if nonzero else "\n".join(
         f"{value & 0xffffffff:x}" for value in expected) + "\n") +

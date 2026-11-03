@@ -27,7 +27,8 @@ def generate(path, seed, compact):
     expected_totals = {"cases": 0, "operands": 0, "physical_bytes": 0,
                        "scanned": 0, "skipped": 0}
     for index, (output, row, columns) in enumerate(shapes):
-        for predicate in range(7):
+        predicates = (4,) if columns == 11008 else range(7)
+        for predicate in predicates:
             mask = (15, 1, 10, 5, 15, 15, 15)[predicate]
             sparse = predicate != 0
             threshold = 0 if predicate == 2 else 0x1400

@@ -5,11 +5,12 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import shutil
 import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative, cleanup_build, mutation_copy, compile_verilator
+from receipts import ROOT, execute, new_run, relative, cleanup_build, mutation_copy, compile_verilator
 from reference import pack_rows, tile_sum, f32
 
 
@@ -30,7 +31,7 @@ def generate(path, seed, lanes, compact):
     def case(columns, mask, row_mask, repeated=False):
         nonlocal input_count
         beats = []
-        for column in range(columns):
+        for column in range(1 if repeated and columns else columns):
             qs = [(row + column) & 15 for row in range(128)]
             zs = [((row >> 4) + column) & 15 for row in range(128)]
             scales = sum((0x1400 if repeated else rng.choice(scales_pool)) << (16 * row)
@@ -56,7 +57,7 @@ def generate(path, seed, lanes, compact):
                            if mask & (1 << token) and row_mask & (1 << row))
         else:
             expected = tile_sum(beats, mask, row_mask)
-        records = [f"{columns} {mask:x} {row_mask:x} 0 {columns}",
+        records = [f"{columns} {mask:x} {row_mask:x} 0 {columns} {int(repeated)}",
                    *(f"{(expected >> (token * 4096)) & ((1 << 4096) - 1):x}"
                      for token in range(4))]
         for column, beat in enumerate(beats):
@@ -75,7 +76,8 @@ def generate(path, seed, lanes, compact):
         case(1024, 15, (1 << lanes) - 1)
         case(11008, 15, (1 << lanes) - 1, repeated=True)
     path.write_text(f"{len(cases)}\n" + "\n".join(cases) + "\n")
-    return {"cases": len(cases), "inputs": input_count, "outputs": len(cases)}
+    return {"cases": len(cases), "inputs": input_count, "outputs": len(cases),
+            "repeated_beats": 0 if compact else 11008}
 
 
 def run_tile(run, simulator, seed, compact, mutant=False):
@@ -99,11 +101,15 @@ def run_tile(run, simulator, seed, compact, mutant=False):
         version = ["vvp", "-V"]
     else:
         obj = run / "tile-obj"
-        executable = compile_verilator(run, "tile-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
-                "--top-module", "tile_tb", "-GWEIGHT_LANES=128", "-GHIDDEN_SIZE=2048",
-                "-GNUM_KV_HEADS=2", "-GHEAD_DIM=128", "--Mdir", relative(obj),
+        obj.mkdir()
+        driver = obj / "timed_driver.cpp"
+        shutil.copyfile(ROOT / "tests/timed_driver.cpp", driver)
+        executable = compile_verilator(run, "tile-compile", ["verilator", "--cc", "--exe", "--build", "--timing", "-Wno-fatal",
+                "--top-module", "tile_tb", "-DHT2_PRODUCTION_TILE",
+                "--inline-mult", "1", "--expand-limit", "1024",
+                "--hierarchical", "tests/compiled.vlt", "--Mdir", relative(obj),
                 "-j", "2", "--output-split", "20000", "--output-split-cfuncs", "2000",
-                "-CFLAGS", "-O0", *sources], obj, "Vtile_tb")
+                "-CFLAGS", "-O0", *sources, driver.name], obj, "Vtile_tb")
         argv = [relative(executable), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
     try:

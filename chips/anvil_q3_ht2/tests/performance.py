@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import shutil
 from time import time_ns
 
 from integrated_fast import run_fast_integration
@@ -49,13 +50,19 @@ def measure_sustained(run):
     vectors = run / "bandwidth-vectors.txt"
     generate(vectors)
     obj = run / "performance-obj"
+    obj.mkdir()
+    driver = obj / "timed_driver.cpp"
+    shutil.copyfile(ROOT / "tests/timed_driver.cpp", driver)
     sources = [relative(path) for directory in ("anvil_q3_ht_reference/rtl", "rtl")
                for path in sorted((ROOT / directory).glob("*.sv"))]
     executable = compile_verilator(run, "performance-compile", [
-        "verilator", "--binary", "--timing", "-Wno-fatal",
+        "verilator", "--cc", "--exe", "--build", "--timing", "-Wno-fatal",
+        "--inline-mult", "1", "--expand-limit", "1024",
+        "--hierarchical", "tests/compiled.vlt",
         "--top-module", "performance_tb", "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
-        "-CFLAGS", "-O3", *sources, "tests/performance_tb.sv"], obj, "Vperformance_tb")
+        "-CFLAGS", "-O3 -DHT2_TIMED_PERFORMANCE",
+        *sources, "tests/performance_tb.sv", driver.name], obj, "Vperformance_tb")
     try:
         result = execute(run, "performance-simulate",
                          [relative(executable), f"+vectors={relative(vectors)}"],

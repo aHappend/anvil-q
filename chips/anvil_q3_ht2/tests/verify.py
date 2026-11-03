@@ -29,7 +29,7 @@ from tree_attention import run_tree
 
 
 SEEDS = (17, 29, 43)
-INTEGRATION_SAMPLES = ((1, 17), (2, 29))
+INTEGRATION_SAMPLES = tuple((mode, seed) for mode in (1, 2) for seed in SEEDS)
 
 
 def enter_tier():
