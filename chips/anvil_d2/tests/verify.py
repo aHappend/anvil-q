@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from reference import bf16_to_q16, dequantize, quantize_group
+from reference import bf16_to_q16, committed_block, dequantize, quantize_group
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -315,10 +315,152 @@ def run_dequant_mutant(experiment, defect):
     run_dequant(experiment, "verilator", str(copied.relative_to(ROOT)), expect_mismatch=True)
 
 
+def run_service_probe(experiment, rtl="rtl/anvil_d2_fp8_mla_moe.sv",
+                      expect_mismatch=False):
+    rng = random.Random(89)
+    directory = experiment.directory.relative_to(ROOT)
+    vectors = experiment.directory / "service-vectors.txt"
+    fixtures = []
+    for row, length in enumerate([1, 2, 3, 4, 127, 128, 129, 255, 256] * 5):
+        values = [rng.randrange(-0x80000000, 0x80000000) for _ in range(length)]
+        for base in range(0, length, 128):
+            part = values[base:base+128]
+            scale, codes = quantize_group(part)
+            fixtures.append((0, 1, row % 3, row, base, part, scale, codes))
+    for sequence in range(24):
+        count = 128 if sequence < 6 else [1, 2, 3, 4, 127, 128][sequence % 6]
+        # Revisit the same expert key with changed scales and payload after flush.
+        scale = [0x3EAAAAAB, 0x3F800001, 0x3F818000][sequence % 3]
+        codes = [rng.randrange(127) | (rng.randrange(2) << 7) for _ in range(count)]
+        fixtures.append((1, 1, 2, (sequence // 3) % 2, 0, [0] * count, scale, codes))
+    with vectors.open("w") as stream:
+        for operation, epoch, layer, row, base, values, scale, codes in fixtures:
+            stream.write(f"{operation} {epoch} {layer} {row} {base} {len(values)} 0 {scale:08x}\n")
+            for value, code in zip(values, codes):
+                fp32, bf16, error = dequantize(code, scale)
+                q16, qerror = bf16_to_q16(bf16)
+                assert not error and not qerror
+                stream.write(f"{value & 0xFFFFFFFF:08x} {code:02x} {fp32:08x} "
+                             f"{bf16:04x} {q16:08x}\n")
+    obj = directory / "service-obj"
+    experiment.execute(["verilator", "--version"], "verilator-version")
+    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
+                        "--top-module", "fp8_service_tb", "--Mdir", str(obj),
+                        "-o", "service-sim", "rtl/anvil_d2_fp8_dequant.sv",
+                        "rtl/anvil_d2_fp8_group_quantizer.sv",
+                        "rtl/anvil_d2_bf16_to_q16.sv", rtl,
+                        "tests/fp8_service_tb.sv"], "service-compile", 1200)
+    try:
+        output = experiment.execute([str(obj / "service-sim"),
+                                     "+vectors=" + str(vectors.relative_to(ROOT))],
+                                    "service-simulation")
+    except RuntimeError:
+        command = experiment.receipt["commands"][-1]
+        output = (ROOT / command["stdout"]).read_text() + (ROOT / command["stderr"]).read_text()
+        diagnostics = ("SERVICE_NUMERICAL_MISMATCH", "CACHE_PACKING_MISMATCH",
+                       "CACHE_SCALE_WRITE_MISMATCH", "GROUP_READ_OR_FLUSH_INVALIDATION_ACCOUNTING")
+        if not expect_mismatch or command.get("timed_out") or not any(
+                diagnostic in output for diagnostic in diagnostics):
+            raise
+        experiment.receipt["results"]["mutant"] = {
+            "rejected_by": "normal numerical/transfer scoreboard",
+            "raw_diagnostic": output.strip(),
+        }
+        experiment.save()
+        return
+    if expect_mismatch:
+        raise AssertionError("behavioral service mutant survived normal scoreboard")
+    experiment.receipt["results"]["service"] = {
+        "fixtures": len(fixtures), "seed": 89, "raw_summary": output.strip(),
+        "scope": "cache packing/roundtrip and expert dequantized Q16 boundary; not MAC/logit coverage",
+    }
+    experiment.save()
+
+
+def run_service_mutant(experiment, defect):
+    source_path = ROOT / "rtl/anvil_d2_fp8_mla_moe.sv"
+    original = source_path.read_text()
+    before, after = {
+        "byte-order": ("selected_byte=payload_q >> {element_index[1:0],3'b000}",
+                       "selected_byte=payload_q >> {~element_index[1:0],3'b000}"),
+        "scale-group": ("base_col>>7", "base_col>>6"),
+        "scale-invalidation": ("resident_valid<=0; epoch_valid<=0;", "epoch_valid<=0;"),
+    }[defect]
+    if original.count(before) != 1:
+        raise AssertionError(f"mutation anchor for {defect} must occur exactly once")
+    mutated = original.replace(before, after)
+    copied = experiment.directory / "anvil_d2_fp8_mla_moe.sv"
+    copied.write_text(mutated)
+    (experiment.directory / "mutant.diff").write_text("".join(difflib.unified_diff(
+        original.splitlines(True), mutated.splitlines(True),
+        fromfile="rtl/anvil_d2_fp8_mla_moe.sv",
+        tofile="disposable/anvil_d2_fp8_mla_moe.sv")))
+    experiment.receipt["mutation"] = {
+        "defect": defect, "original_sha256": hashlib.sha256(original.encode()).hexdigest(),
+        "mutated_sha256": hashlib.sha256(mutated.encode()).hexdigest(),
+        "diff": str((experiment.directory / "mutant.diff").relative_to(ROOT)),
+    }
+    experiment.save()
+    run_service_probe(experiment, str(copied.relative_to(ROOT)), expect_mismatch=True)
+
+
+def run_verdict_probe(experiment, simulator):
+    directory = experiment.directory.relative_to(ROOT)
+    vectors = experiment.directory / "verdict-vectors.txt"
+    cases = 0
+    with vectors.open("w") as stream:
+        for proposed in range(5):
+            for prefix in range(proposed+1):
+                drafts = [1, 2, 3, 4]
+                targets = drafts.copy()
+                if prefix < proposed:
+                    targets[prefix] += 10
+                for limit in range(1, 6):
+                    for first in (1, 9, 11):
+                        untruncated, _, _ = committed_block(
+                            0, drafts, targets, proposed, limit, first, 12, 99)
+                        for eos_index in range(-1, len(untruncated)):
+                            eos = 99 if eos_index < 0 else untruncated[eos_index]
+                            expected, accepted, rejected = committed_block(
+                                0, drafts, targets, proposed, limit, first, 12, eos)
+                            packed_drafts = sum(token << (32*i) for i, token in enumerate(drafts))
+                            packed_targets = sum(token << (32*i) for i, token in enumerate(targets))
+                            packed_expected = sum(token << (32*i) for i, token in enumerate(expected))
+                            stream.write(f"0 {packed_drafts:032x} {packed_targets:032x} "
+                                         f"{proposed} {limit} {first} {eos:x} "
+                                         f"{len(expected)} {accepted} {int(rejected)} "
+                                         f"{packed_expected:040x} {prefix} {eos_index}\n")
+                            cases += 1
+    if simulator == "icarus":
+        experiment.execute(["iverilog", "-V"], "iverilog-version")
+        binary = directory / "verdict.vvp"
+        experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "verdict_tb", "-o",
+                            str(binary), "rtl/anvil_d2_mtp_verdict.sv", "tests/verdict_tb.sv"],
+                           "verdict-compile")
+        argv = ["vvp", str(binary)]
+    else:
+        experiment.execute(["verilator", "--version"], "verilator-version")
+        obj = directory / "verdict-obj"
+        experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
+                            "--top-module", "verdict_tb", "--Mdir", str(obj),
+                            "-o", "verdict-sim", "rtl/anvil_d2_mtp_verdict.sv",
+                            "tests/verdict_tb.sv"], "verdict-compile", 1200)
+        argv = [str(obj / "verdict-sim")]
+    output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
+                                "verdict-simulation")
+    experiment.receipt["results"]["verdict"] = {
+        "cases": cases, "simulator": simulator, "raw_summary": output.strip(),
+        "scope": "public-pin block publication unit; not native MTP-head prefix coverage",
+    }
+    experiment.save()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", choices=["dequant", "quantizer", "bf16", "public-smoke",
-                                         "synthesis-probe", "fp8-bias", "bf16-tie"],
+                                         "synthesis-probe", "fp8-bias", "bf16-tie",
+                                         "fp8-service", "byte-order", "scale-group",
+                                         "scale-invalidation", "verdict"],
                         required=True)
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
@@ -340,6 +482,12 @@ def main():
             run_synthesis_probe(experiment)
         elif args.probe in ("fp8-bias", "bf16-tie"):
             run_dequant_mutant(experiment, args.probe)
+        elif args.probe == "fp8-service":
+            run_service_probe(experiment)
+        elif args.probe in ("byte-order", "scale-group", "scale-invalidation"):
+            run_service_mutant(experiment, args.probe)
+        elif args.probe == "verdict":
+            run_verdict_probe(experiment, args.simulator)
         else:
             run_numerical_leaf(experiment, args.probe, args.simulator)
     except Exception as error:

@@ -114,3 +114,17 @@ def bf16_to_q16(bits):
         rounded = -rounded
     saturated = min(0x7FFFFFFF, max(-0x80000000, rounded))
     return saturated & 0xFFFFFFFF, 0
+
+
+def committed_block(anchor, drafts, targets, proposed, limit, first, capacity, eos):
+    assert 0 <= proposed <= 4 and 1 <= limit <= 5 and 0 <= first < capacity
+    accepted = 0
+    while accepted < proposed and drafts[accepted] == targets[accepted]:
+        accepted += 1
+    result = [anchor, *drafts[:accepted]]
+    if accepted < proposed:
+        result.append(targets[accepted])
+    visible = result[:min(limit, capacity-first)]
+    if eos in visible:
+        visible = visible[:visible.index(eos)+1]
+    return visible, min(accepted, len(visible)-1), accepted < proposed
