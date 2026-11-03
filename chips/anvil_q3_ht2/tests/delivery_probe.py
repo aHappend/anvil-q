@@ -43,7 +43,15 @@ def run_cache_path(run):
 def worker(run, focus):
     ledger = Ledger(run, "changed-delivery-producers-preparation")
     try:
-        if focus == "compacted":
+        if focus == "repaired-tools":
+            for name, function in (("broadcast", run_tile), ("sparse", run_sparse)):
+                control = ledger.check(f"control-{name}", function, "verilator", 17, True)
+                observed = ledger.check(f"mutation-{name}", function, "verilator", 17,
+                                        True, mutant=True)
+                bind_mutation_control(ledger, control, observed,
+                                      ("seed", "simulator", "vector_sha256"))
+            ledger.check("clean-reproduction", clean_reproduction)
+        elif focus == "compacted":
             ledger.check("tile-portability", run_tile, "iverilog", 17, True)
             ledger.check("sparse-portability", run_sparse, "iverilog", 17, True)
             for seed in (17, 29, 43):
@@ -110,7 +118,7 @@ def main():
     parser.add_argument("--_worker-run", help=argparse.SUPPRESS)
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
     parser.add_argument("--focus", choices=("all", "compatibility", "integration", "residual",
-                                          "compacted"),
+                                          "compacted", "repaired-tools"),
                         default="all")
     args = parser.parse_args()
     enter_tier()
