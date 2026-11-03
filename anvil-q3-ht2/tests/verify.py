@@ -38,7 +38,7 @@ def enter_tier():
     """Only the outer entry establishes an allowance; children inherit it."""
     entered = time.monotonic()
     if "HT2_L1_DEADLINE" not in os.environ:
-        os.environ["HT2_L1_DEADLINE"] = repr(entered + 2700)
+        os.environ["HT2_L1_DEADLINE"] = repr(entered + 86400)
     deadline = float(os.environ["HT2_L1_DEADLINE"])
     if not math.isfinite(deadline) or deadline <= entered:
         raise RuntimeError("inherited L1 execution allowance is invalid or exhausted")

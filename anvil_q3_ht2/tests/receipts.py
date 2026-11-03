@@ -183,8 +183,8 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
         deadline = float(inherited)
         if not math.isfinite(deadline):
             raise ValueError("HT2_L1_DEADLINE must be a finite monotonic deadline")
-        limit = 600 if Path(str(argv[0])).name == "vvp" else 2700
-        child_deadline = min(deadline, started + limit)
+        child_deadline = (min(deadline, started + 600)
+                          if Path(str(argv[0])).name == "vvp" else deadline)
 
         def remaining():
             left = child_deadline - time.monotonic()
