@@ -30,16 +30,17 @@ def testbench():
          "    csr(1,16'h0160,64,0);\n"
          "    csr(1,16'h0100,fmt,0);"),
         ('        $display("SUMMARY inference_probe mode=%s canceled=1 faults=%0d logits=0 debt=%0d",',
-         "        fault_armed=0; invalid_reads=read_beats;\n"
-         "        tid=1; tpos=1; tv=1; #1;\n"
-         "        if(tr!==1) $fatal(1,\"PACKED_REJECT_NOT_READY\");\n"
-         "        tick(); tv=0; invalid_wait=0;\n"
-         "        while(done!==1 && invalid_wait<64) begin\n"
-         "          if(ov!==0 || commit_valid!==0) $fatal(1,\"PACKED_FAILED_PREFIX_VISIBLE\");\n"
-         "          tick(); invalid_wait=invalid_wait+1;\n"
+         "        fault_armed=0; csr(0,16'h0004,0,0);\n"
+         "        if((saved_cd & 9)!==8) $fatal(1,\"PACKED_FAULT_STATUS\");\n"
+         "        invalid_reads=read_beats; tid=1; tpos=1; tv=1;\n"
+         "        repeat(64) begin\n"
+         "          #1;\n"
+         "          if(tr!==0 || ov!==0 || commit_valid!==0 || done!==0 || error!==0 ||\n"
+         "             qc!=0 || read_beats!=invalid_reads)\n"
+         "            $fatal(1,\"PACKED_FAILED_PREFIX_ADMITTED\");\n"
+         "          tick();\n"
          "        end\n"
-         "        if(done!==1 || error!==1 || ov!==0 || qc!=0 || read_beats!=invalid_reads)\n"
-         "          $fatal(1,\"PACKED_FAILED_PREFIX_ADMITTED\");\n"
+         "        tv=0;\n"
          '        $display("PACKED_PREFIX_REJECTION position=1 reads=0 logits=0");\n'
          '        $display("SUMMARY inference_probe mode=%s canceled=1 faults=%0d logits=0 debt=%0d",'),
     ]

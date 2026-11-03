@@ -27,7 +27,7 @@ def rejection(function):
     raise AssertionError("independent score sensitivity failed to reject injected defect")
 
 
-def run(output, model_step):
+def run(output, model_step, continuation=False):
     works, bindings, failures = prepare(output)
     if failures:
         raise AssertionError(f"official acquisition failed: {failures}")
@@ -57,19 +57,44 @@ def run(output, model_step):
                   score_defects_rejected=4, official_workloads=len(works),
                   reference_only=True)
     if model_step:
+        import numpy as np
+        from official_scoring import restore_state, save_state
+
         checkpoint = Checkpoint(ROOT/bindings["model.safetensors"]["path"])
         config = json.loads((ROOT/bindings["config.json"]["path"]).read_text())
         token = works[0]["token_ids"][0]
         observations = []
+        models = {}
         for represented in (False, True):
             oracle = QwenFP64(config, checkpoint, represented)
             logits = oracle.step(token)
+            models["represented_image" if represented else "native"] = oracle
             observations.append(dict(represented_image=represented, token=token,
                                      shape=list(logits.shape),
                                      logits_sha256=hashlib.sha256(logits.tobytes()).hexdigest(),
                                      greedy_token=int(logits.argmax()),
                                      min_logit=float(logits.min()), max_logit=float(logits.max())))
         result["official_fp64_steps"] = observations
+        if continuation:
+            path = output/"official-reference-state.npz"
+            save_state(path, models)
+            restored = {name: QwenFP64(config, checkpoint, name == "represented_image")
+                        for name in models}
+            restore_state(path, restored, 1)
+            comparisons = []
+            for name in models:
+                token = works[0]["token_ids"][1]
+                expected = models[name].step(token)
+                observed = restored[name].step(token)
+                if not np.array_equal(expected, observed):
+                    raise AssertionError("official FP64 checkpoint restoration changed logits")
+                skipped = QwenFP64(config, checkpoint, name == "represented_image")
+                skipped.step(works[0]["token_ids"][0], emit_logits=False)
+                if not np.array_equal(expected, skipped.step(token)):
+                    raise AssertionError("omitting unscored prefix LM head changed official logits")
+                comparisons.append(dict(model=name, position=1, vocabulary=len(observed),
+                                        logits_sha256=hashlib.sha256(observed.tobytes()).hexdigest()))
+            result["official_reference_continuation"] = comparisons
     return result
 
 
@@ -77,6 +102,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-step", action="store_true")
+    parser.add_argument("--continuation", action="store_true")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -84,7 +110,7 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     try:
-        result = run(output, args.model_step)
+        result = run(output, args.model_step or args.continuation, args.continuation)
     except (OSError, ValueError, AssertionError, KeyError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
