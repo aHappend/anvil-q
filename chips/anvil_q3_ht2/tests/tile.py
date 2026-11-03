@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative, cleanup_build, mutation_copy
+from receipts import execute, new_run, relative, cleanup_build, mutation_copy, compile_verilator
 from reference import pack_rows, tile_sum, f32
 
 
@@ -99,12 +99,12 @@ def run_tile(run, simulator, seed, compact, mutant=False):
         version = ["vvp", "-V"]
     else:
         obj = run / "tile-obj"
-        execute(run, "tile-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
+        executable = compile_verilator(run, "tile-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
                 "--top-module", "tile_tb", "-GWEIGHT_LANES=128", "-GHIDDEN_SIZE=2048",
                 "-GNUM_KV_HEADS=2", "-GHEAD_DIM=128", "--Mdir", relative(obj),
                 "-j", "2", "--output-split", "20000", "--output-split-cfuncs", "2000",
-                "-CFLAGS", "-O0", *sources], ["verilator", "--version"])
-        argv = [relative(obj / "Vtile_tb"), f"+vectors={relative(path)}"]
+                "-CFLAGS", "-O0", *sources], obj, "Vtile_tb")
+        argv = [relative(executable), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
     try:
         output = execute(run, "tile-simulate", argv, version, expect=-6 if mutant else 0)

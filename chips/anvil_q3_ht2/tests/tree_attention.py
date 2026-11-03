@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import ROOT, execute, new_run, relative, cleanup_build
+from receipts import ROOT, execute, new_run, relative, cleanup_build, compile_verilator
 from reference import causal_context, kv_encode, kv_decode
 
 
@@ -113,13 +113,13 @@ def run_tree(run, mode, seed, mutant=None, residency=3):
             "mutant": relative(copy), "before": before, "after": after,
         }, indent=2) + "\n")
     obj = run / "tree-obj"
-    execute(run, "tree-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
+    executable = compile_verilator(run, "tree-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
             "--top-module", "tree_attention_tb", f"-GCACHE_MODE={mode}",
             f"-GKV_RESIDENT_GROUPS={residency}", "--Mdir", relative(obj),
-            "-j", "2", *sources], ["verilator", "--version"])
+            "-j", "2", *sources], obj, "Vtree_attention_tb")
     try:
         output = execute(run, "tree-simulate",
-                         [relative(obj / "Vtree_attention_tb"), f"+vectors={relative(path)}"],
+                         [relative(executable), f"+vectors={relative(path)}"],
                          ["verilator", "--version"], expect=-6 if mutant else 0)
     finally:
         cleanup_build(obj)

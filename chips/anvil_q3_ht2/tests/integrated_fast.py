@@ -5,7 +5,7 @@ import json
 import shutil
 
 from integrated import generate
-from receipts import ROOT, cleanup_build, execute, relative
+from receipts import ROOT, cleanup_build, execute, relative, compile_verilator
 
 
 def run_fast_integration(run, mode, diagnostic=False):
@@ -23,15 +23,15 @@ def run_fast_integration(run, mode, diagnostic=False):
         "CACHE_MODE": mode, "TILE_K": 16, "QUEUE_DEPTH": 3,
         "BURST_BEATS": 1, "KV_RESIDENT_GROUPS": 3,
     }
-    execute(run, "integrated-clock-driver-compile", [
+    executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "--top-module", "anvil_q3_ht2_top", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2", "-CFLAGS", "-O3",
         *[f"-G{name}={value}" for name, value in parameters.items()],
-        *sources, driver.name], ["verilator", "--version"])
+        *sources, driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
-            relative(obj / "Vintegrated"), f"+vectors={relative(vectors)}",
+            relative(executable), f"+vectors={relative(vectors)}",
             f"+model={relative(model)}",
             *(["+sample_cycles=16384"] if diagnostic else [])],
             ["verilator", "--version"])

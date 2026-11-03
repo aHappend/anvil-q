@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative, cleanup_build
+from receipts import execute, new_run, relative, cleanup_build, compile_verilator
 from reference import kv_encode, kv_decode
 
 
@@ -48,12 +48,12 @@ def run_atomic(run, mode, seed, mutant=False):
             "replacement_before": target,
             "replacement_after": "COPY_WRITE: if (request_fire) begin record<=0; state<=FENCE_FIRST; end",
         }, indent=2) + "\n")
-    execute(run, "atomic-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
+    executable = compile_verilator(run, "atomic-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
             "--top-module", "kv_atomic_tb", f"-GCACHE_MODE={mode}", "--Mdir", relative(obj),
-            "-j", "2", *sources], ["verilator", "--version"])
+            "-j", "2", *sources], obj, "Vkv_atomic_tb")
     try:
         result = execute(run, "atomic-simulate",
-                         [relative(obj / "Vkv_atomic_tb"), f"+vectors={relative(path)}"],
+                         [relative(executable), f"+vectors={relative(path)}"],
                          ["verilator", "--version"], expect=-6 if mutant else 0)
     finally:
         cleanup_build(obj)

@@ -9,7 +9,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import ROOT, execute, new_run, relative, cleanup_build, mutation_copy
+from receipts import ROOT, execute, new_run, relative, cleanup_build, mutation_copy, compile_verilator
 from reference import fp_operation, q16_to_half, single_to_q16, weight
 
 
@@ -88,11 +88,11 @@ def run_arithmetic(run, simulator="iverilog", seed=17, compact=False, mutant=Fal
         version = ["vvp", "-V"]
     else:
         obj = run / "arithmetic-obj"
-        execute(run, "arithmetic-compile",
+        executable = compile_verilator(run, "arithmetic-compile",
                 ["verilator", "--binary", "--timing", "-Wno-fatal", "--top-module",
                  "arithmetic_tb", "--Mdir", relative(obj), "-j", "2",
-                 *sources, "tests/arithmetic_tb.sv"], ["verilator", "--version"])
-        argv = [relative(obj / "Varithmetic_tb"), f"+vectors={relative(vector_path)}"]
+                 *sources, "tests/arithmetic_tb.sv"], obj, "Varithmetic_tb")
+        argv = [relative(executable), f"+vectors={relative(vector_path)}"]
         version = ["verilator", "--version"]
     try:
         result_path = execute(run, "arithmetic-simulate", argv, version,

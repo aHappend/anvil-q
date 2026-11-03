@@ -9,7 +9,7 @@ import sys
 sys.dont_write_bytecode = True
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative, cleanup_build
+from receipts import execute, new_run, relative, cleanup_build, compile_verilator
 from reference import kv_encode
 
 
@@ -103,17 +103,17 @@ def run_spec(run, mode, seed):
     path = run / "spec-vectors.txt"
     expected = generate(path, mode, seed)
     obj = run / "spec-obj"
-    execute(run, "spec-compile", [
+    executable = compile_verilator(run, "spec-compile", [
         "verilator", "--binary", "--timing", "-Wno-fatal",
         "--top-module", "speculative_tb", f"-GCACHE_MODE={mode}",
         "--Mdir", relative(obj), "-j", "2",
         "anvil_q3_ht_reference/rtl/anvil_q3_ht_kv_codec.sv",
         "rtl/anvil_q3_ht2_kv_commit_engine.sv",
         "rtl/anvil_q3_ht2_spec_verifier.sv", "tests/speculative_tb.sv"],
-        ["verilator", "--version"])
+        obj, "Vspeculative_tb")
     try:
         result = execute(run, "spec-simulate",
-                         [relative(obj / "Vspeculative_tb"), f"+vectors={relative(path)}"],
+                         [relative(executable), f"+vectors={relative(path)}"],
                          ["verilator", "--version"])
     finally:
         cleanup_build(obj)

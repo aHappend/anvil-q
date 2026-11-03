@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
@@ -11,6 +12,7 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
+_COMPILED_MODELS = {}
 
 
 def utc():
@@ -161,6 +163,86 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
 
 def relative(path):
     return str(path.relative_to(ROOT))
+
+
+def compile_verilator(run, name, argv, obj, executable):
+    """Reuse only an identical successful build within this Python execution."""
+    argv = list(map(str, argv))
+    if argv[0] != "verilator" or argv.count("--Mdir") != 1:
+        raise ValueError("compiled-model reuse requires an explicit Verilator Mdir")
+    obj.mkdir(parents=True, exist_ok=True)
+    tool_receipts, tools = [], {}
+    for tool in ("verilator", "g++", "make"):
+        command = shutil.which(tool)
+        if command is None:
+            raise RuntimeError(f"missing compilation tool: {tool}")
+        version = execute(run, f"{name}-{tool}-identity", [tool, "--version"],
+                          [tool, "--version"])
+        tool_receipts.append(relative(version / "receipt.json"))
+        tools[tool] = {
+            "binary_sha256": hashlib.sha256(Path(command).resolve().read_bytes()).hexdigest(),
+            "version": (version / "stdout.txt").read_text(),
+        }
+    # verilator is often a Perl launcher; bind its actual compiler as well.
+    backend = shutil.which("verilator_bin")
+    if backend is None:
+        raise RuntimeError("missing Verilator compilation backend: verilator_bin")
+    tools["verilator_bin"] = {
+        "binary_sha256": hashlib.sha256(Path(backend).resolve().read_bytes()).hexdigest()}
+    normalized = []
+    directory_index = argv.index("--Mdir") + 1
+    for index, argument in enumerate(argv):
+        if index == directory_index:
+            normalized.append("<build-directory>")
+            continue
+        candidate = ROOT / argument
+        if not candidate.is_file():
+            candidate = obj / argument
+        if candidate.is_file():
+            normalized.append({
+                "filename": candidate.name,
+                "sha256": hashlib.sha256(candidate.read_bytes()).hexdigest(),
+            })
+        else:
+            normalized.append(argument)
+    source_identity = hashes(sources())
+    identity = {
+        "argv": normalized, "source_sha256": source_identity, "tools": tools,
+        "environment_sha256": hashlib.sha256(json.dumps({
+            key: os.environ.get(key) for key in (
+                "CXX", "CC", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "MAKEFLAGS",
+                "VERILATOR_ROOT", "VERILATOR_BIN", "SYSTEMC_INCLUDE", "SYSTEMC_LIBDIR",
+                "CPATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH", "LD_LIBRARY_PATH")
+        }, sort_keys=True).encode()).hexdigest(),
+    }
+    key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+    cached = _COMPILED_MODELS.get(key)
+    reused = cached is not None
+    if cached is None:
+        compiled = execute(run, name, argv, ["verilator", "--version"])
+        binary = obj / executable
+        if not binary.is_file() or not os.access(binary, os.X_OK):
+            raise RuntimeError("successful compiler did not produce the requested executable")
+        if hashes(sources()) != source_identity:
+            raise RuntimeError("source changed while compiling the cached model")
+        cached = {
+            "executable": relative(binary),
+            "executable_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+            "compile_receipt": relative(compiled / "receipt.json"),
+        }
+        _COMPILED_MODELS[key] = cached
+    binary = ROOT / cached["executable"]
+    if not binary.is_file() or hashlib.sha256(binary.read_bytes()).hexdigest() != (
+            cached["executable_sha256"]):
+        raise RuntimeError("cached compiled executable is absent or changed")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    binding = run / f"{name}-binding-{timestamp}.json"
+    with binding.open("x") as stream:
+        json.dump({"key": key, "reused": reused, "identity": identity,
+                   "requested_argv": argv, "tool_identity_receipts": tool_receipts,
+                   **cached}, stream, indent=2)
+        stream.write("\n")
+    return binary
 
 
 def mutation_copy(run, source, before, after, defect):

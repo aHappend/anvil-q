@@ -8,7 +8,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from receipts import execute, new_run, relative, cleanup_build, mutation_copy
+from receipts import execute, new_run, relative, cleanup_build, mutation_copy, compile_verilator
 from reference import packed_image, sparse_expected
 
 
@@ -94,10 +94,10 @@ def run_sparse(run, simulator, seed, compact, mutant=False):
         version = ["vvp", "-V"]
     else:
         obj = run / "sparse-obj"
-        execute(run, "sparse-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
+        executable = compile_verilator(run, "sparse-compile", ["verilator", "--binary", "--timing", "-Wno-fatal",
                 "--top-module", "sparse_ddr_tb", "-GMAX_COLUMNS=11008",
-                "--Mdir", relative(obj), "-j", "2", *sources], ["verilator", "--version"])
-        argv = [relative(obj / "Vsparse_ddr_tb"), f"+vectors={relative(path)}"]
+                "--Mdir", relative(obj), "-j", "2", *sources], obj, "Vsparse_ddr_tb")
+        argv = [relative(executable), f"+vectors={relative(path)}"]
         version = ["verilator", "--version"]
     try:
         output = execute(run, "sparse-simulate", argv, version, expect=-6 if mutant else 0)

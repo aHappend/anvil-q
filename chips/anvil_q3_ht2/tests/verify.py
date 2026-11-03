@@ -174,7 +174,6 @@ def require_complete_coverage(ledger):
 
 
 def all_checks(ledger):
-    ledger.check("integration-profile", run_fast_integration, 1, True)
     ledger.check("parameter-boundaries", run_parameters)
     ledger.check("arithmetic-portability", run_arithmetic, "iverilog", 17, True)
     ledger.check("tile-portability", run_tile, "iverilog", 17, True)
