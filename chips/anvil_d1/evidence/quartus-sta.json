@@ -1,6 +1,6 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-03T02:38:36.486940+00:00",
+  "timestamp_utc": "2026-11-03T02:47:07.017509+00:00",
   "project_dir": "/data/sufeng/anvil-d1-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
@@ -40,7 +40,7 @@
       "",
       "    while executing",
       "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_hzcdl52t.tcl\" line 2)",
+      "    (file \"vulcan_sta_yu9ba6rb.tcl\" line 2)",
       "------------------------------------------------"
     ]
   },
@@ -48,7 +48,7 @@
   "quartus_slot_telemetry": {
     "slot_index": 3,
     "max_slots": 6,
-    "slot_wait_s": 0.003
+    "slot_wait_s": 0.002
   },
   "top_module": "anvil_d1_top",
   "clock_port": "clk",
