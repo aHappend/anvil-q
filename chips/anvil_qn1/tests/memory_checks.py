@@ -155,16 +155,13 @@ def run_banked_top(run, geometry=Geometry(), seed=17, cases=6, banks=8, queue=3)
 
 
 def run_memory_matrix(run):
-    results = []
-    for index, (banks, queue) in enumerate(
-            ((1, 1), (8, 3), (1, 16), (8, 1), (1, 3), (8, 16))):
-        geometry = Geometry(q_heads=2 if index % 2 == 0 else 4)
-        seed = (17, 89, 203)[index % 3]
-        results.append(run.component(
-            f"memory-matrix-case{index:02d}",
-            lambda child, banks=banks, queue=queue, geometry=geometry, seed=seed:
-            run_banked_top(child, geometry=geometry, seed=seed, banks=banks, queue=queue)))
-    return {"scope": "pairwise direct decode memory matrix, not full fault coverage",
-            "cases": results, "compared_frames": sum(len(r["transactions"]) for r in results),
-            "compared_logit_words": sum(
-                len(r["transactions"]) * r["geometry"]["vocabulary"] for r in results)}
+    from resume_checks import memory_case, validate_memory_matrix
+
+    results = [memory_case(run, index) for index in range(6)]
+    result = {"scope": "pairwise direct decode memory matrix, not full fault coverage",
+              "cases": results,
+              "compared_frames": sum(len(r["transactions"]) for r in results),
+              "compared_logit_words": sum(
+                  len(r["transactions"]) * r["geometry"]["vocabulary"] for r in results)}
+    validate_memory_matrix(result)
+    return result

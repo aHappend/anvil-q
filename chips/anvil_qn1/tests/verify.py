@@ -141,7 +141,9 @@ def main():
                                           "saved-behavior-applicability",
                                           "marker-applicability", "behavior-components",
                                           "behavior-checker", "delivery-checker",
-                                          "benchmark-case", "mutation-case"))
+                                          "benchmark-case", "mutation-case",
+                                          "resume-checker", "memory-case"))
+    parser.add_argument("--case-index", type=int, choices=range(6), default=0)
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
                         help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
@@ -154,7 +156,15 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "mutation-case":
+        if args.probe == "resume-checker":
+            from resume_checks import run_resume_checker
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_resume_checker(run)
+        elif args.probe == "memory-case":
+            from resume_checks import memory_case
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = memory_case(run, args.case_index)
+        elif args.probe == "mutation-case":
             run.versions(("python3", "verilator", "g++", "make"))
             baseline = run.component(
                 f"mutation-baseline-{args.mutation}",

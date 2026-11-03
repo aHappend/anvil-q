@@ -111,7 +111,8 @@ def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None)
         if child.get("status") != "passed" or not child_path.is_file():
             reasons.append(f"failed/missing child component {name.as_posix()}")
             continue
-        assessment, _ = assess(run, child_path, inputs, {}, tools, (*ancestors, path))
+        assessment, _ = assess(run, child_path, inputs, {}, tools, (*ancestors, path),
+                               equivalence=equivalence)
         children.append(assessment)
         if not assessment["applicable"]:
             reasons.append(f"inapplicable child component {name.as_posix()}")
@@ -175,7 +176,7 @@ def saved_behavior_applicability(run):
 
 
 def component(run, stem, operation, *, inputs, parameters, tools, validate,
-              equivalence=None):
+              equivalence=None, validate_retained=None):
     candidates = []
     for parent in (ROOT / "evidence/preparation", ROOT / "evidence"):
         if parent.is_dir():
@@ -189,6 +190,8 @@ def component(run, stem, operation, *, inputs, parameters, tools, validate,
         if assessment["applicable"]:
             try:
                 validate(results)
+                if validate_retained is not None:
+                    validate_retained(run, path, json.loads(path.read_text()), results)
             except (AssertionError, KeyError, TypeError, ValueError) as error:
                 assessment["applicable"] = False
                 assessment["reasons"].append(f"retained comparison/artifact invalid: {error}")
