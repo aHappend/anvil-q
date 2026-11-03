@@ -1,6 +1,11 @@
 {
   "chip": "Anvil-Q3-FP",
-  "fitter_resources": {},
+  "fitter_resources": {
+    "total_registers": 83732,
+    "block_memory_bits": 8192,
+    "dsp_blocks": 139,
+    "virtual_pins": 2550
+  },
   "timing": {
     "device": "10AX115N2F45E1SG",
     "netlist_mode": null,
