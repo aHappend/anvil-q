@@ -115,3 +115,23 @@
 | **DSP 乘加器 (18x19)** | `92` | `1,518` | `6.06%` | 启用 1,024+ DSP 阵列提升百倍吞吐率 |
 | **工作主频 (Fmax)** | **`102.46 MHz`** (`WNS +0.240 ns` @ `100.0 MHz`) | `20nm Arria 10` | `0 违规路径` | 已突破 **100 MHz** 基线，可向 **150–250 MHz** 演进 |
 | **板载 8 GB DDR4 模型容量** | `0.5B–1.5B` (`0.35–0.95 GB`) | `8.0 GB DDR4` | `4.4%–11.9%` | **0.5B $\to$ 1.5B (`0.95 GB`) $\to$ 3B (`1.8 GB`) $\to$ 7B–8B (`3.9 GB` W4 权重 + `4 GB` KV Cache)** |
+
+## 产品白皮书分页图文预览
+
+### 第 1 页
+![产品白皮书第 1 页](showcase_figures_zh/page-1.png)
+
+### 第 2 页
+![产品白皮书第 2 页](showcase_figures_zh/page-2.png)
+
+### 第 3 页
+![产品白皮书第 3 页](showcase_figures_zh/page-3.png)
+
+### 第 4 页
+![产品白皮书第 4 页](showcase_figures_zh/page-4.png)
+
+### 第 5 页
+![产品白皮书第 5 页](showcase_figures_zh/page-5.png)
+
+### 第 6 页
+![产品白皮书第 6 页](showcase_figures_zh/page-6.png)

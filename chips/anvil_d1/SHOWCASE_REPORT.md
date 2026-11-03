@@ -115,3 +115,23 @@
 | **Precision DSP Blocks (18x19)** | `92` | `1,518` | `6.06%` | 1,024+ DSP MAC array for >100x throughput |
 | **Clock Frequency (Fmax)** | **`102.46 MHz`** (`WNS +0.240 ns` @ `100.0 MHz`) | `20nm Arria 10` | `0 Failing Paths` | Surpassed **100 MHz** baseline; scales to **150–250 MHz** |
 | **On-Board 8 GB DDR4 Capacity** | `0.5B–1.5B` (`0.35–0.95 GB`) | `8.0 GB DDR4` | `4.4%–11.9%` | **0.5B $\to$ 1.5B (`0.95 GB`) $\to$ 3B (`1.8 GB`) $\to$ 7B–8B (`3.9 GB` W4 weights + `4 GB` KV Cache)** |
+
+## Whitepaper Page Preview
+
+### Page 1
+![Whitepaper Page 1](showcase_figures/page-1.png)
+
+### Page 2
+![Whitepaper Page 2](showcase_figures/page-2.png)
+
+### Page 3
+![Whitepaper Page 3](showcase_figures/page-3.png)
+
+### Page 4
+![Whitepaper Page 4](showcase_figures/page-4.png)
+
+### Page 5
+![Whitepaper Page 5](showcase_figures/page-5.png)
+
+### Page 6
+![Whitepaper Page 6](showcase_figures/page-6.png)
