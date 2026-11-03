@@ -1,0 +1,74 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0001-suite-1-run_fifo/fifo-d3-s17/simulation.vvp",
+    "rtl/anvil_edge_fifo.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0001-suite-1-run_fifo/fifo-d3-s17/bench.sv"
+  ],
+  "child_settled": true,
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 62010175488,
+    "peak_object_allocated_bytes": 0,
+    "sample_interval_s": 0.25,
+    "samples": 1
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 62010236928,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 8254390272,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 7985954816,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 0.0531104258261621,
+  "end_utc": "2026-10-31T15:36:45.945339+00:00",
+  "exit_code": 0,
+  "index": 38,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.1831987649202347e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.053402640856802464,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 49152,
+    "output_blocks": 64,
+    "system_cpu_s": 0.016859,
+    "user_cpu_s": 0.006716
+  },
+  "start_utc": "2026-10-31T15:36:45.890417+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0001-suite-1-run_fifo/038-fifo-d3-s17-compile/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0001-suite-1-run_fifo/038-fifo-d3-s17-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 62010138624,
+    "available_inodes": 195632805,
+    "observed_utc": "2026-10-31T15:36:45.945412+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525111537664
+  },
+  "storage_before": {
+    "available_bytes": 62010228736,
+    "available_inodes": 195632810,
+    "observed_utc": "2026-10-31T15:36:45.890899+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525111447552
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

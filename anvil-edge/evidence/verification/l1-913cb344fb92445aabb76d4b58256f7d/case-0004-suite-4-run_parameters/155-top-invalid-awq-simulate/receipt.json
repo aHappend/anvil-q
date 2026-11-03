@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/top-invalid-awq/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.4033547870349139,
+  "end_utc": "2026-10-31T15:36:53.534230+00:00",
+  "exit_code": 1,
+  "index": 155,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.6047928258776665e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.2490119338035583e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 51200,
+    "output_blocks": 8,
+    "system_cpu_s": 0.031034,
+    "user_cpu_s": 0.340374
+  },
+  "start_utc": "2026-10-31T15:36:53.128837+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/155-top-invalid-awq-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/155-top-invalid-awq-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 62093340672,
+    "available_inodes": 195631823,
+    "observed_utc": "2026-10-31T15:36:53.534332+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525028335616
+  },
+  "storage_before": {
+    "available_bytes": 62093529088,
+    "available_inodes": 195631829,
+    "observed_utc": "2026-10-31T15:36:53.129370+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525028147200
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

@@ -1,0 +1,4 @@
+TOP_CONTROL errors=1 reloads=0 controls=4
+BOOT_TRANSACTIONS writes=4408 reads=22640 acknowledgements=27048
+COMPARED 27053
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0139-top-error-1-surrogate/top-synthetic-q1-s1-surrogate/compiled-bench.sv:4773: Verilog $finish

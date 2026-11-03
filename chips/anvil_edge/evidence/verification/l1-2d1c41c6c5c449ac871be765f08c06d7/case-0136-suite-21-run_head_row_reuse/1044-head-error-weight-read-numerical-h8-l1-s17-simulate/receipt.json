@@ -1,0 +1,65 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/initial_records.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/expected.hex",
+    "+verification_file2=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/expected_logits.hex",
+    "+verification_file3=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/token_words.hex",
+    "+verification_file4=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/fault_config.hex",
+    "+verification_file5=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/initial_records.hex",
+    "+verification_file6=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/expected.hex",
+    "+verification_file7=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/expected_logits.hex",
+    "+verification_file8=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/token_words.hex",
+    "+verification_file9=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17-input/fault_config.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 1.5077052449341863,
+  "end_utc": "2026-10-31T16:00:00.571424+00:00",
+  "exit_code": 0,
+  "index": 1044,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.3583881556987762e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.750195562839508e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.080056,
+    "user_cpu_s": 1.411996
+  },
+  "start_utc": "2026-10-31T15:59:59.062207+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/1044-head-error-weight-read-numerical-h8-l1-s17-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/1044-head-error-weight-read-numerical-h8-l1-s17-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 57771298816,
+    "available_inodes": 195587275,
+    "observed_utc": "2026-10-31T16:00:00.571581+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529350377472
+  },
+  "storage_before": {
+    "available_bytes": 57772425216,
+    "available_inodes": 195587297,
+    "observed_utc": "2026-10-31T15:59:59.062584+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529349251072
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

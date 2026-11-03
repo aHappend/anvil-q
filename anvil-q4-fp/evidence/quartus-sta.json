@@ -1,0 +1,68 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-11-03T09:26:11.496920+00:00",
+  "project_dir": "/data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "failed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 6,
+    "errors": [
+      "Error (10170): Verilog HDL syntax error at anvil_q4_fp_channel_mux.sv(47) near text: \"endgenerate\";  expecting \"end\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q4_fp_channel_mux.sv Line: 47",
+      "Error (10170): Verilog HDL syntax error at anvil_q4_fp_channel_mux.sv(64) near text: \"endmodule\";  expecting \"endgenerate\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q4_fp_channel_mux.sv Line: 64",
+      "Error (10170): Verilog HDL syntax error at anvil_q4_fp_decoder_layer.sv(54) near text: \"endgenerate\";  expecting \"end\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q4_fp_decoder_layer.sv Line: 54",
+      "Error (10170): Verilog HDL syntax error at anvil_q4_fp_decoder_layer.sv(231) near text: \"endmodule\";  expecting \"endgenerate\". Check for and fix any syntax errors that appear immediately before or at the specified keyword. The Intel FPGA Knowledge Database contains many articles with specific details on how to resolve this error. Visit the Knowledge Database at https://www.altera.com/support/support-resources/knowledge-base/search.html and search for this specific error message number. File: /data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q4_fp_decoder_layer.sv Line: 231",
+      "Error (10149): Verilog HDL Declaration error at anvil_q4_fp_gemv.sv(87): identifier \"n\" is already declared in the present scope File: /data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q4_fp_gemv.sv Line: 87",
+      "Error (10112): Ignored design unit \"anvil_q4_fp_gemv\" at anvil_q4_fp_gemv.sv(1) due to previous errors File: /data/sufeng/anvil-q4-fp-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_q4_fp_gemv.sv Line: 1"
+    ],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 3,
+    "netlist_mode": null,
+    "clocks": [],
+    "wns_setup_ns": null,
+    "wns_hold_ns": null,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [],
+    "hold_paths": [],
+    "stderr_tail": [
+      "------------------------------------------------",
+      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
+      "",
+      "    while executing",
+      "\"create_timing_netlist -post_map\"",
+      "    (file \"vulcan_sta_cltm9481.tcl\" line 2)",
+      "------------------------------------------------"
+    ]
+  },
+  "detail": "quartus_map reported 6 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "quartus_slot_telemetry": {
+    "slot_index": 1,
+    "max_slots": 6,
+    "slot_wait_s": 0.002
+  },
+  "top_module": "anvil_q4_parent_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "parameters": {
+    "TILE_K": 8,
+    "TILE_ROWS": 2
+  },
+  "source_sha256": "9ea7c3d759e0d4c063f1257d901ba66dc49beef4d579326b5b3cd5d794a70c61",
+  "applicable": true
+}

@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/top-legal-multilayer-gqa/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.4040403561666608,
+  "end_utc": "2026-10-31T15:37:06.966513+00:00",
+  "exit_code": 0,
+  "index": 217,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.628890797495842e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.042677417397499e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 51200,
+    "output_blocks": 8,
+    "system_cpu_s": 0.030986999999999997,
+    "user_cpu_s": 0.369853
+  },
+  "start_utc": "2026-10-31T15:37:06.560814+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/217-top-legal-multilayer-gqa-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/217-top-legal-multilayer-gqa-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 62029123584,
+    "available_inodes": 195631322,
+    "observed_utc": "2026-10-31T15:37:06.966734+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525092552704
+  },
+  "storage_before": {
+    "available_bytes": 62029234176,
+    "available_inodes": 195631338,
+    "observed_utc": "2026-10-31T15:37:06.561282+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525092442112
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

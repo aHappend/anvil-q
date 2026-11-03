@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/top-invalid-prompt-tokens/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:21.709589+00:00",
+  "pid": 1141848,
+  "process_group": 1141848,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58734514176,
+    "available_inodes": 195605920,
+    "observed_utc": "2026-10-31T15:51:21.709674+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528387162112
+  }
+}

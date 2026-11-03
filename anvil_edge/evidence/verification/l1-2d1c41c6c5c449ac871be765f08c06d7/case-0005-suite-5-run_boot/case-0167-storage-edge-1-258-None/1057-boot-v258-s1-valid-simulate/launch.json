@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0167-storage-edge-1-258-None/boot-v258-s1-valid/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0167-storage-edge-1-258-None/boot-v258-s1-valid-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T16:00:18.713025+00:00",
+  "pid": 1295683,
+  "process_group": 1295683,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 57737089024,
+    "available_inodes": 195586985,
+    "observed_utc": "2026-10-31T16:00:18.713112+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529384587264
+  }
+}

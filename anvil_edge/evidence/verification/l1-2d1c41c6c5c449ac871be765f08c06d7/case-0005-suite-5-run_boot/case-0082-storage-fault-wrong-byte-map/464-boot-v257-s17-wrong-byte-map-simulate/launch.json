@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0082-storage-fault-wrong-byte-map/boot-v257-s17-wrong-byte-map/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0082-storage-fault-wrong-byte-map/boot-v257-s17-wrong-byte-map-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:16.322698+00:00",
+  "pid": 1140293,
+  "process_group": 1140293,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58717184000,
+    "available_inodes": 195605898,
+    "observed_utc": "2026-10-31T15:51:16.322765+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528404492288
+  }
+}

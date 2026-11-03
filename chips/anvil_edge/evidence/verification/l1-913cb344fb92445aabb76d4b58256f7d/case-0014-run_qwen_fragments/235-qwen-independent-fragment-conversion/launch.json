@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "python3",
+    "tests/qwen_tables.py",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:38:34.123713+00:00",
+  "pid": 1024037,
+  "process_group": 1024037,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61877608448,
+    "available_inodes": 195629443,
+    "observed_utc": "2026-10-31T15:38:34.123817+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525244067840
+  }
+}

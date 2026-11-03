@@ -1,0 +1,11 @@
+--- rtl/anvil_edge_autoregressive_fsm.sv
++++ mutant/rtl/anvil_edge_autoregressive_fsm.sv
+@@ -190,7 +190,7 @@
+               end else if (prefill && prompt_index+1 < prompt_count) begin
+                 prompt_index <= prompt_index + 1;
+                 position <= position + 1;
+-                issue_id <= prompt[prompt_index+1];
++                issue_id <= prompt[prompt_index];
+                 state <= ISSUE;
+               end else begin
+                 prefill <= 0;

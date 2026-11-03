@@ -1,0 +1,164 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 98304,
+      "bytes": 95004,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__ALL.a",
+      "sha256": "a3fe88651045cf5649eae5695cf57df06bb20b90dded5385ff43da6f221629af"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 432,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__ALL.cpp",
+      "sha256": "5c22c9bef919afa79c30365a0e25a34e459be3aed682c638d39a75440fc7d10c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 691,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__ALL.d",
+      "sha256": "49ec93194676b97576483a42e84e8c8fa3000ba435dae13050ddf36f8d159ee6"
+    },
+    {
+      "allocated_bytes": 94208,
+      "bytes": 90128,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__ALL.o",
+      "sha256": "edf9012262ce10b010e878dfbea08e29479477219e46300db250b04187f4407a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1104,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__Syms.cpp",
+      "sha256": "f36841c44981397de29291749362aa38bfe83461020f8326d660d04e3628da45"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1076,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__Syms.h",
+      "sha256": "4f768b4c5cd8f4202b49d01e585ae2ab47011bde54f1327543acb7d0fc7fb3b1"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19452,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench___024root.h",
+      "sha256": "21e479b92f1af91445a4791e7a589e0c81aed3720f01d7d9233d8b890db38283"
+    },
+    {
+      "allocated_bytes": 73728,
+      "bytes": 71024,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "9bb6c48c1f7a941b45df16fbdd056e2b22dc81a015df188d33550c850c880570"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2022,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "c02140bb5e9ba0fb0bced97e57dbb192a247200f0b9356e69f387e4161d93f2f"
+    },
+    {
+      "allocated_bytes": 180224,
+      "bytes": 179761,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "2e17f1b410443b18fd528849701bfcf1117f7044e1d2eddefc1f3e581103ac7b"
+    },
+    {
+      "allocated_bytes": 45056,
+      "bytes": 43732,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "100b56366f1feca73c122f918c75e6ddff1e659d39a43a40f97b1a029a42c6b6"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3850,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__ver.d",
+      "sha256": "f5b87346d1bad176f3b829302f71f404524ed98d1669eab91622b010240b36cd"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 10700,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench__verFiles.dat",
+      "sha256": "ac11034b392173a545266aa845fdcea949e10f27adcf7f7275b164687f45d383"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1673,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/Vbench_classes.mk",
+      "sha256": "0d757ab0fbdd6c57e2cc26f9babe1130d4f911bbc8ce6e98436802bbf08fc848"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-ddr-error-m3-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:56:44.428750+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

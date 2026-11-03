@@ -1,0 +1,131 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "yosys",
+    "-V"
+  ],
+  "child_settled": false,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "index": 2,
+  "queue_duration_s": 2.66998540610075e-05,
+  "requested_timeout_s": 3600,
+  "source_manifest": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/launch.json",
+  "start_utc": "2026-10-31T15:47:09.897013+00:00",
+  "status": "launch pending; not an execution result",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/002-yosys-version/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/002-yosys-version/stdout.log",
+  "storage_before": {
+    "available_bytes": 59359035392,
+    "available_inodes": 195616405,
+    "observed_utc": "2026-10-31T15:47:09.897344+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3527762640896
+  },
+  "timed_out": false,
+  "timeout_s": 3600,
+  "tool_versions": {
+    "iverilog": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "iverilog",
+        "-V"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.05246240505948663,
+      "end_utc": "2026-10-31T15:47:09.842965+00:00",
+      "exit_code": 0,
+      "index": 0,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 1.5058089047670364e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 5.084485746920109e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 30720,
+        "output_blocks": 24,
+        "system_cpu_s": 0.01184,
+        "user_cpu_s": 0.0019459999999999998
+      },
+      "start_utc": "2026-10-31T15:47:09.789830+00:00",
+      "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/000-iverilog-version/stderr.log",
+      "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/000-iverilog-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 59359072256,
+        "available_inodes": 195616413,
+        "observed_utc": "2026-10-31T15:47:09.843031+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3527762604032
+      },
+      "storage_before": {
+        "available_bytes": 59359084544,
+        "available_inodes": 195616417,
+        "observed_utc": "2026-10-31T15:47:09.790170+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3527762591744
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    },
+    "vvp": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "vvp",
+        "-V"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.052245571045205,
+      "end_utc": "2026-10-31T15:47:09.896514+00:00",
+      "exit_code": 0,
+      "index": 1,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 1.096096821129322e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 2.7070986106991768e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 30720,
+        "output_blocks": 8,
+        "system_cpu_s": 0.003244,
+        "user_cpu_s": 0.001081
+      },
+      "start_utc": "2026-10-31T15:47:09.843474+00:00",
+      "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/001-vvp-version/stderr.log",
+      "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/001-vvp-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 59359043584,
+        "available_inodes": 195616407,
+        "observed_utc": "2026-10-31T15:47:09.896589+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3527762632704
+      },
+      "storage_before": {
+        "available_bytes": 59359064064,
+        "available_inodes": 195616411,
+        "observed_utc": "2026-10-31T15:47:09.843834+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3527762612224
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    }
+  }
+}

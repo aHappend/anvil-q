@@ -1,0 +1,4 @@
+BOOT_TRANSACTIONS writes=1604391 reads=1558608 acknowledgements=3162999
+COMPARED 3163000
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0086-large-image-128256/boot-v128256-s17-valid/compiled-bench.sv:225: Verilog $finish
+EXPLICIT_CLOCK edges=262783259 time_ps=1313916296000

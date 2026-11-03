@@ -1,0 +1,5 @@
+evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/fifo-legal-depth-3/bench.sv:2: warning: Instantiating module anvil_edge_fifo with dangling input port 1 (clk) floating.
+evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/fifo-legal-depth-3/bench.sv:2: warning: Instantiating module anvil_edge_fifo with dangling input port 2 (rst_n) floating.
+evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/fifo-legal-depth-3/bench.sv:2: warning: Instantiating module anvil_edge_fifo with dangling input port 3 (in_valid) floating.
+evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/fifo-legal-depth-3/bench.sv:2: warning: Instantiating module anvil_edge_fifo with dangling input port 5 (in_data) floating.
+evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/fifo-legal-depth-3/bench.sv:2: warning: Instantiating module anvil_edge_fifo with dangling input port 7 (out_ready) floating.

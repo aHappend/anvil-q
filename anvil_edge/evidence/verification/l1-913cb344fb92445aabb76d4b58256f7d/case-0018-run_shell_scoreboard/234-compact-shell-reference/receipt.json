@@ -1,0 +1,53 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "./.venv/bin/python",
+    "tests/qwen_shell.py",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard",
+    "--compact"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.3548276030924171,
+  "end_utc": "2026-10-31T15:38:34.224116+00:00",
+  "exit_code": 0,
+  "index": 234,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 4.31709922850132e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.389292396605015e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 220076,
+    "output_blocks": 616,
+    "system_cpu_s": 0.042044,
+    "user_cpu_s": 0.293311
+  },
+  "start_utc": "2026-10-31T15:38:33.867129+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/234-compact-shell-reference/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/234-compact-shell-reference/stdout.log",
+  "storage_after": {
+    "available_bytes": 61877506048,
+    "available_inodes": 195629435,
+    "observed_utc": "2026-10-31T15:38:34.224304+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525244170240
+  },
+  "storage_before": {
+    "available_bytes": 61877911552,
+    "available_inodes": 195629462,
+    "observed_utc": "2026-10-31T15:38:33.867647+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525243764736
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

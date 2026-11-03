@@ -1,0 +1,3 @@
+BOOT_TRANSACTIONS writes=4408 reads=22632 acknowledgements=27040
+COMPARED 27041
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0070-storage-fault-tag-register/boot-v257-s17-tag-register/compiled-bench.sv:4618: Verilog $finish

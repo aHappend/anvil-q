@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-detok-s1/obj/simulation",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/fragments.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:39:18.845278+00:00",
+  "pid": 1032256,
+  "process_group": 1032256,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61574463488,
+    "available_inodes": 195626683,
+    "observed_utc": "2026-10-31T15:39:18.845343+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525547212800
+  }
+}

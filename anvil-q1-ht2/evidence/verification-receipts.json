@@ -1,0 +1,2636 @@
+{
+  "chip": "Anvil-Q1-HT2",
+  "passed_checks": {
+    "check:behavior": {
+      "attempt_id": 2614,
+      "duration_s": 2048.9269629230257,
+      "stdout_preview": "ning\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-compile running\nprogress: top-2-17-verilator-simulate running\nprogress: behavior singleton-functional\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: top-0-17-verilator-compile running\nprogress: behavior gqa-seed43\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-compile running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: top-0-43-verilator-simulate running\nprogress: behavior medium-seed89\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-compile running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: top-0-89-verilator-simulate running\nprogress: behavior compatibility-0\nprogress: behavior compatibility-2\nprogress: compatibility-candidate-compile running\nprogress: behavior compatibility-entry-alias\n{\"status\": \"passed\", \"receipt\": \"evidence/behavior-20261102T153611Z-6e04f50f/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/behavior-20261102T153611Z-6e04f50f/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "behavior"
+            ],
+            "checks": [
+              {
+                "compared": "15",
+                "csr": "15",
+                "name": "top-startup-0-17-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/startup-f4cabbd2/top-startup-0-17-iverilog-simulate-8481990c/receipt.json",
+                "simulator": "iverilog",
+                "startup_only": "1"
+              },
+              {
+                "compared": "764744",
+                "exhaustive_per_format": "65536",
+                "name": "conversions-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/conversions-iverilog-4cb625c2/conversions-iverilog-simulate-591e1b0d/receipt.json",
+                "rows": "191186",
+                "simulator": "iverilog"
+              },
+              {
+                "add32": "45724",
+                "compared": "189012",
+                "mul16": "45732",
+                "mul32": "45732",
+                "name": "pipelines-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/pipelines-iverilog-5146eefe/pipelines-iverilog-simulate-cc099bbe/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "1450",
+                "dma_transactions": "225",
+                "errors": "41",
+                "name": "sparse-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/sparse-iverilog-f9cbb4fd/sparse-iverilog-simulate-8fede2c5/receipt.json",
+                "simulator": "iverilog",
+                "skipped": "1184"
+              },
+              {
+                "compared": "19699",
+                "exhaustive_tree_assignments": "19692",
+                "name": "verifier-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/verifier-iverilog-222ca11e/verifier-iverilog-simulate-04a02c31/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "533",
+                "name": "masks-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/masks-iverilog-dde0c765/masks-iverilog-simulate-d7e22e87/receipt.json",
+                "simulator": "iverilog",
+                "trees_and_sequence_boundaries": "533"
+              },
+              {
+                "compared": "28672",
+                "lanes": "8",
+                "name": "awq-iverilog",
+                "q_values": "16",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/dequant-iverilog-4a0865af/awq-iverilog-simulate-c7b74d9f/receipt.json",
+                "scale_classes": "14",
+                "simulator": "iverilog",
+                "zero_values": "16"
+              },
+              {
+                "accepted_beats": "130",
+                "compared": "331776",
+                "completed_dots": "14",
+                "live_paths": "256",
+                "name": "mac-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/mac-iverilog-924d4c6b/mac-iverilog-simulate-136aec87/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "3980",
+                "name": "divsqrt-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/divsqrt-iverilog-bc1dfb4f/divsqrt-iverilog-simulate-9bff5d7d/receipt.json",
+                "requests": "3980",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "1629",
+                "name": "exp-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/exp-iverilog-d72f9b7e/exp-iverilog-simulate-ef4b1884/receipt.json",
+                "requests": "1629",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "294",
+                "name": "sincos-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/sincos-iverilog-7e452630/sincos-iverilog-simulate-d7087cdc/receipt.json",
+                "requests": "294",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "528",
+                "inputs": "96",
+                "name": "rmsnorm-8-iverilog",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/rmsnorm-iverilog-1cf3e01f/rmsnorm-8-iverilog-simulate-33d2382b/receipt.json",
+                "simulator": "iverilog",
+                "stalled_comparisons": "36"
+              },
+              {
+                "compared": "672",
+                "inputs": "96",
+                "name": "swiglu-8-iverilog",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/swiglu-iverilog-5fa598fa/swiglu-8-iverilog-simulate-af9222de/receipt.json",
+                "simulator": "iverilog",
+                "stalled_comparisons": "72"
+              },
+              {
+                "compared": "75",
+                "csr": "75",
+                "low_word_wraps": "16",
+                "name": "control-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/control-iverilog-25ec2752/control-iverilog-simulate-9ba41a7a/receipt.json",
+                "simulator": "iverilog"
+              },
+              {
+                "compared": "472",
+                "delivered": "80",
+                "full_observations": "1472",
+                "name": "cdc-mailbox-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/mailbox-iverilog-72f8cb47/cdc-mailbox-iverilog-simulate-3262981d/receipt.json",
+                "simulator": "iverilog",
+                "stalls": "312"
+              },
+              {
+                "compared": "4684",
+                "delivered": "1200",
+                "full_observations": "1625",
+                "name": "cdc-response_fifo-iverilog",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/response_fifo-iverilog-98ea4603/cdc-response_fifo-iverilog-simulate-fe558c28/receipt.json",
+                "simulator": "iverilog",
+                "stalls": "2284"
+              },
+              {
+                "compared": "764744",
+                "exhaustive_per_format": "65536",
+                "name": "conversions-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/conversions-verilator-67576025/conversions-verilator-simulate-cb37b013/receipt.json",
+                "rows": "191186",
+                "simulator": "verilator"
+              },
+              {
+                "add32": "45724",
+                "compared": "189012",
+                "mul16": "45732",
+                "mul32": "45732",
+                "name": "pipelines-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/pipelines-verilator-d61a1e59/pipelines-verilator-simulate-cf9334f7/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "1450",
+                "dma_transactions": "225",
+                "errors": "41",
+                "name": "sparse-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/sparse-verilator-581d1d3d/sparse-verilator-simulate-26554591/receipt.json",
+                "simulator": "verilator",
+                "skipped": "1184"
+              },
+              {
+                "compared": "19699",
+                "exhaustive_tree_assignments": "19692",
+                "name": "verifier-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/verifier-verilator-ac8bf591/verifier-verilator-simulate-d82561ff/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "533",
+                "name": "masks-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/masks-verilator-a5a4bda6/masks-verilator-simulate-4a31b7ff/receipt.json",
+                "simulator": "verilator",
+                "trees_and_sequence_boundaries": "533"
+              },
+              {
+                "compared": "28672",
+                "lanes": "8",
+                "name": "awq-verilator",
+                "q_values": "16",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/dequant-verilator-259306aa/awq-verilator-simulate-0157d9fa/receipt.json",
+                "scale_classes": "14",
+                "simulator": "verilator",
+                "zero_values": "16"
+              },
+              {
+                "accepted_beats": "130",
+                "compared": "331776",
+                "completed_dots": "14",
+                "live_paths": "256",
+                "name": "mac-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/mac-verilator-c2f02ffb/mac-verilator-simulate-83a0814b/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "3980",
+                "name": "divsqrt-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/divsqrt-verilator-785ff2fe/divsqrt-verilator-simulate-5abeecdb/receipt.json",
+                "requests": "3980",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "1629",
+                "name": "exp-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/exp-verilator-3d33e77d/exp-verilator-simulate-053fceab/receipt.json",
+                "requests": "1629",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "294",
+                "name": "sincos-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/sincos-verilator-af0fd7d2/sincos-verilator-simulate-616cc989/receipt.json",
+                "requests": "294",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "528",
+                "inputs": "96",
+                "name": "rmsnorm-8-verilator",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/rmsnorm-verilator-e991e688/rmsnorm-8-verilator-simulate-cefe07fe/receipt.json",
+                "simulator": "verilator",
+                "stalled_comparisons": "36"
+              },
+              {
+                "compared": "672",
+                "inputs": "96",
+                "name": "swiglu-8-verilator",
+                "outputs": "96",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/swiglu-verilator-f37557fe/swiglu-8-verilator-simulate-c88e644e/receipt.json",
+                "simulator": "verilator",
+                "stalled_comparisons": "72"
+              },
+              {
+                "compared": "75",
+                "csr": "75",
+                "low_word_wraps": "16",
+                "name": "control-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/control-verilator-ccf01e49/control-verilator-simulate-76a7e19a/receipt.json",
+                "simulator": "verilator"
+              },
+              {
+                "compared": "472",
+                "delivered": "80",
+                "full_observations": "1472",
+                "name": "cdc-mailbox-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/mailbox-verilator-209c4759/cdc-mailbox-verilator-simulate-d8760014/receipt.json",
+                "simulator": "verilator",
+                "stalls": "312"
+              },
+              {
+                "compared": "4684",
+                "delivered": "1200",
+                "full_observations": "1625",
+                "name": "cdc-response_fifo-verilator",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/response_fifo-verilator-42a82d39/cdc-response_fifo-verilator-simulate-ba72b7f1/receipt.json",
+                "simulator": "verilator",
+                "stalls": "2284"
+              },
+              {
+                "cases": [
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-layers",
+                    "parameters": {
+                      "NUM_LAYERS": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-layers-diagnostic-ce5b72e4/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-layers",
+                    "parameters": {
+                      "NUM_LAYERS": 25
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-layers-diagnostic-e6bee2bf/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "hidden-zero",
+                    "parameters": {
+                      "HIDDEN_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/hidden-zero-diagnostic-49aae253/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "hidden-too-large",
+                    "parameters": {
+                      "HIDDEN_SIZE": 904
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/hidden-too-large-diagnostic-b085f6a6/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "hidden-alignment",
+                    "parameters": {
+                      "HIDDEN_SIZE": 9
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/hidden-alignment-diagnostic-f88c86fe/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "intermediate-zero",
+                    "parameters": {
+                      "INTERMEDIATE_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/intermediate-zero-diagnostic-d4a025f5/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "intermediate-too-large",
+                    "parameters": {
+                      "INTERMEDIATE_SIZE": 4872
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/intermediate-too-large-diagnostic-9822192d/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "intermediate-alignment",
+                    "parameters": {
+                      "INTERMEDIATE_SIZE": 9
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/intermediate-alignment-diagnostic-5eac66cf/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-query-heads",
+                    "parameters": {
+                      "NUM_Q_HEADS": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-query-heads-diagnostic-5283da15/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-query-heads",
+                    "parameters": {
+                      "NUM_Q_HEADS": 15
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-query-heads-diagnostic-50aeb309/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-kv-heads",
+                    "parameters": {
+                      "NUM_KV_HEADS": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-kv-heads-diagnostic-5fe34389/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-kv-heads",
+                    "parameters": {
+                      "NUM_KV_HEADS": 3
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-kv-heads-diagnostic-3534efd5/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "odd-head-dimension",
+                    "parameters": {
+                      "HEAD_DIM": 7
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/odd-head-dimension-diagnostic-957b1d9c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "head-too-small",
+                    "parameters": {
+                      "HEAD_DIM": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/head-too-small-diagnostic-8eff8dcc/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "head-too-large",
+                    "parameters": {
+                      "HEAD_DIM": 66
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/head-too-large-diagnostic-803ad6a1/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "query-hidden-mismatch",
+                    "parameters": {
+                      "NUM_Q_HEADS": 2
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/query-hidden-mismatch-diagnostic-4fc47b6b/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "gqa-indivisible",
+                    "parameters": {
+                      "HIDDEN_SIZE": 24,
+                      "NUM_KV_HEADS": 2,
+                      "NUM_Q_HEADS": 3
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/gqa-indivisible-diagnostic-4cbe5b3e/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "kv-width-alignment",
+                    "parameters": {
+                      "HEAD_DIM": 4,
+                      "NUM_Q_HEADS": 2
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/kv-width-alignment-diagnostic-cd889bab/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-group",
+                    "parameters": {
+                      "GROUP_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-group-diagnostic-23d4201f/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "group-too-large",
+                    "parameters": {
+                      "GROUP_SIZE": 9
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/group-too-large-diagnostic-34a6fb8c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "group-hidden-divisibility",
+                    "parameters": {
+                      "GROUP_SIZE": 3,
+                      "INTERMEDIATE_SIZE": 24
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/group-hidden-divisibility-diagnostic-b72746b2/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "group-intermediate-divisibility",
+                    "parameters": {
+                      "GROUP_SIZE": 3,
+                      "HIDDEN_SIZE": 24,
+                      "INTERMEDIATE_SIZE": 8,
+                      "NUM_Q_HEADS": 3
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/group-intermediate-divisibility-diagnostic-5115cd3c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-vocabulary",
+                    "parameters": {
+                      "VOCAB_SIZE": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-vocabulary-diagnostic-eef6567f/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-vocabulary",
+                    "parameters": {
+                      "VOCAB_SIZE": 151937
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-vocabulary-diagnostic-1db4f059/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-sequence",
+                    "parameters": {
+                      "MAX_SEQ_LEN": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-sequence-diagnostic-094569db/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-sequence",
+                    "parameters": {
+                      "MAX_SEQ_LEN": 32769
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-sequence-diagnostic-c6392975/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "awq-width",
+                    "parameters": {
+                      "AWQ_BITS": 3
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/awq-width-diagnostic-7aca0a76/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "array-lanes",
+                    "parameters": {
+                      "LANES": 32
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/array-lanes-diagnostic-4e54a714/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "array-banks",
+                    "parameters": {
+                      "BANKS": 4
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/array-banks-diagnostic-0f079686/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "array-bank-lanes",
+                    "parameters": {
+                      "LANES_PER_BANK": 4
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/array-bank-lanes-diagnostic-d128893c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "ddr-width",
+                    "parameters": {
+                      "DDR_WIDTH": 256
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/ddr-width-diagnostic-be51a66c/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-tile",
+                    "parameters": {
+                      "TILE_BEATS": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-tile-diagnostic-6c9879d2/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-tile",
+                    "parameters": {
+                      "TILE_BEATS": 257
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-tile-diagnostic-dd0b0055/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "zero-window",
+                    "parameters": {
+                      "KV_WINDOW": 0
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/zero-window-diagnostic-94193c1b/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "excess-window",
+                    "parameters": {
+                      "KV_WINDOW": 129
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/excess-window-diagnostic-82b66ea7/receipt.json"
+                  },
+                  {
+                    "expected_rejection_observed": true,
+                    "name": "window-exceeds-sequence",
+                    "parameters": {
+                      "KV_WINDOW": 2,
+                      "MAX_SEQ_LEN": 1
+                    },
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/illegal-parameters-7aace5c2/window-exceeds-sequence-diagnostic-7f046566/receipt.json"
+                  }
+                ],
+                "name": "illegal-parameters"
+              },
+              {
+                "commits": "2",
+                "compared": "238",
+                "csr": "181",
+                "logits": "7",
+                "name": "top-0-17-verilator",
+                "read_beats": "1134",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compact-top-mode0-29600fd5/top-0-17-verilator-simulate-44c18bc3/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "14"
+              },
+              {
+                "commits": "2",
+                "compared": "238",
+                "csr": "181",
+                "logits": "7",
+                "name": "top-1-17-verilator",
+                "read_beats": "1134",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compact-top-mode1-6d648492/top-1-17-verilator-simulate-906aa3d4/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "14"
+              },
+              {
+                "commits": "2",
+                "compared": "362",
+                "csr": "307",
+                "logits": "7",
+                "name": "top-2-17-verilator",
+                "read_beats": "1806",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compact-top-mode2-0259aeaa/top-2-17-verilator-simulate-8cc09113/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "14"
+              },
+              {
+                "commits": "0",
+                "compared": "182",
+                "csr": "173",
+                "logits": "1",
+                "name": "top-0-17-verilator",
+                "read_beats": "276",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/singleton-functional-bbdbfb51/top-0-17-verilator-simulate-4adddb3b/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "2"
+              },
+              {
+                "commits": "2",
+                "compared": "483",
+                "csr": "307",
+                "logits": "31",
+                "name": "top-0-43-verilator",
+                "read_beats": "6622",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/gqa-seed43-b2a53ed7/top-0-43-verilator-simulate-87766d39/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "28"
+              },
+              {
+                "commits": "1",
+                "compared": "956",
+                "csr": "303",
+                "logits": "257",
+                "name": "top-0-89-verilator",
+                "read_beats": "9786",
+                "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/medium-seed89-e7f99c43/top-0-89-verilator-simulate-c2dcece7/receipt.json",
+                "simulator": "verilator",
+                "write_beats": "20"
+              },
+              {
+                "compared_logits": 16,
+                "mode": 0,
+                "name": "compatibility",
+                "runs": [
+                  {
+                    "compared": "162",
+                    "name": "compatibility-parent",
+                    "outputs": "16",
+                    "read_beats": "214",
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compatibility-0-57736a44/compatibility-parent-simulate-379debca/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  },
+                  {
+                    "compared": "162",
+                    "name": "compatibility-candidate",
+                    "outputs": "16",
+                    "read_beats": "214",
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compatibility-0-57736a44/compatibility-candidate-simulate-b57c31d4/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  }
+                ],
+                "seed": 17,
+                "tokens": 2,
+                "top": "anvil_q1_ht_top"
+              },
+              {
+                "compared_logits": 16,
+                "mode": 2,
+                "name": "compatibility",
+                "runs": [
+                  {
+                    "compared": "274",
+                    "name": "compatibility-parent",
+                    "outputs": "16",
+                    "read_beats": "522",
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compatibility-2-142f512b/compatibility-parent-simulate-a4b229e8/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  },
+                  {
+                    "compared": "274",
+                    "name": "compatibility-candidate",
+                    "outputs": "16",
+                    "read_beats": "522",
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compatibility-2-142f512b/compatibility-candidate-simulate-86653cb3/receipt.json",
+                    "simulator": "verilator",
+                    "write_beats": "16"
+                  }
+                ],
+                "seed": 17,
+                "tokens": 2,
+                "top": "anvil_q1_ht_top"
+              },
+              {
+                "compared_logits": 16,
+                "name": "logical-compatibility",
+                "runs": [
+                  {
+                    "compared": "16",
+                    "name": "logical-parent",
+                    "outputs": "16",
+                    "reads": "4696",
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compatibility-entry-alias-ecc731de/logical-parent-simulate-f628dc06/receipt.json",
+                    "simulator": "verilator",
+                    "writes": "304"
+                  },
+                  {
+                    "compared": "16",
+                    "name": "logical-candidate",
+                    "outputs": "16",
+                    "reads": "4696",
+                    "receipt": "evidence/behavior-20261102T153611Z-6e04f50f/compatibility-entry-alias-ecc731de/logical-candidate-simulate-36ead060/receipt.json",
+                    "simulator": "verilator",
+                    "writes": "304"
+                  }
+                ],
+                "tokens": 2
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 2048.6951439219993,
+            "end_time": "2026-11-02T16:10:20.586949+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
+              "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "9b3283860d6a5e3d6cec431ecd71cb0e3aea3387a3fe29904a1f3c1f1b805cd9",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "9b9f0e8875de5c6daacec23ff34bfcedb9afa02f51b191f8306964f9f8753330",
+              "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-11-02T15:36:11.891815+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "behavior",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    },
+    "check:benchmark-workload-contract": {
+      "attempt_id": 2617,
+      "duration_s": 1682.2993425179739,
+      "stdout_preview": "progress: compile running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: compile running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\nprogress: bridge running\n{\"status\": \"passed\", \"receipt\": \"evidence/benchmark-contract-20261102T161752Z-0e57e01b/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "benchmark-contract"
+            ],
+            "checks": [
+              {
+                "compared_descriptors": 50,
+                "name": "checkpoint-conversion",
+                "rejections": [
+                  "bf16-descriptor",
+                  "bf16-overlap",
+                  "bf16-bytes",
+                  "w4-descriptor",
+                  "w4-overlap",
+                  "w4-bytes"
+                ],
+                "scope": "compact independent converter fixtures",
+                "storage": {
+                  "exact_values_per_storage": 3,
+                  "rejections": [
+                    "raw-length",
+                    "header-shape",
+                    "nonfinite-bf16",
+                    "negative-scale",
+                    "wide-nibble"
+                  ]
+                }
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-dense_reference-e05d447c/bridge-e623da40/receipt.json",
+                "name": "bf16/facts-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-dense_reference-e05d447c/response.json",
+                  "sha256": "d07245bfa37f96bbb0363f395b15306a6da4a8d852c73cfde43456976f9879de"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-ht2_speculative_sparse-bee62f9d/bridge-6437b845/receipt.json",
+                "name": "bf16/facts-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-1-ht2_speculative_sparse-bee62f9d/response.json",
+                  "sha256": "ac38ea758b63b5d32fe685f6b15b335f669a61457a4b32dfb1293de0be9dfddb"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-dense_reference-2832f53a/bridge-56d5253e/receipt.json",
+                "name": "bf16/facts-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-dense_reference-2832f53a/response.json",
+                  "sha256": "56b464979233276bf79a94203b217dd874fe1bb0fe66a17daf901139359c4f29"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-ht2_speculative_sparse-8daa0ac6/bridge-c98792ab/receipt.json",
+                "name": "bf16/facts-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-facts-2-ht2_speculative_sparse-8daa0ac6/response.json",
+                  "sha256": "e5a328d803c546773e8ff40433cc509f82e57c4e7a4e4c043a88eb49efe1ab1b"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-dense_reference-72c4afa1/bridge-e80d2ed0/receipt.json",
+                "name": "bf16/math-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-dense_reference-72c4afa1/response.json",
+                  "sha256": "5a2c62a7b71a83254ceddc2c42afd719fe399fc645a95c54e2387f79d452aec1"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-ht2_speculative_sparse-607f5d37/bridge-467c6171/receipt.json",
+                "name": "bf16/math-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-1-ht2_speculative_sparse-607f5d37/response.json",
+                  "sha256": "c4f4c7edb4c5f8dfb072558e1bbc9c17a70741b18accfda7bc1222876bb10ef9"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-dense_reference-1227c31f/bridge-443ba552/receipt.json",
+                "name": "bf16/math-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-dense_reference-1227c31f/response.json",
+                  "sha256": "94262264bdc9fff0a21f536443c50bf79d088cf25b51e7617c144eb38fa749c5"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-ht2_speculative_sparse-2103f6c3/bridge-cd23b0e4/receipt.json",
+                "name": "bf16/math-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-math-2-ht2_speculative_sparse-2103f6c3/response.json",
+                  "sha256": "1f99256889032e5167a98997369b686bad83281d5fe3e0ac57daf6495a1255b0"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-dense_reference-95639856/bridge-b1ff8bfb/receipt.json",
+                "name": "bf16/code-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-dense_reference-95639856/response.json",
+                  "sha256": "39f7c632587c828eda70053726d32882717f94e2addb5b2dc9ef9e6c11fee0d5"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-ht2_speculative_sparse-b34d84d0/bridge-3b0b445a/receipt.json",
+                "name": "bf16/code-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-1-ht2_speculative_sparse-b34d84d0/response.json",
+                  "sha256": "13b2c60fce746d8252c6f79a1992489e7d87744742101b01418136aba6162a3c"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-dense_reference-3dd99637/bridge-1892976e/receipt.json",
+                "name": "bf16/code-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-dense_reference-3dd99637/response.json",
+                  "sha256": "e73bf27ed20549891d4e71517071333f37ae09653c702ff57338fb3ef17732ee"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-ht2_speculative_sparse-18168d17/bridge-c9613840/receipt.json",
+                "name": "bf16/code-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-code-2-ht2_speculative_sparse-18168d17/response.json",
+                  "sha256": "ee392e6b4bbee54038c9302ad579b744cf1064ad03ccf8f1b8ec58e8927125c0"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-dense_reference-a8396e41/bridge-1d3c4ccc/receipt.json",
+                "name": "bf16/multilingual-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-dense_reference-a8396e41/response.json",
+                  "sha256": "c6d36bfa9b297aada21a0d82d92f8dc2a4c1d0d0038278f658950a3065e7ebb6"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-ht2_speculative_sparse-7428f6f7/bridge-cd1e8aa3/receipt.json",
+                "name": "bf16/multilingual-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-1-ht2_speculative_sparse-7428f6f7/response.json",
+                  "sha256": "711e6193329f86afa9b2e273aa04bc2de046260ee9f62164f7d64b3a388e6015"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-dense_reference-55f1a29a/bridge-6ae59985/receipt.json",
+                "name": "bf16/multilingual-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-dense_reference-55f1a29a/response.json",
+                  "sha256": "2d3cdbfef4ad4c203eebecb64af6da2a3abf1707d8facd0a8f2ca441293c8b6a"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-ht2_speculative_sparse-edce8f68/bridge-49c93298/receipt.json",
+                "name": "bf16/multilingual-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-multilingual-2-ht2_speculative_sparse-edce8f68/response.json",
+                  "sha256": "ad121a18d7e700709a7efc07ec65791b6dfc5648f03726dd11109d9baef44734"
+                },
+                "tokens": 5
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-dense_reference-c25eb300/bridge-eb3b8d6d/receipt.json",
+                "name": "bf16/retrieval-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-dense_reference-c25eb300/response.json",
+                  "sha256": "a23d6380bd4f1c7109fb874b76355593610a9498edbe3109c1a5c05c9c04b1b0"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-ht2_speculative_sparse-bfe6fb7a/bridge-35047c6f/receipt.json",
+                "name": "bf16/retrieval-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-1-ht2_speculative_sparse-bfe6fb7a/response.json",
+                  "sha256": "0c86a21be204aa38b10ec3d230f3bf1399e668453fddba8d2959bfdca4f5f577"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-dense_reference-58d55fc8/bridge-ed1fb43d/receipt.json",
+                "name": "bf16/retrieval-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-dense_reference-58d55fc8/response.json",
+                  "sha256": "c2293297c9f99e8fc86217df618bb2fa7c2a8856aad12c2b8c9fa2c9974b9575"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-ht2_speculative_sparse-56a3d980/bridge-59ccad19/receipt.json",
+                "name": "bf16/retrieval-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/bf16-retrieval-2-ht2_speculative_sparse-56a3d980/response.json",
+                  "sha256": "2bee1b33a763e4cc4e165c3c06550ae9077ae80c05ae3eee62750a47954d846c"
+                },
+                "tokens": 5
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-dense_reference-3b96b9a8/bridge-b27743b6/receipt.json",
+                "name": "w4/facts-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-dense_reference-3b96b9a8/response.json",
+                  "sha256": "6f584f4cd089c309f8b0bfc9e13b8068159752a2aaee69b0fc3ce9db3dadfa01"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-ht2_speculative_sparse-470d9c9d/bridge-76564b57/receipt.json",
+                "name": "w4/facts-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-1-ht2_speculative_sparse-470d9c9d/response.json",
+                  "sha256": "74531495cc013888b9b227b2fa6ae90d9f8e3b8de68553d019da27e9f38b4f8d"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-dense_reference-53becb10/bridge-8bcb2298/receipt.json",
+                "name": "w4/facts-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-dense_reference-53becb10/response.json",
+                  "sha256": "766ef114c6f026cdb4922fafa064619bc217776d1c6c282aeb9b57831636566c"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-ht2_speculative_sparse-34caf958/bridge-91e89722/receipt.json",
+                "name": "w4/facts-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-facts-2-ht2_speculative_sparse-34caf958/response.json",
+                  "sha256": "a63dc0680cd4aae85ef1d5dc00ff2aaa543b05c4344937f03eab3b9fef59d5e3"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-dense_reference-92e79436/bridge-86274f42/receipt.json",
+                "name": "w4/math-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-dense_reference-92e79436/response.json",
+                  "sha256": "0030dfa60b79b361d21f7734129f3b45d2fb5dc065cd0de675f013e321fd72d0"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-ht2_speculative_sparse-0cf87dcd/bridge-f8fb2f6d/receipt.json",
+                "name": "w4/math-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-1-ht2_speculative_sparse-0cf87dcd/response.json",
+                  "sha256": "0b1b7fb72105e3c92739afcd96ca51a9bee6bb209827ed6dc901950d85e7227a"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-dense_reference-091ede96/bridge-c334f0db/receipt.json",
+                "name": "w4/math-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-dense_reference-091ede96/response.json",
+                  "sha256": "ce99de1f7f5d9adea4ff25f3c2ef42776a8bfba3687defcc86f2becd77d2dc7a"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-ht2_speculative_sparse-0544833a/bridge-e3dfed46/receipt.json",
+                "name": "w4/math-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-math-2-ht2_speculative_sparse-0544833a/response.json",
+                  "sha256": "64056c6920fb74975710a85c8111acbc97889b09a441f2005a3c01470e6a385d"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-dense_reference-3912004d/bridge-0a13d6cd/receipt.json",
+                "name": "w4/code-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-dense_reference-3912004d/response.json",
+                  "sha256": "976fe24aed66f27b2cea44a6cfcc746f980ffd10be62f4b164003d197449f98f"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-ht2_speculative_sparse-b5578cc7/bridge-60fb2dba/receipt.json",
+                "name": "w4/code-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-1-ht2_speculative_sparse-b5578cc7/response.json",
+                  "sha256": "381417f06258c796c4c9a85801011a24c4d5ddba1e8eb14ffa4a1ee3fefe006a"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-dense_reference-8c1f2e27/bridge-0715e14d/receipt.json",
+                "name": "w4/code-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-dense_reference-8c1f2e27/response.json",
+                  "sha256": "802540937c948b6e49becff34c603e389b169c38fefe12a8a8016c8c3640386d"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-ht2_speculative_sparse-a6bdcc8e/bridge-b7b5a4c1/receipt.json",
+                "name": "w4/code-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-code-2-ht2_speculative_sparse-a6bdcc8e/response.json",
+                  "sha256": "d0d21e601b4efd29ecdaf2d17f724dbd958a9d9b6b3d854e487f262734366c66"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-dense_reference-59c0db5b/bridge-35c22183/receipt.json",
+                "name": "w4/multilingual-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-dense_reference-59c0db5b/response.json",
+                  "sha256": "1a0c1c7424b7b49c6a6bec2c5f0e910b4656c3007c140b55e5e933b910df8535"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-ht2_speculative_sparse-9fb3f1f7/bridge-f69c5679/receipt.json",
+                "name": "w4/multilingual-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-1-ht2_speculative_sparse-9fb3f1f7/response.json",
+                  "sha256": "5204e9de311ba41aa53cf9f7c7a88149d5834ad2af6ae01fd9bbe514ab618fdc"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-dense_reference-7c9952f0/bridge-a2f966be/receipt.json",
+                "name": "w4/multilingual-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-dense_reference-7c9952f0/response.json",
+                  "sha256": "ce6cf8aa61e1b9f0b760b0573569c3152c124be30453b132efb0bbef250151a7"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-ht2_speculative_sparse-00325eca/bridge-a62427f5/receipt.json",
+                "name": "w4/multilingual-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-multilingual-2-ht2_speculative_sparse-00325eca/response.json",
+                  "sha256": "4f7ecdf47377d3f703f271abc90c0b4c276e7758f85991f50e9abd467c4c428a"
+                },
+                "tokens": 5
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-dense_reference-c4c1d6c4/bridge-e31f503c/receipt.json",
+                "name": "w4/retrieval-1/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-dense_reference-c4c1d6c4/response.json",
+                  "sha256": "086569efb32491111ca5015a11656a1e61ce402802df1894adc0b21a96b5a6d8"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-ht2_speculative_sparse-0a581026/bridge-e2c46bb6/receipt.json",
+                "name": "w4/retrieval-1/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-1-ht2_speculative_sparse-0a581026/response.json",
+                  "sha256": "5e2b7cb3c37206c94fe831b3f1243dfac20499a5cae516afef1983080d5c21e6"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-dense_reference-c50d65c9/bridge-7493c0b0/receipt.json",
+                "name": "w4/retrieval-2/dense_reference",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-dense_reference-c50d65c9/response.json",
+                  "sha256": "d5084051e4d4956b3d8889c34606b41f2255c8a96fd51da966781897c1aeb83b"
+                },
+                "tokens": 4
+              },
+              {
+                "integration_only": true,
+                "launch_receipt": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-ht2_speculative_sparse-a62eec16/bridge-70e222a9/receipt.json",
+                "name": "w4/retrieval-2/ht2_speculative_sparse",
+                "response": {
+                  "path": "evidence/benchmark-contract-20261102T161752Z-0e57e01b/w4-retrieval-2-ht2_speculative_sparse-a62eec16/response.json",
+                  "sha256": "4158e4720c328862caa02ee6cb8c310e68a00557e589e7b43bd8a9152f3bd77f"
+                },
+                "tokens": 5
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 1682.0623973710462,
+            "end_time": "2026-11-02T16:45:54.953347+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
+              "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "9b3283860d6a5e3d6cec431ecd71cb0e3aea3387a3fe29904a1f3c1f1b805cd9",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "9b9f0e8875de5c6daacec23ff34bfcedb9afa02f51b191f8306964f9f8753330",
+              "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-11-02T16:17:52.890945+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "benchmark-contract",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    },
+    "check:clean-directory-reproduction": {
+      "attempt_id": 2618,
+      "duration_s": 377.04902421310544,
+      "stdout_preview": "progress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-behavior running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\nprogress: clean-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/reproduction-20261102T164605Z-f9e52373/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/reproduction-20261102T164605Z-f9e52373/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "reproduction"
+            ],
+            "checks": [
+              {
+                "copied_files": 120,
+                "name": "clean-directory-reproduction",
+                "runs": [
+                  {
+                    "name": "clean-behavior",
+                    "receipt": "evidence/reproduction-20261102T164605Z-f9e52373/clean-behavior-68a565e7/receipt.json"
+                  },
+                  {
+                    "name": "clean-synthesis",
+                    "receipt": "evidence/reproduction-20261102T164605Z-f9e52373/clean-synthesis-be4bef87/receipt.json"
+                  }
+                ],
+                "scope": "compact portable L1; external official hardware and comparator prerequisites remain required for full-model reproduction"
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 376.81301219877787,
+            "end_time": "2026-11-02T16:52:21.930901+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
+              "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "9b3283860d6a5e3d6cec431ecd71cb0e3aea3387a3fe29904a1f3c1f1b805cd9",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "9b9f0e8875de5c6daacec23ff34bfcedb9afa02f51b191f8306964f9f8753330",
+              "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-11-02T16:46:05.117883+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "reproduction",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    },
+    "check:defect-sensitivity": {
+      "attempt_id": 2615,
+      "duration_s": 203.77689501689747,
+      "stdout_preview": "progress: mac-verilator-compile running\nprogress: mac-verilator-compile running\n{\"status\": \"passed\", \"receipt\": \"evidence/mutations-20261102T161031Z-6f9fd269/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/mutations-20261102T161031Z-6f9fd269/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "mutations"
+            ],
+            "checks": [
+              {
+                "after_sha256": "5f8f6cadb266815dd6b34ab03d45c9d5d82b78c89da3db3bdbc8423bb0bc8431",
+                "before_sha256": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261102T161031Z-6f9fd269/multiply-rounding-8cac3130/rtl/anvil_q1_ht2_fp16_mul.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "MUL16",
+                "name": "multiply-rounding",
+                "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/multiply-rounding-8cac3130/pipelines-verilator-simulate-58b336a2/receipt.json",
+                "unmutated_comparison": {
+                  "add32": "45724",
+                  "compared": "189012",
+                  "mul16": "45732",
+                  "mul32": "45732",
+                  "name": "pipelines-verilator",
+                  "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/multiply-rounding-8cac3130/baseline-8783d6a3/pipelines-verilator-simulate-f0844f42/receipt.json",
+                  "simulator": "verilator"
+                }
+              },
+              {
+                "after_sha256": "c9393a9ee20d50a2ce40c0db0f72270a081051f42ca9b5dfc4cfc0247fbb8359",
+                "before_sha256": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261102T161031Z-6f9fd269/awq-lane-order-826d2ceb/rtl/anvil_q1_ht2_dequant.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "AWQ",
+                "name": "awq-lane-order",
+                "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/awq-lane-order-826d2ceb/awq-verilator-simulate-8ccc9341/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "28672",
+                  "lanes": "8",
+                  "name": "awq-verilator",
+                  "q_values": "16",
+                  "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/awq-lane-order-826d2ceb/baseline-50e92853/awq-verilator-simulate-634c0feb/receipt.json",
+                  "scale_classes": "14",
+                  "simulator": "verilator",
+                  "zero_values": "16"
+                }
+              },
+              {
+                "after_sha256": "52dc6990a6068926960706caf7aaa686286bf0be5cafde05458e8a48692c3fa1",
+                "before_sha256": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261102T161031Z-6f9fd269/slot-broadcast-b13039af/rtl/anvil_q1_ht2_tile_batch_mac.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "MAC_NUMERIC",
+                "name": "slot-broadcast",
+                "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/slot-broadcast-b13039af/mac-verilator-simulate-6d8f1920/receipt.json",
+                "unmutated_comparison": {
+                  "accepted_beats": "130",
+                  "compared": "331776",
+                  "completed_dots": "14",
+                  "live_paths": "256",
+                  "name": "mac-verilator",
+                  "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/slot-broadcast-b13039af/baseline-83dbc2f0/mac-verilator-simulate-e0b084ce/receipt.json",
+                  "simulator": "verilator"
+                }
+              },
+              {
+                "after_sha256": "c66e89f2270754190db600994dfc0e3f918154a0e09235e4ef4dbe6955163665",
+                "before_sha256": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261102T161031Z-6f9fd269/sparse-cross-slot-d9c6ddfd/rtl/anvil_q1_ht2_sparse_dma.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": [
+                  "SPARSE_DECISION",
+                  "DMA_REQUEST"
+                ],
+                "name": "sparse-cross-slot",
+                "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/sparse-cross-slot-d9c6ddfd/sparse-verilator-simulate-f191959a/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "1450",
+                  "dma_transactions": "225",
+                  "errors": "41",
+                  "name": "sparse-verilator",
+                  "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/sparse-cross-slot-d9c6ddfd/baseline-4c9744c9/sparse-verilator-simulate-5adf5b64/receipt.json",
+                  "simulator": "verilator",
+                  "skipped": "1184"
+                }
+              },
+              {
+                "after_sha256": "00bcd7ea1a9738178d509d6c6c3f923d66b82c08c9fc07155f66d5c08ae3c495",
+                "before_sha256": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261102T161031Z-6f9fd269/causal-sibling-leakage-5ab3dac1/rtl/anvil_q1_ht2_tree_mask.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "CAUSAL_MASK",
+                "name": "causal-sibling-leakage",
+                "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/causal-sibling-leakage-5ab3dac1/masks-verilator-simulate-98480b7a/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "533",
+                  "name": "masks-verilator",
+                  "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/causal-sibling-leakage-5ab3dac1/baseline-b1b9b488/masks-verilator-simulate-e96890f7/receipt.json",
+                  "simulator": "verilator",
+                  "trees_and_sequence_boundaries": "533"
+                }
+              },
+              {
+                "after_sha256": "f6ce83b98d3ca12bbea58bad0fcad0401b86b5ffa319d720104ec9a4e10dd4b2",
+                "before_sha256": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+                "compile_failure_counts_as_detection": false,
+                "copied_source": "evidence/mutations-20261102T161031Z-6f9fd269/speculative-mismatch-4f04c02c/rtl/anvil_q1_ht2_spec_verifier.sv",
+                "detected": true,
+                "exit_code": -6,
+                "expected_assertion": "TREE_WALK",
+                "name": "speculative-mismatch",
+                "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/speculative-mismatch-4f04c02c/verifier-verilator-simulate-7a87a370/receipt.json",
+                "unmutated_comparison": {
+                  "compared": "19699",
+                  "exhaustive_tree_assignments": "19692",
+                  "name": "verifier-verilator",
+                  "receipt": "evidence/mutations-20261102T161031Z-6f9fd269/speculative-mismatch-4f04c02c/baseline-a1efea2b/verifier-verilator-simulate-7068ee65/receipt.json",
+                  "simulator": "verilator"
+                }
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 203.55621128110215,
+            "end_time": "2026-11-02T16:13:54.648647+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
+              "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "9b3283860d6a5e3d6cec431ecd71cb0e3aea3387a3fe29904a1f3c1f1b805cd9",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "9b9f0e8875de5c6daacec23ff34bfcedb9afa02f51b191f8306964f9f8753330",
+              "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-11-02T16:10:31.092431+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "mutations",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    },
+    "check:synthesis": {
+      "attempt_id": 2616,
+      "duration_s": 218.08192389993928,
+      "stdout_preview": "progress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\nprogress: anvil_q1_ht2_top-synthesis running\n{\"status\": \"passed\", \"receipt\": \"evidence/synthesis-20261102T161404Z-2c2e4e72/receipt.json\"}\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/synthesis-20261102T161404Z-2c2e4e72/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "synthesis"
+            ],
+            "checks": [
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp16_mul": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 9,
+                  "$adff": 10,
+                  "$and": 1,
+                  "$eq": 8,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 12,
+                  "$logic_not": 11,
+                  "$logic_or": 6,
+                  "$lt": 3,
+                  "$mul": 1,
+                  "$mux": 85,
+                  "$neg": 1,
+                  "$reduce_bool": 4,
+                  "$reduce_or": 9,
+                  "$shiftx": 1,
+                  "$shl": 1,
+                  "$shr": 2,
+                  "$sub": 8,
+                  "$xor": 2
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp16_mul-8689cbd1/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp16_mul-synthesis-9c7315c7/receipt.json",
+                "registered_cells": 10,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp16_mul",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_add": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 9,
+                  "$adff": 17,
+                  "$and": 2,
+                  "$ge": 2,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 7,
+                  "$logic_not": 4,
+                  "$logic_or": 5,
+                  "$lt": 3,
+                  "$mux": 93,
+                  "$ne": 2,
+                  "$neg": 1,
+                  "$or": 1,
+                  "$reduce_and": 7,
+                  "$reduce_bool": 1,
+                  "$reduce_or": 11,
+                  "$shiftx": 1,
+                  "$shl": 1,
+                  "$shr": 4,
+                  "$sub": 8
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_add-c3578507/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_add-synthesis-91b86e09/receipt.json",
+                "registered_cells": 17,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_add",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_mul": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 10,
+                  "$adff": 9,
+                  "$and": 1,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 6,
+                  "$logic_not": 5,
+                  "$logic_or": 6,
+                  "$lt": 3,
+                  "$mul": 1,
+                  "$mux": 76,
+                  "$neg": 1,
+                  "$reduce_and": 6,
+                  "$reduce_or": 10,
+                  "$shiftx": 1,
+                  "$shl": 1,
+                  "$shr": 2,
+                  "$sub": 6,
+                  "$xor": 2
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_mul-264a24c0/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_mul-synthesis-7708eaab/receipt.json",
+                "registered_cells": 9,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_mul",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_divsqrt": 1,
+                  "anvil_q1_ht2_reset_sync": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 18,
+                  "$adff": 14,
+                  "$and": 1,
+                  "$eq": 21,
+                  "$gt": 4,
+                  "$le": 2,
+                  "$logic_and": 15,
+                  "$logic_not": 23,
+                  "$logic_or": 13,
+                  "$lt": 3,
+                  "$mux": 149,
+                  "$neg": 1,
+                  "$pmux": 9,
+                  "$reduce_and": 6,
+                  "$reduce_or": 20,
+                  "$shiftx": 1,
+                  "$shl": 3,
+                  "$shr": 2,
+                  "$sub": 16,
+                  "$xor": 3
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_divsqrt-48f7dfdb/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_divsqrt-synthesis-fe4eecc4/receipt.json",
+                "registered_cells": 14,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_divsqrt",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_add": 1,
+                  "anvil_q1_ht2_fp32_exp": 1,
+                  "anvil_q1_ht2_fp32_mul": 1,
+                  "anvil_q1_ht2_reset_sync": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 37,
+                  "$adff": 38,
+                  "$and": 6,
+                  "$eq": 62,
+                  "$ge": 4,
+                  "$gt": 18,
+                  "$le": 10,
+                  "$logic_and": 27,
+                  "$logic_not": 26,
+                  "$logic_or": 14,
+                  "$lt": 13,
+                  "$mem_v2": 1,
+                  "$mul": 1,
+                  "$mux": 367,
+                  "$ne": 2,
+                  "$neg": 6,
+                  "$not": 2,
+                  "$or": 1,
+                  "$pmux": 16,
+                  "$reduce_and": 14,
+                  "$reduce_bool": 1,
+                  "$reduce_or": 36,
+                  "$shiftx": 5,
+                  "$shl": 5,
+                  "$shr": 12,
+                  "$sub": 26,
+                  "$xor": 2
+                },
+                "memory_bits": 464,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_exp-d7612daa/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_exp-synthesis-25dec4d8/receipt.json",
+                "registered_cells": 38,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_exp",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp32_add": 1,
+                  "anvil_q1_ht2_fp32_mul": 1,
+                  "anvil_q1_ht2_fp32_sincos": 1,
+                  "anvil_q1_ht2_reset_sync": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 50,
+                  "$adff": 66,
+                  "$and": 13,
+                  "$eq": 178,
+                  "$ge": 2,
+                  "$gt": 18,
+                  "$le": 12,
+                  "$logic_and": 26,
+                  "$logic_not": 41,
+                  "$logic_or": 19,
+                  "$lt": 16,
+                  "$mem_v2": 2,
+                  "$mul": 1,
+                  "$mux": 568,
+                  "$ne": 3,
+                  "$neg": 20,
+                  "$not": 12,
+                  "$or": 13,
+                  "$pmux": 38,
+                  "$reduce_and": 14,
+                  "$reduce_bool": 5,
+                  "$reduce_or": 35,
+                  "$shift": 16,
+                  "$shiftx": 24,
+                  "$shl": 8,
+                  "$shr": 11,
+                  "$sub": 34,
+                  "$xor": 3
+                },
+                "memory_bits": 976,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_sincos-bc124085/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_fp32_sincos-synthesis-71eaff87/receipt.json",
+                "registered_cells": 66,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_fp32_sincos",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_fp16_mul": 256,
+                  "anvil_q1_ht2_fp32_add": 256,
+                  "anvil_q1_ht2_mac_lane": 256,
+                  "anvil_q1_ht2_reset_sync": 1,
+                  "anvil_q1_ht2_tile_batch_mac": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 4611,
+                  "$adff": 9228,
+                  "$and": 768,
+                  "$eq": 3872,
+                  "$ge": 512,
+                  "$gt": 2048,
+                  "$le": 1024,
+                  "$logic_and": 8208,
+                  "$logic_not": 4878,
+                  "$logic_or": 4353,
+                  "$lt": 1536,
+                  "$mul": 256,
+                  "$mux": 55593,
+                  "$ne": 513,
+                  "$neg": 512,
+                  "$or": 256,
+                  "$pmux": 5,
+                  "$reduce_and": 2560,
+                  "$reduce_bool": 1280,
+                  "$reduce_or": 5121,
+                  "$shiftx": 512,
+                  "$shl": 512,
+                  "$shr": 1536,
+                  "$sub": 4096,
+                  "$xor": 512
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_tile_batch_mac-08a6a5d1/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_tile_batch_mac-synthesis-64b60f5b/receipt.json",
+                "registered_cells": 9228,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_tile_batch_mac",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_reset_sync": 1,
+                  "anvil_q1_ht2_sparse_dma": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 1,
+                  "$adff": 9,
+                  "$eq": 12,
+                  "$gt": 5,
+                  "$logic_and": 11,
+                  "$logic_not": 12,
+                  "$logic_or": 6,
+                  "$mux": 42,
+                  "$pmux": 3,
+                  "$reduce_bool": 2
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_sparse_dma-d1dba3b4/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_sparse_dma-synthesis-c7ba1f97/receipt.json",
+                "registered_cells": 9,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_sparse_dma",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_reset_sync": 1,
+                  "anvil_q1_ht2_spec_verifier": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 3,
+                  "$adff": 11,
+                  "$and": 3,
+                  "$eq": 42,
+                  "$ge": 4,
+                  "$gt": 1,
+                  "$logic_and": 58,
+                  "$logic_not": 24,
+                  "$logic_or": 1,
+                  "$lt": 20,
+                  "$mux": 94,
+                  "$ne": 4,
+                  "$neg": 7,
+                  "$not": 3,
+                  "$or": 3,
+                  "$pmux": 5,
+                  "$shift": 7,
+                  "$shiftx": 3
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_spec_verifier-4be9904e/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_spec_verifier-synthesis-3f142b10/receipt.json",
+                "registered_cells": 11,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_spec_verifier",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht2_attention": 1,
+                  "anvil_q1_ht2_burst_reader": 4,
+                  "anvil_q1_ht2_control": 1,
+                  "anvil_q1_ht2_counter_cdc": 1,
+                  "anvil_q1_ht2_decoder": 1,
+                  "anvil_q1_ht2_dequant": 64,
+                  "anvil_q1_ht2_descriptors": 1,
+                  "anvil_q1_ht2_dma_mux": 2,
+                  "anvil_q1_ht2_execution": 1,
+                  "anvil_q1_ht2_fp16_mul": 256,
+                  "anvil_q1_ht2_fp32_add": 356,
+                  "anvil_q1_ht2_fp32_divsqrt": 40,
+                  "anvil_q1_ht2_fp32_exp": 36,
+                  "anvil_q1_ht2_fp32_mul": 164,
+                  "anvil_q1_ht2_fp32_sincos": 12,
+                  "anvil_q1_ht2_image_loader": 1,
+                  "anvil_q1_ht2_kv": 1,
+                  "anvil_q1_ht2_kv_reader": 1,
+                  "anvil_q1_ht2_kv_writer": 1,
+                  "anvil_q1_ht2_mac_lane": 256,
+                  "anvil_q1_ht2_mailbox": 8,
+                  "anvil_q1_ht2_panel_prefetch": 1,
+                  "anvil_q1_ht2_projection": 1,
+                  "anvil_q1_ht2_provisional_kv": 1,
+                  "anvil_q1_ht2_reset_sync": 215,
+                  "anvil_q1_ht2_response_fifo": 1,
+                  "anvil_q1_ht2_rmsnorm": 1,
+                  "anvil_q1_ht2_rope": 2,
+                  "anvil_q1_ht2_rope_frequency": 2,
+                  "anvil_q1_ht2_scalar": 4,
+                  "anvil_q1_ht2_sparse_dma": 1,
+                  "anvil_q1_ht2_spec_verifier": 1,
+                  "anvil_q1_ht2_swiglu": 1,
+                  "anvil_q1_ht2_swiglu_engine": 8,
+                  "anvil_q1_ht2_tile_batch_mac": 1,
+                  "anvil_q1_ht2_top": 1,
+                  "anvil_q1_ht2_transport": 1,
+                  "anvil_q1_ht2_tree_mask": 1
+                },
+                "initial_state": [
+                  {
+                    "init": "0000000000",
+                    "module": "anvil_q1_ht2_transport",
+                    "wire": "bus_ledger[0]"
+                  }
+                ],
+                "leaf_cells": {
+                  "$add": 11688,
+                  "$adff": 14967,
+                  "$and": 1754,
+                  "$dff": 43,
+                  "$eq": 13408,
+                  "$ge": 881,
+                  "$gt": 5021,
+                  "$le": 2567,
+                  "$logic_and": 14372,
+                  "$logic_not": 10002,
+                  "$logic_or": 7729,
+                  "$lt": 3830,
+                  "$mem_v2": 86,
+                  "$mul": 435,
+                  "$mux": 136541,
+                  "$ne": 864,
+                  "$neg": 1586,
+                  "$not": 277,
+                  "$or": 598,
+                  "$pmux": 1736,
+                  "$reduce_and": 5324,
+                  "$reduce_bool": 1766,
+                  "$reduce_or": 11214,
+                  "$shift": 233,
+                  "$shiftx": 1687,
+                  "$shl": 1385,
+                  "$shr": 3361,
+                  "$sub": 8726,
+                  "$xor": 974
+                },
+                "memory_bits": 19007744,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_top-1a667eb1/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht2_top-synthesis-5c662a81/receipt.json",
+                "registered_cells": 15010,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht2_top",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht_address": 1,
+                  "anvil_q1_ht_avalon_mux": 1,
+                  "anvil_q1_ht_cdc_mailbox": 8,
+                  "anvil_q1_ht_ddr_scalar": 1,
+                  "anvil_q1_ht_decoder": 1,
+                  "anvil_q1_ht_dequant": 64,
+                  "anvil_q1_ht_descriptors": 1,
+                  "anvil_q1_ht_divide": 2,
+                  "anvil_q1_ht_image_guard": 1,
+                  "anvil_q1_ht_isqrt": 2,
+                  "anvil_q1_ht_kernel": 1,
+                  "anvil_q1_ht_kv_window": 1,
+                  "anvil_q1_ht_logical_memory": 1,
+                  "anvil_q1_ht_mac_lane": 64,
+                  "anvil_q1_ht_math": 2,
+                  "anvil_q1_ht_nonlinear": 1,
+                  "anvil_q1_ht_projection": 1,
+                  "anvil_q1_ht_reset_sync": 28,
+                  "anvil_q1_ht_tensor_array": 1,
+                  "anvil_q1_ht_tile_bank": 2,
+                  "anvil_q1_ht_top": 1,
+                  "anvil_q1_ht_transaction_mux": 2,
+                  "anvil_q1_ht_weight_dma": 1,
+                  "anvil_q1_ht_weight_stream": 1,
+                  "anvil_q1_ht_weight_tiles": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 1134,
+                  "$adff": 2404,
+                  "$and": 605,
+                  "$dff": 10,
+                  "$eq": 3077,
+                  "$ge": 367,
+                  "$gt": 350,
+                  "$le": 2,
+                  "$logic_and": 1326,
+                  "$logic_not": 1106,
+                  "$logic_or": 388,
+                  "$lt": 103,
+                  "$mem_v2": 10,
+                  "$mul": 336,
+                  "$mux": 7960,
+                  "$ne": 121,
+                  "$neg": 566,
+                  "$not": 46,
+                  "$or": 491,
+                  "$pmux": 356,
+                  "$reduce_and": 11,
+                  "$reduce_bool": 162,
+                  "$reduce_or": 130,
+                  "$shift": 44,
+                  "$shiftx": 60,
+                  "$shl": 405,
+                  "$shr": 330,
+                  "$sshr": 4,
+                  "$sub": 482,
+                  "$xor": 384
+                },
+                "memory_bits": 29212160,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht_top-f61076dd/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_ht_top-synthesis-1524d146/receipt.json",
+                "registered_cells": 2414,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_ht_top",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              },
+              {
+                "default_geometry": true,
+                "hierarchical_instances": {
+                  "anvil_q1_ht_compat_projection": 1,
+                  "anvil_q1_ht_decoder": 1,
+                  "anvil_q1_ht_dequant": 1,
+                  "anvil_q1_ht_divide": 2,
+                  "anvil_q1_ht_isqrt": 2,
+                  "anvil_q1_ht_kernel": 1,
+                  "anvil_q1_ht_mac_lane": 64,
+                  "anvil_q1_ht_math": 2,
+                  "anvil_q1_ht_nonlinear": 1,
+                  "anvil_q1_ht_reset_sync": 2,
+                  "anvil_q1_ht_tensor_array": 1,
+                  "anvil_q1_top": 1
+                },
+                "initial_state": [],
+                "leaf_cells": {
+                  "$add": 867,
+                  "$adff": 1469,
+                  "$and": 596,
+                  "$eq": 2038,
+                  "$ge": 20,
+                  "$gt": 139,
+                  "$logic_and": 464,
+                  "$logic_not": 257,
+                  "$logic_or": 47,
+                  "$lt": 16,
+                  "$mul": 260,
+                  "$mux": 3290,
+                  "$ne": 82,
+                  "$neg": 53,
+                  "$not": 24,
+                  "$or": 404,
+                  "$pmux": 259,
+                  "$reduce_and": 1,
+                  "$reduce_bool": 71,
+                  "$reduce_or": 47,
+                  "$shift": 32,
+                  "$shiftx": 41,
+                  "$shl": 20,
+                  "$shr": 10,
+                  "$sshr": 4,
+                  "$sub": 27,
+                  "$xor": 384
+                },
+                "memory_bits": 0,
+                "netlist": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_top-c1676298/netlist.json",
+                "receipt": "evidence/synthesis-20261102T161404Z-2c2e4e72/anvil_q1_top-synthesis-4cb3842a/receipt.json",
+                "registered_cells": 1469,
+                "scope": "generic synthesis, not FPGA resource mapping or timing",
+                "top": "anvil_q1_top",
+                "zero_latches": true,
+                "zero_runtime_div_mod": true
+              }
+            ],
+            "cwd": ".",
+            "duration_s": 217.8031945268158,
+            "end_time": "2026-11-02T16:17:42.781918+00:00",
+            "exit_code": 0,
+            "preparation": false,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "repair_of": null,
+            "schema_version": 1,
+            "source_sha256": {
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_decoder.sv": "ede492a2c4e4b0e796329b59caa71002485d94a0032e24f554b13f2c059bc530",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_dequant.sv": "282f0bde5cd6d747587bba1c24759bd2bdbd77c98a8dd8822acb8230083a5b93",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kernel.sv": "d1f55ff3d418253e0b14d42c526325668590d00103487fff86f73c9fbab87c28",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_mac_lane.sv": "5581a92ec4ed0edc65b086200069e4ded822d8bbd88c6efad5dd6fdac7648392",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_nonlinear.sv": "0690f889e9ddc33fdb534708250e42a6d92f76ffd069f4f0ccc0b65fd3dfcbc2",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "anvil_q1_ht_reference/rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "anvil_q1_ht_reference/rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "design/ARCHITECTURE.md": "7472361f58313896aebcf68a91714567ca086f27a19043870b70a0f2de2a38c4",
+              "design/GENERATIONAL_HANDOFF.md": "e7dd9443e1fb5759547a65a11a4832fbac70047e943111601cfaa5e2a90cc9ea",
+              "design/SPEC.md": "b0dc9c240d3fc2671605605b545ce62d458ba380f5643867a123c118215f50b9",
+              "rtl/anvil_q1_ht2_00_fp_pkg.sv": "cad254a4b1ee7f7595ba9eff4ee77e157dd79e3e6ee91a81cf8b4559f9c6014e",
+              "rtl/anvil_q1_ht2_attention.sv": "0bdcbfcaff1d16e6b982fee615cdfa8bad382120a220f28c27bdf2d8eb19d68f",
+              "rtl/anvil_q1_ht2_burst_reader.sv": "b743b3625af8f1b9535f068b7780abbbc8619c26f45e92e7d75365c725160834",
+              "rtl/anvil_q1_ht2_control.sv": "e02e1a20a861668e06a89b100715eba514e48155f939c7cabd364e84b6ce7004",
+              "rtl/anvil_q1_ht2_counter_cdc.sv": "61195be025da4aab21d330a20da747c7a6b5909fc0a3791111c50bca570158f7",
+              "rtl/anvil_q1_ht2_decoder.sv": "c1ef058eb3570e4e46d9a3f5a9fd6ce0a1fa6825aac46d26242d6e41dfbb9fd6",
+              "rtl/anvil_q1_ht2_dequant.sv": "6b50bdbf4662413e037dd7782639d55f48ad335f83f6154af61bc160968b75b5",
+              "rtl/anvil_q1_ht2_descriptors.sv": "5b60a95198e3d46e6bc213c25785c7e06190208cab6e7b2d09ad20d666dff63d",
+              "rtl/anvil_q1_ht2_dma_mux.sv": "61883f516a9308fcbe85f439e72877a3c23ac51a2a890c7a1d93312441b027d6",
+              "rtl/anvil_q1_ht2_execution.sv": "e36904c1599865e791b7102d269235a67ed94c71637900302f51fe39dda399a9",
+              "rtl/anvil_q1_ht2_fp16_mul.sv": "7a6c6b06d5d7b32334a60864ce42b97edbce5478e93f74c283ecc3ebcfa2df56",
+              "rtl/anvil_q1_ht2_fp32_add.sv": "7b192df19a420261fce3ec606d20a0839c0fafc9b619e9c9452d310af2a22a38",
+              "rtl/anvil_q1_ht2_fp32_divsqrt.sv": "d37b2de57895893c7cb99699189c1947f4b9e8bfdd4daffd00a1ed35927632de",
+              "rtl/anvil_q1_ht2_fp32_exp.sv": "70b2899af855a35a64fe1d2f8aa077d0c62b27c5eef230ab18db9998b66ceb03",
+              "rtl/anvil_q1_ht2_fp32_mul.sv": "068ea300b905cb99987f81ca7aed70c248ec14fdec304661e75d01596e3df5b5",
+              "rtl/anvil_q1_ht2_fp32_sincos.sv": "75d8d91a1b55be6c8d6a5e1b335b0530f90ea225e0a887c7e19ab6dc3310a0f5",
+              "rtl/anvil_q1_ht2_image_loader.sv": "8a5dcf11b18b75a07512202c902ee7cdd74ba0a300144f1515fccc6b4c9d81a1",
+              "rtl/anvil_q1_ht2_kv.sv": "02868a3c8ded1282bbcae3d8599b44625ecaca83b032bdebd2c3278592f4e74e",
+              "rtl/anvil_q1_ht2_kv_reader.sv": "37da80c94ffc85af55660ca2a4866cef7a0459ae3cb1e03be0e70422c357e3e2",
+              "rtl/anvil_q1_ht2_kv_writer.sv": "ec8cd2af1cd088561401d12365f2e0f9a658c2031a38e716d3ceaf10839b8ce2",
+              "rtl/anvil_q1_ht2_mac_lane.sv": "e3f7cfc3fbe024df536110026e694b95f9a375bcb094d8d8e235e16311e93563",
+              "rtl/anvil_q1_ht2_mailbox.sv": "1328eebcf1b463411532f562d61c7b26420c9098f80230666309a7cceb5d588b",
+              "rtl/anvil_q1_ht2_panel_prefetch.sv": "c23cc9aed92e914220e36c40acc92328be88d2f07d71c3e637f7e649778be49a",
+              "rtl/anvil_q1_ht2_parameters.sv": "171daabb86f5bf5e8b3d8a7ae534ba4bb590946d33691388f6bad8ca59614941",
+              "rtl/anvil_q1_ht2_projection.sv": "fa59f2ff01f13944db773c0625d5e72d095190b5c71c88201f5706aebfa58539",
+              "rtl/anvil_q1_ht2_provisional_kv.sv": "4c304ac224ce001f5059d3c9e75699ff32de0d782a19aae55047dc8c24a448dc",
+              "rtl/anvil_q1_ht2_reset_sync.sv": "980cf54061d1eab292c2da976d50b222127af246eba86e64102cd62a842aafd0",
+              "rtl/anvil_q1_ht2_response_fifo.sv": "b049f54da42ce39a8ec3e3b8efbe6cc66d5a0efd380e2ee1e126904afacc7f92",
+              "rtl/anvil_q1_ht2_rmsnorm.sv": "60dbbe783139371c07317660146a3de77af68616284afd6eb5a33dffda57f243",
+              "rtl/anvil_q1_ht2_rope.sv": "c0a21e4e2fadde9c88b5c0c4881765f6a430b87d2f7b08d0948da12bc3d5f4cc",
+              "rtl/anvil_q1_ht2_rope_frequency.sv": "d568b3af5fe6a3af7cff6b836c1923627939a4c01cd38b531545354ce102e5d5",
+              "rtl/anvil_q1_ht2_scalar.sv": "79fa0852ada9c9fd21cfd7f22f05f1a8b29f5621febca7d71cb238f5ef1c3e8e",
+              "rtl/anvil_q1_ht2_sparse_dma.sv": "d91c27dfe87848707e4173c345e8bac36f622663257949c9adc776f4423f0b12",
+              "rtl/anvil_q1_ht2_spec_verifier.sv": "41da3dfbd82aea10a43540b2fdc94eeb8ac4b753b85beae2d068aa8d564719bc",
+              "rtl/anvil_q1_ht2_swiglu.sv": "434c5b9b78552ee542efeced46c65cb2dde01cc8a2f31a016e1a8513eda02389",
+              "rtl/anvil_q1_ht2_swiglu_engine.sv": "b1001e21f1b982418927b7b88884cbf14ccc909673447bf30a82a9c3c862c580",
+              "rtl/anvil_q1_ht2_tile_batch_mac.sv": "3fed00df9dc2fbeb0fba80d5e76b07156f200afe3f756f605039581f817cb128",
+              "rtl/anvil_q1_ht2_top.sv": "7b18781a7bf0947d1df893a9b886b7c9e4087f5d4ce2660b55712595b98546f9",
+              "rtl/anvil_q1_ht2_transport.sv": "63404b33601f8a32242bd214672ff0d278d7eb645e75c936100648b41575f824",
+              "rtl/anvil_q1_ht2_tree_mask.sv": "3c4b906996ba72e6e99dba37db77b77afb6e54b0425283641fd041683bb6f8f8",
+              "rtl/anvil_q1_ht_00_numeric_pkg.sv": "ae51b6d363a48bf7940c7acfdbd018ad40cc7ee099fd909051088df1bf565018",
+              "rtl/anvil_q1_ht_address.sv": "67a885e072b422ea8c765c8840ec27b4a7f5acb8bf7d41d02f1bca85fbd1b20e",
+              "rtl/anvil_q1_ht_avalon_mux.sv": "3f4585a9a707711b146980faed298f8fbea10342c3cb41f04d263ea7bd3a5c4a",
+              "rtl/anvil_q1_ht_cdc_mailbox.sv": "d02f035c7dbb115ebae2c15d8b8f3f37ba3a6bc6065cf2cc4de8d520295ba8d0",
+              "rtl/anvil_q1_ht_compat_projection.sv": "5374b0b6c1041aeed60530d335fd4dd0a3fc53b50ab22a31d2df8787fe4a798a",
+              "rtl/anvil_q1_ht_ddr_scalar.sv": "7b10a03d81122e8e47871828e6e208543cbfea15f5e12092d0292584b6708841",
+              "rtl/anvil_q1_ht_decoder.sv": "d77cc4c164529209d3f4e7da6acb333cbbe0f3bd97020b0e550c9cf8f6973cc9",
+              "rtl/anvil_q1_ht_dequant.sv": "a53bb14a75f882e2716600b41bc59404f0d997fde614aca275a6bfe9842c94bb",
+              "rtl/anvil_q1_ht_descriptors.sv": "adde34ead2fcdb50484c6aab3c64c6332b60003f06ba0040c6dba5c2e8ea63d1",
+              "rtl/anvil_q1_ht_divide.sv": "4f54a238955bd689ea4421618d29f4c8b289e2c3ff92dc93d0057dae7c611110",
+              "rtl/anvil_q1_ht_image_guard.sv": "49bc7a2241049118b4f3990f3b192a7891f5cacc8dbe71b7af47b7d9143c64c8",
+              "rtl/anvil_q1_ht_isqrt.sv": "f5a582bec36f72d74f4d929950dbb85389391dce2b48919382945349d3f63e0c",
+              "rtl/anvil_q1_ht_kernel.sv": "39bd7a185be0da98ff511510aab820d2d2a136fe83f463f78ab7fe1f3d3ea0b9",
+              "rtl/anvil_q1_ht_kv_window.sv": "da43297f981e3ef10827d36f60e7a7af7306da304af41f6a58b8db0def5ac3fe",
+              "rtl/anvil_q1_ht_logical_memory.sv": "57fdb6201ac1b8f9f2f5415068342b3d22dbbac98be57cfc522fd14b840a19ce",
+              "rtl/anvil_q1_ht_mac_lane.sv": "5e4d2c208246107f6cff9e5298f4227a71f7624737cb6afae222d88fb6dbf057",
+              "rtl/anvil_q1_ht_math.sv": "b9805a5045489eeee5aa3741fbab82ecae5e6a1a13cc83e464c3705d4c402ca1",
+              "rtl/anvil_q1_ht_nonlinear.sv": "51ffe72b7c1a5cdc084b7f7d97adeaa2bbcdf5ab97ce5fca656e8a83965fa839",
+              "rtl/anvil_q1_ht_parameters.sv": "fb69b13c80786b1820ba1851f12836b814b662bad66fbbae943c5c2af34011a4",
+              "rtl/anvil_q1_ht_projection.sv": "7c7a44477e6f1c310ca999330540aaa1a0b50b0ffab706c237898cdb919cb154",
+              "rtl/anvil_q1_ht_reset_sync.sv": "294ee9c467d370837baf3892da5eb7adc2cd3c4388d770d504b69bbc1572df8f",
+              "rtl/anvil_q1_ht_tensor_array.sv": "ec97fb76b3b71003eeb23c9f5755d1e23fdaed8476fb17fb01ec18dfd4aec1c6",
+              "rtl/anvil_q1_ht_tile_bank.sv": "5cea641eef271d314dadd4e58ee0b66082e9a3e6f321f3cb9faf8227d699aa23",
+              "rtl/anvil_q1_ht_top.sv": "629ee9231ab5945208c222590167dec508186addeb2005b33136eace010e5af0",
+              "rtl/anvil_q1_ht_transaction_mux.sv": "6a9f44fc6386bbc0b0525ed821872337a35974a883b6eaf41b19f97114aa56b5",
+              "rtl/anvil_q1_ht_weight_dma.sv": "e92481e72608a478b0d4ecb7772735be0ec7578fce40dce649cceafdf91cc06f",
+              "rtl/anvil_q1_ht_weight_stream.sv": "85a81603f95731488fdd04e44b919cbd395282fdf6a1a32239cc50cb9b486b04",
+              "rtl/anvil_q1_ht_weight_tiles.sv": "43797938629b2f8a11e3b677bd885b6e1d74e29fc0cdd79b03a61f5bbe108a24",
+              "rtl/anvil_q1_top.sv": "f2a49a3389a5f2b746b57cab3bf051be5247552138b2892a45a08233034c8df9",
+              "tests/benchmark_checks.py": "2fe05111df02827e333e4b5556fc0375ee004ba485e6df97773c8b994f3e4630",
+              "tests/benchmark_manifest.py": "1cbf52073d2de17687a4e6dfa04bf03de1bdf758c915e1c7d4787bcf5b75ad94",
+              "tests/checkpoint_images.py": "43c281d573d5135891a97ae581e8020a3423f781818a03001c3d9a70c55f283f",
+              "tests/compact_workload.py": "59f3810151b9b777e3bd122a7ae072b964416defcc6df15f80ee558d5cfec8ff",
+              "tests/compatibility_checks.py": "9157cbefe0ea11c09aa2a7d97cc5754b23eee12114d210804e6c3ff197103f31",
+              "tests/decoder_reference.py": "0b35ea7410d5390e73a6a4a6ca9d8c0dc4d17cb1d96f380d5b672ccbec1c985f",
+              "tests/evidence.py": "461249aa4ea89817ba8533219e3e076f83059ad38180558da6de52e078cbab0d",
+              "tests/hardware_workload.py": "9b3283860d6a5e3d6cec431ecd71cb0e3aea3387a3fe29904a1f3c1f1b805cd9",
+              "tests/ieee_reference.py": "d0b8c6752028f01cc44e45a4963b602b6d4f04d964e8de8d65631c42d4c6edee",
+              "tests/integration_checks.py": "b292ce2c3a6be2a5c890defda9a79938af4a5031421fd5088bfbf0a22fee964c",
+              "tests/leaf_checks.py": "6d1f3018214917f52f5c60a3569e3c89872a96a6b0811dc2668fcd12f664dd3f",
+              "tests/mutation_checks.py": "e175ab6e06ad4ca00a89f1eb00509adbd0b138cd70b3a69b3a510d14dd8aae5f",
+              "tests/operator_checks.py": "4ac772b34c2602cc76be5091250538b01071533ea55d3fa345880b468a90b43e",
+              "tests/parameter_checks.py": "19a6bbaf81e3eafac2f4e1560f9b0bad10b2a4d74aa06725112cd42c7b4c99fc",
+              "tests/protocol_checks.py": "5bb7585bfda2cd78465d9e5ba4f852e3f801669a254e3a76549b07ba5d968768",
+              "tests/suites.py": "0706386b0b144beb50f605ca9f4055443cf9beaeaa9039afdfc80bb37f83147b",
+              "tests/synthesis_checks.py": "32fd94bf318818be789d53687cdb73f4883cacc897274976a87ce904aa7b077f",
+              "tests/tooling_checks.py": "9b9f0e8875de5c6daacec23ff34bfcedb9afa02f51b191f8306964f9f8753330",
+              "tests/verify.py": "9013bd58dcd56da8e9ab86ce9a597bd0a7ea267cdfa6ef6027d8855cf056720d"
+            },
+            "source_unchanged": true,
+            "start_time": "2026-11-02T16:14:04.978735+00:00",
+            "status": "passed",
+            "stderr": "stderr.txt",
+            "stdout": "stdout.txt",
+            "suite": "synthesis",
+            "timed_out": false,
+            "timeout_s": 2700,
+            "tool_versions": "See source-bound child receipts"
+          }
+        }
+      ]
+    }
+  }
+}

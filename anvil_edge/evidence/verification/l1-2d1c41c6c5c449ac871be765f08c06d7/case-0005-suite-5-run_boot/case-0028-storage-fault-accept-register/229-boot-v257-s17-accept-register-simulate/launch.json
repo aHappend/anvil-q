@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0028-storage-fault-accept-register/boot-v257-s17-accept-register/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0028-storage-fault-accept-register/boot-v257-s17-accept-register-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:48:44.108478+00:00",
+  "pid": 1089571,
+  "process_group": 1089571,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58925137920,
+    "available_inodes": 195612951,
+    "observed_utc": "2026-10-31T15:48:44.108562+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528196538368
+  }
+}

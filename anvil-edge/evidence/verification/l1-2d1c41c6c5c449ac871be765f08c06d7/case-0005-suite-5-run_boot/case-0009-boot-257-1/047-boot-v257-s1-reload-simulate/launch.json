@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0009-boot-257-1/boot-v257-s1-reload/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0009-boot-257-1/boot-v257-s1-reload-input/flash.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0009-boot-257-1/boot-v257-s1-reload-input/undersized.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:47:34.861585+00:00",
+  "pid": 1068395,
+  "process_group": 1068395,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 59024621568,
+    "available_inodes": 195614706,
+    "observed_utc": "2026-10-31T15:47:34.861714+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528097054720
+  }
+}

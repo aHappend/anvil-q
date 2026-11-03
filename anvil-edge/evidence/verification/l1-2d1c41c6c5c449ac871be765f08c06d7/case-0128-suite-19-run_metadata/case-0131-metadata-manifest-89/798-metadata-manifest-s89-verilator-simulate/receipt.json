@@ -1,0 +1,56 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0128-suite-19-run_metadata/case-0129-metadata-manifest-1/metadata-manifest-s1-verilator/obj/simulation",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0128-suite-19-run_metadata/case-0131-metadata-manifest-89/metadata-manifest-s89-verilator-input/ddr.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.15483579388819635,
+  "end_utc": "2026-10-31T15:56:35.636522+00:00",
+  "exit_code": 0,
+  "index": 798,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.861504279077053e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.9643517727963626,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.073583,
+    "user_cpu_s": 0.043752
+  },
+  "start_utc": "2026-10-31T15:56:35.477305+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0128-suite-19-run_metadata/case-0131-metadata-manifest-89/798-metadata-manifest-s89-verilator-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0128-suite-19-run_metadata/case-0131-metadata-manifest-89/798-metadata-manifest-s89-verilator-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 58041704448,
+    "available_inodes": 195594461,
+    "observed_utc": "2026-10-31T15:56:35.636626+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529079971840
+  },
+  "storage_before": {
+    "available_bytes": 58041892864,
+    "available_inodes": 195594466,
+    "observed_utc": "2026-10-31T15:56:35.478135+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529079783424
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

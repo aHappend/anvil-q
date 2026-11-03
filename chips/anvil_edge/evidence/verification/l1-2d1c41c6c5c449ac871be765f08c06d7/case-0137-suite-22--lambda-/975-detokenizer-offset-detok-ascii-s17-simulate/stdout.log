@@ -1,0 +1,3 @@
+[465000] %Fatal: compiled-bench.sv:83: Assertion failed in TOP.bench: DETOK_LOOKUP item=4 expected=0000000000004020 observed=0000000000004024
+%Error: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0137-suite-22--lambda-/detokenizer-offset-detok-ascii-s17/compiled-bench.sv:83: Verilog $stop
+Aborting...

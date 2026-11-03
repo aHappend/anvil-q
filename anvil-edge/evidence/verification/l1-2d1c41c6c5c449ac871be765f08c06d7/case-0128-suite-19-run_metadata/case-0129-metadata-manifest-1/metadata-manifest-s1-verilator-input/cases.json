@@ -1,0 +1,189 @@
+{
+  "scope": "Structural metadata validation only; version labels do not certify tables. Successful helper transactions restart through start; rejected helper transactions require reset, as supplied by the production boot loader. The separate SPI tests verify public boot-loader reload/error recovery.",
+  "seed": 1,
+  "cases": [
+    [
+      "unchanged-v1",
+      {},
+      0
+    ],
+    [
+      "explicit-v2",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576
+      },
+      0
+    ],
+    [
+      "unsupported-0",
+      {
+        "0": 0
+      },
+      6
+    ],
+    [
+      "unsupported-3",
+      {
+        "0": 3
+      },
+      6
+    ],
+    [
+      "unsupported-4294967295",
+      {
+        "0": 4294967295
+      },
+      6
+    ],
+    [
+      "v1-reserved-24",
+      {
+        "24": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-25",
+      {
+        "25": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-26",
+      {
+        "26": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-27",
+      {
+        "27": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-28",
+      {
+        "28": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-29",
+      {
+        "29": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-30",
+      {
+        "30": 1
+      },
+      6
+    ],
+    [
+      "v1-reserved-31",
+      {
+        "31": 1
+      },
+      6
+    ],
+    [
+      "v2-reserved-26",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576,
+        "26": 1
+      },
+      6
+    ],
+    [
+      "v2-reserved-27",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576,
+        "27": 1
+      },
+      6
+    ],
+    [
+      "v2-reserved-28",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576,
+        "28": 1
+      },
+      6
+    ],
+    [
+      "v2-reserved-29",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576,
+        "29": 1
+      },
+      6
+    ],
+    [
+      "v2-reserved-30",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576,
+        "30": 1
+      },
+      6
+    ],
+    [
+      "v2-reserved-31",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576,
+        "31": 1
+      },
+      6
+    ],
+    [
+      "v2-explicit-zero-not-inherited",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 0,
+        "25": 0
+      },
+      0
+    ],
+    [
+      "recovery-v1",
+      {},
+      0
+    ],
+    [
+      "recovery-v2",
+      {
+        "0": 2,
+        "8": 1048576,
+        "24": 589824,
+        "25": 1048576
+      },
+      0
+    ]
+  ]
+}

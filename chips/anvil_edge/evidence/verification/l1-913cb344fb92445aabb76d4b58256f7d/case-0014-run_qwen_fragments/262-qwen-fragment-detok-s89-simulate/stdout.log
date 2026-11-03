@@ -1,0 +1,3 @@
+DETOK_REQUESTS 631
+COMPARED 1079
+- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-detok-s1/compiled-bench.sv:1268: Verilog $finish

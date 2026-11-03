@@ -1,0 +1,170 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 307200,
+      "bytes": 304094,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__ALL.a",
+      "sha256": "fb4948e9eb2718e0b417117254b362b2e7fb9beef16e854d687f60cc945980af"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 467,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__ALL.cpp",
+      "sha256": "912807196402f143283bd3652aacfe855f13601a85f40b06a45b6b27af9d3fe2"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 715,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__ALL.d",
+      "sha256": "e830d0807dfc7ab1f2148e9a3c5278edb33a1c792b19775397f45d225b7d0de1"
+    },
+    {
+      "allocated_bytes": 299008,
+      "bytes": 297528,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__ALL.o",
+      "sha256": "074e014c16929e867d5682b3e1eb3442706ce44c8a1ddb06a9e6f914b6dcfbb0"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1770,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "4496dab83ef8d72faf0a9bb770c0c7c1e47ce1347b429da850e39d8d55fd3b23"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1236,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__Syms.cpp",
+      "sha256": "4aa163be8a40469c44bf99c1ec60b3342f1d33406fb901f134af0d3b265a94e2"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1126,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__Syms.h",
+      "sha256": "23820c3089e32a0a8a1b86c8fc3848247cd9492be2da95b2fbb849e6fef0dffe"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19096,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench___024root.h",
+      "sha256": "f1a42b491a08442d9b51fc0723f83b7dab75477e65d1bc569ca908fa03034b7f"
+    },
+    {
+      "allocated_bytes": 348160,
+      "bytes": 346269,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "601f649de257b6ecdc2fa9d2309dbfe0855eda66459421fbd3580773b08c25dd"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 24997,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "c9ccbc8e67d33ed78e05f123668ac0481fbe43f59d20aab172be388df9e59dff"
+    },
+    {
+      "allocated_bytes": 278528,
+      "bytes": 276973,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "a84336250303292f7ab770ea9c00ca73729c445ce15e57313813bc69117ce52f"
+    },
+    {
+      "allocated_bytes": 110592,
+      "bytes": 107254,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "b75f79dd5227050a499b170f96739cb6d04ce6aa18b1982f6b66782d1fd032b6"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2538,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__ver.d",
+      "sha256": "3f1a067fc798bfe143461b6e6f708897adbc06f83c4b15bfeb0fd95e23a6744a"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5130,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench__verFiles.dat",
+      "sha256": "20287217d300d0c02831245eceae03fc566be33257a75c27a28b921a4996426a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1696,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/Vbench_classes.mk",
+      "sha256": "d83ef5d066ae2a5943cea20655ba641a774fea502d243a216c51038ac870b3fa"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0085-suite-15-run_memory/memory-concurrent-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:51:24.459118+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

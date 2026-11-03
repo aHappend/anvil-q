@@ -1,0 +1,3 @@
+BOOT_TRANSACTIONS writes=4409 reads=22637 acknowledgements=27046
+COMPARED 27047
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0069-storage-fault-scalar-pool/boot-v257-s17-scalar-pool/compiled-bench.sv:4619: Verilog $finish

@@ -1,0 +1,55 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/obj/simulation",
+    "+verification_seed=89"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.10258283419534564,
+  "end_utc": "2026-10-31T15:37:02.455028+00:00",
+  "exit_code": 0,
+  "index": 191,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.2604054063558578e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.8052134439349174e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 51200,
+    "output_blocks": 8,
+    "system_cpu_s": 0.081408,
+    "user_cpu_s": 0.0031309999999999997
+  },
+  "start_utc": "2026-10-31T15:37:02.350813+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/191-bpe-maximum-rank-s89-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/191-bpe-maximum-rank-s89-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 61905186816,
+    "available_inodes": 195631535,
+    "observed_utc": "2026-10-31T15:37:02.455102+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525216489472
+  },
+  "storage_before": {
+    "available_bytes": 61905272832,
+    "available_inodes": 195631538,
+    "observed_utc": "2026-10-31T15:37:02.351233+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525216403456
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

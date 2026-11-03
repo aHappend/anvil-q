@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/sqrt-w128-s17/simulation.vvp",
+    "rtl/anvil_edge_isqrt128.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/sqrt-w128-s17/bench.sv"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:50.673156+00:00",
+  "pid": 1007111,
+  "process_group": 1007111,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61971824640,
+    "available_inodes": 195632117,
+    "observed_utc": "2026-10-31T15:36:50.673249+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525149851648
+  }
+}

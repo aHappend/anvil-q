@@ -1,0 +1,11 @@
+--- rtl/anvil_edge_tensor_mapper.sv
++++ mutant-offset/mapper.sv
+@@ -180,7 +180,7 @@
+         cache_layer[cache_victim]<=request_layer;
+         cache_projection[cache_victim]<=request_projection;
+         cache_storage_kind[cache_victim]<=storage_kind;
+-        cache_offset[cache_victim]<=region_offset;
++        cache_offset[cache_victim]<=region_offset+64'd4;
+         cache_extent[cache_victim]<=region_extent;
+         cache_rows[cache_victim]<=region_rows;
+         cache_columns[cache_victim]<=region_columns;

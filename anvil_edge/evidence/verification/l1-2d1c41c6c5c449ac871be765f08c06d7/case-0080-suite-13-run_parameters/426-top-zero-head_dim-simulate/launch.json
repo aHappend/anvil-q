@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/top-zero-head_dim/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:08.477600+00:00",
+  "pid": 1135204,
+  "process_group": 1135204,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58764947456,
+    "available_inodes": 195606304,
+    "observed_utc": "2026-10-31T15:51:08.477681+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528356728832
+  }
+}

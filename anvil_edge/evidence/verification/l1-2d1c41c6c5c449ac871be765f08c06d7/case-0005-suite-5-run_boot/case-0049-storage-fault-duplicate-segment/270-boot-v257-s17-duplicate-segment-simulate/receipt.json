@@ -1,0 +1,56 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0037-storage-fault-descriptor-flags/boot-v257-s17-descriptor-flags/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0049-storage-fault-duplicate-segment/boot-v257-s17-duplicate-segment-input/flash.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.1534729888662696,
+  "end_utc": "2026-10-31T15:49:24.202885+00:00",
+  "exit_code": 0,
+  "index": 270,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.7210917323827744e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 8.013501005945727,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 62972,
+    "output_blocks": 8,
+    "system_cpu_s": 0.081076,
+    "user_cpu_s": 0.059524
+  },
+  "start_utc": "2026-10-31T15:49:24.047529+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0049-storage-fault-duplicate-segment/270-boot-v257-s17-duplicate-segment-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0049-storage-fault-duplicate-segment/270-boot-v257-s17-duplicate-segment-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 58938081280,
+    "available_inodes": 195612451,
+    "observed_utc": "2026-10-31T15:49:24.203014+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528183595008
+  },
+  "storage_before": {
+    "available_bytes": 58947747840,
+    "available_inodes": 195612437,
+    "observed_utc": "2026-10-31T15:49:24.048096+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528173928448
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

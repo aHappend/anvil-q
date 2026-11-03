@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "status": "bounded-official-qwen-and-deepseek-tokenizer-preparation-not-appliance-acceptance",
+  "policy": "No unpinned downloads, invented hashes, synthetic replacement for official coverage or runtime software inference is authorized. Populate actual revision, license, ordered file hashes and preprocessing semantics before executing official-profile/model cases. This is a missing-input manifest, not asset provenance or an authenticated boot claim.",
+  "official_tokenizers": [
+    {
+      "family": "Qwen2.5 text BPE",
+      "family_id": 1,
+      "available": true,
+      "availability_scope": "Pinned assets, executed official software oracle, bounded complete-table public-port tokenizer/detokenizer comparisons and a separate SPI-to-DDR boot scan; no full-shell official weighted inference",
+      "identity": "Qwen/Qwen2.5-0.5B-Instruct",
+      "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "license": "Apache-2.0",
+      "unicode_version": null,
+      "normalization": "NFC",
+      "preprocessing": "Raw text, no chat template, no automatic BOS; preserve the pinned ordered Split regex, ByteLevel byte mapping and AddedToken policies",
+      "unicode_semantics_status": "Pinned candidate source maps use primary-UCD-audited Unicode16 classification/case folding and Unicode9 normalization. tests/qwen_integration.py now measures agreement against the actual installed tokenizers==0.21.4 oracle: 1112064 scalar NFC comparisons, 1112064 scalar-context Split comparisons, 3000 seeded ordered-Split comparisons and 93610 NFC conformance comparisons. Version2 metadata labels these source-table semantics independently. Actual installed files are hashed; embedded Rust dependency versions are not inferred from candidate crates. This is measured agreement on the recorded domain, not an exhaustive string-level proof or Python Unicode substitution",
+      "conversion_status": "tests/qwen_integration.py combines all fifteen table kinds from the pinned vocabulary/merge/AddedToken, Unicode/NFC and tagged-DFA converters. All 151665 tokens, 151387 ranked merges, 256 byte mappings and 22 AddedTokens are retained without invented padding. A 66-case corpus compares independent software token vectors with the official library, then compares complete RTL token and decoded-byte vectors at seeds1/17/89. A separate complete SPI boot image contains these genuine tokenizer tables and synthetic H8/L1 zero weights; no real-model or default-geometry inference is claimed",
+      "official_reference_status": "Executed project-local tokenizers==0.21.4 oracle; installed-library file hashes and complete official vectors are retained in each new preparation invocation",
+      "rtl_integration_status": "Bounded public-port tokenizer/detokenizer matrix and separate real boot-loader validation passed in advisory preparation; official full-shell UART/bypass inference and reload integration remain required",
+      "complete_profile_source": "tests/qwen_integration.py",
+      "complete_profile_reproduction": "python3 tests/verify.py --probe official-qwen-integration",
+      "complete_profile_receipt": "evidence/preparation/official-qwen-integration-42c232094e2744d8a5fca453decb18ba/receipt.json",
+      "complete_boot_reproduction": "python3 tests/verify.py --probe official-qwen-boot",
+      "complete_boot_receipt": "evidence/preparation/official-qwen-boot-da4f2d23df664b2b9329f48f7f3140ac/receipt.json",
+      "bundle_sha256": "77d274c5ebbbbb911c7a99d5ab81f9a754d736673b17fadd30dec2e42247a337",
+      "ordered_files": [
+        {
+          "path": "tests/data/qwen-LICENSE",
+          "upstream_path": "LICENSE",
+          "bytes": 11343,
+          "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+        },
+        {
+          "path": "tests/data/qwen-tokenizer.json",
+          "upstream_path": "tokenizer.json",
+          "bytes": 7031645,
+          "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+        },
+        {
+          "path": "tests/data/qwen-tokenizer_config.json",
+          "upstream_path": "tokenizer_config.json",
+          "bytes": 7305,
+          "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+        },
+        {
+          "path": "tests/data/qwen-vocab.json",
+          "upstream_path": "vocab.json",
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        },
+        {
+          "path": "tests/data/qwen-merges.txt",
+          "upstream_path": "merges.txt",
+          "bytes": 1671839,
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+        }
+      ]
+    },
+    {
+      "family": "DeepSeek-V3 text BPE",
+      "family_id": 2,
+      "available": true,
+      "availability_scope": "Pinned raw assets, independent preprocessing/BPE/byte comparisons and complete-table public-port tokenizer/detokenizer RTL comparisons. SPI boot and full-shell weighted inference remain separate checks",
+      "identity": "deepseek-ai/DeepSeek-V3",
+      "revision": "e815299b0bcbac849fa540c768ef21845365c9eb",
+      "license": "Upstream LICENSE-CODE (MIT) and LICENSE-MODEL (DeepSeek Model License); both retained verbatim; no blanket SPDX grant inferred",
+      "unicode_version": "16.0.0 candidate classification data, measured against installed tokenizers==0.21.4; not inferred library linkage",
+      "normalization": "Identity (Sequence with no normalizers)",
+      "preprocessing": "Three ordered Isolated Split expressions followed by ByteLevel without prefix-space insertion or its own regex. Explicit raw tokenizer.json policy: add_special_tokens=False, literal AddedTokens enabled, identity normalization, no automatic BOS/EOS. A separate metadata-driven profile prepends BOS ID0 exactly once according to tokenizer_config.json and does not append EOS. The installed tokenizers backend with TemplateProcessing cross-checks independently prefixed vectors. Transformers itself and chat templates are not executed or certified",
+      "conversion_status": "tests/deepseek_integration.py serializes all fifteen table kinds, retaining 128815 complete token IDs (128000 base entries, 818 AddedTokens with three shared IDs), all 127741 ranked merges and 256 byte mappings. tests/deepseek_dfa.py composes the three Isolated Split stages into 24 tagged-DFA states over 17 classes, compared independently with exhaustive symbolic and seeded span vectors. No real-model inference result",
+      "preprocessing_status": "Independent primary-UCD16 category/whitespace parsing, 3345237 official individual-Split comparisons and 3015 chained ByteLevel comparisons passed; 881 independent complete BPE/byte vectors include all AddedTokens and all five exact benchmark prompts. Measured agreement is not an exhaustive string-level proof",
+      "complete_profile_reproduction": "python3 tests/verify.py --probe official-deepseek-integration",
+      "complete_profile_receipt": "evidence/preparation/official-deepseek-integration-bc5404faec754b63a777bc340f4162e6/receipt.json",
+      "model_bos_reproduction": "python3 tests/verify.py --probe official-deepseek-bos",
+      "model_bos_policy": "Separate from the unchanged raw-text fixture. Metadata words5/6 enable one automatic BOS ID0, including when literal input already begins with BOS. Compare all881 original input vectors, complete token vectors and exact bytes with skip_special_tokens=False. Preserve the raw AddedToken normalized=false and identity normalization; tokenizer_config.json normalized=true is recorded rather than silently treated as an identical asset field. This is declared single-sequence policy coverage, not execution of an unavailable Transformers wrapper",
+      "model_bos_initial_receipt": "evidence/preparation/official-deepseek-bos-53e4c1f8a7a44ca7875038cbb9e7aa84/receipt.json",
+      "model_bos_mutation_receipt": "evidence/preparation/official-deepseek-bos-54dc6bb547594ceea324804984fbc558/receipt.json",
+      "complete_boot_reproduction": "python3 tests/verify.py --probe official-deepseek-boot",
+      "complete_boot_receipt": "evidence/preparation/official-deepseek-boot-945fd24edeb04873936bc5fce89f41e3/receipt.json",
+      "rtl_integration_status": "Complete table-driven public tokenizer/detokenizer vectors passed at seeds1/17/89: 880 vectors at default prompt capacity4096, plus the original 27508-byte whole-AddedToken concatenation at legal capacity32768. A compact combining-character vector also passed four-state Icarus. These are preparation results, not full-shell/boot/weighted inference acceptance",
+      "raw_intake_receipt": "evidence/preparation/official-deepseek-intake-b72c3826f23745bebbc8138b735ae3b9/receipt.json",
+      "asset_validation_reproduction": "python3 tests/verify.py --probe official-deepseek-assets",
+      "official_reference_reproduction": "python3 tests/verify.py --probe official-deepseek-reference",
+      "bundle_sha256": "96659aa8910bec1726c42e2e370935d88004b752d278270231260313c82d06a3",
+      "ordered_files": [
+        {
+          "path": "tests/data/deepseek-LICENSE-CODE",
+          "upstream_path": "LICENSE-CODE",
+          "bytes": 1064,
+          "sha256": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7"
+        },
+        {
+          "path": "tests/data/deepseek-LICENSE-MODEL",
+          "upstream_path": "LICENSE-MODEL",
+          "bytes": 13759,
+          "sha256": "ccfee4895df06bcab524151c278e8dde88bbe76165a24ecbcbcf9fafd71fd2b3"
+        },
+        {
+          "path": "tests/data/deepseek-README.md",
+          "upstream_path": "README.md",
+          "bytes": 19626,
+          "sha256": "3739763a851074c810f1565f9823956f3a095231f8c591dd3c254581bdd3cf08"
+        },
+        {
+          "path": "tests/data/deepseek-tokenizer.json",
+          "upstream_path": "tokenizer.json",
+          "bytes": 7847652,
+          "sha256": "621ac2e32d0dba658404412318818aaa8ce8cda492e59830109d8da6b517fb41"
+        },
+        {
+          "path": "tests/data/deepseek-tokenizer_config.json",
+          "upstream_path": "tokenizer_config.json",
+          "bytes": 3128,
+          "sha256": "637bcd1a08cf7c772ce6a383196b22930921c79c3c73223c5afc0c7f41545546"
+        }
+      ]
+    },
+    {
+      "family": "Llama-3.2 text BPE",
+      "family_id": 3,
+      "available": false,
+      "identity": "meta-llama/Llama-3.2-1B-Instruct",
+      "revision": "9213176726f574b556790deb65791e0c5aa438b6",
+      "license": "Public API declares llama3.2; license text not retrieved and no agreement accepted",
+      "availability_scope": "Public official API resolves immutable provenance, but unauthenticated HEAD of that revision's tokenizer.json returns HTTP401 with X-Error-Code GatedRepo. No credentials, mirrors or access bypass used; no payload hashes, conversion or official vectors are available",
+      "access_reproduction": "python3 tests/verify.py --probe official-llama-discovery",
+      "access_receipt": "evidence/preparation/official-llama-discovery-2c4292de31e7481099815905c449f9a5/receipt.json",
+      "unicode_version": null,
+      "normalization": null,
+      "ordered_files": []
+    }
+  ],
+  "real_quantized_models": {
+    "available": false,
+    "identity": null,
+    "revision": null,
+    "license": null,
+    "quantization": null,
+    "ordered_files": [],
+    "required_default_geometry": {
+      "NUM_LAYERS": 24,
+      "HIDDEN_SIZE": 896,
+      "INTERMEDIATE_SIZE": 4864,
+      "NUM_Q_HEADS": 14,
+      "NUM_KV_HEADS": 2,
+      "HEAD_DIM": 64,
+      "GROUP_SIZE": 128,
+      "AWQ_BITS": 4,
+      "VOCAB_SIZE": 151936,
+      "MAX_SEQ_LEN": 32768
+    },
+    "missing": [
+      "Actual immutable embedding/output/AWQ4/scales/zero-point/bias/norm/RoPE tensors compatible with the frozen numerical contract",
+      "Provenance-pinned independent tokenizer and identical quantized-weight reference outputs for all required benchmark/profile combinations",
+      "Documented preprocessing, lane permutation, magnitude rounding, tensor extents and complete cryptographic file hashes"
+    ]
+  },
+  "physical_integration": {
+    "available": false,
+    "missing": [
+      "Real board wrapper instantiating the shell and installed Arria 10 DDR4 controller/PHY",
+      "Installed/generated DDR4 QIP inputs and actual calibration path",
+      "Complete board and DDR clocks/SDC constraints, actual pin and I/O-standard assignments",
+      "Board description consumed by fpga/create_project.tcl, declared installed DDR and SPI NOR capacities/address mode sufficient for real assets",
+      "Physical 10AX115N2F45E1SG target and hardware bridge for autonomous real-memory inference observations"
+    ],
+    "note": "Command-name discovery does not establish licensed Quartus 17.1/device support or hardware availability. The shared runtime owns native gate execution; no native gate pass is claimed."
+  }
+}

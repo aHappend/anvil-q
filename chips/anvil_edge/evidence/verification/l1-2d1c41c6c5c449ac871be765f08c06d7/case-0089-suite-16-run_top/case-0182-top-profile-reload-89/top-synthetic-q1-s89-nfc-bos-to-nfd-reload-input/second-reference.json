@@ -1,0 +1,14 @@
+{
+  "scope": "Synthetic profile-only reload; not official assets",
+  "image_sha256": "7f8cb9985416967b5c2854046bc26c0b12f99e72869ba0559892f9ac5be87b29",
+  "expected_prompt_tokens": [
+    101,
+    204,
+    129
+  ],
+  "expected_feedback_tokens": [
+    0
+  ],
+  "normalization": "NFD",
+  "bos": false
+}

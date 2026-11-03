@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/obj/simulation",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s89-input/directory.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:49:37.163748+00:00",
+  "pid": 1104890,
+  "process_group": 1104890,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58934816768,
+    "available_inodes": 195612176,
+    "observed_utc": "2026-10-31T15:49:37.163850+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528186859520
+  }
+}

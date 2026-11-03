@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "verilator",
+    "--binary",
+    "--timing",
+    "--assert",
+    "--timescale",
+    "1ns/1ps",
+    "--top-module",
+    "bench",
+    "-Wno-fatal",
+    "--x-initial",
+    "unique",
+    "--x-assign",
+    "unique",
+    "-j",
+    "2",
+    "-MAKEFLAGS",
+    "VK_PCH_I_FAST=\"-include Vbench__pch.h\" VK_PCH_I_SLOW=\"-include Vbench__pch.h\" --old-file=Vbench__pch.h.fast.gch --old-file=Vbench__pch.h.slow.gch",
+    "--Mdir",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/cache-mutant-offset/obj",
+    "-o",
+    "simulation",
+    "rtl/anvil_edge_parameters.sv",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/cache-defect-offset/mapper.sv",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/cache-mutant-offset/compiled-bench.sv"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:58:25.439300+00:00",
+  "pid": 1270675,
+  "process_group": 1270675,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 57882394624,
+    "available_inodes": 195591582,
+    "observed_utc": "2026-10-31T15:58:25.439981+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529239281664
+  }
+}

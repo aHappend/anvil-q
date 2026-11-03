@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/fifo-legal-depth-2/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.052655628183856606,
+  "end_utc": "2026-10-31T15:37:03.997447+00:00",
+  "exit_code": 0,
+  "index": 207,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 3.437511622905731e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.561587072908878e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 51200,
+    "output_blocks": 8,
+    "system_cpu_s": 0.010213,
+    "user_cpu_s": 0.001857
+  },
+  "start_utc": "2026-10-31T15:37:03.942856+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/207-fifo-legal-depth-2-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/207-fifo-legal-depth-2-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 61903515648,
+    "available_inodes": 195631399,
+    "observed_utc": "2026-10-31T15:37:03.997916+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525218160640
+  },
+  "storage_before": {
+    "available_bytes": 61898633216,
+    "available_inodes": 195631403,
+    "observed_utc": "2026-10-31T15:37:03.943362+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525223043072
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

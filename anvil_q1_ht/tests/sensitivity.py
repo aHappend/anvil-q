@@ -1,0 +1,262 @@
+"""Disposable compile-then-functional-rejection tests; originals are never edited."""
+
+import hashlib
+from pathlib import Path
+import shutil
+
+from experiments import dequant, dma_probe, kv_probe, math_probe, tensor, top_probe
+from arithmetic_benchmark import arithmetic_default
+from layer_benchmark import layer_default
+from attention_benchmark import attention_context
+from numerical_faults import fault_cases
+from descriptor_checks import descriptor_case
+from address_checks import address_case
+from scalar_checks import scalar_case
+from kv_faults import kv_fault_case
+from late_faults import late_read_case
+from projection_bandwidth import sensitivity_trial
+
+
+def stored_number_trial(evidence, seed, name):
+    fault = next(case for case in fault_cases() if case["name"] == name)
+    top_probe(evidence, fault["mode"], seed, numerical_fault=fault)
+
+
+def run_sensitivity(parent, seed, only=None):
+    cases = (
+        ("projection_bandwidth_lane_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: sensitivity_trial(run, seed), "BANDWIDTH_TENSOR_RESULT_MISMATCH"),
+        ("projection_bandwidth_dma_cursor", "anvil_q1_ht_weight_dma.sv",
+         "cursor <= {cursor[33:6] + 28'd1, 6'b0};",
+         "cursor <= {cursor[33:6] + 28'd2, 6'b0};",
+         lambda run: sensitivity_trial(run, seed), "BANDWIDTH_TENSOR_OPERAND_MISMATCH"),
+        ("tensor_bubble_accumulation", "anvil_q1_ht_mac_lane.sv",
+         "if (valid_pipe[3]) begin", "if (valid_pipe[3] || !in_valid) begin",
+         lambda run: tensor(run, seed), "TENSOR_MISMATCH"),
+        ("tensor_high_chunk_carry", "anvil_q1_ht_mac_lane.sv",
+         "{1'b0, accumulator_s[63:32]} + {1'b0, accumulator_c[63:32]} + {32'b0, carry};",
+         "{1'b0, accumulator_s[63:32]} + {1'b0, accumulator_c[63:32]};",
+         lambda run: tensor(run, seed), "TENSOR_MISMATCH"),
+        ("math_negative_tie", "anvil_q1_ht_math.sv",
+         "increment <= round_bit && lower_nonzero;",
+         "increment <= round_bit;",
+         lambda run: math_probe(run, seed), "MATH_MISMATCH"),
+        ("math_sqrt_boundary", "anvil_q1_ht_isqrt.sv",
+         "trial_divisor <= {30'b0, root, 2'b01};",
+         "trial_divisor <= {30'b0, root, 2'b10};",
+         lambda run: math_probe(run, seed), "MATH_MISMATCH"),
+        ("awq_permutation", "anvil_q1_ht_00_numeric_pkg.sv",
+         "awq_shift = {lane[0], lane[2:1], 2'b00};",
+         "awq_shift = {lane, 2'b00};",
+         lambda run: dequant(run, seed), "DEQUANT_MISMATCH"),
+        ("negative_tie", "anvil_q1_ht_mac_lane.sv",
+         "value[15:0] > 16'h8000", "value[15:0] >= 16'h8000",
+         lambda run: tensor(run, seed), "TENSOR_MISMATCH"),
+        ("lane_17_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: tensor(run, seed), "TENSOR_MISMATCH"),
+        ("response_cursor", "anvil_q1_ht_weight_dma.sv",
+         "cursor <= {cursor[33:6] + 28'd1, 6'b0};",
+         "cursor <= {cursor[33:6] + 28'd2, 6'b0};",
+         lambda run: dma_probe(run, 1), "DMA_DATA_MISMATCH"),
+        ("upload_byteenable_ignored", "anvil_q1_ht_weight_dma.sv",
+         "write_mask <= load_byteenable;",
+         "write_mask <= 64'hffffffffffffffff;",
+         lambda run: dma_probe(run, 3, seed, upload_validation=True),
+         "UPLOAD_AVALON_COMMAND_MISMATCH"),
+        ("upload_address_high_bit_lost", "anvil_q1_ht_weight_dma.sv",
+         "write_address <= load_address;",
+         "write_address <= {1'b0, load_address[31:0]};",
+         lambda run: dma_probe(run, 3, seed, upload_validation=True),
+         "UPLOAD_AVALON_COMMAND_MISMATCH"),
+        ("kv_tag_alias", "anvil_q1_ht_kv_window.sv",
+         "mask_data != 0 && tag_data == position && selected_valid",
+         "mask_data != 0 && selected_valid",
+         lambda run: kv_probe(run, 1), "KV_DATA_OR_TAG_MISMATCH"),
+        ("kv_default_layer_alias", "anvil_q1_ht_kv_window.sv",
+         "lookup_word = lookup_entry*KV_WIDTH + column;",
+         "lookup_word = ((layer & 32'd15)*KV_WINDOW + "
+         "{{(32-SLOT_BITS){1'b0}}, slot})*KV_WIDTH + column;",
+         lambda run: kv_probe(run, 128, max_sequence=32768, layers=24, head_dim=64),
+         "KV_DATA_OR_TAG_MISMATCH"),
+        ("kv_eviction_error_ignored", "anvil_q1_ht_kv_window.sv",
+         "if (spill_rsp_error) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "              state <= RESULT;\n"
+         "            end else if (evict_column + 1 < KV_WIDTH)",
+         "if (1'b0) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "              state <= RESULT;\n"
+         "            end else if (evict_column + 1 < KV_WIDTH)",
+         lambda run: kv_fault_case(run, 1, seed, "verilator"), "KV_SERVICE_RESULT_MISMATCH"),
+        ("kv_cold_error_ignored", "anvil_q1_ht_kv_window.sv",
+         "if (spill_rsp_error) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "            end else result_data <= spill_rsp_data;",
+         "if (1'b0) begin\n"
+         "              result_error <= 1;\n"
+         "              failed <= 1;\n"
+         "            end else result_data <= spill_rsp_data;",
+         lambda run: kv_fault_case(run, 1, seed, "verilator"), "KV_SERVICE_RESULT_MISMATCH"),
+        ("final_logit_stall", "anvil_q1_ht_decoder.sv",
+         "wire final_transfer = logit_valid && logit_ready && logit_index == VOCAB_SIZE-1;",
+         "wire final_transfer = logit_valid && logit_index == VOCAB_SIZE-1;",
+         lambda run: top_probe(run, "AWQ", seed), "TOP_STALLED_LOGIT_CHANGED"),
+        ("tile_read_backpressure", "anvil_q1_ht_weight_tiles.sv",
+         "wire move_request = request_pending && output_space && !core_failed;",
+         "wire move_request = request_pending && !core_failed;",
+         lambda run: dma_probe(run, 3, seed), "PIPELINED_DMA_POSTEDGE_STALLED_PAYLOAD_CHANGED"),
+        ("matched_arithmetic_lane_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: arithmetic_default(run, seed), "ARITHMETIC_MISMATCH"),
+        ("layer_lane_sign", "anvil_q1_ht_tensor_array.sv",
+         ".in_weight_q16(in_weight_q16[37*INDEX+:37])",
+         ".in_weight_q16(INDEX == 17 ? -$signed(in_weight_q16[37*INDEX+:37]) : "
+         "$signed(in_weight_q16[37*INDEX+:37]))",
+         lambda run: layer_default(run, seed, "AWQ"), "LAYER_WRITE_MISMATCH"),
+        ("attention_cold_value", "anvil_q1_ht_kv_window.sv",
+         "else result_data <= spill_rsp_data;",
+         "else result_data <= spill_rsp_data ^ (value_select ? 32'h00010000 : 32'b0);",
+         lambda run: attention_context(run, seed, 3, 9), "ATTENTION_KV_REFERENCE_MISMATCH"),
+        ("attention_drop_cold_term", "anvil_q1_ht_kernel.sv",
+         "math_b <= {{63{math_value[64]}}, math_value[64:0]};",
+         "math_b <= time_index < 32'd6 ? 128'b0 : "
+         "{{63{math_value[64]}}, math_value[64:0]};",
+         lambda run: attention_context(run, seed, 3, 9), "ATTENTION_CONTEXT_MISMATCH"),
+        ("stored_fp16_nonfinite", "anvil_q1_ht_00_numeric_pkg.sv",
+         "fp16_invalid = value[14:10] == 5'd31;", "fp16_invalid = 1'b0;",
+         lambda run: stored_number_trial(run, seed, "awq_embedding_inf"),
+         "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
+        ("stored_bf16_nonfinite", "anvil_q1_ht_00_numeric_pkg.sv",
+         "bf16_invalid = value[14:7] == 8'hff;", "bf16_invalid = 1'b0;",
+         lambda run: stored_number_trial(run, seed, "bf16_weight_0_nonfinite"),
+         "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
+        ("stored_negative_scale", "anvil_q1_ht_00_numeric_pkg.sv",
+         "scale_invalid = fp16_invalid(value) || (value[15] && value[14:0] != 0);",
+         "scale_invalid = fp16_invalid(value);",
+         lambda run: stored_number_trial(run, seed, "awq_scale_0_negative"),
+         "NUMERICAL_FAULT_PUBLISHED_LOGIT"),
+        ("command_new_sequence_position", "anvil_q1_ht_decoder.sv",
+         "(new_sequence && token_pos != 0)", "1'b0",
+         lambda run: top_probe(run, "AWQ", seed, config=1, command_validation=True),
+         "COMMAND_REJECTION_DEADLINE"),
+        ("command_busy_mode_mutation", "anvil_q1_ht_descriptors.sv",
+         "csr_address[1:0] != 0 || (mutation && busy)", "csr_address[1:0] != 0",
+         lambda run: top_probe(run, "AWQ", seed, config=1, command_validation=True),
+         "CSR_MISMATCH"),
+        ("pending_upload_busy_ownership", "anvil_q1_ht_image_guard.sv",
+         "!engine_busy && !configuration_busy && !csr_active &&",
+         "!configuration_busy && !csr_active &&",
+         lambda run: top_probe(run, "AWQ", seed, pending_upload_validation=True),
+         "PENDING_UPLOAD_BUSY_STALL_CHANGED"),
+        ("reset_descriptor_validity", "anvil_q1_ht_descriptors.sv",
+         "if (state == INITIALIZE) descriptors[scan_index] <= 0;",
+         "if (state == INITIALIZE) descriptors[scan_index] <= descriptors[scan_index];",
+         lambda run: top_probe(run, "AWQ", seed, reset_validation=True),
+         "CSR_MISMATCH"),
+        ("descriptor_region_overlap", "anvil_q1_ht_descriptors.sv",
+         "{1'b0, scan_entry[64:32]} < candidate_end",
+         "1'b0",
+         lambda run: descriptor_case(run, "AWQ", "verilator"),
+         "DESCRIPTOR_CSR_MISMATCH"),
+        ("descriptor_extended_bank_end", "anvil_q1_ht_descriptors.sv",
+         "stage_base[5:0] != 0 || stage_end > 34'h200000000",
+         "stage_base[5:0] != 0",
+         lambda run: descriptor_case(run, "BF16", "verilator"),
+         "DESCRIPTOR_CSR_MISMATCH"),
+        ("descriptor_token_snapshot_bypass", "anvil_q1_ht_descriptors.sv",
+         "token_snapshot_valid ? token_high_snapshot : token_cycles[63:32]",
+         "token_cycles[63:32]",
+         lambda run: descriptor_case(run, "AWQ", "verilator"),
+         "DESCRIPTOR_CSR_MISMATCH"),
+        ("descriptor_read_snapshot_bypass", "anvil_q1_ht_descriptors.sv",
+         "read_snapshot_valid ? read_high_snapshot : read_beats[63:32]",
+         "read_beats[63:32]",
+         lambda run: descriptor_case(run, "BF16", "verilator"),
+         "DESCRIPTOR_CSR_MISMATCH"),
+        ("address_tail_stride", "anvil_q1_ht_address.sv",
+         "7'(output_count - panel_base) : 7'd64;",
+         "7'd64 : 7'd64;",
+         lambda run: address_case(run, "AWQ", "verilator", seed),
+         "ADDRESS_RESULT_MISMATCH"),
+        ("address_byte_lane", "anvil_q1_ht_address.sv",
+         "bit_offset <= {complete_address[5:0], 3'b0};",
+         "bit_offset <= {complete_address[5:0], 3'b0} + 9'd8;",
+         lambda run: address_case(run, "BF16", "verilator", seed),
+         "ADDRESS_RESULT_MISMATCH"),
+        ("scalar_issue_response", "anvil_q1_ht_ddr_scalar.sv",
+         "wire response_allowed = state == WAIT_RESPONSE || accepted;",
+         "wire response_allowed = state == WAIT_RESPONSE;",
+         lambda run: scalar_case(run, "verilator", seed), "SCALAR_RESULT_MISMATCH"),
+        ("scalar_response_error", "anvil_q1_ht_ddr_scalar.sv",
+         "failed <= avm_response != 0;", "failed <= 0;",
+         lambda run: scalar_case(run, "verilator", seed), "SCALAR_RESULT_MISMATCH"),
+        ("late_read_error_ignored", "anvil_q1_ht_avalon_mux.sv",
+         "(client_readdatavalid[client] || client_writeresponsevalid[client]) ? avm_response : 2'b0;",
+         "(client_readdatavalid[client] || client_writeresponsevalid[client]) ? "
+         "(avm_readdatavalid ? 2'b0 : avm_response) : 2'b0;",
+         lambda run: late_read_case(run, "AWQ", seed), "LATE_READ_POSTFAULT_LOGIT"),
+        ("late_read_sequence_reuse", "anvil_q1_ht_decoder.sv",
+         "(!new_sequence && (!sequence_valid || token_pos != next_position))",
+         "(!new_sequence && (token_pos != next_position))",
+         lambda run: late_read_case(run, "AWQ", seed),
+         "LATE_READ_CONTINUATION_REJECTION_DEADLINE"),
+    )
+    if only is not None:
+        selected = set(only)
+        if not selected or not selected.issubset({case[0] for case in cases}):
+            raise ValueError("sensitivity selection must name existing defects")
+        cases = tuple(case for case in cases if case[0] in selected)
+    for name, filename, before, after, experiment, rejection in cases:
+        trial = parent.__class__("mutation-" + name,
+                                 source_root=parent.folder / "sources")
+        trial.default_simulator = "verilator"
+        trial.rtl_root = trial.folder / "mutated-rtl"
+        trial.rtl_root.mkdir()
+        for source in (trial.folder / "sources/rtl").glob("*.sv"):
+            shutil.copyfile(source, trial.rtl_root / source.name)
+        target = trial.rtl_root / filename
+        original = target.read_text()
+        if original.count(before) != 1:
+            raise AssertionError(f"mutation no longer identifies exactly one site: {name}")
+        target.write_text(original.replace(before, after))
+        trial.record["mutation"] = {
+            "name": name, "source": "rtl/" + filename, "before": before, "after": after,
+            "mutated_sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+            "parent_receipt": parent.relative(parent.folder / "receipt.json"),
+            "expected_rejection": rejection,
+        }
+        trial.record["tool_version_receipt"] = parent.relative(parent.folder / "receipt.json")
+        trial.flush()
+        try:
+            experiment(trial)
+        except RuntimeError as exc:
+            commands = trial.record["commands"]
+            last = commands[-1]
+            output = (parent.folder.parents[2] / last["stdout"]).read_text()
+            compiled = any(command["exit_code"] == 0 and
+                           command["argv"][:2] == ["verilator", "--binary"]
+                           for command in commands)
+            if (Path(last["argv"][0]).parts[-2:] != ("compiled", "Vtb") or
+                    last["exit_code"] not in (1, -6) or last["timed_out"]
+                    or not last.get("process_settled") or not compiled or rejection not in output):
+                trial.finish("failed", f"Not a qualified functional defect rejection: {exc}")
+                raise AssertionError(f"unqualified mutation outcome: {name}") from exc
+            trial.finish("defect_rejected", f"Compiled, then public functional assertion {rejection} rejected it.")
+        else:
+            trial.finish("failed", "Deliberate defect escaped the functional oracle.")
+            raise AssertionError(f"undetected defect: {name}")
+        parent.record["observations"].append({
+            "mutation": name, "compiled": True, "functional_rejection": rejection,
+            "receipt": parent.relative(trial.folder / "receipt.json")})
+        parent.flush()

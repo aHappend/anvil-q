@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "./.venv/bin/python",
+    "tests/qwen_shell.py",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard",
+    "--compact"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:38:33.872447+00:00",
+  "pid": 1024013,
+  "process_group": 1024013,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61877878784,
+    "available_inodes": 195629457,
+    "observed_utc": "2026-10-31T15:38:33.872542+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525243797504
+  }
+}

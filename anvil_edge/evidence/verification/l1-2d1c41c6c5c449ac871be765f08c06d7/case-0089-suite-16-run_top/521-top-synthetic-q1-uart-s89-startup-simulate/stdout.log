@@ -1,0 +1,2 @@
+COMPARED 20
+evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/top-synthetic-q1-uart-s89-startup/bench.sv:4699: $finish called at 216 (1s)

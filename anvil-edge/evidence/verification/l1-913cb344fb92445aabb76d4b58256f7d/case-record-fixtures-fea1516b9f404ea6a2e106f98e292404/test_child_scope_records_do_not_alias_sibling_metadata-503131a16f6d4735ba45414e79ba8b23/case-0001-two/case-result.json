@@ -1,0 +1,35 @@
+{
+  "acceptance_evidence": false,
+  "case": {
+    "directory": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-record-fixtures-fea1516b9f404ea6a2e106f98e292404/test_child_scope_records_do_not_alias_sibling_metadata-503131a16f6d4735ba45414e79ba8b23/case-0001-two",
+    "duration_s": 0.00022584106773138046,
+    "end_utc": "2026-10-31T15:38:33.729818+00:00",
+    "name": "two",
+    "result_record": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-record-fixtures-fea1516b9f404ea6a2e106f98e292404/test_child_scope_records_do_not_alias_sibling_metadata-503131a16f6d4735ba45414e79ba8b23/case-0001-two/case-result.json",
+    "start_utc": "2026-10-31T15:38:33.729602+00:00",
+    "status": "passed"
+  },
+  "child_settled": true,
+  "kind": "settled-verification-case",
+  "limitation": "Settled case observations only. An absent parent receipt means the enclosing invocation is incomplete; this record neither certifies acceptance nor skips work.",
+  "parent_receipt": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-record-fixtures-fea1516b9f404ea6a2e106f98e292404/test_child_scope_records_do_not_alias_sibling_metadata-503131a16f6d4735ba45414e79ba8b23/receipt.json",
+  "record": {
+    "case_batches": [],
+    "children": [],
+    "coverage": [
+      {
+        "value": 2
+      }
+    ],
+    "local_value": 2,
+    "source_sha256": {
+      "tests/fixture.py": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "tool_versions": {}
+  },
+  "schema": 1,
+  "source_manifest": {
+    "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-record-fixtures-fea1516b9f404ea6a2e106f98e292404/test_child_scope_records_do_not_alias_sibling_metadata-503131a16f6d4735ba45414e79ba8b23/launch.json",
+    "sha256": "4993da0d8dfa27f3f7cc92faca9c4f6eae01c9b08d77afce59d4cbd81472d3c8"
+  }
+}

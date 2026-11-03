@@ -1,0 +1,60 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-ranked-s1/obj/simulation",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-reject-normalized-s89-input/table_records.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-reject-normalized-s89-input/input_words.hex",
+    "+verification_file2=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-reject-normalized-s89-input/expected.hex",
+    "+verification_file3=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-reject-normalized-s89-input/runtime_control.hex",
+    "+verification_file4=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-reject-normalized-s89-input/runtime_config.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.10247844900004566,
+  "end_utc": "2026-10-31T15:56:01.918753+00:00",
+  "exit_code": 0,
+  "index": 737,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 8.68597999215126e-06,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.09488661400973797,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.071712,
+    "user_cpu_s": 0.02121
+  },
+  "start_utc": "2026-10-31T15:56:01.814706+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/737-tokenizer-reject-normalized-s89-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/737-tokenizer-reject-normalized-s89-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 58145878016,
+    "available_inodes": 195598046,
+    "observed_utc": "2026-10-31T15:56:01.918809+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528975798272
+  },
+  "storage_before": {
+    "available_bytes": 58145955840,
+    "available_inodes": 195598053,
+    "observed_utc": "2026-10-31T15:56:01.815241+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528975720448
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

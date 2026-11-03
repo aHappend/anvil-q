@@ -1,0 +1,28 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "iverilog",
+    "-V"
+  ],
+  "child_settled": false,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "index": 0,
+  "queue_duration_s": 5.084485746920109e-05,
+  "requested_timeout_s": 3600,
+  "source_manifest": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/launch.json",
+  "start_utc": "2026-10-31T15:47:09.789830+00:00",
+  "status": "launch pending; not an execution result",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/000-iverilog-version/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/000-iverilog-version/stdout.log",
+  "storage_before": {
+    "available_bytes": 59359084544,
+    "available_inodes": 195616417,
+    "observed_utc": "2026-10-31T15:47:09.790170+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3527762591744
+  },
+  "timed_out": false,
+  "timeout_s": 3600,
+  "tool_versions": {}
+}

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "make",
+    "--version"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:47:10.721770+00:00",
+  "pid": 1064995,
+  "process_group": 1064995,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 59353104384,
+    "available_inodes": 195616301,
+    "observed_utc": "2026-10-31T15:47:10.721879+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3527768571904
+  }
+}

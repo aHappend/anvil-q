@@ -1,0 +1,42 @@
+{
+  "argv": [
+    "verilator",
+    "--binary",
+    "--timing",
+    "--assert",
+    "--timescale",
+    "1ns/1ps",
+    "--top-module",
+    "bench",
+    "-Wno-fatal",
+    "--x-initial",
+    "unique",
+    "--x-assign",
+    "unique",
+    "-j",
+    "2",
+    "-MAKEFLAGS",
+    "VK_PCH_I_FAST=\"-include Vbench__pch.h\" VK_PCH_I_SLOW=\"-include Vbench__pch.h\" --old-file=Vbench__pch.h.fast.gch --old-file=Vbench__pch.h.slow.gch",
+    "--Mdir",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj",
+    "-o",
+    "simulation",
+    "rtl/anvil_edge_parameters.sv",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "rtl/anvil_edge_tensor_mapper.sv",
+    "rtl/anvil_edge_memory_subsystem.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/compiled-bench.sv"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:44.289704+00:00",
+  "pid": 1005807,
+  "process_group": 1005807,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 62031405056,
+    "available_inodes": 195633135,
+    "observed_utc": "2026-10-31T15:36:44.289895+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525090271232
+  }
+}

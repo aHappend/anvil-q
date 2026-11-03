@@ -1,0 +1,297 @@
+
+-- Executing script file `evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0128-suite-19-run_metadata/metadata-synthesis/check.ys' --
+
+1. Executing Verilog-2005 frontend: rtl/anvil_edge_parameters.sv
+Parsing SystemVerilog input from `rtl/anvil_edge_parameters.sv' to AST representation.
+Generating RTLIL representation for module `\anvil_edge_parameters'.
+Successfully finished Verilog frontend.
+
+2. Executing Verilog-2005 frontend: rtl/anvil_edge_boot_segment_reader.sv
+Parsing SystemVerilog input from `rtl/anvil_edge_boot_segment_reader.sv' to AST representation.
+Generating RTLIL representation for module `\anvil_edge_boot_segment_reader'.
+Successfully finished Verilog frontend.
+
+3. Executing Verilog-2005 frontend: rtl/anvil_edge_manifest_validator.sv
+Parsing SystemVerilog input from `rtl/anvil_edge_manifest_validator.sv' to AST representation.
+Generating RTLIL representation for module `\anvil_edge_manifest_validator'.
+Successfully finished Verilog frontend.
+Parameter \NUM_LAYERS = 1
+Parameter \HIDDEN_SIZE = 8
+Parameter \INTERMEDIATE_SIZE = 8
+Parameter \NUM_Q_HEADS = 1
+Parameter \NUM_KV_HEADS = 1
+Parameter \HEAD_DIM = 8
+Parameter \GROUP_SIZE = 8
+Parameter \VOCAB_SIZE = 257
+Parameter \MAX_SEQ_LEN = 4
+
+4. Executing AST frontend in derive mode using pre-parsed AST for module `\anvil_edge_manifest_validator'.
+Parameter \NUM_LAYERS = 1
+Parameter \HIDDEN_SIZE = 8
+Parameter \INTERMEDIATE_SIZE = 8
+Parameter \NUM_Q_HEADS = 1
+Parameter \NUM_KV_HEADS = 1
+Parameter \HEAD_DIM = 8
+Parameter \GROUP_SIZE = 8
+Parameter \VOCAB_SIZE = 257
+Parameter \MAX_SEQ_LEN = 4
+Generating RTLIL representation for module `$paramod$c8383baa4f9e26267037cc16277f3d12ddfd99be\anvil_edge_manifest_validator'.
+
+5. Executing HIERARCHY pass (managing design hierarchy).
+
+5.1. Analyzing design hierarchy..
+Top module:  \anvil_edge_manifest_validator
+Used module:     \anvil_edge_parameters
+Used module:     \anvil_edge_boot_segment_reader
+Parameter 1 (\NUM_LAYERS) = 1
+Parameter 2 (\HIDDEN_SIZE) = 8
+Parameter 3 (\INTERMEDIATE_SIZE) = 8
+Parameter 4 (\NUM_Q_HEADS) = 1
+Parameter 5 (\NUM_KV_HEADS) = 1
+Parameter 6 (\HEAD_DIM) = 8
+Parameter 7 (\GROUP_SIZE) = 8
+Parameter 8 (\AWQ_BITS) = 4
+Parameter 9 (\VOCAB_SIZE) = 257
+Parameter 10 (\MAX_SEQ_LEN) = 4
+
+5.2. Executing AST frontend in derive mode using pre-parsed AST for module `\anvil_edge_parameters'.
+Parameter 1 (\NUM_LAYERS) = 1
+Parameter 2 (\HIDDEN_SIZE) = 8
+Parameter 3 (\INTERMEDIATE_SIZE) = 8
+Parameter 4 (\NUM_Q_HEADS) = 1
+Parameter 5 (\NUM_KV_HEADS) = 1
+Parameter 6 (\HEAD_DIM) = 8
+Parameter 7 (\GROUP_SIZE) = 8
+Parameter 8 (\AWQ_BITS) = 4
+Parameter 9 (\VOCAB_SIZE) = 257
+Parameter 10 (\MAX_SEQ_LEN) = 4
+Generating RTLIL representation for module `$paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters'.
+Parameter \DDR_BASE = 64'0000000000000000000000000000000000000000000000000000000000000000
+Parameter \DDR_BYTES = 64'0000000000000000000000000000000100000000000000000000000000000000
+
+5.3. Executing AST frontend in derive mode using pre-parsed AST for module `\anvil_edge_boot_segment_reader'.
+Parameter \DDR_BASE = 64'0000000000000000000000000000000000000000000000000000000000000000
+Parameter \DDR_BYTES = 64'0000000000000000000000000000000100000000000000000000000000000000
+Generating RTLIL representation for module `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader'.
+
+5.4. Analyzing design hierarchy..
+Top module:  \anvil_edge_manifest_validator
+Used module:     $paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters
+Used module:     $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader
+
+5.5. Analyzing design hierarchy..
+Top module:  \anvil_edge_manifest_validator
+Used module:     $paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters
+Used module:     $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader
+Removing unused module `\anvil_edge_boot_segment_reader'.
+Removing unused module `\anvil_edge_parameters'.
+Removed 2 unused modules.
+
+6. Executing PROC pass (convert processes to netlists).
+
+6.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+6.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 1 switch rules as full_case in process $proc$rtl/anvil_edge_manifest_validator.sv:106$393 in module anvil_edge_manifest_validator.
+Removed 1 dead cases from process $proc$rtl/anvil_edge_manifest_validator.sv:118$395 in module anvil_edge_manifest_validator.
+Marked 15 switch rules as full_case in process $proc$rtl/anvil_edge_manifest_validator.sv:118$395 in module anvil_edge_manifest_validator.
+Marked 6 switch rules as full_case in process $proc$rtl/anvil_edge_boot_segment_reader.sv:51$576 in module $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.
+Removed a total of 1 dead cases.
+
+6.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 1 redundant assignment.
+Promoted 12 assignments to connections.
+
+6.4. Executing PROC_INIT pass (extract init attributes).
+
+6.5. Executing PROC_ARST pass (detect async resets in processes).
+Found async reset \rst_n in `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+Found async reset \rst_n in `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+
+6.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~29 debug messages>
+
+6.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:106$393'.
+     1/2: $1\validator.record_shift[2:0]
+     2/2: $1\validator.expected_record_bytes[31:0]
+Creating decoders for process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+     1/33: $6$lookahead\validator.table_counts$394[511:0]$528
+     2/33: $5$bitselwrite$data$rtl/anvil_edge_manifest_validator.sv:204$318[511:0]$526
+     3/33: $5$bitselwrite$mask$rtl/anvil_edge_manifest_validator.sv:204$317[511:0]$525
+     4/33: $5$bitselwrite$sel$rtl/anvil_edge_manifest_validator.sv:204$319[31:0]$527
+     5/33: $5$lookahead\validator.table_counts$394[511:0]$522
+     6/33: $4$bitselwrite$sel$rtl/anvil_edge_manifest_validator.sv:204$319[31:0]$521
+     7/33: $4$bitselwrite$data$rtl/anvil_edge_manifest_validator.sv:204$318[511:0]$520
+     8/33: $4$bitselwrite$mask$rtl/anvil_edge_manifest_validator.sv:204$317[511:0]$519
+     9/33: $4$lookahead\validator.table_counts$394[511:0]$415
+    10/33: $3$lookahead\validator.table_counts$394[511:0]$414
+    11/33: $3$bitselwrite$sel$rtl/anvil_edge_manifest_validator.sv:204$319[31:0]$413
+    12/33: $3$bitselwrite$data$rtl/anvil_edge_manifest_validator.sv:204$318[511:0]$412
+    13/33: $3$bitselwrite$mask$rtl/anvil_edge_manifest_validator.sv:204$317[511:0]$411
+    14/33: $2$lookahead\validator.table_counts$394[511:0]$410
+    15/33: $2$bitselwrite$sel$rtl/anvil_edge_manifest_validator.sv:204$319[31:0]$409
+    16/33: $2$bitselwrite$data$rtl/anvil_edge_manifest_validator.sv:204$318[511:0]$408
+    17/33: $2$bitselwrite$mask$rtl/anvil_edge_manifest_validator.sv:204$317[511:0]$407
+    18/33: $1$lookahead\validator.table_counts$394[511:0]$404
+    19/33: $1$bitselwrite$sel$rtl/anvil_edge_manifest_validator.sv:204$319[31:0]$403
+    20/33: $1$bitselwrite$data$rtl/anvil_edge_manifest_validator.sv:204$318[511:0]$402
+    21/33: $1$bitselwrite$mask$rtl/anvil_edge_manifest_validator.sv:204$317[511:0]$401
+    22/33: $0\validator.done_r[0:0]
+    23/33: $0\validator.code[7:0]
+    24/33: $0\validator.expected_length[64:0]
+    25/33: $0\validator.data_bytes[63:0]
+    26/33: $0\validator.segment_index[4:0]
+    27/33: $0\validator.header[255:0]
+    28/33: $0\validator.geometry[511:0]
+    29/33: $0\validator.metadata[1023:0]
+    30/33: $0\validator.configuration[223:0]
+    31/33: $0\validator.lengths[1279:0]
+    32/33: $0\validator.bases[1279:0]
+    33/33: $0\validator.state[3:0]
+Creating decoders for process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+     1/21: $3$lookahead\reader.result$575[1023:0]$591
+     2/21: $2$lookahead\reader.result$575[1023:0]$589
+     3/21: $2$bitselwrite$mask$rtl/anvil_edge_boot_segment_reader.sv:82$555[1023:0]$588
+     4/21: $2$bitselwrite$data$rtl/anvil_edge_boot_segment_reader.sv:82$556[1023:0]$587
+     5/21: $2$bitselwrite$sel$rtl/anvil_edge_boot_segment_reader.sv:82$557[31:0]$586
+     6/21: $1$lookahead\reader.result$575[1023:0]$585
+     7/21: $1$bitselwrite$mask$rtl/anvil_edge_boot_segment_reader.sv:82$555[1023:0]$584
+     8/21: $1$bitselwrite$data$rtl/anvil_edge_boot_segment_reader.sv:82$556[1023:0]$583
+     9/21: $1$bitselwrite$sel$rtl/anvil_edge_boot_segment_reader.sv:82$557[31:0]$582
+    10/21: $0\reader.code[7:0]
+    11/21: $0\reader.failed[0:0]
+    12/21: $0\reader.read_data[31:0]
+    13/21: $0\reader.physical_address[64:0]
+    14/21: $0\reader.offset_end[64:0]
+    15/21: $0\reader.segment_end[64:0]
+    16/21: $0\reader.word_index[5:0]
+    17/21: $0\reader.count[5:0]
+    18/21: $0\reader.offset_value[63:0]
+    19/21: $0\reader.length[63:0]
+    20/21: $0\reader.base[63:0]
+    21/21: $0\reader.state[3:0]
+
+6.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\anvil_edge_manifest_validator.\validator.expected_record_bytes' from process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:106$393'.
+No latch inferred for signal `\anvil_edge_manifest_validator.\validator.record_shift' from process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:106$393'.
+
+6.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\anvil_edge_manifest_validator.\validator.state' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1292' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.bases' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1293' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.lengths' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1294' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.configuration' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1295' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.metadata' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1296' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.table_counts' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1297' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.geometry' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1298' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.header' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1299' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.segment_index' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1300' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.data_bytes' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1301' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.expected_length' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1302' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.done_r' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1303' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.\validator.code' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1304' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.$bitselwrite$mask$rtl/anvil_edge_manifest_validator.sv:204$317' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1305' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.$bitselwrite$data$rtl/anvil_edge_manifest_validator.sv:204$318' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1306' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.$bitselwrite$sel$rtl/anvil_edge_manifest_validator.sv:204$319' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1307' with positive edge clock and negative level reset.
+Creating register for signal `\anvil_edge_manifest_validator.$lookahead\validator.table_counts$394' using process `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+  created $adff cell `$procdff$1308' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.state' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1309' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.base' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1310' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.length' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1311' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.offset_value' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1312' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.count' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1313' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.word_index' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1314' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.segment_end' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1315' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.offset_end' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1316' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.physical_address' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1317' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.result' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1318' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.read_data' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1319' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.failed' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1320' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.\reader.code' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1321' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$bitselwrite$sel$rtl/anvil_edge_boot_segment_reader.sv:82$557' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1322' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$bitselwrite$data$rtl/anvil_edge_boot_segment_reader.sv:82$556' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1323' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$bitselwrite$mask$rtl/anvil_edge_boot_segment_reader.sv:82$555' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1324' with positive edge clock and negative level reset.
+Creating register for signal `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$lookahead\reader.result$575' using process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+  created $adff cell `$procdff$1325' with positive edge clock and negative level reset.
+
+6.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+6.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 1 empty switch in `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:106$393'.
+Removing empty process `anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:106$393'.
+Found and cleaned up 20 empty switches in `\anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+Removing empty process `anvil_edge_manifest_validator.$proc$rtl/anvil_edge_manifest_validator.sv:118$395'.
+Found and cleaned up 8 empty switches in `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+Removing empty process `$paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.$proc$rtl/anvil_edge_boot_segment_reader.sv:51$576'.
+Cleaned up 29 empty switches.
+
+6.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module anvil_edge_manifest_validator.
+<suppressed ~33 debug messages>
+Optimizing module $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.
+<suppressed ~19 debug messages>
+Optimizing module $paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters.
+
+7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module anvil_edge_manifest_validator.
+<suppressed ~14 debug messages>
+Optimizing module $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.
+<suppressed ~5 debug messages>
+Optimizing module $paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters.
+
+8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \anvil_edge_manifest_validator..
+Finding unused cells or wires in module $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader..
+Finding unused cells or wires in module $paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters..
+Removed 105 unused cells and 317 unused wires.
+<suppressed ~118 debug messages>
+
+9. Executing FLATTEN pass (flatten design).
+Deleting now unused module $paramod$3606153b4f199f107871059e12bc1ad3b80beac7\anvil_edge_boot_segment_reader.
+Deleting now unused module $paramod$b54095c5fc88eab3836ac75ef60297cfbde4bcec\anvil_edge_parameters.
+<suppressed ~1 debug messages>
+
+10. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \anvil_edge_manifest_validator..
+Removed 0 unused cells and 3 unused wires.
+<suppressed ~1 debug messages>
+
+11. Executing CHECK pass (checking for obvious problems).
+Checking module anvil_edge_manifest_validator...
+Found and reported 0 problems.
+
+12. Executing JSON backend.

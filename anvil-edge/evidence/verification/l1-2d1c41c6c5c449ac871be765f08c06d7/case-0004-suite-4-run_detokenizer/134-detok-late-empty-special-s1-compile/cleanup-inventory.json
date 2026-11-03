@@ -1,0 +1,164 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 81920,
+      "bytes": 80516,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__ALL.a",
+      "sha256": "1aeb3e10ff2cfb57f974777ef64178ccc2326ae98022f4f3ff469734a59e4dbe"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 432,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__ALL.cpp",
+      "sha256": "5c22c9bef919afa79c30365a0e25a34e459be3aed682c638d39a75440fc7d10c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 691,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__ALL.d",
+      "sha256": "49ec93194676b97576483a42e84e8c8fa3000ba435dae13050ddf36f8d159ee6"
+    },
+    {
+      "allocated_bytes": 77824,
+      "bytes": 75704,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__ALL.o",
+      "sha256": "cbfa54f02bb8a6c766cecde18e54e524e6ca8502dfbc8ca7afa76c5ac9b6ebb3"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1104,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__Syms.cpp",
+      "sha256": "f36841c44981397de29291749362aa38bfe83461020f8326d660d04e3628da45"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1076,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__Syms.h",
+      "sha256": "4f768b4c5cd8f4202b49d01e585ae2ab47011bde54f1327543acb7d0fc7fb3b1"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 6014,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench___024root.h",
+      "sha256": "7536c1ef21f807cd51e4eebacb490bd292b76e31530946133d561bafa386b30d"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 46134,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "92c1e1936fa009b82a400341d8b2f5c59d532488b46aeffaf54d8c3e841095f3"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1884,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "84929be3e44ffe09b97caaf232371198cf48fd6408bf71a973aa7b6508af113c"
+    },
+    {
+      "allocated_bytes": 45056,
+      "bytes": 42184,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "37e2eaabe8f6d87a9ee58e96c0ab46c0bc9da5647897c2a042a026abc93e28e7"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 20199,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "97e8328456ed537e6f582f0bba74a9b2e674aea57511a191b018d37af3b55478"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2475,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__ver.d",
+      "sha256": "21dcb2852d40ed594d119d8b9b896d8be227108fb9f13d9e8dfda4ed7aa15fb5"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4710,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench__verFiles.dat",
+      "sha256": "2917ae3ef33fd4e0a29d893b46a5b9e2926b1bad59dd2b4c3dcfd80b42352caf"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1673,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/Vbench_classes.mk",
+      "sha256": "0d757ab0fbdd6c57e2cc26f9babe1130d4f911bbc8ce6e98436802bbf08fc848"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-late-empty-special-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:48:18.747919+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0001-suite-1-run_fifo/fifo-d1-s89/simulation.vvp",
+    "rtl/anvil_edge_fifo.sv",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0001-suite-1-run_fifo/fifo-d1-s89/bench.sv"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:47:50.945896+00:00",
+  "pid": 1073279,
+  "process_group": 1073279,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 59001827328,
+    "available_inodes": 195614287,
+    "observed_utc": "2026-10-31T15:47:50.945975+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528119848960
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3863,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench.cpp",
+      "sha256": "968a80fecba9a09c69a7ffa44e7474acd6b7eb3a1e3c1ad16225de8ce8d6a778"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3683,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench.h",
+      "sha256": "2ddc51dfe983359f23c573da18abc945d036d654227e56064fa4d458dcaef56d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 208896,
+      "bytes": 207524,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__ALL.a",
+      "sha256": "826816da6450c85a42674d76052ec6841cd03af94f97afd21ac6b47a2c709da4"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1115,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__ALL.cpp",
+      "sha256": "e3347161a6d4f2dce5ee32f4e54660acf0a629402338e23a55c47fad8c97958b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1378,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__ALL.d",
+      "sha256": "adf1a3dc9c4d057fccfcb5826e297c2a30bd9fe6a5119382c0fd53dd467edb40"
+    },
+    {
+      "allocated_bytes": 200704,
+      "bytes": 197720,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__ALL.o",
+      "sha256": "75b6f4d9ffbfae22c3d250fc88a1d595a24c59965aba32fd06f294a8666b1ba5"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 428,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "27f4d0c4df1f37275fbed2c04fa4f2d916e6fad6abf66a01d523be8ea643e014"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3507,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__Syms.cpp",
+      "sha256": "e8bc1dd807ea1ef22b3d981763b626cfe3cb9097ab0e6a38db6eefdb8074b3bc"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__Syms.h",
+      "sha256": "c73df620d303dec1a54575c3596c051e535dafc9d9b112e1a69d3a862e58498a"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 46823,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench___024root.h",
+      "sha256": "53969475c5e6bfdd0b108da1a62f695066421e65bfd083864a25742b4fc49721"
+    },
+    {
+      "allocated_bytes": 507904,
+      "bytes": 505122,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "b2dd3dafbda37c46516f06c0424a8f2a85b50f536df92d15bea3499b88b572a2"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 46815,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "393d38af1e578c146aba3ba1a8049e1dc1f83421e2e46fe3fcb38471acf582e4"
+    },
+    {
+      "allocated_bytes": 94208,
+      "bytes": 93337,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "a345c028b72c0a64dccdc4d90340eff1f6e54d015dadd9df87c57a3757d97ecb"
+    },
+    {
+      "allocated_bytes": 94208,
+      "bytes": 93771,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "ada739277e5350d1247990789d2c98217c8b00ee83887cc288882437d6ae9b8b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 6213,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__ver.d",
+      "sha256": "5bb1c3299c5171a90a642c1a21c9f9cc1d3a9213cb562e46a88516cfa3853b31"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 13951,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench__verFiles.dat",
+      "sha256": "4087bb3439485943cc5e23253e0b1403eacee1f951ac26c814927400d9f9f072"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 15723,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_normalizer__M10.h",
+      "sha256": "c38fc6af024decd72e6923259dc1561ba74ed16a04c7cc710b34adea7f63cd6a"
+    },
+    {
+      "allocated_bytes": 290816,
+      "bytes": 288577,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_normalizer__M10__DepSet_h6c09981b__0.cpp",
+      "sha256": "933555cfa3b58cddb6b1dd2be6dd8667f3bc4e63daf07e8eed6552ce3ef3b053"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 20327,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_normalizer__M10__DepSet_h6c09981b__0__Slow.cpp",
+      "sha256": "dea2f9984e1c54741eb8137b6551c8bc395f3d296901281b3df6dae60ea5a99f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1702,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_normalizer__M10__DepSet_h781becef__0.cpp",
+      "sha256": "d48f581663d4d1657fced77f18c19f012a5512ba1ea09851ddbc9b38e3303d0b"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 17846,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_normalizer__M10__DepSet_h781becef__0__Slow.cpp",
+      "sha256": "8bd98ed8745fd1809a87fe5fc3ec3283150a2dfb098d31ab0cc530578e70eb16"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 792,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_normalizer__M10__Slow.cpp",
+      "sha256": "cfe1f36ab71c75619a356556b385fdd0d527f4e6edad2a888e38374d262ac3a8"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 13214,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_special_splitter__pi2.h",
+      "sha256": "04428aef3e7e3bc313a4a1df19c9b995c06d9f159553d10cbdff61ff1b8f2dfa"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 15223,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_h4678c305__0__Slow.cpp",
+      "sha256": "b576a94cecd1e5b3e9a51be58125af9de2f2c59c2aac1b85275840e55fe2aa36"
+    },
+    {
+      "allocated_bytes": 262144,
+      "bytes": 260325,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_hbe6cb62d__0.cpp",
+      "sha256": "b7e5c0f47c3aefbd92f6da2f24c5aea8d5f5dea7ecb55617afa963d9f134c240"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 26731,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_hbe6cb62d__0__Slow.cpp",
+      "sha256": "f943c6f1a711df8935a27aa6b923db8789e4756973baa991249a0e2b23f98c29"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 846,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_anvil_edge_special_splitter__pi2__Slow.cpp",
+      "sha256": "50f4627595839085b672a48115464a4431bfe8ec7ade53a0bd7f8a6dd39b2ab8"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2236,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/Vbench_classes.mk",
+      "sha256": "06cb571940cb8f19426718f89e8fc6e391d9216ff6e685abf3647b88d77af158"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bos-special-exact-three-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:56:45.486103+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

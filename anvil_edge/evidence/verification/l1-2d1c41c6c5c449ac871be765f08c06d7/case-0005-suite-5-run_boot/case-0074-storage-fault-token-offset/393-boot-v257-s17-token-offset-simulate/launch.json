@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0074-storage-fault-token-offset/boot-v257-s17-token-offset/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0074-storage-fault-token-offset/boot-v257-s17-token-offset-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:50:52.831801+00:00",
+  "pid": 1128253,
+  "process_group": 1128253,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58795036672,
+    "available_inodes": 195607831,
+    "observed_utc": "2026-10-31T15:50:52.831869+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528326639616
+  }
+}

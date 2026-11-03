@@ -1,0 +1,55 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-bad-continuation-s1/obj/simulation",
+    "+verification_seed=1"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.10403896798379719,
+  "end_utc": "2026-10-31T15:50:05.726774+00:00",
+  "exit_code": 0,
+  "index": 332,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.2743985280394554e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 1.6311717149801552,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 62972,
+    "output_blocks": 8,
+    "system_cpu_s": 0.080576,
+    "user_cpu_s": 0.0051649999999999995
+  },
+  "start_utc": "2026-10-31T15:50:05.615322+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/332-detok-bad-continuation-s1-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/332-detok-bad-continuation-s1-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 58881593344,
+    "available_inodes": 195611589,
+    "observed_utc": "2026-10-31T15:50:05.726857+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528240082944
+  },
+  "storage_before": {
+    "available_bytes": 58881998848,
+    "available_inodes": 195611616,
+    "observed_utc": "2026-10-31T15:50:05.615825+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528239677440
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

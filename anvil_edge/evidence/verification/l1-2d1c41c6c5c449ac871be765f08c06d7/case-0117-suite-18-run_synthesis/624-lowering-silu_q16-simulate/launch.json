@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0117-suite-18-run_synthesis/lowering-silu_q16/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:55:20.144520+00:00",
+  "pid": 1181841,
+  "process_group": 1181841,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58023915520,
+    "available_inodes": 195599409,
+    "observed_utc": "2026-10-31T15:55:20.144620+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529097760768
+  }
+}

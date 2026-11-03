@@ -1,0 +1,841 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "verilator",
+    "--cc",
+    "--exe",
+    "--build",
+    "--timing",
+    "--assert",
+    "--timescale",
+    "1ns/1ps",
+    "--top-module",
+    "bench",
+    "-Wno-fatal",
+    "--x-initial",
+    "unique",
+    "--x-assign",
+    "unique",
+    "-j",
+    "2",
+    "-MAKEFLAGS",
+    "VK_PCH_I_FAST=\"-include Vbench__pch.h\" VK_PCH_I_SLOW=\"-include Vbench__pch.h\" --old-file=Vbench__pch.h.fast.gch --old-file=Vbench__pch.h.slow.gch OPT_FAST=-O3 OPT_SLOW=-O3",
+    "--Mdir",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj",
+    "-o",
+    "simulation",
+    "rtl/anvil_edge_numeric_pkg.sv",
+    "rtl/anvil_edge_autoregressive_fsm.sv",
+    "rtl/anvil_edge_boot_segment_reader.sv",
+    "rtl/anvil_edge_bpe_tokenizer.sv",
+    "rtl/anvil_edge_config.sv",
+    "rtl/anvil_edge_core_adapter.sv",
+    "rtl/anvil_edge_ddr4_boot_loader.sv",
+    "rtl/anvil_edge_detokenizer.sv",
+    "rtl/anvil_edge_directory_validator.sv",
+    "rtl/anvil_edge_exp_q24.sv",
+    "rtl/anvil_edge_fifo.sv",
+    "rtl/anvil_edge_image_loader.sv",
+    "rtl/anvil_edge_isqrt128.sv",
+    "rtl/anvil_edge_manifest_validator.sv",
+    "rtl/anvil_edge_memory_subsystem.sv",
+    "rtl/anvil_edge_normalizer.sv",
+    "rtl/anvil_edge_parameters.sv",
+    "rtl/anvil_edge_profile_table_validator.sv",
+    "rtl/anvil_edge_ranked_bpe.sv",
+    "rtl/anvil_edge_round_div.sv",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "rtl/anvil_edge_silu_q16.sv",
+    "rtl/anvil_edge_special_splitter.sv",
+    "rtl/anvil_edge_special_trie_validator.sv",
+    "rtl/anvil_edge_spi_reader.sv",
+    "rtl/anvil_edge_table_record_reader.sv",
+    "rtl/anvil_edge_tagged_dfa.sv",
+    "rtl/anvil_edge_tensor_mapper.sv",
+    "rtl/anvil_edge_text_bpe_span.sv",
+    "rtl/anvil_edge_token_table_validator.sv",
+    "rtl/anvil_edge_top.sv",
+    "rtl/anvil_edge_uart_io.sv",
+    "rtl/anvil_edge_unicode_lookup.sv",
+    "rtl/anvil_edge_unsigned_divider.sv",
+    "rtl/anvil_edge_utf8_decoder.sv",
+    "rtl/anvil_edge_utf8_encoder.sv",
+    "rtl/anvil_q1_bus_mux.sv",
+    "rtl/anvil_q1_decoder_layer.sv",
+    "rtl/anvil_q1_elementwise.sv",
+    "rtl/anvil_q1_gqa_attention.sv",
+    "rtl/anvil_q1_mem_port.sv",
+    "rtl/anvil_q1_rmsnorm.sv",
+    "rtl/anvil_q1_rope.sv",
+    "rtl/anvil_q1_swiglu_mlp.sv",
+    "rtl/anvil_q1_top.sv",
+    "rtl/anvil_q1_w4a16_gemv.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/compiled-bench.sv",
+    "../clock-driver.cpp"
+  ],
+  "child_settled": true,
+  "compiler_intermediates_removed": [
+    {
+      "allocated_bytes": 8192,
+      "bytes": 6791,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench.cpp",
+      "sha256": "dac51a1ba3d9ffa36f92ff200c3334bddde2994f466d8c7fe96d86cd52b81e23"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 586,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench.d",
+      "sha256": "375ad9965d9c8b1560bcbbc7f90f6590cec35bba44cb4b7e249d14fdc7f2c82f"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5730,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench.h",
+      "sha256": "7d078c76188dd2a06dabfc5b98d022b4f1bff80c7b33833da0e44ef9c16f5689"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1853,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench.mk",
+      "sha256": "87f8a40f9c32e0ef3b01188e12e1256350084b306befd87f59facde7e9777399"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 10184,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench.o",
+      "sha256": "33c656974d809332c57eedfc064052797ae67ededcda3e68544400c263284b10"
+    },
+    {
+      "allocated_bytes": 1523712,
+      "bytes": 1521964,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__ALL.a",
+      "sha256": "d4b74af77b9b7ed8d206c317e58bc9a9ba4fbcf473e07888a42f4b15c01e94a5"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4385,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "44420dcede2f1413c8f7c4766afeec859680717df433b9cf04f251932fbafd42"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 598,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__ConstPool_0.d",
+      "sha256": "85be4272f2bf3d5ea87b6a4c73349ddd772c59b6b76bf3993c75619d0e7327db"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2560,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__ConstPool_0.o",
+      "sha256": "96fac8155c4f9492c1f25049aa7e804764c3ad8b07e2bb6c85ccfde40285c408"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12518,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__Syms.cpp",
+      "sha256": "af3db04337cd91eaab4615a292de62e65f69f68c991cb32e10d086e82bc03a33"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 784,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__Syms.d",
+      "sha256": "8e06c5578b9eff0c6dd72b32071d04d76a379bd4f9c8206c76f18d90586b07ae"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4568,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__Syms.h",
+      "sha256": "d41050870c3bda7f05ebd3c1e638d8c00a0fe06c8155303fdd208a5ce05928f1"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19152,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__Syms.o",
+      "sha256": "781ace6fc47a904e510308d52a7c376f5d578b9c8edbb5ee502f96883e48ed1e"
+    },
+    {
+      "allocated_bytes": 221184,
+      "bytes": 217831,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root.h",
+      "sha256": "1c17f5511c05c939d8b74683997abdb1f0cfbe2434683907611b028bf8585c10"
+    },
+    {
+      "allocated_bytes": 638976,
+      "bytes": 638028,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "c0606fffe105bcdf72cc8617c2818240cfab8821d1b7b678ca2ac2b5dfdb43ee"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 688,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.d",
+      "sha256": "566ef0891a88e949b466d6374d02b0bf24d113585381c613905422fc78d743f9"
+    },
+    {
+      "allocated_bytes": 425984,
+      "bytes": 422712,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.o",
+      "sha256": "a84ce3e516a2e5bdb6ac60f93288b358bd06e944ebc9dc5a6db229f6f4c8f452"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19862,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "ee3f36a8701f3ec5b973ddac1f2c61637e232b34d64546076e3b105cdb21e863"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 700,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.d",
+      "sha256": "6459c5fe3187afb92409e101fc821ebadcd54c6c09f55511ebed114c646b00cc"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 12272,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.o",
+      "sha256": "f404cbf674ec7c0289a3ce8e1c6aabddf4613e4687ca4959c3c6127928eac022"
+    },
+    {
+      "allocated_bytes": 802816,
+      "bytes": 800294,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__1.cpp",
+      "sha256": "13b9cf5e247e06ebf3a8ccc7cc2df43adefca15db1a3fa745772f96a5cfc3d98"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 688,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__1.d",
+      "sha256": "5bdfc504032c539441142724e37f67d465120fb7295df525f7bb639de68078e3"
+    },
+    {
+      "allocated_bytes": 69632,
+      "bytes": 68112,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__1.o",
+      "sha256": "fa90fef04e13125802a6c674a2b3e19da5c13f9cd15a0cf49b819db4e50945fb"
+    },
+    {
+      "allocated_bytes": 1101824,
+      "bytes": 1099847,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__2.cpp",
+      "sha256": "c5a8f1f2ae8f3427074f6c086d4e61dc03b516d6528e16f5aa6c73e49a56255f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 688,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__2.d",
+      "sha256": "48659f4dfc17ebd9af50085e22601b63d56ada4f128bff3ea60ead718f9efedc"
+    },
+    {
+      "allocated_bytes": 77824,
+      "bytes": 77632,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__2.o",
+      "sha256": "cba69478e84323edc5ffba87c8f2367a815bfcc35504fae2ed1ad304344a3d1f"
+    },
+    {
+      "allocated_bytes": 294912,
+      "bytes": 291021,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__3.cpp",
+      "sha256": "3e9abeb4268653c20a59334e234e6b560188469292fe0009558fa681e213a90b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 688,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__3.d",
+      "sha256": "9d9a0dc453335acbd5bbcbb78c179ab79f11b1d644a1c1de26d7c2a1d3c69ffb"
+    },
+    {
+      "allocated_bytes": 81920,
+      "bytes": 80968,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h0cc030f4__3.o",
+      "sha256": "463d9aac95175424753e6341d0d65e9c52021c964dbed08daf3ec7fb3330f883"
+    },
+    {
+      "allocated_bytes": 692224,
+      "bytes": 689348,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "a2a3b38be15320661f1baffac7aebb4a64109b35a27a1b5ad2a240231cee38e2"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 673,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__0.d",
+      "sha256": "d4e0ee28990aedcd5cf1d921606b097f930ddc0ee405adc06e490b410122356d"
+    },
+    {
+      "allocated_bytes": 331776,
+      "bytes": 330320,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__0.o",
+      "sha256": "f3b77dabb67444eeca27e475bbdee31936f660ea41b8527c80470403bb6d1758"
+    },
+    {
+      "allocated_bytes": 815104,
+      "bytes": 814011,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "55651b0b0b21b5c2549c2b6595f5eabf4b32bee225be0a0a4112c6e7f2136a7a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 685,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.d",
+      "sha256": "1540e7f298ce13b6b41a6ddd7cf5d2a0d68fa79bc3cce5cbaf163c20af10ac15"
+    },
+    {
+      "allocated_bytes": 118784,
+      "bytes": 117200,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.o",
+      "sha256": "6cf3da935685b0cfb64566e714eb65fdb39446a6b9f16985a34434547f46c9dc"
+    },
+    {
+      "allocated_bytes": 479232,
+      "bytes": 478220,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__1.cpp",
+      "sha256": "1dc5cd171019aac01d11cdbf3d85c6fe5e7ce880dec2965557e950dd2f802e5a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 673,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__1.d",
+      "sha256": "c7c92b812ea5af0ee005719a5c9115601b9531af75e7599312a2fc0ef22c19c4"
+    },
+    {
+      "allocated_bytes": 45056,
+      "bytes": 43160,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__DepSet_h97d444dc__1.o",
+      "sha256": "cf7f93da68da7ddc52c0f7cbfa75c68d4ccc86089cccdd4f1aa080c5ae53dedc"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 655,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__Slow.d",
+      "sha256": "eadc714442d08f2e95afdd115996eecd8f8c045f8563ff397dd3c0db2d87265d"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 16584,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench___024root__Slow.o",
+      "sha256": "9cb0d72ef75ad3a3dfe2d80a63b9a20fa43ca7f85bd188e5d5e0764a20a80e8c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 9556,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__ver.d",
+      "sha256": "ac74d1f506f82be73f228be7e20bf63a10e02a48b18595e217f8e428d440b4aa"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 18526,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench__verFiles.dat",
+      "sha256": "f7105826b8c7a782e60c80f0912f4ba5ca9d70ee4e0529ae17046ad091cffcbb"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12620,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer.h",
+      "sha256": "3b6f3c6989932b9bc980af4cd9d8a1faae710605a5df99d77531bd20fc3af278"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 14372,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_h017443b3__0__Slow.cpp",
+      "sha256": "09741049e6e4353a491b150af6cc7506fb6b2edcc5ab67652ae57bd1770b15f8"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 721,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_h017443b3__0__Slow.d",
+      "sha256": "ce1e8285b433fccfc046bdf9181e1ffad98f1c47be715585c45753f326ab35a0"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 8272,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_h017443b3__0__Slow.o",
+      "sha256": "e8b6a4d9e698fb4a056cb13f2a92bd8fcb0df1572a3e8d2263826f2e124b2c5b"
+    },
+    {
+      "allocated_bytes": 282624,
+      "bytes": 279706,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_hf56037df__0.cpp",
+      "sha256": "91d339ef28404f98206be9e0724b3af7500e469b06e6b71ff979d3084cc36edc"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 724,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_hf56037df__0.d",
+      "sha256": "9b8c0c43d6c8c657f9621fd49b02e468aea8ce62d15b1ed5a0bab5c7cc0c13d0"
+    },
+    {
+      "allocated_bytes": 40960,
+      "bytes": 39320,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_hf56037df__0.o",
+      "sha256": "f5e155ba4875012441a57fe4951e46fc89eb56fbaf6323fe97dcc2d0c150d6ad"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19948,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_hf56037df__0__Slow.cpp",
+      "sha256": "44a04b081a3416f32f23463265650806f34724f033690c6b7099c1ff64bdcc4c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 736,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_hf56037df__0__Slow.d",
+      "sha256": "1f94cc21239c578abd19f282537f951d8e668096f8b614a72eaf084988bcbcfc"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3120,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__DepSet_hf56037df__0__Slow.o",
+      "sha256": "a1f29712158dc46c3e2e120a3061fec59960cf0eedb233923dfb708e36850be8"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 747,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__Slow.cpp",
+      "sha256": "ba0e3ea9ac13b9999c9094e975be3eba3273e60851859fa4e43cc2ea7d00beca"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__Slow.d",
+      "sha256": "e7a0875d54696f6a117ab178cc6b9a063b1b2f35ad3f1c670ec583cc0adc2011"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3032,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_normalizer__Slow.o",
+      "sha256": "92455968c87e03cc27eb893cdfcce31251cf7a014d1b1cba4e3a27d273c53f8a"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5306,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19.h",
+      "sha256": "515f03142168f3444733586c5cccc34dc4829e0c62ae06c92aa671af0d46d6a5"
+    },
+    {
+      "allocated_bytes": 397312,
+      "bytes": 393313,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__0.cpp",
+      "sha256": "6b70d5f017d4c0da9741d8f2ede1b3ade5cfd2ea038dd69951ea06ca63ae720c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 763,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__0.d",
+      "sha256": "c0098a6735f9a848343b6f2b2c1142911bacf78919aefd810f50bc3ae09f8c89"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31032,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__0.o",
+      "sha256": "4785b8f55a7d6e11c178cdd81a62199dafc442cde068cbff89234ef936471d41"
+    },
+    {
+      "allocated_bytes": 69632,
+      "bytes": 66990,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__0__Slow.cpp",
+      "sha256": "3d5ccfbba3ea5b07e075ae0a1a9e400e45d12cadb252dd1c610afe81b496087f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 775,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__0__Slow.d",
+      "sha256": "a422f8209fcbdebef06aa3a3951edb467217cc5a108a8c862a6d1cbf0612bee3"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3360,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__0__Slow.o",
+      "sha256": "87babc9bf09afdf4c3e2f823ea420c4165f007cb380b9fa941df093204fd56e9"
+    },
+    {
+      "allocated_bytes": 172032,
+      "bytes": 170939,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__1.cpp",
+      "sha256": "cac77397f35f77bf723b6e2fc4e1eb939228f533f07d63ea9ae7819456bbe292"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 763,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__1.d",
+      "sha256": "6b357b7946a61707f5de77f1de10f2a0842146a2a1566d7480b3631f767e6e6c"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 14744,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_h270e578e__1.o",
+      "sha256": "c90a30b33332f0c2ed676225f5600da7d62dc03e0f2e957a86725c7a7c3db5e1"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12550,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_haf162362__0.cpp",
+      "sha256": "06cfe8cfeca22afa1bc74d9c230db13a9a85bb6f240bee221a35be1773185528"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 748,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_haf162362__0.d",
+      "sha256": "041439a603ab37e62f954b9643d615492278e89f2bc514877c57586f61d3290e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1696,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_haf162362__0.o",
+      "sha256": "627ced250723e6ff0ee1ab114875573180b9d7bd7457451ebe9e3f968947cfdf"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5798,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_haf162362__0__Slow.cpp",
+      "sha256": "56b61f10ed60dcb032c14b2f3696676f26ca7b0dff863fc1f418be43e9f99d2f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 760,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_haf162362__0__Slow.d",
+      "sha256": "be64e36593cc1a4481555ccb2fca6fc08a68b909f4205f2ef48b0358f1575377"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3616,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__DepSet_haf162362__0__Slow.o",
+      "sha256": "ceb3b37ab172a492a44cb3cf34efd52883cc83293ac3d1c883e6dcba6f09060e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 864,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__Slow.cpp",
+      "sha256": "c72222113531dca8f66dee91d82c72da04d6a3ae89e3bd74d2f7da7d2beeedaa"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 733,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__Slow.d",
+      "sha256": "c91aead0cc07c97818a824a512a40b7ffdbedb43696cc93b05dbb3ab27b1bcb3"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3152,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_signed_multiplier__pi19__Slow.o",
+      "sha256": "5368ec7c8fb406dea03e3d6d322c10fb4496e99739161a338127bf5598311f75"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 10883,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter.h",
+      "sha256": "9f7feab4c17549591ceee48b51909069580a03f7db3f6a041f25a7921dad1be7"
+    },
+    {
+      "allocated_bytes": 253952,
+      "bytes": 253673,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_he683fa1b__0.cpp",
+      "sha256": "d18e6a558197617732f4649848090d268332caa850294e3dc956ea5b41b68e66"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 742,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_he683fa1b__0.d",
+      "sha256": "036a770ef9178f818fa2feed9cff76cbf414472b43e04a39b080c1fa7f502ec3"
+    },
+    {
+      "allocated_bytes": 40960,
+      "bytes": 38072,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_he683fa1b__0.o",
+      "sha256": "784bd57abd72dd56d5eaa7adc7b3093c2ad1bc37bd86d644c99b2e44f07019b1"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 26572,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_he683fa1b__0__Slow.cpp",
+      "sha256": "dadbb6585bd57034f44561a474d80395c791e99c339091752e3ba5ea7c4b4c30"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 754,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_he683fa1b__0__Slow.d",
+      "sha256": "e5a471731ad7c9ecc82132dd910c6446d61806049ae52387292d2238b39fff86"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3512,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_he683fa1b__0__Slow.o",
+      "sha256": "f81bacbc7f935014a827bab5b2549b4d1a00797fd391aa5575ddb5c943f1bf48"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12640,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_hed918eef__0__Slow.cpp",
+      "sha256": "5896bcb4c12d88c44f3a1d746d548feccd9436d96089b56bb7a1c9a118f28340"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 739,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_hed918eef__0__Slow.d",
+      "sha256": "ce858bb63675d0f5c2763ae95a3bdf7533415a2a101f6496a79c314a3fd5edb4"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 7616,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__DepSet_hed918eef__0__Slow.o",
+      "sha256": "536e7334c5af4044c77f8c59fc8f9257c01b715dee969d90b1f8e09b01f04626"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 801,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__Slow.cpp",
+      "sha256": "fd3b5bf346e5902953d5c3618409dbd00b39e4c896ebed343f851a481e745676"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 712,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__Slow.d",
+      "sha256": "6812e1c1344270b5c32e989c1f720c1d9716096d35bdba5947413f3df3d29cff"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3088,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_edge_special_splitter__Slow.o",
+      "sha256": "c872d519c4cf9585fcc61704917d48f1581b59ec2f41f3ac3b5dfce1ebfd06c8"
+    },
+    {
+      "allocated_bytes": 24576,
+      "bytes": 23310,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40.h",
+      "sha256": "29826932a83e13eb6fae80e6c0d7769469e0b98a8b538ff23ca62a6b3cab6bc0"
+    },
+    {
+      "allocated_bytes": 548864,
+      "bytes": 547717,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__0.cpp",
+      "sha256": "a459fa23e9d5cdb9f4e2850e827741ecc2cd8b79f446f38c66726bf599ee9f09"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 742,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__0.d",
+      "sha256": "adceb433c20f1c48dd5191b2ecc0835162b173d70d34bd70cad56210904ceb36"
+    },
+    {
+      "allocated_bytes": 57344,
+      "bytes": 56512,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__0.o",
+      "sha256": "ac06164327d0eaafd71a71018c49b2ddd5aa6fa3b3a7ad3917f5b9a41276f5b8"
+    },
+    {
+      "allocated_bytes": 462848,
+      "bytes": 458937,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__0__Slow.cpp",
+      "sha256": "b560653485d5d825b89c8a4b8acd19de33c6f97bc765594e955723a2ecb1a9b6"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 754,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__0__Slow.d",
+      "sha256": "70f07be2e181b744565d38b57c3c6b85494fcd635818e71ad4b7a765f0e78013"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12504,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__0__Slow.o",
+      "sha256": "e4c3cd81832c7cee73ac4295acc882d472add298d1bfc86ddcaa5af7264ea776"
+    },
+    {
+      "allocated_bytes": 548864,
+      "bytes": 548793,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__1.cpp",
+      "sha256": "57ae2e3d33b0370ed43455e649fc630d803ea53c6fac37e0964b7abbc8c086c4"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 742,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__1.d",
+      "sha256": "7df1a8afe3c30702fc2366ddc4d487e6fed5531a057f2414a21faa51f033e257"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 45152,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_h2439c763__1.o",
+      "sha256": "f4b2b3b5bc7e393dfc4c251136471d60c5399fe20e1fd86828862c74c4e7ef43"
+    },
+    {
+      "allocated_bytes": 323584,
+      "bytes": 323555,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_hb02bb447__0.cpp",
+      "sha256": "c20ebc7f415632bd7928fadc6035edb68380df05067f5f73b68f427eba3820fa"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 727,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_hb02bb447__0.d",
+      "sha256": "cef383b1a0927855473e95ecc219d3772d6d927331bef53b2822e75e16373f6b"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5992,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_hb02bb447__0.o",
+      "sha256": "0dedc5b974e6403eb9dd5296169ff7ab8f4b3cb2897f128961cfe6fbbe78eebf"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 24995,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_hb02bb447__0__Slow.cpp",
+      "sha256": "6cf0d4a6801f45b5df1d5e19ffd0f8182579aae68f521064c6326b431a1bc81c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 739,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_hb02bb447__0__Slow.d",
+      "sha256": "fde4328b4843509eb6180b03a4e8d42200d8199cb64da5885ee473bbe0184e02"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 10600,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__DepSet_hb02bb447__0__Slow.o",
+      "sha256": "fdce0351bd557eb68a40de6fd19dd0d47e5625793d7edb5ad29b787978eb2e6d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 801,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__Slow.cpp",
+      "sha256": "cda8bf022f2b3440e74f46f16d0d215fb58b20071ee73533d9fe6d5f965ac852"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 712,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__Slow.d",
+      "sha256": "8636d490ca8a81b65dc1df5207e81e9fa3a3844752b908fd36344a18e925b9d4"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3088,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_anvil_q1_rmsnorm__N1_H8_M40__Slow.o",
+      "sha256": "6e8e132c747d6f852c6486e7899bf84c5ddcf41f21cacf9847e6016555c747b4"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3030,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/Vbench_classes.mk",
+      "sha256": "0e619c6a689de0913bd80b1d576a3fbca7ff16cbdea95057e0a80cca0bcf536b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 286,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/clock-driver.d",
+      "sha256": "978c0dc6bc5cf21922c6002ed312876dbe1fe01f44ddfe8d3ca9fbf3e35218a8"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5840,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/clock-driver.o",
+      "sha256": "456dd02158a27c85eacc35db975861d4f1d930b9dd7ce7bd7478391dade72a73"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12880,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/verilated_timing.o",
+      "sha256": "98cc476cfa7786d3936d7fbb538397f11df7408a37608e4b9b69157a08c75f85"
+    }
+  ],
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 60550664192,
+    "peak_object_allocated_bytes": 13053952,
+    "retained_object_allocated_bytes": 1122304,
+    "sample_interval_s": 0.25,
+    "samples": 190
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 61877043200,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 1409286144,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 1140850688,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 60.30668871290982,
+  "end_utc": "2026-10-31T15:39:34.659712+00:00",
+  "exit_code": 0,
+  "index": 236,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.3813918232917786e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.0001797748263925314,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 325552,
+    "output_blocks": 44760,
+    "system_cpu_s": 10.026106,
+    "user_cpu_s": 106.019871
+  },
+  "start_utc": "2026-10-31T15:38:34.348703+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/236-qwen-shell-b1-s1-compile/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/236-qwen-shell-b1-s1-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 60476760064,
+    "available_inodes": 195625673,
+    "observed_utc": "2026-10-31T15:39:34.659790+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3526644916224
+  },
+  "storage_before": {
+    "available_bytes": 61877039104,
+    "available_inodes": 195629403,
+    "observed_utc": "2026-10-31T15:38:34.349595+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525244637184
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

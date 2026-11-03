@@ -1,0 +1,4 @@
+FATAL: rtl/anvil_edge_bpe_tokenizer.sv:31: ANVIL_EDGE_TOKENIZER PARAMETER ERROR: positive capacities and at least 32 tags required
+       Time: 0  Scope: bench.dut.tokenizer.invalid_parameters
+FATAL: rtl/anvil_edge_autoregressive_fsm.sv:31: ANVIL_EDGE_CONTROLLER PARAMETER ERROR: MAX_PROMPT_TOKENS must be positive
+       Time: 0  Scope: bench.dut.controller.invalid_parameters

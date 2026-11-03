@@ -1,0 +1,74 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/multiply-w16-s89/simulation.vvp",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/multiply-w16-s89/bench.sv"
+  ],
+  "child_settled": true,
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 62110535680,
+    "peak_object_allocated_bytes": 0,
+    "sample_interval_s": 0.25,
+    "samples": 1
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 62110560256,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 8254390272,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 7985954816,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 0.0523135089315474,
+  "end_utc": "2026-10-31T15:36:51.329411+00:00",
+  "exit_code": 0,
+  "index": 130,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.0829884558916092e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 6.649410352110863e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 51200,
+    "output_blocks": 416,
+    "system_cpu_s": 0.022463999999999998,
+    "user_cpu_s": 0.035734999999999996
+  },
+  "start_utc": "2026-10-31T15:36:51.275534+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/130-multiply-w16-s89-compile/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/130-multiply-w16-s89-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 62110339072,
+    "available_inodes": 195632044,
+    "observed_utc": "2026-10-31T15:36:51.329484+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525011337216
+  },
+  "storage_before": {
+    "available_bytes": 62110556160,
+    "available_inodes": 195632049,
+    "observed_utc": "2026-10-31T15:36:51.275926+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525011120128
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

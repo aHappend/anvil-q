@@ -1,0 +1,628 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/simulation",
+    "+verification_bypass=0",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-flash-0.hex",
+    "+verification_file1=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-input.hex",
+    "+verification_file2=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-tokens.hex",
+    "+verification_file3=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-output.hex",
+    "+verification_file4=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-write-address.hex",
+    "+verification_file5=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-write-data.hex",
+    "+verification_file6=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-write-operation.hex",
+    "+verification_file7=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-input.hex",
+    "+verification_file8=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-tokens.hex",
+    "+verification_file9=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-output.hex",
+    "+verification_file10=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-write-address.hex",
+    "+verification_file11=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-write-data.hex",
+    "+verification_file12=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-write-operation.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 31.45718809007667,
+  "end_utc": "2026-10-31T15:40:06.142424+00:00",
+  "exit_code": 0,
+  "index": 276,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 4.06559556722641e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.9575079679489136e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 406656,
+    "output_blocks": 48,
+    "system_cpu_s": 0.076001,
+    "user_cpu_s": 31.368736
+  },
+  "start_utc": "2026-10-31T15:39:34.682875+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0023-compact-shell-b0-s89/276-qwen-shell-b0-s89-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0023-compact-shell-b0-s89/276-qwen-shell-b0-s89-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [
+    {
+      "line": "QWEN_SHELL_START transport=0 cycles=22",
+      "observed_elapsed_s": 0.25398048805072904
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=0 cycles=16618",
+      "observed_elapsed_s": 0.25398048805072904
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=1 cycles=43392",
+      "observed_elapsed_s": 0.5047666861210018
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=2 cycles=229751",
+      "observed_elapsed_s": 2.008370092138648
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=3 cycles=307725",
+      "observed_elapsed_s": 2.509756770217791
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=4 cycles=309986",
+      "observed_elapsed_s": 2.509756770217791
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=5 cycles=380619",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=6 cycles=385641",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=7 cycles=403706",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=8 cycles=404604",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=9 cycles=405503",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=10 cycles=406131",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=11 cycles=407308",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=12 cycles=408753",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=13 cycles=411011",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=14 cycles=411639",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=15 cycles=412538",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=16 cycles=413436",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=17 cycles=414067",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=18 cycles=414692",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=19 cycles=415320",
+      "observed_elapsed_s": 3.011130043072626
+    },
+    {
+      "line": "QWEN_SHELL_BOOT writes=5848 reads=23600 acknowledgements=29448 cycles=611006",
+      "observed_elapsed_s": 4.013928266009316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=input_begin frame=0 cycles=611006",
+      "observed_elapsed_s": 4.013928266009316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=input_sent frame=0 cycles=611207",
+      "observed_elapsed_s": 4.013928266009316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=0 cycles=616910",
+      "observed_elapsed_s": 4.013928266009316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=0 cycles=691726",
+      "observed_elapsed_s": 4.264706989051774
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=0 cycles=751527",
+      "observed_elapsed_s": 4.766171383205801
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=1 cycles=751566",
+      "observed_elapsed_s": 4.766171383205801
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=1 cycles=853996",
+      "observed_elapsed_s": 5.2677278481423855
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=1 cycles=913860",
+      "observed_elapsed_s": 5.518417535116896
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=2 cycles=913908",
+      "observed_elapsed_s": 5.518417535116896
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=2 cycles=1044067",
+      "observed_elapsed_s": 6.019749311031774
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=2 cycles=1103916",
+      "observed_elapsed_s": 6.5210758270695806
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=3 cycles=1103961",
+      "observed_elapsed_s": 6.5210758270695806
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=output_progress frame=0 bytes=1 cycles=1104066",
+      "observed_elapsed_s": 6.5210758270695806
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=3 cycles=1261578",
+      "observed_elapsed_s": 7.273242691066116
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=3 cycles=1321448",
+      "observed_elapsed_s": 7.524045660160482
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=4 cycles=1321494",
+      "observed_elapsed_s": 7.524045660160482
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=4 cycles=1507045",
+      "observed_elapsed_s": 8.526718950131908
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=4 cycles=1566928",
+      "observed_elapsed_s": 8.77773856301792
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=5 cycles=1566975",
+      "observed_elapsed_s": 8.77773856301792
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=5 cycles=1779695",
+      "observed_elapsed_s": 9.781462162034586
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=5 cycles=1839615",
+      "observed_elapsed_s": 10.032366179162636
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=6 cycles=1839661",
+      "observed_elapsed_s": 10.032366179162636
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=6 cycles=2076152",
+      "observed_elapsed_s": 11.285628599114716
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=6 cycles=2135980",
+      "observed_elapsed_s": 11.536348833004013
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=7 cycles=2136026",
+      "observed_elapsed_s": 11.536348833004013
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=7 cycles=2399755",
+      "observed_elapsed_s": 12.78968457900919
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=7 cycles=2459547",
+      "observed_elapsed_s": 13.040343970060349
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=0 operation=8 cycles=2459596",
+      "observed_elapsed_s": 13.040343970060349
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=0 operation=8 cycles=2750962",
+      "observed_elapsed_s": 14.544756576186046
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=0 operation=8 cycles=2810750",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=output_progress frame=0 bytes=8 cycles=2810945",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_COMPLETION frame=0 cycles=2810946",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=0 token=256 cycles=616910",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=1 token=67 cycles=751566",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=2 token=3 cycles=913908",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=3 token=3 cycles=1103961",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=4 token=3 cycles=1321494",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=5 token=3 cycles=1566975",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=6 token=3 cycles=1839661",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=7 token=3 cycles=2136026",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=0 position=8 token=3 cycles=2459596",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_FRAME frame=0 transport=0 prompt_bytes=3 operations=9 output_bytes=8 embedding_reads=18576 activation_writes=1368 cycles=2810966",
+      "observed_elapsed_s": 14.795974689070135
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=0 cycles=2827561",
+      "observed_elapsed_s": 15.046921987086535
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=1 cycles=2854336",
+      "observed_elapsed_s": 15.046921987086535
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=2 cycles=3040698",
+      "observed_elapsed_s": 16.050007646204904
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=3 cycles=3118682",
+      "observed_elapsed_s": 16.300807760097086
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=4 cycles=3120942",
+      "observed_elapsed_s": 16.300807760097086
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=5 cycles=3191579",
+      "observed_elapsed_s": 16.551743717165664
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=6 cycles=3196600",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=7 cycles=3214658",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=8 cycles=3215560",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=9 cycles=3216460",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=10 cycles=3217090",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=11 cycles=3218261",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=12 cycles=3219704",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=13 cycles=3221966",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=14 cycles=3222594",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=15 cycles=3223497",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=16 cycles=3224395",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=17 cycles=3225023",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=18 cycles=3225652",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT_SEGMENT segment=19 cycles=3226280",
+      "observed_elapsed_s": 16.802591148065403
+    },
+    {
+      "line": "QWEN_SHELL_BOOT writes=5848 reads=23600 acknowledgements=29448 cycles=3422110",
+      "observed_elapsed_s": 17.805938916048035
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=input_begin frame=1 cycles=3422110",
+      "observed_elapsed_s": 17.805938916048035
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=input_sent frame=1 cycles=3422361",
+      "observed_elapsed_s": 17.805938916048035
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=0 cycles=3429873",
+      "observed_elapsed_s": 17.805938916048035
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=0 cycles=3504806",
+      "observed_elapsed_s": 18.05690829618834
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=0 cycles=3564791",
+      "observed_elapsed_s": 18.558513461146504
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=1 cycles=3564830",
+      "observed_elapsed_s": 18.558513461146504
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=1 cycles=3667209",
+      "observed_elapsed_s": 19.060232129180804
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=1 cycles=3727002",
+      "observed_elapsed_s": 19.310963915195316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=2 cycles=3727041",
+      "observed_elapsed_s": 19.310963915195316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=2 cycles=3856981",
+      "observed_elapsed_s": 19.81265833810903
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=2 cycles=3916887",
+      "observed_elapsed_s": 20.314312084112316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=3 cycles=3916934",
+      "observed_elapsed_s": 20.314312084112316
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=3 cycles=4074831",
+      "observed_elapsed_s": 21.0667483410798
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=3 cycles=4134631",
+      "observed_elapsed_s": 21.317706489004195
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=4 cycles=4134684",
+      "observed_elapsed_s": 21.317706489004195
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=output_progress frame=1 bytes=1 cycles=4134789",
+      "observed_elapsed_s": 21.317706489004195
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=4 cycles=4320222",
+      "observed_elapsed_s": 22.320767673198134
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=4 cycles=4380093",
+      "observed_elapsed_s": 22.571520077064633
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=5 cycles=4380137",
+      "observed_elapsed_s": 22.571520077064633
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=5 cycles=4593059",
+      "observed_elapsed_s": 23.826265825191513
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=5 cycles=4652929",
+      "observed_elapsed_s": 24.077014381997287
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=6 cycles=4652978",
+      "observed_elapsed_s": 24.077014381997287
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=6 cycles=4893407",
+      "observed_elapsed_s": 25.331318104173988
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=6 cycles=4953226",
+      "observed_elapsed_s": 25.83353091403842
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=7 cycles=4953275",
+      "observed_elapsed_s": 25.83353091403842
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=7 cycles=5216677",
+      "observed_elapsed_s": 27.089105999097228
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=7 cycles=5276480",
+      "observed_elapsed_s": 27.590726724127308
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=8 cycles=5276527",
+      "observed_elapsed_s": 27.590726724127308
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=8 cycles=5568010",
+      "observed_elapsed_s": 29.096927096135914
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=8 cycles=5627753",
+      "observed_elapsed_s": 29.347958571044728
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=core_begin frame=1 operation=9 cycles=5627798",
+      "observed_elapsed_s": 29.347958571044728
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_begin frame=1 operation=9 cycles=5946923",
+      "observed_elapsed_s": 31.104777567088604
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=head_ack frame=1 operation=9 cycles=6006770",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_PHASE phase=output_progress frame=1 bytes=8 cycles=6006961",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_COMPLETION frame=1 cycles=6006962",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=0 token=256 cycles=3429873",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=1 token=67 cycles=3564830",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=2 token=68 cycles=3727041",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=3 token=4 cycles=3916934",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=4 token=4 cycles=4134684",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=5 token=4 cycles=4380137",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=6 token=4 cycles=4652978",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=7 token=4 cycles=4953275",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=8 token=4 cycles=5276527",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_OPERATION frame=1 position=9 token=4 cycles=5627798",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_FRAME frame=1 transport=0 prompt_bytes=4 operations=10 output_bytes=8 embedding_reads=20640 activation_writes=1520 cycles=6006982",
+      "observed_elapsed_s": 31.456082817167044
+    },
+    {
+      "line": "QWEN_SHELL_COUNTS frames=2 reloads=1 request_stalls=140592 output_stalls=0",
+      "observed_elapsed_s": 31.456082817167044
+    }
+  ],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [
+    {
+      "at_settlement": false,
+      "child_index": 276,
+      "cycles": 16618,
+      "event": "QWEN_SHELL_BOOT_SEGMENT",
+      "observed_elapsed_s": 0.25398048805072904,
+      "relayed_elapsed_s": 0.25398048805072904,
+      "segment": 0
+    },
+    {
+      "at_settlement": false,
+      "child_index": 276,
+      "cycles": 5627798,
+      "event": "QWEN_SHELL_PHASE",
+      "frame": 1,
+      "observed_elapsed_s": 29.347958571044728,
+      "operation": 9,
+      "phase": "core_begin",
+      "relayed_elapsed_s": 30.351786956191063
+    },
+    {
+      "at_settlement": true,
+      "child_index": 276,
+      "cycles": 6006962,
+      "event": "QWEN_SHELL_COMPLETION",
+      "frame": 1,
+      "observed_elapsed_s": 31.456082817167044,
+      "relayed_elapsed_s": 31.456082817167044
+    }
+  ],
+  "storage_after": {
+    "available_bytes": 59688173568,
+    "available_inodes": 195622583,
+    "observed_utc": "2026-10-31T15:40:06.142750+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3527433502720
+  },
+  "storage_before": {
+    "available_bytes": 60455796736,
+    "available_inodes": 195625652,
+    "observed_utc": "2026-10-31T15:39:34.683355+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3526665879552
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

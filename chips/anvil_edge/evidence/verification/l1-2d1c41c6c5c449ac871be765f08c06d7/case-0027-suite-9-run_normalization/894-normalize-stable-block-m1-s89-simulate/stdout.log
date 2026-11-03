@@ -1,0 +1,3 @@
+TEXT_COUNTS inputs=7 requests=160 responses=160 outputs=6
+COMPARED 167
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-stable-block-m1-s1/compiled-bench.sv:242: Verilog $finish

@@ -1,0 +1,332 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 428,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench.d",
+      "sha256": "e5e6268e781fadac1fc4f235c22765c60f8a093a1eee84a7fa89ffcbfe036585"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 8896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench.o",
+      "sha256": "95dd1095a2ace52203557a1af6cd9d279ec55725d4aa4505f052691f78baab66"
+    },
+    {
+      "allocated_bytes": 602112,
+      "bytes": 599670,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__ALL.a",
+      "sha256": "dc727c3c604f74d288eb40a51de9ac17f1d06d70fe465d636e2be1f2be79888a"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 8682,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "3cd0e1e4bb510dd3ff233fe7825e3cfbece0ad64fbd53f63caaad1c7e87d331a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 440,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__ConstPool_0.d",
+      "sha256": "5a5e6bffb1f233fe514ccfba86a956044fa6970462322167637d7f71e2ca591c"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4472,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__ConstPool_0.o",
+      "sha256": "f8d6f9d2aed90c4a1ce3cb3d5ee0a0a58af7805b45912403edf6daa21ff4bc52"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1392,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__Syms.cpp",
+      "sha256": "4c81c8953694ab93f4da79844ff786b91b9cc1d4f24b963bdef3b78865d1492f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 471,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__Syms.d",
+      "sha256": "d025640417a82470cd734cb2f15cdbd1901481ab52f383f2affededa479a7709"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1184,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__Syms.h",
+      "sha256": "5afc711ce8bdf6d5fa270cd0ed597d4483d3cb6b15c9097c3b6ed264efd4206e"
+    },
+    {
+      "allocated_bytes": 24576,
+      "bytes": 22976,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__Syms.o",
+      "sha256": "872110e8df6b7f2c74d6ebd3152fe21228bfa5b42c195cff210052103ba87722"
+    },
+    {
+      "allocated_bytes": 53248,
+      "bytes": 50820,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root.h",
+      "sha256": "b01fb12e432c5b326cbb14b0582a006c2296349ef35d35890c0a71772dbe2a2c"
+    },
+    {
+      "allocated_bytes": 266240,
+      "bytes": 264940,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "e2792de4db80737655bb99bfe3efda2792cb6b51c0168fa03ec365b5a3b145c4"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 530,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__0.d",
+      "sha256": "f2e4dd251fa5ff6aaadab986080e6a8533844c9e5ee057f0cab1cc369e3ee808"
+    },
+    {
+      "allocated_bytes": 69632,
+      "bytes": 66416,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__0.o",
+      "sha256": "22fb9f827b74b048c1f2bbd8fa8cd303ccdd9541b242f462bddb104d62cc51c6"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 29285,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "22679ce370cfc61eafe446ca56ae9673b7b0b631fdf2d91b6e3da900a9aa8cfd"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 542,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.d",
+      "sha256": "7597be6cf8c36a0cad70ca144c41605b0bc6b409da30d6ba97eb75642816bb20"
+    },
+    {
+      "allocated_bytes": 40960,
+      "bytes": 38728,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.o",
+      "sha256": "4c549e882ed1d5b6f866875234c53bd1c6778d889948064efedcbb82e0fb2047"
+    },
+    {
+      "allocated_bytes": 364544,
+      "bytes": 361376,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__1.cpp",
+      "sha256": "8d3d7cca69c89cf331027e0cd5e225ce094e5449a39a052d577034cbaec8aedd"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 530,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__1.d",
+      "sha256": "96d0c033376ea3f8bc60e1e9220dacd4ed6c9dfed6d0aabf9e0bb07bb2a61713"
+    },
+    {
+      "allocated_bytes": 106496,
+      "bytes": 105344,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h0cc030f4__1.o",
+      "sha256": "ed03f2cabff7fdd6950ab4540b40165537901efdf833618c7e679435f6a9c111"
+    },
+    {
+      "allocated_bytes": 221184,
+      "bytes": 217909,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "cc83ca977cbdaa109aee37701e556cae62e40abb9f27624c51c73da6bd5d421d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 515,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__0.d",
+      "sha256": "10b226c40485b4b6eabebcbbfcb1b8558d1551598d4dcac1c78d2b9638c90c77"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 28304,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__0.o",
+      "sha256": "ca925c904f6f5085272104da936c2b24c5f7dfc517061302b3ab7e0925ffeeec"
+    },
+    {
+      "allocated_bytes": 266240,
+      "bytes": 264583,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "e03097287e128554835dedaae3c83e53f8535d8f6c9b1da81877317ba28c8dfb"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 527,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.d",
+      "sha256": "297b067bdde63b052a913b26f599df877e9b534b054bfc56482eb9a5e1e94436"
+    },
+    {
+      "allocated_bytes": 143360,
+      "bytes": 139904,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.o",
+      "sha256": "836def2a1fe74817d622d794896338311ddac5c738f18443396af091dc2332ff"
+    },
+    {
+      "allocated_bytes": 217088,
+      "bytes": 216634,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__1.cpp",
+      "sha256": "c30ab84f762927f5e8fab9d42bf0529c73b51f4ad42a6682ce9faef18ced7ed4"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 515,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__1.d",
+      "sha256": "460eecc7bf437aa6303fd5e0abc98d01d96537011c08997586ad8b371d4fe67e"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 25368,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__1.o",
+      "sha256": "40bc7c643aeaeefc6fbfbe3e72389c74617a3112d8d260124f5a7a2c5db10fb4"
+    },
+    {
+      "allocated_bytes": 872448,
+      "bytes": 871620,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__2.cpp",
+      "sha256": "48a2243cf51e37523481f1f281c32ea59f6088c24db8ea3f9e488ee9d5ca0cf8"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 515,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__2.d",
+      "sha256": "5153ef912ec7eb3535c29ee53d0f061918c6a6d88b27986f1f501c5bd86d7784"
+    },
+    {
+      "allocated_bytes": 77824,
+      "bytes": 77816,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__2.o",
+      "sha256": "ac480ac6c1a6012ecf47c30b0b84c5fd3c8ddf5e8c22dcffbd6d02accc466919"
+    },
+    {
+      "allocated_bytes": 135168,
+      "bytes": 132422,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__3.cpp",
+      "sha256": "98a84892fd3bb5efe69ea5d7c9b5cf8ccbbf027a151d23c50d3b35d63ead2701"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 515,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__3.d",
+      "sha256": "38e142f30690d106a1c971a490d9aadf4b3d618d3103c6d889badf99197f88af"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 15024,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__DepSet_h97d444dc__3.o",
+      "sha256": "b0c050d8d0b72ac3ed8d425f47757b2651489cf70aa5116ed1fdef4162b2f12d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 497,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__Slow.d",
+      "sha256": "22e17887cd6c762fde20e476939e4535d99dda14516d833ff37fdf69c1fe48fb"
+    },
+    {
+      "allocated_bytes": 45056,
+      "bytes": 42840,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench___024root__Slow.o",
+      "sha256": "48f756d93fe8d89758f0a792cff5ca4be9a309bff85d07412cba28a383503167"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 435,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__main.d",
+      "sha256": "602e741f10f7581b1a61b58cb7df81f18d02da2aeb3e2e9d5556057e1bb1c255"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4680,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__main.o",
+      "sha256": "aff79603ff15cc5c0bc95c9ab50d3e20fbb28ad37810d88e471f811f9a4b66a6"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5313,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__ver.d",
+      "sha256": "11e7001c1dc9f71c03f3e82b0d68ab3b21ecf6cefa976e8a1d3f6e037c2eff6e"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12616,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench__verFiles.dat",
+      "sha256": "4a11b6edf90d742a10b0c4327d846361d78470f45d01d80c2665e29ae29cc39b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1860,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/Vbench_classes.mk",
+      "sha256": "523916200d0a15b5792ed1ade6fcf52962f49a02a75fc1c6b3781ec57f875c43"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0078-storage-fault-unicode-class/boot-v257-s17-unicode-class/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:51:10.760940+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

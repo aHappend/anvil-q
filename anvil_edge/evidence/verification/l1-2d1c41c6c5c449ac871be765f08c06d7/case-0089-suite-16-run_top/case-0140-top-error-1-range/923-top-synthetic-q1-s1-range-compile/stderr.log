@@ -1,0 +1,273 @@
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:64:53: Operator OR expects 64 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                              : ... note: In instance 'bench.dut.core_adapter.core.decoder.residual.silu_unit.divider'
+   64 |               quotient_work <= (quotient_work << 1) | 1'b1;
+      |                                                     ^
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:69:28: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'iterations' generates 7 bits.
+                                                              : ... note: In instance 'bench.dut.core_adapter.core.decoder.residual.silu_unit.divider'
+   69 |             if (iterations == WIDTH-1) state <= PUBLISH;
+      |                            ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:64:53: Operator OR expects 129 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                              : ... note: In instance 'bench.dut.core_adapter.core.decoder.attention.rounded_divider.divider'
+   64 |               quotient_work <= (quotient_work << 1) | 1'b1;
+      |                                                     ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:69:28: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'iterations' generates 8 bits.
+                                                              : ... note: In instance 'bench.dut.core_adapter.core.decoder.attention.rounded_divider.divider'
+   69 |             if (iterations == WIDTH-1) state <= PUBLISH;
+      |                            ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:64:53: Operator OR expects 32 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                              : ... note: In instance 'bench.dut.tokenizer.tokenizer.normalization.normalizer.hangul_divider'
+   64 |               quotient_work <= (quotient_work << 1) | 1'b1;
+      |                                                     ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:69:28: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'iterations' generates 6 bits.
+                                                              : ... note: In instance 'bench.dut.tokenizer.tokenizer.normalization.normalizer.hangul_divider'
+   69 |             if (iterations == WIDTH-1) state <= PUBLISH;
+      |                            ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:64:53: Operator OR expects 128 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                              : ... note: In instance 'bench.dut.core_adapter.core.decoder.residual.silu_unit.exp_unit.divider'
+   64 |               quotient_work <= (quotient_work << 1) | 1'b1;
+      |                                                     ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_exp_q24.sv:91:15: Operator ASSIGNDLY expects 32 bits on the Assign RHS, but Assign RHS's COND generates 64 bits.
+                                                    : ... note: In instance 'bench.dut.core_adapter.core.decoder.residual.silu_unit.exp_unit'
+   91 |         result<=total<0 ? 0 : total >> exponent;
+      |               ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_numeric_pkg.sv:16:18: Operator ASSIGN expects 128 bits on the Assign RHS, but Assign RHS's COND generates 129 bits.
+                                                        : ... note: In instance 'bench'
+   16 |       round_shift=x<0 ? -$signed(magnitude) : $signed(magnitude);
+      |                  ^
+%Warning-WIDTHTRUNC: rtl/anvil_q1_w4a16_gemv.sv:45:27: Operator ASSIGNW expects 4 bits on the Assign RHS, but Assign RHS's SHIFTR generates 32 bits.
+                                                     : ... note: In instance 'bench.dut.core_adapter.core.decoder.gemv'
+   45 |   wire [3:0] weight_nibble=qw >> lane_shift;
+      |                           ^
+%Warning-WIDTHTRUNC: rtl/anvil_q1_w4a16_gemv.sv:46:25: Operator ASSIGNW expects 4 bits on the Assign RHS, but Assign RHS's SHIFTR generates 32 bits.
+                                                     : ... note: In instance 'bench.dut.core_adapter.core.decoder.gemv'
+   46 |   wire [3:0] zero_nibble=qz >> lane_shift;
+      |                         ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_table_record_reader.sv:102:25: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'word_index' generates 1 bits.
+                                                                  : ... note: In instance 'bench.dut.tokenizer.tokenizer.ordinary_text.span.byte_map'
+  102 |           if (word_index==RECORD_WORDS-1) state<=RETURN;
+      |                         ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_table_record_reader.sv:102:25: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'word_index' generates 2 bits.
+                                                                  : ... note: In instance 'bench.dut.tokenizer.tokenizer.ordinary_text.span.pretokenization.dfa.classification.record_reader'
+  102 |           if (word_index==RECORD_WORDS-1) state<=RETURN;
+      |                         ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_isqrt128.sv:44:41: Operator OR expects 64 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                      : ... note: In instance 'bench.dut.core_adapter.core.decoder.attention.root_unit'
+   44 |           root_work <= (root_work << 1) | 1'b1;
+      |                                         ^
+%Warning-WIDTHEXPAND: rtl/anvil_q1_gqa_attention.sv:151:18: Operator ADD expects 64 bits on the LHS, but LHS's VARREF 'index' generates 32 bits.
+                                                          : ... note: In instance 'bench.dut.core_adapter.core.decoder.attention'
+  151 |         if (index+1<KV_SIZE) begin index<=index+1; state<=CACHE_READ; end
+      |                  ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_spi_reader.sv:93:25: Operator ASSIGNDLY expects 1 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.
+                                                       : ... note: In instance 'bench.dut.boot_loader.image_loader.loader.flash_reader'
+   93 |                 counter <= CLOCK_HALF_PERIOD-1;
+      |                         ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_spi_reader.sv:100:25: Operator ASSIGNDLY expects 1 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.
+                                                        : ... note: In instance 'bench.dut.boot_loader.image_loader.loader.flash_reader'
+  100 |                 counter <= CLOCK_HALF_PERIOD-1;
+      |                         ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_spi_reader.sv:114:25: Operator ASSIGNDLY expects 1 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.
+                                                        : ... note: In instance 'bench.dut.boot_loader.image_loader.loader.flash_reader'
+  114 |                 counter <= CLOCK_HALF_PERIOD-1;
+      |                         ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_spi_reader.sv:127:25: Operator ASSIGNDLY expects 1 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.
+                                                        : ... note: In instance 'bench.dut.boot_loader.image_loader.loader.flash_reader'
+  127 |                 counter <= CLOCK_HALF_PERIOD-1;
+      |                         ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_spi_reader.sv:138:25: Operator ASSIGNDLY expects 1 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.
+                                                        : ... note: In instance 'bench.dut.boot_loader.image_loader.loader.flash_reader'
+  138 |                 counter <= CLOCK_HALF_PERIOD-1;
+      |                         ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_tagged_dfa.sv:186:67: Operator GT expects 33 bits on the RHS, but RHS's VARREF 'MAX_SPAN_BYTES' generates 32 bits.
+                                                         : ... note: In instance 'bench.dut.tokenizer.tokenizer.ordinary_text.span.pretokenization'
+  186 |             end else if (scalar_count>=MAX_SPAN_BYTES || input_end>MAX_SPAN_BYTES ||
+      |                                                                   ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_tensor_mapper.sv:331:60: Operator NEQ expects 64 bits on the LHS, but LHS's VARREF 'directory_count' generates 32 bits.
+                                                            : ... note: In instance 'bench.dut.memory_subsystem.tensor_mapper'
+  331 |             DIRECTORY_COUNT>64'hffffffff || directory_count!=DIRECTORY_COUNT ||
+      |                                                            ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_directory_validator.sv:235:53: Operator NEQ expects 64 bits on the LHS, but LHS's SEL generates 32 bits.
+                                                                  : ... note: In instance 'bench.dut.boot_loader.directory'
+  235 |                 header[64+:32]!=48 || header[96+:32]!=DIRECTORY_COUNT ||
+      |                                                     ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_manifest_validator.sv:195:57: Operator NEQ expects 64 bits on the LHS, but LHS's VARREF 'header_record_count' generates 32 bits.
+                                                                 : ... note: In instance 'bench.dut.boot_loader.manifest'
+  195 |                 (segment_index==1 && header_record_count!=DIRECTORY_COUNT) ||
+      |                                                         ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_image_loader.sv:165:30: Operator ASSIGN expects 5 bits on the Assign RHS, but Assign RHS's SUB generates 32 bits.
+                                                          : ... note: In instance 'bench.dut.boot_loader.image_loader'
+  165 |         descriptor_kind_index=descriptor[0]-32'h100;
+      |                              ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_image_loader.sv:168:30: Operator ASSIGN expects 5 bits on the Assign RHS, but Assign RHS's ADD generates 32 bits.
+                                                          : ... note: In instance 'bench.dut.boot_loader.image_loader'
+  168 |         descriptor_kind_index=descriptor[0]-32'h200+32'd4;
+      |                              ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_image_loader.sv:292:44: Operator LT expects 65 bits on the LHS, but LHS's ARRAYSEL generates 64 bits.
+                                                           : ... note: In instance 'bench.dut.boot_loader.image_loader'
+  292 |                   segment_bases[pair_index]<candidate_ddr_end) ||
+      |                                            ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_image_loader.sv:294:44: Operator LT expects 65 bits on the LHS, but LHS's ARRAYSEL generates 64 bits.
+                                                           : ... note: In instance 'bench.dut.boot_loader.image_loader'
+  294 |                   flash_offsets[pair_index]<candidate_flash_end))) begin
+      |                                            ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:31:41: Operator LT expects 32 bits on the LHS, but LHS's VARREF 'count' generates 2 bits.
+                                                  : ... note: In instance 'bench.dut.edge_io.rx_fifo'
+   31 |       assign in_ready = rst_n && (count < DEPTH || pop);
+      |                                         ^
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:34:36: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'count' generates 2 bits.
+                                                  : ... note: In instance 'bench.dut.edge_io.rx_fifo'
+   34 |       assign full = rst_n && count == DEPTH;
+      |                                    ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:49:27: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'write_ptr' generates 2 bits.
+                                                  : ... note: In instance 'bench.dut.edge_io.rx_fifo'
+   49 |             if (write_ptr == DEPTH-1) write_ptr <= 0;
+      |                           ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:53:26: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'read_ptr' generates 2 bits.
+                                                  : ... note: In instance 'bench.dut.edge_io.rx_fifo'
+   53 |             if (read_ptr == DEPTH-1) read_ptr <= 0;
+      |                          ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_ddr4_boot_loader.sv:83:48: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'selected' generates 3 bits.
+                                                              : ... note: In instance 'bench.dut.boot_loader'
+   83 |   assign ddr_req_write=active_stage && selected==LOADER && loader_write;
+      |                                                ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_ddr4_boot_loader.sv:85:48: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'selected' generates 3 bits.
+                                                              : ... note: In instance 'bench.dut.boot_loader'
+   85 |   assign ddr_req_wdata=active_stage && selected==LOADER ? loader_wdata : 0;
+      |                                                ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_ddr4_boot_loader.sv:86:48: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'selected' generates 3 bits.
+                                                              : ... note: In instance 'bench.dut.boot_loader'
+   86 |   assign ddr_req_wstrb=active_stage && selected==LOADER ? loader_wstrb : 0;
+      |                                                ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_ddr4_boot_loader.sv:90:13: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'LOADER' generates 32 bits.
+                                                             : ... note: In instance 'bench.dut.boot_loader'
+   90 |     selected=LOADER;
+      |             ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_ddr4_boot_loader.sv:92:46: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'MANIFEST' generates 32 bits.
+                                                             : ... note: In instance 'bench.dut.boot_loader'
+   92 |       MANIFEST_START, MANIFEST_WAIT: selected=MANIFEST;
+      |                                              ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_ddr4_boot_loader.sv:93:48: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'DIRECTORY' generates 32 bits.
+                                                             : ... note: In instance 'bench.dut.boot_loader'
+   93 |       DIRECTORY_START, DIRECTORY_WAIT: selected=DIRECTORY;
+      |                                                ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_ddr4_boot_loader.sv:94:42: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'TOKENS' generates 32 bits.
+                                                             : ... note: In instance 'bench.dut.boot_loader'
+   94 |       TOKENS_START, TOKENS_WAIT: selected=TOKENS;
+      |                                          ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_ddr4_boot_loader.sv:95:44: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'PROFILE' generates 32 bits.
+                                                             : ... note: In instance 'bench.dut.boot_loader'
+   95 |       PROFILE_START, PROFILE_WAIT: selected=PROFILE;
+      |                                            ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_ddr4_boot_loader.sv:96:38: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'TRIE' generates 32 bits.
+                                                             : ... note: In instance 'bench.dut.boot_loader'
+   96 |       TRIE_START, TRIE_WAIT: selected=TRIE;
+      |                                      ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_detokenizer.sv:59:24: Operator ASSIGNW expects 8 bits on the Assign RHS, but Assign RHS's SHIFTR generates 32 bits.
+                                                        : ... note: In instance 'bench.dut.detokenizer'
+   59 |   wire [7:0] next_byte = response_data >> {byte_lane, 3'b000};
+      |                        ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_detokenizer.sv:243:25: Bit extraction of array[3:0] requires 2 bit index, not 3 bits.
+                                                         : ... note: In instance 'bench.dut.detokenizer'
+  243 |             scalar_bytes[scalar_length] <= next_byte;
+      |                         ^
+%Warning-WIDTHTRUNC: rtl/anvil_edge_detokenizer.sv:263:36: Bit extraction of array[3:0] requires 2 bit index, not 3 bits.
+                                                         : ... note: In instance 'bench.dut.detokenizer'
+  263 |           tail_byte <= scalar_bytes[emit_index];
+      |                                    ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:106:22: Operator ASSIGN expects 32 bits on the Assign RHS, but Assign RHS's SEL generates 24 bits.
+                                                                                                                                                                                         : ... note: In instance 'bench'
+  106 |         flash_address=command_shift[23:0]; spi_reads=spi_reads+1;
+      |                      ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:151:27: Bit extraction of array[65535:0] requires 16 bit index, not 64 bits.
+                                                                                                                                                                                        : ... note: In instance 'bench'
+  151 |         ddr_rsp_rdata={ddr[pending_address+3],ddr[pending_address+2],
+      |                           ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:151:50: Bit extraction of array[65535:0] requires 16 bit index, not 64 bits.
+                                                                                                                                                                                        : ... note: In instance 'bench'
+  151 |         ddr_rsp_rdata={ddr[pending_address+3],ddr[pending_address+2],
+      |                                                  ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:152:27: Bit extraction of array[65535:0] requires 16 bit index, not 64 bits.
+                                                                                                                                                                                        : ... note: In instance 'bench'
+  152 |                        ddr[pending_address+1],ddr[pending_address]};
+      |                           ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:152:50: Bit extraction of array[65535:0] requires 16 bit index, not 64 bits.
+                                                                                                                                                                                        : ... note: In instance 'bench'
+  152 |                        ddr[pending_address+1],ddr[pending_address]};
+      |                                                  ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:192:68: Operator SUB expects 64 bits on the LHS, but LHS's VARREF 'embedding_index' generates 32 bits.
+                                                                                                                                                                                         : ... note: In instance 'bench'
+  192 |             end else if (ddr_req_addr!==64'd5728+4*(embedding_index-8))
+      |                                                                    ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:215:31: Operator ADD expects 64 bits on the RHS, but RHS's VARREF 'lane' generates 32 bits.
+                                                                                                                                                                                         : ... note: In instance 'bench'
+  215 |               ddr[ddr_req_addr+lane]=ddr_req_wdata[lane*8+:8];
+      |                               ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:215:18: Bit extraction of array[65535:0] requires 16 bit index, not 64 bits.
+                                                                                                                                                                                        : ... note: In instance 'bench'
+  215 |               ddr[ddr_req_addr+lane]=ddr_req_wdata[lane*8+:8];
+      |                  ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:228:29: Operator ADD expects 64 bits on the RHS, but RHS's VARREF 'lane' generates 32 bits.
+                                                                                                                                                                                         : ... note: In instance 'bench'
+  228 |             ddr[ddr_req_addr+lane]=ddr_req_wdata[lane*8+:8];
+      |                             ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:228:16: Bit extraction of array[65535:0] requires 16 bit index, not 64 bits.
+                                                                                                                                                                                        : ... note: In instance 'bench'
+  228 |             ddr[ddr_req_addr+lane]=ddr_req_wdata[lane*8+:8];
+      |                ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:237:63: Operator ADD expects 32 bits on the RHS, but RHS's SEL generates 3 bits.
+                                                                                                                                                                                         : ... note: In instance 'bench'
+  237 |         pending_address=ddr_req_addr; pending=1; delay_count=1+rng[4:2];
+      |                                                               ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:4753:73: Logical operator LOGOR expects 1 bit on the RHS, but RHS's VARREF 'outputs' generates 32 bits.
+ 4753 |           done || busy || s_axis_tready || m_axis_tvalid || uart_tx!==1 ||
+      |                                                                         ^~
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:4754:19: Logical operator LOGOR expects 1 bit on the RHS, but RHS's VARREF 'completions' generates 32 bits.
+ 4754 |           outputs || completions || embedding_reads || inference_writes)
+      |                   ^~
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:4754:34: Logical operator LOGOR expects 1 bit on the RHS, but RHS's VARREF 'embedding_reads' generates 32 bits.
+ 4754 |           outputs || completions || embedding_reads || inference_writes)
+      |                                  ^~
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:4754:53: Logical operator LOGOR expects 1 bit on the RHS, but RHS's VARREF 'inference_writes' generates 32 bits.
+ 4754 |           outputs || completions || embedding_reads || inference_writes)
+      |                                                     ^~
+%Warning-UNSIGNED: rtl/anvil_edge_boot_segment_reader.sv:71:43: Comparison is constant due to unsigned arithmetic
+                                                              : ... note: In instance 'bench.dut.boot_loader.manifest.validator.reader'
+   71 |               physical_address[64] || base<DDR_BASE || segment_end>DDR_END ||
+      |                                           ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:332:53: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut.memory_subsystem.tensor_mapper'
+  332 |             directory_base[1:0]!=0 || directory_base<DDR_BASE ||
+      |                                                     ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:337:27: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut.memory_subsystem.tensor_mapper'
+  337 |             immutable_base<DDR_BASE || writable_base<DDR_BASE ||
+      |                           ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:337:53: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut.memory_subsystem.tensor_mapper'
+  337 |             immutable_base<DDR_BASE || writable_base<DDR_BASE ||
+      |                                                     ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:489:53: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut.memory_subsystem.tensor_mapper'
+  489 |         if (physical_address[64] || physical_address<{1'b0,DDR_BASE} ||
+      |                                                     ^
+%Warning-UNSIGNED: rtl/anvil_edge_image_loader.sv:282:31: Comparison is constant due to unsigned arithmetic
+                                                        : ... note: In instance 'bench.dut.boot_loader.image_loader'
+  282 |                 candidate_base<DDR_BASE || candidate_ddr_end>DDR_END ||
+      |                               ^
+%Warning-UNSIGNED: rtl/anvil_edge_memory_subsystem.sv:228:28: Comparison is constant due to unsigned arithmetic
+                                                            : ... note: In instance 'bench.dut.memory_subsystem'
+  228 |             request_address<DDR_BASE || request_end>DDR_END) begin
+      |                            ^
+%Warning-UNSIGNED: rtl/anvil_edge_memory_subsystem.sv:232:32: Comparison is constant due to unsigned arithmetic
+                                                            : ... note: In instance 'bench.dut.memory_subsystem'
+  232 |                      table_base>=DDR_BASE && allowed_table_end<=DDR_END &&
+      |                                ^~
+%Warning-MULTIDRIVEN: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:79:23: Signal has multiple driving blocks with different clocking: 'bench.ddr_rsp_valid'
+                      evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:172:57: ... Location of first driving block
+  172 |         pending=0; acknowledgements=acknowledgements+1; ddr_rsp_valid<=0;
+      |                                                         ^~~~~~~~~~~~~
+                      evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0140-top-error-1-range/top-synthetic-q1-s1-range/compiled-bench.sv:150:9: ... Location of other driving block
+  150 |         ddr_rsp_valid<=1;
+      |         ^~~~~~~~~~~~~

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "python3",
+    "--version"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:38:33.801474+00:00",
+  "pid": 1024006,
+  "process_group": 1024006,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61878046720,
+    "available_inodes": 195629483,
+    "observed_utc": "2026-10-31T15:38:33.801572+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525243629568
+  }
+}

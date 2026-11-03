@@ -1,0 +1,45 @@
+%Warning-WIDTHEXPAND: rtl/anvil_edge_tensor_mapper.sv:331:60: Operator NEQ expects 64 bits on the LHS, but LHS's VARREF 'directory_count' generates 32 bits.
+                                                            : ... note: In instance 'bench.dut'
+  331 |             DIRECTORY_COUNT>64'hffffffff || directory_count!=DIRECTORY_COUNT ||
+      |                                                            ^~
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:46:27: Bit extraction of array[727:0] requires 10 bit index, not 64 bits.
+                                                                                                                                                    : ... note: In instance 'bench'
+   46 |         value_at=directory[(address-cfg_directory_base)>>2];
+      |                           ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:101:67: Operator ADD expects 32 bits on the RHS, but RHS's SEL generates 3 bits.
+                                                                                                                                                      : ... note: In instance 'bench'
+  101 |         outstanding=1; pending_address=ddr_req_addr; delay_count=1+rng[4:2];
+      |                                                                   ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:114:54: Operator ASSIGN expects 4 bits on the Assign RHS, but Assign RHS's VARREF 'kind' generates 32 bits.
+                                                                                                                                                     : ... note: In instance 'bench'
+  114 |       mem_req_valid=1; mem_req_write=wr; mem_req_kind=kind; mem_req_layer=layer;
+      |                                                      ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:115:19: Operator ASSIGN expects 3 bits on the Assign RHS, but Assign RHS's VARREF 'projection' generates 32 bits.
+                                                                                                                                                     : ... note: In instance 'bench'
+  115 |       mem_req_proj=projection; mem_req_row=row; mem_req_col=col;
+      |                   ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:332:53: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut'
+  332 |             directory_base[1:0]!=0 || directory_base<DDR_BASE ||
+      |                                                     ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:337:27: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut'
+  337 |             immutable_base<DDR_BASE || writable_base<DDR_BASE ||
+      |                           ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:337:53: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut'
+  337 |             immutable_base<DDR_BASE || writable_base<DDR_BASE ||
+      |                                                     ^
+%Warning-UNSIGNED: rtl/anvil_edge_tensor_mapper.sv:489:53: Comparison is constant due to unsigned arithmetic
+                                                         : ... note: In instance 'bench.dut'
+  489 |         if (physical_address[64] || physical_address<{1'b0,DDR_BASE} ||
+      |                                                     ^
+%Warning-MULTIDRIVEN: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:27:23: Signal has multiple driving blocks with different clocking: 'bench.ddr_rsp_valid'
+                      evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:82:24: ... Location of first driving block
+   82 |         outstanding=0; ddr_rsp_valid<=0;
+      |                        ^~~~~~~~~~~~~
+                      evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-h16-l2-s1/compiled-bench.sv:63:9: ... Location of other driving block
+   63 |         ddr_rsp_valid<=1; ddr_rsp_rdata=value_at(pending_address);
+      |         ^~~~~~~~~~~~~

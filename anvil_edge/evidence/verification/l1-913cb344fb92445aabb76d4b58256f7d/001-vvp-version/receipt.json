@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "-V"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.05292651290073991,
+  "end_utc": "2026-10-31T15:36:43.790362+00:00",
+  "exit_code": 0,
+  "index": 1,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.046814188361168e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.7460122257471085e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 32768,
+    "output_blocks": 8,
+    "system_cpu_s": 0.005889,
+    "user_cpu_s": 0.001963
+  },
+  "start_utc": "2026-10-31T15:36:43.736646+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/001-vvp-version/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/001-vvp-version/stdout.log",
+  "storage_after": {
+    "available_bytes": 62034477056,
+    "available_inodes": 195633330,
+    "observed_utc": "2026-10-31T15:36:43.790494+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525087199232
+  },
+  "storage_before": {
+    "available_bytes": 62034489344,
+    "available_inodes": 195633334,
+    "observed_utc": "2026-10-31T15:36:43.737004+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525087186944
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

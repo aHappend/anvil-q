@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-token-length-over-s1/obj/simulation",
+    "+verification_seed=1"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:52:24.316653+00:00",
+  "pid": 1151036,
+  "process_group": 1151036,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58305429504,
+    "available_inodes": 195604188,
+    "observed_utc": "2026-10-31T15:52:24.316761+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528816246784
+  }
+}

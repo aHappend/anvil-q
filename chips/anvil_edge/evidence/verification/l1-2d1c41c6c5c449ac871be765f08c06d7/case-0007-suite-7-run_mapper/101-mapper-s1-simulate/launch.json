@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-s1/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-s1-input/directory.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:48:07.289768+00:00",
+  "pid": 1077205,
+  "process_group": 1077205,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 59008720896,
+    "available_inodes": 195614154,
+    "observed_utc": "2026-10-31T15:48:07.289857+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528112955392
+  }
+}

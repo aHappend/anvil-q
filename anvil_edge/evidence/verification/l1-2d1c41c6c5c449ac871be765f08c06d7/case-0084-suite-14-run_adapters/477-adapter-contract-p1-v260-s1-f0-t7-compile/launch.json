@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "verilator",
+    "--binary",
+    "--timing",
+    "--assert",
+    "--timescale",
+    "1ns/1ps",
+    "--top-module",
+    "bench",
+    "-Wno-fatal",
+    "--x-initial",
+    "unique",
+    "--x-assign",
+    "unique",
+    "-j",
+    "2",
+    "-MAKEFLAGS",
+    "VK_PCH_I_FAST=\"-include Vbench__pch.h\" VK_PCH_I_SLOW=\"-include Vbench__pch.h\" --old-file=Vbench__pch.h.fast.gch --old-file=Vbench__pch.h.slow.gch",
+    "--Mdir",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0084-suite-14-run_adapters/adapter-contract-p1-v260-s1-f0-t7/obj",
+    "-o",
+    "simulation",
+    "rtl/anvil_edge_core_adapter.sv",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0084-suite-14-run_adapters/adapter-contract-p1-v260-s1-f0-t7/compiled-bench.sv"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:19.393936+00:00",
+  "pid": 1141470,
+  "process_group": 1141470,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58686115840,
+    "available_inodes": 195605743,
+    "observed_utc": "2026-10-31T15:51:19.394015+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528435560448
+  }
+}

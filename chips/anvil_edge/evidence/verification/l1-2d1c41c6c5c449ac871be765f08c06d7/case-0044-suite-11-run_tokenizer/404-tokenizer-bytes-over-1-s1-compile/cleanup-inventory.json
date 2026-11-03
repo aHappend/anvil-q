@@ -1,0 +1,242 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3863,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench.cpp",
+      "sha256": "968a80fecba9a09c69a7ffa44e7474acd6b7eb3a1e3c1ad16225de8ce8d6a778"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3680,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench.h",
+      "sha256": "51d5b72cc5aaae66cece86f0921338c1149f950452295e6722f41fd4ede98c6a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210566,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__ALL.a",
+      "sha256": "7f93e082d57babfe78464672e4ec1d8ac7845fc1a9962aa0b947c507645ee91d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1186,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__ALL.cpp",
+      "sha256": "60ecd5d6ae11297b950faebc6e0f967089b3f7f36a514a90a0ccf072ff6b164d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1440,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__ALL.d",
+      "sha256": "cb69cf5f1da4ac74e95166cac8aa3f7de0d7b2bebf2449a33b2083195990e16d"
+    },
+    {
+      "allocated_bytes": 200704,
+      "bytes": 200480,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__ALL.o",
+      "sha256": "fad339f40ea5ddeeef10ab5f67058670b0ae330150e5295f8790baeaec0d0e17"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 428,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "27f4d0c4df1f37275fbed2c04fa4f2d916e6fad6abf66a01d523be8ea643e014"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3506,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__Syms.cpp",
+      "sha256": "901450933199398674920a1b5ffc6f89358f33646e32fbbfb38849793f3730af"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1893,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__Syms.h",
+      "sha256": "7eaf1f6461fc353b9b38b767311d4a9763e1bd20325fbcbbce5b14425e0b6174"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 47259,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench___024root.h",
+      "sha256": "ed3a318f665abaa54fdf76e51f48f768b52f0648c9ceb08bee8aee318002e689"
+    },
+    {
+      "allocated_bytes": 507904,
+      "bytes": 506997,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "cd5f8204c0d2d33e6b3b98769458414b63392dde0d2f7f3de8cff019b0844080"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 47038,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "badb9717343ee2d5e354c71992e1469c1649bd104f9b4e04e152a99c1eb59255"
+    },
+    {
+      "allocated_bytes": 94208,
+      "bytes": 92147,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "9ec40b36ed7cd68c7488c98515370c2d01ced59e728ca9949e1c097f70ddff31"
+    },
+    {
+      "allocated_bytes": 98304,
+      "bytes": 94435,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "795adc552e71fa7cc056b4b3b5e050220f3e47014de5d85c15e25eec2874f490"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 6085,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__ver.d",
+      "sha256": "1659534c57eca3bd048481f8742ebd155833af1be0b12b6a7cec5c33ad10e1d6"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 13862,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench__verFiles.dat",
+      "sha256": "91ec163b17c8b02f411021efc2bbb96b0e0dc9e3745accd9108104ce19e2d038"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 16410,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_normalizer__M1.h",
+      "sha256": "aa64177e9dbeeabfe22613c88f9ef2af75daceb8cebc38b555770281696038a6"
+    },
+    {
+      "allocated_bytes": 294912,
+      "bytes": 294031,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_normalizer__M1__DepSet_hd727d85e__0.cpp",
+      "sha256": "19d728413a63922e257f8082f5e1e52d315f3c70fea42a5f9dc0ce03711c47e2"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 20320,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_normalizer__M1__DepSet_hd727d85e__0__Slow.cpp",
+      "sha256": "bc10ce9adb41e993307080c1bb0033f7bd5b0a58465f05b4c58d138413860bcc"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2467,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_normalizer__M1__DepSet_hdf2dad32__0.cpp",
+      "sha256": "93505fb8ac11b50a8a4c840a8c706a5f4e2d61239bb545bd22f55ddc6d96499c"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 18669,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_normalizer__M1__DepSet_hdf2dad32__0__Slow.cpp",
+      "sha256": "010661d8ed20fd1a2e48bef6eceae49fa701cbc39f6e20de821ff032046ce17a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 783,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_normalizer__M1__Slow.cpp",
+      "sha256": "3600cba7108b1ab96fc1b9343c7011406cb8e5447774def924a9a38ff627c7df"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 14901,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_special_splitter__pi2.h",
+      "sha256": "1372f6a3c787c7615681b334b73b5fc3ffdea6c6853bc79735a37e148db7c18f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1989,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_h4678c305__0.cpp",
+      "sha256": "f874af1d6b940423a0dc3444b847dfebdc7f165d215a9656583be3a33950c875"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 17258,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_h4678c305__0__Slow.cpp",
+      "sha256": "fd40cd9aca0d3bffca1498c6c4c1fa8d8ad005be19777addca387e00a6f8e768"
+    },
+    {
+      "allocated_bytes": 278528,
+      "bytes": 276086,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_hbe6cb62d__0.cpp",
+      "sha256": "4c1564b28bdac7989bef2a8b7ad5a257dd941881025bfc4d4b726c047535112f"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 28267,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_special_splitter__pi2__DepSet_hbe6cb62d__0__Slow.cpp",
+      "sha256": "c6b7feec4985670d48c2ff2e5f2281a63d1bb362fc706076e003a593b9239178"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 846,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_anvil_edge_special_splitter__pi2__Slow.cpp",
+      "sha256": "50f4627595839085b672a48115464a4431bfe8ec7ade53a0bd7f8a6dd39b2ab8"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2295,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/Vbench_classes.mk",
+      "sha256": "5f0100c8e308aa0dcfdaf61644f0d5426efe64fe973162b09ac2a6c5aacc459b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-over-1-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:51:05.232396+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

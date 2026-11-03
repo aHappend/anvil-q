@@ -1,0 +1,1100 @@
+"""Source-bound subprocess retention, including unfinished child invocations.
+
+An in-flight receipt with a null exit is not evidence of child completion or
+shared-runtime persistence recovery.
+Snapshot copying starts only after an incomplete receipt is retained. If later
+writes fail too, that receipt remains incomplete, never a successful snapshot.
+Every copied source must match its recorded hash before the snapshot is complete.
+Live sources must still match that snapshot at successful finalization; source
+drift fails the invocation rather than certifying a different workspace revision.
+Check the same identity before each child launch, so detected drift cannot start
+another tool. This guard detects changes, not their writer or shared-runtime cause.
+The complete public-source inventory must match too, including added files.
+Successful finalization requires a complete snapshot and settled child records;
+completed expected-negative tests may retain nonzero exit codes.
+Snapshot content, raw logs and child receipts must still exist at finalization.
+Missing in-flight receipts or logs stop only the invocation's owned child group.
+Lost artifacts are never recreated, and the enclosing stderr reports the loss
+even when the invocation directory itself can no longer retain a diagnosis.
+
+Workload shards retain independent invocation receipts under the requested output.
+Reuse requires matching public sources, tool executables/version outputs,
+deterministic fixture inputs and complete workload arguments, plus intact
+snapshots, generated fixtures, comparisons and raw tool evidence. The aggregate
+automatically executes cases without reusable evidence and revalidates every
+child at finalization. These content bindings do not adjudicate runtime-owned
+identifiers, waive coverage gates or establish a cold-run time budget.
+"""
+
+from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, is_dataclass
+import errno
+import gzip
+import hashlib
+import json
+import os
+import re
+import signal
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+import uuid
+import threading
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextlib import contextmanager
+
+ROOT = Path(__file__).resolve().parent.parent
+SELECTORS = ("rtl/*.sv", "design/*.md", "design/*.json", "fpga/*",
+             "tests/**", "anvil_q2_reference/rtl/*.sv")
+VERILATOR_UNROLL = ("--unroll-count", "1024", "--unroll-stmts", "1000000")
+WORKLOAD_ROOT = "evidence/check-behavior/shards"
+BUILD_RESERVE_BYTES = 4 * 1024**3
+BUILD_CLASS_RESERVES = {
+    "default": BUILD_RESERVE_BYTES,
+    # Startup-only Icarus builds: >26x sampled storage, including temporary files.
+    # Measurement scope and receipts are documented in tests/README.md.
+    "icarus-startup": 64 * 1024**2,
+    "verilator-startup": 512 * 1024**2,
+}
+DISK_FLOOR_BYTES = 2 * 1024**3
+STARTUP_RETAIN_BYTES = 2 * 1024**2
+CANCEL_SETTLE_SECONDS = 15
+CAPACITY_RECOVERY_SECONDS = 120
+CAPACITY_POLL_SECONDS = 0.25
+
+
+class EvidenceRetentionError(RuntimeError):
+    """Observed artifact loss, not an RTL failure or storage-recovery result."""
+
+
+def canonical(value):
+    if is_dataclass(value):
+        return canonical(asdict(value))
+    if isinstance(value, dict):
+        return {key: canonical(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [canonical(item) for item in value]
+    return value
+
+
+def content_hash(value):
+    return hashlib.sha256(json.dumps(canonical(value), sort_keys=True).encode()).hexdigest()
+
+
+@dataclass
+class Workload:
+    """One unchanged case; cost is a scheduling heuristic, never a time claim."""
+
+    group: str
+    name: str
+    action: object
+    run: object
+    args: tuple
+    kwargs: dict
+    cost: int = 1
+
+    @property
+    def descriptor(self):
+        return canonical({"group": self.group, "call": self.name,
+                          "args": self.args, "kwargs": self.kwargs})
+
+    @property
+    def id(self):
+        return self.group + "-" + content_hash(self.descriptor)[:20]
+
+    def execute(self, run):
+        return self.action(run, *self.args, **self.kwargs)
+
+    def __call__(self):
+        return self.execute(self.run)
+
+
+def workload(run, group, name, action, *args, cost=1, **kwargs):
+    if name == "decoder_case":
+        g = args[0]
+        tokens = kwargs.get("tokens", (1, 4, 2, 6, 3, 5, 7))
+        cost = len(tokens) * (
+            g.NUM_LAYERS * (4 * g.HIDDEN_SIZE**2 +
+                            3 * g.HIDDEN_SIZE * g.INTERMEDIATE_SIZE) +
+            g.VOCAB_SIZE * g.HIDDEN_SIZE)
+    return Workload(group, name, action, run, args, kwargs, cost)
+
+
+def execution_resources():
+    cpus = len(os.sched_getaffinity(0))
+    quota = Path("/sys/fs/cgroup/cpu.max")
+    quota_cpus = None
+    if quota.is_file():
+        maximum, period = quota.read_text().split()
+        if maximum != "max":
+            quota_cpus = max(1, int(maximum) // int(period))
+    capacity = min(cpus, quota_cpus) if quota_cpus is not None else cpus
+    limit = Path("/sys/fs/cgroup/memory.max")
+    memory = None
+    if limit.is_file():
+        value = limit.read_text().strip()
+        memory = None if value == "max" else int(value)
+    available = os.sysconf("SC_AVPHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
+    budget = min(available, memory) if memory is not None else available
+    workers = min(8, capacity, max(1, (budget - 2 * 1024**3) // (512 * 1024**2)))
+    build_jobs = min(2, max(1, capacity // min(workers, 2)))
+    if budget < 8 * 1024**3:
+        build_jobs = 1
+    return {"workers": workers, "build_jobs": build_jobs,
+            "affinity_cpus": cpus, "quota_cpus": quota_cpus, "memory_limit_bytes": memory}
+
+
+def sha256(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def sources():
+    selected = set()
+    for pattern in SELECTORS:
+        # pathlib's trailing ** visits directories, unlike the admitted recursive selector.
+        matches = {p for p in ROOT.glob(pattern + "/*" if pattern.endswith("/**") else pattern)
+                   if p.is_file() and not set(p.relative_to(ROOT).parts).intersection(
+                       ("__pycache__", ".vulcan", ".git", ".tooling", "VULCAN"))}
+        if not matches:
+            raise AssertionError("declared source selector matched no public files: " + pattern)
+        selected.update(matches)
+    return sorted(selected)
+
+
+def write_json(path, obj):
+    path = Path(path)
+    payload = json.dumps(obj, indent=2, sort_keys=True) + "\n"
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix="." + path.name + "-", delete=False) as out:
+            temporary = Path(out.name)
+            out.write(payload)
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(temporary, path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink()
+
+
+class Run:
+    def __init__(self, output, purpose, repair_of=None):
+        root = Path(output)
+        if not root.is_absolute():
+            root = ROOT / root
+        root.relative_to(ROOT)
+        root.mkdir(parents=True, exist_ok=True)
+        self.output_root = root
+        self.path = root / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") +
+                            "-" + uuid.uuid4().hex[:12])
+        self.path.mkdir()
+        self.records = []
+        self.lock = threading.RLock()
+        self.build_locks = {}
+        self.resources = execution_resources()
+        self.resources["compiler_disk_policy"] = {
+            "floor_bytes": DISK_FLOOR_BYTES,
+            "per_build_reserve_bytes": BUILD_RESERVE_BYTES,
+            "build_class_reserves_bytes": dict(BUILD_CLASS_RESERVES),
+            "capacity_recovery_seconds": CAPACITY_RECOVERY_SECONDS}
+        self.compiler_slots = threading.BoundedSemaphore(min(2, self.resources["workers"]))
+        self.compiler_admissions = {}
+        self.cancelled = threading.Event()
+        self.active_processes = {}
+        self.builds = {}
+        self.build_reuses = []
+        self.transient_builds = {}
+        self.workload_results = []
+        self.start = time.time()
+        self.purpose = purpose
+        self.repair_of = repair_of
+        self.hashes = {}
+        self.source_snapshot_complete = False
+        self.finish("running")
+        try:
+            for source in sources():
+                relative = source.relative_to(ROOT)
+                self.hashes[str(relative)] = sha256(source)
+                target = self.path / "sources" / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+                if sha256(target) != self.hashes[str(relative)]:
+                    raise OSError(errno.EIO, "source snapshot hash mismatch: " + str(relative))
+        except OSError as exc:
+            self.finish("failed", diagnosis="source snapshot failed: " + str(exc))
+            raise
+        self.source_snapshot_complete = True
+        self.finish("running")
+
+    def rel(self, path):
+        return str(Path(path).relative_to(ROOT))
+
+    def validate_live_sources(self):
+        if not self.source_snapshot_complete:
+            raise AssertionError("incomplete verification snapshot cannot launch a tool")
+        for name, digest in self.hashes.items():
+            source = ROOT / name
+            if not source.is_file() or sha256(source) != digest:
+                raise AssertionError("live verification source changed during execution: " + name)
+        selected = {str(source.relative_to(ROOT)) for source in sources()}
+        recorded = set(self.hashes)
+        if selected != recorded:
+            raise AssertionError(
+                "live verification source selection changed during execution: "
+                + json.dumps({"added": sorted(selected - recorded),
+                              "removed": sorted(recorded - selected)}, sort_keys=True))
+
+    def validate_tool_retention(self, folder):
+        paths = (self.path / "receipt.json", folder / "receipt.json",
+                 folder / "stdout.txt", folder / "stderr.txt")
+        missing = [self.rel(path) for path in paths if not path.is_file()]
+        if missing:
+            raise EvidenceRetentionError(
+                "in-flight verification evidence lost; refusing to recreate: "
+                + ", ".join(missing))
+
+    def parallel(self, jobs, *, max_workers=None):
+        """Observe completion order; return results in the unchanged inventory order."""
+        jobs = list(jobs)
+        order = list(range(len(jobs)))
+        if any(isinstance(job, Workload) for job in jobs):
+            order.sort(key=lambda i: (-getattr(jobs[i], "cost", 1),
+                                      getattr(jobs[i], "id", ""), i))
+            self.workload_toolchain()
+            write_json(self.path / "workload-inventory.json", [
+                {"id": job.id, "workload": job.descriptor, "scheduling_cost": job.cost}
+                for job in jobs if isinstance(job, Workload)])
+        if max_workers is not None and (not isinstance(max_workers, int) or max_workers < 1):
+            raise ValueError("parallel worker bound must be a positive integer")
+        workers = min(self.resources["workers"], max_workers or self.resources["workers"])
+        pool = ThreadPoolExecutor(max_workers=workers)
+        pending = {}
+        remaining = iter(order)
+        results = [None] * len(jobs)
+
+        def submit():
+            index = next(remaining, None)
+            if index is None:
+                return
+            self.check_cancelled()
+            job = jobs[index]
+            future = (pool.submit(self.collect_workload, job)
+                      if isinstance(job, Workload) else pool.submit(job))
+            pending[future] = index
+
+        try:
+            for _ in range(min(workers, len(jobs))):
+                submit()
+            while pending:
+                completed, _ = wait(pending, return_when=FIRST_COMPLETED)
+                # Check the whole completed batch before admitting replacements.
+                for future in completed:
+                    results[pending[future]] = future.result()
+                for future in completed:
+                    del pending[future]
+                for _ in completed:
+                    submit()
+            return results
+        except BaseException as exc:
+            with self.lock:
+                self.cancelled.set()
+            for future in pending:
+                future.cancel()
+            _, unfinished = wait(pending, timeout=CANCEL_SETTLE_SECONDS) if pending else (set(), set())
+            with self.lock:
+                unsettled = list(self.active_processes)
+            if unfinished or unsettled:
+                raise RuntimeError(
+                    "bounded cancellation did not settle all owned work: "
+                    f"{len(unfinished)} jobs, process IDs {unsettled}") from exc
+            raise
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+
+    def check_cancelled(self):
+        if self.cancelled.is_set():
+            raise RuntimeError("work cancelled after another parallel job failed")
+
+    def plan_startup_storage(self, count):
+        """Budget the entire serial startup matrix before dispatch, not one build."""
+        if not isinstance(count, int) or count < 0:
+            raise ValueError("startup execution count must be a nonnegative integer")
+        if hasattr(self, "startup_storage"):
+            raise ValueError("startup storage inventory already frozen")
+        self.startup_storage = {
+            "executions": count, "remaining": count,
+            "retained_bytes_per_execution": STARTUP_RETAIN_BYTES,
+            "completed": [],
+        }
+        self.check_startup_storage()
+
+    def check_startup_storage(self):
+        """Record capacity; only compiler admission decides whether work may start."""
+        plan = self.startup_storage
+        free = shutil.disk_usage(self.path).free
+        required = (DISK_FLOOR_BYTES + max(BUILD_CLASS_RESERVES[c] for c in
+                    ("icarus-startup", "verilator-startup")) +
+                    plan["remaining"] * STARTUP_RETAIN_BYTES)
+        plan.update({"available_bytes": free, "required_bytes": required,
+                     "floor_bytes": DISK_FLOOR_BYTES,
+                      "largest_startup_build_reserve_bytes":
+                         BUILD_CLASS_RESERVES["verilator-startup"],
+                     "checked_at": time.time()})
+        write_json(self.path / "startup-storage.json", plan)
+        return free >= required
+
+    def settled_compiler_directories(self):
+        """Exclude directories also owned by failed or unfinished build records."""
+        candidates, protected = set(), set()
+        for record in getattr(self, "records", ()):
+            argv = record.get("argv", ())
+            if not argv or argv[0] != "verilator" or "--Mdir" not in argv:
+                continue
+            directory = (ROOT / record["cwd"] / argv[argv.index("--Mdir") + 1]).resolve()
+            if (record.get("exit_code") != 0 or
+                    record.get("process_scope_settled") is not True or
+                    record.get("timeout") or record.get("cancelled") or
+                    any(key in record for key in
+                        ("launch_error", "cleanup_error", "retention_error"))):
+                protected.add(directory)
+            else:
+                candidates.add(directory)
+        for record in getattr(self, "records", ()):
+            argv = record.get("argv", ())
+            if not argv or argv[0] != "make" or "-C" not in argv:
+                continue
+            if (record.get("exit_code") != 0 or
+                    record.get("process_scope_settled") is not True or
+                    record.get("timeout") or record.get("cancelled") or
+                    any(key in record for key in
+                        ("launch_error", "cleanup_error", "retention_error"))):
+                directory = ROOT / record["cwd"] / argv[argv.index("-C") + 1]
+                protected.add(directory.resolve())
+        protected.update(Path(path).resolve() for path in
+                         getattr(self, "transient_builds", {}).values())
+        return candidates - protected
+
+    def reclaim_settled_compiler_intermediates(self):
+        """Revisit only this invocation's successful, settled compiler directories."""
+        removed = []
+        for directory in sorted(self.settled_compiler_directories()):
+            removed.extend(self.release_intermediates(directory))
+        return removed
+
+    def compact_compiler_sources(self):
+        """Losslessly retain generated sources after successful workload comparison."""
+        settled = self.settled_compiler_directories()
+        for record in self.records:
+            argv = record.get("argv", ())
+            if (not argv or argv[0] != "verilator" or "--Mdir" not in argv or
+                    not any(flag in argv for flag in ("--binary", "--build")) or
+                    record.get("exit_code") != 0 or
+                    record.get("process_scope_settled") is not True or
+                    record.get("timeout") or record.get("cancelled") or
+                    any(key in record for key in
+                        ("launch_error", "cleanup_error", "retention_error"))):
+                continue
+            directory = (ROOT / record["cwd"] / argv[argv.index("--Mdir") + 1]).resolve()
+            if directory not in settled:
+                continue
+            directory.relative_to(self.path.resolve())
+            if "--prefix" in argv:
+                prefix = argv[argv.index("--prefix") + 1]
+            elif "--top-module" in argv:
+                prefix = "V" + argv[argv.index("--top-module") + 1]
+            else:
+                continue
+            files = [path for path in sorted(directory.iterdir())
+                     if not path.is_symlink() and path.is_file() and
+                     path.name.startswith(prefix) and
+                     path.suffix in (".cpp", ".h", ".mk", ".dat", ".d")]
+            if not files:
+                continue
+            archive = directory / "generated-sources.tar.gz"
+            manifest = directory / "generated-sources.json"
+            if archive.exists() or manifest.exists():
+                raise AssertionError("compiler source archive already exists: " + self.rel(archive))
+            hashes = {path.name: sha256(path) for path in files}
+            with archive.open("xb") as target:
+                with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as zipped:
+                    with tarfile.open(fileobj=zipped, mode="w|") as bundle:
+                        for path in files:
+                            info = tarfile.TarInfo(path.name)
+                            info.size = path.stat().st_size
+                            info.mode = path.stat().st_mode & 0o777
+                            with path.open("rb") as source:
+                                bundle.addfile(info, source)
+            with tarfile.open(archive, "r:gz") as bundle:
+                members = bundle.getmembers()
+                if [member.name for member in members] != list(hashes):
+                    raise AssertionError("compiler source archive inventory differs")
+                for member in members:
+                    with bundle.extractfile(member) as source:
+                        if hashlib.file_digest(source, "sha256").hexdigest() != hashes[member.name]:
+                            raise AssertionError("compiler source archive content differs")
+            write_json(manifest, {
+                "archive": self.rel(archive), "archive_sha256": sha256(archive),
+                "files": hashes,
+                "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
+                "scope": "generated compiler sources only; workload comparisons already returned"})
+            for path in files:
+                if sha256(path) != hashes[path.name]:
+                    raise AssertionError("compiler source changed before compaction: " + self.rel(path))
+            for path in files:
+                path.unlink()
+
+    @staticmethod
+    def validate_cached_build(cached):
+        manifest = json.loads((cached.parent / "build.json").read_text())
+        digest = manifest.get("archive_sha256", manifest["executable_sha256"])
+        if sha256(cached) != digest:
+            raise AssertionError("cached executable identity changed")
+        if manifest.get("compression") == "gzip":
+            with gzip.open(cached, "rb") as source:
+                if hashlib.file_digest(source, "sha256").hexdigest() != manifest["executable_sha256"]:
+                    raise AssertionError("compressed executable identity changed")
+        return manifest
+
+    def compact_startup(self, binary):
+        """Called only after the caller has asserted the settled startup outcome."""
+        binary = Path(binary).resolve()
+        binary.relative_to(self.path.resolve())
+        cached, record = self.startup_executables[str(binary)]
+        simulation = getattr(self, "startup_simulations", {}).get(str(binary))
+        if simulation is None:
+            raise AssertionError("unexecuted startup cannot release its executable")
+        if (simulation.get("process_scope_settled") is not True or
+                simulation.get("exit_code") not in simulation["expected_exit_codes"] or
+                simulation.get("timeout") or simulation.get("cancelled")):
+            raise AssertionError("unsettled/failed startup cannot release its executable")
+        manifest = self.validate_cached_build(cached)
+        if manifest.get("compression") != "gzip" or sha256(binary) != manifest["executable_sha256"]:
+            raise AssertionError("startup executable differs from retained compressed build")
+        released = {"executable": self.rel(binary), "bytes": binary.stat().st_size,
+                    "executable_sha256": manifest["executable_sha256"],
+                    "archive": self.rel(cached),
+                    "archive_sha256": manifest["archive_sha256"],
+                    "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
+                    "simulation_receipt": str(Path(simulation["stdout"]).parent / "receipt.json")}
+        # Retain the identity and settled evidence before releasing this run's copy.
+        with self.lock:
+            releases = getattr(self, "startup_releases", [])
+            releases.append(released)
+            self.startup_releases = releases
+            write_json(self.path / "startup-releases.json", releases)
+            binary.unlink()
+            del self.startup_executables[str(binary)]
+            del self.startup_simulations[str(binary)]
+            if hasattr(self, "startup_storage"):
+                plan = self.startup_storage
+                if plan["remaining"] <= 0:
+                    raise AssertionError("startup exceeded frozen storage inventory")
+                plan["remaining"] -= 1
+                plan["completed"].append(released)
+                self.check_startup_storage()
+
+    @contextmanager
+    def compiler_admission(self, build_class="default"):
+        """Bounded, cancellable recovery without launching below the full forecast."""
+        reserve = BUILD_CLASS_RESERVES[build_class]
+        acquired = False
+        key = uuid.uuid4().hex
+        recovery = None
+        try:
+            while not acquired:
+                self.check_cancelled()
+                acquired = self.compiler_slots.acquire(timeout=0.1)
+            started = time.monotonic()
+            heartbeat = started + 30
+            while True:
+                self.check_cancelled()
+                with self.lock:
+                    free = shutil.disk_usage(self.path).free
+                    reserved = sum(self.compiler_admissions.values())
+                    retention = (self.startup_storage["remaining"] * STARTUP_RETAIN_BYTES
+                                 if hasattr(self, "startup_storage") else 0)
+                    required_reserve = (max(reserve, BUILD_CLASS_RESERVES["verilator-startup"])
+                                        if hasattr(self, "startup_storage") else reserve)
+                    required = DISK_FLOOR_BYTES + reserved + required_reserve + retention
+                    if free >= required:
+                        self.compiler_admissions[key] = reserve
+                        admission = {
+                            "build_class": build_class,
+                            "available_bytes": free, "other_build_reserves_bytes": reserved,
+                            "floor_bytes": DISK_FLOOR_BYTES,
+                            "build_reserve_bytes": reserve,
+                            "required_bytes": required,
+                            "future_startup_retention_bytes": retention,
+                            "capacity_wait_seconds": time.monotonic() - started,
+                            "admitted_at": time.time()}
+                        if recovery is not None:
+                            recovery.update(status="admitted", admission=admission)
+                        break
+                    if recovery is None:
+                        recovery = {"build_class": build_class, "started_at": time.time(),
+                                    "status": "waiting", "samples": 0}
+                    recovery.update(available_bytes=free, required_bytes=required,
+                                    remaining_startup_executions=(
+                                        self.startup_storage["remaining"]
+                                        if hasattr(self, "startup_storage") else 0))
+                    recovery["samples"] += 1
+                    removed = self.reclaim_settled_compiler_intermediates()
+                    recovery.setdefault("released_intermediates", []).extend(removed)
+                    if removed:
+                        continue
+                    if time.monotonic() - started >= CAPACITY_RECOVERY_SECONDS:
+                        recovery["status"] = "shortage"
+                        raise OSError(
+                            errno.ENOSPC,
+                            "compiler capacity recovery exhausted without admission: "
+                            f"free={free}, required={required}, floor={DISK_FLOOR_BYTES}, "
+                            f"reserve={reserve}, future_retention={retention}, "
+                            f"build_class={build_class}")
+                now = time.monotonic()
+                if now >= heartbeat:
+                    print(f"compiler capacity recovery: free={free}, required={required}",
+                          flush=True)
+                    heartbeat = now + 30
+                self.cancelled.wait(min(CAPACITY_POLL_SECONDS,
+                                        max(0, CAPACITY_RECOVERY_SECONDS - (now - started))))
+            yield admission
+        finally:
+            try:
+                with self.lock:
+                    if recovery is not None:
+                        if recovery["status"] == "waiting":
+                            recovery["status"] = (
+                                "cancelled" if self.cancelled.is_set() else "failed")
+                        recovery["finished_at"] = time.time()
+                        events = getattr(self, "compiler_capacity_events", [])
+                        events.append(recovery)
+                        self.compiler_capacity_events = events
+                        if hasattr(self, "source_snapshot_complete"):
+                            write_json(self.path / "compiler-capacity.json", events)
+            finally:
+                with self.lock:
+                    self.compiler_admissions.pop(key, None)
+                if acquired:
+                    self.compiler_slots.release()
+
+    def workload_toolchain(self):
+        if hasattr(self, "workload_toolchain_identity"):
+            return self.workload_toolchain_identity
+        tools = (("python3", "--version"), ("iverilog", "-V"), ("vvp", "-V"),
+                 ("verilator", "--version"), ("g++", "--version"), ("make", "--version"))
+        versions = self.versions(tools)
+        identity = {}
+        for name, _ in tools:
+            version = versions[name]
+            identity[name] = {"available": version["available"]}
+            if version["available"]:
+                record = next(record for record in reversed(self.records)
+                              if record["stdout"] == version["version_output"])
+                identity[name].update({
+                    "executable_sha256": sha256(Path(shutil.which(name)).resolve()),
+                    "stdout_sha256": sha256(ROOT / record["stdout"]),
+                    "stderr_sha256": sha256(ROOT / record["stderr"])})
+        identity["environment_sha256"] = content_hash({
+            name: os.environ.get(name) for name in
+            ("CC", "CXX", "CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "MAKEFLAGS",
+             "VERILATOR_ROOT", "IVERILOG_ICONFIG")})
+        self.workload_toolchain_identity = identity
+        return identity
+
+    def reusable_workload(self, receipt, binding):
+        """Incomplete, stale or damaged receipts trigger execution, not acceptance."""
+        try:
+            saved = json.loads(receipt.read_text())
+            if (not isinstance(saved, dict) or saved.get("status") != "passed" or
+                    saved.get("source_snapshot_complete") is not True or
+                    saved.get("source_hashes") != self.hashes or
+                    saved.get("workload_binding") != binding or
+                    not isinstance(saved.get("finished_at"), (int, float)) or
+                    "result" not in saved or not saved.get("executions") or
+                    not isinstance(saved["executions"], list) or
+                    not isinstance(saved.get("workload_artifacts"), dict) or
+                    not saved["workload_artifacts"] or
+                    not isinstance(saved.get("workload_dependencies"), dict) or
+                    not saved["workload_dependencies"] or
+                    saved.get("result_sha256") != content_hash(saved["result"])):
+                return None, "incomplete or stale binding/result"
+            for index, record in enumerate(saved["executions"]):
+                if (not isinstance(record, dict) or
+                        record.get("exit_code") is None or record.get("timeout") or
+                        record.get("cancelled") or record.get("process_scope_settled") is False or
+                        record["exit_code"] not in record.get("expected_exit_codes", ()) or
+                        "launch_error" in record or "cleanup_error" in record or
+                        "finished_at" not in record):
+                    return None, "unsettled tool execution"
+                folder = receipt.parent / ("tool-%04d" % index)
+                child = folder / "receipt.json"
+                if json.loads(child.read_text()) != record:
+                    return None, "changed tool receipt"
+                for stream in ("stdout", "stderr"):
+                    if record.get(stream) != self.rel(folder / (stream + ".txt")):
+                        return None, "misbound tool log"
+            for name, digest in saved["workload_artifacts"].items():
+                path = (receipt.parent / name).resolve()
+                path.relative_to(receipt.parent.resolve())
+                if sha256(path) != digest:
+                    return None, "changed retained artifact: " + name
+            for name, digest in saved["workload_dependencies"].items():
+                path = (ROOT / name).resolve()
+                path.relative_to(ROOT.resolve())
+                if sha256(path) != digest:
+                    return None, "changed retained dependency: " + name
+            actual = {str(path.relative_to(receipt.parent))
+                      for path in receipt.parent.rglob("*")
+                      if path.is_file() and path != receipt}
+            if actual != set(saved["workload_artifacts"]):
+                return None, "changed retained artifact inventory"
+            for name, digest in self.hashes.items():
+                if sha256(receipt.parent / "sources" / name) != digest:
+                    return None, "changed source snapshot: " + name
+            return saved["result"], None
+        except (FileNotFoundError, IsADirectoryError, json.JSONDecodeError,
+                UnicodeDecodeError, KeyError, TypeError, ValueError):
+            return None, "missing or malformed retained evidence"
+
+    def collect_workload(self, job, output=None):
+        self.check_cancelled()
+        self.validate_live_sources()
+        binding = {"workload": job.descriptor, "source_hashes": self.hashes,
+                   "toolchain": self.workload_toolchain(),
+                   "fixture_inputs": "source-bound deterministic generators, seeds and assets"}
+        root = self.output_root / "shards" / job.id if output is None else Path(output)
+        root.relative_to(self.output_root)
+        decisions = []
+        for receipt in sorted(root.glob("*/receipt.json"), reverse=True):
+            result, reason = self.reusable_workload(receipt, binding)
+            decisions.append({"receipt": self.rel(receipt), "rejection": reason})
+            if reason is None:
+                self.validate_live_sources()
+                with self.lock:
+                    if not hasattr(self, "workload_reuses"):
+                        self.workload_reuses = []
+                    self.workload_reuses.append({"id": job.id, "receipt": self.rel(receipt)})
+                    self.workload_results.append({
+                        "receipt": self.rel(receipt), "binding": binding,
+                        "result_sha256": content_hash(result)})
+                    write_json(self.path / "workload-reuse.json", self.workload_reuses)
+                return result
+        child = Run(self.rel(root), "behavior-shard:" + job.id)
+        child.workload_toolchain_identity = binding["toolchain"]
+        child.tool_versions = self.tool_versions
+        child.resources = self.resources
+        child.compiler_slots = self.compiler_slots
+        child.compiler_admissions = self.compiler_admissions
+        child.cancelled = self.cancelled
+        child.active_processes = self.active_processes
+        child.lock = self.lock
+        child.build_locks = self.build_locks
+        child.shared_builds = self.builds
+        child.workload_binding = binding
+        child.finish("running", reuse_candidates=decisions)
+        try:
+            if child.hashes != self.hashes:
+                raise AssertionError("shard source snapshot differs from inventory snapshot")
+            self.validate_live_sources()
+            child.check_cancelled()
+            result = job.execute(child)
+            child.check_cancelled()
+            if job.group == "portability" and result["cycles"] > 500000:
+                raise AssertionError("portability smoke exceeds compact cycle tier")
+            if isinstance(result, dict):
+                result = {**result, "evidence_receipt": child.rel(child.path / "receipt.json")}
+            child.compact_compiler_sources()
+            child.workload_artifacts = {
+                str(path.relative_to(child.path)): sha256(path)
+                for path in sorted(child.path.rglob("*"))
+                if path.is_file() and path != child.path / "receipt.json"}
+            dependencies = set()
+            for version in self.tool_versions.values():
+                if version["available"]:
+                    folder = (ROOT / version["version_output"]).parent
+                    dependencies.update(folder / name for name in
+                                        ("receipt.json", "stdout.txt", "stderr.txt"))
+            with self.lock:
+                builds = list(self.builds.values())
+            for cached, _, record in builds:
+                dependencies.update((cached, cached.parent / "build.json"))
+                folder = (ROOT / record["stdout"]).parent
+                dependencies.update(folder / name for name in
+                                    ("receipt.json", "stdout.txt", "stderr.txt"))
+            child.workload_dependencies = {self.rel(path): sha256(path)
+                                           for path in sorted(dependencies)}
+            child.finish("passed", result=result, result_sha256=content_hash(result),
+                         reuse_candidates=decisions)
+        except BaseException as exc:
+            child.finish("failed", diagnosis=str(exc), reuse_candidates=decisions)
+            raise
+        with self.lock:
+            self.workload_results.append({
+                "receipt": self.rel(child.path / "receipt.json"), "binding": binding,
+                "result_sha256": content_hash(result)})
+        return result
+
+    def _build(self, argv, cwd, timeout, expected, build_class="default"):
+        argv = list(argv)
+        tool = str(argv[0])
+        if build_class not in BUILD_CLASS_RESERVES:
+            raise ValueError("unknown compiler build class: " + build_class)
+        required_tool = {"icarus-startup": "iverilog", "verilator-startup": "verilator"}
+        if build_class in required_tool and tool != required_tool[build_class]:
+            raise ValueError(build_class + " reservation requires " + required_tool[build_class])
+        if tool == "verilator" and not any(
+                arg in ("-j", "--build-jobs") or
+                re.fullmatch(r"-j\d+", str(arg)) or
+                str(arg).startswith("--build-jobs=") for arg in argv[1:]):
+            jobs = 1 if build_class == "verilator-startup" else self.resources["build_jobs"]
+            argv[1:1] = ["-j", str(jobs)]
+        output_flag = "-o"
+        binary = Path(argv[argv.index(output_flag) + 1])
+        if tool == "verilator":
+            obj = Path(argv[argv.index("--Mdir") + 1])
+            binary = obj / binary
+        work = ROOT if cwd is None else Path(cwd)
+        binary = work / binary
+        if tool == "verilator":
+            (work / obj).resolve().relative_to(self.path.resolve())
+        if tool not in getattr(self, "tool_versions", {}):
+            self.versions([(tool, "--version" if tool == "verilator" else "-V")])
+        normalized = []
+        skip = False
+        for arg in map(str, argv):
+            if skip:
+                skip = False
+                continue
+            if arg in ("-o", "--Mdir"):
+                skip = True
+                continue
+            path = work / arg
+            if tool == "verilator" and arg.endswith(".cpp") and not path.is_file():
+                path = work / obj / arg
+            if path.is_file():
+                normalized.append({"name": path.name, "sha256": sha256(path)})
+            else:
+                normalized.append(arg)
+        identity = {"argv": normalized, "tool": self.tool_versions[tool],
+                    "build_class": build_class,
+                    "cwd": str(work.relative_to(ROOT)),
+                    "source_inventory": self.hashes}
+        if tool == "verilator" and "g++" in self.tool_versions:
+            identity["cpp_toolchain"] = self.tool_versions["g++"]
+        key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        with self.lock:
+            gate = self.build_locks.setdefault(key, threading.Lock())
+        with gate:
+            self.validate_live_sources()
+            cache_entries = getattr(self, "shared_builds", self.builds)
+            if key in cache_entries:
+                cached, text, record = cache_entries[key]
+                manifest = self.validate_cached_build(cached)
+                binary.parent.mkdir(parents=True, exist_ok=True)
+                if manifest.get("compression") == "gzip":
+                    with gzip.open(cached, "rb") as source, binary.open("wb") as target:
+                        shutil.copyfileobj(source, target)
+                    if sha256(binary) != manifest["executable_sha256"]:
+                        raise AssertionError("restored executable identity changed")
+                    if build_class in ("icarus-startup", "verilator-startup"):
+                        if not hasattr(self, "startup_executables"):
+                            self.startup_executables = {}
+                        self.startup_executables[str(binary.resolve())] = cached, record
+                        getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
+                else:
+                    shutil.copyfile(cached, binary)
+                binary.chmod(0o755)
+                with self.lock:
+                    self.builds[key] = cached, text, record
+                    reuse = {"key": key, "executable": self.rel(binary),
+                             "build_manifest": self.rel(cached.parent / "build.json"),
+                             "compile_stdout": record["stdout"]}
+                    self.build_reuses.append(reuse)
+                    write_json(self.path / "build-reuse.json", self.build_reuses)
+                return text, record
+            with self.compiler_admission(build_class) as admission:
+                text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected,
+                                          compiler_admission=admission)
+            if record["exit_code"] != 0:
+                return text, record
+            cache = self.path / "builds" / key
+            cache.mkdir(parents=True)
+            compact = build_class in ("icarus-startup", "verilator-startup")
+            cached = cache / "executable.gz"
+            with binary.open("rb") as source, cached.open("wb") as target:
+                with gzip.GzipFile(filename="", mode="wb", fileobj=target, mtime=0) as archive:
+                    shutil.copyfileobj(source, archive)
+            if compact:
+                if not hasattr(self, "startup_executables"):
+                    self.startup_executables = {}
+                self.startup_executables[str(binary.resolve())] = cached, record
+                getattr(self, "startup_simulations", {}).pop(str(binary.resolve()), None)
+            write_json(cache / "build.json", {
+                "key": key, "identity": identity, "executable_sha256": sha256(binary),
+                "compression": "gzip", "archive_sha256": sha256(cached),
+                "compile_receipt": str(Path(record["stdout"]).parent / "receipt.json"),
+                "original_executable": self.rel(binary),
+                "intermediates": ("only .o/.a/.gch removed after settled compilation; "
+                                  "generated model sources retained; startup executable "
+                                  "retained losslessly as gzip" if compact else
+                                  "only .o/.a/.gch removed after settled compilation; "
+                                  "executable cache retained losslessly as gzip; "
+                                  "generated model sources archived after workload comparison")})
+            self.validate_cached_build(cached)
+            with self.lock:
+                self.builds[key] = cached, text, record
+                cache_entries[key] = cached, text, record
+            return text, record
+
+    def tool(self, argv, *, cwd=None, timeout=3600, expected=(0,), build_class="default"):
+        self.check_cancelled()
+        if (str(argv[0]) == "verilator" and
+                ("--binary" in argv or "--build" in argv) or
+                str(argv[0]) == "iverilog" and "-o" in argv):
+            return self._build(argv, cwd, timeout, expected, build_class)
+        if build_class != "default":
+            raise ValueError("build class is only valid for a compiler invocation")
+        work = ROOT if cwd is None else Path(cwd)
+        binary = str((work / str(argv[0])).resolve())
+        text, record = self._tool(argv, cwd=cwd, timeout=timeout, expected=expected)
+        with self.lock:
+            executable = work / str(argv[1] if str(argv[0]) == "vvp" else argv[0])
+            if str(executable.resolve()) in getattr(self, "startup_executables", {}):
+                if not hasattr(self, "startup_simulations"):
+                    self.startup_simulations = {}
+                self.startup_simulations[str(executable.resolve())] = record
+            directory = self.transient_builds.get(binary)
+            if directory is not None and record.get("process_scope_settled") is True:
+                self.release_intermediates(directory)
+                del self.transient_builds[binary]
+        return text, record
+
+    def release_intermediates(self, directory):
+        directory = Path(directory).resolve()
+        directory.relative_to(self.path.resolve())
+        removed = []
+        if directory.is_dir():
+            for path in sorted(directory.iterdir()):
+                if (not path.is_symlink() and path.is_file() and
+                        path.suffix in (".o", ".a", ".gch")):
+                    size = path.stat().st_size
+                    path.unlink()
+                    removed.append({"path": self.rel(path), "bytes": size})
+        return removed
+
+    @staticmethod
+    def process_group_live(pgid):
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        # Ignore already-dead children awaiting their system reaper.
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+            if int(fields[2]) == pgid and fields[0] != "Z":
+                return True
+        return False
+
+    @classmethod
+    def settle_process(cls, child):
+        """Terminate only this tool's new process group, including compiler children."""
+        for sig, duration in ((signal.SIGTERM, 2), (signal.SIGKILL, 5)):
+            try:
+                os.killpg(child.pid, sig)
+            except ProcessLookupError:
+                pass
+            deadline = time.monotonic() + duration
+            while time.monotonic() < deadline:
+                child.poll()
+                if child.returncode is not None and not cls.process_group_live(child.pid):
+                    return True
+                time.sleep(0.05)
+        return child.poll() is not None and not cls.process_group_live(child.pid)
+
+    def _tool(self, argv, *, cwd=None, timeout=3600, expected=(0,),
+              compiler_admission=None):
+        if timeout < 3600:
+            raise ValueError("functional subprocess deadlines must be >=3600 seconds")
+        work = ROOT if cwd is None else Path(cwd)
+        work.relative_to(ROOT)
+        self.check_cancelled()
+        self.validate_live_sources()
+        start = time.time()
+        with self.lock:
+            folder = self.path / ("tool-%04d" % len(self.records))
+            folder.mkdir()
+            record = {}
+            self.records.append(record)
+        record = {"argv": [str(a) for a in argv], "cwd": str(work.relative_to(ROOT)) or ".",
+                  "cwd_base": "project root", "started_at": start, "timeout_s": timeout,
+                  "expected_exit_codes": list(expected),
+                  "stdout": self.rel(folder / "stdout.txt"), "stderr": self.rel(folder / "stderr.txt"),
+                  "timeout": False, "exit_code": None}
+        if compiler_admission is not None:
+            record["compiler_admission"] = compiler_admission
+        caught = None
+        child = None
+        settled = False
+        with (folder / "stdout.txt").open("wb") as out, (folder / "stderr.txt").open("wb") as err:
+            with self.lock:
+                self.records[int(folder.name.split("-")[1])] = record
+                write_json(folder / "receipt.json", record)
+                self.finish("running")
+            try:
+                with self.lock:
+                    self.check_cancelled()
+                    child = subprocess.Popen(
+                        record["argv"], cwd=work, stdout=out, stderr=err,
+                        start_new_session=True)
+                    self.active_processes[child.pid] = child
+                    record["process_group"] = child.pid
+                deadline = time.monotonic() + timeout
+                retention_check = 0
+                while child.poll() is None:
+                    self.check_cancelled()
+                    now = time.monotonic()
+                    if now >= retention_check:
+                        self.validate_tool_retention(folder)
+                        retention_check = now + 1
+                    if now >= deadline:
+                        record["timeout"] = True
+                        raise subprocess.TimeoutExpired(record["argv"], timeout)
+                    self.cancelled.wait(0.1)
+                self.validate_tool_retention(folder)
+                record["exit_code"] = child.returncode
+            except EvidenceRetentionError as exc:
+                record["retention_error"] = str(exc)
+                caught = exc
+            except OSError as exc:
+                record["launch_error"] = str(exc)
+                caught = exc
+            except BaseException as exc:
+                record["cancelled"] = self.cancelled.is_set()
+                caught = exc
+            finally:
+                if child is not None:
+                    if child.poll() is None or self.process_group_live(child.pid):
+                        settled = self.settle_process(child)
+                    else:
+                        settled = True
+                    record["exit_code"] = child.poll()
+                    record["process_scope_settled"] = settled
+                    if settled:
+                        with self.lock:
+                            self.active_processes.pop(child.pid, None)
+                    else:
+                        caught = RuntimeError("owned process group did not settle: "
+                                              + str(child.pid))
+                if (settled and caught is None and record["exit_code"] == 0 and
+                        str(argv[0]) == "verilator" and "--Mdir" in argv):
+                    directory = work / argv[argv.index("--Mdir") + 1]
+                    try:
+                        record["released_intermediates"] = self.release_intermediates(directory)
+                    except (OSError, ValueError) as exc:
+                        record["cleanup_error"] = str(exc)
+                        caught = exc
+        if "retention_error" in record:
+            message = (record["retention_error"] + "; owned child exit="
+                       + str(record["exit_code"]) + ", process_scope_settled=" + str(settled))
+            print(message, file=sys.stderr, flush=True)
+            raise EvidenceRetentionError(message) from caught
+        with self.lock:
+            record["finished_at"] = time.time()
+            write_json(folder / "receipt.json", record)
+            self.finish("running")
+        if caught is not None:
+            raise RuntimeError("tool execution failed: " + self.rel(folder / "receipt.json")) from caught
+        if record["exit_code"] not in expected:
+            raise AssertionError("tool exit %s: %s" %
+                                 (record["exit_code"], self.rel(folder / "receipt.json")))
+        return (folder / "stdout.txt").read_text(errors="replace"), record
+
+    def versions(self, tools):
+        versions = dict(getattr(self, "tool_versions", {}))
+        for name, flag in tools:
+            if shutil.which(name) is None:
+                versions[name] = {"available": False}
+                continue
+            text, record = self.tool([name, flag])
+            versions[name] = {"available": True, "version_output": record["stdout"],
+                              "version_text": text[:2000]}
+        self.tool_versions = versions
+        self.finish("running")
+        return versions
+
+    def finish(self, status, **details):
+        with self.lock:
+            return self._finish(status, **details)
+
+    def _finish(self, status, **details):
+        if self.source_snapshot_complete and not (self.path / "receipt.json").is_file():
+            raise EvidenceRetentionError(
+                "verification invocation receipt lost; refusing to recreate: "
+                + self.rel(self.path / "receipt.json"))
+        if status == "passed" and (
+                not self.source_snapshot_complete or
+                self.cancelled.is_set() or
+                any(record.get("exit_code") is None or record.get("timeout") or
+                    record.get("cancelled") or record.get("process_scope_settled") is False or
+                    "launch_error" in record or "cleanup_error" in record or
+                    "retention_error" in record
+                    for record in self.records)):
+            raise AssertionError("incomplete verification execution cannot be finalized as passed")
+        if status == "passed":
+            self.validate_live_sources()
+            for item in self.workload_results:
+                result, reason = self.reusable_workload(ROOT / item["receipt"], item["binding"])
+                if reason is not None or content_hash(result) != item["result_sha256"]:
+                    raise AssertionError("missing/stale workload at finalization: "
+                                         + item["receipt"] + ": " + str(reason))
+            for cached, _, _ in self.builds.values():
+                self.validate_cached_build(cached)
+            if hasattr(self, "startup_storage") and self.startup_storage["remaining"]:
+                raise AssertionError("incomplete startup storage inventory")
+            for name, digest in self.hashes.items():
+                snapshot = self.path / "sources" / name
+                if not snapshot.is_file() or sha256(snapshot) != digest:
+                    raise AssertionError("missing/changed retained verification artifact: "
+                                         + self.rel(snapshot))
+            for index, record in enumerate(self.records):
+                folder = self.path / ("tool-%04d" % index)
+                for stream in ("stdout", "stderr"):
+                    path = folder / (stream + ".txt")
+                    if record.get(stream) != self.rel(path) or not path.is_file():
+                        raise AssertionError("missing/misbound retained verification artifact: "
+                                             + self.rel(path))
+                receipt = folder / "receipt.json"
+                if not receipt.is_file() or json.loads(receipt.read_text()) != record:
+                    raise AssertionError("missing/changed retained verification artifact: "
+                                         + self.rel(receipt))
+        write_json(self.path / "receipt.json",
+                   {"schema": 1, "purpose": self.purpose, "status": status,
+                    "started_at": self.start, "finished_at": time.time(),
+                    "invocation": {"argv": ["python3", *sys.argv], "cwd": ".",
+                                   "cwd_base": "project root"},
+                    "repair_of": self.repair_of, "source_hashes": self.hashes,
+                    "source_snapshot_complete": self.source_snapshot_complete,
+                    "tool_versions": getattr(self, "tool_versions", {}),
+                    "build_manifests": [self.rel(item[0].parent / "build.json")
+                                        for item in self.builds.values()],
+                    "build_reuses": self.build_reuses,
+                    "workload_results": self.workload_results,
+                    "execution_resources": self.resources,
+                    **({"workload_binding": self.workload_binding}
+                       if hasattr(self, "workload_binding") else {}),
+                    **({"workload_artifacts": self.workload_artifacts}
+                       if hasattr(self, "workload_artifacts") else {}),
+                    **({"workload_dependencies": self.workload_dependencies}
+                       if hasattr(self, "workload_dependencies") else {}),
+                    "executions": self.records, **details})

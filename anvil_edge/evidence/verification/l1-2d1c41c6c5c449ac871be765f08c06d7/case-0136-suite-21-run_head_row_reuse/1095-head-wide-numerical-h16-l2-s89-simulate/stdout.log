@@ -1,0 +1,6 @@
+HEAD_MEASURE 0 166262 6768 3612 16 272
+HEAD_MEASURE 1 198394 6587 4220 16 272
+HEAD_MEASURE 2 231942 6775 4828 16 272
+CORE_NUMERIC requests=12660 writes=1632 logits=51 completions=3
+COMPARED 1683
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-wide-numerical-h16-l2-s89/compiled-bench.sv:2068: Verilog $finish

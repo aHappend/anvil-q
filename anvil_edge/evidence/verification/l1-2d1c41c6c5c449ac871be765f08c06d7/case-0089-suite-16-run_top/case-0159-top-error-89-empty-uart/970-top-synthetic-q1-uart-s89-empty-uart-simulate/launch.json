@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0143-top-error-1-empty-uart/top-synthetic-q1-uart-s1-empty-uart/obj/simulation",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0159-top-error-89-empty-uart/top-synthetic-q1-uart-s89-empty-uart-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:58:39.086629+00:00",
+  "pid": 1274298,
+  "process_group": 1274298,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 57714847744,
+    "available_inodes": 195591124,
+    "observed_utc": "2026-10-31T15:58:39.086778+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529406828544
+  }
+}

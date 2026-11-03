@@ -1,0 +1,18 @@
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:64:53: Operator OR expects 64 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                              : ... note: In instance 'bench.dut.divider'
+   64 |               quotient_work <= (quotient_work << 1) | 1'b1;
+      |                                                     ^
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:69:28: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'iterations' generates 7 bits.
+                                                              : ... note: In instance 'bench.dut.divider'
+   69 |             if (iterations == WIDTH-1) state <= PUBLISH;
+      |                            ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_exp_q24.sv:91:15: Operator ASSIGNDLY expects 32 bits on the Assign RHS, but Assign RHS's COND generates 64 bits.
+                                                    : ... note: In instance 'bench.dut'
+   91 |         result<=total<0 ? 0 : total >> exponent;
+      |               ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_numeric_pkg.sv:16:18: Operator ASSIGN expects 128 bits on the Assign RHS, but Assign RHS's COND generates 129 bits.
+                                                        : ... note: In instance 'bench'
+   16 |       round_shift=x<0 ? -$signed(magnitude) : $signed(magnitude);
+      |                  ^

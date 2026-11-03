@@ -1,0 +1,2 @@
+COMPARED 1016
+evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0001-suite-1-run_fifo/fifo-d3-s1/bench.sv:50: $finish called at 10185 (1s)

@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0006-suite-6-run_config/config-v257/obj/simulation"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:47:29.070803+00:00",
+  "pid": 1067005,
+  "process_group": 1067005,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 59028447232,
+    "available_inodes": 195614860,
+    "observed_utc": "2026-10-31T15:47:29.071350+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528093229056
+  }
+}

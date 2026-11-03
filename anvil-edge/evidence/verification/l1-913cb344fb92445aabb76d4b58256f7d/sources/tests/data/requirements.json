@@ -1,0 +1,684 @@
+{
+  "schema": 2,
+  "status": "verification-in-progress-not-acceptance",
+  "full_capacity_execution_measurement": {
+    "reproduction": "python3 tests/verify.py --probe shell-full-capacity-feasibility",
+    "collection_controls": "python3 tests/verify.py --probe shell-feasibility-controls",
+    "scope": "Cold complete Qwen tables and all five original prompts, UART/bypass, seeds1/17/89 and idle reload, with every physical head row, SPI byte, DDR acknowledgement and independent numerical/output assertion retained. Uses the real H8/L1 production core and synthetic weights, not full-model or default-geometry acceptance.",
+    "budget": "Uses the unchanged2700-second aggregate diagnostic budget, including fresh table conversion, input generation and compilation. Child defaults remain3600 seconds, subordinate to the shared runtime parent limit and settlement reserve. No prior executable, table or receipt is a prerequisite.",
+    "observability": "Bounded public-pin phase summaries mark driven input completion, first embedding fetch, physical head traversal and final response acknowledgement, output progress and successful drain. Progress summaries occur once per16777216 simulated cycles. The parent records when flushed lines are observed, nominally at0.25-second polling intervals; those times are not precise event timestamps. Missing endpoints stay incomplete rather than becoming zero-duration phases.",
+    "interpretation": "This necessary six-cell subset can expose a current scheduling-budget conflict if it exhausts that budget, but cannot certify cold aggregate L1 feasibility even if it completes. Earlier tool, input or evidence loss is an inconclusive measurement, not a budget proof. Never authorize another aggregate retry from compact extrapolations, partial frames, phase counters or this subset alone. Keep the L1 incomplete-coverage rejection and all admitted checks unchanged.",
+    "retention": "Active invocation sources, launch manifests, SPI images, vector files, binaries and raw child logs must remain available until settlement and independent review. Loss of a live stdout artifact explicitly stops and settles the child, fails verification and records evidence_error; missing output directories are not recreated. Shared-runtime restoration of historical artifacts must be authentic, not inferred from parent summaries.",
+    "predecessor": "Attempt0145 is a settled execution-budget cancellation, not an established RTL mismatch. Missing historical preparation receipts require authentic shared-runtime restoration, never reconstruction."
+  },
+  "compiled_shell_execution_recovery": {
+    "reproduction": "python3 tests/verify.py --probe shell-execution-acceleration",
+    "profiling_reproduction": "python3 tests/verify.py --probe shell-execution-cost",
+    "scope": "Bounded synthetic 257/4097-row diagnostics, not aggregate L1, complete official-table inference, pretrained-model inference, STA or HIL acceptance.",
+    "repair": "Bind UART/bypass selection as a required validated simulation plusarg so all six seed/transport cells share one source/tool-bound executable. Select the corresponding independently hashed flash image at runtime. Keep every original pin-level stimulus and public transaction/numerical/byte/drain assertion. Schedule complete Qwen cells with at most three workers, further capped by the existing resource limits and global child/compiler-storage reservations.",
+    "controls": "Retain compact baseline/gprof measurements in the same fresh invocation, with profiling disabled for actual performance timings. Compare literal and runtime-bound transports for both pins at all seeds1/17/89, both original compact prompts and the real intervening SPI reload. Compare capacity257/4097 traces with the original literal representation and optional LTO. Warm the identical two-frame executable outside both serial and parallel timing windows; require cache hits and identical complete traces/comparison counts in every timed cell. Reject missing/negative/oversized transport inputs. Retain the original wrong-value/duplicate/missing-write rejection controls.",
+    "tiering": "Shell sweeps remain explicitly compiled. Mark large boot images and core geometries HIDDEN_SIZE>=64 as compiled workloads; interpreter overrides route automatically to Verilator rather than aborting or reducing coverage. Existing compact four-state controls remain.",
+    "profiling_limit": "gprof is diagnostic only and never enabled by production L1. Function-split instrumentation substantially perturbs runtime; its durations are not acceleration measurements. LTO is measured but not enabled by default.",
+    "admitted_reuse_result": "evidence/preparation/runtime-input-reuse-92af98cfb23640eb8211c32043b9e9e6/receipt.json",
+    "lower_overhead_profile": "evidence/preparation/shell-execution-cost-b83459f5dff54b2e82bf5bb5a8318e95/receipt.json",
+    "initial_acceleration_measurement": "evidence/preparation/shell-execution-acceleration-fa3a7b1fb7244c2ca6d99838e8b7578c/receipt.json",
+    "initial_measurement_limit": "The first serial schedule included cold LTO builds while its parallel schedule reused them. Those wall times are not a pure concurrency speedup; the revised diagnostic warms both timing windows equally.",
+    "historical_availability": "The admitted_reuse_result and lower_overhead_profile receipts above were subsequently unavailable at their exact paths when --repair-of was resolved. The two failed linkage invocations are evidence/preparation/runtime-input-reuse-5de1b79289f843dcab7aa877876f3743/receipt.json and evidence/preparation/shell-execution-acceleration-55e47ce3c6624ec6b55fa9c44dc4908b/receipt.json. They launched no tool children. Do not reconstruct those unavailable predecessors. Bare probe commands regenerate every current input and executable; old receipts are not prerequisites. Current runs print their exact fresh receipt paths.",
+    "interrupted_predecessor": "evidence/verification/l1-da9a33ef8bca4a49b6b71c31de9288f0",
+    "original_failure": "Attempt0138 was a settled patrol cancellation of an already compiled Verilator simulation. Its retained log shows boot completion at cycle253536628, not inference completion. Do not treat it as an established RTL defect or replay aggregate L1 without independent patrol-compatible recovery review.",
+    "remaining": "A compact scheduling improvement alone does not establish that full physical-head traversal and five-prompt/reload cells fit2700 seconds. Conditional sizing is explicitly not a measured full-table result. If the unchanged command remains infeasible, Coordinator and independent Reviewer must replan its execution contract without deleting required checks or weakening acceptance. Full-model weights, authorized Llama assets, genuine board integration, complete L1, STA, HIL and product acceptance remain unresolved."
+  },
+  "compact_deepseek_shell_recovery": {
+    "source": "tests/deepseek_shell.py",
+    "reproduction": "python3 tests/verify.py --probe deepseek-shell-compact",
+    "scope": "Supplemental synthetic261-token/physical263-row H8/L1 production-shell diagnostic, not official complete tables, pretrained weights, full geometry, STA, HIL or clean-reproduction acceptance.",
+    "policies": "Separate DeepSeek raw-text and automatic-BOS configurations. The compact BOS/EOS IDs259/260 intentionally differ from official IDs. Prompt letter classifications use the real DeepSeek Split compiler; other Unicode classifications are outside this compact fixture's coverage. Independent DeepSeek Split evaluation and ranked-byte merges are cross-checked against the pinned installed tokenizer backend using the original DeepSeek preprocessing.",
+    "matrix": "Each policy executes UART and bypass at seeds1/17/89 on compiled Verilator. Each run autonomously boots, accepts ABC then ABCD with an intervening idle same-image SPI reload, prefills complete ranked-BPE token vectors and generates eight tokens per prompt from the real production Q1 and independent nonzero fixed-point tensors.",
+    "assertions": "Reuse all existing production-shell public-DDR checks without removal: source-bound boot bytes/strobes and write acknowledgements; complete physical head traversal; exact prompt/feedback embedding identities, operation counts and cache positions; independently derived intermediate numerical writes; generated bytes, tlast, stalls, physical UART bits, completion and output drain; no configuration traffic, SPI reentry or memory edits during inference.",
+    "shared_change": "Extracted the existing Qwen image/reference serializer into build_shell_inputs, retaining its original inputs, assertions and complete Qwen matrix. Shell assertion labels are parameterized for distinct DeepSeek policy logs. No RTL, reference, design or FPGA source is changed.",
+    "compact_receipt": "evidence/preparation/deepseek-shell-compact-206508d3aca04ff7b1a07a3e98284f18/receipt.json",
+    "actual": "Twelve compiled functional simulations pass with5470140 public comparisons,24 completed responses,240 core-operation fetch frames,192 exact output bytes,36480 independent numerical writes,12 idle reloads and six explicitly rejected compiled scoreboard controls (wrong numerical value, duplicate write and missing write, independently for both policies). Total probe elapsed761.875 seconds. Final cumulative simulated cycles range6095777..6903990 per run. These controls are monitor diagnostics, not additional production RTL mutation kills.",
+    "shared_serializer_regression": "evidence/preparation/shell-scoreboard-1a1ade92108446d299fc61c5f47a146b/receipt.json",
+    "shared_serializer_observation": "The original six compiled Qwen compact transport/seed cases and three wrong-value/duplicate/missing monitor controls pass after extracting the shared input serializer. The existing official Qwen full matrix and all prior assertions remain present; no complete-table rerun was performed.",
+    "source_contract_receipt": "evidence/preparation/source-contract-2f7665c413b946bab2e3e52f591fffbd/receipt.json",
+    "feasibility_reproduction": "python3 tests/verify.py --probe deepseek-shell-feasibility --schedule-receipt evidence/preparation/deepseek-shell-compact-206508d3aca04ff7b1a07a3e98284f18/receipt.json --schedule-receipt evidence/preparation/head-row-shell-295cf872644a4e6c853933f60c9d49b9/receipt.json --schedule-receipt evidence/preparation/official-deepseek-boot-945fd24edeb04873936bc5fce89f41e3/receipt.json",
+    "feasibility_receipt": "evidence/preparation/deepseek-shell-feasibility-d8418d8deb784c85ae850a92f86f3fe6/receipt.json",
+    "feasibility_generation_assumption": "Estimates assume eight non-EOS selections per prompt, as in the compact fixtures. Complete-table synthetic outputs have not been calculated or executed here; earlier EOS could reduce operation counts. This is conditional sizing, not a proof that every full-table transaction exceeds the budget.",
+    "feasibility_observation": "The analysis binds the actual compiled current-production RTL in all three retained experiments. The257/1025-row shell measurements fit232.653 additional cycles per physical row per operation. Current compact simulations measure139651..161090 cycles/second; the retained complete official DeepSeek SPI/table-validation boot alone took924.125 seconds. Extrapolating the head cost plus that boot yields3574..3981 seconds for raw-text general prompt (14 operations) and3764..4200 seconds for automatic-BOS (15 operations), before tokenization, non-head inference, compilation or input preparation. The full five-prompt/reload estimates are16424..18662 and17371..19754 seconds per transport/seed respectively. This far-out-of-range linear fit is neither a proven bound nor an actual full-table result, but it does not support a new unchanged complete-table run within2700 seconds. No such run was attempted; Coordinator and independent Reviewer must consider the next strategy without weakening acceptance.",
+    "original_failure": "evidence/preparation/deepseek-shell-compact-22a17e57e6dd400bbdc533fc5ee0f680/receipt.json",
+    "repair": "The initial raw-policy fixture incorrectly retained BOS ID259 with automatic BOS disabled. The boot validator correctly rejected it with code06 before prefill. The repair sets only the disabled BOS metadata field to0, retaining expected token/byte vectors and every functional assertion. The repair invocation captured the original receipt hash; that predecessor was subsequently unavailable at its exact project path. Do not reconstruct it or infer a retained original receipt.",
+    "remaining": "Quantitatively review complete-table feasibility before any further full-table shell run within the unchanged2700-second budget. Complete DeepSeek shell execution is not yet demonstrated. Existing official-profile checks, original failures, missing-Llama-access limitation and all five mandatory runtime commands remain unchanged."
+  },
+  "descriptor_cache_recovery": {
+    "source": "tests/mapper_cache.py",
+    "reproduction": "python3 tests/verify.py --probe mapper-cache",
+    "l1_wiring": "run_mapper_cache is appended to L1_SUITES. Existing suites, complete-table checks, incomplete-product rejection and all five original commands remain mandatory. L1 is self-contained; only the preparation A/B comparison requires the retained historical source.",
+    "baseline_receipt": "evidence/preparation/official-qwen-shell-general-79870737978648f58850a61e30a567f0/receipt.json",
+    "baseline_mapper_sha256": "5a9f273d97a00524d6ce00043c367bb16e78613a79b343ec5d70f79d9d864558",
+    "comparison_receipt": "evidence/preparation/mapper-cache-76bbcc0a79d341e18022b2dd32a6fb0b/receipt.json",
+    "method": "The original uncached mapper and current mapper run identical source-bound public-port benches, input tables, 32 alternating activation/embedding requests and seeds1/17/89, using the same current registered multiplier and parameter validator. Compare every address, write tuple, data/error response, acknowledgement, held request/response and final count. No DUT internal paths are observed. DDR stalls derive from identical per-cycle seeded stimulus; different completion cycles need not encounter identical random wait intervals.",
+    "observed_cycles_before": [18188, 18114, 17919],
+    "observed_cycles_after": [2130, 2183, 2098],
+    "observed_directory_reads_before_per_seed": 1728,
+    "observed_directory_reads_after_per_seed": 108,
+    "observed_tensor_reads_per_seed_before_and_after": 32,
+    "scope": "Measured 8.30-8.54x cycle reduction for this bounded alternating workload, not full-model speedup or a promise to finish complete Qwen within the shared runtime patrol limit.",
+    "lifecycle": "Three compiled seeds plus a compact Icarus four-state seed17 each compare 79 requests. Check warm hits; capacity eviction; row13 activation rejection; row-specific bounds; illegal layer and readonly writes; maximal row; real read/write DDR errors and acknowledgements; invalid storage, shape, format, permissions, extent and overflowing offset; early/late directory read errors; repair after unsuccessful fills; same-address reload with swapped valid descriptors; changed configuration count and recovery; withdrawal during a miss; warm reset; held DDR requests and upstream replies.",
+    "defect_controls": "Two disposable compiled mapper mutants are killed by original functional assertions: cached offset corruption by CACHE_DATA_TUPLE, suppressed epoch invalidation by CACHE_RESPONSE. Diffs, compilation and bounded mismatch traces remain in the comparison receipt. These supplement, never replace, the original nine mandatory mutation experiments.",
+    "original_harness_failure": "evidence/preparation/mapper-cache-4357dcc2a6584b3bb87de9bdabaf654a/receipt.json",
+    "harness_repair": "The initial lifecycle compile rejected an unsized overflow-test expected address greater than 32 bits. Explicitly size generated arguments, including 64-bit addresses. No production RTL, oracle arithmetic, stimulus values or response assertions changed. The retained intermediate repair is evidence/preparation/mapper-cache-3cfe3ee2b2e2475fa1ddd3197da309bb/receipt.json.",
+    "mapper_regression_receipt": "evidence/preparation/mapper-12737aa35a45458d8837cb31ae82b7f1/receipt.json",
+    "mapper_regression": "All six existing typed-region mapper simulations pass: two geometries at three seeds, 1848 compared transactions.",
+    "compact_shell_receipt": "evidence/preparation/shell-scoreboard-63ab4d364a334a1581254a30024c6a90/receipt.json",
+    "compact_shell_regression": "Six real production-shell compiled simulations pass on UART/bypass at seeds1/17/89, with two distinct multitoken prompts separated by genuine SPI reload, exact synthetic nonzero fixed-point writes, feedback, output bytes and physical drain. 2757504 comparisons. All three original wrong-value/duplicate/missing scoreboard controls are rejected. Reduced directory traffic reduces the transaction comparison count, not the required prompt, decode, numerical or byte vectors.",
+    "synthesis_receipt": "evidence/preparation/synthesis-496797ce35bd4bd4a45a70a55134184c/receipt.json",
+    "synthesis": "Actual Yosys minimum/default production hierarchies retain integrated arithmetic and shell state, with 147608/147751 flip-flop bits and 17824/17873 primitive cells respectively; both pass check assertions with zero latch/division/remainder cells. This is not target STA or board acceptance.",
+    "execution_limits": "The old 14400-second child allowance is not reused. Substantive children default to 3600 seconds, interpreted compact vvp children are bounded to 600 seconds, and the shared runtime owns parent deadlines and its 2700-second patrol budget. Medium/large inference, multi-token sweeps and mutation suites remain compiled.",
+    "remaining": "No complete-table rerun was attempted in this recovery. The bounded cache gain does not establish that full-vocabulary multi-prompt inference fits the unchanged patrol budget; retain historical timeouts and obtain a feasible independently reviewed execution strategy before retrying. DeepSeek/Llama tokenizer assets, compatible real quantized weights, physical DDR/board integration and all five mandatory runtime results remain outstanding."
+  },
+  "complete_qwen_shell_recovery": {
+    "source": "tests/qwen_shell.py",
+    "general_prompt_reproduction": "python3 tests/verify.py --probe official-qwen-shell-general",
+    "complete_matrix_reproduction": "python3 tests/verify.py --probe official-qwen-shell",
+    "compact_scoreboard_reproduction": "python3 tests/verify.py --probe shell-scoreboard",
+    "scope": "Production anvil_edge_top and real H8/L1 Q1, complete official Qwen tables, synthetic nonzero periodic tensors, active vocabulary151665 distinct from physical capacity151936, sequence64 and max_new_tokens8. Not pretrained-model inference, full-size execution or hardware acceptance.",
+    "expected_results": "Official prompt vectors come from the already installed pinned tokenizer. Independent fixed-point Transformer equations evaluate sixteen distinct synthetic embedding rows; all active physical rows repeat those exact rows, so repeating the output dot products cannot change lowest-index argmax. Inactive physical rows are zero. Every other tensor is serialized from the independent reference before SPI boot. Full generated vectors and concatenated vocabulary bytes, not scripted replies, derive from that reference.",
+    "implemented_matrix": "Compiled Verilator seeds1/17/89 on UART and bypass, all five exact prompts, eight non-EOS selections per prompt and idle reload after the first response. Assertions compare autonomous SPI payload/strobes and DDR acknowledgements, every prompt/feedback embedding fetch, complete ordered physical head traversal, per-address intermediate values within each operation, cache addresses/positions, full bytes/tlast, physical UART bit lengths and final drain. No configuration traffic or memory edits occur during inference.",
+    "public_observation_limit": "The top has no token/logit output ports. Internal token/logit channels are not probed or claimed observed. Their exact framing remains independently checked by existing public adapter/controller suites; the shell checks externally visible fetch traversal, numerical writes and selected token/byte consequences.",
+    "l1_wiring": "run_qwen_shell is appended after the existing complete-table integration and boot routines. All previous L1 suites, fail-closed incomplete-product rejection and five original execution commands remain unchanged.",
+    "preparation_failures": [
+      {
+        "receipt": "evidence/preparation/official-qwen-shell-general-93dcce1ba2914ae7b9fb7475cb288666/receipt.json",
+        "diagnosis": "New standalone verification script did not explicitly add its sibling import directory under the actual launcher. Added only the project-local script directory before imports; no interpreter or global safe-path settings changed."
+      },
+      {
+        "receipt": "evidence/preparation/official-qwen-shell-general-437370175e2a4338ac18bf58691d8f52/receipt.json",
+        "diagnosis": "New serializer reporting attempted relative_to with a relative path against an absolute project root. Resolve generated input paths within this project; shipped paths remain project-relative."
+      },
+      {
+        "receipt": "evidence/preparation/official-qwen-shell-general-94dae04d3a874da2a82e6b40da178c3f/receipt.json",
+        "diagnosis": "New input guard compared the ASCII hex file against the raw SPI-image digest. Retain both identities and compare each representation against its own hash."
+      },
+      {
+        "receipt": "evidence/preparation/official-qwen-shell-general-2400a09ea19a4b9fa4b028574fb416dd/receipt.json",
+        "diagnosis": "New bench used unsupported adjacent SV string literals. Repaired format strings only; retained both compiler failures and all expected values."
+      },
+      {
+        "receipt": "evidence/preparation/official-qwen-shell-general-d8f720343e9648c88d7880c1a7ebbeda/receipt.json",
+        "diagnosis": "Both real compiled full-Qwen shell runs autonomously booted 2702225 writes plus6246352 reads with8948577 acknowledgements, then failed the new global write-order assertion at the first prompt token3838, operation0 write41. Observed address4874572/valuefffff92e exactly equals reference row44 at that address; reference row41 instead addresses4874560. RoPE is permitted to write independent lanes out of global order. Repair the verifier to enforce ordered values per address within each public operation, not a lane order absent from the contract. This is not a demonstrated RTL defect.",
+        "execution_limit": "The UART child took2643.149 seconds and stopped shortly after boot at cycle254105548, before even completing the first full physical vocabulary traversal. No output byte or generated token was certified. A further unchanged full-matrix retry is not justified; bounded execution feasibility needs Coordinator diagnosis without weakening the full matrix."
+      }
+    ],
+    "compact_repair_receipt": "evidence/preparation/shell-scoreboard-ec85f5415ae94cdcad79560bc3d691f8/receipt.json",
+    "compact_repair_observation": "The corrected scoreboard passed six real compiled production-shell simulations (UART/bypass at seeds1/17/89), each with synthetic257-entry tables, a two-token prompt, seven feedback requests, eight independently derived output bytes and1368 exact intermediate writes. Each compares3137255 public transactions/outputs. This validates the owned scoreboard repair, not complete Qwen inference. The later added second prompt/reload is not covered by this historical receipt.",
+    "compact_reload_receipt": "evidence/preparation/shell-scoreboard-f3fd753fe847471e8c3719e18f552851/receipt.json",
+    "compact_reload_observation": "Six real compiled UART/bypass runs at seeds1/17/89 pass with unchanged captured sources and settled children. Each executes initial SPI boot, a two-token prompt with seven feedback requests, eight output bytes, idle configuration-command reload through a second complete SPI boot, then a different three-token prompt with seven feedback requests and eight output bytes. Each compares6694889 public transactions/outputs; total40169334 comparisons across12 completed responses,114 core-operation fetch frames,96 exact output bytes and17328 exact intermediate writes. Every run proves one idle reload and request stalls; bypass also proves held-output stalls. The two operation frames have18576/20640 embedding reads and1368/1520 activation writes respectively. Synthetic257-entry tables only: this validates scoreboard/reload execution, not the unexecuted repaired complete-Qwen matrix.",
+    "source_contract_receipt": "evidence/preparation/source-contract-55386727b5db48c5ab27bb696827c081/receipt.json",
+    "remaining": "Execute the repaired complete-Qwen boot-to-output checks and all five prompts/reload under an independently reviewed feasible execution strategy; no full-table inference pass is claimed. Missing DeepSeek/Llama assets, compatible real weights and native physical prerequisites still block full product acceptance."
+  },
+  "metadata_extension": {
+    "source": "tests/metadata.py",
+    "reproduction": "python3 tests/verify.py --probe metadata",
+    "admitted_l1_integration": "run_metadata is appended to the existing L1_SUITES; every prior suite and all five original commands remain mandatory",
+    "contract": "Unchanged version 1 reserves words 24..31. Version 2 uses word 8 for classification/special properties, word 24 for normalization/combining classes, word 25 for regex case folding and reserves words 26..31. These are table provenance labels, not hardwired Unicode selectors or proof of official equivalence.",
+    "matrix": "22 independently encoded manifest transactions per run: five valid and seventeen rejected. Compact Icarus seed17 and compiled Verilator seeds1/17/89 check unsupported versions 0/3/ffffffff, every v1 reserved word24..31, every v2 reserved word26..31, exact committed metadata/count vectors, held requests, acknowledged reads, no partial publication and successful-completion counts. Rejected standalone helpers reset between cases; the real boot loader owns that reset epoch in production.",
+    "boot_matrix": "Compiled seeds1/17/89 each execute four complete SPI-to-DDR epochs: initial v1, valid mixed-version-label v2, CRC-correct v2 with nonzero reserved word26 rejected as code06, and recovery to unchanged v1. Compare exact payload writes/strobes, all acknowledgements and exact committed bundles; failed reload exposes no old or partial bundle.",
+    "scope": "Synthetic representation fixtures only. No official mixed-version profile is selected and no official boot image, tokenizer equivalence, real weighted benchmark or physical result is claimed.",
+    "initial_stimulus_failure": "evidence/preparation/metadata-cc510e04a1fa4970819fe04b67b9b7e9/receipt.json",
+    "failure_diagnosis": "The standalone helper test incorrectly expected start to recover its sticky FAILED state. Production boot resets this helper on each epoch. Preserve the sticky rejection assertions and reset the helper after a rejected case; separately check actual reload/error recovery through the public SPI boot-loader interface. No RTL change.",
+    "first_repair_receipt": "evidence/preparation/metadata-b1bc85ecd6e747a685830719de892a31/receipt.json",
+    "first_repair_observation": "Seven actual simulations passed with 263684 comparisons and settled children in 35.518 seconds. This historical snapshot precedes the added per-epoch summaries and leaf Yosys check; its result is not claimed for those later additions.",
+    "synthesis_scope": "Actual Yosys hierarchy/proc/check assertions on the changed real manifest validator and its segment reader, explicit zero latch/division/remainder cells and substantive retained state. This leaf check supplements, never replaces, existing full-production minimum/default synthesis or native timing/board gates."
+  },
+  "verification_dependencies": {
+    "python": "Python >=3.11 for offline published-release Cargo.lock parsing with stdlib tomllib; no Python package installation is performed",
+    "portable_l1": "Icarus/iverilog/vvp, Verilator, GNU-compatible C/C++ compilers (gcc/g++), make and Yosys; the admitted project-local .venv must already provide tokenizers==0.21.4. No dependency installation occurs during L1. Exact executed tool versions and installed-oracle file hashes are retained. Compiling candidate dependency sources remains distinct from executing the actual official library",
+    "unicode_primary_inputs": "tests/data/unicode-provenance.json pins thirteen flat raw source inputs and their license locations. Unicode conversion/component probes and the L1 Unicode branch are offline",
+    "native": "Original shared-runtime timing lint, licensed Quartus 17.1 and installed physical target/DDR/bridge prerequisites remain unchanged"
+  },
+  "seeds": [1, 17, 89],
+  "prompts": [
+    "What is the capital of France?",
+    "Compute 17 + 25.",
+    "Write a Python function that adds two integers.",
+    "All robins are birds. Are robins animals? Explain briefly.",
+    "Translate hello into Chinese."
+  ],
+  "max_new_tokens": 8,
+  "required_official_tokenizer_families": [
+    "Qwen2.5",
+    "DeepSeek-V3",
+    "Llama-3.2"
+  ],
+  "asset_status": "Complete pinned Qwen and DeepSeek raw-text tables now have independently derived official-library token/byte comparisons, bounded public-port RTL comparisons and separate SPI-to-DDR boot scans. DeepSeek independent preprocessing composes its three Isolated Split stages without shared official preprocessing; all 128815 genuine token IDs are retained. A separate metadata-driven DeepSeek automatic-BOS profile checks the declared single-sequence model configuration with independent prefix/byte concatenation and the installed tokenizer backend, not an unavailable Transformers wrapper. Full-shell official weighted benchmarks and native physical acceptance remain separate. Llama-3.2 inputs, compatible real quantized weights and genuine board integration remain missing.",
+  "deepseek_bos_policy": {
+    "source": "tests/deepseek_integration.py",
+    "reproduction": "python3 tests/verify.py --probe official-deepseek-bos",
+    "l1_wiring": "run_deepseek_bos is appended after the existing DeepSeek integration/boot calls. Raw-text coverage, all prior suites, the fail-closed incomplete-product rejection and all five original commands remain mandatory.",
+    "oracle": "Exactly one configured BOS ID0 is independently prepended to each independently derived raw token vector; expected bytes concatenate its pinned literal bytes and the original decoded bytes. Cross-check complete vectors with the installed tokenizers==0.21.4 backend configured with TemplateProcessing and add_special_tokens=True; also require the special-token mask and unchanged add_special_tokens=False vectors. Literal BOS input must yield two BOS IDs. No chat template or automatic EOS.",
+    "scope": "Declared single-sequence policy only. Transformers is not installed or executed, no wrapper override of AddedToken normalization is inferred and no weights, inference, full-shell or hardware acceptance is claimed. Raw tables remain unchanged; only committed metadata words5/6 select automatic BOS.",
+    "initial_failure_receipt": "evidence/preparation/official-deepseek-bos-ae1b6bacd1414955b6cf645b3b28b188/receipt.json",
+    "initial_failure_retention_limit": "The original receipt was created and read during this turn, but its exact path subsequently disappeared without a Verifier deletion. Its hash link remains in the first successful repair receipt. A later attempted repair link fails FileNotFoundError in evidence/preparation/official-deepseek-bos-ef0bfdebab8e4a2da073bbe2b91e569e/receipt.json. No historical receipt is reconstructed or overwritten.",
+    "initial_failure": "The new harness incorrectly assumed the raw BOS AddedToken normalized flag equals the model-config flag. The pinned raw token has normalized=false and tokenizer_config.json declares normalized=true. Retain both identities explicitly and preserve the raw table policy under the existing identity normalizer. No RTL, expected token/byte vectors or assertion was weakened.",
+    "initial_repair_receipt": "evidence/preparation/official-deepseek-bos-53e4c1f8a7a44ca7875038cbb9e7aa84/receipt.json",
+    "initial_observations": "881 complete software policy comparisons; one compact four-state Icarus combining-character case; compiled Verilator seeds1/17/89 each execute880 default-capacity vectors and the original27508-byte vector at legal capacity32768. 12557215 actual public comparisons across seven successful RTL runs, unchanged captured sources and settled children. This historical receipt predates the new supplemental BOS mutations.",
+    "source_wiring_failure_receipt": "evidence/preparation/source-contract-a22a125dece04a08b5ac1e7c684e1fff/receipt.json",
+    "source_wiring_repair": "The static exact-call-list guard rejected the newly appended mandatory BOS call. Add that same call to the expected sequence, retaining every original call, order and the fail-closed product rejection. No functional criterion is changed.",
+    "mutation_harness_failure_receipt": "evidence/preparation/official-deepseek-bos-b154920875b749c4aaec69051c3f21b0/receipt.json",
+    "mutation_harness_repair": "The first compiled missing-prefix mutant was correctly rejected by the original token-vector assertion. The second mutant did not execute: both harness invocations attempted the same generated-vector directory. Scope each mutant's generated vectors and simulation outputs under its own existing disposable directory. The old summary 'mutant survived' was an imprecise harness diagnostic, not an observed successful mutant simulation; require exactly one executed functional rejection and report the underlying exception. No mutation, oracle, RTL or required assertion is weakened.",
+    "final_policy_and_mutation_receipt": "evidence/preparation/official-deepseek-bos-54dc6bb547594ceea324804984fbc558/receipt.json",
+    "final_observations": "All original881 policy vectors and seven RTL simulations pass again with12557215 successful public comparisons. Both isolated mutants compile and fail DEEPSEEK-BOS_OFFICIAL_TOKEN in actual bounded compiled simulations; neither timeout nor compilation rejection counts as a kill. Raw logs, source copies/diffs, source identities and child settlement are retained. The whole preparation completes in233.868 seconds; these are advisory results, not the mandatory L1 result or product acceptance.",
+    "source_wiring_repair_receipt": "evidence/preparation/source-contract-bfe7754566554368a6270bfdecd3f248/receipt.json",
+    "supplemental_defect_controls": "Two disposable compiled tokenizer mutants suppress the BOS prefix or corrupt its ID. Require failure of the original complete token-vector assertion, not compilation failure or timeout. These supplement, never replace, the original mandatory mutations."
+  },
+  "llama_input_access": {
+    "source": "tests/official.py",
+    "reproduction": "python3 tests/verify.py --probe official-llama-discovery",
+    "receipt": "evidence/preparation/official-llama-discovery-2c4292de31e7481099815905c449f9a5/receipt.json",
+    "observation": "The official public API resolves meta-llama/Llama-3.2-1B-Instruct at immutable revision9213176726f574b556790deb65791e0c5aa438b6 and declares manual gating and license llama3.2. An unauthenticated HEAD of that exact revision's tokenizer.json returns HTTP401 with GatedRepo. No payload, credentials, gate bypass, mirror substitution, license acceptance or tool installation is performed.",
+    "acceptance_limit": "Complete Llama asset hashes, independently compared official vectors, loadable tables and shell integration remain unavailable. This provenance/access diagnostic is not functional verification and does not change any mandatory check."
+  },
+  "deepseek_preprocessing_recovery": {
+    "sources": ["tests/deepseek_preprocessing.py", "tests/deepseek_dfa.py", "tests/deepseek_integration.py"],
+    "reproduction": "python3 tests/verify.py --probe official-deepseek-integration",
+    "independent_preprocessing_receipt": "evidence/preparation/official-deepseek-reference-a4670825459940d8a59f98af224f65a7/receipt.json",
+    "compiled_dfa_receipt": "evidence/preparation/official-deepseek-dfa-66ca0420797a468d8df38f1653cd383e/receipt.json",
+    "complete_profile_receipt": "evidence/preparation/official-deepseek-integration-bc5404faec754b63a777bc340f4162e6/receipt.json",
+    "qwen_shared_harness_regression_receipt": "evidence/preparation/official-qwen-integration-74db527732074eb087bc567bee3cac3d/receipt.json",
+    "oracle": "Primary-UCD16 category, combining-class, word and whitespace maps are hash-pinned; Python Unicode and the official regex engine do not compute expected spans. Direct ordered-expression/Isolated-Split evaluation independently produces expected spans. The official tokenizers==0.21.4 implementation is observation-only. Compare 1112064 scalar contexts per Split stage, fifteen directed contexts per stage, 3000 seeded contexts per stage and 3015 complete chained ByteLevel spans. Serialize a separately derived 24-state, 17-class tagged DFA and independently compare 5220 exhaustive sequences of length0..3, fourteen directed vectors and 3000 seeded vectors. Four public-port RTL DFA runs cover a compact Icarus case plus full-classifier Verilator seeds1/17/89, with actual stalls and exact byte-offset spans.",
+    "complete_profile": "All fifteen table kinds retain 128815 complete IDs, all 127741 ranked merges, 256 distinct byte mappings, 818 AddedTokens and identity normalization. All three original Split stages are composed, including 1..3-digit boundaries, isolated CJK/kana runs, trailing whitespace before earlier-stage boundaries, ASCII punctuation prefixes and preserved unmatched control gaps. Every serialized vocabulary/merge/trie field is reparsed and compared with pinned source assets.",
+    "raw_policy": "Raw tokenizer.json encode with add_special_tokens=False, skip_special_tokens=False, enabled literal AddedTokens, no automatic BOS/EOS. tokenizer_config.json independently declares add_bos_token=true; that model-wrapper policy is explicitly not certified by the raw-table fixture. No inference-time software tokenization.",
+    "executed_profile_matrix": "881 complete software BPE/token and decoded-byte vectors include the exact five required multitoken prompts, ASCII/accented/CJK/emoji/combining/whitespace/digits, every AddedToken and bounded concatenations. At each Verilator seed1/17/89, 880 vectors execute at default byte/token capacity4096, comparing3296 accepted token IDs and55842 output bytes with2806433 total public comparisons. The original27508-byte all-AddedToken concatenation is preserved at legal capacity32768 and compares1635 token IDs,27508 output bytes and1323587 total public comparisons at every seed. The combining-character compact vector also passes four-state Icarus with583 comparisons. No vector is silently dropped or truncated.",
+    "source_scope": "Shared vocabulary auditing now accepts an explicit vocabulary count and independently handles the three literal AddedTokens already present in the DeepSeek base vocabulary. The common complete-profile bench derives the active vocabulary from metadata and uses family-specific evidence names; Qwen numerical/vector assertions and its50000000-cycle bound remain unchanged. The complete Qwen regression passed after these changes.",
+    "original_failures_and_repairs": [
+      {
+        "receipt": "evidence/preparation/official-deepseek-reference-0e20e6e52bc94a71be37773477eed36b/receipt.json",
+        "repair": "The strict literal pattern guard initially represented CR/LF as backslash escapes while the pinned JSON contains actual control characters. Correct only the literal spelling; retain the exact semantic oracle and all comparisons."
+      },
+      {
+        "receipt": "evidence/preparation/official-deepseek-integration-680940472d324d59b6c369dbf2ebc384/receipt.json",
+        "repair": "The earlier provisional128256 vocabulary count omits559 genuine AddedToken IDs. The actual pinned base128000 plus818 AddedTokens sharing three base IDs is128815. Preserve every source ID and correct the fixture extent; no RTL capacity or acceptance requirement changed."
+      },
+      {
+        "receipt": "evidence/preparation/official-deepseek-integration-4fc1ab5a1c4d4fe89486a38cd3fa4f87/receipt.json",
+        "repair": "Qwen-only audit logic tried to byte-decode literal special spellings before AddedToken override. Verify overlapping source spellings exactly and then independently audit their literal byte records; retain all ordinary merge and byte-map assertions."
+      },
+      {
+        "receipt": "evidence/preparation/official-deepseek-integration-c930ad81cebf4c2ebfb13a84000b5080/receipt.json",
+        "repair": "The positive RTL fixture correctly rejected its own27508-byte all-AddedToken prompt at4096 capacity before compilation. Keep that vector and execute it at legal32768 capacity; execute every other vector plus32-token concatenations at4096. Existing default overflow-rejection tests stay mandatory."
+      },
+      {
+        "receipt": "evidence/preparation/source-contract-f15a8f0a0eaa459fb41498caf5f0673e/receipt.json",
+        "repair": "Update the exact static direct-call ledger to require all three appended DeepSeek routines while retaining every original L1 call and the final incomplete-product rejection. Repair passed in evidence/preparation/source-contract-2becc3f662c549a29a079337c68046bf/receipt.json."
+      },
+      {
+        "receipt": "evidence/preparation/official-deepseek-boot-b66d5d81522a4d12bff534f673233f46/receipt.json",
+        "repair": "The boot child actually completed with2333499 writes,6714095 reads,9047594 acknowledgements and9047595 comparisons, but the parent correctly invalidated the entire result because verification provenance/wiring files were edited while it ran. Preserve that failed source-integrity receipt, freeze all selected sources and rerun into a fresh namespace with an explicit repair_of link; do not relabel the first parent as passing."
+      }
+    ],
+    "l1_wiring": "Append run_deepseek_dfa, run_deepseek_integration and run_deepseek_boot after the pre-existing DeepSeek software checkpoint; all original suites, complete Qwen checks, fail-closed incomplete-product rejection and five unchanged runtime commands remain mandatory.",
+    "remaining": "DeepSeek autonomous boot receipt, genuine full-shell UART/bypass/reload execution, model-wrapper BOS policy, pinned Llama assets, compatible real quantized weights and genuine DDR/board integration remain separate. All five mandatory runtime results and independent engineering acceptance remain required."
+  },
+  "deepseek_asset_recovery": {
+    "source": "tests/deepseek_assets.py",
+    "identity": "deepseek-ai/DeepSeek-V3",
+    "revision": "e815299b0bcbac849fa540c768ef21845365c9eb",
+    "discovery_receipt": "evidence/preparation/official-deepseek-discovery-c2c6971ba2414ced8343c4bab21a25d1/receipt.json",
+    "intake_receipt": "evidence/preparation/official-deepseek-intake-b72c3826f23745bebbc8138b735ae3b9/receipt.json",
+    "reference_receipt": "evidence/preparation/official-deepseek-reference-780c8e526cff4431b0fec67d4e439e26/receipt.json",
+    "ranked_bpe_receipt": "evidence/preparation/official-deepseek-reference-c634083413a048aabe14aa2cf0c1e968/receipt.json",
+    "reproduction": "python3 tests/verify.py --probe official-deepseek-reference",
+    "scope": "Historical raw-intake checkpoint: five flat raw upstream assets, including both licenses and the upstream README, are individually length/hash pinned in assets.json and tests/deepseek_assets.py. Offline validation checks all127741 ranked merges, unique base IDs and consistent overlapping AddedTokens. The earlier128256-entry summary was incorrect: the retained official source has128815 complete entries. The then-executed twelve software vectors used shared preprocessing; the newer independent preprocessing and hardware comparisons are recorded separately in deepseek_preprocessing_recovery. Historical receipts are preserved.",
+    "wiring_failure_receipt": "evidence/preparation/source-contract-ee21c366cbd04b179741c08967628b7b/receipt.json",
+    "wiring_repair_receipt": "evidence/preparation/source-contract-e55fadde7c6a4e388037dd9bf7fb988c/receipt.json",
+    "wiring_repair": "The original source-contract assertion rejected the new checkpoint being accidentally inserted in the Qwen-only probe branch rather than L1. Move only that call into L1, keep the separate Qwen probe unchanged and preserve all original suites and the final incomplete-product rejection. The repaired static wiring check passed with an explicit repair_of link; this is not executed L1 coverage.",
+    "l1_wiring": "run_deepseek_reference is appended after the existing Qwen software checkpoint. All earlier suites, complete-table Qwen integrations, fail-closed incomplete-product rejection and five unchanged mandatory execution commands remain.",
+    "remaining": "Implement independent DeepSeek conversion for its identity normalization and three ordered pretokenization splits, explicitly resolve automatic BOS metadata, then compare complete hardware token/byte vectors against official vectors at all required seeds and execute genuine boot/shell/reload coverage. Raw asset availability does not satisfy those checks or supply real quantized model tensors."
+  },
+  "complete_qwen_profile": {
+    "source": "tests/qwen_integration.py",
+    "reproduction": "python3 tests/verify.py --probe official-qwen-integration",
+    "failure_receipt": "evidence/preparation/official-qwen-integration-9c92b1ef003846bab47cf10d52cefc82/receipt.json",
+    "failure_diagnosis": "After complete software/oracle comparisons succeeded, the new bench placeholder guard incorrectly treated legal SystemVerilog event-control @ characters as unexpanded placeholders. Match only @UPPERCASE_NAME@ markers; no expected vector, numerical/functional assertion, RTL or acceptance threshold changed.",
+    "repair_receipt": "evidence/preparation/official-qwen-integration-8d6992cdb9014064895d5339841709c5/receipt.json",
+    "post_manifest_repair_receipt": "evidence/preparation/official-qwen-integration-42c232094e2744d8a5fca453decb18ba/receipt.json",
+    "post_manifest_repair_observation": "The same complete software/oracle comparisons and four real RTL simulations pass again, with 1588207 public comparisons, unchanged captured sources and settled children. This receipt also includes the inherited top-template substitution repair in its input snapshot.",
+    "source_contract_repair_receipt": "evidence/preparation/source-contract-0d13fd5fbd36406595930f48c5f71fe3/receipt.json",
+    "legacy_regression_repair_receipt": "evidence/preparation/simulator-compatibility-af0d2c8680984efab935b43785090aae/receipt.json",
+    "legacy_regression_repair_observation": "All twenty original compiled compatibility cases pass with 1036540 actual comparisons, unchanged captured sources and settled children. Includes valid256/257 and invalid1/255 boot, failed reload isolation, protocol/text/numerical/memory/adapter checks and the repaired full-shell reset-during-prefill case. The latter preserves exact two-byte output, core feedback/cache counts and all original reset/reboot assertions, with 978975 comparisons. These are bounded synthetic regressions, not official-model or native physical acceptance.",
+    "software_scope": "Actual installed tokenizers==0.21.4 identities and complete vector outputs retained. Candidate tables agree with official NFC for all 1112064 scalars, with official Split on all scalar contexts plus 3000 seeded strings, and with 93610 NFC conformance identities. Every one of 66 complete independent BPE vectors and concatenated decoded-byte vectors agrees with the official library, including the five exact multitoken benchmark prompts, all 22 AddedTokens, Unicode/composition/version witnesses, whitespace, contractions and seeded strings. These are measured domains, not exhaustive arbitrary-string equivalence or inferred wheel dependency versions.",
+    "rtl_scope": "One compact Icarus four-state complete-profile e+combining-acute case has 529 comparisons. Compiled Verilator seeds1/17/89 each execute 66 complete public-port tokenizer/detokenizer transactions against the official vectors: 2224 input bytes, 940 tokens, 2207 decoded bytes, 517822 tokenizer reads and 5967 detokenizer reads; 529226 comparisons per seed. All fifteen tables are genuine pinned-asset conversions, supplied directly with version2 metadata. Exact token/byte/last, stalls, reset, conservation, full-prompt buffering and completion are asserted. Compiled simulation is two-state. These transactions do not execute boot, inference or the full shell.",
+    "boot_reproduction": "python3 tests/verify.py --probe official-qwen-boot",
+    "boot_receipt": "evidence/preparation/official-qwen-boot-da4f2d23df664b2b9329f48f7f3140ac/receipt.json",
+    "boot_scope": "Separate compiled real production boot-loader run, seed17: autonomous delayed-calibration SPI loading of a 10804028-byte image with the complete official Qwen tokenizer tables and synthetic H8/L1 zero weights. All 2700785 exact DDR writes/strobes and 6245392 validation reads receive 8946177 acknowledgements before exact atomic configuration/table commit; 8946178 comparisons. Active vocabulary151665 is distinct from physical capacity151936. Simulation took 979.678 seconds without timeout; all children settled. This does not execute the tokenizer after boot or real-model inference.",
+    "later_regression_failures": [
+      {
+        "receipts": [
+          "evidence/preparation/source-contract-140e859589b14efa830eb61c2cd0e953/receipt.json",
+          "evidence/preparation/official-qwen-integration-9a6ebcecea8b42f0b507f1bdd4da8200/receipt.json"
+        ],
+        "diagnosis": "Documentation update introduced a trailing JSON comma in requirements.json. Both consumers failed parsing this owned manifest, not an RTL comparison. Remove only the trailing comma and retain all assertions and requirements; fresh repair runs link these receipts."
+      },
+      {
+        "receipt": "evidence/preparation/simulator-compatibility-da652abc406946648c8d5fb838b6880c/receipt.json",
+        "diagnosis": "The original twenty-case compatibility regression reaches a top-reset bench compiler failure: BOOT's inherited expected_metadata declaration still contains @METADATA@ because top_test never substituted the newer shared-template marker. Bind it to the independently serialized fixture metadata, without altering stimulus or any assertion. No RTL change; the original failed compile and preceding successful cases remain retained."
+      }
+    ],
+    "l1_wiring": "Both complete-profile and boot routines are appended after all original L1 suites/checkpoints. The original five mandatory commands, all prior suites and fail-closed incomplete-product rejection remain. Preparation receipts certify only their captured source sets, not later edits or admitted runtime acceptance.",
+    "remaining": "Connect the official image through the actual shell for both UART and bypass prompt/prefill/decode/output and reload; complete DeepSeek/Llama conversion; obtain provenance-pinned compatible real weights and independent full-size benchmark vectors; complete every original mandatory runtime check and native physical gate."
+  },
+  "external_asset_manifest": "tests/data/assets.json",
+  "official_profile_checkpoint": {
+    "identity": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "license": "Apache-2.0",
+    "source": "tests/official.py",
+    "discovery_receipt": "evidence/preparation/official-qwen-discovery-dbddeb7f99024b0d917735c8639e93ce/receipt.json",
+    "retrieval_receipt": "evidence/preparation/official-qwen-intake-d09c21d3714b4762ac905fc4cef2707c/receipt.json",
+    "retrieval_outcome": "All five immutable files retrieved and retained; the enclosing probe then failed on the missing independent official tokenizer dependency. This is not a successful official-profile check.",
+    "local_validation_receipt": "evidence/preparation/official-qwen-assets-8ca3cf5b99f84de6856d5c32fa6a28ef/receipt.json",
+    "reference_failure_receipt": "evidence/preparation/official-qwen-reference-3c202603c2e844f4bae1fc9645b8fb56/receipt.json",
+    "normalization": "NFC, not identity",
+    "actual_tokenizer_vocabulary": 151665,
+    "physical_embedding_capacity_is_distinct": true,
+    "fragment_source": "tests/qwen_tables.py",
+    "fragment_reproduction": "python3 tests/verify.py --probe official-qwen-fragments",
+    "fragment_receipt": "evidence/preparation/official-qwen-fragments-7a4b84748646452fa2780f96d8f07b4f/receipt.json",
+    "symbolic_regex_source": "tests/qwen_regex.py",
+    "symbolic_regex_reproduction": "python3 tests/verify.py --probe official-qwen-regex",
+    "symbolic_regex_receipt": "evidence/preparation/official-qwen-regex-9658065aee3a4168a685a231df4755fb/receipt.json",
+    "symbolic_regex_scope": "Conditional on the symbolic classifier: 17 states, 289 transitions, 166 tag operations and 21 accepts encode the seven official ordered alternatives, greedy extents, trailing negative lookahead and synthetic EOF. Independent direct rule evaluation matches reparsed tables for every one of 69905 symbol sequences of length 0..4 and 1000 randomized byte-width sequences per seed 1/17/89. A set-before-to-set-after converter mutation is rejected by the unchanged two-space lookahead assertion; this is not a compiled RTL mutation kill. Three compiled RTL cases each compare 5316 public table reads and 54 exact byte spans, totaling 16113 comparisons. The fixtures explicitly classify only their selected scalars, not the complete Unicode alphabet, and execute no NFC or official-library reference.",
+    "upstream_unicode_source": "tests/unicode_sources.py",
+    "upstream_unicode_reproduction": "python3 tests/verify.py --probe official-unicode-sources",
+    "upstream_unicode_receipt": "evidence/preparation/official-unicode-sources-2067b27d12464161bee2f33244c031f6/receipt.json",
+    "upstream_unicode_scope": "Historical source-intake receipt only: read-only archive inspection, with no installation or fetched-source execution in that invocation. Candidate tokenizers 0.21.4 commit e892882fd4608b468dcf9dc33ea95283882b8e6d calls Unicode9 normalization; independently hashed onig_sys 69.9.1 has Unicode16 markers. These source identities do not identify the later installed wheel. Later version2 representation and measured official-library comparisons are indexed separately in complete_qwen_profile, not retroactively attributed to source intake.",
+    "unicode_converter_source": "tests/unicode_tables.py",
+    "unicode_converter_inputs": "tests/data/unicode-provenance.json",
+    "unicode_converter_reproduction": "python3 tests/verify.py --probe unicode-rtl",
+    "unicode_converter_receipt": "evidence/preparation/unicode-rtl-c0ed0b2c26fc45efa2746ea4be0a34f5/receipt.json",
+    "unicode_converter_scope": "Advisory source-bound preparation: primary UCD independently confirms all scalar classifications and 1557 case-fold mappings, source normalization maps and composition exclusions. All 18722 published UCD9 normalization rows satisfy twenty identities each (374440 software comparisons). Reparsed serialized ranges compare every one of 1112064 Unicode scalars. Candidate fragments contain 2292 ranges, 2060 canonical decompositions, 3404 pool scalars and 940 composition pairs; NFKC/NFKD maps are software-audited but not serialized in these NFC/NFD fragments. GCC compiles all 48 original pinned Oniguruma C sources without installation; 3005 expression cases compare 83845 exact byte spans, not official token vectors. Nine compiled Verilator component runs (seeds 1/17/89) compare 89244 public transactions/vectors: NFC outputs 28 scalars and 4144 reads per seed, NFD outputs 38 scalars and 3056 reads per seed, and ordered regex outputs 175 byte spans and 22304 reads per seed. The source/report identify exact upstream members and version witnesses. These are separate scalar-component checks, not UTF-8-to-token integration, SPI boot, synthesis or hardware results. Later source changes are not retroactively bound to this receipt.",
+    "unicode_helper_portability": "The same receipt additionally records two compact Icarus/vvp four-state component checks of the edited shared bench-memory helper: 38 comparisons for the small case-statement path and 222 comparisons for the full-table readmemh path. Both retain time-zero and first-active-edge reset/X/Z checks. The complete eleven-run receipt has 89504 actual RTL comparisons, all children settled, source set unchanged and duration 51.975 seconds. No medium/large interpreted simulation or full synthetic sweep was repeated.",
+    "unicode_recovery_failures": [
+      {
+        "receipt": "evidence/preparation/unicode-intake-c5c200855a9e48fc9121790f47c45edb/receipt.json",
+        "diagnosis": "The pinned Git source tree has no root Cargo.lock (HTTP 404). Retained release crate Cargo.lock instead, checked its dependency checksums, and kept linked official build identity provisional.",
+        "repair_receipt": "evidence/preparation/unicode-intake-3542912028d44ed896d73c3964c34437/receipt.json"
+      },
+      {
+        "receipt": "evidence/preparation/unicode-conversion-0eed1ffa374640e6a8b8cb62ef3d4327/receipt.json",
+        "diagnosis": "Source-location reporting searched for an unmerged U+1C89 interval. Locate the containing U+1C80..U+1C8A range inside CR_L; semantic comparisons remain unchanged.",
+        "repair_receipt": "evidence/preparation/unicode-conversion-caa6208e352a42acb9e782545c7187dd/receipt.json"
+      },
+      {
+        "receipt": "evidence/preparation/unicode-rtl-ad72d9a68bcc4586852647704c940e16/receipt.json",
+        "diagnosis": "The wrapper incorrectly required more than 50 C source files. The retained build.rs explicitly lists 48. Require exactly those unique files and consume every source-list character; no C comparison or RTL assertion was removed."
+      },
+      {
+        "receipt": "evidence/preparation/unicode-rtl-d32a9c115ae540a3abd9a699b60f8efe/receipt.json",
+        "diagnosis": "Strict ISO C99 did not expose the upstream alloca declaration/builtin and failed linking. Use GNU C99, matching the crate's GNU compiler extensions, and reject implicit declarations explicitly.",
+        "repair_receipt": "evidence/preparation/unicode-rtl-2c6b07e554b047438336dddef566a69e/receipt.json"
+      }
+    ],
+    "limits": "Historical fragment/component receipts retain their original narrower scope. The pinned tokenizer has 151643 BPE entries and 22 AddedTokens, not 151936 text entries; no padding is fabricated. Flags2 denote special AddedTokens; flags3 retain ordinary AddedTokens with trie eligibility. Source-lock resolution and candidate component comparisons alone do not identify a linked wheel or establish official whole-tokenizer behavior. Later bounded official-library, complete-table RTL and separate boot observations are indexed in complete_qwen_profile. None establishes weighted benchmarks, full-shell official-profile inference or physical acceptance. All original suites, five mandatory commands and fail-closed incomplete-product rejection remain."
+  },
+  "evidence_policy": "Receipt references describe advisory preparation for their own captured source sets, not admitted check results or current delivery acceptance. Historical receipts that are absent from this workspace cannot be used as evidence. Later verification-source edits are not retroactively bound to an older receipt. Runtime execution of all five original checks remains required.",
+  "timeout_provenance": "Earlier preparation parent receipts used timeout_s for the helper's default per-child budget, not an aggregate watchdog. Their child receipts contain the actual enforced limits. New parent receipts explicitly identify that scope and leave the parent watchdog to the shared runtime. No earlier receipt is edited or reclassified as acceptance.",
+  "simulation_tiering": {
+    "diagnosis": "The first L1 attempt has no published result after an ENOSPC receipt-publication interruption. The unchanged retry was cancelled during interpreted top-synthetic-q1-uart-s89, after 1997 seconds in vvp. Its preceding seed-17 UART integration completed with 928006 comparisons but consumed 2814.65 seconds. Neither interrupted attempt establishes a functional pass or a demonstrated RTL defect.",
+    "original_observation": "evidence/verification/l1-a0de77a29e9e49749e1565437719b639/1163-top-synthetic-q1-uart-s17-simulate/receipt.json",
+    "repair": "Compile non-leaf protocol, storage, text, numerical, integration and mutation simulations with installed Verilator. Retain compact four-state Icarus arithmetic/FIFO, elaboration and full-shell startup checks. Original self-checking benches and compiled variants are both retained. Only unsupported inactive-region #0 settling becomes 1 ps in compiled benches; four-state startup still checks time-zero and the first active clock edge.",
+    "reuse": "Reuse a compiled executable only within the same fresh invocation, keyed by complete normalized bench text, ordered source paths/hashes, simulator executable/version and exact compilation options. Publication is synchronized per key; tool discovery is synchronized. Seed and readmemh paths become checked plusargs; input files, original bench, compiled bench, executable hashes and actual simulation argv remain retained. Do not reuse prior evidence binaries.",
+    "limits": "Compiled simulation is two-state and does not establish four-state X/Z coverage. Compilation, per-child budgets and comparison thresholds remain explicit. Wall time improvement does not certify missing official-profile, default-model, timing or physical-board requirements. The complete L1 matrix has not been rerun in this repair turn and its aggregate wall time is not yet demonstrated.",
+    "observed_repair_receipts": [
+      {
+        "receipt": "evidence/preparation/simulator-tiering-3f4b0fe882b948ce88674b9306e2f482/receipt.json",
+        "scope": "Icarus and Verilator each compare 78 compact UART events; Icarus checks 20 full-shell startup cycles. Compiled original UART seeds 89 and 17 each compare 928006 transactions in 111.03 and 115.78 seconds. Their source-bound executable is reused within this invocation only."
+      },
+      {
+        "receipt": "evidence/preparation/mutations-5803e26e335a448d99fef258a36b7b62/receipt.json",
+        "scope": "All nine compiled disposable mutants are killed by the original specific functional assertions, with no compile-failure or timeout kills."
+      },
+      {
+        "receipt": "evidence/preparation/simulator-compatibility-b8e1ec7349b146cf9302ecdfa157d967/receipt.json",
+        "scope": "Twenty affected compiled scoreboard cases pass: controller, split-codepoint detokenization, valid 256/257 and invalid 1/255 images with failed reload isolation, configuration, stalled mapper/memory, normalization/DFA/tokenization, independent nonzero H16/L2 numerical comparisons, Q4 contract fixture and full-shell prefill reset/reboot. Bounded synthetic coverage only."
+      },
+      {
+        "receipt": "evidence/preparation/reproduction-8027f0ee75394d77b63f396fa946b9d0/receipt.json",
+        "scope": "Fresh 79-file declared-source copy, compiled real minimum-Q1 multitoken inference with 928006 comparisons, and actual connected minimum-hierarchy Yosys synthesis with 146949 register bits and zero forbidden cells. Advisory reproduction, not the admitted clean-reproduction result or default-geometry timing."
+      }
+    ]
+  },
+  "matrix_policy": "Seeded unit/protocol/reset suites use 1,17,89. The additional large-image representation scans use seed 17 with actual DDR stalls; the 256/257 complete-image stall matrix separately uses all three seeds. This is a bounded matrix, not a claim of the full size-by-seed cross-product or official-profile coverage.",
+  "aggregate_scheduling": {
+    "status": "admitted-bounded-parallel-repair-measured-full-l1-still-undemonstrated",
+    "historical_receipt": "evidence/preparation/schedule-076621700d9c41baa8f5e0766b39ec83/receipt.json",
+    "historical_reported_simulation_seconds": 3145.4499993177596,
+    "patrol_check_seconds": 2700,
+    "implementation": "Bound execution by CPU affinity/quota, available memory and free disk, capped at eight tool children. Nested case batches share one semaphore. Allocate child and case namespaces monotonically under a lock, isolate source/simulator overrides and generated inputs per case, and wait for every submitted peer even on failure. Capture per-child wait4 CPU/RSS/I/O usage, queue time, process-group settlement and aggregate planned/settled case counts before publishing a final receipt. No seed, assertion, mutation, cycle bound, subprocess watchdog or mandatory command is removed.",
+    "static_accounting": "tests/scheduling.py --source-contract checks that the actual L1 branch schedules all 20 original suite entrypoints and traverses their call graph, including existing nested coverage and the new interaction suites. Static reachability is not executed coverage; coverage rows and planned/settled batches record actual execution.",
+    "measured_preparation": [
+      {
+        "receipt": "evidence/preparation/scheduling-controls-a1d5dcfc43ae4d4abcfb6eea0acba589/receipt.json",
+        "scope": "One deliberate exit-7 child is rejected while all eight submitted peers settle with distinct raw logs; three concurrent identical UART cases share exactly one compilation and preserve isolated overrides. Harness diagnostic, not an RTL mutation kill."
+      },
+      {
+        "receipt": "evidence/preparation/scheduling-parallel-3518ea487f7a4a3090f3f711374658f5/receipt.json",
+        "duration_s": 351.898,
+        "scope": "Six real minimum-Q1 inference/reload cases plus compact dual-simulator UART; four source/tool/options-bound cache hits. Compilation, simulation and per-child resource measurements are retained."
+      },
+      {
+        "receipt": "evidence/preparation/top-09bb01f0f43c489d8709dd1aba6251ae/receipt.json",
+        "duration_s": 1974.549,
+        "comparisons": 51039219,
+        "scope": "All 69 then-wired transitive synthetic top cases, including profile/UART/reload/error paths and the first nine interaction cases; 44 cache hits and eight peak concurrent children. Later priority and token-capacity extensions are separate below."
+      },
+      {
+        "receipt": "evidence/preparation/large-images-d3daaf048aaf4be4930adfac6dcab7a1/receipt.json",
+        "duration_s": 1106.200,
+        "scope": "Concurrent complete synthetic 128256/151936/262144-image scans plus dual-simulator wide-watchdog startup. Maximum simulation 1039.415 seconds on compiled Verilator; parent peak RSS 1714580 KiB, peak three children. Not official assets or default-geometry inference."
+      }
+    ],
+    "limits": "Each preparation receipt binds its own captured sources and includes compilation, simulation and raw resource records. These submatrix measurements disprove neither feasibility nor infeasibility of the complete L1 command. Its full aggregate duration remains unmeasured; mandatory runtime execution, official assets and all native gates remain required. Do not shard acceptance, remove coverage, shorten watchdogs or alter the five mandatory commands."
+  },
+  "incomplete_historical_records": [
+    {
+      "receipt": "evidence/preparation/schedule-076621700d9c41baa8f5e0766b39ec83/001-measured-scheduling-submatrix/receipt.json",
+      "missing": ["stdout.log", "stderr.log"],
+      "limits": "Original receipt preserved. Missing output is not reconstructed or counted as fresh scheduling evidence."
+    },
+    {
+      "receipt": "evidence/preparation/top-profile-reload-27d8a98cca2142aba8792310a57abbe5/002-top-synthetic-q1-s1-nfc-bos-to-nfd-reload-simulate/receipt.json",
+      "exit_code": -6,
+      "timed_out": false,
+      "missing": ["stdout.log", "stderr.log"],
+      "limits": "The cause of this original abort is unestablished. Later successful two-epoch runs do not explain its absent diagnostics."
+    }
+  ],
+  "implemented_advisory_scopes": [
+    {
+      "scope": "Standalone controller: capacities 1/3/4096 including a complete 4096-token prompt, vocabularies 1/257/128256/151936/262144, signed/tied/INT32_MIN and positive-limit logits, prefill/feedback/EOS/sequence limits, missing/duplicate/reordered/out-of-range/extra logit frames, illegal configuration and reset during collection; seeds 1/17/89",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/controller-6baeb03fb4ae443298f3223246c007d5/receipt.json"
+    },
+    {
+      "scope": "UART divisors 4/5/868, FIFO depths 1/2/3/16, independently decoded exact TX bit lengths, RX framing, LF/fixed count, bypass tlast/stalls, deliberate overflow and RX reset; seeds 1/17/89",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/uart-c780c1c1e58747bb8dd854778e785863/receipt.json"
+    },
+    {
+      "scope": "Exact detokenizer byte vectors, split UTF-8 code points, incomplete/overlong/surrogate/out-of-range rejection, empty finish, offset bounds and table response errors; seeds 1/17/89",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/detokenizer-5aa2671c501e486d879aac1b69896255/receipt.json"
+    },
+    {
+      "scope": "Independent ranked-BPE counterexample, leftmost rank ties and legal unsigned rank 0xffffffff; seeds 1/17/89; synthetic only",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/bpe-b13ad9fe336c40e38c6f11b6d8b2b6f2/receipt.json"
+    },
+    {
+      "scope": "Actual SPI-to-DDR boot: valid 256/257 images, partial raw-byte write strobes, complete undersized 1/255 rejection, delayed calibration, randomized DDR request/response timing and failed-reload isolation",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/boot-boundaries-6b6095c5c4364d2f8edf20c7723c5d4b/receipt.json"
+    },
+    {
+      "scope": "47 additional malformed-image cases: header/config/descriptor intervals, directory keys/shapes/permissions/overlap/extents, token/map/merge/trie records, Unicode/DFA/tag/accept/normalization records, writable initialization, truncated flash and validation-read errors. Semantic payload mutations have recomputed correct CRCs.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/storage-faults-1f4a75db853f4ea2935aa0f01dfdc14c/receipt.json"
+    },
+    {
+      "scope": "Configuration active-versus-staged separation, legal image size limits including 151936/128256/262144 with sufficient capacity, illegal writes leave state unchanged, held responses and publication mismatch",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/config-4126636cd30c408494928814d64cdd1f/receipt.json"
+    },
+    {
+      "scope": "All mandatory typed tensor keys, first/last coordinates, permissions and invalid tuple zero-DDR behavior, multilayer cache positions, physical activation stride 24 with hidden width 16 and KV width 8, padding/reserved-slot rejection and RoPE address pairs; seeds 1/17/89",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/mapper-225d67e9589a49f0ac23588cba4f1963/receipt.json"
+    },
+    {
+      "scope": "Simultaneous core/tokenizer/detokenizer requests, distinct owner-bound data, stalled held responses, single outstanding DDR conservation, invalid table addresses and exclusive precommit boot ownership; seeds 1/17/89",
+      "source": "tests/memory.py",
+      "receipt": "evidence/preparation/memory-68cbeea7431a4009af3b8951d93cb3eb/receipt.json"
+    },
+    {
+      "scope": "Integer/Fraction-based exp and SiLU references plus nonzero-weight real Q1, H8/L1 and H16/I24/L2/GQA geometries, positions 0/1/2: exact intermediate activation/cache writes and complete logits; seeds 1/17/89. Synthetic weights, not official models.",
+      "source": "tests/numerics.py",
+      "receipt": "evidence/preparation/numerical-7d23e23ccef44a95979feabdde1edccd/receipt.json"
+    },
+    {
+      "scope": "Executable illegal geometry/address/FIFO/capacity diagnostics and legal degenerate/multilayer elaboration; elaboration is not functional parameter coverage",
+      "source": "tests/parameters.py",
+      "receipt": "evidence/preparation/parameters-a3f0838a4499449d95f27ed1ffdd4cc1/receipt.json"
+    },
+    {
+      "scope": "72 adversarial frozen-interface adapter fixtures with four pacing profiles, active 256/257/260 of 260 physical logits, inactive-tail drain/validation, malformed frames, rejected vocabularies and typed-memory signal preservation. Not real Q2/Q3/Q4 arithmetic or complete shell-family acceptance.",
+      "source": "tests/adapters.py",
+      "receipt": "evidence/preparation/adapters-6b2d8ae1590a4b1d8ab8bb464fc54743/receipt.json"
+    },
+    {
+      "scope": "Real connected minimum and default production Yosys hierarchy, no blackboxed core, hierarchy/check assertions and zero latch/division/remainder cells; not Quartus timing",
+      "source": "tests/synthesis.py",
+      "receipt": "evidence/preparation/synthesis-2d3be0298bbb4ffeb5f9c5b388ecd999/receipt.json"
+    },
+    {
+      "scope": "Nine separately compiled mutants killed by unchanged original functional assertions, not compile failures or timeouts",
+      "source": "tests/mutations.py",
+      "receipt": "evidence/preparation/mutations-6beb71517e7a47c6920bd16f7d48e497/receipt.json"
+    },
+    {
+      "scope": "Fresh declared-source copy, actual SPI boot, multitoken real-Q1 inference with exact two-NUL output and production minimum synthesis. Captures an earlier verification-source set; final bundle must run the admitted clean-reproduction check.",
+      "source": "tests/reproduce.py",
+      "receipt": "evidence/preparation/reproduction-850ee6c8372a4993a9f1f72b1002af62/receipt.json"
+    },
+    {
+      "scope": "Complete real minimum-Q1 shell, physical UART RX/TX pins, autonomous SPI boot, two-token prefill and feedback with exact two-NUL output, 24 writes per cache and done after the final complete stop bit; seed 17. Synthetic zero weights, not official benchmarks.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-uart-15d3954b58f84eaba19fb5bfdf855565/receipt.json"
+    },
+    {
+      "scope": "84 scalar normalizer cases: all five modes, canonical and compatibility decompositions, chained composition, stable combining-class ordering/blocking, leading marks, first/last Hangul syllables and Jamo composition, supplementary scalars, capacity overflow and DDR errors; seeds 1/17/89. Selected synthetic tables compared with recorded Python unicodedata version, not complete official tables.",
+      "source": "tests/text.py",
+      "receipt": "evidence/preparation/normalization-599f395290a9407d9a4ab8b148d22937/receipt.json"
+    },
+    {
+      "scope": "24 tagged-DFA public-port cases: longest/shortest extent, unsigned priority 0xffffffff, priority over length, invalid copied tags, ordered clear/set-before/set-after/copy operations, trailing lookahead with byte-accurate rewind across multibyte scalars and no-candidate rejection; seeds 1/17/89. Synthetic table interpreter plus independently asserted span vectors, not official regex conversion.",
+      "source": "tests/text.py",
+      "receipt": "evidence/preparation/dfa-42d615331c564da2a86e0803c5edd705/receipt.json"
+    },
+    {
+      "scope": "90 complete synthetic tokenizer cases with exact token vectors: ranked BPE versus pretoken boundaries, longest raw-special match, Unicode single_word and lstrip/rstrip, disabled/ordinary/reject policies, before/after-normalization protection, automatic BOS, NFC/NFD/NFKC, invalid UTF-8 with no emitted tokens and prompt byte/token capacities 1/3/4096 including one-beyond rejection. Actual fixture Unicode version is encoded in metadata and recorded; seeds 1/17/89. Not official-profile acceptance.",
+      "source": "tests/text.py",
+      "receipt": "evidence/preparation/tokenizer-cd7472d8565c470297ef8a9889f46461/receipt.json"
+    },
+    {
+      "scope": "12 additional UART control cases: divisor/transport/framing updates held off during active RX/TX, exact old TX bit periods, quiescent switch to bypass, false-start rejection, reset during TX with no stale frame, FRAME_LOCK at depth 1 and receive-enable gating; divisors 4/5/868, seeds 1/17/89.",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/uart-controls-3766067bb3744db29da51110e7d5349e/receipt.json"
+    },
+    {
+      "scope": "39 actual minimum-Q1 exceptional cases: NaN and signed infinity embeddings, negative nonzero and negative-subnormal AWQ scales, nonfinite scales/bias/norm gamma and read/write response errors; seeds 1/17/89. Assert one error-qualified core completion, no logits, settled public requests and unchanged independent numerical prefix writes. The successful nonzero-weight intermediate/logit suite was also re-executed.",
+      "source": "tests/numerics.py",
+      "receipt": "evidence/preparation/numerical-c1acd5331b824edfabbcc7012fa49d03/receipt.json"
+    },
+    {
+      "scope": "Complete synthetic committed images at active/physical vocabulary sizes 128256,151936,262144: real SPI loading, exact independent DDR write tuples/strobes and acknowledged validation reads, complete bundle commit and 13349416 observed comparisons in total; seed 17. Minimum H8/L1 geometry and synthetic byte-BPE tables, not official tokenizer/model assets or default-geometry inference.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/large-images-98459d25562a48839039b04560ad6a35/receipt.json"
+    },
+    {
+      "scope": "Small-image boot boundary regression after scaling the same public scoreboard to large images: valid 256/257, invalid 1/255 and failed undersized reload; seed 17.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/boot-boundaries-b970091160ea404ca49b864c13fccb7b/receipt.json"
+    },
+    {
+      "scope": "12 real minimum-Q1 full-shell reset/reboot cases: reset during an observed boot write, first prefill cache write, stalled AXI output and active physical UART TX; seeds 1/17/89. Each proves the reset event, cancels the external outstanding response epoch, reloads through actual SPI and independently compares the fresh two-token prefill/feedback, exact two-NUL output, 24 writes per cache and successful output drain. No hierarchical DUT access or configuration traffic.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-resets-2d429c18349d4244a17c183dfda70613/receipt.json"
+    },
+    {
+      "scope": "Nine compiled functional mutation kills re-executed after extending the protocol harness; original RTL and unchanged functional mismatch assertions, not compiler rejection or timeout kills.",
+      "source": "tests/mutations.py",
+      "receipt": "evidence/preparation/mutations-a194ccd2ec5c4a5f97f01a3f6f29faf9/receipt.json"
+    },
+    {
+      "scope": "18 boot-admitted synthetic text profiles through the real minimum Q1 shell: NFC/BOS, NFKC, shortest and lookahead/rewind tagged DFA, raw specials/BOS and after-normalization specials; seeds 1/17/89. Public DDR embedding/projection addresses independently assert the complete prompt token vector, feedback token, operation count and exact two-NUL output. Not official profiles or real weighted benchmarks.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-profiles-7b42eac649044c8093e9d810abb65135/receipt.json"
+    },
+    {
+      "scope": "24 full-shell rejection cases: late overlong/surrogate/out-of-range/truncated UTF-8, byte capacity overflow, empty UART frame, malformed stop and UART traffic after a closed prompt; seeds 1/17/89. Assert exact sticky error codes via status/CSR, no embedding/prefill writes or output, no successful done, settled public memory and illegal-write nonmutation. Earlier auxiliary reference.json files describe the valid recovery prompt; actual faulty stimulus and assertions are retained in each bench. The subsequently corrected manifest labels both epochs explicitly; no earlier evidence is edited.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-errors-c871d9773f76419288dc155691aab88b/receipt.json"
+    },
+    {
+      "scope": "Six real minimum-Q1 successful idle reload/error recovery cases, seeds 1/17/89. Public command/held-response checks, admission withdrawal, complete fresh SPI/DDR validation, exact second prompt tokens/feedback/cache positions/output, zero configuration traffic during active inference.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-reload-4be49012541c428fa0102265c2b11859/receipt.json"
+    },
+    {
+      "scope": "14 storage edges: reject nonzero inactive embedding rows; admit zero immutable trailing holes; reject active vocabulary above instantiated physical capacity; seeds 1/17/89. Also reject nonzero immutable holes and metadata token/pretoken/tag/class capacities beyond hardware limits with recomputed valid payload CRCs. Exact boot writes, bounded validation reads and error codes are compared.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/storage-edges-4a29d7699f454094a0a3bd80388161f5/receipt.json"
+    },
+    {
+      "scope": "Public embedding/projection token-vector scoreboard regression on the original physical-UART synthetic prefill/decode, with exact framing/output drain; seed 17.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-uart-b78b1f9de0484f9b9d1ce48aa6d03c15/receipt.json"
+    },
+    {
+      "scope": "Boot-admitted synthetic NFC/BOS integration on physical UART with exact prompt tokens and drained output; seed 17. Not official tokenizer/model coverage.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-profile-uart-7beacc69ff434dc2834fa8851dcb9659/receipt.json"
+    },
+    {
+      "scope": "Successful quiescent reload between two physically drained UART responses through the real synthetic minimum-Q1 shell; seed 17.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-reload-uart-8a6f6db9cf4b4352a35bc98bb3d379ce/receipt.json"
+    },
+    {
+      "scope": "Three successful idle reloads from committed NFC plus BOS to committed NFD without BOS, seeds 1/17/89. Independently encoded flash images change metadata only while idle; public SPI/DDR writes, held/staged CSR responses, different exact prompt-token vectors, feedback and UTF-8 outputs are asserted. Two complete real-core inference epochs per case.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/top-profile-reload-028f2ab18e8d4fe2883a5f7769ee1646/receipt.json"
+    },
+    {
+      "scope": "Twenty existing compiled controller/detokenizer/boot/config/mapper/text/numerical/memory/adapter/reset cases re-executed after adding the public-DDR prompt-token scoreboard. Includes reset during prefill and fresh autonomous reboot/inference. Synthetic scoped regression only.",
+      "source": "tests/verify.py",
+      "receipt": "evidence/preparation/simulator-compatibility-4b0aba4830db4a6ebd01f2c01297d466/receipt.json"
+    },
+    {
+      "scope": "Complete independently encoded active-vocabulary 262145 image with sufficient physical capacity is rejected at the header, exact error 0x01, zero public DDR writes/reads and no commit. The same receipt verifies that the explicit 64-bit cycle watchdog advances four actual clocks under both Icarus and Verilator instead of firing at time zero. Not a valid or official vocabulary profile.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/image-upper-095387cd529b411da98dc64da5bdff10/receipt.json"
+    },
+    {
+      "scope": "Affected legal large-image regression after the wide-watchdog harness repair: compiled Verilator executes complete 128256/151936/262144 active/physical-vocabulary synthetic images through actual SPI loading, exact independently encoded DDR tuples and acknowledged validation reads, and complete bundle commit. Compact four-clock watchdog startup is also checked with Icarus and Verilator. Minimum H8/L1 geometry, seed 17; not official tokenizer assets or full-model inference.",
+      "source": "tests/storage.py",
+      "receipt": "evidence/preparation/large-images-1852640799e24175a857d4ab2262f599/receipt.json"
+    },
+    {
+      "scope": "Twelve real minimum-Q1 public-pin interactions at seeds 1/17/89: busy AXI/physical-UART drain rejects serial configuration changes without corrupting output; quiescent changes/readbacks succeed; a fully written CRC-correct semantic-invalid reload remains uncommitted and rejects 100 held prompt edges without old-table reuse. Additional simultaneous accepted DDR-error and closed-UART-overflow events select sticky memory code 04. A separate public UART instance times the lower-priority transport event, not the expected priority result; this is one priority pair, not the complete priority matrix.",
+      "source": "tests/interactions.py",
+      "receipt": "evidence/preparation/top-interactions-bd332eb80a854b50a6e3b01f14325a73/receipt.json"
+    },
+    {
+      "scope": "All 54 detokenizer cases including empty special tokens after prior text, delayed finish, split final code points, malformed UTF-8, bounds and DDR errors; seeds 1/17/89. Exact offset/byte/last and completion comparisons remain unchanged; not complete error-prefix/capacity coverage.",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/detokenizer-eeeb4d68c6584959b1ebe872148ef158/receipt.json"
+    },
+    {
+      "scope": "24 tokenizer capacity cases compare 1218300 public transactions: 1/3/4096 boundaries and overflow, BOS capacity accounting and single/exact-three/overflow special-token vectors; seeds 1/17/89. Synthetic tables only.",
+      "source": "tests/text.py",
+      "receipt": "evidence/preparation/tokenizer-capacity-cc7e114f1911469290e94a804459e6b9/receipt.json"
+    },
+    {
+      "scope": "Three full-shell token-capacity rejections: ABC independently tokenizes to [256,67] while instantiated prompt-token capacity is one. Assert error 30, no prefill memory operations, no output, no successful done, held public status and rejected illegal CSR writes; seeds 1/17/89.",
+      "source": "tests/interactions.py",
+      "receipt": "evidence/preparation/top-token-capacity-6b6760bf9d794960969e761f75f8c8f8/receipt.json"
+    },
+    {
+      "scope": "Twelve UART-control cases at seeds 1/17/89: retain existing mid-RX/TX update/reset/frame-lock assertions and independently decode every bit of an additional frame after a quiescent divisor update. Baseline divisors 4/5/868, updated divisors 7/8/871; 129 exact comparisons.",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/uart-controls-67b3d6a7bdb74d6aa3d8bd5e2ca69d1e/receipt.json"
+    },
+    {
+      "scope": "Nine unchanged functional mutation assertions kill separately compiled disposable mutants after the scheduling changes. Compile failures/timeouts are not kills. This captured source set predates the later aggregate failed-simulation accounting enhancement.",
+      "source": "tests/mutations.py",
+      "receipt": "evidence/preparation/mutations-918c5ba2f06c4736a64d1674f3a38298/receipt.json"
+    },
+    {
+      "scope": "Fresh 81-file declared-source copy, autonomous synthetic real-Q1 multitoken inference, exact UTF-8 output and connected minimum-hierarchy Yosys synthesis. Not the final admitted clean-reproduction result, default-geometry timing or official-model acceptance.",
+      "source": "tests/reproduce.py",
+      "receipt": "evidence/preparation/reproduction-773d3bc57b8447f79f43e8c1c696a86c/receipt.json"
+    },
+    {
+      "scope": "78 compiled detokenizer cases, 1185 public address/byte/last/completion comparisons at seeds 1/17/89. Adds emitted nonfinal ASCII prefixes before malformed/incomplete UTF-8 or an oversized next token; explicit finish after incomplete UTF-8; exact configured token lengths 1/64 and one-beyond 2/65; exact error request/response conservation. Existing 54 cases retained. Not complete official-policy/capacity integration.",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/detokenizer-94c68bf0554342c190cf1c0046e3d822/receipt.json"
+    },
+    {
+      "scope": "Nine compiled real minimum-Q1 output-drain cases, 8407878 comparisons at seeds 1/17/89. Held AXI prompt attempts are rejected at eight observed edges during stalled bypass output and during physical UART output; original inference operation counts and exact drained output remain unchanged. Actual second UART prompt byte during TX produces sticky 0x41, no new inference and no successful done, while both already queued frames retain exact bit periods/stop bits. Existing transitive L1 interactions retain these additions; synthetic zero weights, not official-model evidence.",
+      "source": "tests/interactions.py",
+      "receipt": "evidence/preparation/drain-prompts-9a3f9db820e4408c8707887182eab360/receipt.json"
+    },
+    {
+      "scope": "Nine compiled ranked-BPE cases, 153 comparisons at seeds 1/17/89 after the shared detokenizer bench changes: ranked counterexample, leftmost ties and unsigned rank 0xffffffff retained. Not official regex/profile conversion.",
+      "source": "tests/protocol.py",
+      "receipt": "evidence/preparation/bpe-777bf6d4bc6d4423846c17b8f534f436/receipt.json"
+    },
+    {
+      "scope": "Pinned local Qwen immutable asset integrity and cross-file consistency: five exact lengths/SHA-256 hashes, ordered bundle digest, all 151387 merge pairs/order/concatenation references, and contiguous distinct actual tokenizer IDs. Raw assets only; zero official library or RTL token-vector comparisons.",
+      "source": "tests/official.py",
+      "receipt": "evidence/preparation/official-qwen-assets-8ca3cf5b99f84de6856d5c32fa6a28ef/receipt.json"
+    },
+    {
+      "scope": "Independent real Qwen partial table conversion: every 151665 token piece/record, 256 distinct byte mappings, 151387 ranked merges with exact decoded concatenations and all 22 AddedToken/trie records audited against pinned assets. Five corrupted serialized fields are rejected by the software auditor, not counted as RTL mutation kills. Nine compiled Verilator fragment simulations at seeds 1/17/89 perform 84582 public comparisons: detokenizer exact read/byte vectors including split code points and all AddedTokens; isolated ranked-BPE span; complete isolated special-trie validator with every required public read observed. Boot and official Unicode/regex/library equivalence are not tested. Compiled simulation does not establish four-state X/Z behavior. Receipt binds its own earlier sources; later layout-auditor/L1 wiring changes are not retroactively certified.",
+      "source": "tests/qwen_tables.py",
+      "receipt": "evidence/preparation/official-qwen-fragments-7a4b84748646452fa2780f96d8f07b4f/receipt.json"
+    }
+  ],
+  "harness_repairs": [
+    {
+      "failure": "evidence/preparation/normalization-585109d8d2354e06a8612504fff77679/receipt.json",
+      "repair": "evidence/preparation/normalization-599f395290a9407d9a4ab8b148d22937/receipt.json",
+      "diagnosis": "The synthetic NFC fixture omitted the intermediate U+00C5 starter needed for A+ring+acute to compose to U+01FA. Expand the fixture's recursive decomposition-component closure, retaining the exact expected U+01FA vector and all public assertions. No RTL change."
+    },
+    {
+      "failure": "evidence/preparation/top-profile-reload-27d8a98cca2142aba8792310a57abbe5/receipt.json",
+      "repair": "evidence/preparation/top-profile-reload-028f2ab18e8d4fe2883a5f7769ee1646/receipt.json",
+      "diagnosis": "The original child receipt records exit -6 without timeout, but its stdout.log and stderr.log are absent; its actual abort cause cannot be established. The saved harness retains 30000000 cycles per complete boot/inference epoch (60000000 for two epochs), public progress fields and every original functional assertion/14400-second child watchdog. Later three-seed executions complete, including 2548591 comparisons for seed 1, but do not retroactively diagnose the original failure. No RTL change."
+    },
+    {
+      "failure": "evidence/preparation/image-upper-a7526193f9de46f5b0dc313885ea9170/receipt.json",
+      "repair": "evidence/preparation/image-upper-095387cd529b411da98dc64da5bdff10/receipt.json",
+      "diagnosis": "The size-262145 rejection exposed a large-image harness portability defect: Verilator 5.020 lowered repeat(64'd3700482320) to a time-zero fatal instead of waiting for clocks. Replace the repeat with an explicit unsigned 64-bit clock counter and the identical bound, retain all functional assertions and watchdog durations. Both installed simulators now execute the compact four-clock guard check, and the complete oversized image rejects with the required zero-DDR/error-code behavior. Prior large-image interpreter evidence is not retroactively compiled-simulator coverage."
+    },
+    {
+      "failure": "evidence/preparation/drain-prompts-32447374054041de9c5dfb4bc6d42765/receipt.json",
+      "repair": "evidence/preparation/drain-prompts-9a3f9db820e4408c8707887182eab360/receipt.json",
+      "diagnosis": "Six held-AXI drain scenarios passed, but all three new physical-UART rejection scenarios applied pre-output error assertions (zero observed bytes/immediate idle TX) during active queued transmission. Sticky code 41 was already correct. The repaired bench independently decodes both queued frames through their exact stop bits, then asserts idle TX, sticky 41, no successful completion and no extra core operation. No RTL, original assertion, admitted threshold or watchdog change."
+    },
+    {
+      "failure": "evidence/preparation/official-qwen-assets-2996a14231b849e98c6a88f5ece86993/receipt.json",
+      "repair": "evidence/preparation/official-qwen-assets-8ca3cf5b99f84de6856d5c32fa6a28ef/receipt.json",
+      "diagnosis": "The new parser wrongly required a merges.txt version-header line. The pinned upstream file starts with its first real merge. Recognize an optional version header without dropping a real pair; retain exact entire ordered comparison against tokenizer.json, all hashes and operand/concatenation checks. The related original reference probe also stopped here: evidence/preparation/official-qwen-reference-92e06aebd3014057981cb937c39f8ba4/receipt.json. Its repaired successor reaches the independently missing tokenizers package and still fails explicitly; no official execution pass is claimed."
+    },
+    {
+      "failure": "evidence/preparation/official-qwen-fragments-85313ff94cad4a7bb7b81ec0624454ad/receipt.json",
+      "repair": "evidence/preparation/official-qwen-fragments-7a4b84748646452fa2780f96d8f07b4f/receipt.json",
+      "diagnosis": "Actual child launch could not import sibling official.py. Add the explicit local script directory to sys.path, matching tests/verify.py and advisory lesson exp-6a4baac55d8459da132c8b6a. The original failure and source snapshots are retained; no dependency was installed and no expected source fields or RTL assertions changed."
+    }
+  ],
+  "remaining_required_checks": [
+    "Complete official tokenizer conversion and independent official token/byte vectors for Qwen2.5, DeepSeek-V3 and Llama-3.2, pinned revision/license/preprocessing/Unicode/hash provenance",
+    "Independently review the measured official-library comparisons and version2 mixed-Unicode table provenance; extend Qwen complete-table public-port and separate boot observations to actual full-shell UART/bypass prefill/decode/output and reload. Complete the other official-profile integrations without treating candidate component checks or bounded Qwen vectors as exhaustive tokenizer equivalence.",
+    "Remaining storage malformation combinations and record/profile-capacity limits; all allowed validation reads must remain explicitly bounded. Failed semantic reload isolation, physical-capacity/upper-bound rejection, immutable-hole/inactive-row validation and successful reload/recovery have bounded synthetic coverage only.",
+    "Remaining simultaneous full-shell error-priority pairs and prompt-attempt combinations beyond the bounded seeded held-AXI/active-UART drain cases. The DDR-error/closed-UART-overflow pair, exact post-update UART bit periods, rejected serial writes, closed-frame overflow and sticky status have bounded directed coverage only.",
+    "Remaining detokenizer official-policy and complete parameter-capacity integration edges beyond the bounded seeded emitted-prefix and configured token-length 1/64 plus one-beyond cases. Full-shell malformed UTF-8, byte overflow and token overflow have bounded seeded zero-prefill assertions; official-profile and all-capacity integration coverage remains incomplete.",
+    "Default-model real quantized weights and default-geometry complete independent numerical reference execution",
+    "Actual full-shell family/profile integrations on both transports, distinct from the adversarial adapter fixtures",
+    "All five exact benchmark prompts, max_new_tokens=8, both transports, all required tokenizer/accelerator profiles, independently computed fixed-point expected token and UTF-8 vectors using identical real quantized weights",
+    "Execute the full admitted L1 command against the final source set and measure its complete aggregate scheduling under the unchanged patrol limits. The independently admitted bounded scheduling repair has real measured submatrix results, not full-L1 timing or acceptance. The entry deliberately fails closed because full required coverage/assets are not complete",
+    "Execute admitted clean reproduction against the final declared bundle; earlier successful preparation is not current delivery acceptance",
+    "Native timing lint, Quartus 17.1 setup/hold/constrained endpoint closure on 10AX115N2F45E1SG and three consecutive deterministic physical board passes with default-geometry real weighted benchmarks"
+  ]
+}

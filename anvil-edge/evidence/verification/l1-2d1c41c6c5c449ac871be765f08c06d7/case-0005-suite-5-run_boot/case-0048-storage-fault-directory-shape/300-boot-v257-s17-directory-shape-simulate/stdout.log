@@ -1,0 +1,3 @@
+BOOT_TRANSACTIONS writes=4408 reads=196 acknowledgements=4604
+COMPARED 4605
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0048-storage-fault-directory-shape/boot-v257-s17-directory-shape/compiled-bench.sv:4618: Verilog $finish

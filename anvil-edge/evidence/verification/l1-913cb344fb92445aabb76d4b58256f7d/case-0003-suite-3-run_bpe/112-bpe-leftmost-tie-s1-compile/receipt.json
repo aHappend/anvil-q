@@ -1,0 +1,247 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "verilator",
+    "--binary",
+    "--timing",
+    "--assert",
+    "--timescale",
+    "1ns/1ps",
+    "--top-module",
+    "bench",
+    "-Wno-fatal",
+    "--x-initial",
+    "unique",
+    "--x-assign",
+    "unique",
+    "-j",
+    "2",
+    "-MAKEFLAGS",
+    "VK_PCH_I_FAST=\"-include Vbench__pch.h\" VK_PCH_I_SLOW=\"-include Vbench__pch.h\" --old-file=Vbench__pch.h.fast.gch --old-file=Vbench__pch.h.slow.gch",
+    "--Mdir",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj",
+    "-o",
+    "simulation",
+    "rtl/anvil_edge_ranked_bpe.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/compiled-bench.sv"
+  ],
+  "child_settled": true,
+  "compiler_intermediates_removed": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 81920,
+      "bytes": 81844,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__ALL.a",
+      "sha256": "4e6f5629e4b2fa2acf9a4837ae30b1de680fd6d9af505192ffc1dcc176f48350"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 432,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__ALL.cpp",
+      "sha256": "5c22c9bef919afa79c30365a0e25a34e459be3aed682c638d39a75440fc7d10c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 691,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__ALL.d",
+      "sha256": "49ec93194676b97576483a42e84e8c8fa3000ba435dae13050ddf36f8d159ee6"
+    },
+    {
+      "allocated_bytes": 77824,
+      "bytes": 77032,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__ALL.o",
+      "sha256": "f47d76790329e9f94722326ba1e660e38ff49d1995662a2aa0b41cab1faf75ab"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1104,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__Syms.cpp",
+      "sha256": "f36841c44981397de29291749362aa38bfe83461020f8326d660d04e3628da45"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1076,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__Syms.h",
+      "sha256": "4f768b4c5cd8f4202b49d01e585ae2ab47011bde54f1327543acb7d0fc7fb3b1"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5725,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench___024root.h",
+      "sha256": "40ddf1a92466fcc1c66adee085d3773a9038db05fc257ab1ccfb27a24a7a6058"
+    },
+    {
+      "allocated_bytes": 49152,
+      "bytes": 47678,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "d64a4ea7eb029976ad95626b568e204f4ea3c71b569c3562a101b6e883787137"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1868,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "0ae9835258a4f11f7159fd524b1f59d379bb68dab53fbe68321929aa986e67bd"
+    },
+    {
+      "allocated_bytes": 40960,
+      "bytes": 38338,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "be0d325cd377c9068b502be096c6ebb8d1efb00c37dac41a10ab6da960632dcb"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 18949,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "f76f8bb614d795b638183f11bd496bd89f29f5ba639b32c1ce875cc4cbb6b2c6"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2218,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__ver.d",
+      "sha256": "7f0d2262ed920d3c56270bec84a75612b061156ca45711c04523287a70bf7762"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4404,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench__verFiles.dat",
+      "sha256": "aa2279110b1deb53278067e627093c17417d7451245cbbd9e829963137c8f0ff"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1673,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/Vbench_classes.mk",
+      "sha256": "0d757ab0fbdd6c57e2cc26f9babe1130d4f911bbc8ce6e98436802bbf08fc848"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-leftmost-tie-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 61956882432,
+    "peak_object_allocated_bytes": 815104,
+    "retained_object_allocated_bytes": 200704,
+    "sample_interval_s": 0.25,
+    "samples": 25
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 61977812992,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 8254390272,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 7985954816,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 5.861415101913735,
+  "end_utc": "2026-10-31T15:36:55.921061+00:00",
+  "exit_code": 0,
+  "index": 112,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.5489058569073677e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 8.632102981209755e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 251904,
+    "output_blocks": 3872,
+    "system_cpu_s": 1.263746,
+    "user_cpu_s": 9.337648
+  },
+  "start_utc": "2026-10-31T15:36:50.057741+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/112-bpe-leftmost-tie-s1-compile/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/112-bpe-leftmost-tie-s1-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 62078640128,
+    "available_inodes": 195631765,
+    "observed_utc": "2026-10-31T15:36:55.921141+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525043036160
+  },
+  "storage_before": {
+    "available_bytes": 61977808896,
+    "available_inodes": 195632185,
+    "observed_utc": "2026-10-31T15:36:50.058204+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525143867392
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

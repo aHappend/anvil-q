@@ -1,0 +1,34 @@
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:31:41: Operator LT expects 32 bits on the LHS, but LHS's VARREF 'count' generates 1 bits.
+                                                  : ... note: In instance 'bench.dut.rx_fifo'
+   31 |       assign in_ready = rst_n && (count < DEPTH || pop);
+      |                                         ^
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:34:36: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'count' generates 1 bits.
+                                                  : ... note: In instance 'bench.dut.rx_fifo'
+   34 |       assign full = rst_n && count == DEPTH;
+      |                                    ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:49:27: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'write_ptr' generates 1 bits.
+                                                  : ... note: In instance 'bench.dut.rx_fifo'
+   49 |             if (write_ptr == DEPTH-1) write_ptr <= 0;
+      |                           ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_fifo.sv:53:26: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'read_ptr' generates 1 bits.
+                                                  : ... note: In instance 'bench.dut.rx_fifo'
+   53 |             if (read_ptr == DEPTH-1) read_ptr <= 0;
+      |                          ^~
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0003-suite-3-run_uart/uart-d4-f1-s1/compiled-bench.sv:30:41: Operator NEQCASE expects 28 bits on the LHS, but LHS's REPLICATE generates 27 bits.
+                                                                                                                                                : ... note: In instance 'bench'
+   30 |            rx_idle,tx_idle,rx_line_idle}!==28'd0 || uart_tx!==1)
+      |                                         ^~~
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0003-suite-3-run_uart/uart-d4-f1-s1/compiled-bench.sv:153:42: Operator TASKREF 'bypass_byte' expects 8 bits on the Function Argument, but Function Argument's AND generates 32 bits.
+                                                                                                                                                : ... note: In instance 'bench'
+  153 |       begin for (integer k=0;k<32;k=k+1) bypass_byte((k*37+19)&255,k==31); end
+      |                                          ^~~~~~~~~~~
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0003-suite-3-run_uart/uart-d4-f1-s1/compiled-bench.sv:154:42: Operator TASKREF 'transmit' expects 8 bits on the Function Argument, but Function Argument's AND generates 32 bits.
+                                                                                                                                                : ... note: In instance 'bench'
+  154 |       begin for (integer k=0;k<32;k=k+1) transmit((k*53+7)&255,k==31); end
+      |                                          ^~~~~~~~
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0003-suite-3-run_uart/uart-d4-f1-s1/compiled-bench.sv:167:27: Operator TASKREF 'serial_byte' expects 8 bits on the Function Argument, but Function Argument's VARREF 'j' generates 32 bits.
+                                                                                                                                                : ... note: In instance 'bench'
+  167 |     for (j=0;j<1+2;j=j+1) serial_byte(j,1);
+      |                           ^~~~~~~~~~~

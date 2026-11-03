@@ -1,0 +1,7 @@
+BOOT_METADATA_EPOCH 0 code=0 writes=4408 reads=22640 acknowledgements=27048
+BOOT_METADATA_EPOCH 1 code=0 writes=4408 reads=22640 acknowledgements=27048
+BOOT_METADATA_EPOCH 2 code=6 writes=4408 reads=48 acknowledgements=4456
+BOOT_METADATA_EPOCH 3 code=0 writes=4408 reads=22640 acknowledgements=27048
+BOOT_TRANSACTIONS writes=4408 reads=22640 acknowledgements=27048
+COMPARED 85604
+- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0013-metadata-boot-reload-89/boot-v257-s89-valid-metadata-v1-v2-reloads/compiled-bench.sv:4782: Verilog $finish

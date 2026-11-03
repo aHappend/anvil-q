@@ -1,0 +1,3 @@
+TEXT_COUNTS inputs=3 requests=0 responses=0 outputs=0
+COMPARED 1
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-ranked-s1/compiled-bench.sv:201: Verilog $finish

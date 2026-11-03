@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/top-invalid-sequence-overflow/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.40352167119272053,
+  "end_utc": "2026-10-31T15:51:19.574144+00:00",
+  "exit_code": 1,
+  "index": 475,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.9826926290988922e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.474687062203884e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 67068,
+    "output_blocks": 8,
+    "system_cpu_s": 0.027964,
+    "user_cpu_s": 0.344564
+  },
+  "start_utc": "2026-10-31T15:51:19.169050+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/475-top-invalid-sequence-overflow-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/475-top-invalid-sequence-overflow-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 58685894656,
+    "available_inodes": 195605723,
+    "observed_utc": "2026-10-31T15:51:19.574222+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528435781632
+  },
+  "storage_before": {
+    "available_bytes": 58685915136,
+    "available_inodes": 195605736,
+    "observed_utc": "2026-10-31T15:51:19.169423+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528435761152
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

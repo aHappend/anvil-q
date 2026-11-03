@@ -1,0 +1,6 @@
+rtl/anvil_edge_image_loader.sv:163: warning: @* is sensitive to all 10 words in array 'descriptor'.
+rtl/anvil_edge_image_loader.sv:163: warning: @* is sensitive to all 10 words in array 'descriptor'.
+rtl/anvil_edge_image_loader.sv:165: warning: @* is sensitive to all 10 words in array 'descriptor'.
+rtl/anvil_edge_image_loader.sv:166: warning: @* is sensitive to all 10 words in array 'descriptor'.
+rtl/anvil_edge_image_loader.sv:166: warning: @* is sensitive to all 10 words in array 'descriptor'.
+rtl/anvil_edge_image_loader.sv:168: warning: @* is sensitive to all 10 words in array 'descriptor'.

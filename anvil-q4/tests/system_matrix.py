@@ -1,0 +1,146 @@
+"""Compact compiled multi-architecture numerical integration matrix."""
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from execution import Experiment, ROOT
+from transformer_reference import make_fixture
+
+
+def cases():
+    for seed in (17, 29, 43):
+        for index, ratio in enumerate((1, 3, 6, 7, 8)):
+            yield dict(seed=seed, heads=ratio, kv_heads=1, dimension=2,
+                       layers=3, tokens=4, intermediate=5, vocabulary=17,
+                       activation_format=index % 2, bias=index % 2 == 0,
+                       banks=(1, 2, 4, 8, 16)[index], page_tokens=2 if index % 2 else 1,
+                       weight_format=(0, 1, 2, 1, 2)[index],
+                       activation_a8=index >= 3, asymmetric=index % 2 == 0,
+                       cache_format=index % 2)
+        yield dict(seed=seed, heads=4, kv_heads=4, dimension=16,
+                   layers=3, tokens=4, intermediate=7, vocabulary=17,
+                   activation_format=1, bias=False, banks=16, page_tokens=32)
+    for ratio, theta in ((7, 1000000), (6, 10000)):
+        yield dict(seed=17, heads=ratio, kv_heads=1, dimension=2,
+                   layers=28, tokens=4, intermediate=5, vocabulary=17,
+                   activation_format=0, bias=True, banks=16, page_tokens=2,
+                   theta_value=theta)
+    yield dict(seed=17, heads=1, kv_heads=1, dimension=2, layers=1,
+               tokens=1, intermediate=1, vocabulary=1, activation_format=0,
+               bias=False, banks=1, page_tokens=1, context_capacity=1,
+               physical_pages=1, page_base=0)
+    for seed in (17, 29, 43):
+        yield dict(seed=seed, heads=6, kv_heads=2, dimension=2, layers=3,
+                   tokens=4, intermediate=5, vocabulary=17, activation_format=0,
+                   bias=True, banks=16, page_tokens=2)
+
+
+def compile_top(experiment, banks=16, tile_k=7, tile_rows=3, queue_depth=3,
+                driver="top_probe.cpp", rtl_sources=None, profile=False):
+    objects = experiment.directory / "compile-obj"
+    packages = ["rtl/anvil_q3_00_pkg.sv", "rtl/anvil_q4_00_fp_pkg.sv"]
+    rtl = packages + [experiment.rel(p) for p in sorted((ROOT/"rtl").glob("*.sv"))
+                      if experiment.rel(p) not in packages]
+    if rtl_sources is not None:
+        rtl = list(rtl_sources)
+    experiment.run([
+        "verilator", "--cc", "--exe", "--build", "--verilate-jobs", "1",
+        "--build-jobs", "2", "-Wno-fatal",
+        "-fno-dfg", "-fno-gate",
+        "--top-module", "anvil_q4_top", "--Mdir", experiment.rel(objects),
+        f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue_depth}",
+        f"-GTILE_K={tile_k}", f"-GTILE_ROWS={tile_rows}",
+        "-CFLAGS", "-std=c++17" + (" -pg" if profile else ""),
+        *(["-LDFLAGS", "-pg"] if profile else []),
+        "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
+        "-o", "top-sim", "tests/verilator.vlt", *rtl,
+        str(Path("../../../../tests")/driver if
+            experiment.directory.parent.name == "preparation" else
+            Path("../../../tests")/driver),
+    ], "compile", timeout=600)
+    return objects / "top-sim"
+
+
+def execute_case(experiment, binary, options, index, profile=False):
+    identity = hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()[:12]
+    directory = experiment.directory / f"case-{index}-{identity}"
+    directory.mkdir()
+    geometry = make_fixture(directory, **options)
+    geometry["case_index"] = index
+    (directory/"seed.txt").write_text(str(options["seed"])+"\n")
+    geometry["fixture_sha256"] = {
+        p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in directory.glob("*.txt")
+    }
+    command = [experiment.rel(binary), experiment.rel(directory)]
+    if profile:
+        command = ["env", "GMON_OUT_PREFIX="+experiment.rel(directory/"gmon"), *command]
+    output = experiment.run(command,
+                            f"simulation-{index}", timeout=600)
+    expected = f"SUMMARY top tokens={geometry['tokens']} logits={geometry['expected_logits']} "
+    if expected not in output:
+        raise AssertionError(f"missing numerical summary for case {index}")
+    geometry["summary"] = output[output.index("SUMMARY"):].splitlines()[0]
+    if profile:
+        dumps = sorted(directory.glob("gmon.*"))
+        if len(dumps) != 1:
+            raise AssertionError("missing unique execution profile")
+        experiment.run(["gprof", "-b", experiment.rel(binary), experiment.rel(dumps[0])],
+                       f"profile-{index}")
+    return geometry
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--preparation", action="store_true")
+    parser.add_argument("--case", type=int, nargs="+")
+    parser.add_argument("--repair-of", action="append", default=[])
+    parser.add_argument("--profile", action="store_true",
+                        help="retain a bounded gprof diagnostic for explicitly selected cases")
+    parser.add_argument("--workers", type=int, choices=(1, 2), default=2)
+    args = parser.parse_args()
+    if args.profile and (not args.preparation or not args.case):
+        parser.error("--profile requires --preparation and --case")
+    experiment = Experiment("system-matrix", args.preparation, args.repair_of)
+    error = None
+    try:
+        experiment.receipt["tool_version"] = experiment.run(
+            ["verilator", "--version"], "version").strip()
+        if args.profile:
+            experiment.receipt["profiler_version"] = experiment.run(
+                ["gprof", "--version"], "profiler-version").splitlines()[0]
+        binary = compile_top(experiment, profile=args.profile)
+        results = []
+        experiment.receipt["cases"] = results
+        selected = [(index, options) for index, options in enumerate(cases())
+                    if args.case is None or index in args.case]
+        experiment.receipt["case_workers"] = args.workers
+
+        def execute(item):
+            index, options = item
+            print(f"system case={index} seed={options['seed']} hidden="
+                  f"{options['heads']*options['dimension']}", flush=True)
+            return execute_case(experiment, binary, options, index, args.profile)
+
+        for result in experiment.map(execute, selected, args.workers):
+            experiment.append_result("cases", result)
+        if len(results) != len(selected):
+            raise AssertionError("missing selected system cases")
+        if not results:
+            raise AssertionError("no system cases executed")
+        experiment.prune_objects(binary.parent)
+    except (RuntimeError, ValueError, AssertionError, KeyError) as exc:
+        error = exc
+    finally:
+        experiment.finish(error)
+    if error:
+        print(str(error), file=sys.stderr)
+    return int(error is not None)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

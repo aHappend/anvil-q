@@ -1,0 +1,53 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "./.venv/bin/python",
+    "tests/official.py",
+    "reference",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0017-run_official_checkpoint"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 1.813927864190191,
+  "end_utc": "2026-10-31T15:38:35.679206+00:00",
+  "exit_code": 0,
+  "index": 233,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.7030007913708687e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.8360944017767906e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 220076,
+    "output_blocks": 40,
+    "system_cpu_s": 0.344982,
+    "user_cpu_s": 1.457924
+  },
+  "start_utc": "2026-10-31T15:38:33.860063+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0017-run_official_checkpoint/233-qwen-independent-official-reference/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0017-run_official_checkpoint/233-qwen-independent-official-reference/stdout.log",
+  "storage_after": {
+    "available_bytes": 61874348032,
+    "available_inodes": 195629226,
+    "observed_utc": "2026-10-31T15:38:35.679352+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525247328256
+  },
+  "storage_before": {
+    "available_bytes": 61877956608,
+    "available_inodes": 195629469,
+    "observed_utc": "2026-10-31T15:38:33.862145+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525243719680
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

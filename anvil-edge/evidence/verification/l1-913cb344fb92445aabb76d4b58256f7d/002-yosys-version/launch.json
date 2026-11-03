@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "yosys",
+    "-V"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:43.794587+00:00",
+  "pid": 1005753,
+  "process_group": 1005753,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 62034460672,
+    "available_inodes": 195633325,
+    "observed_utc": "2026-10-31T15:36:43.794653+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525087215616
+  }
+}

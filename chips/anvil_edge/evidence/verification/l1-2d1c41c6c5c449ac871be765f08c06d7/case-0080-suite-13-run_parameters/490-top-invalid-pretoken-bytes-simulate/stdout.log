@@ -1,0 +1,4 @@
+FATAL: rtl/anvil_edge_bpe_tokenizer.sv:31: ANVIL_EDGE_TOKENIZER PARAMETER ERROR: positive capacities and at least 32 tags required
+       Time: 0  Scope: bench.dut.tokenizer.invalid_parameters
+FATAL: rtl/anvil_edge_manifest_validator.sv:37: ANVIL_EDGE_MANIFEST PARAMETER ERROR: invalid table capacity
+       Time: 0  Scope: bench.dut.boot_loader.manifest.invalid_parameters

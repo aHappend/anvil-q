@@ -1,0 +1,164 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 208896,
+      "bytes": 207220,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__ALL.a",
+      "sha256": "b9a8e29b9d0acac5dd0788bfec84132a6e1b9a7be93bfce511b5b61dc8db5d2c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 432,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__ALL.cpp",
+      "sha256": "5c22c9bef919afa79c30365a0e25a34e459be3aed682c638d39a75440fc7d10c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 691,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__ALL.d",
+      "sha256": "49ec93194676b97576483a42e84e8c8fa3000ba435dae13050ddf36f8d159ee6"
+    },
+    {
+      "allocated_bytes": 204800,
+      "bytes": 202344,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__ALL.o",
+      "sha256": "3e1da72fd47e29e917f2608e158c910fd9704cded29ecb5319477eb261d3fae8"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1251,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__Syms.cpp",
+      "sha256": "7bcea6cdac25f7355c6f51c9153f5cd3019c5aa26a163455f4396f69e7f969b5"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1131,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__Syms.h",
+      "sha256": "6835f2f32f413ee648fdc16d5ed2fef9ef92c15f1487b954319324355633817d"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19749,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench___024root.h",
+      "sha256": "d3338101dcdd8b6349f35f5b9362d48fc8c1f0255b02554dcbf52c9f5b7b3802"
+    },
+    {
+      "allocated_bytes": 192512,
+      "bytes": 191730,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "e4aa2c988d0f59e16e4cb9613a6d9381774c6380536910a10eb0923d1a923b62"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 4005,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "6f60fe87f23dc310550ef32dd35dc5ec6f9bb89ff6258d22bd153da5c5c8d48d"
+    },
+    {
+      "allocated_bytes": 180224,
+      "bytes": 179909,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "3fff7a26feb564aac098be8a1be1d761ccbcb5711a6174e769a74b2518bad273"
+    },
+    {
+      "allocated_bytes": 45056,
+      "bytes": 44173,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "ebd6ae31e48dc0b7b8cd3fe649b49b5873100666a6a832614932bc68c5fcbc50"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4426,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__ver.d",
+      "sha256": "461dee59b08aa36f7f6d73425077824a9d6dec50c1896e9af28fd2361d8cd987"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 11384,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench__verFiles.dat",
+      "sha256": "07cbbd221981ea8fd97845ae750411581df5bf167327bafd6d54dfc64773f72d"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1673,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/Vbench_classes.mk",
+      "sha256": "0d757ab0fbdd6c57e2cc26f9babe1130d4f911bbc8ce6e98436802bbf08fc848"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:39:16.018764+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

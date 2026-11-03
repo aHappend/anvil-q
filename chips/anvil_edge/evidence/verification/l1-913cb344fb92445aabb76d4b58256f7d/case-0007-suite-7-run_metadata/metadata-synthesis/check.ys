@@ -1,0 +1,11 @@
+read_verilog -sv rtl/anvil_edge_parameters.sv rtl/anvil_edge_boot_segment_reader.sv rtl/anvil_edge_manifest_validator.sv
+chparam -set NUM_LAYERS 1 -set HIDDEN_SIZE 8 -set INTERMEDIATE_SIZE 8 -set NUM_Q_HEADS 1 -set NUM_KV_HEADS 1 -set HEAD_DIM 8 -set GROUP_SIZE 8 -set VOCAB_SIZE 257 -set MAX_SEQ_LEN 4 anvil_edge_manifest_validator
+hierarchy -check -top anvil_edge_manifest_validator
+proc
+opt_expr
+opt_clean
+flatten
+opt_clean
+check -assert
+select -assert-none t:$dlatch t:$adlatch t:$dlatchsr t:$div t:$mod t:$divfloor t:$modfloor
+write_json evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/metadata-synthesis/netlist.json

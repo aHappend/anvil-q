@@ -1,0 +1,3 @@
+TEXT_COUNTS inputs=112 requests=5316 responses=5316 outputs=54
+COMPARED 5371
+- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0015-run_qwen_regex/qwen-symbolic-regex-s1/compiled-bench.sv:2686: Verilog $finish

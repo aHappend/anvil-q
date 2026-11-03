@@ -1,0 +1,70 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "yosys",
+    "-Q",
+    "-T",
+    "-s",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0006-suite-6-run_synthesis/synthesis-default/synthesize.ys"
+  ],
+  "child_settled": true,
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 61839273984,
+    "peak_object_allocated_bytes": 0,
+    "sample_interval_s": 0.25,
+    "samples": 212
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 61866881024,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 1409286144,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 1140850688,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 53.11208908003755,
+  "end_utc": "2026-10-31T15:38:30.363920+00:00",
+  "exit_code": 0,
+  "index": 226,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.7521979063749313e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.00012144702486693859,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 275140,
+    "output_blocks": 61824,
+    "system_cpu_s": 0.656941,
+    "user_cpu_s": 52.409364
+  },
+  "start_utc": "2026-10-31T15:37:37.250366+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0006-suite-6-run_synthesis/226-synthesis-default/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0006-suite-6-run_synthesis/226-synthesis-default/stdout.log",
+  "storage_after": {
+    "available_bytes": 61900640256,
+    "available_inodes": 195629602,
+    "observed_utc": "2026-10-31T15:38:30.364060+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525221036032
+  },
+  "storage_before": {
+    "available_bytes": 61866876928,
+    "available_inodes": 195630749,
+    "observed_utc": "2026-10-31T15:37:37.250744+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525254799360
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

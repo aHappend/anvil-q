@@ -1,0 +1,29 @@
+QWEN_SHELL_START transport=1 cycles=22
+QWEN_SHELL_BOOT_SEGMENT segment=0 cycles=16617
+QWEN_SHELL_BOOT_SEGMENT segment=1 cycles=43395
+QWEN_SHELL_BOOT_SEGMENT segment=2 cycles=229759
+QWEN_SHELL_BOOT_SEGMENT segment=3 cycles=307763
+QWEN_SHELL_BOOT_SEGMENT segment=4 cycles=310028
+QWEN_SHELL_BOOT_SEGMENT segment=5 cycles=380666
+QWEN_SHELL_BOOT_SEGMENT segment=6 cycles=385681
+QWEN_SHELL_BOOT_SEGMENT segment=7 cycles=403749
+QWEN_SHELL_BOOT_SEGMENT segment=8 cycles=404650
+QWEN_SHELL_BOOT_SEGMENT segment=9 cycles=405550
+QWEN_SHELL_BOOT_SEGMENT segment=10 cycles=406177
+QWEN_SHELL_BOOT_SEGMENT segment=11 cycles=407350
+QWEN_SHELL_BOOT_SEGMENT segment=12 cycles=408795
+QWEN_SHELL_BOOT_SEGMENT segment=13 cycles=411058
+QWEN_SHELL_BOOT_SEGMENT segment=14 cycles=411685
+QWEN_SHELL_BOOT_SEGMENT segment=15 cycles=412584
+QWEN_SHELL_BOOT_SEGMENT segment=16 cycles=413482
+QWEN_SHELL_BOOT_SEGMENT segment=17 cycles=414111
+QWEN_SHELL_BOOT_SEGMENT segment=18 cycles=414741
+QWEN_SHELL_BOOT_SEGMENT segment=19 cycles=415366
+QWEN_SHELL_BOOT writes=5848 reads=23600 acknowledgements=29448 cycles=610804
+QWEN_SHELL_PHASE phase=input_begin frame=0 cycles=610804
+QWEN_SHELL_PHASE phase=input_sent frame=0 cycles=610810
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=0 cycles=616552
+SCOREBOARD_INJECT wrong-value address=000000000000511c
+[6173445000] %Fatal: compiled-bench.sv:186: Assertion failed in TOP.bench.check_write: QWEN_SHELL_NUMERICAL_WRITE frame=0 item=0 address=000000000000511c got=00008001 expected=00008000
+%Error: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/compiled-bench.sv:186: Verilog $stop
+Aborting...

@@ -1,0 +1,60 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s17-scale-negative-subnormal-input/initial_records.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s17-scale-negative-subnormal-input/expected.hex",
+    "+verification_file2=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s17-scale-negative-subnormal-input/expected_logits.hex",
+    "+verification_file3=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s17-scale-negative-subnormal-input/token_words.hex",
+    "+verification_file4=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s17-scale-negative-subnormal-input/fault_config.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.10353006119839847,
+  "end_utc": "2026-10-31T15:56:46.605199+00:00",
+  "exit_code": 0,
+  "index": 828,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.3284850865602493e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.0007491682190448046,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.078233,
+    "user_cpu_s": 0.020536
+  },
+  "start_utc": "2026-10-31T15:56:46.493749+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/828-numerical-h8-l1-s17-scale-negative-subnormal-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/828-numerical-h8-l1-s17-scale-negative-subnormal-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 58028990464,
+    "available_inodes": 195594018,
+    "observed_utc": "2026-10-31T15:56:46.605278+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529092685824
+  },
+  "storage_before": {
+    "available_bytes": 58029051904,
+    "available_inodes": 195594026,
+    "observed_utc": "2026-10-31T15:56:46.494575+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529092624384
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

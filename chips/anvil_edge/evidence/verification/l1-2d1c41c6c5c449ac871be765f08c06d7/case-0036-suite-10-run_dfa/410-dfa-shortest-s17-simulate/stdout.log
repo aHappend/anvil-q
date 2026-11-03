@@ -1,0 +1,3 @@
+TEXT_COUNTS inputs=5 requests=336 responses=336 outputs=5
+COMPARED 342
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0036-suite-10-run_dfa/dfa-shortest-s1/compiled-bench.sv:217: Verilog $finish

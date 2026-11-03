@@ -1,0 +1,11 @@
+--- rtl/anvil_q1_top.sv
++++ mutant/rtl/anvil_q1_top.sv
+@@ -118,7 +118,7 @@
+       if (state==WAIT_ACTIVATION && complete)
+         head_activations[component]<=read_data;
+       if (state==READ_ACTIVATION && activation_reuse_valid)
+-        head_activation_q<=head_activations[component];
++        head_activation_q<=head_activations[0];
+     end
+   end
+   always @(posedge clk or negedge rst_n) begin

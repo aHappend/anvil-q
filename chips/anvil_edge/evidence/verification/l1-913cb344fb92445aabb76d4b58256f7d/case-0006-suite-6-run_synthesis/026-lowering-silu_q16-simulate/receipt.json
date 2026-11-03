@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0006-suite-6-run_synthesis/lowering-silu_q16/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.8366360568907112,
+  "end_utc": "2026-10-31T15:36:45.763695+00:00",
+  "exit_code": 0,
+  "index": 26,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.4958204701542854e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.7481000870466232e-05,
+  "requested_timeout_s": 600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 38912,
+    "output_blocks": 8,
+    "system_cpu_s": 0.013,
+    "user_cpu_s": 0.726016
+  },
+  "start_utc": "2026-10-31T15:36:44.870208+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0006-suite-6-run_synthesis/026-lowering-silu_q16-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0006-suite-6-run_synthesis/026-lowering-silu_q16-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 62013018112,
+    "available_inodes": 195632858,
+    "observed_utc": "2026-10-31T15:36:45.764108+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525108658176
+  },
+  "storage_before": {
+    "available_bytes": 62023159808,
+    "available_inodes": 195632951,
+    "observed_utc": "2026-10-31T15:36:44.885331+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525098516480
+  },
+  "timed_out": false,
+  "timeout_s": 600
+}

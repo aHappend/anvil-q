@@ -1,0 +1,355 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-11-02T16:59:30.020351+00:00",
+  "project_dir": "/data/sufeng/anvil-q1-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "passed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q1-ht2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
+    "errors": [],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 2.514,
+    "wns_hold_ns": 0.038,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [
+      {
+        "slack_ns": 2.514,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.PROJECTION_WAIT"
+      },
+      {
+        "slack_ns": 2.519,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.KERNEL_WAIT"
+      },
+      {
+        "slack_ns": 2.52,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.EMBEDDING_RESPONSE"
+      },
+      {
+        "slack_ns": 2.529,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_WAIT|anvil_q1_ht_decoder:u_compatibility|state.KERNEL_WAIT"
+      },
+      {
+        "slack_ns": 2.53,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_WAIT|anvil_q1_ht_decoder:u_compatibility|state.KERNEL_WAIT"
+      },
+      {
+        "slack_ns": 2.544,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.EMBEDDING_ACK"
+      },
+      {
+        "slack_ns": 2.545,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.PROJECTION_WAIT"
+      },
+      {
+        "slack_ns": 2.545,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.PROJECTION_WAIT"
+      },
+      {
+        "slack_ns": 2.55,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.KERNEL_WAIT"
+      },
+      {
+        "slack_ns": 2.55,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_WAIT|anvil_q1_ht_decoder:u_compatibility|state.KERNEL_WAIT"
+      },
+      {
+        "slack_ns": 2.55,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.KERNEL_WAIT"
+      },
+      {
+        "slack_ns": 2.551,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.EMBEDDING_RESPONSE"
+      },
+      {
+        "slack_ns": 2.551,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.EMBEDDING_RESPONSE"
+      },
+      {
+        "slack_ns": 2.555,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.PROJECTION_WAIT"
+      },
+      {
+        "slack_ns": 2.557,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.INVALID|anvil_q1_ht_decoder:u_compatibility|state.PROJECTION_WAIT"
+      },
+      {
+        "slack_ns": 2.56,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_SEND|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.dimension[31]"
+      },
+      {
+        "slack_ns": 2.56,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_SEND|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.dimension[30]"
+      },
+      {
+        "slack_ns": 2.56,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_SEND|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.dimension[29]"
+      },
+      {
+        "slack_ns": 2.56,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_SEND|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.dimension[28]"
+      },
+      {
+        "slack_ns": 2.56,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "state.PROJECTION_SEND|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.dimension[27]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.038,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[43]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[43]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[110]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[110]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[105]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[105]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.memory_kind.0000|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.memory_kind.0000"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[29]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[29]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[13]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[13]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[82]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[82]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[111]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[111]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.norm_kind.0110|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.norm_kind.0110"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[66]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[66]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[70]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[70]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.memory_kind.0111|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.memory_kind.0111"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[50]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[50]"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_math:g_legal.u_math|anvil_q1_ht_divide:u_divide|g_legal.chunk[1]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|anvil_q1_ht_math:g_legal.u_math|anvil_q1_ht_divide:u_divide|g_legal.chunk[1]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[33]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[33]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_b[97]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_b[97]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_b[105]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_b[105]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_b[126]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_b[126]"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_a[26]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_a[26]"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q1_ht_decoder:u_compatibility",
+        "to_node": "anvil_q1_ht_kernel:u_kernel|g_legal.math_b[30]|anvil_q1_ht_decoder:u_compatibility|anvil_q1_ht_kernel:u_kernel|g_legal.math_b[30]"
+      }
+    ],
+    "stderr_tail": []
+  },
+  "detail": "Timing closed: Setup WNS = 2.514 ns",
+  "top_module": "anvil_q1_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 133.58,
+  "critical_path_delay_ns": 7.486,
+  "fitter_resource_summary": {
+    "alms_used": 6875,
+    "alms_total": 427200,
+    "alms_pct": "2 %",
+    "total_registers": 8156,
+    "block_memory_bits": 0,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 8,
+    "virtual_pins": 310
+  },
+  "parameters": {
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 16,
+    "INTERMEDIATE_SIZE": 16,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 2,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "1a47a695e6217871829e07896fca9e659a4c7d18611db7edcfc85f1bfc88b07d",
+  "applicable": true
+}

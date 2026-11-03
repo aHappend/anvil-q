@@ -1,0 +1,29 @@
+%Warning-WIDTHEXPAND: rtl/anvil_edge_manifest_validator.sv:195:57: Operator NEQ expects 64 bits on the LHS, but LHS's VARREF 'header_record_count' generates 32 bits.
+                                                                 : ... note: In instance 'bench.dut'
+  195 |                 (segment_index==1 && header_record_count!=DIRECTORY_COUNT) ||
+      |                                                         ^~
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHTRUNC: rtl/anvil_edge_numeric_pkg.sv:16:18: Operator ASSIGN expects 128 bits on the Assign RHS, but Assign RHS's COND generates 129 bits.
+                                                        : ... note: In instance 'bench'
+   16 |       round_shift=x<0 ? -$signed(magnitude) : $signed(magnitude);
+      |                  ^
+%Warning-WIDTHTRUNC: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator/compiled-bench.sv:50:29: Bit extraction of array[16383:0] requires 14 bit index, not 64 bits.
+                                                                                                                                                                                                  : ... note: In instance 'bench'
+   50 |         ddr_rsp_rdata=memory[pending_address>>2];
+      |                             ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator/compiled-bench.sv:73:20: Operator ADD expects 32 bits on the RHS, but RHS's SEL generates 2 bits.
+                                                                                                                                                                                                   : ... note: In instance 'bench'
+   73 |       delay_count=1+rng[3:2]; requests=requests+1;
+      |                    ^
+%Warning-UNSIGNED: rtl/anvil_edge_boot_segment_reader.sv:71:43: Comparison is constant due to unsigned arithmetic
+                                                              : ... note: In instance 'bench.dut.validator.reader'
+   71 |               physical_address[64] || base<DDR_BASE || segment_end>DDR_END ||
+      |                                           ^
+%Warning-MULTIDRIVEN: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator/compiled-bench.sv:17:23: Signal has multiple driving blocks with different clocking: 'bench.ddr_rsp_valid'
+                      evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator/compiled-bench.sv:67:41: ... Location of first driving block
+   67 |       pending=0; responses=responses+1; ddr_rsp_valid<=0;
+      |                                         ^~~~~~~~~~~~~
+                      evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator/compiled-bench.sv:49:9: ... Location of other driving block
+   49 |         ddr_rsp_valid<=1;
+      |         ^~~~~~~~~~~~~

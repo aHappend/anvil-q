@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/multiply-w64-s1/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.10325233289040625,
+  "end_utc": "2026-10-31T15:36:47.840778+00:00",
+  "exit_code": 0,
+  "index": 73,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.347600482404232e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.571800723671913e-05,
+  "requested_timeout_s": 600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 49152,
+    "output_blocks": 8,
+    "system_cpu_s": 0.009006,
+    "user_cpu_s": 0.064043
+  },
+  "start_utc": "2026-10-31T15:36:47.735162+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/073-multiply-w64-s1-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/073-multiply-w64-s1-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 61994364928,
+    "available_inodes": 195632482,
+    "observed_utc": "2026-10-31T15:36:47.840866+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525127311360
+  },
+  "storage_before": {
+    "available_bytes": 61994446848,
+    "available_inodes": 195632494,
+    "observed_utc": "2026-10-31T15:36:47.735964+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525127229440
+  },
+  "timed_out": false,
+  "timeout_s": 600
+}

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/top-legal-controller-only-capacity/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:34.360519+00:00",
+  "pid": 1144213,
+  "process_group": 1144213,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58703413248,
+    "available_inodes": 195605468,
+    "observed_utc": "2026-10-31T15:51:34.370945+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528418263040
+  }
+}

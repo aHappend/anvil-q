@@ -1,0 +1,4 @@
+FATAL: rtl/anvil_edge_manifest_validator.sv:37: ANVIL_EDGE_MANIFEST PARAMETER ERROR: invalid table capacity
+       Time: 0  Scope: bench.dut.boot_loader.manifest.invalid_parameters
+FATAL: rtl/anvil_edge_special_trie_validator.sv:23: ANVIL_EDGE_SPECIAL_TRIE PARAMETER ERROR: positive capacities required
+       Time: 0  Scope: bench.dut.boot_loader.special_trie.invalid_parameters

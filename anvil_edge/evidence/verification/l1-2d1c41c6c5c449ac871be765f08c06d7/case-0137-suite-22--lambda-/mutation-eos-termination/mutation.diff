@@ -1,0 +1,11 @@
+--- rtl/anvil_edge_autoregressive_fsm.sv
++++ mutant/rtl/anvil_edge_autoregressive_fsm.sv
+@@ -197,7 +197,7 @@
+                 if (max_tokens == 0) state <= FINISH;
+                 else begin
+                   selections <= selections + 1;
+-                  if (winner_id == eos) state <= FINISH;
++                  if (1'b0) state <= FINISH;
+                   else begin
+                     selected_id <= winner_id;
+                     selected_last <= selections+1 >= max_tokens;

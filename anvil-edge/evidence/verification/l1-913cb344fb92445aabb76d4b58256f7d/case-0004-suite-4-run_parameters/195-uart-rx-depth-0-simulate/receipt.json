@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/uart-rx-depth-0/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.0522990629542619,
+  "end_utc": "2026-10-31T15:37:03.066302+00:00",
+  "exit_code": 1,
+  "index": 195,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.3335142284631729e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.5918008759617805e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 51200,
+    "output_blocks": 8,
+    "system_cpu_s": 0.008661,
+    "user_cpu_s": 0.0048119999999999994
+  },
+  "start_utc": "2026-10-31T15:37:03.012346+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/195-uart-rx-depth-0-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/195-uart-rx-depth-0-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 61904424960,
+    "available_inodes": 195631497,
+    "observed_utc": "2026-10-31T15:37:03.066387+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525217251328
+  },
+  "storage_before": {
+    "available_bytes": 61904445440,
+    "available_inodes": 195631501,
+    "observed_utc": "2026-10-31T15:37:03.012794+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525217230848
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

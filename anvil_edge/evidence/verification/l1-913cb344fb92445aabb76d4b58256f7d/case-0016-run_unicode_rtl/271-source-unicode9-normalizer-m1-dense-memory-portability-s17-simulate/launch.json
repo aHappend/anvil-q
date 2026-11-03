@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/source-unicode9-normalizer-m1-dense-memory-portability-s17/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:39:32.996701+00:00",
+  "pid": 1036084,
+  "process_group": 1036084,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61116002304,
+    "available_inodes": 195625818,
+    "observed_utc": "2026-10-31T15:39:32.996769+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3526005673984
+  }
+}

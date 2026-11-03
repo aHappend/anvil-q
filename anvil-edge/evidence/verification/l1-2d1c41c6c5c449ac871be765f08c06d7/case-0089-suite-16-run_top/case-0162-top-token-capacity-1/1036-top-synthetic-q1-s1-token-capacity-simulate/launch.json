@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0163-top-token-capacity-17/top-synthetic-q1-s17-token-capacity/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0162-top-token-capacity-1/top-synthetic-q1-s1-token-capacity-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:59:50.452159+00:00",
+  "pid": 1290824,
+  "process_group": 1290824,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 57791930368,
+    "available_inodes": 195587505,
+    "observed_utc": "2026-10-31T15:59:50.452249+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529329745920
+  }
+}

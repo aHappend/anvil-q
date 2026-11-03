@@ -1,0 +1,6 @@
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0137-suite-22--lambda-/argmax-tie-controller-c1-s17/compiled-bench.sv:33:70: Operator NEQCASE expects 145 bits on the LHS, but LHS's REPLICATE generates 114 bits.
+                                                                                                                                                                : ... note: In instance 'bench'
+   33 |            core_logit_ready,busy,done,error,error_code,finish_valid} !== 145'd0)
+      |                                                                      ^~~
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.

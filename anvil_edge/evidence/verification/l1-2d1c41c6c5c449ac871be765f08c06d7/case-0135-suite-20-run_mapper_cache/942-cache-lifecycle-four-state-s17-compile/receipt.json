@@ -1,0 +1,76 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/cache-lifecycle-four-state-s17/simulation.vvp",
+    "rtl/anvil_edge_parameters.sv",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "rtl/anvil_edge_tensor_mapper.sv",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/cache-lifecycle-four-state-s17/bench.sv"
+  ],
+  "child_settled": true,
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 57895505920,
+    "peak_object_allocated_bytes": 0,
+    "sample_interval_s": 0.25,
+    "samples": 1
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 57895567360,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 2550136832,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 2281701376,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 0.053278788924217224,
+  "end_utc": "2026-10-31T15:58:14.477317+00:00",
+  "exit_code": 0,
+  "index": 942,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.2182008251547813e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.457886334042996,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 568,
+    "system_cpu_s": 0.021405999999999998,
+    "user_cpu_s": 0.030895
+  },
+  "start_utc": "2026-10-31T15:58:14.421885+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/942-cache-lifecycle-four-state-s17-compile/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/942-cache-lifecycle-four-state-s17-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 57895231488,
+    "available_inodes": 195591890,
+    "observed_utc": "2026-10-31T15:58:14.477407+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529226444800
+  },
+  "storage_before": {
+    "available_bytes": 57895563264,
+    "available_inodes": 195591895,
+    "observed_utc": "2026-10-31T15:58:14.422380+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529226113024
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

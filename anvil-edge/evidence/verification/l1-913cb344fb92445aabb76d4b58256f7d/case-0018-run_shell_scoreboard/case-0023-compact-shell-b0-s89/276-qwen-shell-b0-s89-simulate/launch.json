@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/obj/simulation",
+    "+verification_bypass=0",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-flash-0.hex",
+    "+verification_file1=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-input.hex",
+    "+verification_file2=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-tokens.hex",
+    "+verification_file3=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-output.hex",
+    "+verification_file4=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-write-address.hex",
+    "+verification_file5=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-write-data.hex",
+    "+verification_file6=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-0-write-operation.hex",
+    "+verification_file7=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-input.hex",
+    "+verification_file8=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-tokens.hex",
+    "+verification_file9=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-output.hex",
+    "+verification_file10=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-write-address.hex",
+    "+verification_file11=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-write-data.hex",
+    "+verification_file12=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/shell-case-1-write-operation.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:39:34.687348+00:00",
+  "pid": 1036189,
+  "process_group": 1036189,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 60451942400,
+    "available_inodes": 195625647,
+    "observed_utc": "2026-10-31T15:39:34.687801+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3526669733888
+  }
+}

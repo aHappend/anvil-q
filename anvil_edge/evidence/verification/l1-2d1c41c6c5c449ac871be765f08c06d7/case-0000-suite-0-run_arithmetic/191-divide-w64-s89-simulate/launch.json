@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0000-suite-0-run_arithmetic/divide-w64-s89/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:48:24.429256+00:00",
+  "pid": 1081740,
+  "process_group": 1081740,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58945466368,
+    "available_inodes": 195613166,
+    "observed_utc": "2026-10-31T15:48:24.429339+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528176209920
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0001-suite-1-run_fifo/fifo-d16-s89/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:47.067723+00:00",
+  "pid": 1006148,
+  "process_group": 1006148,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 62000689152,
+    "available_inodes": 195632589,
+    "observed_utc": "2026-10-31T15:36:47.067793+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525120987136
+  }
+}

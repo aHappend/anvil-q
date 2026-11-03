@@ -1,0 +1,150 @@
+{
+  "synthetic_only": true,
+  "input_provenance": "Independent synthetic representation fixture",
+  "vocabulary": 262144,
+  "physical_capacity": 262144,
+  "metadata_words": null,
+  "metadata_reload_epochs": null,
+  "image_sha256": "7c0f8f2603b62697a10b6f398b2e513c805da87baacc32081e9d68ff8c7cc4ff",
+  "segments": [
+    {
+      "kind": 256,
+      "base": 4096,
+      "length": 64,
+      "crc32": 950469529
+    },
+    {
+      "kind": 257,
+      "base": 4160,
+      "length": 1568,
+      "crc32": 3767325495
+    },
+    {
+      "kind": 258,
+      "base": 5728,
+      "length": 8389404,
+      "crc32": 2628638077
+    },
+    {
+      "kind": 259,
+      "base": 8395132,
+      "length": 736,
+      "crc32": 1515991110
+    },
+    {
+      "kind": 512,
+      "base": 8395868,
+      "length": 128,
+      "crc32": 3774014443
+    },
+    {
+      "kind": 513,
+      "base": 8395996,
+      "length": 4194336,
+      "crc32": 2390288371
+    },
+    {
+      "kind": 514,
+      "base": 12590332,
+      "length": 524064,
+      "crc32": 2070871854
+    },
+    {
+      "kind": 515,
+      "base": 13114396,
+      "length": 1056,
+      "crc32": 858854204
+    },
+    {
+      "kind": 516,
+      "base": 13115452,
+      "length": 32,
+      "crc32": 1218539456
+    },
+    {
+      "kind": 517,
+      "base": 13115484,
+      "length": 48,
+      "crc32": 2934732869
+    },
+    {
+      "kind": 518,
+      "base": 13115532,
+      "length": 32,
+      "crc32": 3855035459
+    },
+    {
+      "kind": 519,
+      "base": 13115564,
+      "length": 64,
+      "crc32": 3377002481
+    },
+    {
+      "kind": 520,
+      "base": 13115628,
+      "length": 80,
+      "crc32": 3037261369
+    },
+    {
+      "kind": 521,
+      "base": 13115708,
+      "length": 128,
+      "crc32": 3502877344
+    },
+    {
+      "kind": 522,
+      "base": 13115836,
+      "length": 32,
+      "crc32": 1218539456
+    },
+    {
+      "kind": 523,
+      "base": 13115868,
+      "length": 48,
+      "crc32": 3012656560
+    },
+    {
+      "kind": 524,
+      "base": 13115916,
+      "length": 48,
+      "crc32": 875649235
+    },
+    {
+      "kind": 525,
+      "base": 13115964,
+      "length": 32,
+      "crc32": 1218539456
+    },
+    {
+      "kind": 526,
+      "base": 13115996,
+      "length": 32,
+      "crc32": 1590464162
+    },
+    {
+      "kind": 527,
+      "base": 13116028,
+      "length": 32,
+      "crc32": 1218539456
+    }
+  ],
+  "validation_reads": "Aligned word reads wholly within a declared segment's padded final word; all payload writes and their acknowledgements precede reads.",
+  "expected_write_tuple_count": 3277991,
+  "expected_write_files": [
+    {
+      "field": "address",
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0088-large-image-262144/boot-v262144-s17-valid-input/address.hex",
+      "sha256": "5122098394f9cabae106767ff6445dad74c8acabd61dad26d98864526ac30f2e"
+    },
+    {
+      "field": "data",
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0088-large-image-262144/boot-v262144-s17-valid-input/data.hex",
+      "sha256": "40153b91a242320e5fc2da97cac486d394676234bcc108997a8759cdaed0c523"
+    },
+    {
+      "field": "strobe",
+      "path": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0088-large-image-262144/boot-v262144-s17-valid-input/strobe.hex",
+      "sha256": "1e399f497730899f096dedc38cfecd24c41a39f70e9b22303218e28415eac5f2"
+    }
+  ]
+}

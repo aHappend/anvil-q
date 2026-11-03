@@ -1,0 +1,27 @@
+{
+  "chip": "Anvil-Q2-FP2",
+  "fitter_resources": {
+    "alms_used": 182271,
+    "alms_total": 427200,
+    "alms_pct": "43 %",
+    "total_registers": 137797,
+    "block_memory_bits": 1237440,
+    "m20k_ram_blocks": 119,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 316,
+    "virtual_pins": 2761
+  },
+  "timing": {
+    "device": "10AX115N2F45E1SG",
+    "netlist_mode": "post_fit",
+    "target_frequency_mhz": 100.0,
+    "fmax_mhz": 102.99,
+    "critical_path_delay_ns": 9.71,
+    "wns_setup_ns": 0.29,
+    "wns_hold_ns": 0.036
+  },
+  "verification_tiers": {
+    "L3_board_hil": "L3_BRIDGE_CONNECTIVITY_PROBE_ONLY",
+    "L3_note": "Catapult PCIe BAR0 hardware bridge connectivity probe (reg 57) only; per-chip bitstream flash and on-board workload vector execution require fpga/board_hil.json role wrapper."
+  }
+}

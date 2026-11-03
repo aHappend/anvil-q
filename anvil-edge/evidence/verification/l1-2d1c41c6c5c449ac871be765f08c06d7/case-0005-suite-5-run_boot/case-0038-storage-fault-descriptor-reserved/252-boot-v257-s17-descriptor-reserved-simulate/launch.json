@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0037-storage-fault-descriptor-flags/boot-v257-s17-descriptor-flags/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0038-storage-fault-descriptor-reserved/boot-v257-s17-descriptor-reserved-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:49:10.342160+00:00",
+  "pid": 1096253,
+  "process_group": 1096253,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58903166976,
+    "available_inodes": 195612420,
+    "observed_utc": "2026-10-31T15:49:10.342704+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528218509312
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0180-top-profile-reload-1/top-synthetic-q1-s1-nfc-bos-to-nfd-reload/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0181-top-profile-reload-17/top-synthetic-q1-s17-nfc-bos-to-nfd-reload-input/flash.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0181-top-profile-reload-17/top-synthetic-q1-s17-nfc-bos-to-nfd-reload-input/second-flash.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 31.025079786079004,
+  "end_utc": "2026-10-31T16:02:40.676079+00:00",
+  "exit_code": 0,
+  "index": 1112,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.4033943191170692e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 4.4221989810466766e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.075989,
+    "user_cpu_s": 30.908913
+  },
+  "start_utc": "2026-10-31T16:02:09.649000+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0181-top-profile-reload-17/1112-top-synthetic-q1-s17-nfc-bos-to-nfd-reload-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0181-top-profile-reload-17/1112-top-synthetic-q1-s17-nfc-bos-to-nfd-reload-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 57552265216,
+    "available_inodes": 195585922,
+    "observed_utc": "2026-10-31T16:02:40.676220+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529569411072
+  },
+  "storage_before": {
+    "available_bytes": 57600253952,
+    "available_inodes": 195586194,
+    "observed_utc": "2026-10-31T16:02:09.649505+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529521422336
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

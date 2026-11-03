@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/top-invalid-vocabulary-address-overflow/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:20.084875+00:00",
+  "pid": 1141515,
+  "process_group": 1141515,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58741944320,
+    "available_inodes": 195605975,
+    "observed_utc": "2026-10-31T15:51:20.084925+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528379731968
+  }
+}

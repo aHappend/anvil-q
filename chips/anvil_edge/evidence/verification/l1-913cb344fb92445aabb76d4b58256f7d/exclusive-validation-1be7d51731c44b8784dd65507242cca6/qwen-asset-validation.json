@@ -1,0 +1,267 @@
+{
+  "identity": "Qwen/Qwen2.5-0.5B-Instruct",
+  "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "license": "Apache-2.0",
+  "ordered_files": [
+    {
+      "path": "tests/data/qwen-LICENSE",
+      "upstream_path": "LICENSE",
+      "bytes": 11343,
+      "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+    },
+    {
+      "path": "tests/data/qwen-tokenizer.json",
+      "upstream_path": "tokenizer.json",
+      "bytes": 7031645,
+      "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+    },
+    {
+      "path": "tests/data/qwen-tokenizer_config.json",
+      "upstream_path": "tokenizer_config.json",
+      "bytes": 7305,
+      "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+    },
+    {
+      "path": "tests/data/qwen-vocab.json",
+      "upstream_path": "vocab.json",
+      "bytes": 2776833,
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    {
+      "path": "tests/data/qwen-merges.txt",
+      "upstream_path": "merges.txt",
+      "bytes": 1671839,
+      "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+    }
+  ],
+  "bundle_sha256": "77d274c5ebbbbb911c7a99d5ab81f9a754d736673b17fadd30dec2e42247a337",
+  "base_vocabulary": 151643,
+  "actual_tokenizer_vocabulary": 151665,
+  "model_embedding_capacity_is_not_tokenizer_vocabulary": true,
+  "ordered_merge_comparisons": 151387,
+  "normalizer": {
+    "type": "NFC"
+  },
+  "pre_tokenizer": {
+    "type": "Sequence",
+    "pretokenizers": [
+      {
+        "type": "Split",
+        "pattern": {
+          "Regex": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
+        },
+        "behavior": "Isolated",
+        "invert": false
+      },
+      {
+        "type": "ByteLevel",
+        "add_prefix_space": false,
+        "trim_offsets": false,
+        "use_regex": false
+      }
+    ]
+  },
+  "added_tokens": [
+    {
+      "id": 151643,
+      "content": "<|endoftext|>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 151644,
+      "content": "<|im_start|>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 151645,
+      "content": "<|im_end|>",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 151646,
+      "content": "<|object_ref_start|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151647,
+      "content": "<|object_ref_end|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151648,
+      "content": "<|box_start|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151649,
+      "content": "<|box_end|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151650,
+      "content": "<|quad_start|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151651,
+      "content": "<|quad_end|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151652,
+      "content": "<|vision_start|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151653,
+      "content": "<|vision_end|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151654,
+      "content": "<|vision_pad|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151655,
+      "content": "<|image_pad|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151656,
+      "content": "<|video_pad|>",
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": true
+    },
+    {
+      "id": 151657,
+      "content": "<tool_call>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151658,
+      "content": "</tool_call>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151659,
+      "content": "<|fim_prefix|>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151660,
+      "content": "<|fim_middle|>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151661,
+      "content": "<|fim_suffix|>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151662,
+      "content": "<|fim_pad|>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151663,
+      "content": "<|repo_name|>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    {
+      "id": 151664,
+      "content": "<|file_sep|>",
+      "lstrip": false,
+      "normalized": false,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    }
+  ],
+  "conversion_status": "tests/qwen_integration.py combines all fifteen table kinds from the pinned vocabulary/merge/AddedToken, Unicode/NFC and tagged-DFA converters. All 151665 tokens, 151387 ranked merges, 256 byte mappings and 22 AddedTokens are retained without invented padding. A 66-case corpus compares independent software token vectors with the official library, then compares complete RTL token and decoded-byte vectors at seeds1/17/89. A separate complete SPI boot image contains these genuine tokenizer tables and synthetic H8/L1 zero weights; no real-model or default-geometry inference is claimed",
+  "official_reference_comparisons": 0,
+  "rtl_boot_or_tokenization_executed": false
+}

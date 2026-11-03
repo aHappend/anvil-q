@@ -1,0 +1,11 @@
+--- rtl/anvil_edge_image_loader.sv
++++ mutant/rtl/anvil_edge_image_loader.sv
+@@ -364,7 +364,7 @@
+             end
+           end
+           CRC_CHECK: begin
+-            if ((~crc_value)!=payload_crc) begin code<=8'h03; state<=FAILED; end
++            if (1'b0) begin code<=8'h03; state<=FAILED; end
+             else if (payload_number==19) begin done_r<=1; state<=LOADED; end
+             else begin payload_number<=payload_number+1'b1; state<=PAYLOAD_SELECT; end
+           end

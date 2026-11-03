@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/top-legal-multilayer-gqa/simulation.vvp"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.5057978888507932,
+  "end_utc": "2026-10-31T15:51:36.722033+00:00",
+  "exit_code": 0,
+  "index": 528,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.4737015590071678e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 3.2390933483839035e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1196948,
+    "output_blocks": 8,
+    "system_cpu_s": 0.032993999999999996,
+    "user_cpu_s": 0.317951
+  },
+  "start_utc": "2026-10-31T15:51:35.949040+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/528-top-legal-multilayer-gqa-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/528-top-legal-multilayer-gqa-simulate/stdout.log",
+  "storage_after": {
+    "available_bytes": 58699497472,
+    "available_inodes": 195605456,
+    "observed_utc": "2026-10-31T15:51:36.722139+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528422178816
+  },
+  "storage_before": {
+    "available_bytes": 58698665984,
+    "available_inodes": 195605456,
+    "observed_utc": "2026-10-31T15:51:35.949923+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528423010304
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/candidate-oniguruma/regex-reference",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/candidate-oniguruma/vectors.txt"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:39:03.653014+00:00",
+  "pid": 1027962,
+  "process_group": 1027962,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61786529792,
+    "available_inodes": 195627383,
+    "observed_utc": "2026-10-31T15:39:03.653080+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525335146496
+  }
+}

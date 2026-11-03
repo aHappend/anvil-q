@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0004-suite-4-run_parameters/top-zero-num_kv_heads/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:48.454966+00:00",
+  "pid": 1006333,
+  "process_group": 1006333,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61988216832,
+    "available_inodes": 195632417,
+    "observed_utc": "2026-10-31T15:36:48.455057+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525133459456
+  }
+}

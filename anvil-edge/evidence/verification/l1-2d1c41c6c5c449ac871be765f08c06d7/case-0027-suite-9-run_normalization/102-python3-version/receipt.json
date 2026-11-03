@@ -1,0 +1,51 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "python3",
+    "--version"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 0.05242809094488621,
+  "end_utc": "2026-10-31T15:48:07.413430+00:00",
+  "exit_code": 0,
+  "index": 102,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.5668181478977203e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 2.8162832169327885,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 59392,
+    "output_blocks": 8,
+    "system_cpu_s": 0.002562,
+    "user_cpu_s": 0.0
+  },
+  "start_utc": "2026-10-31T15:48:07.358974+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/102-python3-version/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/102-python3-version/stdout.log",
+  "storage_after": {
+    "available_bytes": 59008593920,
+    "available_inodes": 195614144,
+    "observed_utc": "2026-10-31T15:48:07.413514+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528113082368
+  },
+  "storage_before": {
+    "available_bytes": 59008626688,
+    "available_inodes": 195614151,
+    "observed_utc": "2026-10-31T15:48:07.359463+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528113049600
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

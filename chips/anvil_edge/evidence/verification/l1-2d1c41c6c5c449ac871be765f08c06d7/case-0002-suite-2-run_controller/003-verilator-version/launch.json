@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "verilator",
+    "--version"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:47:10.448494+00:00",
+  "pid": 1064918,
+  "process_group": 1064918,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 59357335552,
+    "available_inodes": 195616340,
+    "observed_utc": "2026-10-31T15:47:10.497523+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3527764340736
+  }
+}

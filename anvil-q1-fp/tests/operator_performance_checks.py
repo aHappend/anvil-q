@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+"""Bounded exact-reuse and buffered-input repair comparisons, not full L1."""
+
+import argparse
+from contextlib import contextmanager
+import io
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import sys
+import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import architecture
+import operators
+import verify
+from operator_storage import export_text, inspect_requests
+from numerical import decode
+
+
+@contextmanager
+def uncached():
+    encoding, stored = architecture.encode16, operators.stored_value
+    try:
+        architecture.encode16 = operators.encode16 = encoding.__wrapped__
+        operators.stored_value = stored.__wrapped__
+        yield
+    finally:
+        architecture.encode16 = operators.encode16 = encoding
+        operators.stored_value = stored
+
+
+def conversion_check(ev):
+    good = True
+    for mode in (0, 1, 2):
+        config = architecture.CONFIGURATIONS["nonpower"]
+        outputs = []
+        for reuse in (False, True):
+            started = time.monotonic()
+            stream, binary = io.StringIO(), io.BytesIO()
+
+            def generate():
+                reference = operators.OperatorReference(config, mode, 17, stream, binary)
+                for name in operators.OPERATOR_IDS:
+                    for selector in (range(7) if name == "gemv" else
+                                     range(3) if name in ("norm", "elementwise") else (0,)):
+                        reference.execute_operator(name, selector, 2, 1)
+                model = architecture.Architecture(config, mode, 17)
+                fixture = ev.path / f"conversion-mode{mode}-reuse{int(reuse)}.hex"
+                model.write_fixture(fixture)
+                model.execute()
+                return reference, model, fixture
+
+            if reuse:
+                reference, model, fixture = generate()
+            else:
+                with uncached():
+                    reference, model, fixture = generate()
+            outputs.append((stream.getvalue(), binary.getvalue(),
+                            reference.expected_writes, model.events, fixture))
+            ev.receipt.setdefault("measurements", []).append({
+                "mode": mode, "reuse": reuse, "elapsed_s": time.monotonic()-started,
+                "requests": reference.count})
+        old, new = outputs
+        good = ev.assertion(
+            f"mode{mode}_exact_uncached_reference_identity",
+            old[:4] == new[:4] and verify.digest(old[4]) == verify.digest(new[4]),
+            requests_bytes=len(new[0]), writes=len(new[2]), events=len(new[3]),
+            fixture_sha256=verify.digest(new[4])) and good
+        decoded = b"".join(
+            operators.REQUEST_RECORD.pack(*map(int, row.split()[:6]),
+                                          int(row.split()[6], 16))
+            for row in new[0].encode().splitlines())
+        good = ev.assertion(
+            f"mode{mode}_binary_exact_text_records",
+            new[1] == operators.REQUEST_MAGIC + decoded) and good
+    # Eviction is bounded, and both formats preserve the unchanged exact core.
+    for mode in (1, 2):
+        for bits in range(65536):
+            eb, fb = (8, 7) if mode == 1 else (5, 10)
+            _, kind, _, value = decode(bits, eb, fb)
+            if kind not in ("nan", "inf"):
+                value = float(value)
+                if architecture.encode16(value, mode) != architecture.encode16.__wrapped__(value, mode):
+                    raise ValueError("conversion cache differs")
+    good = ev.assertion("bounded_format_aware_cache",
+                        architecture.encode16.cache_info().currsize <= 8192 and
+                        operators.stored_value.cache_info().currsize <= 4096,
+                        encoding_cache=list(architecture.encode16.cache_info()),
+                        decode_cache=list(operators.stored_value.cache_info())) and good
+    return good
+
+
+def input_check(ev, production=False):
+    config = operators.PRODUCTION if production else architecture.CONFIGURATIONS["nonpower"]
+    # operator_check executes the pristine numerical/protocol assertions first.
+    mode = 1
+    good = verify.operator_check(ev, config=config, operations={"gemv": (4,)},
+                                 cases=(("gemv", 4, mode),))
+    binary_run = next(r for r in ev.receipt["records"]
+                      if r["label"] == "gemv-selector4-mode1-revised")
+    binary = ev.path / "gemv-selector4-mode1.requests.bin.gz"
+    count, decoded_hash = inspect_requests(binary)
+    metadata = ev.receipt["operator_inputs"]["gemv-selector4-mode1"]
+    good = ev.assertion(
+        "all_input_records_identical",
+        count == metadata["records"] and decoded_hash == metadata["decoded_sha256"],
+        records=count, decoded_sha256=decoded_hash,
+        compressed_sha256=verify.digest(binary)) and good
+    if production:
+        # Formatted-input portability is exercised on the compact case only.
+        return good
+    text = ev.path / "gemv-selector4-mode1.requests"
+    export_text(binary, text)
+    text_argv = [arg.replace("-revised.trace", "-text.trace")
+                 for arg in binary_run["argv"] if not arg.startswith("+oracle_binary=")]
+    text_argv = ["+oracle="+str(text.relative_to(verify.ROOT))
+                 if arg.startswith("+oracle=") else arg for arg in text_argv]
+    executed = ev.run("formatted-input-baseline", text_argv, timeout=86400)
+    binary_trace = ev.path / "gemv-selector4-mode1-revised.trace"
+    text_trace = ev.path / "gemv-selector4-mode1-text.trace"
+    good = ev.assertion("buffered_formatted_exact_trace",
+                        executed and verify.digest(binary_trace) == verify.digest(text_trace),
+                        trace_sha256=verify.digest(binary_trace),
+                        binary_elapsed_s=binary_run["elapsed_s"],
+                        formatted_elapsed_s=ev.receipt["records"][-1]["elapsed_s"]) and good
+    with gzip.open(binary, "rb") as stream:
+        data = stream.read()
+    with text.open() as stream:
+        require_magic = data[:8] == operators.REQUEST_MAGIC
+        index = 8
+        for line in stream:
+            row = line.split()
+            expected = (*map(int, row[:6]), int(row[6], 16))
+            if operators.REQUEST_RECORD.unpack_from(data, index) != expected:
+                raise ValueError("binary/text request mismatch")
+            index += operators.REQUEST_RECORD.size
+    good = ev.assertion("all_input_records_identical",
+                        require_magic and index == len(data),
+                        records=(index-8)//28,
+                        text_sha256=verify.digest(text), binary_sha256=verify.digest(binary)) and good
+    if not production:
+        executable = ev.path / "operator-icarus.vvp"
+        parameters = {"OP": 3, **dict(zip(architecture.PARAMETERS, config))}
+        compiled = verify.compile_simulation(ev, "operator-icarus-compile", [
+            "iverilog", "-g2012", "-Wall", "-s", "operator_tb",
+            "-o", str(executable.relative_to(verify.ROOT)),
+            *[f"-Poperator_tb.{key}={value}" for key, value in parameters.items()],
+            *[str(p.relative_to(verify.ROOT)) for p in sorted(verify.ROOT.glob("rtl/*.sv"))],
+            "tests/operator_tb.sv",
+        ], executable)
+        argv = ["vvp", str(executable.relative_to(verify.ROOT)), *text_argv[1:]]
+        argv = [arg if not arg.startswith("+trace=") else
+                "+trace=" + str((ev.path / "operator-icarus.trace").relative_to(verify.ROOT))
+                for arg in argv]
+        executed = compiled and ev.run("operator-icarus", argv, timeout=86400)
+        record = ev.receipt["records"][-1]
+        coverage = (binary_trace.read_text().splitlines()[-1].split()
+                    if executed else [])
+        good = ev.assertion(
+            "compact_icarus_operator_exact_trace",
+            executed and record["elapsed_s"] < 60 and
+            verify.digest(ev.path / "operator-icarus.trace") == verify.digest(binary_trace)
+            and int(coverage[-2]) < 500000,
+            elapsed_s=record.get("elapsed_s"), coverage=coverage,
+            wall_clock_allowance_s=86400) and good
+        for name, contents, diagnostic in (
+            ("header", b"INVALID!" + data[8:], "OPERATOR_BINARY_OPEN"),
+            ("truncated", data[:-1], "OPERATOR_EXTRA_REQUEST"),
+            ("extra", data + data[8:36], "OPERATOR_MISSING_REQUESTS"),
+            ("address", data[:12] + (15).to_bytes(4, "little") + data[16:],
+             "OPERATOR_ARCHITECTURAL_ADDRESS"),
+        ):
+            mutant = ev.path / (name + ".bin")
+            mutant.write_bytes(gzip.compress(contents, mtime=0))
+            argv = [arg if not arg.startswith("+oracle_binary=") else
+                    "+oracle_binary=" + str(mutant.relative_to(verify.ROOT))
+                    for arg in binary_run["argv"]]
+            argv = [arg if not arg.startswith("+trace=") else
+                    "+trace=" + str((ev.path / (name + ".trace")).relative_to(verify.ROOT))
+                    for arg in argv]
+            success = ev.run("input-defect-" + name, argv, timeout=86400)
+            record = ev.receipt["records"][-1]
+            output = (verify.ROOT / record["stdout"]).read_text()
+            good = ev.assertion(
+                "input_defect_" + name,
+                not success and record["exit_code"] is not None and
+                not record["timed_out"] and diagnostic in output,
+                diagnostic=diagnostic) and good
+    return good
+
+
+def production_reference_check(ev):
+    class HashWriter:
+        def __init__(self):
+            self.hash = hashlib.sha256()
+
+        def write(self, text):
+            self.hash.update(text.encode())
+
+    observations = []
+    for reuse in (False, True):
+        stream = HashWriter()
+
+        def generate():
+            model = operators.OperatorReference(operators.PRODUCTION, 1, 17, stream)
+            model.execute_operator("gemv", 4, 0, 23)
+            return model
+
+        with ev.profile("production-reference-" + ("cached" if reuse else "uncached")):
+            if reuse:
+                model = generate()
+            else:
+                with uncached():
+                    model = generate()
+        observations.append({
+            "request_sha256": stream.hash.hexdigest(), "requests": model.count,
+            "reference_sha256": hashlib.sha256(
+                json.dumps(model.expected_writes).encode()).hexdigest()})
+    return ev.assertion("production_exact_reference_and_request_identity",
+                        observations[0] == observations[1], observations=observations)
+
+
+def check(ev, production=False):
+    good = conversion_check(ev)
+    if production:
+        good = production_reference_check(ev) and good
+    return input_check(ev, production) and good
+
+
+def compare_runs(ev, paths):
+    prior, current = [verify.ROOT / path for path in paths]
+    receipts = [json.loads(path.read_text()) for path in (prior, current)]
+    dependencies = [str(path.relative_to(verify.ROOT))
+                    for folder in ("rtl", "anvil_q1_reference/rtl")
+                    for path in verify.ROOT.glob(folder + "/*.sv")]
+    dependencies += ["tests/" + name for name in (
+        "architecture.py", "numerical.py", "operators.py", "operator_tb.sv",
+        "operator_input.cpp")]
+    bound = all(receipts[0]["source_sha256"][name] ==
+                receipts[1]["source_sha256"][name] == verify.digest(verify.ROOT / name)
+                for name in dependencies)
+    names = ("gemv-selector4-mode1.requests.bin.gz",
+             "gemv-selector4-mode1-revised.trace",
+             "gemv-selector4-mode1-revised-reference.json")
+    identical = all(verify.digest(prior.parent / name) ==
+                    verify.digest(current.parent / name) for name in names)
+    for path in (prior, current):
+        ev.receipt.setdefault("data_sha256", {})[str(path.relative_to(verify.ROOT))] = verify.digest(path)
+        for name in names:
+            artifact = path.parent / name
+            ev.receipt["data_sha256"][str(artifact.relative_to(verify.ROOT))] = verify.digest(artifact)
+    return ev.assertion("optimized_and_original_source_bound_exact_results",
+                        bound and identical and all(r["status"] == "passed" for r in receipts),
+                        receipts=[str(path.relative_to(verify.ROOT)) for path in (prior, current)],
+                        identical_artifacts=list(names))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--production", action="store_true")
+    parser.add_argument("--input-only", action="store_true")
+    parser.add_argument("--compare", nargs=2, type=Path)
+    args = parser.parse_args()
+    ev = verify.Evidence("operator-performance")
+    good = False
+    try:
+        if args.compare:
+            good = compare_runs(ev, args.compare)
+        else:
+            good = ev.versions() and (
+                input_check(ev, args.production) if args.input_only else check(ev, args.production))
+    except (ValueError, KeyError, OSError, AssertionError) as error:
+        ev.assertion("repair_probe_exception", False, diagnostic=repr(error))
+    finally:
+        ev.finish("passed" if good else "failed")
+    print(json.dumps({"status": ev.receipt["status"],
+                      "receipt": str((ev.path / "receipt.json").relative_to(verify.ROOT))}))
+    return 0 if good else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

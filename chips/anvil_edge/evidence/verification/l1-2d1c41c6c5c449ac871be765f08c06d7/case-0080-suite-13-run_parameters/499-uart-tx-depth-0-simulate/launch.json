@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0080-suite-13-run_parameters/uart-tx-depth-0/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:24.131304+00:00",
+  "pid": 1142014,
+  "process_group": 1142014,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58725654528,
+    "available_inodes": 195605823,
+    "observed_utc": "2026-10-31T15:51:24.131385+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528396021760
+  }
+}

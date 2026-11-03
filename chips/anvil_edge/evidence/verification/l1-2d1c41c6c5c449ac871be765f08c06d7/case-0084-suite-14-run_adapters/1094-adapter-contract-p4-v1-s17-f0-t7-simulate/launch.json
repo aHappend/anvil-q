@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0084-suite-14-run_adapters/adapter-contract-p4-v1-s17-f0-t7/obj/simulation",
+    "+verification_seed=17"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T16:01:12.383049+00:00",
+  "pid": 1307315,
+  "process_group": 1307315,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 57572499456,
+    "available_inodes": 195586593,
+    "observed_utc": "2026-10-31T16:01:12.383202+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529549176832
+  }
+}

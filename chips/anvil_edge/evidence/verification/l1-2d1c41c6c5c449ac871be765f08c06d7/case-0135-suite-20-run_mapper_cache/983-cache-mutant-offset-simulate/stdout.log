@@ -1,0 +1,5 @@
+CACHE_MEASURE alternate-a0 964 96 1
+CACHE_MEASURE alternate-e0 146 12 1
+[11265000] %Fatal: compiled-bench.sv:105: Assertion failed in TOP.bench: CACHE_DATA_TUPLE expected=0000000000003c60 observed=0000000000003c64
+%Error: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0135-suite-20-run_mapper_cache/cache-mutant-offset/compiled-bench.sv:105: Verilog $stop
+Aborting...

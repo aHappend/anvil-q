@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/case-0008-metadata-manifest-1/metadata-manifest-s1-verilator-input/ddr.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:37:13.121026+00:00",
+  "pid": 1013202,
+  "process_group": 1013202,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61893296128,
+    "available_inodes": 195631350,
+    "observed_utc": "2026-10-31T15:37:13.121178+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525228380160
+  }
+}

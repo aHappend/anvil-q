@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-ranked-s1/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-normalized-special-s1-input/table_records.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-normalized-special-s1-input/input_words.hex",
+    "+verification_file2=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-normalized-special-s1-input/expected.hex",
+    "+verification_file3=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-normalized-special-s1-input/runtime_control.hex",
+    "+verification_file4=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-normalized-special-s1-input/runtime_config.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:49:50.385365+00:00",
+  "pid": 1108723,
+  "process_group": 1108723,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58891919360,
+    "available_inodes": 195611762,
+    "observed_utc": "2026-10-31T15:49:50.385432+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528229756928
+  }
+}

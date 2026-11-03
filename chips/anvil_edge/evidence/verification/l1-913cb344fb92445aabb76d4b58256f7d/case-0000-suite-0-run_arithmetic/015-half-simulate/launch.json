@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/half/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:44.327870+00:00",
+  "pid": 1005811,
+  "process_group": 1005811,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 62031187968,
+    "available_inodes": 195633118,
+    "observed_utc": "2026-10-31T15:36:44.328167+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525090488320
+  }
+}

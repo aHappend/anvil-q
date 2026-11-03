@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1/obj/simulation",
+    "+verification_seed=1",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1-embedding-positive-inf-input/initial_records.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1-embedding-positive-inf-input/expected.hex",
+    "+verification_file2=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1-embedding-positive-inf-input/expected_logits.hex",
+    "+verification_file3=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1-embedding-positive-inf-input/token_words.hex",
+    "+verification_file4=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h8-l1-s1-embedding-positive-inf-input/fault_config.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:56:14.225228+00:00",
+  "pid": 1219973,
+  "process_group": 1219973,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58072993792,
+    "available_inodes": 195594815,
+    "observed_utc": "2026-10-31T15:56:14.225339+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529048682496
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "./.venv/bin/python",
+    "tests/official.py",
+    "reference",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0017-run_official_checkpoint"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:38:33.869449+00:00",
+  "pid": 1024012,
+  "process_group": 1024012,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61877895168,
+    "available_inodes": 195629459,
+    "observed_utc": "2026-10-31T15:38:33.869839+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525243781120
+  }
+}

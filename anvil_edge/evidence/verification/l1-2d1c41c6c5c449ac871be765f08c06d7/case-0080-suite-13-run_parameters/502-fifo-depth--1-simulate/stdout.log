@@ -1,0 +1,2 @@
+FATAL: rtl/anvil_edge_fifo.sv:16: ANVIL_EDGE_FIFO PARAMETER ERROR: WIDTH and DEPTH must be positive
+       Time: 0  Scope: bench.dut.invalid_parameters

@@ -1,0 +1,4 @@
+BOOT_TRANSACTIONS writes=0 reads=0 acknowledgements=0
+COMPARED 1
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/boot-v262145-s17-valid/compiled-bench.sv:226: Verilog $finish
+EXPLICIT_CLOCK edges=3057 time_ps=15286000

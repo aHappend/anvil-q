@@ -1,0 +1,74 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0000-suite-0-run_arithmetic/multiply-w8-s89/simulation.vvp",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0000-suite-0-run_arithmetic/multiply-w8-s89/bench.sv"
+  ],
+  "child_settled": true,
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 58976538624,
+    "peak_object_allocated_bytes": 0,
+    "sample_interval_s": 0.25,
+    "samples": 1
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 58976575488,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 8254390272,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 7985954816,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 0.052480929996818304,
+  "end_utc": "2026-10-31T15:48:15.136961+00:00",
+  "exit_code": 0,
+  "index": 165,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 2.7542002499103546e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 7.176422514021397e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 59392,
+    "output_blocks": 416,
+    "system_cpu_s": 0.015455,
+    "user_cpu_s": 0.036382
+  },
+  "start_utc": "2026-10-31T15:48:15.082951+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0000-suite-0-run_arithmetic/165-multiply-w8-s89-compile/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0000-suite-0-run_arithmetic/165-multiply-w8-s89-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 58976342016,
+    "available_inodes": 195613633,
+    "observed_utc": "2026-10-31T15:48:15.137087+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528145334272
+  },
+  "storage_before": {
+    "available_bytes": 58976571392,
+    "available_inodes": 195613636,
+    "observed_utc": "2026-10-31T15:48:15.083307+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528145104896
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

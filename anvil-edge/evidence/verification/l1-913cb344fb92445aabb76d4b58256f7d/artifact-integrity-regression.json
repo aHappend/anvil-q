@@ -1,0 +1,8 @@
+{
+  "corrupt_asset_rejected": "Local immutable Qwen asset length/hash mismatch: tests/data/qwen-LICENSE",
+  "corrupt_copy_sha256": "50c16cd3feb260fcb1cd8fa6b7506de944b0e14229826d7d898ea195733e2162",
+  "exclusive_write_rejected": true,
+  "earlier_artifacts_unchanged": {
+    "qwen-asset-validation.json": "2e817d0e0a88f3aa714b54d87b620b1791197a499b19ce27038769249e8dd53b"
+  }
+}

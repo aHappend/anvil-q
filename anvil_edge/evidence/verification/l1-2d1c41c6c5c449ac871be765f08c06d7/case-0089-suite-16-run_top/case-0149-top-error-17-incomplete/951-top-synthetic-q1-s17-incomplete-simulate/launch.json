@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0141-top-error-1-incomplete/top-synthetic-q1-s1-incomplete/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0149-top-error-17-incomplete/top-synthetic-q1-s17-incomplete-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:58:21.103657+00:00",
+  "pid": 1268678,
+  "process_group": 1268678,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 57886834688,
+    "available_inodes": 195591725,
+    "observed_utc": "2026-10-31T15:58:21.103784+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529234841600
+  }
+}

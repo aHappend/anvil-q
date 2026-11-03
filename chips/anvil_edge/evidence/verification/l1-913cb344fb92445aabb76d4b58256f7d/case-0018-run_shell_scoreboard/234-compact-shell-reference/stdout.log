@@ -1,0 +1,1 @@
+QWEN_SHELL_REFERENCE prompts=2 max_new_tokens=8 active=257 capacity=257 compact=True

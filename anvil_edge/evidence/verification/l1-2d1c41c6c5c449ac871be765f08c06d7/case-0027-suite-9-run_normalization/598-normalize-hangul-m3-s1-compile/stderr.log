@@ -1,0 +1,33 @@
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:64:53: Operator OR expects 32 bits on the RHS, but RHS's CONST '1'h1' generates 1 bits.
+                                                              : ... note: In instance 'bench.dut.normalizer.hangul_divider'
+   64 |               quotient_work <= (quotient_work << 1) | 1'b1;
+      |                                                     ^
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHEXPAND: rtl/anvil_edge_unsigned_divider.sv:69:28: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'iterations' generates 6 bits.
+                                                              : ... note: In instance 'bench.dut.normalizer.hangul_divider'
+   69 |             if (iterations == WIDTH-1) state <= PUBLISH;
+      |                            ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_table_record_reader.sv:102:25: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'word_index' generates 1 bits.
+                                                                  : ... note: In instance 'bench.dut.normalizer.scalar_pool'
+  102 |           if (word_index==RECORD_WORDS-1) state<=RETURN;
+      |                         ^~
+%Warning-WIDTHEXPAND: rtl/anvil_edge_table_record_reader.sv:102:25: Operator EQ expects 32 bits on the LHS, but LHS's VARREF 'word_index' generates 2 bits.
+                                                                  : ... note: In instance 'bench.dut.normalizer.classification.record_reader'
+  102 |           if (word_index==RECORD_WORDS-1) state<=RETURN;
+      |                         ^~
+%Warning-WIDTHTRUNC: rtl/anvil_edge_numeric_pkg.sv:16:18: Operator ASSIGN expects 128 bits on the Assign RHS, but Assign RHS's COND generates 129 bits.
+                                                        : ... note: In instance 'bench'
+   16 |       round_shift=x<0 ? -$signed(magnitude) : $signed(magnitude);
+      |                  ^
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-hangul-m3-s1/compiled-bench.sv:191:64: Operator ADD expects 32 bits on the RHS, but RHS's SEL generates 3 bits.
+                                                                                                                                                                   : ... note: In instance 'bench'
+  191 |         pending_addr=tbl_req_addr; outstanding=1; delay_count=1+rng[4:2];
+      |                                                                ^
+%Warning-MULTIDRIVEN: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-hangul-m3-s1/compiled-bench.sv:13:23: Signal has multiple driving blocks with different clocking: 'bench.tbl_rsp_valid'
+                      evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-hangul-m3-s1/compiled-bench.sv:186:47: ... Location of first driving block
+  186 |         outstanding=0; responses=responses+1; tbl_rsp_valid<=0;
+      |                                               ^~~~~~~~~~~~~
+                      evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-hangul-m3-s1/compiled-bench.sv:160:11: ... Location of other driving block
+  160 |           tbl_rsp_valid<=1; tbl_rsp_data=memory(pending_addr);
+      |           ^~~~~~~~~~~~~

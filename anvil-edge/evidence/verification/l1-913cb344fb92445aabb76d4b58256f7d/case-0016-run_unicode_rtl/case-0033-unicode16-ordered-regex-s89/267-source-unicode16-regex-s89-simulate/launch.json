@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0031-unicode16-ordered-regex-s1/source-unicode16-regex-s1/obj/simulation",
+    "+verification_seed=89",
+    "+verification_file0=evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0033-unicode16-ordered-regex-s89/source-unicode16-regex-s89-table.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:39:31.861838+00:00",
+  "pid": 1035268,
+  "process_group": 1035268,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61676023808,
+    "available_inodes": 195626081,
+    "observed_utc": "2026-10-31T15:39:31.861968+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525445652480
+  }
+}

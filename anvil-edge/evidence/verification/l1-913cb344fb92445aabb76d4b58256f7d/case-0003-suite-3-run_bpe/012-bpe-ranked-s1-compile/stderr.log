@@ -1,0 +1,17 @@
+%Warning-WIDTHEXPAND: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-ranked-s1/compiled-bench.sv:52:53: Operator NEQCASE expects 112 bits on the RHS, but RHS's CONST '90'h0' generates 90 bits.
+                                                                                                                                               : ... note: In instance 'bench'
+   52 |            tbl_req_valid,tbl_req_addr,tbl_rsp_ready}!==90'd0)
+      |                                                     ^~~
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHEXPAND: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-ranked-s1/compiled-bench.sv:94:64: Operator ADD expects 32 bits on the RHS, but RHS's SEL generates 3 bits.
+                                                                                                                                               : ... note: In instance 'bench'
+   94 |         pending_addr=tbl_req_addr; outstanding=1; delay_count=1+rng[4:2];
+      |                                                                ^
+%Warning-MULTIDRIVEN: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-ranked-s1/compiled-bench.sv:13:23: Signal has multiple driving blocks with different clocking: 'bench.tbl_rsp_valid'
+                      evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-ranked-s1/compiled-bench.sv:87:47: ... Location of first driving block
+   87 |         outstanding=0; responses=responses+1; tbl_rsp_valid<=0;
+      |                                               ^~~~~~~~~~~~~
+                      evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-ranked-s1/compiled-bench.sv:64:11: ... Location of other driving block
+   64 |           tbl_rsp_valid<=1; tbl_rsp_data=memory(pending_addr);
+      |           ^~~~~~~~~~~~~

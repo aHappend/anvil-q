@@ -1,0 +1,135 @@
+QWEN_SHELL_START transport=0 cycles=22
+QWEN_SHELL_BOOT_SEGMENT segment=0 cycles=16618
+QWEN_SHELL_BOOT_SEGMENT segment=1 cycles=43400
+QWEN_SHELL_BOOT_SEGMENT segment=2 cycles=229750
+QWEN_SHELL_BOOT_SEGMENT segment=3 cycles=307755
+QWEN_SHELL_BOOT_SEGMENT segment=4 cycles=310018
+QWEN_SHELL_BOOT_SEGMENT segment=5 cycles=380656
+QWEN_SHELL_BOOT_SEGMENT segment=6 cycles=385683
+QWEN_SHELL_BOOT_SEGMENT segment=7 cycles=403738
+QWEN_SHELL_BOOT_SEGMENT segment=8 cycles=404635
+QWEN_SHELL_BOOT_SEGMENT segment=9 cycles=405535
+QWEN_SHELL_BOOT_SEGMENT segment=10 cycles=406160
+QWEN_SHELL_BOOT_SEGMENT segment=11 cycles=407330
+QWEN_SHELL_BOOT_SEGMENT segment=12 cycles=408775
+QWEN_SHELL_BOOT_SEGMENT segment=13 cycles=411033
+QWEN_SHELL_BOOT_SEGMENT segment=14 cycles=411661
+QWEN_SHELL_BOOT_SEGMENT segment=15 cycles=412563
+QWEN_SHELL_BOOT_SEGMENT segment=16 cycles=413463
+QWEN_SHELL_BOOT_SEGMENT segment=17 cycles=414089
+QWEN_SHELL_BOOT_SEGMENT segment=18 cycles=414717
+QWEN_SHELL_BOOT_SEGMENT segment=19 cycles=415344
+QWEN_SHELL_BOOT writes=5848 reads=23600 acknowledgements=29448 cycles=610744
+QWEN_SHELL_PHASE phase=input_begin frame=0 cycles=610744
+QWEN_SHELL_PHASE phase=input_sent frame=0 cycles=610945
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=0 cycles=616710
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=0 cycles=691580
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=0 cycles=751428
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=1 cycles=751467
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=1 cycles=854018
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=1 cycles=913850
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=2 cycles=913899
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=2 cycles=1043740
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=2 cycles=1103574
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=3 cycles=1103624
+QWEN_SHELL_PHASE phase=output_progress frame=0 bytes=1 cycles=1103728
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=3 cycles=1261502
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=3 cycles=1321514
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=4 cycles=1321559
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=4 cycles=1506608
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=4 cycles=1566466
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=5 cycles=1566514
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=5 cycles=1779575
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=5 cycles=1839466
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=6 cycles=1839512
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=6 cycles=2075604
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=6 cycles=2135474
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=7 cycles=2135521
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=7 cycles=2399431
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=7 cycles=2459345
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=8 cycles=2459393
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=8 cycles=2750723
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=8 cycles=2810652
+QWEN_SHELL_PHASE phase=output_progress frame=0 bytes=8 cycles=2810850
+QWEN_SHELL_COMPLETION frame=0 cycles=2810851
+QWEN_SHELL_OPERATION frame=0 position=0 token=256 cycles=616710
+QWEN_SHELL_OPERATION frame=0 position=1 token=67 cycles=751467
+QWEN_SHELL_OPERATION frame=0 position=2 token=3 cycles=913899
+QWEN_SHELL_OPERATION frame=0 position=3 token=3 cycles=1103624
+QWEN_SHELL_OPERATION frame=0 position=4 token=3 cycles=1321559
+QWEN_SHELL_OPERATION frame=0 position=5 token=3 cycles=1566514
+QWEN_SHELL_OPERATION frame=0 position=6 token=3 cycles=1839512
+QWEN_SHELL_OPERATION frame=0 position=7 token=3 cycles=2135521
+QWEN_SHELL_OPERATION frame=0 position=8 token=3 cycles=2459393
+QWEN_SHELL_FRAME frame=0 transport=0 prompt_bytes=3 operations=9 output_bytes=8 embedding_reads=18576 activation_writes=1368 cycles=2810871
+QWEN_SHELL_BOOT_SEGMENT segment=0 cycles=2827467
+QWEN_SHELL_BOOT_SEGMENT segment=1 cycles=2854244
+QWEN_SHELL_BOOT_SEGMENT segment=2 cycles=3040605
+QWEN_SHELL_BOOT_SEGMENT segment=3 cycles=3118610
+QWEN_SHELL_BOOT_SEGMENT segment=4 cycles=3120870
+QWEN_SHELL_BOOT_SEGMENT segment=5 cycles=3191501
+QWEN_SHELL_BOOT_SEGMENT segment=6 cycles=3196519
+QWEN_SHELL_BOOT_SEGMENT segment=7 cycles=3214586
+QWEN_SHELL_BOOT_SEGMENT segment=8 cycles=3215486
+QWEN_SHELL_BOOT_SEGMENT segment=9 cycles=3216384
+QWEN_SHELL_BOOT_SEGMENT segment=10 cycles=3217011
+QWEN_SHELL_BOOT_SEGMENT segment=11 cycles=3218186
+QWEN_SHELL_BOOT_SEGMENT segment=12 cycles=3219629
+QWEN_SHELL_BOOT_SEGMENT segment=13 cycles=3221891
+QWEN_SHELL_BOOT_SEGMENT segment=14 cycles=3222518
+QWEN_SHELL_BOOT_SEGMENT segment=15 cycles=3223415
+QWEN_SHELL_BOOT_SEGMENT segment=16 cycles=3224316
+QWEN_SHELL_BOOT_SEGMENT segment=17 cycles=3224943
+QWEN_SHELL_BOOT_SEGMENT segment=18 cycles=3225569
+QWEN_SHELL_BOOT_SEGMENT segment=19 cycles=3226194
+QWEN_SHELL_BOOT writes=5848 reads=23600 acknowledgements=29448 cycles=3421864
+QWEN_SHELL_PHASE phase=input_begin frame=1 cycles=3421864
+QWEN_SHELL_PHASE phase=input_sent frame=1 cycles=3422115
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=0 cycles=3429633
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=0 cycles=3504746
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=0 cycles=3564510
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=1 cycles=3564549
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=1 cycles=3666989
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=1 cycles=3726787
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=2 cycles=3726826
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=2 cycles=3856890
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=2 cycles=3916732
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=3 cycles=3916782
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=3 cycles=4074506
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=3 cycles=4134382
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=4 cycles=4134426
+QWEN_SHELL_PHASE phase=output_progress frame=1 bytes=1 cycles=4134531
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=4 cycles=4319500
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=4 cycles=4379339
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=5 cycles=4379383
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=5 cycles=4591902
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=5 cycles=4651711
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=6 cycles=4651759
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=6 cycles=4891986
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=6 cycles=4951803
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=7 cycles=4951850
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=7 cycles=5215557
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=7 cycles=5275483
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=8 cycles=5275528
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=8 cycles=5566853
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=8 cycles=5626761
+QWEN_SHELL_PHASE phase=core_begin frame=1 operation=9 cycles=5626807
+QWEN_SHELL_PHASE phase=head_begin frame=1 operation=9 cycles=5945836
+QWEN_SHELL_PHASE phase=head_ack frame=1 operation=9 cycles=6005682
+QWEN_SHELL_PHASE phase=output_progress frame=1 bytes=8 cycles=6005880
+QWEN_SHELL_COMPLETION frame=1 cycles=6005881
+QWEN_SHELL_OPERATION frame=1 position=0 token=256 cycles=3429633
+QWEN_SHELL_OPERATION frame=1 position=1 token=67 cycles=3564549
+QWEN_SHELL_OPERATION frame=1 position=2 token=68 cycles=3726826
+QWEN_SHELL_OPERATION frame=1 position=3 token=4 cycles=3916782
+QWEN_SHELL_OPERATION frame=1 position=4 token=4 cycles=4134426
+QWEN_SHELL_OPERATION frame=1 position=5 token=4 cycles=4379383
+QWEN_SHELL_OPERATION frame=1 position=6 token=4 cycles=4651759
+QWEN_SHELL_OPERATION frame=1 position=7 token=4 cycles=4951850
+QWEN_SHELL_OPERATION frame=1 position=8 token=4 cycles=5275528
+QWEN_SHELL_OPERATION frame=1 position=9 token=4 cycles=5626807
+QWEN_SHELL_FRAME frame=1 transport=0 prompt_bytes=4 operations=10 output_bytes=8 embedding_reads=20640 activation_writes=1520 cycles=6005901
+QWEN_SHELL_COUNTS frames=2 reloads=1 request_stalls=140336 output_stalls=0
+COMPARED 420672
+- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/compiled-bench.sv:575: Verilog $finish
+EXPLICIT_CLOCK edges=12011801 time_ps=60059006000

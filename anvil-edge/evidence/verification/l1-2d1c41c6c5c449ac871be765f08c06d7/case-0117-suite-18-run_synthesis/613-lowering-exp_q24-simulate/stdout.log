@@ -1,0 +1,2 @@
+COMPARED 80
+evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0117-suite-18-run_synthesis/lowering-exp_q24/bench.sv:49: $finish called at 15961 (1s)

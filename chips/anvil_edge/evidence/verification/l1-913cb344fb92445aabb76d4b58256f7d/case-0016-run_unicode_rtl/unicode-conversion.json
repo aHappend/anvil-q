@@ -1,0 +1,158 @@
+{
+  "scope": "Offline candidate dependency source-to-table conversion and public-interface component comparisons; not executed official tokenizers, a bootable image, official-profile equivalence, or model inference",
+  "release_lock_packages": {
+    "onig": {
+      "name": "onig",
+      "version": "6.5.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "336b9c63443aceef14bea841b899035ae3abe89b7c486aaf4c5bd8aafedac3f0",
+      "dependencies": [
+        "bitflags",
+        "libc",
+        "once_cell",
+        "onig_sys"
+      ]
+    },
+    "onig_sys": {
+      "name": "onig_sys",
+      "version": "69.9.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "c7f86c6eef3d6df15f23bcfb6af487cbd2fed4e5581d58d5bf1f5f8b7f6727dc",
+      "dependencies": [
+        "cc",
+        "pkg-config"
+      ]
+    },
+    "tokenizers": {
+      "name": "tokenizers",
+      "version": "0.21.4",
+      "dependencies": [
+        "ahash",
+        "aho-corasick",
+        "assert_approx_eq",
+        "compact_str",
+        "criterion",
+        "dary_heap",
+        "derive_builder",
+        "esaxx-rs",
+        "fancy-regex",
+        "getrandom 0.3.3",
+        "hf-hub",
+        "indicatif",
+        "itertools 0.14.0",
+        "log",
+        "macro_rules_attribute",
+        "monostate",
+        "onig",
+        "paste",
+        "rand",
+        "rayon",
+        "rayon-cond",
+        "regex",
+        "regex-syntax",
+        "serde",
+        "serde_json",
+        "spm_precompiled",
+        "tempfile",
+        "thiserror",
+        "tracing",
+        "tracing-subscriber",
+        "unicode-normalization-alignments",
+        "unicode-segmentation",
+        "unicode_categories"
+      ]
+    },
+    "unicode-normalization-alignments": {
+      "name": "unicode-normalization-alignments",
+      "version": "0.1.12",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "43f613e4fa046e69818dd287fdc4bc78175ff20331479dab6e1b0f98d57062de",
+      "dependencies": [
+        "smallvec"
+      ]
+    }
+  },
+  "official_build_identity": "unconfirmed; no official tokenizer library executed",
+  "official_reference_comparisons": 0,
+  "regex_unicode_version": [
+    16,
+    0,
+    0
+  ],
+  "normalization_unicode_version": [
+    9,
+    0,
+    0
+  ],
+  "metadata_emitted": false,
+  "bootable_image": false,
+  "normalization_table_modes": [
+    "NFC",
+    "NFD"
+  ],
+  "scalar_comparisons": 1112064,
+  "normalization_conformance_rows": 18722,
+  "normalization_conformance_comparisons": 374440,
+  "casefold_mappings": 1557,
+  "range_records": 2292,
+  "decomposition_records": 2060,
+  "scalar_pool_records": 3404,
+  "composition_records": 940,
+  "literal_long_s_class": 0,
+  "source_locations": {
+    "normalization": {
+      "archive": "tests/data/unicode-normalization-alignments-0.1.12.crate",
+      "member": "src/tables.rs",
+      "version_line": 18,
+      "lookup_member": "src/lookups.rs",
+      "algorithm_member": "src/normalize.rs"
+    },
+    "regex": {
+      "archive": "tests/data/onig_sys-69.9.1.crate",
+      "member": "oniguruma/src/unicode_property_data.c",
+      "letter_range_line": 16476,
+      "fold_member": "oniguruma/src/unicode_fold_data.c",
+      "fold_algorithm_member": "oniguruma/src/unicode.c"
+    }
+  },
+  "version_witnesses": {
+    "classification": {
+      "scalar": "U+1C89",
+      "unicode9": "Cn / not Letter",
+      "candidate_oniguruma_and_ucd16": "Lu / Letter",
+      "ucd16_source_line": "1C89;CYRILLIC CAPITAL LETTER TJE;Lu;0;L;;;;;N;;;;1C8A;"
+    },
+    "normalization": {
+      "input_scalars": [
+        71989,
+        71984
+      ],
+      "candidate_unicode9_nfc": [
+        71989,
+        71984
+      ],
+      "ucd16_nfc": [
+        71992
+      ],
+      "ucd16_source_line": "11938;DIVES AKURU VOWEL SIGN O;Mc;0;L;11935 11930;;;;N;;;;;",
+      "ucd16_composition_exclusion": false
+    },
+    "conclusion": "These pinned candidate dependencies have demonstrably different scalar semantics. No single-version profile is emitted. This does not identify an executed official build; official build identity and exact single-version representability remain acceptance blockers."
+  },
+  "table_hashes": {
+    "208": "4fa2e3ab2a827f0c2e19c0f4855b9c06b4e7a391eb32f194470ea5cdeac04621",
+    "209": "809ff22cc76d141d48e69d0193438b57b2a8ec01b340611d576deab81b6d0732",
+    "20b": "04a8a4af763e524807aa71105f8f99a086614fffb75891f08edf144cbf918a1f",
+    "20c": "706f8983dda1082bca20209164a22619050d82eb7c9a53ca9459941d6382926e",
+    "207": "c564cf2a39a060357aa06cae8a2c13f1034be5c953be26b850614532a6798f92",
+    "20d": "b9726c9a64afce1e94edc0bdd646a38877efbb792c649d807cc349711e26df4f",
+    "20e": "9df0fd71cec02f780bfb731620a3141f8b8934fcd579b8835538819361a01406",
+    "20f": "1ed287777887276e83d5f07793700088d34411796d697de22c36676be1321a77"
+  },
+  "missing": [
+    "Executed official tokenizer build and complete official token vectors",
+    "Independently reviewed resolution of single-version metadata versus candidate dependencies",
+    "Complete official-profile boot/image integrations for all three families",
+    "Real weighted default-geometry benchmarks and native timing/physical-board acceptance"
+  ]
+}

@@ -1,0 +1,371 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-11-03T10:11:52.744317+00:00",
+  "project_dir": "/data/sufeng/anvil-d1-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "passed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-d1-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
+    "errors": [],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 0.24,
+    "wns_hold_ns": 0.037,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [
+      {
+        "slack_ns": 0.24,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.SEQUENCE_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.24,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.SEQUENCE_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.25,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.SEQUENCE_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.25,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.SEQUENCE_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.283,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.283,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.293,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.293,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.379,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.379,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.409,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|draining|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.409,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|draining|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.489,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.SEQUENCE_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[28]"
+      },
+      {
+        "slack_ns": 0.489,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.SEQUENCE_FLUSH",
+        "to_node": "anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|clients[2].response_data[20]"
+      },
+      {
+        "slack_ns": 0.501,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.CANCEL_COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|state.PROJECT"
+      },
+      {
+        "slack_ns": 0.505,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.CANCEL_COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|state.OUTPUT_PROJECT"
+      },
+      {
+        "slack_ns": 0.509,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.CANCEL_COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|state.PROJECT"
+      },
+      {
+        "slack_ns": 0.513,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|state.PROJECT"
+      },
+      {
+        "slack_ns": 0.513,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.CANCEL_COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|state.OUTPUT_PROJECT"
+      },
+      {
+        "slack_ns": 0.517,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|state.OUTPUT_PROJECT"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.037,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_rmsnorm:native.final_normalization",
+        "to_node": "anvil_d1_add128:adder|valid|anvil_d1_rmsnorm:native.final_normalization|anvil_d1_add128:adder|valid"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.MULTIPLY|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.MULTIPLY"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[19][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[19][2]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[16][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[16][2]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_rmsnorm:native.final_normalization",
+        "to_node": "anvil_d1_mem_port:memory_port|state.REQUEST|anvil_d1_rmsnorm:native.final_normalization|anvil_d1_mem_port:memory_port|state.REQUEST"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_rmsnorm:normalization|anvil_d1_add128:adder|partial[63]|anvil_d1_decoder_layer:native.decoder|anvil_d1_rmsnorm:normalization|anvil_d1_add128:adder|partial[63]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_add128:adder|valid|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_add128:adder|valid"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.INPUT_RESPONSE|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.INPUT_RESPONSE"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.INPUT_READ|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.INPUT_READ"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_rope:rotary|anvil_d1_mem_port:memory_port|state.RESPONSE|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_rope:rotary|anvil_d1_mem_port:memory_port|state.RESPONSE"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[1][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[1][2]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_rmsnorm:normalization|anvil_d1_add128:adder|carry|anvil_d1_decoder_layer:native.decoder|anvil_d1_rmsnorm:normalization|anvil_d1_add128:adder|carry"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_mem_port:memory_port|state.IDLE|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_mem_port:memory_port|state.IDLE"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_accumulator:score_accumulator|anvil_d1_add128:add|stage[1]|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_accumulator:score_accumulator|anvil_d1_add128:add|stage[1]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_accumulator:score_accumulator|anvil_d1_add128:add|partial[63]|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_accumulator:score_accumulator|anvil_d1_add128:add|partial[63]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.WEIGHT_RESPONSE|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|state.WEIGHT_RESPONSE"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "failed|anvil_d1_decoder_layer:native.decoder|failed"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_csr_perf:performance",
+        "to_node": "anvil_d1_counter64:global_counters[3].counter|overflow_sticky|anvil_d1_csr_perf:performance|anvil_d1_counter64:global_counters[3].counter|overflow_sticky"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_csr_perf:performance",
+        "to_node": "anvil_d1_counter64:domains[1].counters[2].counter|overflow_sticky|anvil_d1_csr_perf:performance|anvil_d1_counter64:domains[1].counters[2].counter|overflow_sticky"
+      },
+      {
+        "slack_ns": 0.046,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_exp:exp|anvil_d1_sdiv:divider|result_q[64]|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_exp:exp|anvil_d1_sdiv:divider|result_q[64]"
+      }
+    ],
+    "stderr_tail": []
+  },
+  "detail": "Timing closed: Setup WNS = 0.240 ns",
+  "quartus_slot_telemetry": {
+    "slot_index": 5,
+    "max_slots": 6,
+    "slot_wait_s": 0.004
+  },
+  "top_module": "anvil_d1_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 102.46,
+  "critical_path_delay_ns": 9.76,
+  "fitter_resource_summary": {
+    "alms_used": 38656,
+    "alms_total": 427200,
+    "alms_pct": "9 %",
+    "total_registers": 55797,
+    "block_memory_bits": 1886208,
+    "m20k_ram_blocks": 131,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 92,
+    "virtual_pins": 2634
+  },
+  "parameters": {
+    "MODEL_MODE": 0,
+    "NUM_LAYERS": 27,
+    "HIDDEN_SIZE": 2048,
+    "INTERMEDIATE_SIZE": 10944,
+    "NUM_Q_HEADS": 16,
+    "KV_LORA_RANK": 512,
+    "QK_NOPE_HEAD_DIM": 128,
+    "QK_ROPE_HEAD_DIM": 64,
+    "V_HEAD_DIM": 128,
+    "ROUTED_EXPERTS": 64,
+    "TOP_K": 6,
+    "SHARED_EXPERTS": 2,
+    "MOE_INTERMEDIATE_SIZE": 1408,
+    "FIRST_DENSE_LAYERS": 1,
+    "VOCAB_SIZE": 102400,
+    "MAX_SEQ_LEN": 32768,
+    "BANKS": 8,
+    "QUEUE_DEPTH": 3,
+    "TILE_K": 128,
+    "TILE_ROWS": 8
+  },
+  "source_sha256": "6d6fa1fb1a822c81b302e499e8ade98822b45c215c1e73e4fbee9c68dd5caae1",
+  "applicable": true
+}

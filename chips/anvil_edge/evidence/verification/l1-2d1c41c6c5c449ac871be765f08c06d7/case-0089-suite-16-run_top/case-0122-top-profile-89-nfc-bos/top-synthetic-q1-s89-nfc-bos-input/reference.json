@@ -1,0 +1,17 @@
+{
+  "scope": "synthetic zero-tensor real-Q1 integration, not official assets",
+  "raw_prompt_hex": "65cc81",
+  "input_fault": null,
+  "expected_error": 0,
+  "expected_prompt_tokens": [
+    254,
+    195,
+    169
+  ],
+  "expected_feedback_tokens": [
+    0
+  ],
+  "expected_output_hex": "0000",
+  "recovery_transaction": null,
+  "image_sha256": "a1da8f7f049e0b9b117ffb4ac06c0fe3ee92712ea95737027b46139d264239ab"
+}

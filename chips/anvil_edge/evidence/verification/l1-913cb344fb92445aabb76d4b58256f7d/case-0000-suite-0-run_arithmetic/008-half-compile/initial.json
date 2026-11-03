@@ -1,0 +1,358 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/half/simulation.vvp",
+    "rtl/anvil_edge_numeric_pkg.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/half/bench.sv"
+  ],
+  "child_settled": false,
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 62031577088,
+    "peak_object_allocated_bytes": 0,
+    "sample_interval_s": 0.25,
+    "samples": 0
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 62031581184,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 3690987520,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 3422552064,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "index": 8,
+  "queue_duration_s": 0.00045970710925757885,
+  "requested_timeout_s": 3600,
+  "source_manifest": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/launch.json",
+  "start_utc": "2026-10-31T15:36:44.261181+00:00",
+  "status": "launch pending; not an execution result",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/008-half-compile/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/008-half-compile/stdout.log",
+  "storage_before": {
+    "available_bytes": 62031577088,
+    "available_inodes": 195633165,
+    "observed_utc": "2026-10-31T15:36:44.261759+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525090099200
+  },
+  "timed_out": false,
+  "timeout_s": 3600,
+  "tool_versions": {
+    "g++": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "g++",
+        "--version"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.05503226304426789,
+      "end_utc": "2026-10-31T15:36:44.172993+00:00",
+      "exit_code": 0,
+      "index": 5,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 1.3485085219144821e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 3.360304981470108e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 32768,
+        "output_blocks": 8,
+        "system_cpu_s": 0.002526,
+        "user_cpu_s": 0.001263
+      },
+      "start_utc": "2026-10-31T15:36:44.114902+00:00",
+      "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/005-g++-version/stderr.log",
+      "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/005-g++-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 62032080896,
+        "available_inodes": 195633202,
+        "observed_utc": "2026-10-31T15:36:44.173477+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525089595392
+      },
+      "storage_before": {
+        "available_bytes": 62032863232,
+        "available_inodes": 195633273,
+        "observed_utc": "2026-10-31T15:36:44.115349+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525088813056
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    },
+    "iverilog": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "iverilog",
+        "-V"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.053024575812742114,
+      "end_utc": "2026-10-31T15:36:43.735673+00:00",
+      "exit_code": 0,
+      "index": 0,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 4.4312095269560814e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 5.2697956562042236e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 32768,
+        "output_blocks": 24,
+        "system_cpu_s": 0.014473999999999999,
+        "user_cpu_s": 0.001981
+      },
+      "start_utc": "2026-10-31T15:36:43.681939+00:00",
+      "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/000-iverilog-version/stderr.log",
+      "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/000-iverilog-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 62034497536,
+        "available_inodes": 195633336,
+        "observed_utc": "2026-10-31T15:36:43.735846+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087178752
+      },
+      "storage_before": {
+        "available_bytes": 62034509824,
+        "available_inodes": 195633340,
+        "observed_utc": "2026-10-31T15:36:43.682281+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087166464
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    },
+    "make": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "make",
+        "--version"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.0537124399561435,
+      "end_utc": "2026-10-31T15:36:44.230531+00:00",
+      "exit_code": 0,
+      "index": 6,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 1.3816170394420624e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 3.4534838050603867e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 32768,
+        "output_blocks": 8,
+        "system_cpu_s": 0.0031209999999999996,
+        "user_cpu_s": 0.00104
+      },
+      "start_utc": "2026-10-31T15:36:44.174663+00:00",
+      "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/006-make-version/stderr.log",
+      "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/006-make-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 62031904768,
+        "available_inodes": 195633179,
+        "observed_utc": "2026-10-31T15:36:44.230670+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525089771520
+      },
+      "storage_before": {
+        "available_bytes": 62032052224,
+        "available_inodes": 195633198,
+        "observed_utc": "2026-10-31T15:36:44.175290+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525089624064
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    },
+    "verilator": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "verilator",
+        "--version"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.13339801714755595,
+      "end_utc": "2026-10-31T15:36:44.102239+00:00",
+      "exit_code": 0,
+      "index": 4,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 1.5709083527326584e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 3.513507544994354e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 32768,
+        "output_blocks": 8,
+        "system_cpu_s": 0.027947999999999997,
+        "user_cpu_s": 0.083462
+      },
+      "start_utc": "2026-10-31T15:36:43.960368+00:00",
+      "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/004-verilator-version/stderr.log",
+      "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0007-suite-7-run_metadata/004-verilator-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 62032932864,
+        "available_inodes": 195633276,
+        "observed_utc": "2026-10-31T15:36:44.104139+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525088743424
+      },
+      "storage_before": {
+        "available_bytes": 62033694720,
+        "available_inodes": 195633291,
+        "observed_utc": "2026-10-31T15:36:43.962563+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087981568
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    },
+    "vvp": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "vvp",
+        "-V"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.05292651290073991,
+      "end_utc": "2026-10-31T15:36:43.790362+00:00",
+      "exit_code": 0,
+      "index": 1,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 2.046814188361168e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 3.7460122257471085e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 32768,
+        "output_blocks": 8,
+        "system_cpu_s": 0.005889,
+        "user_cpu_s": 0.001963
+      },
+      "start_utc": "2026-10-31T15:36:43.736646+00:00",
+      "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/001-vvp-version/stderr.log",
+      "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/001-vvp-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 62034477056,
+        "available_inodes": 195633330,
+        "observed_utc": "2026-10-31T15:36:43.790494+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087199232
+      },
+      "storage_before": {
+        "available_bytes": 62034489344,
+        "available_inodes": 195633334,
+        "observed_utc": "2026-10-31T15:36:43.737004+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087186944
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    },
+    "yosys": {
+      "aggregate_budget_s": null,
+      "argv": [
+        "yosys",
+        "-V"
+      ],
+      "child_settled": true,
+      "compiler_storage_reservation": null,
+      "cwd": ".",
+      "duration_s": 0.05288459500297904,
+      "end_utc": "2026-10-31T15:36:43.844974+00:00",
+      "exit_code": 0,
+      "index": 2,
+      "process_group_settled": true,
+      "process_group_settlement": {
+        "duration_s": 1.3415003195405006e-05,
+        "samples": 1,
+        "settled": true,
+        "sigkill_sent": false,
+        "timeout_s": 10
+      },
+      "queue_duration_s": 3.396300598978996e-05,
+      "requested_timeout_s": 3600,
+      "resources": {
+        "input_blocks": 0,
+        "major_page_faults": 0,
+        "max_rss_kib": 32768,
+        "output_blocks": 8,
+        "system_cpu_s": 0.007311,
+        "user_cpu_s": 0.003133
+      },
+      "start_utc": "2026-10-31T15:36:43.791141+00:00",
+      "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/002-yosys-version/stderr.log",
+      "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/002-yosys-version/stdout.log",
+      "storage_after": {
+        "available_bytes": 62034452480,
+        "available_inodes": 195633324,
+        "observed_utc": "2026-10-31T15:36:43.845047+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087223808
+      },
+      "storage_before": {
+        "available_bytes": 62034468864,
+        "available_inodes": 195633328,
+        "observed_utc": "2026-10-31T15:36:43.791494+00:00",
+        "total_bytes": 3779169468416,
+        "used_bytes": 3525087207424
+      },
+      "timed_out": false,
+      "timeout_s": 3600
+    }
+  }
+}

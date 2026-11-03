@@ -1,0 +1,59 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/boot-v151936-s17-valid/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/boot-v151936-s17-valid-input/flash.hex",
+    "+verification_file1=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/boot-v151936-s17-valid-input/address.hex",
+    "+verification_file2=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/boot-v151936-s17-valid-input/data.hex",
+    "+verification_file3=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/boot-v151936-s17-valid-input/strobe.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 227.4089084409643,
+  "end_utc": "2026-10-31T15:56:48.567668+00:00",
+  "exit_code": 0,
+  "index": 577,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.7822952941060066e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 21.07863692403771,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.154994,
+    "user_cpu_s": 227.232224
+  },
+  "start_utc": "2026-10-31T15:53:01.155706+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/577-boot-v151936-s17-valid-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0087-large-image-151936/577-boot-v151936-s17-valid-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 58010574848,
+    "available_inodes": 195593766,
+    "observed_utc": "2026-10-31T15:56:48.567765+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529111101440
+  },
+  "storage_before": {
+    "available_bytes": 58253991936,
+    "available_inodes": 195604401,
+    "observed_utc": "2026-10-31T15:53:01.156284+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528867684352
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

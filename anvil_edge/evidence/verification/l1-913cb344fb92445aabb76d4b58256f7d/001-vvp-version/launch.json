@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "-V"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:43.739914+00:00",
+  "pid": 1005751,
+  "process_group": 1005751,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 62034485248,
+    "available_inodes": 195633331,
+    "observed_utc": "2026-10-31T15:36:43.739979+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525087191040
+  }
+}

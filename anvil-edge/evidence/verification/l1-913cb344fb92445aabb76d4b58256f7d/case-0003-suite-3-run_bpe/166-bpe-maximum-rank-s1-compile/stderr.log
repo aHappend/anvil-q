@@ -1,0 +1,17 @@
+%Warning-WIDTHEXPAND: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/compiled-bench.sv:44:53: Operator NEQCASE expects 112 bits on the RHS, but RHS's CONST '90'h0' generates 90 bits.
+                                                                                                                                                     : ... note: In instance 'bench'
+   44 |            tbl_req_valid,tbl_req_addr,tbl_rsp_ready}!==90'd0)
+      |                                                     ^~~
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHEXPAND: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/compiled-bench.sv:86:64: Operator ADD expects 32 bits on the RHS, but RHS's SEL generates 3 bits.
+                                                                                                                                                     : ... note: In instance 'bench'
+   86 |         pending_addr=tbl_req_addr; outstanding=1; delay_count=1+rng[4:2];
+      |                                                                ^
+%Warning-MULTIDRIVEN: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/compiled-bench.sv:13:23: Signal has multiple driving blocks with different clocking: 'bench.tbl_rsp_valid'
+                      evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/compiled-bench.sv:79:47: ... Location of first driving block
+   79 |         outstanding=0; responses=responses+1; tbl_rsp_valid<=0;
+      |                                               ^~~~~~~~~~~~~
+                      evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/compiled-bench.sv:56:11: ... Location of other driving block
+   56 |           tbl_rsp_valid<=1; tbl_rsp_data=memory(pending_addr);
+      |           ^~~~~~~~~~~~~

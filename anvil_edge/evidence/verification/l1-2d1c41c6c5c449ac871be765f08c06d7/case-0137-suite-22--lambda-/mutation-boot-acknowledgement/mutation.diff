@@ -1,0 +1,11 @@
+--- rtl/anvil_edge_image_loader.sv
++++ mutant/rtl/anvil_edge_image_loader.sv
+@@ -356,7 +356,7 @@
+           end
+           WRITE_REQUEST: if (ddr_req_valid && ddr_req_ready) state<=WRITE_RESPONSE;
+           WRITE_RESPONSE: if (ddr_rsp_valid && ddr_rsp_ready) begin
+-            if (ddr_rsp_error) begin code<=8'h04; state<=FAILED; end
++            if (1'b0) begin code<=8'h04; state<=FAILED; end
+             else if (payload_last_byte) state<=CRC_CHECK;
+             else begin
+               write_address<=write_address+64'd4;

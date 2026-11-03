@@ -1,0 +1,14 @@
+Analysis & Synthesis Status : Successful - Sat Oct 31 08:52:14 2026
+Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+Revision Name : top
+Top-level Entity Name : anvil_q1_top
+Family : Arria 10
+Logic utilization (in ALMs) : N/A
+Total registers : 8089
+Total pins : 0
+Total virtual pins : 310
+Total block memory bits : 0
+Total DSP Blocks : 8
+Total HSSI RX channels : 0
+Total HSSI TX channels : 0
+Total PLLs : 0

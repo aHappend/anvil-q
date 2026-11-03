@@ -1,0 +1,57 @@
+QWEN_SHELL_START transport=1 cycles=22
+QWEN_SHELL_BOOT_SEGMENT segment=0 cycles=16617
+QWEN_SHELL_BOOT_SEGMENT segment=1 cycles=43395
+QWEN_SHELL_BOOT_SEGMENT segment=2 cycles=229759
+QWEN_SHELL_BOOT_SEGMENT segment=3 cycles=307763
+QWEN_SHELL_BOOT_SEGMENT segment=4 cycles=310028
+QWEN_SHELL_BOOT_SEGMENT segment=5 cycles=380666
+QWEN_SHELL_BOOT_SEGMENT segment=6 cycles=385681
+QWEN_SHELL_BOOT_SEGMENT segment=7 cycles=403749
+QWEN_SHELL_BOOT_SEGMENT segment=8 cycles=404650
+QWEN_SHELL_BOOT_SEGMENT segment=9 cycles=405550
+QWEN_SHELL_BOOT_SEGMENT segment=10 cycles=406177
+QWEN_SHELL_BOOT_SEGMENT segment=11 cycles=407350
+QWEN_SHELL_BOOT_SEGMENT segment=12 cycles=408795
+QWEN_SHELL_BOOT_SEGMENT segment=13 cycles=411058
+QWEN_SHELL_BOOT_SEGMENT segment=14 cycles=411685
+QWEN_SHELL_BOOT_SEGMENT segment=15 cycles=412584
+QWEN_SHELL_BOOT_SEGMENT segment=16 cycles=413482
+QWEN_SHELL_BOOT_SEGMENT segment=17 cycles=414111
+QWEN_SHELL_BOOT_SEGMENT segment=18 cycles=414741
+QWEN_SHELL_BOOT_SEGMENT segment=19 cycles=415366
+QWEN_SHELL_BOOT writes=5848 reads=23600 acknowledgements=29448 cycles=610804
+QWEN_SHELL_PHASE phase=input_begin frame=0 cycles=610804
+QWEN_SHELL_PHASE phase=input_sent frame=0 cycles=610810
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=0 cycles=616552
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=0 cycles=691461
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=0 cycles=751339
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=1 cycles=751378
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=1 cycles=853881
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=1 cycles=913746
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=2 cycles=913791
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=2 cycles=1044079
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=2 cycles=1104100
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=3 cycles=1104148
+QWEN_SHELL_PHASE phase=output_progress frame=0 bytes=1 cycles=1104203
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=3 cycles=1261837
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=3 cycles=1321747
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=4 cycles=1321795
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=4 cycles=1506934
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=4 cycles=1566859
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=5 cycles=1566905
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=5 cycles=1779743
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=5 cycles=1839601
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=6 cycles=1839646
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=6 cycles=2076091
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=6 cycles=2135967
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=7 cycles=2136015
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=7 cycles=2399993
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=7 cycles=2459944
+QWEN_SHELL_PHASE phase=core_begin frame=0 operation=8 cycles=2459989
+SCOREBOARD_INJECT missing address=00000000000052f8
+QWEN_SHELL_PHASE phase=head_begin frame=0 operation=8 cycles=2751326
+QWEN_SHELL_PHASE phase=head_ack frame=0 operation=8 cycles=2811224
+QWEN_SHELL_PHASE phase=output_progress frame=0 bytes=8 cycles=2811326
+[28113265000] %Fatal: compiled-bench.sv:364: Assertion failed in TOP.bench: QWEN_SHELL_DRAIN frame=0 output=8 writes=1367 embedding=18576
+%Error: evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0018-run_shell_scoreboard/case-0020-compact-shell-b1-s1/qwen-shell-b1-s1/compiled-bench.sv:364: Verilog $stop
+Aborting...

@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0105-top-profile-1-nfc-bos/top-synthetic-q1-s1-nfc-bos/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0111-top-profile-17-nfc-bos/top-synthetic-q1-s17-nfc-bos-input/flash.hex"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:54:41.899172+00:00",
+  "pid": 1172798,
+  "process_group": 1172798,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58028126208,
+    "available_inodes": 195599705,
+    "observed_utc": "2026-10-31T15:54:41.899259+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529093550080
+  }
+}

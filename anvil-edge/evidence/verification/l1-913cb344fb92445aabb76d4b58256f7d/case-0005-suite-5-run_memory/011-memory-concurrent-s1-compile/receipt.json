@@ -1,0 +1,256 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "verilator",
+    "--binary",
+    "--timing",
+    "--assert",
+    "--timescale",
+    "1ns/1ps",
+    "--top-module",
+    "bench",
+    "-Wno-fatal",
+    "--x-initial",
+    "unique",
+    "--x-assign",
+    "unique",
+    "-j",
+    "2",
+    "-MAKEFLAGS",
+    "VK_PCH_I_FAST=\"-include Vbench__pch.h\" VK_PCH_I_SLOW=\"-include Vbench__pch.h\" --old-file=Vbench__pch.h.fast.gch --old-file=Vbench__pch.h.slow.gch",
+    "--Mdir",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj",
+    "-o",
+    "simulation",
+    "rtl/anvil_edge_parameters.sv",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "rtl/anvil_edge_tensor_mapper.sv",
+    "rtl/anvil_edge_memory_subsystem.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/compiled-bench.sv"
+  ],
+  "child_settled": true,
+  "compiler_intermediates_removed": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 307200,
+      "bytes": 304094,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__ALL.a",
+      "sha256": "0550d9d32af34bc9048e4e6687fdd7e9c0258306117ee3c7c81172eb5c137817"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 467,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__ALL.cpp",
+      "sha256": "912807196402f143283bd3652aacfe855f13601a85f40b06a45b6b27af9d3fe2"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 715,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__ALL.d",
+      "sha256": "e830d0807dfc7ab1f2148e9a3c5278edb33a1c792b19775397f45d225b7d0de1"
+    },
+    {
+      "allocated_bytes": 299008,
+      "bytes": 297528,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__ALL.o",
+      "sha256": "a915895a5d1258fe715ae76888ce5a94314f5b59c7c50d0b8764bfdcd70f845c"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1770,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "4496dab83ef8d72faf0a9bb770c0c7c1e47ce1347b429da850e39d8d55fd3b23"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1236,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__Syms.cpp",
+      "sha256": "4aa163be8a40469c44bf99c1ec60b3342f1d33406fb901f134af0d3b265a94e2"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1126,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__Syms.h",
+      "sha256": "23820c3089e32a0a8a1b86c8fc3848247cd9492be2da95b2fbb849e6fef0dffe"
+    },
+    {
+      "allocated_bytes": 20480,
+      "bytes": 19096,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench___024root.h",
+      "sha256": "f1a42b491a08442d9b51fc0723f83b7dab75477e65d1bc569ca908fa03034b7f"
+    },
+    {
+      "allocated_bytes": 348160,
+      "bytes": 345847,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "6402e945411ece096ec3f9121f894a39792711dbcaf302f7497f00746c1948d1"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 24996,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "848d1ca751290eeae554cc2e3733a8e071d2f67ae10119210b319c476a68c1c5"
+    },
+    {
+      "allocated_bytes": 278528,
+      "bytes": 276970,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "176b5fa5a9c678b04d6d3e9ef656bf1b74d46a67923eb7ce8d43cd3653741a27"
+    },
+    {
+      "allocated_bytes": 110592,
+      "bytes": 107253,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "e5798f5303724ba5e9fb554c2c06898d46da67189fe81f24a1b11bed9bb97313"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2521,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__ver.d",
+      "sha256": "7a221095cc0446e594c943e63cdff2bd5581f56badd70393a2adcee26c534ae1"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 5110,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench__verFiles.dat",
+      "sha256": "1dff23e536a25a900ebded301054b815bc4b31a58c58505a2af73c99d4e8bf3e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1696,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/Vbench_classes.mk",
+      "sha256": "d83ef5d066ae2a5943cea20655ba641a774fea502d243a216c51038ac870b3fa"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/memory-concurrent-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "compiler_storage_observation": {
+    "limitation": "Sampled allocated-file high-water mark, not an exact continuous peak. Filesystem availability includes other users.",
+    "minimum_filesystem_available_bytes": 61971779584,
+    "peak_object_allocated_bytes": 2048000,
+    "retained_object_allocated_bytes": 315392,
+    "sample_interval_s": 0.25,
+    "samples": 39
+  },
+  "compiler_storage_reservation": {
+    "available_bytes": 62031478784,
+    "basis": "Provisional conservative budget; not a measured peak",
+    "required_bytes": 9395240960,
+    "reserve_bytes": 268435456,
+    "reserved_bytes": 1140850688,
+    "retained_growth_budget_bytes": 67108864,
+    "total_reserved_bytes": 9126805504,
+    "transient_budget_bytes": 1073741824
+  },
+  "cwd": ".",
+  "duration_s": 9.807513634907082,
+  "end_utc": "2026-10-31T15:36:54.093504+00:00",
+  "exit_code": 0,
+  "index": 11,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 1.2011965736746788e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 0.0005968839395791292,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 258048,
+    "output_blocks": 8840,
+    "system_cpu_s": 1.316068,
+    "user_cpu_s": 12.495549
+  },
+  "start_utc": "2026-10-31T15:36:44.281655+00:00",
+  "stderr": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/011-memory-concurrent-s1-compile/stderr.log",
+  "stdout": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0005-suite-5-run_memory/011-memory-concurrent-s1-compile/stdout.log",
+  "storage_after": {
+    "available_bytes": 62089736192,
+    "available_inodes": 195631824,
+    "observed_utc": "2026-10-31T15:36:54.093593+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525031940096
+  },
+  "storage_before": {
+    "available_bytes": 62031458304,
+    "available_inodes": 195633146,
+    "observed_utc": "2026-10-31T15:36:44.282618+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525090217984
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

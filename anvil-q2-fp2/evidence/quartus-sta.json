@@ -1,0 +1,361 @@
+{
+  "gate": "quartus-sta",
+  "timestamp_utc": "2026-11-03T12:37:45.374581+00:00",
+  "project_dir": "/data/sufeng/anvil-q2-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
+  "revision": "top",
+  "clock_filter": "clk_main",
+  "min_setup_slack_ns": 0.0,
+  "min_hold_slack_ns": 0.0,
+  "status": "passed",
+  "map_summary": {
+    "exists": true,
+    "path": "/data/sufeng/anvil-q2-fp2-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
+    "errors": [],
+    "lpm_divide_error_count": 0,
+    "lpm_divide_errors": [],
+    "warning_10268_count": 0,
+    "warning_10268": [],
+    "uninferred_ram_count": 0,
+    "uninferred_rams": []
+  },
+  "sta_summary": {
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 0.29,
+    "wns_hold_ns": 0.036,
+    "unconstrained_setup_paths": 0,
+    "unconstrained_functional_endpoints": 0,
+    "unapproved_timing_exceptions": 0,
+    "failing_setup_count": 0,
+    "failing_hold_count": 0,
+    "setup_paths": [
+      {
+        "slack_ns": 0.29,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[20]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.3,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[22]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.33,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[38]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.338,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[20]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.339,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[42]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.348,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[22]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.35,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[42]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.354,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[46]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.355,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[36]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.357,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[21]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.359,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[20]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.363,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[35]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.365,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[46]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.369,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[22]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.37,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[19]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.373,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[24]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.378,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|product0[38]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[96].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[3]"
+      },
+      {
+        "slack_ns": 0.379,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[42]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.38,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[42]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      },
+      {
+        "slack_ns": 0.382,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|product0[42]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[59].multiply|anvil_q2_fp2_product_round2:rounding|mantissa1[5]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.036,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array",
+        "to_node": "anvil_q2_fp2_bfp_mul3:aligned_lanes[53].product|error0|anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array|anvil_q2_fp2_bfp_mul3:aligned_lanes[53].product|error0"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array",
+        "to_node": "anvil_q2_fp2_bfp_mul3:aligned_lanes[32].product|error0|anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array|anvil_q2_fp2_bfp_mul3:aligned_lanes[32].product|error0"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[48]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[48]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_flash_attn:accelerated.flash_attention",
+        "to_node": "anvil_q2_fp2_mul3:datapath.dot_lanes[2].multiply|class0[1]|anvil_q2_fp2_flash_attn:accelerated.flash_attention|anvil_q2_fp2_mul3:datapath.dot_lanes[2].multiply|class0[1]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "read_beat[79]|anvil_q2_fp2_controller:accelerated.controller|read_beat[79]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[38]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[38]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[39]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[39]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[40]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[40]"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[43]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[43]"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "read_beat[31]|anvil_q2_fp2_controller:accelerated.controller|read_beat[31]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array",
+        "to_node": "anvil_q2_fp2_bfp_mul3:aligned_lanes[50].product|product0[6]|anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array|anvil_q2_fp2_bfp_mul3:aligned_lanes[50].product|product0[6]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array",
+        "to_node": "anvil_q2_fp2_bfp_mul3:aligned_lanes[75].product|error0|anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array|anvil_q2_fp2_bfp_mul3:aligned_lanes[75].product|error0"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[19]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[19]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "query_buffer[52]|anvil_q2_fp2_controller:accelerated.controller|query_buffer[52]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "query_buffer[164]|anvil_q2_fp2_controller:accelerated.controller|query_buffer[164]"
+      },
+      {
+        "slack_ns": 0.044,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "query_buffer[161]|anvil_q2_fp2_controller:accelerated.controller|query_buffer[161]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array",
+        "to_node": "anvil_q2_fp2_bfp_mul3:aligned_lanes[43].product|product0[8]|anvil_q2_fp2_bfp_tensor_array:accelerated.tensor_array|anvil_q2_fp2_bfp_mul3:aligned_lanes[43].product|product0[8]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "attention_position[12]|anvil_q2_fp2_controller:accelerated.controller|attention_position[12]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "attention_position[2]|anvil_q2_fp2_controller:accelerated.controller|attention_position[2]"
+      },
+      {
+        "slack_ns": 0.045,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q2_fp2_controller:accelerated.controller",
+        "to_node": "cache_strobe[23]|anvil_q2_fp2_controller:accelerated.controller|cache_strobe[23]"
+      }
+    ],
+    "stderr_tail": []
+  },
+  "detail": "Timing closed: Setup WNS = 0.290 ns",
+  "quartus_slot_telemetry": {
+    "slot_index": 0,
+    "max_slots": 6,
+    "slot_wait_s": 0.005
+  },
+  "top_module": "anvil_q2_fp2_top",
+  "clock_port": "clk",
+  "clock_period_ns": 10.0,
+  "target_frequency_mhz": 100.0,
+  "fmax_mhz": 102.99,
+  "critical_path_delay_ns": 9.71,
+  "fitter_resource_summary": {
+    "alms_used": 182271,
+    "alms_total": 427200,
+    "alms_pct": "43 %",
+    "total_registers": 137797,
+    "block_memory_bits": 1237440,
+    "m20k_ram_blocks": 119,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 316,
+    "virtual_pins": 2761
+  },
+  "parameters": {
+    "VOCAB_SIZE": 16,
+    "HIDDEN_SIZE": 48,
+    "INTERMEDIATE_SIZE": 48,
+    "NUM_LAYERS": 2,
+    "NUM_Q_HEADS": 6,
+    "NUM_KV_HEADS": 1,
+    "HEAD_DIM": 8,
+    "GROUP_SIZE": 8,
+    "CACHE_BLOCK": 8,
+    "MAX_SEQ_LEN": 8
+  },
+  "source_sha256": "8e19e52e8c8b069a2df05dfcb1e590adccc4182468fff096415fece795fe8555",
+  "applicable": true
+}

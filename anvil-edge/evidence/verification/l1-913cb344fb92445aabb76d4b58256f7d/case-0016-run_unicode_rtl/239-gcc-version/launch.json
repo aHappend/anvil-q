@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "gcc",
+    "--version"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:38:52.397187+00:00",
+  "pid": 1026368,
+  "process_group": 1026368,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61838671872,
+    "available_inodes": 195628477,
+    "observed_utc": "2026-10-31T15:38:52.397227+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525283004416
+  }
+}

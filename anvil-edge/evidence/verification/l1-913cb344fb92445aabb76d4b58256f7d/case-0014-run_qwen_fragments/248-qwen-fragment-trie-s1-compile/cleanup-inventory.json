@@ -1,0 +1,170 @@
+{
+  "artifacts": [
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3239,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench.cpp",
+      "sha256": "d202c1051f08fedbc5c6a1222eacc8fbabe0187d10c904cf85f6f1a296a8074b"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 3126,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench.h",
+      "sha256": "a2fe8d84777e24cab6a70247e02ea34f8a274a1fae93763be5293c5e3fc6300a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1748,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench.mk",
+      "sha256": "00bd7099b9445cfcc50293b87133f62e2a4cd66e5efdcef6e15f21d37eb4173f"
+    },
+    {
+      "allocated_bytes": 118784,
+      "bytes": 116888,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__ALL.a",
+      "sha256": "f01b1ec7bc059d84ecf6f2c69e5b7fb272491802a40b464b2de6377321d2c3db"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 467,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__ALL.cpp",
+      "sha256": "912807196402f143283bd3652aacfe855f13601a85f40b06a45b6b27af9d3fe2"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 715,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__ALL.d",
+      "sha256": "e830d0807dfc7ab1f2148e9a3c5278edb33a1c792b19775397f45d225b7d0de1"
+    },
+    {
+      "allocated_bytes": 114688,
+      "bytes": 111848,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__ALL.o",
+      "sha256": "7bc6a7812903f0ff1aa3b0144582b51c21707bd3e8686da03d93ff7710f06c86"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2396,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__ConstPool_0.cpp",
+      "sha256": "8c863a9b3c8b5bf80d1109d1df88eb59898aae9ef0f8932fc09915692eb2763f"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1251,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__Syms.cpp",
+      "sha256": "7bcea6cdac25f7355c6f51c9153f5cd3019c5aa26a163455f4396f69e7f969b5"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1131,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__Syms.h",
+      "sha256": "6835f2f32f413ee648fdc16d5ed2fef9ef92c15f1487b954319324355633817d"
+    },
+    {
+      "allocated_bytes": 12288,
+      "bytes": 10015,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench___024root.h",
+      "sha256": "541724e9fa15a4cb7c083b0ec1037a85c44eb68cf5016b199a633375acce6941"
+    },
+    {
+      "allocated_bytes": 200704,
+      "bytes": 197004,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench___024root__DepSet_h0cc030f4__0.cpp",
+      "sha256": "5c686427563b0b2f85e77fbefbbd20e4bc841b7be6046fd33804d7011fb3ee67"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4826,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench___024root__DepSet_h0cc030f4__0__Slow.cpp",
+      "sha256": "097e2b06218722f4738d1f3a67c3efcc846f2960891e22aecd0cc539d064772c"
+    },
+    {
+      "allocated_bytes": 131072,
+      "bytes": 128203,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench___024root__DepSet_h97d444dc__0.cpp",
+      "sha256": "489be7a6509823d830f1f69ac20abf7120f9d8760d90e589d0cb96f1fba8ec36"
+    },
+    {
+      "allocated_bytes": 28672,
+      "bytes": 26664,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench___024root__DepSet_h97d444dc__0__Slow.cpp",
+      "sha256": "081ae0dc5230d4c1b2a1b2e52b00bd230f751e3f2e8982f409d73996028954b6"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 681,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench___024root__Slow.cpp",
+      "sha256": "9b0319f945e8307a9ed8dc693f92a33d1b8b0655f6e5026ec1643ef9a642d072"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 964,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__main.cpp",
+      "sha256": "a4d5ca420f3c0863a0eed66c10aee494aaa31b13fdeda0a34512d2ea67dd777e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 694,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__pch.h",
+      "sha256": "e11ff3e2e529395b1c2f8cb7435b14d3c0ce0378cd9353f9fd6f6131cb3af713"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 2485,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__ver.d",
+      "sha256": "c8f51ffb3e01f23f9acb0c9384f6d8ac311780ff6ed2e9ed50592147afb48160"
+    },
+    {
+      "allocated_bytes": 8192,
+      "bytes": 4880,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench__verFiles.dat",
+      "sha256": "6aff0bc4ffb79bbeaa3c2f3d8835a6fb887fb8f3bd3377eaba40ca9202644705"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 1696,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/Vbench_classes.mk",
+      "sha256": "d83ef5d066ae2a5943cea20655ba641a774fea502d243a216c51038ac870b3fa"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 550,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/verilated.d",
+      "sha256": "7709a6f70e5990c409d9bc64ab43e8624a332c03230350d6046bc2e2e6f556ae"
+    },
+    {
+      "allocated_bytes": 212992,
+      "bytes": 210896,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/verilated.o",
+      "sha256": "6371ab4c64eacb8f310198256120e539556ffcf99a848fbeb6e9f6a7838fa82a"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 365,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/verilated_threads.d",
+      "sha256": "58e40742732676a43a74c71b41c5f7f2f74fdd58e2bb55832280afbc3d05f2f2"
+    },
+    {
+      "allocated_bytes": 32768,
+      "bytes": 31752,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/verilated_threads.o",
+      "sha256": "7b329cb59ddf986aa0b9991d864cf24c3d4d63955e156816d17bb5e47438cd8e"
+    },
+    {
+      "allocated_bytes": 4096,
+      "bytes": 362,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/verilated_timing.d",
+      "sha256": "19bc573a4e706f27e798b1017a74f02e9774064cc6c1b7232efaa12f435cc184"
+    },
+    {
+      "allocated_bytes": 16384,
+      "bytes": 12384,
+      "path": "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0014-run_qwen_fragments/qwen-fragment-trie-s1/obj/verilated_timing.o",
+      "sha256": "f2bca8afa56ba8ab7edf6e2e8a16a3fff10f8a2c4e73fc6b418f4b27f805c5bc"
+    }
+  ],
+  "created_utc": "2026-10-31T15:39:14.446533+00:00",
+  "policy": "Only settled compiler intermediates. Failed generated C++/headers, benches, source snapshots, binaries and raw logs are preserved.",
+  "schema": 1,
+  "successful_compile": true
+}

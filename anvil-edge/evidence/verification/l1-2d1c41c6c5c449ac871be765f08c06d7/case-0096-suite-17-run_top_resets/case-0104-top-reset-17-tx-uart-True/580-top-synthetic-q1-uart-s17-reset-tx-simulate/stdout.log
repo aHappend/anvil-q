@@ -1,0 +1,4 @@
+TOP_SYNTHETIC_REAL_Q1 output_bytes=2 k_writes=24 v_writes=24 reads=32014 writes=456
+BOOT_TRANSACTIONS writes=4408 reads=22640 acknowledgements=59518
+COMPARED 131424
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0096-suite-17-run_top_resets/case-0100-top-reset-1-tx-uart-True/top-synthetic-q1-uart-s1-reset-tx/compiled-bench.sv:4767: Verilog $finish

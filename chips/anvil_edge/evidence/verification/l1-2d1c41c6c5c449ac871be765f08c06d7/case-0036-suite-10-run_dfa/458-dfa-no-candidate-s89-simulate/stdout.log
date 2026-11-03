@@ -1,0 +1,3 @@
+TEXT_COUNTS inputs=5 requests=108 responses=108 outputs=0
+COMPARED 109
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0036-suite-10-run_dfa/dfa-no-candidate-s1/compiled-bench.sv:209: Verilog $finish

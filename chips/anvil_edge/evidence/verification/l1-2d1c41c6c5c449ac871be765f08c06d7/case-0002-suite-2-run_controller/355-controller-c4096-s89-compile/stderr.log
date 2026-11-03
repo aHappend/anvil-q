@@ -1,0 +1,10 @@
+%Warning-WIDTHEXPAND: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0002-suite-2-run_controller/controller-c4096-s89/compiled-bench.sv:33:70: Operator NEQCASE expects 145 bits on the LHS, but LHS's REPLICATE generates 114 bits.
+                                                                                                                                                             : ... note: In instance 'bench'
+   33 |            core_logit_ready,busy,done,error,error_code,finish_valid} !== 145'd0)
+      |                                                                      ^~~
+                      ... For warning description see https://verilator.org/warn/WIDTHEXPAND?v=5.020
+                      ... Use "/* verilator lint_off WIDTHEXPAND */" and lint_on around source to disable this message.
+%Warning-WIDTHTRUNC: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0002-suite-2-run_controller/controller-c4096-s89/compiled-bench.sv:333:82: Operator TASKREF 'frame' expects 1 bits on the Function Argument, but Function Argument's AND generates 32 bits.
+                                                                                                                                                             : ... note: In instance 'bench'
+  333 | for (integer compact_index=0; compact_index<4095; compact_index=compact_index+1) frame(compact_index,0,2,compact_index & 1);
+      |                                                                                  ^~~~~

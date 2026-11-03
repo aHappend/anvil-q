@@ -1,0 +1,56 @@
+{
+  "aggregate_budget_s": null,
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0168-storage-edge-17-256-nonzero-inactive-row/boot-v256-s17-nonzero-inactive-row/obj/simulation",
+    "+verification_seed=17",
+    "+verification_file0=evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0168-storage-edge-17-256-nonzero-inactive-row/boot-v256-s17-nonzero-inactive-row-input/flash.hex"
+  ],
+  "child_settled": true,
+  "compiler_storage_reservation": null,
+  "cwd": ".",
+  "duration_s": 2.3630654788576066,
+  "end_utc": "2026-10-31T16:00:19.063731+00:00",
+  "exit_code": 0,
+  "index": 1054,
+  "process_group_settled": true,
+  "process_group_settlement": {
+    "duration_s": 3.14291100949049e-05,
+    "samples": 1,
+    "settled": true,
+    "sigkill_sent": false,
+    "timeout_s": 10
+  },
+  "queue_duration_s": 4.864088259637356e-05,
+  "requested_timeout_s": 3600,
+  "resources": {
+    "input_blocks": 0,
+    "major_page_faults": 0,
+    "max_rss_kib": 1872872,
+    "output_blocks": 8,
+    "system_cpu_s": 0.078097,
+    "user_cpu_s": 2.282844
+  },
+  "start_utc": "2026-10-31T16:00:16.697766+00:00",
+  "stderr": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0168-storage-edge-17-256-nonzero-inactive-row/1054-boot-v256-s17-nonzero-inactive-row-simulate/stderr.log",
+  "stdout": "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0168-storage-edge-17-256-nonzero-inactive-row/1054-boot-v256-s17-nonzero-inactive-row-simulate/stdout.log",
+  "stdout_observation_policy": "Parent monotonic elapsed time when a flushed phase line was read; not exact event wall time. Nominal polling interval 0.25 seconds.",
+  "stdout_observations": [],
+  "stdout_progress_policy": "Relay only advancing observed shell cycles/counters to parent stdout, at most once per 30 seconds and once at settlement; at most 128 reports per child. Raw logs and phase observations remain authoritative. Progress is not completion and changes no timeout or acceptance rule.",
+  "stdout_progress_reports": [],
+  "storage_after": {
+    "available_bytes": 57734631424,
+    "available_inodes": 195586948,
+    "observed_utc": "2026-10-31T16:00:19.063869+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529387044864
+  },
+  "storage_before": {
+    "available_bytes": 57739337728,
+    "available_inodes": 195586945,
+    "observed_utc": "2026-10-31T16:00:16.698222+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3529382338560
+  },
+  "timed_out": false,
+  "timeout_s": 3600
+}

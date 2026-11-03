@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "vvp",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/multiply-w64-s17/simulation.vvp"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:49.926928+00:00",
+  "pid": 1006802,
+  "process_group": 1006802,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 61977616384,
+    "available_inodes": 195632191,
+    "observed_utc": "2026-10-31T15:36:49.927027+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525144059904
+  }
+}

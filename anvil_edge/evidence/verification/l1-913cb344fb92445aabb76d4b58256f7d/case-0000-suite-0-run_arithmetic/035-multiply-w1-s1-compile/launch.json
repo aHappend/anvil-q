@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "iverilog",
+    "-g2012",
+    "-Wall",
+    "-s",
+    "bench",
+    "-o",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/multiply-w1-s1/simulation.vvp",
+    "rtl/anvil_edge_signed_multiplier.sv",
+    "evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0000-suite-0-run_arithmetic/multiply-w1-s1/bench.sv"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:36:45.773808+00:00",
+  "pid": 1005978,
+  "process_group": 1005978,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 62012416000,
+    "available_inodes": 195632843,
+    "observed_utc": "2026-10-31T15:36:45.773902+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3525109260288
+  }
+}

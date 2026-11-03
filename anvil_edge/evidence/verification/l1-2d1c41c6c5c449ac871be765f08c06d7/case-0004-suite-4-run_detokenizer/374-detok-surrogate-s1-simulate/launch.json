@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-surrogate-s1/obj/simulation",
+    "+verification_seed=1"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:50:40.462725+00:00",
+  "pid": 1123046,
+  "process_group": 1123046,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58829340672,
+    "available_inodes": 195609314,
+    "observed_utc": "2026-10-31T15:50:40.462817+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528292335616
+  }
+}

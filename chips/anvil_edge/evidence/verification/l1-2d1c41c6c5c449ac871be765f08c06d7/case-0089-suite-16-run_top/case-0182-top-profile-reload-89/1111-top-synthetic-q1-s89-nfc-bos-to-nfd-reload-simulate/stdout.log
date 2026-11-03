@@ -1,0 +1,4 @@
+TOP_CONTROL errors=0 reloads=1 controls=5
+BOOT_TRANSACTIONS writes=4763 reads=22932 acknowledgements=76072
+COMPARED 168751
+- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0180-top-profile-reload-1/top-synthetic-q1-s1-nfc-bos-to-nfd-reload/compiled-bench.sv:5149: Verilog $finish

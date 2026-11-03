@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/watchdog-width-verilator/obj/simulation"
+  ],
+  "cwd": ".",
+  "launched_utc": "2026-10-31T15:51:24.502452+00:00",
+  "pid": 1142466,
+  "process_group": 1142466,
+  "status": "launched; final outcome requires receipt.json",
+  "storage": {
+    "available_bytes": 58714980352,
+    "available_inodes": 195605804,
+    "observed_utc": "2026-10-31T15:51:24.502531+00:00",
+    "total_bytes": 3779169468416,
+    "used_bytes": 3528406695936
+  }
+}
