@@ -77,7 +77,7 @@ def execute(run, root, source_paths):
     run.tool("vvp")
     results = []
     for snapshot, paths in (("original", source_paths), ("lowered", lowered_paths)):
-        for native in (0, 1):
+        for native in (0, 1, 2):
             stem = f"configuration-{snapshot}-native{native}"
             binary = run.path / (stem + ".vvp")
             run.command(
@@ -90,7 +90,7 @@ def execute(run, root, source_paths):
                 ["vvp", run.relative(binary)], stem + "-simulate", timeout=600)
             if f"SUMMARY lowering native={native} compared=1540 " not in stdout:
                 raise AssertionError(f"{stem}: missing executed readback comparisons")
-            results.append({"snapshot": snapshot, "native": bool(native),
+            results.append({"snapshot": snapshot, "configuration_kind": native,
                             "summary": stdout.strip()})
             binary.unlink()
     defects = []
@@ -135,6 +135,9 @@ def execute(run, root, source_paths):
                   "not complete configuration equivalence, synthesis or physical signoff"),
     }
     run.save()
+    from legacy_checks import configuration, integration
+    configuration(run, root, source_paths, lowered_paths)
+    integration(run, root, source_paths, lowered_paths)
     return lowered_paths
 
 
