@@ -186,8 +186,12 @@ def run(output):
                                  receipt=relative(directory/"simulation.receipt.json")))
             except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                 rows.append(dict(format=fmt, probe=probe, status="failed", error=str(exc)))
+    artifacts = dict(json.loads((ROOT/binding).read_text())["artifact_sha256"])
+    artifacts[relative(ROOT/binding)] = digest(ROOT/binding)
+    artifacts.update({relative(p): digest(p) for p in output.rglob("*") if p.is_file()})
     return dict(status="passed" if len(rows) == 10 and all(r["status"] == "passed"
-                for r in rows) else "failed", runs=rows, required_cases=10)
+                for r in rows) else "failed", runs=rows, required_cases=10,
+                artifact_sha256=artifacts)
 
 
 def main():

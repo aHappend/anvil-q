@@ -157,12 +157,14 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
     if any(receipt.get("source_sha256", {}).get(p) != current.get(p)
            for p in dependencies):
         return None
-    pending = [result]
+    pending, external_tools = [result], set()
     while pending:
         value = pending.pop()
         if isinstance(value, dict):
             if "artifact_sha256" in value and not artifacts_intact(value["artifact_sha256"]):
                 return None
+            external_tools.update(ROOT/p for p in value.get("artifact_sha256", {})
+                                  if p.endswith(".receipt.json"))
             pending.extend(value.values())
         elif isinstance(value, list):
             pending.extend(value)
@@ -195,7 +197,7 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
         from run_mutations import validated_campaign
         if not validated_campaign(result, dependencies, versions):
             return None
-    children = list(directory.rglob("*.receipt.json"))
+    children = sorted(set(directory.rglob("*.receipt.json")) | external_tools)
     tool_receipts = []
     for path in children:
         record = json.loads(path.read_text())
@@ -227,8 +229,10 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
                 return None
             if record.get("artifact_sha256", {}).get(record[key]) != digest(artifact):
                 return None
+        bound_sources = (dependencies if path not in external_tools else
+                         [p for p in dependencies if p.endswith(".sv") or p.startswith("design/")])
         if not mutation_campaign and any(record.get("source_sha256", {}).get(p) != current.get(p)
-                                        for p in dependencies):
+                                        for p in bound_sources):
             return None
         tool_receipts.append(relative(path))
     if not tool_receipts:
