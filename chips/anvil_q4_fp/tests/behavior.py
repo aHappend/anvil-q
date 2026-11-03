@@ -86,14 +86,63 @@ def run_matrix(preparation=False):
     return directory
 
 
+def run_geometries(preparation=False):
+    directory = new_run("native-geometries", preparation)
+    records = []
+    geometries = (
+        ((1, 1, 1, 1), [(17, 0, 0, 2, 1, 1, 1, 1)]),
+        ((2, 16, 3, 3), [(89, 1, 1, 6, 1, 5, 5, 3)]),
+        ((4, 3, 128, 3), [(2026, 0, 2, 2, 2, 5, 5, 2)]),
+        ((8, 1, 1, 16), [(17, 1, 2, 2, 8, 17, 17, 2)]),
+        ((16, 3, 128, 16), [
+            (seed, element, element, 2, 8, 17, 17, 2)
+            for seed in (17, 89, 2026) for element in (0, 1)] +
+         [(17, 0, 0, 8, 4, 19, 19, 4)]),
+    )
+    for geometry, cases in geometries:
+        banks, queue, tile_k, tile_rows = geometry
+        obj = directory / f"banks-{banks}-compile-obj"
+        try:
+            binary = build(directory / f"banks-{banks}", obj, banks, tile_rows, tile_k, queue)
+            for index, (seed, element, cache, dimension, ratio, inter, vocab, tokens) in enumerate(cases):
+                large = dimension==8
+                words = descriptor(
+                    banks=banks, element=element, cache=cache, dimension=dimension,
+                    ratio=ratio, kv_heads=2 if large else 1, layers=2 if large else 1,
+                    intermediate=inter, vocabulary=vocab, context=max(tokens, 1),
+                    page_tokens=1 if tokens==1 else 2, bias=int(vocab!=1))
+                case = directory / "checkpoint-images" / f"banks-{banks}-case-{index}"
+                case.mkdir(parents=True)
+                image = Fixture(words, seed, tokens).export(case)
+                observed = case / "observed.json"
+                execute(directory / f"banks-{banks}-case-{index}", [
+                    relative(binary), relative(image), relative(observed)],
+                    timeout=1800, extra_inputs=[case / "checkpoint-images/manifest.json"])
+                records.append({"geometry": geometry, "descriptor": words,
+                                "seed": seed, "tokens": tokens, "synthetic": True,
+                                "observed": json.loads(observed.read_text()),
+                                "receipt": relative(directory / f"banks-{banks}-case-{index}/receipt.json")})
+                print(f"Native geometry compared: banks={banks} seed={seed} format={element}",
+                      flush=True)
+        finally:
+            if obj.exists():
+                shutil.rmtree(obj)
+    (directory / "observed.json").write_text(json.dumps({
+        "source_sha256": source_hashes(), "cases": records}, indent=2) + "\n")
+    return directory
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--large", action="store_true")
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--matrix", action="store_true")
+    parser.add_argument("--geometries", action="store_true")
     args = parser.parse_args()
-    if args.matrix:
+    if args.geometries:
+        run_geometries(args.preparation)
+    elif args.matrix:
         run_matrix(args.preparation)
     else:
         run(args.preparation, words=descriptor(

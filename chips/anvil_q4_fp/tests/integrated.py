@@ -39,9 +39,12 @@ def write_script(path, commands):
 
 def run(preparation=False, repair_of=None):
     directory = new_run("integrated-control", preparation)
-    fixture = Fixture(descriptor(banks=1, dimension=2, intermediate=3,
-                                 vocabulary=5, context=5, page_tokens=1),
-                      tokens=[2, None, None, None])
+    words = descriptor(banks=1, dimension=2, intermediate=3,
+                       vocabulary=5, context=5, page_tokens=1)
+    words[20] = 10
+    fixture = Fixture(words, tokens=[2, None, None, None])
+    replacement = Fixture(words, tokens=[3, None, None], epoch=2, pages=[4, 3, 2, 1, 0])
+    fixture.initial.update({key: value for key, value in replacement.initial.items() if key[0]==15})
     image = fixture.export(directory)
     s = fixture.steps
     initial = command(s[0], fresh=True)
@@ -64,6 +67,22 @@ def run(preparation=False, repair_of=None):
                              accepted=2 if action==5 else 0, error=action<3,
                              action=action, targets=1 if action in (1, 3) else 2,
                              expectations=s[1:3]), command(s[1]), command(s[2])]
+    r = replacement.steps
+    scenarios["new-sequence-replacement"] = [
+        initial, command(r[0], draft=True, fresh=True, token1=r[1]["token"],
+                         accepted=2, targets=2, expectations=r[:2]), command(r[2])]
+    scenarios["new-sequence-rollback"] = [
+        initial, command(r[0], draft=True, fresh=True, token1=r[1]["token"],
+                         accepted=2, targets=2, action=5, expectations=r[:2]), command(s[1])]
+    for label, edits in (("bad-token", {"token": 5}),
+                         ("skipped-position", {"position": 2}),
+                         ("repeated-position", {"position": 0})):
+        scenarios[label] = [
+            initial, command({**s[1], **edits}, error=True, targets=0,
+                             expectations=[{"writes": []}]), command(s[1])]
+    scenarios["bad-new-sequence-position"] = [
+        initial, command(s[1], fresh=True, error=True, targets=0,
+                         expectations=[{"writes": []}]), command(s[1])]
     obj = directory / "compile-obj"
     records = []
     try:

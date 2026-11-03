@@ -116,11 +116,80 @@ def inspect(netlist, geometry):
                     memory_bits += int(parameters["SIZE"], 2) * int(parameters["WIDTH"], 2)
     if memory_bits < 131072 * 32:
         raise AssertionError("Large score memories were not retained as memories")
+    routing = inspect_routing(modules, top)
     return {"geometry": geometry, "sequential_cell_definitions": sequential,
             "memory_bits_in_module_definitions": memory_bits,
             "forbidden_cells": prohibited, "tensor_arrays": array_records,
             "native_scheduler_clients": 17, "external_banks": banks,
+            "lane_connectivity": routing,
             "cell_types": dict(counts)}
+
+
+def inspect_routing(modules, top):
+    """Prove literal per-lane wiring, including both directions of every bundle."""
+    fields = {"req_valid": 1, "req_ready": 1, "req_write": 1, "req_kind": 4,
+              "req_proj": 3, "req_layer": 32, "req_row": 32, "req_col": 32,
+              "req_wdata": 32, "req_stride": 32, "rsp_valid": 1, "rsp_ready": 1,
+              "rsp_error": 1, "rsp_rdata": 32}
+    records = []
+
+    def cell(module, suffix):
+        found = [c for name, c in module["cells"].items()
+                 if name == suffix or name.endswith("." + suffix)]
+        if len(found) != 1:
+            raise AssertionError(f"Expected single routing instance {suffix}")
+        return found[0]
+
+    def equal(actual, expected, label):
+        if actual != expected:
+            raise AssertionError(f"Lane wiring mismatch: {label}")
+
+    def edges(module, mux_name, children, label):
+        mux = cell(module, mux_name)
+        connections = mux["connections"]
+        for field, width in fields.items():
+            if field == "req_stride" and label == "top-scheduler":
+                continue
+            for name, client in children:
+                child = cell(module, name)
+                expected = connections["c_" + field][client*17*width:(client+1)*17*width]
+                equal(child["connections"]["mem_" + field], expected,
+                      f"{label}.{name}.{field}")
+        if label != "top-scheduler":
+            for field in fields:
+                equal(connections["mem_" + field], module["ports"]["mem_" + field]["bits"],
+                      f"{label}.parent.{field}")
+        mux_module = modules[mux["type"]]
+        clients = len(mux_module["ports"]["c_req_valid"]["bits"]) // 17
+        for lane in range(17):
+            owner = cell(mux_module, f"channels[{lane}].ownership")
+            for field, width in fields.items():
+                expected = [bit for client in range(clients)
+                            for bit in mux_module["ports"]["c_" + field]["bits"][
+                                (client*17+lane)*width:(client*17+lane+1)*width]]
+                equal(owner["connections"]["c_" + field], expected,
+                      f"{label}.lane{lane}.clients.{field}")
+                equal(owner["connections"]["mem_" + field],
+                      mux_module["ports"]["mem_" + field]["bits"][lane*width:(lane+1)*width],
+                      f"{label}.lane{lane}.external.{field}")
+        records.append({"stage": label, "channels": 17, "payload_and_handshake_fields": len(fields),
+                        "children": [{"instance": name, "client": client} for name, client in children]})
+        return mux
+
+    decoder = cell(top, "decoder")
+    io = cell(top, "token_io")
+    dec_module = modules[decoder["type"]]
+    io_module = modules[io["type"]]
+    mlp = cell(dec_module, "mlp")
+    edges(dec_module, "routing", (("gemv", 1), ("mlp", 5)), "decoder")
+    edges(modules[mlp["type"]], "routing", (("gemv", 0),), "MLP")
+    edges(io_module, "routing", (("lm_head", 1),), "LM-head")
+    stage = edges(top, "stage_routing", (("token_io", 0), ("decoder", 1)), "top-scheduler")
+    scheduler = cell(top, "bank_scheduler")
+    for field in fields:
+        equal(stage["connections"]["mem_" + field], scheduler["connections"]["c_" + field],
+              f"scheduler.{field}")
+    return records
 
 
 def run(preparation=False, geometries=None, repair_of=None):

@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 SELECTORS = ("rtl/*.sv", "design/*.md", "tests/*",
              "anvil_q4_reference/rtl/*.sv")
+DEADLINE = None
 
 
 def timestamp():
@@ -40,6 +41,11 @@ def relative(path):
 def execute(directory, argv, timeout=600, repair_of=None, expect_failure=False,
             extra_inputs=()):
     """Every invocation has its own immutable receipt and raw log pair."""
+    if DEADLINE is not None:
+        remaining = DEADLINE - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError("Aggregate suite execution budget exhausted before child launch")
+        timeout = min(timeout, remaining)
     directory.mkdir(parents=True, exist_ok=True)
     if any(directory.iterdir()):
         raise FileExistsError(f"Refusing to overwrite retained evidence: {relative(directory)}")

@@ -47,7 +47,9 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
                     relative(output)], timeout=1800, extra_inputs=[fixture],
                     repair_of=repair_of)
                 observed[label] = json.loads(output.read_text())
-            for quantity in ("reads", "writes", "logits", "done", "errors", "transactions"):
+            for quantity in ("reads", "writes", "logits", "done", "errors", "transactions",
+                             "verified_drafts", "invalid_descriptors", "cancellations",
+                             "malformed_tokens"):
                 if observed["parent"][quantity] != observed["integrated"][quantity]:
                     raise AssertionError(f"Legacy differential mismatch: mode={mode} {quantity}")
             records.append({"mode": mode, "tokens": 2, "token_phase_transition": True,

@@ -36,7 +36,7 @@ def descriptor(*, banks=16, element=0, cache=0, layers=1, dimension=2,
 class Fixture:
     """Only mutable DUT writes populate scratch/cache in the simulator."""
 
-    def __init__(self, words, seed=17, tokens=2):
+    def __init__(self, words, seed=17, tokens=2, *, epoch=1, pages=None):
         self.words = words
         self.seed = seed
         self.tokens = ([((seed + 3 * index) % words[13]) for index in range(tokens)]
@@ -49,7 +49,8 @@ class Fixture:
         self.format = "fp16" if words[2] else "bf16"
         self.cache_format = ("bf16", "fp16", "fp8")[words[5]]
         self.rng = random.Random(seed)
-        self.pages = list(reversed(range(words[20])))
+        self.epoch = epoch
+        self.pages = list(reversed(range(words[20]))) if pages is None else list(pages)
         self.cache = {}
         self.build_image()
         self.infer()
@@ -98,7 +99,7 @@ class Fixture:
             for col, value in enumerate(table):
                 self.initial[11, 1, 0, position, col] = value
         for page, physical in enumerate(self.pages):
-            self.initial[15, 1, 0, page, 0] = 0x80000000 | physical
+            self.initial[15, self.epoch, 0, page, 0] = 0x80000000 | physical
 
     def widen(self, value):
         return convert(value, self.format, "fp32")[0]
