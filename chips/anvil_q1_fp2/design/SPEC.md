@@ -211,15 +211,41 @@ independent verification**, not established by the table construction.
 `anvil_q1_fp2_fp32_binary` supplies exact-RNE add (`MULTIPLY=0`) and multiply
 (`MULTIPLY=1`) with `clk,rst_n,in_valid,in_ready,out_ready,a[31:0],b[31:0],
 out_valid,result[31:0],status[4:0]`. It has nine registered stages, accepting
-at k and first asserting its result after k+8. It uses exact signed 576-bit
-integers in units of 2^-298, sufficient for the entire finite FP32 product
-range and exact addition. Only the final FP32 packing rounds. All IEEE
+at k and first asserting its result after k+8. Addition retains exact signed
+576-bit integers in units of 2^-298. Multiplication instead retains the exact
+48-bit unsigned significand product and its signed binary exponent; it does
+not align a single product into the addition grid. Only the final FP32 packing
+rounds. All IEEE
 special values, signaling NaNs, signed zeros, overflow and gradual underflow
 follow the common status/rounding contract. Exact add cancellation returns +0;
 multiplication of finite zeros preserves the XOR sign.
 
-This shared exact implementation supplies the epilogue and attention arithmetic
-boundaries. Like the tensor, its physical cost/timing is unmeasured.
+The multiplier normalizes its complete product, then uses registered coarse/fine
+right shifts only for gradual underflow. Bits discarded by those shifts are
+OR-reduced into a sticky tail; the retained 24 bits, guard and sticky implement
+RNE, including subnormal-to-normal rounding and after-rounding underflow.
+
+| Advancing edge | Multiplier post-edge state |
+|---|---|
+| k | Captured operands; no result for this transaction |
+| k+1 | Exact 24-by-24 product, exponent sum, special-value metadata and XOR sign |
+| k+2 | Product leading-bit index and delayed exact product/exponent |
+| k+3 | Left-normalized 48-bit product, biased exponent and zero/normal classification |
+| k+4 | Coarse subnormal shift and discarded-bit sticky |
+| k+5 | Fine subnormal shift and accumulated sticky |
+| k+6 | Retained significand, guard, sticky and matching metadata |
+| k+7 | RNE-packed result and status, not yet publicly valid |
+| k+8 | Public result/status and out_valid |
+
+Both operations retain II=1. A blocked valid output freezes every register,
+including metadata, and deasserts in_ready; simultaneous output transfer and
+input acceptance advances all stages. Reset invalidates all stages and gates
+public outputs/ready to zero. The first post-reset accepted input follows the
+same edge table, including zero and special-value operands.
+
+This implementation supplies the epilogue and attention arithmetic boundaries.
+The narrow multiplier is a resource repair, not a measured physical improvement;
+fresh independent checks and native physical results remain required.
 
 The package also provides `uint32_to_fp32` and `fp32_to_bf16`. Integer conversion
 uses RNE, including integers exceeding 24 significant bits. FP32-to-BF16 returns

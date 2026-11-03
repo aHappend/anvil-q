@@ -73,6 +73,29 @@ valid stage is blocked. With no stall, II=1 and result latency follows the exact
 edge table in SPEC.md. Throughput is 64 products per advancing input cycle,
 not a claim of 64 delivered MACs per wall-clock cycle under DDR/consumer stalls.
 
+## Specialized FP32 multiplication
+
+The shared binary primitive uses elaboration-time branches: addition retains its
+576-bit exact signed grid and original pipeline, while multiplication carries a
+48-bit exact significand product with a signed exponent. A single finite product
+does not need wide signed alignment or cancellation logic. Its leading-bit
+selection, normalization, coarse/fine gradual-underflow shifts, rounding
+preparation, packing and final output are separate registered stages. Sticky bits
+retain only information below the eventual rounding boundary; no intermediate
+rounding is introduced. Special-value metadata and XOR sign travel with the
+product, including negative zero and signaling-NaN handling.
+
+Both branches retain nine register stages, II=1 and the same global backpressure
+freeze. No ports, consumers or arithmetic operation boundaries change. The tensor
+still retains its complete 544-bit exact cancellation range.
+
+This repair addresses unnecessary wide multiplication machinery after a native
+fitter timeout. That timeout did not produce a timing netlist or critical path;
+it is not a measured setup violation. Resource savings and 100 MHz timing remain
+unmeasured for the repaired design and require fresh native results. Existing
+pre-repair behavior and failed native evidence remain historical evidence, not
+acceptance of the modified sources.
+
 ## Storage ownership and overlap
 
 The ping-pong ring has exactly two physical 512-bit response buffers. Each slot
