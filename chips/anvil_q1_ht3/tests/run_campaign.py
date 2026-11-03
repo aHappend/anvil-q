@@ -1,10 +1,12 @@
 """Exercise durable retention before any cold rebuild, or seal existing observations."""
 
 import argparse
+import copy
 import json
 from pathlib import Path
 import sys
 import uuid
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import campaign
@@ -144,6 +146,40 @@ def regression(output):
             dict(path=relative(source), sha256="0" * 64)]:
         raise AssertionError("unavailable historical source bytes were manufactured")
     assertions += 1
+    reclaiming = directory / "synthetic-open-descriptor.bin"
+    reclaiming.write_bytes(b"synthetic bytes retained across unlink")
+    original_stream_sha = campaign._stream_sha
+
+    def unlink_open_source(stream):
+        if Path(stream.name) == reclaiming and reclaiming.exists():
+            reclaiming.unlink()
+        return original_stream_sha(stream)
+
+    with patch("campaign._stream_sha", side_effect=unlink_open_source):
+        reclaimed_manifest = campaign.preserve([reclaiming], "synthetic unlink during capture")
+    if (reclaiming.exists() or not json.loads(reclaimed_manifest.read_text())["complete"]
+            or campaign.artifact(reclaiming).read_bytes() != b"synthetic bytes retained across unlink"):
+        raise AssertionError("an open source descriptor did not survive synthetic reclamation")
+    assertions += 1
+    from official_stream import compiler_identity
+    compiler = dict(schema=1, parameters=dict(HIDDEN_SIZE=8), compile_options=["-O3"],
+                    source_sha256={"rtl/synthetic.sv": "a" * 64,
+                                   "tests/official_stream.cpp": "b" * 64,
+                                   "tests/official_stream.py": "c" * 64})
+    for change in ("harness", "rtl", "driver", "parameters", "options"):
+        changed = copy.deepcopy(compiler)
+        if change in ("harness", "rtl", "driver"):
+            name = {"harness": "tests/official_stream.py", "rtl": "rtl/synthetic.sv",
+                    "driver": "tests/official_stream.cpp"}[change]
+            changed["source_sha256"][name] = "0" * 64
+        elif change == "parameters":
+            changed["parameters"]["HIDDEN_SIZE"] = 16
+        else:
+            changed["compile_options"] = ["-Os"]
+        same = compiler_identity(changed) == compiler_identity(compiler)
+        if same != (change == "harness"):
+            raise AssertionError(f"compiler contract identity lost {change} distinction")
+        assertions += 1
     row = dict(id="compact-mapped", status="not_started",
                failure_kind="execution_budget_unstarted", available_s=598.39, minimum_s=1800)
     budget = budget_summary([dict(id="synthesis", jobs=[row]),
