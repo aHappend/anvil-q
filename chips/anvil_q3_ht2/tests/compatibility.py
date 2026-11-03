@@ -23,7 +23,7 @@ def run_compatibility(run, mode):
                for path in sorted((ROOT / directory).glob("*.sv"))]
     binary = compile_verilator(run, "compatibility-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-        "--inline-mult", "1",
+        "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt",
         "--top-module", "compatibility_tb", f"-GCACHE_MODE={mode}",
         "--prefix", "Vcompatibility",
         "--Mdir", relative(obj), "-j", "2",

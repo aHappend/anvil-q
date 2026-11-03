@@ -65,7 +65,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
     }
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-        "--inline-mult", "1",
+        "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt",
         "--top-module", "anvil_q3_ht2_top", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
@@ -96,6 +96,11 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
             observation.get("compared_tree_shapes") != ["chain", "branch"]):
         raise AssertionError("incomplete integrated-model accounting")
     receipt = json.loads((result / "receipt.json").read_text())
+    bindings = list(run.glob("integrated-clock-driver-compile-binding-*.json"))
+    if len(bindings) != 1:
+        raise AssertionError("missing exact integration build binding")
+    binding = json.loads(bindings[0].read_text())
+    compile_receipt = json.loads((ROOT / binding["compile_receipt"]).read_text())
     summary = {
         "mode": mode, "seed": seed, "diagnostic_only": diagnostic, "observed": observation,
         "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",
@@ -105,6 +110,8 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
         "compared_tree_shapes": observation.get("compared_tree_shapes", []),
         "model_sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
+        "compile_duration_s": compile_receipt["duration_s"],
+        "compile_receipt": binding["compile_receipt"],
         "simulation_duration_s": receipt["duration_s"],
         "cycles_per_second_including_host_load":
             observation["cycles"] / receipt["duration_s"],

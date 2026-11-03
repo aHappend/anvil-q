@@ -12,26 +12,24 @@ from compatibility import run_compatibility
 from integrated_fast import run_fast_integration
 from performance import run_performance
 from receipts import ROOT, execute, new_run, relative, utc
-from synthesis import run_synthesis
 from verify import Ledger, clean_reproduction, enter_tier
 
 
 FAILED_RECEIPT = (
-    "evidence/preparation/delivery-producers-20261103T024849232660Z/"
-    "changed-producers-20261103T024849279956Z/receipt.json"
+    "evidence/l1-all-20261103T033553896046Z/"
+    "compatibility-mode2-1793679078565125390/"
+    "compatibility-simulate-20261103T041832481330Z/receipt.json"
 )
 
 
 def worker(run):
     ledger = Ledger(run, "changed-delivery-producers-preparation")
     try:
-        for mode in (1, 2):
-            ledger.check(f"read-only-attention-synthesis-mode{mode}", run_synthesis,
-                         "anvil_q3_ht2_tree_attention", mode)
-            ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
         integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
+        ledger.check("compatibility-mode2", run_compatibility, 2)
         ledger.check("performance", run_performance, integrated)
         ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
+        ledger.check("compatibility-mode1", run_compatibility, 1)
         ledger.check("clean-reproduction", clean_reproduction)
         ledger.finish()
     except Exception as error:

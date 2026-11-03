@@ -291,6 +291,6 @@ def cleanup_build(path):
     if not path.is_dir() or not path.is_relative_to(ROOT / "evidence"):
         raise ValueError("cleanup requires a known project evidence build directory")
     for pattern in ("*.o", "*.a", "*.gch", "*.verilator_deplist.tmp"):
-        for file in path.glob(pattern):
+        for file in path.rglob(pattern):
             if file.is_file():
                 file.unlink()
