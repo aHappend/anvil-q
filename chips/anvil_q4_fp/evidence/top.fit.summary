@@ -7,7 +7,7 @@ Reasons candidate registers could not be packed: :
   Inverted    - Programmable invert not available in DSP block : 11 / 243 ( 5 % )
   NoOuptutFF  - Output connected to something other than a register : 4 / 243 ( 2 % )
   MultFanout  - Output has multiple fan-outs : 3 / 243 ( 1 % )
-Fitter Status : Successful - Tue Nov  3 04:56:36 2026
+Fitter Status : Successful - Tue Nov  3 06:48:26 2026
 Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
 Revision Name : top
 Top-level Entity Name : anvil_q4_fp_top
