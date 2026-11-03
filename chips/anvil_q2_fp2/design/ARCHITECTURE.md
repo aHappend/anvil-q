@@ -178,6 +178,69 @@ than three cascaded FP32 multipliers. Coefficients use Q34 and retain the
 full binary32 mantissa residual. Two globally enabled registers retain both
 items under output stalls; readiness never accepts an unstoreable item.
 
+### Two-stage correction/packing timing repair
+
+The retained compact post-fit failure in
+`.vulcan/engineering/run-0001/quartus-sta.json` reports setup WNS -0.851 ns
+at 10 ns, with paths from coefficient storage through rsqrt/reciprocal
+correction and packing. That historical receipt is not changed. The following
+source repair is pending independent numerical checks and fresh native STA;
+it is not timing closure or default-product physical acceptance.
+
+The coefficient generator and all Q34/Q40 constants are unchanged. Exact
+range analysis removes only redundant arithmetic bits and normalization:
+
+| Quantity | Rsqrt | Reciprocal |
+| --- | --- | --- |
+| Centered integer residual d | -4096..4095, signed 13 bits | -2048..2047, signed 12 bits |
+| Stored Q34 slope S | 0 < S < 2^33 | 0 < S < 2^34 |
+| Exact signed product P=S*d | signed 47-bit result of 34-by-13 operands | signed 47-bit result of 35-by-12 operands |
+| Shifted correction C=floor(P/2^23) | -2^22 < C < 2^22 | -2^22 < C < 2^22 |
+| Corrected Q34 tangent B-C | 2^33 <= B-C < 2^34 | 2^33 <= B-C < 2^34 |
+
+The last range follows from convex, decreasing tangents to
+`1/sqrt(2^p*m)` and `1/m`, with normalized m on the binary32 grid
+`1 <= m <= 2-2^-23`. The largest tangent is at m=1 in the first
+interval; its distance below one exceeds 1000 Q34 units for both
+functions. The smallest is at the largest grid point in the last interval
+(p=1 for rsqrt). For rsqrt, the true value exceeds 0.5 by at least
+2^-26, while the last-interval Taylor remainder is less than
+`(1/20)*2^-22`, leaving more than 50 Q34 units above 0.5.
+For reciprocal, the corresponding margin is at least
+`2^-25-(1/6)*2^-24`, more than 340 Q34 units. Rounding each Q34
+coefficient contributes at most 0.5 unit to its base and
+`0.5*abs(d)/2^23` to its correction; flooring the product contributes
+less than one further unit. Their combined effect is less than two
+Q34 units, so none of these bounds crosses a normalization boundary.
+Subnormal inputs use the same normalized mantissa grid and only change
+the separately restored exponent.
+
+`anvil_q2_fp2_tangent_pack` therefore uses fixed significand bits 33:10,
+not a post-correction normalization mux. It splits B-C at bit 10:
+the ten low bits independently determine borrow, guard, sticky and the
+unrounded significand's parity. The rounded high result is exactly
+`B_hi - C_hi - borrow + round_up`. A carry-save compression of
+`B_hi`, `~C_hi` and `1-borrow+round_up` feeds one 25-bit carry-propagating
+addition, rather than a full-width subtraction followed by another
+significand increment. The product shift is still signed floor, and the
+rounding rule is still ties-to-even. No product or coefficient bits needed
+by the previous numerical result are discarded. Exponent restoration and
+normal-range rejection now run in stage zero, independent of the product.
+Out-of-range packing remains an explicit error, not saturation.
+
+The existing coefficient capture registers for rsqrt, reciprocal and exp
+now use dedicated rising-edge processes without asynchronous data resets.
+Reset/flush still clears their owning valid bits; every valid use follows
+a coefficient write on the matching acceptance edge. Captures retain the
+same enable, input-valid and flush conditions, so stalls cannot change
+the pending coefficients. This supplies a synchronous ROM read boundary
+for the unchanged generated case tables, replacing the old capture
+processes rather than adding a stage. ROM inference remains a synthesis
+question, not an asserted result. Rsqrt/reciprocal remain two stages,
+II=1, and exp remains nine stages; all public reset levels and flush
+priorities are unchanged. The existing coefficient-mutation anchors
+remain in both tangent consumers.
+
 The reciprocal similarly tabulates the Newton tangent
 `2*y0-m*y0*y0` across 2048 mantissa intervals, with Q34 coefficients.
 Its intended exercised domains are positive attention denominators and

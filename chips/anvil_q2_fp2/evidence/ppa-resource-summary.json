@@ -11,6 +11,14 @@
     "dsp_blocks": 316,
     "virtual_pins": 2761
   },
-  "timing": {},
+  "timing": {
+    "device": "10AX115N2F45E1SG",
+    "netlist_mode": "post_fit",
+    "target_frequency_mhz": 100.0,
+    "fmax_mhz": 92.16,
+    "critical_path_delay_ns": 10.851,
+    "wns_setup_ns": -0.851,
+    "wns_hold_ns": 0.036
+  },
   "verification_tiers": {}
 }
