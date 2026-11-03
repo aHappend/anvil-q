@@ -209,7 +209,9 @@ across flush, preventing a delayed prior-epoch response from aliasing a
 new request. Tags are unique across banks and never wrap. Reset starts
 a new tag namespace, requiring the external memory reset boundary to
 discard prior-reset responses. Unknown/duplicate tags fault normal
-operation without writing any live slot. During drain they are discarded.
+operation without writing any live slot. A fault stops new arbitration
+but does not retract an already held request before acceptance or flush.
+During drain unknown responses are discarded.
 
 Request slots are small register ownership records, not model storage.
 Large numerical vectors remain in synchronous RAMs. Registered issue

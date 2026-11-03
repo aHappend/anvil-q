@@ -406,6 +406,7 @@ Within a reset lifetime, stale epochs/duplicates cannot alias a live tag.
 | Client response stalled | Retain returned slot and complete payload/status |
 | Client response handshake | Release slot and client ownership |
 | Unknown/duplicate tag in normal operation | Consume without changing a live slot; latch fault and stop new issue |
+| Fault while a bank request is already held | Retain that request until acceptance or explicit flush; select no new queued request |
 | Flush with queued/returned slots | Annul them and stop external issue immediately |
 | Flush with accepted external work | Retain only issued tags; drain matching responses without client publication |
 | Flush plus matching response | Free matching issued slot; flush never strands an acknowledged request |

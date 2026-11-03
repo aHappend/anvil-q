@@ -133,7 +133,7 @@ module anvil_d2_bank_scheduler #(
         assign data_by_bank[b]=result_data;
         assign bank_empty[b]=empty && !issue_active;
         assign bank_fault[b]=failed;
-        assign mem_req_valid[b]=issue_enabled && issue_active;
+        assign mem_req_valid[b]=enabled && !flush && !draining && issue_active;
         assign mem_req_write[b]=mem_req_valid[b] && slot_write[issue_slot];
         assign mem_req_kind[b*4+:4]=mem_req_valid[b] ? slot_kind[issue_slot] : 4'd0;
         assign mem_req_layer[b*32+:32]=mem_req_valid[b] ? slot_layer[issue_slot] : 32'd0;
