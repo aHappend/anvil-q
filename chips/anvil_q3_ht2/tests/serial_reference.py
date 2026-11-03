@@ -260,7 +260,7 @@ class SerialModel:
         normalized = rmsnorm(state, self.image.halves(
             0x6d000000 + 2 * g.layers * g.hidden * 2, g.hidden))
         logits = tuple(saturate_q16(nearest_div(sum(a * scalar_half(b) for a, b in
-            zip(normalized, self.image.halves(0xc0000000 + row * g.hidden * 2, g.hidden),
+            zip(normalized, self.image.halves(0x80000000 + row * g.hidden * 2, g.hidden),
                 strict=True)), 65536)) for row in range(g.vocabulary))
         return Evaluation(position, token, logits, records, tuple(contexts), tuple(projections))
 

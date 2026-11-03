@@ -69,11 +69,11 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary
     else:
         # Zero projected Q/K makes these bounded coefficients immaterial.
         store(0x6e000000, b"\x00\x3c\x00\x00" * (maximum * 4))
+    # The compatible image ties the scalar output head to the embedding table.
+    head = [0xbc00, 0x3800, 0, 0x3c00, 0x3400, 0x3000, 0xb400, 0]
     half_array(0x80000000, [
-        0x3800 + ((token * 17 + row * 5 + seed) % 256) if varied else 0x3c00
+        head[token] + ((row * 5 + seed) % 64) if varied and head[token] else head[token]
         for token in range(vocabulary) for row in range(hidden)])
-    head = [0xbc00, 0xb800, 0, 0x3c00, 0x3800, 0x3400, 0xb400, 0]
-    half_array(0xc0000000, [weight for weight in head[:vocabulary] for _ in range(hidden)])
     images = run / "checkpoint-images"
     images.mkdir()
     model = images / "model-lines.txt"
@@ -83,10 +83,10 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False, vocabulary
     # The optional nonzero image is for differential legacy testing only; the
     # scalar expectations below are valid only for the zero-delta smoke.
     # RMS epsilon is the parent scalar contract's floor(1e-6 * 2**64).
-    root = isqrt((1 << 64) + 18446744073710)
+    root = isqrt((1 << 62) + 18446744073710)
     reciprocal = (1 << 64) // root
-    normalized = nearest_div(65536 * 65536 * reciprocal, 1 << 48)
-    weights_q16 = [-65536, -32768, 0, 65536, 32768, 16384, -16384, 0]
+    normalized = nearest_div(32768 * 65536 * reciprocal, 1 << 48)
+    weights_q16 = [-65536, 32768, 0, 65536, 16384, 8192, -16384, 0]
     expected = [nearest_div(hidden * normalized * weight, 65536)
                 for weight in weights_q16[:vocabulary]]
     vectors = run / "integration-vectors.txt"
