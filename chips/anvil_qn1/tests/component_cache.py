@@ -16,7 +16,10 @@ COMMON = ("rtl/*.sv", "design/SPEC.md", "design/ARCHITECTURE.md", "README.md",
           "tests/execution.py")
 
 
-def assess(run, path, inputs, parameters, tools):
+def assess(run, path, inputs, parameters, tools, ancestors=()):
+    path = Path(path).resolve()
+    if path in ancestors or len(ancestors) >= 32:
+        raise ValueError(f"cyclic/excessively nested component receipt: {relative(path)}")
     receipt = json.loads(path.read_text())
     reasons = []
     if receipt.get("status") != "passed":
@@ -46,8 +49,6 @@ def assess(run, path, inputs, parameters, tools):
             reasons.append(f"parameter/result identity mismatch: {name}")
     commands = receipt.get("commands", [])
     work = [c for c in commands if not Path(c.get("stdout", "")).name.startswith("version-")]
-    if not work:
-        reasons.append("no executed component tools")
     for command in commands:
         if (command.get("exit_code") != 0 or command.get("disposition") != "exited" or
                 not command.get("child_settled")):
@@ -68,12 +69,77 @@ def assess(run, path, inputs, parameters, tools):
                 reasons.append(f"missing retained {field}")
             elif hashlib.sha256(artifact.read_bytes()).hexdigest() != digest:
                 reasons.append(f"changed retained {field}")
+    children = []
+    for child in receipt.get("components", []):
+        name = Path(child.get("receipt", ""))
+        if (name.is_absolute() or ".." in name.parts or
+                not name.parts or name.parts[0] != "evidence"):
+            reasons.append("nonportable/out-of-scope child component receipt")
+            continue
+        child_path = ROOT / name
+        if child.get("status") != "passed" or not child_path.is_file():
+            reasons.append(f"failed/missing child component {name.as_posix()}")
+            continue
+        assessment, _ = assess(run, child_path, inputs, {}, tools, (*ancestors, path))
+        children.append(assessment)
+        if not assessment["applicable"]:
+            reasons.append(f"inapplicable child component {name.as_posix()}")
+    executed = len(work) + sum(child["executed_work_commands"] for child in children)
+    if not executed:
+        reasons.append("no executed component tools, including descendants")
     return {"receipt": relative(path), "applicable": not reasons,
             "reasons": reasons, "declared_dependencies": sorted(selected),
             "parameters": parameters, "tools": list(tools),
+            "executed_work_commands": executed, "children": children,
             "changed_unrelated_sources": {
                 name: value for name, value in sorted(changed.items()) if name not in selected},
             "receipt_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}, results
+
+
+def saved_behavior_applicability(run):
+    """Assess existing behavior evidence without treating partial coverage as closure."""
+    groups = {
+        "behavior-core": ("tests/behavior_checks.py", "tests/speculation_checks.py",
+                          "tests/integration.py", "tests/model.py", "tests/reference.py"),
+        "memory-matrix": ("tests/memory_checks.py", "tests/integration.py",
+                          "tests/model.py", "tests/reference.py"),
+        "fault-matrix": ("tests/fault_checks.py", "tests/memory_checks.py",
+                         "tests/speculation_checks.py", "tests/integration.py",
+                         "tests/model.py", "tests/reference.py"),
+        "speculative-cancel": ("tests/speculative_fault_checks.py",
+                               "tests/speculation_checks.py", "tests/integration.py",
+                               "tests/model.py", "tests/reference.py"),
+        "integrated-csr": ("tests/telemetry_checks.py", "tests/speculation_checks.py",
+                           "tests/integration.py", "tests/model.py", "tests/reference.py"),
+        "parent-reference": ("anvil_q3_reference/rtl/*.sv", "tests/parent_checks.py"),
+    }
+    results = {}
+    for stem, inputs in groups.items():
+        candidates = []
+        for parent in (ROOT / "evidence/preparation", ROOT / "evidence"):
+            candidates.extend(parent.glob(f"{stem}-*/receipt.json"))
+            candidates.extend(parent.glob(f"l1-{stem}-*/receipt.json"))
+        assessments = []
+        for path in sorted(set(candidates), key=lambda p: p.stat().st_mtime, reverse=True):
+            receipt = json.loads(path.read_text())
+            expected = receipt.get("results")
+            if not isinstance(expected, dict):
+                continue
+            if stem in ("behavior-core", "memory-matrix", "fault-matrix",
+                        "speculative-cancel") and not isinstance(expected.get("cases"), list):
+                continue
+            assessment, _ = assess(
+                run, path, inputs, {}, ("python3", "verilator", "g++", "make"))
+            assessments.append(assessment)
+            if assessment["applicable"]:
+                break
+        results[stem] = assessments
+    return {"scope": "historical applicability only, not behavior coverage closure",
+            "components": results,
+            "applicable_groups": [name for name, items in results.items()
+                                  if items and items[-1]["applicable"]],
+            "unavailable_groups": [name for name, items in results.items()
+                                    if not items or not items[-1]["applicable"]]}
 
 
 def component(run, stem, operation, *, inputs, parameters, tools, validate):
