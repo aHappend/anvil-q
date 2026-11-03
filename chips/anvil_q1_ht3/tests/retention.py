@@ -5,11 +5,12 @@ import json
 from pathlib import Path
 
 from execution import ROOT, execute, hashes, relative
+from campaign import artifact as retained_file, available, canonical_argv, logical
 
 
 def digest(path):
     value = hashlib.sha256()
-    with path.open("rb") as stream:
+    with retained_file(path).open("rb") as stream:
         while block := stream.read(1024*1024):
             value.update(block)
     return value.hexdigest()
@@ -23,7 +24,7 @@ def artifacts_intact(bindings, required=()):
         artifact = ROOT / path
         artifact.resolve().relative_to(ROOT)
         try:
-            matches = artifact.is_file() and digest(artifact) == sha
+            matches = available(artifact) and digest(artifact) == sha
         except FileNotFoundError:
             matches = False
         if not matches:
@@ -48,15 +49,15 @@ def normalize_argv(argv):
 def validated_execution(path, binary, binding, sources, inputs, options):
     """Validate a settled compiled case before rescoring its public output."""
     path = Path(path)
-    if not path.is_file():
+    if not available(path):
         return None
     directory = path.parent
-    build = json.loads((ROOT/binding).read_text())
+    build = json.loads(retained_file(ROOT/binding).read_text())
     compile_path = ROOT/build["compile_receipt"]
-    if not compile_path.is_file():
+    if not available(compile_path):
         return None
-    record = json.loads(path.read_text())
-    compilation = json.loads(compile_path.read_text())
+    record = json.loads(retained_file(path).read_text())
+    compilation = json.loads(retained_file(compile_path).read_text())
     current = hashes()
     identity = build["identity"]
     if digest(binary) != build["binary_sha256"]:
@@ -64,26 +65,26 @@ def validated_execution(path, binary, binding, sources, inputs, options):
     executions = [record, compilation]
     artifacts = [path, ROOT/binding, binary, compile_path, directory/"observations.txt",
                  *[directory/p.name for p in inputs]]
-    argv = record.get("argv", [])
+    argv = canonical_argv(record.get("argv", []))
     if not argv:
         return None
     executed_binary = argv[0]
-    if executed_binary != relative(binary):
+    if executed_binary != logical(binary):
         # A reclaimed executable may be rebuilt at a new path, but only identical
         # bytes, sources, parameters, tools and compile arguments permit reuse.
         original_binary = ROOT/executed_binary
         original_binary.resolve().relative_to(ROOT)
         original_binding = original_binary.parent.parent/"binding.json"
         if (original_binary.parent.name != "compile-obj"
-                or original_binary.name != binary.name or not original_binding.is_file()):
+                or original_binary.name != binary.name or not available(original_binding)):
             return None
-        original_build = json.loads(original_binding.read_text())
+        original_build = json.loads(retained_file(original_binding).read_text())
         original_compile = ROOT/original_build["compile_receipt"]
         if (original_build.get("identity") != identity
                 or original_build.get("binary_sha256") != build["binary_sha256"]
-                or not original_compile.is_file()):
+                or not available(original_compile)):
             return None
-        original_record = json.loads(original_compile.read_text())
+        original_record = json.loads(retained_file(original_compile).read_text())
         def compile_arguments(execution):
             arguments = list(execution.get("argv", []))
             if "--Mdir" in arguments:
@@ -91,7 +92,7 @@ def validated_execution(path, binary, binding, sources, inputs, options):
             return arguments
         if compile_arguments(original_record) != compile_arguments(compilation):
             return None
-        if original_binary.is_file():
+        if available(original_binary):
             if digest(original_binary) != build["binary_sha256"]:
                 return None
             artifacts.append(original_binary)
@@ -101,11 +102,11 @@ def validated_execution(path, binary, binding, sources, inputs, options):
                      f"+observations={relative(directory/'observations.txt')}", *options]
     if len(inputs) > 1:
         expected_argv.append(f"+batch={relative(directory/inputs[1].name)}")
-    if record.get("argv") != expected_argv or not (directory/"observations.txt").is_file():
+    if argv != expected_argv or not available(directory/"observations.txt"):
         return None
     for fresh in inputs:
         retained = directory/fresh.name
-        if not retained.is_file() or digest(retained) != digest(fresh):
+        if not available(retained) or digest(retained) != digest(fresh):
             return None
     for execution in executions:
         if (execution.get("exit") != 0 or execution.get("timed_out")
@@ -116,13 +117,13 @@ def validated_execution(path, binary, binding, sources, inputs, options):
             return None
         for key in ("stdout", "stderr"):
             artifact = ROOT/execution[key]
-            if (not artifact.is_file()
+            if (not available(artifact)
                     or execution.get("artifact_sha256", {}).get(execution[key]) != digest(artifact)):
                 return None
             artifacts.append(artifact)
     ledger = directory/"case.json"
-    if ledger.is_file():
-        prior = json.loads(ledger.read_text()).get("artifact_sha256", {})
+    if available(ledger):
+        prior = json.loads(retained_file(ledger).read_text()).get("artifact_sha256", {})
         if not prior:
             return None
         for path, sha in prior.items():
@@ -132,9 +133,9 @@ def validated_execution(path, binary, binding, sources, inputs, options):
                 # executable bytes were already checked above.
                 if sha != build["binary_sha256"]:
                     return None
-            elif not (ROOT/path).is_file() or digest(ROOT/path) != sha:
+            elif not available(ROOT/path) or digest(ROOT/path) != sha:
                 return None
-    return ((ROOT/record["stdout"]).read_text(),
+    return (retained_file(ROOT/record["stdout"]).read_text(),
             {relative(p): digest(p) for p in artifacts})
 
 
@@ -151,10 +152,10 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
     result_path.resolve().relative_to(ROOT)
     directory = result_path.parent
     receipt_path = directory / "receipt.json"
-    if not result_path.is_file() or not receipt_path.is_file():
+    if not available(result_path) or not available(receipt_path):
         return None
-    result = json.loads(result_path.read_text())
-    receipt = json.loads(receipt_path.read_text())
+    result = json.loads(retained_file(result_path).read_text())
+    receipt = json.loads(retained_file(receipt_path).read_text())
     status = result.get("status")
     if status not in (("passed", "failed") if allow_failure else ("passed",)):
         return None
@@ -182,17 +183,17 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
         if len(streams) != 2 or result.get("bit_identical_vectors") != 2:
             return None
         for paths in streams:
-            if not paths or not (ROOT/paths[-1]).is_file():
+            if not paths or not available(ROOT/paths[-1]):
                 return None
-            identity = json.loads((ROOT/paths[-1]).read_text())["identity"]
+            identity = json.loads(retained_file(ROOT/paths[-1]).read_text())["identity"]
             binary = ROOT/identity["binary"]
             build_path = binary.parent.parent/"binding.json"
             image = ROOT/identity["image"]
-            if (not build_path.is_file() or digest(build_path) != identity["build_binding_sha256"]
-                    or not binary.is_file() or digest(binary) != identity["binary_sha256"]
-                    or not image.is_file() or digest(image) != identity["image_sha256"]):
+            if (not available(build_path) or digest(build_path) != identity["build_binding_sha256"]
+                    or not available(binary) or digest(binary) != identity["binary_sha256"]
+                    or not available(image) or digest(image) != identity["image_sha256"]):
                 return None
-            build = json.loads(build_path.read_text())
+            build = json.loads(retained_file(build_path).read_text())
             if not intact(build) or any(
                     current.get(p) != sha for p, sha in identity["source_sha256"].items()):
                 return None
@@ -208,7 +209,7 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
     children = sorted(set(directory.rglob("*.receipt.json")) | external_tools)
     tool_receipts = []
     for path in children:
-        record = json.loads(path.read_text())
+        record = json.loads(retained_file(path).read_text())
         if mutation_campaign:
             for ancestor in path.parents:
                 if ancestor == directory:
@@ -238,7 +239,7 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
                         and path.parent == ROOT/row["path"]
                         and path.name in ("rejection.receipt.json", "simulation.receipt.json")
                         and record.get("exit") not in (0, None)
-                        and "PARAMETER ERROR" in (ROOT/record["stdout"]).read_text()):
+                        and "PARAMETER ERROR" in retained_file(ROOT/record["stdout"]).read_text()):
                     expected_rejection = True
                     break
         if record.get("timed_out") or (record.get("exit") != 0 and not (
@@ -246,7 +247,7 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
             return None
         for key in ("stdout", "stderr"):
             artifact = ROOT / record[key]
-            if not artifact.is_file():
+            if not available(artifact):
                 return None
             if record.get("artifact_sha256", {}).get(record[key]) != digest(artifact):
                 return None
@@ -260,7 +261,7 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
         return None
     if argv[1] == "tests/run_epilogue.py":
         if (result.get("commands") != 104 or result.get("vectors") != 168
-                or not (directory / "observations.txt").is_file()):
+                or not available(directory / "observations.txt")):
             return None
     if argv[1] == "tests/run_unit.py":
         if (not isinstance(result.get("compared"), int) or result["compared"] <= 0

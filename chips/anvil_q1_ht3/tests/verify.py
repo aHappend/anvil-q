@@ -21,6 +21,7 @@ from retention import find_result, inventory
 from run_synthesis import JOBS, JOB_BUDGETS
 from run_reproduction import REPRODUCTION_BUDGET
 from run_parameters import legal_cross
+from campaign import artifact, preserve_tree
 
 
 SEEDS = (17, 89, 2026)
@@ -64,7 +65,7 @@ MINIMUM_ALLOCATIONS = {
 def dependencies(script):
     sources = [relative(p) for pattern in ("rtl/*.sv", "design/*.md")
                for p in sorted(ROOT.glob(pattern))]
-    shared = ["tests/execution.py"]
+    shared = ["tests/execution.py", "tests/campaign.py"]
     owned = {
         "tests/run_unit.py": ["tests/reference.py", "tests/primitive_tb.sv",
                               "tests/quantizer_tb.sv"],
@@ -209,12 +210,12 @@ def reconcile_coverage(rows):
         result_path = row.get("result_path", row.get("result"))
         if not result_path:
             return None
-        receipt = json.loads((ROOT/row["receipt"]).read_text())
+        receipt = json.loads(artifact(ROOT/row["receipt"]).read_text())
         if (receipt.get("timed_out") or receipt.get("exit") != 0
                 or any(receipt.get("source_sha256", {}).get(path) != current[path]
                        for path in dependencies(script))):
             return None
-        result = json.loads((ROOT/result_path).read_text())
+        result = json.loads(artifact(ROOT/result_path).read_text())
         return result if result.get("status") == "passed" else None
 
     packed = next((r for r in rows if r["id"] == "packed_cache"), None)
@@ -386,6 +387,20 @@ def schedule(has_retained_epilogue=False):
     return jobs
 
 
+def budget_summary(rows):
+    unstarted = []
+    for row in rows:
+        if row.get("jobs"):
+            unstarted.extend(budget_summary(row["jobs"])["unstarted"])
+        elif (row.get("status") == "not_started"
+              or row.get("failure_kind") == "execution_budget_unstarted"):
+            unstarted.append({key: row[key] for key in
+                              ("id", "status", "available_s", "minimum_s", "failure_kind")
+                              if key in row})
+    return dict(budget_exhausted=bool(unstarted), unstarted=unstarted,
+                unstarted_count=len(unstarted))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="evidence/l1")
@@ -442,19 +457,24 @@ def main():
         rows.append(dict(id="aggregate", status="failed",
                          error=f"{type(exc).__name__}: {exc}"))
     status = "passed" if rows and all(r["status"] == "passed" for r in rows) else "failed"
-    summary = dict(status=status, checks=rows, seeds=list(SEEDS),
+    budget = budget_summary(rows)
+    summary = dict(status=status, checks=rows, seeds=list(SEEDS), budget=budget,
                    elapsed_s=time.time()-start, source_sha256=receipt["source_sha256"])
     with (output / "result.json").open("x") as out:
         json.dump(summary, out, indent=2)
         out.write("\n")
     receipt.update(end=timestamp(), exit=0 if status == "passed" else 1,
                    result=relative(output / "result.json"), **nested_outcomes(output))
+    receipt["budget_exhausted"] |= budget["budget_exhausted"]
+    receipt["unstarted_rows"] = budget["unstarted"]
     receipt["timed_out"] = (time.time()-start >= CHECK_SECONDS
-                            or receipt["nested_timed_out"] or receipt["budget_exhausted"])
+                            or receipt["nested_timed_out"])
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
         out.write("\n")
+    manifest = preserve_tree(output, "mandatory L1 campaign and dependencies")
     print(json.dumps(dict(status=status, result=relative(output / "result.json"),
+                          campaign_manifest=relative(manifest),
                           checks=[dict(id=r["id"], status=r["status"]) for r in rows])),
           flush=True)
     return receipt["exit"]

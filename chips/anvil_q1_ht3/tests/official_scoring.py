@@ -12,6 +12,7 @@ import numpy as np
 from execution import ROOT, hashes, relative, remaining, timestamp
 from official_reference import QwenFP64, scored_position
 from retention import artifacts_intact, digest
+from campaign import artifact, available, preserve
 
 
 NAMES = ("native", "represented_image")
@@ -43,7 +44,7 @@ def save_state(path, models):
 
 
 def restore_state(path, models, position):
-    with np.load(path, allow_pickle=False) as arrays:
+    with np.load(artifact(path), allow_pickle=False) as arrays:
         if set(arrays.files) != set(models):
             raise AssertionError("FP64 continuation model set mismatch")
         for name, model in models.items():
@@ -61,10 +62,10 @@ def restore_state(path, models, position):
 def checked_chain(path, identity, actual):
     chain, seen = [], set()
     while path is not None:
-        if path in seen or not path.is_file():
+        if path in seen or not available(path):
             return None
         seen.add(path)
-        row = json.loads(path.read_text())
+        row = json.loads(artifact(path).read_text())
         required = [row.get("state")]
         required += [c.get("reference") for c in (row.get("comparison") or {}).get(
             "comparisons", {}).values()]
@@ -79,7 +80,7 @@ def checked_chain(path, identity, actual):
             path = None
         else:
             path = ROOT/predecessor["binding"]
-            if not path.is_file() or digest(path) != predecessor["sha256"]:
+            if not available(path) or digest(path) != predecessor["sha256"]:
                 return None
     chain.reverse()
     for position, row in enumerate(chain):
@@ -101,7 +102,7 @@ def reference_rows(work, stream, bindings, config, checkpoint):
     if sorted(actual_positions) != work["scored_positions"][:len(actual_positions)]:
         raise AssertionError("official reference input is not a complete scored prefix")
     for row in actual_positions.values():
-        if not (ROOT/row["path"]).is_file() or digest(ROOT/row["path"]) != row["sha256"]:
+        if not available(ROOT/row["path"]) or digest(ROOT/row["path"]) != row["sha256"]:
             raise AssertionError("official RTL capture changed before reference scoring")
     current = hashes()
     identity = dict(schema=1, source_sha256={p: current[p] for p in DEPENDENCIES},
@@ -137,7 +138,7 @@ def reference_rows(work, stream, bindings, config, checkpoint):
         artifacts, comparison = [], None
         if scored:
             captured = actual_positions[position]
-            actual = np.fromfile(ROOT/captured["path"], dtype="<f4").astype(np.float64)
+            actual = np.fromfile(artifact(ROOT/captured["path"]), dtype="<f4").astype(np.float64)
             if actual.shape != (151936,) or not np.isfinite(actual).all():
                 raise AssertionError("official scored vector is not finite full vocabulary")
             target = work["token_ids"][position+1]
@@ -171,6 +172,8 @@ def reference_rows(work, stream, bindings, config, checkpoint):
         path = directory/"binding.json"
         with path.open("x") as out:
             json.dump(row, out, indent=2)
+        preserve([path, *([ROOT/chain[-1]["binding"]] if chain else [])],
+                 "settled independent FP64 continuation")
         row["binding"] = relative(path)
         chain.append(row)
         print(f"REFERENCE_PROGRESS task={work['task']} id={work['id']} "

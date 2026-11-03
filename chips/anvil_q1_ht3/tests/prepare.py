@@ -7,7 +7,8 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, execute, relative
+from execution import ROOT, execute, hashes, relative, timestamp
+from campaign import preserve_tree
 
 
 def main():
@@ -48,9 +49,23 @@ def main():
     with (output / "receipt.json").open("x") as out:
         json.dump(record, out, indent=2)
         out.write("\n")
+    retention = dict(argv=["python3", "tests/prepare.py", *sys.argv[1:]], cwd=".",
+                     start=timestamp(), source_sha256=hashes(), tool_version=sys.version,
+                     operation="complete lossless dependency retention", timed_out=False)
+    manifest = None
+    try:
+        manifest = preserve_tree(output, "bounded preparation and dependencies")
+        retention.update(exit=0, manifest=relative(manifest))
+    except (OSError, ValueError) as exc:
+        retention.update(exit=1, error=f"{type(exc).__name__}: {exc}")
+    retention["end"] = timestamp()
+    with (output/"retention.receipt.json").open("x") as out:
+        json.dump(retention, out, indent=2)
     print(json.dumps(dict(receipt=relative(output/"receipt.json"), exit=record["exit"],
-                          timed_out=record["timed_out"])), flush=True)
-    return 1 if record["timed_out"] or record["exit"] != 0 else 0
+                          timed_out=record["timed_out"],
+                          retention_receipt=relative(output/"retention.receipt.json"),
+                          campaign_manifest=relative(manifest) if manifest else None)), flush=True)
+    return int(record["timed_out"] or record["exit"] != 0 or retention["exit"] != 0)
 
 
 if __name__ == "__main__":

@@ -22,13 +22,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from acquire_public import fetch
 from execution import ROOT, ExecutionFailure, hashes, relative, remaining, timestamp
 from official_reference import Checkpoint, QwenFP64, Tokenizer, perplexity, scored_position
+from campaign import artifact, available, preserve
 
 
 MANIFEST = ROOT / "tests/official_inputs.json"
 
 
 def digest(path):
-    with path.open("rb") as stream:
+    with artifact(path).open("rb") as stream:
         sha = hashlib.sha256()
         while block := stream.read(1024*1024):
             sha.update(block)
@@ -38,14 +39,15 @@ def digest(path):
 def acquire(name, url, sha256, output, revision=None):
     directory = ROOT / f"evidence/official-image-{sha256[:24]}"
     directory.mkdir(parents=True, exist_ok=True)
-    candidates = list(directory.glob(name))
+    candidates = [directory/name]
     for root in (ROOT/"evidence/preparation").glob("ht3-official-*"):
         candidates.extend(root.glob(f"shard-*/{name}"))
         candidates.extend(root.glob(f"shard-*/{name}.json"))
         candidates.extend(root.glob(f"shard-*/checkpoint-images/{name}"))
     for candidate in candidates:
-        if candidate.is_file() and digest(candidate) == sha256:
-            return dict(path=relative(candidate), url=url, sha256=sha256, reused=True)
+        if available(candidate) and digest(candidate) == sha256:
+            preserve([candidate], "validated official public input")
+            return dict(path=relative(artifact(candidate)), url=url, sha256=sha256, reused=True)
     target = directory / name
     if target.exists():
         # A corrupt cached input is preserved rather than silently replaced.
@@ -57,6 +59,7 @@ def acquire(name, url, sha256, output, revision=None):
         record = fetch(url, target, sha256)
         if revision is not None and record["headers"].get("x-revision") != revision:
             raise AssertionError(f"official dataset revision mismatch: {name}")
+        preserve([target], "hash-checked official public input")
         return record
     finally:
         with (output / f"acquire-{name.replace('.', '-')}-{uuid.uuid4().hex[:8]}.json").open("x") as out:

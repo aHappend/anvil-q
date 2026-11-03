@@ -57,11 +57,12 @@ def nested_outcomes(directory):
     timed_out, unstarted = [], []
     for path in directory.rglob("*.receipt.json"):
         record = json.loads(path.read_text())
-        if not record.get("timed_out"):
-            continue
         launched = record.get("launched", record.get("exit") is not None
                               or record.get("timeout", 0) > 0)
-        (timed_out if launched else unstarted).append(relative(path))
+        if not launched and record.get("budget_exhausted"):
+            unstarted.append(relative(path))
+        elif record.get("timed_out") and launched:
+            timed_out.append(relative(path))
     return dict(nested_timed_out=bool(timed_out), budget_exhausted=bool(unstarted),
                 timed_out_receipts=timed_out, unstarted_receipts=unstarted)
 
@@ -110,7 +111,6 @@ def execute(argv, output, stem, version_argv, root=ROOT):
         with stdout.open("x") as out, stderr.open("x") as err:
             limit = min(limit, remaining())
             if limit <= 5:
-                timed_out = True
                 record.update(timeout=0, settlement_timeout=limit, budget_exhausted=True)
                 err.write("Complete-check execution budget exhausted before launch.\n")
             else:

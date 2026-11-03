@@ -20,6 +20,7 @@ from execution import (ROOT, ExecutionFailure, clean_objects, execute, failure_d
                        nested_outcomes, relative, remaining, timestamp)
 from reference import convert, encode, float_bits, float_value
 from retention import execution_logs_intact, validated_execution
+from campaign import artifact, available, preserve
 
 
 CASE_MINIMUM_SECONDS = 120
@@ -237,15 +238,16 @@ def compiled(geometry=None, performance=False):
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
     for directory in sorted(cache.glob(f"inference-{key}-*")):
         binding, binary = directory/"binding.json", directory/"compile-obj/Vinference_tb"
-        if (not binding.is_file() or not binary.is_file()
-                or not (directory/"compile.receipt.json").is_file()):
+        if (not available(binding) or not available(binary)
+                or not available(directory/"compile.receipt.json")):
             continue
-        record = json.loads(binding.read_text())
-        receipt = json.loads((directory/"compile.receipt.json").read_text())
+        record = json.loads(artifact(binding).read_text())
+        receipt = json.loads(artifact(directory/"compile.receipt.json").read_text())
         if (record["identity"] == identity and receipt["exit"] == 0 and not receipt["timed_out"]
                 and execution_logs_intact(receipt)
-                and record["binary_sha256"] == hashlib.sha256(binary.read_bytes()).hexdigest()):
-            return binary, relative(binding)
+                and record["binary_sha256"] == hashlib.sha256(artifact(binary).read_bytes()).hexdigest()):
+            preserve([binding, binary], "validated integrated build")
+            return artifact(binary), relative(binding)
     directory = cache/f"inference-{key}-{uuid.uuid4().hex[:12]}"
     directory.mkdir()
     objects = directory/"compile-obj"
@@ -259,6 +261,7 @@ def compiled(geometry=None, performance=False):
                        binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                        compile_receipt=relative(directory/"compile.receipt.json")), out, indent=2)
     clean_objects(objects)
+    preserve([directory/"binding.json", binary], "integrated build")
     return binary, relative(directory/"binding.json")
 
 
@@ -317,12 +320,13 @@ def resumable_case(directory, binary, binding, inputs, options, prefix, checker,
                   artifact_sha256=artifacts)
     with (directory/"case.json").open("x") as out:
         json.dump(result, out, indent=2)
+    preserve([directory/"case.json", ROOT/binding], "checked integrated observation")
     return result
 
 
 def check_case(directory, text, binding, fmt, seed, expected, expected_batch=None, vocab=3):
     """Recheck complete public observations, including retained simulations."""
-    observations = directory/"observations.txt"
+    observations = artifact(directory/"observations.txt")
     match = re.search(r"SUMMARY inference format=(\d+) tokens=(\d+) logits=(\d+) "
                       r"csr=(\d+) csr_holds=(\d+) output_stalls=(\d+) reads=(\d+) "
                       r"writes=(\d+) bus_waits=(\d+) max_debt=(\d+)", text)
@@ -374,7 +378,7 @@ def control_case(directory, binary, binding, probe, fmt=0, seed=17):
 
 
 def check_control(directory, text, binding, probe, fmt, seed, expected):
-    observations = directory/"observations.txt"
+    observations = artifact(directory/"observations.txt")
     if probe in ("sparse", "ownership"):
         checked = check_case(directory, text, binding, fmt, seed, expected)
         if probe == "sparse":

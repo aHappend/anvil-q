@@ -17,11 +17,13 @@ import numpy as np
 from execution import (ROOT, clean_objects, execute, hashes, relative, remaining,
                        timestamp)
 from retention import artifacts_intact, digest, execution_logs_intact
+from campaign import (artifact, available, canonical_argv, logical, preserve)
 
 
 TOP = "anvil_q1_ht3_top"
 DRIVER = "tests/official_stream.cpp"
-DEPENDENCIES = [DRIVER, "tests/official_stream.py", "tests/execution.py"]
+DEPENDENCIES = [DRIVER, "tests/official_stream.py", "tests/execution.py",
+                "tests/campaign.py"]
 COMPILE_OPTIONS = ["-O3", "-CFLAGS", "-O3"]
 SUMMARY = re.compile(
     r"^SHARD cycles=(\d+) state=(\d+) accepted=(\d+) completed=(\d+) "
@@ -48,19 +50,20 @@ def compiled(output, parameters=None):
     cache.mkdir(parents=True, exist_ok=True)
     for candidate in sorted(cache.glob(f"official-stream-{key}-*")):
         path, binary = candidate/"binding.json", candidate/"compile-obj"/f"V{TOP}"
-        if not path.is_file() or not binary.is_file():
+        if not available(path) or not available(binary):
             continue
-        record = json.loads(path.read_text())
+        record = json.loads(artifact(path).read_text())
         required = [relative(p) for p in (binary, candidate/"compile-obj/driver.cpp",
                     *[candidate/f"compile.{suffix}" for suffix in
                       ("receipt.json", "stdout.txt", "stderr.txt")])]
         if (record.get("identity") != identity
                 or not artifacts_intact(record.get("artifact_sha256", {}), required)):
             continue
-        receipt = json.loads((ROOT/record["compile_receipt"]).read_text())
+        receipt = json.loads(artifact(ROOT/record["compile_receipt"]).read_text())
         if (receipt.get("exit") == 0 and not receipt.get("timed_out")
                 and execution_logs_intact(receipt)):
-            return binary, path
+            preserve([path], "validated official stream build")
+            return artifact(binary), path
     directory = cache/f"official-stream-{key}-{uuid.uuid4().hex[:12]}"
     objects = directory/"compile-obj"
     objects.mkdir(parents=True)
@@ -82,6 +85,7 @@ def compiled(output, parameters=None):
                        binary_sha256=digest(binary),
                        artifact_sha256={relative(p): digest(p) for p in artifacts}), out, indent=2)
     clean_objects(objects)
+    preserve([binding], "official stream build and copied driver")
     return binary, binding
 
 
@@ -120,19 +124,19 @@ def validated_chain(path, identity):
     """Every settled predecessor, raw log and complete checkpoint is hash-checked."""
     chain, seen = [], set()
     while path is not None:
-        if path in seen or not path.is_file():
+        if path in seen or not available(path):
             return None
         seen.add(path)
-        row = json.loads(path.read_text())
+        row = json.loads(artifact(path).read_text())
         if row.get("identity") != identity or not intact(row):
             return None
-        receipt = json.loads((ROOT/row["receipt"]).read_text())
+        receipt = json.loads(artifact(ROOT/row["receipt"]).read_text())
         if (receipt.get("exit") != 0 or receipt.get("timed_out")
                 or receipt.get("tool_version_exit") != 0
                 or receipt.get("tool_version", "").strip() != identity["tool_version"]):
             return None
-        argv = receipt.get("argv", [])
-        if (argv != row.get("argv")
+        argv = canonical_argv(receipt.get("argv", []))
+        if (argv != canonical_argv(row.get("argv", []))
                 or not argv or argv[0] != identity["binary"]
                 or "--plan" not in argv or "--image" not in argv
                 or argv[argv.index("--image")+1] != identity["image"]
@@ -141,7 +145,7 @@ def validated_chain(path, identity):
                 or any(receipt.get("source_sha256", {}).get(p) != sha
                        for p, sha in identity["source_sha256"].items())):
             return None
-        observed = summary((ROOT/receipt["stdout"]).read_text())
+        observed = summary(artifact(ROOT/receipt["stdout"]).read_text())
         if observed != row.get("summary"):
             return None
         row["binding"] = relative(path)
@@ -149,7 +153,7 @@ def validated_chain(path, identity):
         predecessor = row.get("predecessor")
         if predecessor:
             path = ROOT/predecessor["binding"]
-            if not path.is_file() or digest(path) != predecessor["sha256"]:
+            if not available(path) or digest(path) != predecessor["sha256"]:
                 return None
         else:
             path = None
@@ -160,11 +164,21 @@ def validated_chain(path, identity):
                 or (index and chain[index-1]["summary"]["complete"])):
             return None
         previous_cycles = row["summary"]["cycles"]
-        argv = row["argv"]
+        argv = canonical_argv(row["argv"])
         if "--restore" in argv:
-            if (not index or argv[argv.index("--restore")+1] !=
-                    chain[index-1]["checkpoint"]):
+            if not index:
                 return None
+            prefix = argv[argv.index("--restore")+1]
+            original = chain[index-1]["checkpoint"]
+            if prefix != original:
+                relocation = row.get("checkpoint_relocation", {})
+                if relocation != dict(original=original, restored=prefix):
+                    return None
+                for suffix in (".rtl.bin", ".host.bin"):
+                    sha = chain[index-1]["artifact_sha256"].get(original+suffix)
+                    if (sha is None or row["artifact_sha256"].get(prefix+suffix) != sha
+                            or digest(ROOT/(prefix+suffix)) != sha):
+                        return None
         elif index:
             return None
     return chain
@@ -174,7 +188,7 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
                chunk_cycles=None, max_new_chunks=None):
     plan = output/"stream-plan.txt"
     plan.write_bytes(plan_bytes(descriptors, image["image_bytes"], tokens, scored, vocab))
-    build = json.loads(binding.read_text())
+    build = json.loads(artifact(binding).read_text())
     current = hashes()
     sources = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+DEPENDENCIES
     if (digest(ROOT/image["image"]) != image["image_sha256"] or
@@ -183,7 +197,7 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
         raise AssertionError("stream input/build no longer matches the captured source image")
     identity = dict(schema=1, source_sha256={p: current[p] for p in sources},
                     tool_version=build["identity"]["tool_version"],
-                    binary=relative(binary), binary_sha256=digest(binary),
+                    binary=logical(binary), binary_sha256=digest(binary),
                     build_binding_sha256=digest(binding), plan_sha256=digest(plan),
                     image=image["image"], image_sha256=image["image_sha256"],
                     image_bytes=image["image_bytes"],
@@ -213,25 +227,44 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
             cycles = 10000
         else:
             prior = chain[-1]
-            receipt = json.loads((ROOT/prior["receipt"]).read_text())
+            receipt = json.loads(artifact(ROOT/prior["receipt"]).read_text())
             start_cycles = chain[-2]["summary"]["cycles"] if len(chain) > 1 else 0
             rate = (prior["summary"]["cycles"]-start_cycles)/max(0.01, receipt["duration_s"])
             cycles = max(1, min(2000000, int(rate*min(60, (remaining()-60)/2))))
         directory = cache/f"chunk-{uuid.uuid4().hex[:12]}"
         directory.mkdir()
-        argv = [relative(binary), "--plan", relative(plan), "--image", image["image"],
+        argv = [relative(artifact(binary)), "--plan", relative(plan),
+                "--image", relative(artifact(ROOT/image["image"])),
                 "--output", relative(directory), "--cycles", str(cycles)]
+        relocation, relocated_files = None, []
         if chain:
-            argv += ["--restore", chain[-1]["checkpoint"]]
+            checkpoint = chain[-1]["checkpoint"]
+            rtl = artifact(ROOT/(checkpoint+".rtl.bin"))
+            host = artifact(ROOT/(checkpoint+".host.bin"))
+            if rtl.parent != host.parent:
+                # The driver consumes a two-file prefix. Relocated pieces must
+                # be assembled together in a fresh, explicitly bound namespace.
+                restored = directory/f"restore-{uuid.uuid4().hex[:12]}"
+                restored.mkdir()
+                for source, suffix in ((rtl, ".rtl.bin"), (host, ".host.bin")):
+                    shutil.copyfile(source, restored/("checkpoint"+suffix))
+                    if digest(source) != digest(restored/("checkpoint"+suffix)):
+                        raise AssertionError("checkpoint relocation changed bytes")
+                    relocated_files.append(restored/("checkpoint"+suffix))
+                argv += ["--restore", relative(restored/"checkpoint")]
+                relocation = dict(original=checkpoint, restored=relative(restored/"checkpoint"))
+            else:
+                argv += ["--restore", relative(rtl.with_suffix("").with_suffix(""))]
         text = execute(argv, directory, "simulation", ["verilator", "--version"])
         observed = summary(text)
         artifacts = [directory/"checkpoint.rtl.bin", directory/"checkpoint.host.bin",
                      *[directory/f"simulation.{suffix}" for suffix in
                        ("receipt.json", "stdout.txt", "stderr.txt")],
-                     *sorted(directory.glob("position-*.f32")), plan]
+                     *sorted(directory.glob("position-*.f32")), plan, *relocated_files]
         if not all(p.is_file() for p in artifacts):
             raise AssertionError("stream zero exit without complete checkpoints")
         row = dict(identity=identity, argv=argv, summary=observed,
+                   checkpoint_relocation=relocation,
                    checkpoint=relative(directory/"checkpoint"),
                    predecessor=(dict(binding=chain[-1]["binding"],
                                      sha256=digest(ROOT/chain[-1]["binding"])) if chain else None),
@@ -240,6 +273,9 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
         path = directory/"binding.json"
         with path.open("x") as out:
             json.dump(row, out, indent=2)
+        preserve([path, binding, ROOT/image["image"],
+                  *([ROOT/chain[-1]["binding"]] if chain else [])],
+                 "settled RTL stream checkpoint and full input closure")
         row["binding"] = relative(path)
         chain.append(row)
         print(f"STREAM_PROGRESS cycles={observed['cycles']} "
@@ -248,7 +284,7 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
     observations, measurements = {}, []
     for row in chain:
         directory = (ROOT/row["binding"]).parent
-        text = (directory/"simulation.stdout.txt").read_text()
+        text = artifact(directory/"simulation.stdout.txt").read_text()
         for match in TOKEN.findall(text):
             position, token, cycles, reads, writes, count, is_scored = map(int, match)
             if (position != len(measurements) or position >= len(tokens) or
@@ -260,9 +296,9 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
                                      simulated_tpm=60*200000000/cycles))
             if is_scored:
                 path = directory/f"position-{position}.f32"
-                if path.stat().st_size != 4*vocab:
+                if artifact(path).stat().st_size != 4*vocab:
                     raise AssertionError("short official RTL logit vector")
-                values = np.fromfile(path, dtype="<f4").astype(np.float64)
+                values = np.fromfile(artifact(path), dtype="<f4").astype(np.float64)
                 if not np.isfinite(values).all():
                     raise AssertionError("nonfinite captured official RTL logits")
                 observations[position] = dict(path=relative(path), sha256=digest(path))

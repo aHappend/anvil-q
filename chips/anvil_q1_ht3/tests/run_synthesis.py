@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
 from yosys_frontend import materialize
 from retention import artifacts_intact, digest, execution_logs_intact
+from campaign import artifact, available, preserve
 
 
 COMPACT = {
@@ -81,17 +82,17 @@ def retained_job(identifier, top, parameters, mapped, script, frontend, version)
                 continue
             receipt_path = ROOT / row["receipt"]
             receipt_path.resolve().relative_to(ROOT)
-            if not receipt_path.is_file():
+            if not available(receipt_path):
                 continue
-            receipt = json.loads(receipt_path.read_text())
+            receipt = json.loads(artifact(receipt_path).read_text())
             directory = receipt_path.parent
             old_frontend_path = directory.parent / "frontend.json"
             if (receipt.get("exit") != 0 or receipt.get("timed_out")
                     or receipt.get("tool_version", "").strip() != version
                     or receipt.get("tool_version_exit") != 0
-                    or not old_frontend_path.is_file()):
+                    or not available(old_frontend_path)):
                 continue
-            old_frontend = json.loads(old_frontend_path.read_text())
+            old_frontend = json.loads(artifact(old_frontend_path).read_text())
             if old_frontend.get("source_sha256") != frontend["source_sha256"]:
                 continue
             transformation = lambda f: [{k: v for k, v in r.items() if k != "output"}
@@ -102,22 +103,22 @@ def retained_job(identifier, top, parameters, mapped, script, frontend, version)
                    for p in frontend["source_sha256"]):
                 continue
             old_script = directory / "synthesis.ys"
-            if not old_script.is_file() or semantic_script(
-                    old_script.read_text().strip(), old_frontend, directory) != script:
+            if not available(old_script) or semantic_script(
+                    artifact(old_script).read_text().strip(), old_frontend, directory) != script:
                 continue
             artifacts = [directory / name for name in
                          ("netlist.json", "statistics.json", "synthesis.stdout.txt",
                           "synthesis.stderr.txt", "synthesis.ys")]
-            if not all(path.is_file() for path in artifacts):
+            if not all(available(path) for path in artifacts):
                 continue
             if not execution_logs_intact(receipt):
                 continue
-            counts = checked_account(json.loads(artifacts[0].read_text()), top,
+            counts = checked_account(json.loads(artifact(artifacts[0]).read_text()), top,
                                      identifier, mapped)
             return dict(id=identifier, status="passed", parameters=parameters,
                         mapped=mapped, accounting=counts, receipt=relative(receipt_path),
                         reused=True, revalidated_by="exact command/frontend/tool/source; raw netlist",
-                        artifact_sha256={relative(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                        artifact_sha256={relative(path): digest(path)
                                          for path in [*artifacts, receipt_path, result_path]})
     return None
 
@@ -277,18 +278,18 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
         retained = None
         for candidate in sorted(cache.glob(f"synthesis-{phase}-*")):
             binding = candidate / "binding.json"
-            if not binding.is_file():
+            if not available(binding):
                 continue
-            record = json.loads(binding.read_text())
+            record = json.loads(artifact(binding).read_text())
             bound_identity = dict(record.get("identity", {}))
             if isinstance(bound_identity.get("commands"), str):
                 bound_identity["commands"] = semantic_sources(bound_identity["commands"], frontend)
             phase_receipt = candidate / "synthesis.receipt.json"
             if (bound_identity != identity or record.get("status") != "passed"
-                    or not phase_receipt.is_file()
+                    or not available(phase_receipt)
                     or record.get("receipt") != relative(phase_receipt)):
                 continue
-            receipt = json.loads(phase_receipt.read_text())
+            receipt = json.loads(artifact(phase_receipt).read_text())
             if (receipt.get("exit") != 0 or receipt.get("timed_out")
                     or receipt.get("tool_version", "").strip() != version):
                 continue
@@ -310,11 +311,11 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                 # The complete bound chain is hash-validated above. Validate
                 # its actual last netlist before advancing, not every growing
                 # intermediate netlist again on each resumed invocation.
-                checked_account(json.loads((predecessor.parent/"netlist.json").read_text()),
+                checked_account(json.loads(artifact(predecessor.parent/"netlist.json").read_text()),
                                 top, identifier, False)
             directory = cache / f"synthesis-{phase}-{key}-{uuid.uuid4().hex[:12]}"
             directory.mkdir()
-            read_checkpoint = f"read_rtlil {relative(predecessor)}; " if predecessor else ""
+            read_checkpoint = f"read_rtlil {relative(artifact(predecessor))}; " if predecessor else ""
             script = (read_checkpoint + commands
                       + f"tee -o {relative(directory / 'statistics.json')} stat -json; "
                       + f"write_json {relative(directory / 'netlist.json')}; "
@@ -353,10 +354,14 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                 json.dump(dict(identity=identity, status="passed",
                                artifact_sha256=artifact_sha256,
                                receipt=relative(directory / "synthesis.receipt.json")), out, indent=2)
+            preserve([directory/"binding.json", output.parent/"frontend.json",
+                      *([predecessor.parent/"binding.json"] if predecessor else [])],
+                     "settled synthesis phase and predecessor")
             reused = False
         else:
             directory, counts = retained, None
             artifact_sha256 = record["artifact_sha256"]
+            preserve([directory/"binding.json"], "validated synthesis phase")
             reused = True
         predecessor = directory / "checkpoint.il"
         predecessor_digest = artifact_sha256[relative(predecessor)]
@@ -366,7 +371,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
         with (output / f"{phase}-progress.json").open("x") as out:
             json.dump(records, out, indent=2)
         if phase == "word" and identifier == "compact-mapped":
-            netlist = json.loads((directory / "netlist.json").read_text())
+            netlist = json.loads(artifact(directory / "netlist.json").read_text())
             phases[1:2] = mapping_groups(netlist)
             if through_phase and through_phase not in {name for name, _ in phases}:
                 raise ValueError(f"unknown synthesis diagnostic phase: {through_phase}")
@@ -376,7 +381,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                         receipt=records[-1]["receipt"],
                         coverage_limits=["partial mapping diagnostic; final ABC not executed"])
     if counts is None:
-        counts = checked_account(json.loads((directory/"netlist.json").read_text()),
+        counts = checked_account(json.loads(artifact(directory/"netlist.json").read_text()),
                                  top, identifier, True)
     return dict(id=identifier, status="passed", parameters=parameters,
                 mapped=True, phases=records, accounting=counts,

@@ -8,6 +8,7 @@ import numpy as np
 from execution import ROOT, hashes, relative
 from official_reference import Checkpoint
 from retention import digest
+from campaign import preserve
 
 
 DEPENDENCIES = ("tests/official_image.py", "tests/official_reference.py",
@@ -150,4 +151,6 @@ def build(directory, checkpoint_path, config_path, checkpoint_sha256):
                   descriptors=regions)
     with (directory/"image-manifest.json").open("x") as out:
         json.dump(result, out, indent=2)
+    preserve([directory/"image-manifest.json", checkpoint_path, config_path],
+             "official represented image and pinned source checkpoint")
     return result

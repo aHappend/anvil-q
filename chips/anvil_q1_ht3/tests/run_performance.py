@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import (ROOT, ExecutionFailure, clean_objects, execute, hashes,
                        relative, remaining, timestamp)
 from retention import digest, validated_execution
+from campaign import artifact, available, preserve
 from run_compatibility import check_case, compiled, fixture
 
 
@@ -89,7 +90,7 @@ def performance_case(output, name, binary, binding, fmt, seed):
     for candidate in candidates:
         cached = json.loads(candidate.read_text())
         intact = bool(cached.get("artifact_sha256")) and all(
-            (ROOT/p).is_file() and digest(ROOT/p) == sha
+            available(ROOT/p) and digest(ROOT/p) == sha
             for p, sha in cached.get("artifact_sha256", {}).items())
         if not intact and cached.get("simulation_receipt"):
             rejected_receipts.add(ROOT/cached["simulation_receipt"])
@@ -136,6 +137,7 @@ def performance_case(output, name, binary, binding, fmt, seed):
                        vectors=digest(vectors), case=relative(directory/"case.json"), reused=reused,
                        artifact_sha256={**artifacts, relative(directory/"case.json"):
                                         digest(directory/"case.json")})
+    preserve([directory/"case.json", ROOT/binding], "matched performance observation")
     return observation
 
 
@@ -169,14 +171,15 @@ def parent_compiled():
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
     for candidate in sorted(cache.glob(f"parent-inference-{key}-*")):
         binding, binary = candidate/"binding.json", candidate/"compile-obj/Vinference_tb"
-        if not binding.is_file() or not binary.is_file():
+        if not available(binding) or not available(binary):
             continue
-        record = json.loads(binding.read_text())
-        receipt = json.loads((candidate/"compile.receipt.json").read_text())
+        record = json.loads(artifact(binding).read_text())
+        receipt = json.loads(artifact(candidate/"compile.receipt.json").read_text())
         if (record.get("identity") == identity and receipt.get("exit") == 0
                 and not receipt.get("timed_out")
-                and record.get("binary_sha256") == hashlib.sha256(binary.read_bytes()).hexdigest()):
-            return binary, relative(binding)
+                and record.get("binary_sha256") == hashlib.sha256(artifact(binary).read_bytes()).hexdigest()):
+            preserve([binding, binary], "validated parent build")
+            return artifact(binary), relative(binding)
     build = cache / f"parent-inference-{key}-{uuid.uuid4().hex[:12]}"
     build.mkdir()
     objects = build / "compile-obj"
@@ -189,6 +192,7 @@ def parent_compiled():
                        binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                        compile_receipt=relative(build/"compile.receipt.json")), out, indent=2)
     clean_objects(objects)
+    preserve([build/"binding.json", binary], "parent build")
     return binary, relative(build/"binding.json")
 
 
