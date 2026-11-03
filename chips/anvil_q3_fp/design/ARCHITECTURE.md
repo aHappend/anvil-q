@@ -159,7 +159,8 @@ producer payload speculatively on every edge, independently of valid, flush
 and scheduler ready. Producer acceptance locks the write slot; scheduler
 acceptance releases the read slot. Owned payload is never rewritten, including
 on its retirement edge. Only the small ownership/pointer controller sees
-handshake and flush conditions. The ordered response path remains direct.
+handshake and flush conditions. Responses cross a separate registered boundary
+described below.
 
 Producer ready uses pre-edge free-slot credit, not combinational scheduler
 arbitration feedback. One occupied slot permits simultaneous retire/refill
@@ -198,8 +199,8 @@ improvement is claimed until fresh post-fit STA.
 
 Every request gains one unstalled clock between producer acceptance and
 scheduler eligibility. Accepted weight staging is retained; scalar reads and
-writes now have the same latency/ownership boundary. No response stage or
-arithmetic stage is added. Registers are independent across clients; the two
+writes now have the same latency/ownership boundary. No arithmetic stage is
+added. Registers are independent across clients; the two
 tile slots and fill/consume overlap are unchanged. Measured command latency
 and bandwidth must be refreshed rather than reusing historical L1 measurements.
 
@@ -216,6 +217,41 @@ annulled. Writes already acknowledged are not rolled back, and incomplete cache
 commits remain inaccessible. Reset clears both payload and valid; flush clears
 ownership without clearing payload. This avoids delaying cancellation or
 masking errors to shorten the timing path.
+
+### Registered client-response boundary
+
+Fresh compact post-fit evidence at 10 ns still reported setup WNS -0.645 ns
+and hold WNS +0.036 ns. Its critical control path was decoder `failed` through
+`unit_flush`, memory-port response ready, scheduler retirement/free-slot
+selection and ingress arbitration into `successor[14][1]`. Request staging
+does not cut that response-credit path.
+
+The top now inserts `response_staging[client]` between the unchanged scheduler
+and every consumer. Each client owns two 33-bit error/data registers, two
+ownership bits and one-bit read/write pointers. Scheduler-facing ready uses
+only reset and registered free-write-slot capacity. Consumer ready, decoder
+failure and core flush cannot affect that ready combinationally. In particular,
+a full FIFO cannot accept on the same edge that the consumer retires; credit
+returns after the edge. With one owned slot, retirement and insertion use
+different slots, preserving ordered delivery without overwriting held payload.
+Unowned payload registers sample speculatively; ownership alone locks payload.
+Acceptance adds one unstalled clock before consumer retirement, independently
+for every client, including read data, write acknowledgments and errors.
+
+Core flush and scheduler fault gate consumer valid/data/error to zero and
+annul all local ownership/pointers at the edge, taking priority over transfers.
+Scheduler-facing credit deliberately remains capacity-only even during flush;
+any response accepted at an annulment edge is discarded. Reset clears payload,
+ownership and pointers and forces response-facing outputs to zero. A
+producer-local failure may stop its consumer, but cannot propagate through
+ready to scheduler arbitration; the bounded FIFO holds responses until the
+top-level abort annuls them. Already buffered responses represent completed
+external transactions, while the scheduler retains sole responsibility for
+draining every still-outstanding external transaction. No stale buffered
+response survives a sequence flush, cancellation, fault or epoch restart.
+Acknowledged writes are not rolled back; cache commitment rules are unchanged.
+Fresh mandatory checks and source-bound post-fit STA must establish this repair;
+the failed timing result is not timing closure or production-default PPA.
 
 ## Cache hierarchy
 

@@ -64,6 +64,8 @@ module anvil_q3_fp_top #(
   wire [CLIENTS*32-1:0] scheduler_req_layer;
   wire [CLIENTS*3-1:0] scheduler_req_proj;
   wire [CLIENTS*32-1:0] scheduler_req_row, scheduler_req_col, scheduler_req_wdata;
+  wire [CLIENTS-1:0] scheduler_rsp_valid, scheduler_rsp_error, scheduler_rsp_ready;
+  wire [CLIENTS*32-1:0] scheduler_rsp_rdata;
   genvar client;
   generate for (client=0;client<CLIENTS;client=client+1) begin: request_staging
     reg [1:0] owned;
@@ -103,6 +105,45 @@ module anvil_q3_fp_top #(
           read_slot<=!read_slot;
         end
         if (accept_request) begin
+          owned[write_slot]<=1;
+          write_slot<=!write_slot;
+        end
+      end
+    end
+  end endgenerate
+  generate for (client=0;client<CLIENTS;client=client+1) begin: response_staging
+    reg [1:0] owned;
+    reg read_slot, write_slot;
+    reg [32:0] payload0, payload1;
+    wire [32:0] incoming_payload={scheduler_rsp_error[client],
+      scheduler_rsp_rdata[client*32+:32]};
+    wire [32:0] payload=read_slot ? payload1 : payload0;
+    wire accept_response=scheduler_rsp_valid[client] && scheduler_rsp_ready[client];
+    wire retire_response=c_rsp_valid[client] && c_rsp_ready[client];
+    // No consumer-ready or flush lookahead may enter scheduler retirement.
+    assign scheduler_rsp_ready[client]=rst_n && !owned[write_slot];
+    assign c_rsp_valid[client]=rst_n && !core_flush && !scheduler_fault && owned[read_slot];
+    assign c_rsp_error[client]=c_rsp_valid[client] && payload[32];
+    assign c_rsp_rdata[client*32+:32]=c_rsp_valid[client] ? payload[31:0] : 32'd0;
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        payload0<=0; payload1<=0;
+      end else begin
+        if (!owned[0]) payload0<=incoming_payload;
+        if (!owned[1]) payload1<=incoming_payload;
+      end
+    end
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        owned<=0; read_slot<=0; write_slot<=0;
+      end else if (core_flush || scheduler_fault) begin
+        owned<=0; read_slot<=0; write_slot<=0;
+      end else begin
+        if (retire_response) begin
+          owned[read_slot]<=0;
+          read_slot<=!read_slot;
+        end
+        if (accept_response) begin
           owned[write_slot]<=1;
           write_slot<=!write_slot;
         end
@@ -178,7 +219,8 @@ module anvil_q3_fp_top #(
     .c_req_layer(scheduler_req_layer),.c_req_proj(scheduler_req_proj),
     .c_req_row(scheduler_req_row),.c_req_col(scheduler_req_col),
     .c_req_wdata(scheduler_req_wdata),
-    .c_rsp_valid(c_rsp_valid),.c_rsp_error(c_rsp_error),.c_rsp_ready(c_rsp_ready),.c_rsp_rdata(c_rsp_rdata),
+    .c_rsp_valid(scheduler_rsp_valid),.c_rsp_error(scheduler_rsp_error),
+    .c_rsp_ready(scheduler_rsp_ready),.c_rsp_rdata(scheduler_rsp_rdata),
     .mem_req_valid(mem_req_valid),.mem_req_ready(mem_req_ready),
     .mem_req_write(mem_req_write),.mem_req_kind(mem_req_kind),
     .mem_req_layer(mem_req_layer),.mem_req_proj(mem_req_proj),

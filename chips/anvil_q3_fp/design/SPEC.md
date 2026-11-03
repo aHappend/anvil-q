@@ -153,8 +153,8 @@ ports or scheduler queue depth. A producer request
 accepted at E0 owns a complete registered 136-bit payload (write, kind, layer,
 projection, row, column, write data). It is first eligible for scheduler
 acceptance at E1, adding one unstalled clock per request, including scalar
-reads/writes and each AWQ q/z/scale read. Responses retain the direct, ordered
-scheduler path. Registered addresses and scheduler-facing valid do not depend
+reads/writes and each AWQ q/z/scale read. Responses use the registered, ordered
+boundary described below. Registered addresses and scheduler-facing valid do not depend
 combinationally on producer failure or core flush. Payload may remain present
 without valid; only valid transfers establish scheduler ownership.
 
@@ -173,6 +173,24 @@ not the retirement edge. FIFO ordering is independent of scheduler backpressure.
 
 The FIFO retains accepted reads/writes independently of later producer-local
 fault/flush gating, until forwarded or annulled by top-level core flush.
+
+Each client also has a two-slot response FIFO carrying the complete 33-bit
+error/data payload. A scheduler response accepted at E0 becomes visible to
+the consumer post-E0 and can first retire at E1. Scheduler-facing ready is
+reset-gated free-write-slot credit derived solely from registered ownership
+and pointers. It never uses consumer ready, decoder failure, core flush or
+same-edge consumer retirement lookahead. One occupied slot permits simultaneous
+retire/refill into distinct slots; a full FIFO restores scheduler credit only
+after a retirement edge. A held valid response preserves both data and error.
+Unowned slots may sample payload speculatively; only handshakes own responses.
+Reset clears payload, ownership and pointers and gates both sides' outputs to
+zero. Core flush or scheduler fault immediately suppresses consumer-facing
+valid/data/error and clears ownership/pointers on the edge, with priority over
+either transfer. Scheduler credit remains capacity-only during flush; any
+coincident accepted response is discarded, never delivered after restart.
+Buffered responses have already retired externally; the unchanged scheduler
+still drains all outstanding external transactions before abort completion.
+Neither buffering boundary changes top ports, scheduler parameters or epochs.
 All existing error propagation remains active. Core flush immediately
 suppresses producer readiness and clears staged ownership on the edge, with
 priority over forwarding/refill. Scheduler flush immediately suppresses
@@ -297,6 +315,13 @@ E0 is the rising edge accepting pre-edge valid && ready.
 | Client stage plus cancel/core flush | Producer readiness suppressed; scheduler flush/draining suppresses admission; clear staged valid on the edge before any refill; scheduler-owned requests still drain |
 | Client stage reset / first post-reset edge | Reset clears payload/ownership; after release an empty stage may accept, but cannot forward before E1 |
 | Client stage, BANKS=1 / QUEUE_DEPTH=1 or 3 | One independent register per weight or scalar client; no pointers or power-of-two depth assumption |
+| Scheduler response accepted at E0 | Error/data registered post-E0; earliest consumer retirement E1 |
+| Response FIFO, one owned slot, retire/refill | Retire old head and own new tail in distinct slots; preserve order and complete payload |
+| Response FIFO full, consumer retires | No scheduler acceptance on that edge; capacity returns next cycle, without ready lookahead |
+| Response held, consumer not ready | Head data/error remain immutable until retirement or annulment |
+| Response FIFO plus cancel/core flush/scheduler fault | Suppress consumer output immediately; clear ownership/pointers before refill, discarding coincident input; external drain remains scheduler-owned |
+| Response FIFO reset / first released edge | Both interfaces zero during reset; empty capacity may assert after release, but no consumer valid until an accepted response |
+| Response FIFO, BANKS=1 / QUEUE_DEPTH=1 or 3 | Two local slots per client, independent of scheduler depth; explicit one-bit pointer toggle |
 | Codec final input and validation | Last is checked on acceptance; lossy output waits for complete group/padding validation |
 | Codec output retirement and last write acknowledgment | Separate events; cache commitment requires the acknowledgment, not just codec retirement |
 
