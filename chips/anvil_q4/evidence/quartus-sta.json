@@ -1,56 +1,354 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-02T19:45:02.312945+00:00",
+  "timestamp_utc": "2026-11-03T01:42:21.236258+00:00",
   "project_dir": "/data/sufeng/anvil-q4-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
   "min_setup_slack_ns": 0.0,
   "min_hold_slack_ns": 0.0,
-  "status": "failed",
+  "status": "passed",
   "map_summary": {
-    "exists": false,
+    "exists": true,
+    "path": "/data/sufeng/anvil-q4-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
+    "error_count": 0,
     "errors": [],
+    "lpm_divide_error_count": 0,
     "lpm_divide_errors": [],
+    "warning_10268_count": 0,
     "warning_10268": [],
+    "uninferred_ram_count": 0,
     "uninferred_rams": []
   },
   "sta_summary": {
-    "exit_code": 3,
-    "netlist_mode": null,
-    "clocks": [],
-    "wns_setup_ns": null,
-    "wns_hold_ns": null,
+    "exit_code": 0,
+    "netlist_mode": "post_map",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 2.925,
+    "wns_hold_ns": -0.179,
     "unconstrained_setup_paths": 0,
     "unconstrained_functional_endpoints": 0,
     "unapproved_timing_exceptions": 0,
     "failing_setup_count": 0,
-    "failing_hold_count": 0,
-    "setup_paths": [],
-    "hold_paths": [],
-    "stderr_tail": [
-      "------------------------------------------------",
-      "ERROR: Can't run TimeQuest Timing Analyzer (quartus_sta) -- Analysis and Synthesis (quartus_map) failed or was not run. Run Analysis and Synthesis (quartus_map) successfully before running the TimeQuest analyzer (create_timing_netlist -post_map).",
-      "",
-      "    while executing",
-      "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_mc1hms54.tcl\" line 2)",
-      "------------------------------------------------"
-    ]
+    "failing_hold_count": 20,
+    "setup_paths": [
+      {
+        "slack_ns": 2.925,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.928,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.936,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.939,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.959,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[30]"
+      },
+      {
+        "slack_ns": 2.962,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[30]"
+      },
+      {
+        "slack_ns": 2.966,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.967,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.969,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.969,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.97,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.97,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[30]"
+      },
+      {
+        "slack_ns": 2.972,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.972,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[168]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.972,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[165]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.973,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[163]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[30]"
+      },
+      {
+        "slack_ns": 2.975,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[169]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.975,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[169]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      },
+      {
+        "slack_ns": 2.976,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[162]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[29]"
+      },
+      {
+        "slack_ns": 2.977,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_descriptor:legal.descriptor",
+        "to_node": "legal.active[174]|anvil_q4_compat:legal.compatibility|anvil_q3_gqa_attention:attention|anvil_q3_kv_cache:kv_cache|anvil_q3_mem_port:memory_port|request_col[31]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a97~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a65~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a33~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a1~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a161~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a64~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a224~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a128~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a34~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a194~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a99~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a17~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a3~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a163~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a131~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a32~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a36~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a196~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a132~reg0"
+      },
+      {
+        "slack_ns": -0.179,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_q4_decoder_layer:legal.decoder",
+        "to_node": "anvil_q4_gqa_attention:attention|time_index[4]|anvil_q4_decoder_layer:legal.decoder|anvil_q4_gqa_attention:attention|altsyncram:scores_rtl_0|altsyncram_55s1:auto_generated|ram_block1a162~reg0"
+      }
+    ],
+    "stderr_tail": []
   },
-  "detail": "quartus_map timed out after 3600s (check for uninferred large RAM arrays; split byte-enabled 1D RAMs into byte-lane arrays in a single always @(posedge clk) block).",
+  "detail": "Timing closed: Setup WNS = 2.925 ns",
+  "fit_mode": "plan_plus_post_map_sta",
   "quartus_slot_telemetry": {
-    "slot_index": 0,
+    "slot_index": 1,
     "max_slots": 6,
-    "slot_wait_s": 0.002
+    "slot_wait_s": 0.003
   },
   "top_module": "anvil_q4_top",
   "clock_port": "clk",
   "clock_period_ns": 10.0,
   "target_frequency_mhz": 100.0,
+  "fmax_mhz": 141.34,
+  "critical_path_delay_ns": 7.075,
+  "fitter_resource_summary": {
+    "alms_used": 107546,
+    "alms_total": 427200,
+    "alms_pct": "25 %",
+    "total_registers": 112138,
+    "block_memory_bits": 4195072,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 116,
+    "virtual_pins": 5103
+  },
   "parameters": {
     "TILE_K": 8,
     "TILE_ROWS": 2
   },
-  "source_sha256": "c455606e0baaca55921b89b049b179b9cf1e8c1dfddd39c082ff9039bcb280d0",
+  "source_sha256": "1b395a677f04bcbd38b551b0755e38b21b542cf37fbb9b44126a87403f33309d",
   "applicable": true
 }

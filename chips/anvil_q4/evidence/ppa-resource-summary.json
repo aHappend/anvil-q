@@ -1,19 +1,27 @@
 {
   "chip": "Anvil-Q4",
   "fitter_resources": {
-    "total_registers": 113834,
+    "alms_used": 107546,
+    "alms_total": 427200,
+    "alms_pct": "25 %",
+    "total_registers": 112138,
     "block_memory_bits": 4195072,
+    "m20k_ram_blocks": 0,
+    "m20k_ram_blocks_total": 2713,
     "dsp_blocks": 116,
     "virtual_pins": 5103
   },
   "timing": {
     "device": "10AX115N2F45E1SG",
-    "netlist_mode": null,
+    "netlist_mode": "post_map",
     "target_frequency_mhz": 100.0,
-    "fmax_mhz": null,
-    "critical_path_delay_ns": null,
-    "wns_setup_ns": null,
-    "wns_hold_ns": null
+    "fmax_mhz": 141.34,
+    "critical_path_delay_ns": 7.075,
+    "wns_setup_ns": 2.925,
+    "wns_hold_ns": -0.179
   },
-  "verification_tiers": {}
+  "verification_tiers": {
+    "L3_board_hil": "L3_BRIDGE_CONNECTIVITY_PROBE_ONLY",
+    "L3_note": "Catapult PCIe BAR0 hardware bridge connectivity probe (reg 57) only; per-chip bitstream flash and on-board workload vector execution require fpga/board_hil.json role wrapper."
+  }
 }
