@@ -64,14 +64,16 @@ labeled and are not an L1 prerequisite. Benchmark cases use identified real-task
 descriptions, a documented lossy compact mapping and independent full-frame/KV
 comparisons; they do not measure published task accuracy. The whole-check clock
 includes Python preparation, compilation, execution and receipt retention; nested
-components never renew it. Defect and no-argument suite dispatchers remain
-incomplete; no whole-product acceptance is claimed. The seven-case production/
+components never renew it. Disposable RTL mutations require actual comparison
+failures, not build failures or timeouts. No arguments dispatches all eleven L1
+suite/domain jobs, reusing only complete current-source evidence and running
+missing/stale work under the same cumulative deadline. No whole-product
+acceptance is claimed. The seven-case production/
 boundary coarse-synthesis campaign has executed successfully; it is not STA.
 The source-only dual-simulator compact reproduction campaign has also executed.
 The original controller
 structural-loop counterexample is retained; the repaired controller has a fresh
-successful structural receipt. No-argument dispatch remains
-incomplete until every mandatory suite has been authored.
+successful structural receipt.
 The scheduler/top boundary SCC failure is retained, and the repaired source has
 a successful independent zero-SCC probe; this is not physical timing proof.
 """
@@ -108,6 +110,7 @@ from component_cache import (historical_applicability, latest_marker_build,
 from prefill_marker_checks import run_prefill_marker
 from model import Geometry
 from benchmark_checks import run_benchmark, run_benchmark_case, fixture_manifest
+from defect_checks import MUTANTS, run_defects, run_mutant, oracle
 import reference
 
 
@@ -138,19 +141,28 @@ def main():
                                           "saved-behavior-applicability",
                                           "marker-applicability", "behavior-components",
                                           "behavior-checker", "delivery-checker",
-                                          "benchmark-case"))
+                                          "benchmark-case", "mutation-case"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
                         help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
     parser.add_argument("--marker", choices=("open", "close"), default="open")
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
+    parser.add_argument("--mutation", choices=tuple(MUTANTS), default="omit-qk-norm")
     args = parser.parse_args()
     run = Run(args.probe or args.suite or "all", preparation=bool(args.probe),
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "delivery-checker":
+        if args.probe == "mutation-case":
+            run.versions(("python3", "verilator", "g++", "make"))
+            baseline = run.component(
+                f"mutation-baseline-{args.mutation}",
+                lambda child: oracle(child, MUTANTS[args.mutation][1]))
+            mutant = run.component(
+                f"mutation-{args.mutation}", lambda child: run_mutant(child, args.mutation))
+            results = {"baseline": baseline, "mutant": mutant}
+        elif args.probe == "delivery-checker":
             from checker_checks import run_delivery_checker
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_delivery_checker(run)
@@ -335,14 +347,21 @@ def main():
                 results = {domain: run.component(
                     f"benchmark-{domain}", lambda child, domain=domain: run_benchmark(child, domain))
                     for domain in DOMAINS}
+        elif args.suite == "defects":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_defects(run)
         elif args.suite == "synthesis":
             run.versions(("python3", "yosys"))
             results = run_synthesis(run)
         elif args.suite == "reproduce":
             run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make"))
             results = run_reproduce(run)
+        elif args.suite is None and args.probe is None:
+            from suite_dispatch import run_all
+            run.versions(("python3", "iverilog", "vvp", "verilator", "g++", "make", "yosys"))
+            results = run_all(run)
         else:
-            raise NotImplementedError("L1 suite authoring is in progress; no passing result claimed")
+            raise AssertionError("unhandled verification entry point")
         return 0 if run.finish("passed", results) == "passed" else 1
     except Exception as error:
         run.finish("failed", error=f"{type(error).__name__}: {error}")

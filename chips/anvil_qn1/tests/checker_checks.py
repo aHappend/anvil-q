@@ -122,19 +122,40 @@ def run_behavior_checker(run):
 
 
 def run_delivery_checker(run):
-    """Source/aggregation diagnostics, not simulation or mandatory-suite closure."""
+    """Source/aggregation diagnostics plus a complete compact fusion component.
+
+    A missing/stale fusion component executes automatically; this is not the
+    complete mandatory behavior suite.
+    """
     import ast
     import time
     from unittest.mock import patch
     import budget
     from benchmark_checks import DOMAINS, benchmark_bench, compact_tokens, fixture_manifest
     from behavior_suite import MODEL, validate_fusion
+    from component_cache import component
+    from production_checks import run_fusion_profile
+    from defect_checks import MUTANTS
+    from speculation_checks import replace_once
+    from suite_dispatch import jobs
 
     parsed = []
     for path in sorted((ROOT / "tests").glob("*.py")):
         ast.parse(path.read_text(), filename=relative(path))
         parsed.append(relative(path))
     benchmark_bench()
+    dispatch_names = [name for name, _ in jobs()]
+    if len(dispatch_names) != 11 or len(set(dispatch_names)) != 11:
+        raise AssertionError("default dispatch omitted/duplicated a suite")
+    mutation_recipes = {}
+    for name, (source, kind, substitutions, diagnostics) in MUTANTS.items():
+        original = (ROOT / source).read_text()
+        changed = original
+        for before, after in substitutions:
+            changed = replace_once(changed, before, after)
+        if changed == original or not diagnostics:
+            raise AssertionError(f"empty mutation recipe: {name}")
+        mutation_recipes[name] = {"source": source, "oracle": kind}
     fixtures = {domain: fixture_manifest(domain) for domain in DOMAINS}
     for domain, records in fixtures.items():
         if (len(records) != 4 or len({r["id"] for r in records}) != 4 or
@@ -161,16 +182,25 @@ def run_delivery_checker(run):
     candidates = sorted((ROOT / "evidence/preparation").glob("fusion-compact-*/receipt.json"),
                         key=lambda p: p.stat().st_mtime, reverse=True)
     applicable = None
+    fusion_assessments = []
     for path in candidates:
         assessment, result = assess(
             run, path, (*MODEL, "tests/production_checks.py"),
             {"profile": 1, "compact_diagnostic": True}, TOOLS)
+        fusion_assessments.append(assessment)
         if assessment["applicable"]:
             validate_fusion(result, 1)
             applicable = assessment
             break
+    (run.path / "fusion-applicability.json").write_text(
+        json.dumps(fusion_assessments, indent=2) + "\n")
     if applicable is None:
-        raise AssertionError("no compatible complete compact profile-1 receipt")
+        result = component(
+            run, "fusion-compact", lambda child: run_fusion_profile(child, 1, compact=True),
+            inputs=(*MODEL, "tests/production_checks.py"),
+            parameters={"profile": 1, "compact_diagnostic": True}, tools=TOOLS,
+            validate=lambda value: validate_fusion(value, 1))
+        applicable = run.components[-1]
     rejected = []
     for field in ("cycles", "requests", "compared_writes", "key_writes", "value_writes"):
         broken = copy.deepcopy(result)
@@ -187,8 +217,9 @@ def run_delivery_checker(run):
     broken["extra_cycles"] = broken["fused"]["cycles"] - broken["without_norm"]["cycles"]
     rejected.append(rejection(lambda: validate_fusion(broken, 1), "fusion:overhead"))
     rejected.append(rejection(lambda: validate_fusion(result, 2), "fusion:wrong-profile-cache"))
-    return {"scope": "source/checker/applicability diagnostics only",
+    return {"scope": "source/checker diagnostics and compact fusion component, not full behavior",
             "parsed_sources": parsed, "fixtures": fixtures,
+            "default_dispatch": dispatch_names, "mutation_recipes": mutation_recipes,
             "compact_profile1_applicability": applicable,
             "compact_profile1_counts": {
                 name: result[name] for name in ("extra_cycles", "compact_diagnostic", "profile")},

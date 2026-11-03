@@ -62,7 +62,8 @@ def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None)
     commands = receipt.get("commands", [])
     work = [c for c in commands if not Path(c.get("stdout", "")).name.startswith("version-")]
     for command in commands:
-        if (command.get("exit_code") != 0 or command.get("disposition") != "exited" or
+        if (command.get("exit_code") != command.get("expected_exit", 0) or
+                command.get("disposition") != "exited" or
                 not command.get("child_settled")):
             reasons.append("unsuccessful/unsettled component command")
         for field in ("stdout", "stderr"):

@@ -60,9 +60,12 @@ class Run(BaseRun):
         if Path(str(argv[0])).name == "vvp":
             allowance = min(allowance, 600)
         timer = signal.setitimer(signal.ITIMER_REAL, 0)
+        first_command = len(self.commands)
         try:
             return super().execute(argv, name, timeout=min(timeout, allowance), **kwargs)
         finally:
+            for record in self.commands[first_command:]:
+                record["expected_exit"] = kwargs.get("expected_exit", 0)
             if timer[0]:
                 signal.setitimer(signal.ITIMER_REAL, max(0.001, remaining()))
 
