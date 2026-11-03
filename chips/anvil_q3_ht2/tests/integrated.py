@@ -13,8 +13,8 @@ from receipts import ROOT, execute, new_run, relative, cleanup_build
 from reference import pack_rows, nearest_div
 
 
-def generate(run):
-    layers, hidden, intermediate, kvdim, group, vocabulary, maximum = 36, 64, 8, 8, 8, 8, 8
+def generate(run, *, layers=36, nonzero=False):
+    hidden, intermediate, kvdim, group, vocabulary, maximum = 64, 8, 8, 8, 8, 8
     image = {}
 
     def store(address, data):
@@ -34,11 +34,13 @@ def generate(run):
             groups = inputs // group
             zeros = [[(row * 3 + g * 5 + layer + projection) & 15
                       for row in range(outputs)] for g in range(groups)]
-            qweight = b"".join(pack_rows(zeros[column // group]).to_bytes(
+            qweight = b"".join(pack_rows(
+                [(value + 1) & 15 for value in zeros[column // group]]
+                if nonzero else zeros[column // group]).to_bytes(
                 outputs // 2, "little") for column in range(inputs))
             qzero = b"".join(pack_rows(row).to_bytes(outputs // 2, "little")
                              for row in zeros)
-            scales = b"\x00\x3c" * (groups * outputs)
+            scales = (b"\x00\x14" if nonzero else b"\x00\x3c") * (groups * outputs)
             for region, data in enumerate((qweight, qzero, scales)):
                 store(offsets[region], data)
                 if region == 0:
@@ -59,7 +61,8 @@ def generate(run):
     model.write_text(str(len(image)) + "\n" + "\n".join(
         f"{address:x} {int.from_bytes(data,'little'):x}"
         for address, data in sorted(image.items())) + "\n")
-    # Every projection is exactly zero (q == z), so residuals preserve embedding.
+    # The optional nonzero image is for differential legacy testing only; the
+    # scalar expectations below are valid only for the zero-delta smoke.
     # RMS epsilon is the parent scalar contract's floor(1e-6 * 2**64).
     root = isqrt((1 << 64) + 18446744073710)
     reciprocal = (1 << 64) // root
@@ -68,8 +71,9 @@ def generate(run):
     expected = [nearest_div(hidden * normalized * weight, 65536)
                 for weight in weights_q16]
     vectors = run / "integration-vectors.txt"
-    vectors.write_text("\n".join(f"{value & 0xffffffff:x}" for value in expected) +
-                       "\n" + str(len(qreads)) + "\n" +
+    vectors.write_text(("" if nonzero else "\n".join(
+        f"{value & 0xffffffff:x}" for value in expected) + "\n") +
+                       str(len(qreads)) + "\n" +
                        "\n".join(f"{address:x}" for address in qreads) + "\n")
     return model, vectors, len(image), len(qreads)
 

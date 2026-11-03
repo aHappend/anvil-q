@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from receipts import ROOT, execute, hashes, new_run, relative, sources, utc
 from arithmetic import run_arithmetic
+from compatibility import run_compatibility
 from integrated_fast import run_fast_integration
 from kv_atomic import run_atomic
 from parameters import run_parameters
@@ -188,6 +189,7 @@ def all_checks(ledger):
             ledger.check(f"greedy-mode{mode}-seed{seed}", run_spec, mode, seed)
             ledger.check(f"atomic-mode{mode}-seed{seed}", run_atomic, mode, seed)
     for mode in (1, 2):
+        ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
         ledger.check(f"integrated-mode{mode}", run_fast_integration, mode)
         for top in ("anvil_q3_ht2_top", "anvil_q3_ht2_tree_attention",
                     "anvil_q3_ht2_kv_commit_engine", "anvil_q3_ht2_spec_verifier"):
