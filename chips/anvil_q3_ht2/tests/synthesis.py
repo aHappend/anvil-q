@@ -153,10 +153,19 @@ def run_synthesis(run, top, mode=1, parameters=None):
                         int(matching[0]["parameters"]["SIZE"], 2)) != (width, expected_depth):
                     raise AssertionError(f"production scratch RAM not retained: {suffix}")
     ports = data["modules"][top]["ports"]
+    constant_outputs = (
+        {"memory_req_write": 0, "memory_req_wdata": 0}
+        if top == "anvil_q3_ht2_tree_attention" else {})
+    for name, value in constant_outputs.items():
+        expected = [str((value >> index) & 1)
+                    for index in range(len(ports[name]["bits"]))]
+        if ports[name]["bits"] != expected:
+            raise AssertionError(f"read-only transport constant changed: {name}")
     for name, port in ports.items():
         if port["direction"] == "output" and name in (
                 "weight_data", "memory_req_address", "memory_req_wdata",
-                "out_tokens", "visible_count", "c_rsp_rdata", "avm_address"):
+                "out_tokens", "visible_count", "c_rsp_rdata", "avm_address") and (
+                    name not in constant_outputs):
             if all(isinstance(bit, str) for bit in port["bits"]):
                 raise AssertionError(f"functional output synthesized to constant: {name}")
     if top == "anvil_q3_ht2_spec_verifier":
@@ -169,6 +178,22 @@ def run_synthesis(run, top, mode=1, parameters=None):
             if not any(isinstance(bit, int) for bit in engines[0]["connections"][port]):
                 raise AssertionError(f"atomic engine connection is constant: {port}")
     instances = hierarchy_instances(data, top)
+    if top == "anvil_q3_ht2_tree_attention":
+        for module, connections in (
+                ("anvil_q3_ht2_kv_read_port",
+                 ("memory_req_valid", "memory_req_address", "memory_rsp_rdata", "out_data")),
+                ("anvil_q3_ht_attention",
+                 ("mem_rsp_rdata", "mem_req_wdata", "kv_read_data"))):
+            matches = [cell for _, original, cell in instances if original == module]
+            if len(matches) != 1:
+                raise AssertionError(f"read-only attention hierarchy missing: {module}")
+            for name in connections:
+                if not any(isinstance(bit, int)
+                           for bit in matches[0]["connections"][name]):
+                    raise AssertionError(f"constant attention data path: {module}.{name}")
+        for name in ("memory_req_valid", "memory_req_byteenable", "scratch_req_wdata"):
+            if not any(isinstance(bit, int) for bit in ports[name]["bits"]):
+                raise AssertionError(f"constant attention output: {name}")
     lanes = [(name, cell) for name, module, cell in instances
              if module == "anvil_q3_ht2_mac_lane"]
     if top in ("anvil_q3_ht2_tile_batch_mac", "anvil_q3_ht2_top",
@@ -195,6 +220,7 @@ def run_synthesis(run, top, mode=1, parameters=None):
                "physical_arithmetic_lanes": len(lanes),
                "cell_types": dict(cells), "sequential_cells": state,
                "memory_bits": memory_bits, "latches": 0, "div_mod": 0,
+               "checked_constant_outputs": constant_outputs,
                "receipt": relative(result / "receipt.json")}
     (run / "synthesis-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return summary
