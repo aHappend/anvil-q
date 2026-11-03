@@ -27,6 +27,7 @@ OBLIGATIONS = {
     "attention": "online FP64 attention, formats, masks, tiles, long context and stalls",
     "packed_cache": "FP32 store conversion, packed writes/readback and subsequent attention",
     "compatibility": "integrated inference, CSR/loader/descriptor/batch/reset/error matrix",
+    "integrated_geometry": "functional smallest/nonpower/H64, native formats and GQA",
     "parameters": "legal extrema/default elaboration and explicit illegal diagnostics",
     "mutations": "five compiling/executing disposable defects rejected by public assertions",
     "benchmarks": "hash-pinned official model/datasets; scored logits, PPL and legacy fixtures",
@@ -41,6 +42,7 @@ REPRODUCTION_RESERVE = 360
 SETTLEMENT_RESERVE = 30
 SUITE_BUDGETS = {"attention": 750, "parameters": 450, "attention_restart": 60,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
+                 "integrated_geometry": 1200,
                  "mutations": 420, "benchmarks": 300, "performance": 480}
 
 
@@ -57,6 +59,8 @@ def dependencies(script):
         "tests/run_transcendental.py": ["tests/reference.py", "tests/transcendental_tb.sv"],
         "tests/run_packed_cache.py": ["tests/reference.py", "tests/packed_cache_tb.sv"],
         "tests/run_compatibility.py": ["tests/reference.py", "tests/inference_tb.sv"],
+        "tests/run_integrated_geometry.py": ["tests/reference.py", "tests/inference_tb.sv",
+                                            "tests/run_compatibility.py"],
         "tests/run_performance.py": ["tests/reference.py", "tests/inference_tb.sv",
                                      "tests/run_compatibility.py",
                                      *[relative(p) for p in sorted(

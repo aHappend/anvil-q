@@ -395,11 +395,16 @@ def main():
             rows.extend(controls(output, binary, binding))
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
         rows.append(dict(status="failed", error=f"{type(exc).__name__}: {exc}"))
+    limits = []
+    if not args.smoke:
+        limits.append("authentic historical five-domain fixtures unavailable in supplied RTL-only intake")
+        if args.batch_only:
+            limits.append("ordinary precision/seed matrix and integrated controls not selected")
+        if args.controls_only:
+            limits.append("ordinary multi-token precision/seed and batch matrix not selected")
     result = dict(status="passed" if rows and all(r["status"]=="passed" for r in rows) else "failed",
                   runs=rows, checkpoint="independent compact synthetic image, not official model",
-                  coverage_limits=[] if args.smoke else [
-                      "H>=64 integrated inference and legal geometry extrema",
-                      "authentic historical five-domain fixtures unavailable in supplied RTL-only intake"])
+                  coverage_limits=limits)
     with (output/"result.json").open("x") as out:
         json.dump(result, out, indent=2)
     receipt.update(end=timestamp(), exit=int(result["status"]!="passed"),
