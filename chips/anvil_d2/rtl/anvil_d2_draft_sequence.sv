@@ -21,6 +21,8 @@ module anvil_d2_draft_sequence #(
   output wire [2:0] result_proposed,
   output wire proposed_pulse,
   output wire done, error, idle, fault,
+  output wire shared_busy, prefetch_busy,
+  output wire [31:0] cache_dense_increment, expert_dense_increment,
   output wire [8:0] c_req_valid, c_req_write,
   input wire [8:0] c_req_ready,
   output wire [35:0] c_req_kind,
@@ -56,6 +58,10 @@ module anvil_d2_draft_sequence #(
       assign error=0;
       assign idle=0;
       assign fault=0;
+      assign shared_busy=0;
+      assign prefetch_busy=0;
+      assign cache_dense_increment=0;
+      assign expert_dense_increment=0;
       assign c_req_valid=0;
       assign c_req_write=0;
       assign c_req_kind=0;
@@ -141,6 +147,8 @@ module anvil_d2_draft_sequence #(
         .commit_valid(enabled && !failed && state==COMMIT),.commit_ready(head_commit_ready),
         .commit_through_pos(speculate ? last_position : position),.commit_done(head_commit_done),
         .idle(head_idle),.fault(head_fault),
+        .shared_busy(shared_busy),.prefetch_busy(prefetch_busy),
+        .cache_dense_increment(cache_dense_increment),.expert_dense_increment(expert_dense_increment),
         .c_req_valid(c_req_valid),.c_req_ready(c_req_ready),.c_req_write(c_req_write),
         .c_req_kind(c_req_kind),.c_req_layer(c_req_layer),.c_req_proj(c_req_proj),
         .c_req_row(c_req_row),.c_req_col(c_req_col),.c_req_wdata(c_req_wdata),

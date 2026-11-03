@@ -580,8 +580,8 @@ the full decoder layer barrier; hidden row 0 persists across that barrier.
 Weights, wide absorbed coefficients and committed cache retain parent
 logical identities outside this local scratch map.
 
-These connected target components do not yet implement native MTP draft
-heads, the public generation controller or `anvil_d2_top`. Their static
+These connected target components are not yet integrated with the native
+draft subsystem, the public generation controller or `anvil_d2_top`. Their static
 elaboration is not numerical, behavioral, synthesis or timing acceptance.
 
 Use bounded queues, tagged bank arbitration and explicit owner/epoch

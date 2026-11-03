@@ -35,6 +35,8 @@ module anvil_d2_target_lanes #(
   output wire [31:0] logit_index,
   output wire signed [31:0] logit_data,
   output wire fault, idle, verify_active,
+  output wire shared_busy, prefetch_busy,
+  output wire [31:0] cache_dense_increment, expert_dense_increment,
   output wire [28:0] c_req_valid, c_req_write,
   input wire [28:0] c_req_ready,
   output wire [115:0] c_req_kind,
@@ -77,6 +79,10 @@ module anvil_d2_target_lanes #(
       assign fault=0;
       assign idle=0;
       assign verify_active=0;
+      assign shared_busy=0;
+      assign prefetch_busy=0;
+      assign cache_dense_increment=0;
+      assign expert_dense_increment=0;
       assign c_req_valid=0;
       assign c_req_write=0;
       assign c_req_kind=0;
@@ -103,6 +109,8 @@ module anvil_d2_target_lanes #(
       wire [3:0] lane_mask;
       wire [3:0] io_ready, io_done, io_error, norm_ready, norm_done, norm_error;
       wire [3:0] decoder_ready, decoder_done, decoder_error;
+      wire [3:0] shared_events, prefetch_events;
+      wire [127:0] cache_dense_events, expert_dense_events;
       wire [3:0] io_logit_valid, io_logit_ready, scratch_idle;
       wire [127:0] io_logit_index, io_logit_data;
       wire [3:0] cache_req_valid, cache_req_ready, cache_req_write;
@@ -153,6 +161,12 @@ module anvil_d2_target_lanes #(
       assign fault=enabled && failed;
       assign idle=cmd_ready;
       assign verify_active=enabled && !failed && decoder_stage;
+      assign shared_busy=enabled && !failed && |shared_events;
+      assign prefetch_busy=enabled && !failed && |prefetch_events;
+      assign cache_dense_increment=cache_dense_events[0+:32]+cache_dense_events[32+:32]+
+        cache_dense_events[64+:32]+cache_dense_events[96+:32];
+      assign expert_dense_increment=expert_dense_events[0+:32]+expert_dense_events[32+:32]+
+        expert_dense_events[64+:32]+expert_dense_events[96+:32];
 
       always @* begin
         command_bad=cmd_lanes<1 || cmd_lanes>4 || cmd_first_pos>=MAX_SEQ_LEN ||
@@ -173,6 +187,13 @@ module anvil_d2_target_lanes #(
         wire [23:0] x_req_proj;
         wire [255:0] x_req_layer, x_req_row, x_req_col, x_req_wdata, x_rsp_rdata;
         reg cache_owned;
+        reg [63:0] previous_shared, previous_prefetch;
+        wire [63:0] shared_cycles, prefetch_cycles, kv_dense, expert_dense;
+        wire mla_complete, moe_complete;
+        assign shared_events[v]=lane_mask[v] && shared_cycles>previous_shared;
+        assign prefetch_events[v]=lane_mask[v] && prefetch_cycles>previous_prefetch;
+        assign cache_dense_events[v*32+:32]=enabled && mla_complete ? kv_dense[31:0] : 32'd0;
+        assign expert_dense_events[v*32+:32]=enabled && moe_complete ? expert_dense[31:0] : 32'd0;
         wire cache_address=x_req_kind[4+:4]==15 && x_req_proj[3+:3]==3;
         wire io_command=enabled && !failed && lane_mask[v] && !issued[v] &&
           (state==EMBED || state==PROJECT);
@@ -194,10 +215,10 @@ module anvil_d2_target_lanes #(
           .cmd_valid(decoder_command),.cmd_ready(decoder_ready[v]),
           .cmd_epoch(epoch),.cmd_layer(layer),.cmd_pos(first_pos+v),.cmd_phase(phase),
           .done(decoder_done[v]),.error(decoder_error[v]),
-          .kv_read_bytes(),.kv_write_bytes(),.kv_dense_equiv_bytes(),
-          .expert_dma_bytes(),.expert_dense_equiv_bytes(),
-          .shared_busy_cycles(),.prefetch_busy_cycles(),.overlap_cycles(),
-          .mla_complete(),.moe_complete(),
+          .kv_read_bytes(),.kv_write_bytes(),.kv_dense_equiv_bytes(kv_dense),
+          .expert_dma_bytes(),.expert_dense_equiv_bytes(expert_dense),
+          .shared_busy_cycles(shared_cycles),.prefetch_busy_cycles(prefetch_cycles),.overlap_cycles(),
+          .mla_complete(mla_complete),.moe_complete(moe_complete),
           .c_req_valid(s_req_valid[0+:5]),.c_req_ready(s_req_ready[0+:5]),
           .c_req_write(s_req_write[0+:5]),.c_req_kind(s_req_kind[0+:20]),
           .c_req_layer(s_req_layer[0+:160]),.c_req_proj(s_req_proj[0+:15]),
@@ -298,9 +319,10 @@ module anvil_d2_target_lanes #(
         assign x_rsp_error[7]=0;
         assign x_rsp_rdata[224+:32]=0;
         always @(posedge clk or negedge rst_n) begin
-          if (!rst_n) cache_owned<=0;
-          else if (child_flush) cache_owned<=0;
+          if (!rst_n) begin cache_owned<=0; previous_shared<=0; previous_prefetch<=0; end
+          else if (child_flush) begin cache_owned<=0; previous_shared<=0; previous_prefetch<=0; end
           else begin
+            previous_shared<=shared_cycles; previous_prefetch<=prefetch_cycles;
             if (cache_rsp_valid[v] && cache_rsp_ready[v]) cache_owned<=0;
             if (cache_req_valid[v] && cache_req_ready[v]) cache_owned<=1;
           end

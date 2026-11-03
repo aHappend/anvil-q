@@ -300,6 +300,85 @@ completion is deliberately separate from public command completion:
 the latter still needs target materialization and acknowledged writes.
 This leaf alone does not establish native MTP computation or generation.
 
+## Native draft transformers and history
+
+`anvil_d2_draft_head` connects the input projection, a real native decoder
+layer, final RMS normalization, shared vocabulary projection and greedy
+argmax. The decoder executes matrix absorption, latent attention, rotary
+queries/keys, both residual additions, routed/shared expert computation
+and their native fixed-point boundaries. Its internal four-layer indexing
+selects one of four MTP parameter images, not four target layers. All MTP
+heads are routed/shared-MoE layers; the target's FIRST_DENSE_LAYERS setting
+continues to apply only to its original NUM_LAYERS layers.
+
+The head exports the unnormalized post-transformer hidden vector before
+publishing its computed prediction. The final RMS output is used only
+for shared output projection. Input and output hidden streams obey
+held ready/valid transfers. All external tensors are remapped to the
+disjoint SPEC.md kind-12 map; shared token weights remain kind 0.
+There is no externally supplied draft-token or target-verdict top port.
+
+One lane-local scratch RAM serves the head's residual/query/FFN vectors.
+`anvil_d2_draft_cache` additionally holds 16*(rank+RoPE) signed32 words:
+four private rows per head. These are geometry-bounded scratch, not
+MAX_SEQ_LEN-wide register arrays. Cache command legality checks the
+actual epoch, depth, absolute position and append frontier. The current
+candidate must write all components before its first causal read.
+Captured candidate reads remain local; older committed rows use the
+head-private external store. No speculative candidate write reaches
+that store until explicit commit.
+
+Native decoder cache positions are relative to the head's first legal
+state at head+1. The wrapper maps relative cache/rotary rows back to
+absolute positions. This excludes nonexistent leading keys without
+changing rotary angles or weakening causal masking. Absorption preserves
+independently valid epochs for all four heads. Flush invalidates those
+epochs and all cache ownership; the shared scheduler must still drain
+accepted external work.
+
+`anvil_d2_draft_sequence` retains the last actual target hidden plus each
+applicable native head hidden. An actual-token append supplies a fully
+materialized target hidden stream; every legal depth computes its new
+state using the previous-position lower-depth state and the actual
+token's embedding. It commits acknowledged head K/V and atomically
+replaces history only after all heads succeed. Target position 0 has no
+native MTP state yet. A controller enabling MTP on an unprimed sequence
+must replay actual history; the sequencer explicitly rejects discontinuous
+commands instead of treating absent context as zero.
+
+For a speculative column c, heads c..K-1 execute sequentially, skipping
+only mathematically nonexistent early states. The diagonal prediction
+selects the next column's token. Later heads in a column provide the
+prefix states needed by the next column, so the four-depth mature case
+executes 4+3+2+1 transformer passes. Two alternating 4H RAM regions retain
+the adjacent columns. Additional 5H committed and 5H append-staging regions
+make history storage 18H signed32 words (144 KiB at H=2048), excluding
+the head's own scratch/projection/cache RAM. This is a storage formula,
+not inferred M20Ks or measured physical area.
+
+After all diagonal proposals, the sequencer explicitly discards private
+head candidates before returning its held result. Accepted-token appends
+recompute actual head state rather than trying to publish a partially
+populated diagonal. This is a deliberate correctness/area simplification
+with extra cycles, not a speedup or PPA-gain claim. Independent benchmarks
+must include priming, auxiliary head passes and replay costs.
+
+The draft subsystem exports nine memory clients: seven native head
+clients, one input-projection client and one private-cache client.
+Future engine arbitration can reuse the target's 29 transport slots
+between nonoverlapping draft/target phases, plus a slot for the group
+service, instead of exceeding the scheduler's 32-client maximum.
+It must switch ownership only after the previous subsystem is quiescent.
+FP8 adaptation now recognizes kind-12/projection-5 routed matrices in
+NUM_LAYERS..NUM_LAYERS+3, retaining those exact head identities in packed
+payload and scale traffic. Target latents alone use projection 3;
+head-private context must not be mislabeled as target bandwidth savings.
+
+These connected draft modules still need the native MTP engine, target
+hidden/verification connection, public generation controller and top-level
+FP8/scheduler integration. Static elaboration does not establish numerical
+correctness, behavior, memory inference, physical timing or acceptance.
+
 ## Concurrent target subsystem
 
 `anvil_d2_target_lanes` instantiates exactly four unchanged native decoder
@@ -371,7 +450,9 @@ final materialization, cancellation/drain and COMPLETE.
 
 `anvil_d2_fp8_adapter` compresses only actual kind-15/projection-3 latent
 components below KV_LORA_RANK, and routed-expert matrix reads at
-projection 5. Parent row encoding retains expert bits 31:25, matrix
+projection 5 (kind 15 for target layers, kind 12 for MTP head layers).
+Target layers are 0..NUM_LAYERS-1; MTP head layers are
+NUM_LAYERS..NUM_LAYERS+3. Parent row encoding retains expert bits 31:25, matrix
 bits 24:23 and output-row bits 22:0. Matrix 0/1 columns span H; matrix 2
 columns span MOE_INTERMEDIATE_SIZE. Bias rows (matrix 3), shared/dense
 experts and RoPE pass through unchanged.

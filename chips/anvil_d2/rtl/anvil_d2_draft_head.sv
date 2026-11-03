@@ -27,6 +27,8 @@ module anvil_d2_draft_head #(
   input wire [31:0] commit_through_pos,
   output wire commit_done,
   output wire idle, fault,
+  output wire shared_busy, prefetch_busy,
+  output wire [31:0] cache_dense_increment, expert_dense_increment,
   output wire [8:0] c_req_valid, c_req_write,
   input wire [8:0] c_req_ready,
   output wire [35:0] c_req_kind,
@@ -64,6 +66,10 @@ module anvil_d2_draft_head #(
       assign commit_done=0;
       assign idle=0;
       assign fault=0;
+      assign shared_busy=0;
+      assign prefetch_busy=0;
+      assign cache_dense_increment=0;
+      assign expert_dense_increment=0;
       assign c_req_valid=0;
       assign c_req_write=0;
       assign c_req_kind=0;
@@ -119,6 +125,18 @@ module anvil_d2_draft_head #(
         (decoder_done && decoder_error) || (norm_done && norm_error) ||
         (io_done && io_error) || memory_fault || cache_fault;
       wire projection_transfer=enabled && state==PROJECT_CAPTURE && projection_valid;
+      wire [63:0] shared_cycles, prefetch_cycles, kv_dense, expert_dense;
+      wire mla_complete, moe_complete;
+      reg [63:0] previous_shared, previous_prefetch;
+      assign shared_busy=enabled && !failed && shared_cycles>previous_shared;
+      assign prefetch_busy=enabled && !failed && prefetch_cycles>previous_prefetch;
+      assign cache_dense_increment=enabled && !failed && mla_complete ? kv_dense[31:0] : 32'd0;
+      assign expert_dense_increment=enabled && !failed && moe_complete ? expert_dense[31:0] : 32'd0;
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin previous_shared<=0; previous_prefetch<=0; end
+        else if (child_flush) begin previous_shared<=0; previous_prefetch<=0; end
+        else begin previous_shared<=shared_cycles; previous_prefetch<=prefetch_cycles; end
+      end
 
       assign cmd_ready=enabled && !failed && state==IDLE && cache_idle &&
         scratch_idle && !commit_valid;
@@ -166,10 +184,10 @@ module anvil_d2_draft_head #(
         .cmd_valid(enabled && !failed && state==DECODER),.cmd_ready(decoder_ready),
         .cmd_epoch(epoch),.cmd_layer({29'd0,head}),.cmd_pos(relative_position),.cmd_phase(1'b1),
         .done(decoder_done),.error(decoder_error),
-        .kv_read_bytes(),.kv_write_bytes(),.kv_dense_equiv_bytes(),
-        .expert_dma_bytes(),.expert_dense_equiv_bytes(),
-        .shared_busy_cycles(),.prefetch_busy_cycles(),.overlap_cycles(),
-        .mla_complete(),.moe_complete(),
+        .kv_read_bytes(),.kv_write_bytes(),.kv_dense_equiv_bytes(kv_dense),
+        .expert_dma_bytes(),.expert_dense_equiv_bytes(expert_dense),
+        .shared_busy_cycles(shared_cycles),.prefetch_busy_cycles(prefetch_cycles),.overlap_cycles(),
+        .mla_complete(mla_complete),.moe_complete(moe_complete),
         .c_req_valid(s_req_valid[0+:5]),.c_req_ready(s_req_ready[0+:5]),
         .c_req_write(s_req_write[0+:5]),.c_req_kind(s_req_kind[0+:20]),
         .c_req_layer(s_req_layer[0+:160]),.c_req_proj(s_req_proj[0+:15]),
