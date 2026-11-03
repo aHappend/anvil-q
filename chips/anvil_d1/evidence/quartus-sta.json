@@ -1,19 +1,17 @@
 {
   "gate": "quartus-sta",
-  "timestamp_utc": "2026-11-03T09:25:45.001154+00:00",
+  "timestamp_utc": "2026-11-03T09:48:11.625750+00:00",
   "project_dir": "/data/sufeng/anvil-d1-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work",
   "revision": "top",
   "clock_filter": "clk_main",
   "min_setup_slack_ns": 0.0,
   "min_hold_slack_ns": 0.0,
-  "status": "failed",
+  "status": "passed",
   "map_summary": {
     "exists": true,
     "path": "/data/sufeng/anvil-d1-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/top.map.rpt",
-    "error_count": 1,
-    "errors": [
-      "Error (12006): Node instance \"scheduler\" instantiates undefined entity \"anvil_q3_bank_scheduler\". Ensure that required library paths are specified correctly, define the specified entity, or change the instantiation. If this entity represents Intel FPGA or third-party IP, generate the synthesis files for the IP. File: /data/sufeng/anvil-d1-line/workspace/project/.vulcan/engineering/run-0001/quartus_sta_work/rtl_staged/anvil_d1_bank_scheduler.sv Line: 51"
-    ],
+    "error_count": 0,
+    "errors": [],
     "lpm_divide_error_count": 0,
     "lpm_divide_errors": [],
     "warning_10268_count": 0,
@@ -22,38 +20,330 @@
     "uninferred_rams": []
   },
   "sta_summary": {
-    "exit_code": 3,
-    "netlist_mode": null,
-    "clocks": [],
-    "wns_setup_ns": null,
-    "wns_hold_ns": null,
+    "exit_code": 0,
+    "netlist_mode": "post_fit",
+    "clocks": [
+      {
+        "name": "clk_main",
+        "period_ns": 10.0
+      }
+    ],
+    "wns_setup_ns": 0.034,
+    "wns_hold_ns": 0.039,
     "unconstrained_setup_paths": 0,
     "unconstrained_functional_endpoints": 0,
     "unapproved_timing_exceptions": 0,
     "failing_setup_count": 0,
     "failing_hold_count": 0,
-    "setup_paths": [],
-    "hold_paths": [],
-    "stderr_tail": [
-      "------------------------------------------------",
-      "ERROR: Can't run the TimeQuest Timing Analyzer (quartus_sta) -- Partition Merge (quartus_cdb --merge) failed or was not run. Run the Partition Merge (quartus_cdb --merge) successfully before running the TimeQuest Timing Analyzer (create_timing_netlist -post_map).",
-      "",
-      "    while executing",
-      "\"create_timing_netlist -post_map\"",
-      "    (file \"vulcan_sta_s5q5k6hj.tcl\" line 2)",
-      "------------------------------------------------"
-    ]
+    "setup_paths": [
+      {
+        "slack_ns": 0.034,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][24]"
+      },
+      {
+        "slack_ns": 0.034,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][22]"
+      },
+      {
+        "slack_ns": 0.035,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][22]"
+      },
+      {
+        "slack_ns": 0.035,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][24]"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][24]"
+      },
+      {
+        "slack_ns": 0.049,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][22]"
+      },
+      {
+        "slack_ns": 0.05,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][22]"
+      },
+      {
+        "slack_ns": 0.05,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|probabilities[39][24]"
+      },
+      {
+        "slack_ns": 0.063,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][3]"
+      },
+      {
+        "slack_ns": 0.063,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][16]"
+      },
+      {
+        "slack_ns": 0.063,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][18]"
+      },
+      {
+        "slack_ns": 0.064,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][3]"
+      },
+      {
+        "slack_ns": 0.064,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][16]"
+      },
+      {
+        "slack_ns": 0.064,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][18]"
+      },
+      {
+        "slack_ns": 0.072,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[53][20]"
+      },
+      {
+        "slack_ns": 0.073,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[53][20]"
+      },
+      {
+        "slack_ns": 0.074,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[54][31]"
+      },
+      {
+        "slack_ns": 0.075,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.COMPLETE",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[54][31]"
+      },
+      {
+        "slack_ns": 0.078,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][3]"
+      },
+      {
+        "slack_ns": 0.078,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "native.state.ABORT_FLUSH",
+        "to_node": "anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|scores[26][16]"
+      }
+    ],
+    "hold_paths": [
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[22][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[22][2]"
+      },
+      {
+        "slack_ns": 0.039,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_exp:exponential|state.IDLE|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_exp:exponential|state.IDLE"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_rmsnorm:native.final_normalization",
+        "to_node": "anvil_d1_add128:adder|stage[1]|anvil_d1_rmsnorm:native.final_normalization|anvil_d1_add128:adder|stage[1]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[12][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[12][2]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|stage[1]|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|stage[1]"
+      },
+      {
+        "slack_ns": 0.04,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|selected_index[1]|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|selected_index[1]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[17][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[17][2]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|anvil_d1_mul96x32:multiplier96|anvil_d1_mul32:limbs[2].multiply|stage.10|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|anvil_d1_mul96x32:multiplier96|anvil_d1_mul32:limbs[2].multiply|stage.10"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_rmsnorm:native.final_normalization",
+        "to_node": "anvil_d1_add128:adder|valid|anvil_d1_rmsnorm:native.final_normalization|anvil_d1_add128:adder|valid"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|max_score[21]|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|max_score[21]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_expert:expert_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|stage[1]|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_expert:expert_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|stage[1]"
+      },
+      {
+        "slack_ns": 0.041,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|partial[95]|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|partial[95]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_bank_scheduler:native.bank_scheduler",
+        "to_node": "anvil_q3_bank_scheduler:scheduler|stage[20][2]|anvil_d1_bank_scheduler:native.bank_scheduler|anvil_q3_bank_scheduler:scheduler|stage[20][2]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|weight[19]|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|weight[19]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|weight[18]|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|weight[18]"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_rope:rotary|anvil_d1_add128:subtractor|overflow|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_rope:rotary|anvil_d1_add128:subtractor|overflow"
+      },
+      {
+        "slack_ns": 0.042,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|overflow|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_accumulator:accumulator|anvil_d1_add128:add|overflow"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|weight[17]|anvil_d1_decoder_layer:native.decoder|anvil_d1_mla_engine:mla|anvil_d1_tensor:tensor|weight[17]"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|prefetch_owned|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|prefetch_owned"
+      },
+      {
+        "slack_ns": 0.043,
+        "from_clock": "clk_main",
+        "to_clock": "clk_main",
+        "from_node": "anvil_d1_decoder_layer:native.decoder",
+        "to_node": "anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_mem_port:memory_port|request_write|anvil_d1_decoder_layer:native.decoder|anvil_d1_moe_router_dma:moe|anvil_d1_tensor:affinity_tensor|anvil_d1_mem_port:memory_port|request_write"
+      }
+    ],
+    "stderr_tail": []
   },
-  "detail": "quartus_map reported 1 error(s); quartus_sta exited with code 3; No setup timing paths extracted from quartus_sta",
+  "detail": "Timing closed: Setup WNS = 0.034 ns",
   "quartus_slot_telemetry": {
     "slot_index": 2,
     "max_slots": 6,
-    "slot_wait_s": 0.002
+    "slot_wait_s": 0.003
   },
   "top_module": "anvil_d1_top",
   "clock_port": "clk",
   "clock_period_ns": 10.0,
   "target_frequency_mhz": 100.0,
+  "fmax_mhz": 100.34,
+  "critical_path_delay_ns": 9.966,
+  "fitter_resource_summary": {
+    "alms_used": 37524,
+    "alms_total": 427200,
+    "alms_pct": "9 %",
+    "total_registers": 53383,
+    "block_memory_bits": 192512,
+    "m20k_ram_blocks": 19,
+    "m20k_ram_blocks_total": 2713,
+    "dsp_blocks": 92,
+    "virtual_pins": 2634
+  },
   "parameters": {
     "PROFILE": 1,
     "VOCAB_SIZE": 16,
