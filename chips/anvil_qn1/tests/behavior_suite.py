@@ -2,8 +2,8 @@
 
 Retained components qualify only with matching computational sources, geometry,
 tools, completed commands and retained raw output. Missing/stale components run
-automatically. Compact protocol coverage never substitutes for the exact-profile
-layer/fusion measurements below.
+automatically. L1 fusion uses the authorized compact two-layer geometry and
+retains profile identities; it is not a production-geometry timing measurement.
 """
 
 from behavior_checks import run_behavior_core
@@ -180,7 +180,7 @@ def prefill_case(run, opening):
 
 
 def run_behavior_components(run):
-    """Bounded diagnostic entry; explicitly excludes production fusion closure."""
+    """Protocol/numerical components, excluding the separate fusion comparisons."""
     jobs = (
         ("behavior-core", run_behavior_core,
          (*SPECULATION, "tests/behavior_checks.py"), validate_core),
@@ -205,26 +205,40 @@ def run_behavior_components(run):
         suffix = "open" if opening else "close"
         results[f"generated-marker-{suffix}"] = marker_case(run, opening)
         results[f"prefill-marker-{suffix}"] = prefill_case(run, opening)
-    return {"scope": "protocol/numerical components; exact-profile fusion is separate",
+    return {"scope": "protocol/numerical components; compact fusion is separate",
             "components": results}
 
 
 def validate_fusion(result, profile):
-    geometry = vars(PROFILES[profile])
-    require(result.get("profile") == profile and not result.get("compact_diagnostic"),
-            "compact fusion is not production-profile measurement")
+    g = Geometry(layers=2, vocabulary=8)
+    geometry = vars(g)
+    require(profile in PROFILES and result.get("profile") == profile and
+            result.get("compact_diagnostic") is True,
+            "missing explicitly labeled compact profile measurement")
     fused, baseline = result["fused"], result["without_norm"]
     for record, normalized in ((fused, True), (baseline, False)):
         require(record.get("geometry") == geometry and
                 record.get("profile") == profile and
                 record.get("normalization") is normalized and
-                not record.get("compact_diagnostic") and record.get("cycles", 0) > 0,
-                "missing exact-profile layer invocation")
-        g = PROFILES[profile]
+                record.get("compact_diagnostic") is True and
+                type(record.get("cycles")) is int and record["cycles"] > 0 and
+                type(record.get("requests")) is int and record["requests"] > 0,
+                "missing compact two-layer invocation")
+        require(record.get("parameters") == {
+                    "PROFILE": profile, "COMPACT": 1, "BANKS": 8,
+                    "NUM_LAYERS": g.layers, "HIDDEN_SIZE": g.hidden,
+                    "INTERMEDIATE_SIZE": g.intermediate, "NUM_Q_HEADS": g.q_heads,
+                    "NUM_KV_HEADS": g.kv_heads, "HEAD_DIM": g.head_dim,
+                    "VOCAB_SIZE": g.vocabulary, "MAX_SEQ_LEN": g.max_sequence,
+                    "GROUP_SIZE": g.group},
+                "changed compact fusion elaboration parameters")
         require(record.get("compared_writes") ==
                 7 * g.hidden + 2 * g.q_dimension + 4 * g.kv_dimension + 3 * g.intermediate and
                 record.get("key_writes") == record.get("value_writes") == g.kv_dimension,
-                "incomplete production layer/projection/norm/KV comparisons")
+                "incomplete compact layer/projection/norm/KV comparisons")
+    for field in ("parameters", "simulation_threads", "measurement", "memory"):
+        require(fused.get(field) == baseline.get(field),
+                f"fusion comparison changed {field}")
     difference = fused["cycles"] - baseline["cycles"]
     require(fused["requests"] == baseline["requests"] and
             result.get("extra_cycles") == difference and
@@ -235,13 +249,15 @@ def validate_fusion(result, profile):
 
 def run_behavior(run):
     results = run_behavior_components(run)
-    results["production_fusion"] = {}
+    results["compact_fusion"] = {}
     for profile in (1, 2, 3):
-        results["production_fusion"][str(profile)] = component(
-            run, f"fusion-profile{profile}",
-            lambda child, profile=profile: run_fusion_profile(child, profile),
+        results["compact_fusion"][str(profile)] = component(
+            run, "fusion-compact" if profile == 1 else f"fusion-compact-profile{profile}",
+            lambda child, profile=profile: run_fusion_profile(child, profile, compact=True),
             inputs=(*MODEL, "tests/production_checks.py"),
-            parameters={"profile": profile, "compact_diagnostic": False},
+            parameters={"profile": profile, "compact_diagnostic": True},
             tools=TOOLS, validate=lambda result, profile=profile: validate_fusion(result, profile))
-    results["scope"] = "behavior components and three exact-profile measured fusion comparisons"
+    results["scope"] = (
+        "behavior components and three profile-labeled compact measured fusion comparisons; "
+        "production-geometry measurements remain separate")
     return results
