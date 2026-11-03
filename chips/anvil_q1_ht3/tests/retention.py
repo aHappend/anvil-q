@@ -123,9 +123,17 @@ def validated_execution(path, binary, binding, sources, inputs, options):
     ledger = directory/"case.json"
     if ledger.is_file():
         prior = json.loads(ledger.read_text()).get("artifact_sha256", {})
-        if not prior or any(not (ROOT/p).is_file() or digest(ROOT/p) != sha
-                            for p, sha in prior.items()):
+        if not prior:
             return None
+        for path, sha in prior.items():
+            if (path == executed_binary and executed_binary != relative(binary)
+                    and not (ROOT/path).is_file()):
+                # The build identity, exact compile options and replacement
+                # executable bytes were already checked above.
+                if sha != build["binary_sha256"]:
+                    return None
+            elif not (ROOT/path).is_file() or digest(ROOT/path) != sha:
+                return None
     return ((ROOT/record["stdout"]).read_text(),
             {relative(p): digest(p) for p in artifacts})
 

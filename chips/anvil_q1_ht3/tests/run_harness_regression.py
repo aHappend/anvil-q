@@ -17,7 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import (ROOT, ExecutionFailure, failure_details, hashes, relative,
                        remaining, timestamp)
-from retention import artifacts_intact, digest, execution_logs_intact
+from retention import artifacts_intact, digest, execution_logs_intact, validated_execution
 from run_mutations import trial
 from run_compatibility import resumable_case
 from official_reference import QwenFP64
@@ -55,6 +55,69 @@ def run(output):
     omitted = {p: sha for p, sha in artifacts.items() if not p.endswith("driver.cpp")}
     if artifacts_intact(omitted, artifacts):
         raise AssertionError("omitted required driver accepted")
+    assertions += 1
+    old_build = output/f"synthetic-old-build-{uuid.uuid4().hex[:12]}"
+    new_build = output/f"synthetic-new-build-{uuid.uuid4().hex[:12]}"
+    for build in (old_build, new_build):
+        (build/"compile-obj").mkdir(parents=True)
+    binary = new_build/"compile-obj/Vinference_tb"
+    binary.write_bytes(b"synthetic executable bytes; never executed")
+    old_binary = old_build/"compile-obj/Vinference_tb"
+    sources = {"tests/inference_tb.sv": hashes()["tests/inference_tb.sv"]}
+    identity = dict(source_sha256=sources, tool_version="synthetic tool version")
+
+    def synthetic_receipt(directory, stem, argv):
+        stdout, stderr = directory/f"{stem}.stdout.txt", directory/f"{stem}.stderr.txt"
+        stdout.write_text("synthetic observation; not tool execution")
+        stderr.write_text("")
+        record = dict(synthetic=True, argv=argv, exit=0, timed_out=False,
+                      source_sha256=sources, tool_version_exit=0,
+                      tool_version=identity["tool_version"],
+                      stdout=relative(stdout), stderr=relative(stderr),
+                      artifact_sha256={relative(p): digest(p) for p in (stdout, stderr)})
+        path = directory/f"{stem}.receipt.json"
+        path.write_text(json.dumps(record))
+        return path
+
+    for build in (old_build, new_build):
+        compiled_receipt = synthetic_receipt(
+            build, "compile", ["verilator", "--Mdir", relative(build/"compile-obj")])
+        (build/"binding.json").write_text(json.dumps(dict(
+            synthetic=True, identity=identity, compile_receipt=relative(compiled_receipt),
+            binary_sha256=digest(binary))))
+    old_case = output/f"synthetic-old-case-{uuid.uuid4().hex[:12]}"
+    new_case = output/f"synthetic-new-case-{uuid.uuid4().hex[:12]}"
+    old_case.mkdir()
+    new_case.mkdir()
+    for directory in (old_case, new_case):
+        (directory/"vectors.txt").write_text("identical synthetic vectors")
+    (old_case/"observations.txt").write_text("synthetic public output")
+    simulated_receipt = synthetic_receipt(
+        old_case, "simulation",
+        [relative(old_binary), f"+vectors={relative(old_case/'vectors.txt')}",
+         f"+observations={relative(old_case/'observations.txt')}"])
+    (old_case/"case.json").write_text(json.dumps(dict(
+        synthetic=True, artifact_sha256={relative(old_binary): digest(binary),
+                                        relative(old_case/"observations.txt"):
+                                        digest(old_case/"observations.txt")})))
+
+    def rebound():
+        return validated_execution(simulated_receipt, binary, relative(new_build/"binding.json"),
+                                   list(sources), [new_case/"vectors.txt"], [])
+
+    checked = rebound()
+    if (checked is None or relative(binary) not in checked[1]
+            or relative(old_binary) in checked[1]):
+        raise AssertionError("identical rebuilt executable could not rebind complete observations")
+    assertions += 1
+    binary.write_bytes(b"different synthetic executable bytes")
+    if rebound() is not None:
+        raise AssertionError("different rebuilt executable admitted old observations")
+    binary.write_bytes(b"synthetic executable bytes; never executed")
+    assertions += 1
+    (old_case/"simulation.stdout.txt").unlink()
+    if rebound() is not None:
+        raise AssertionError("executable replacement concealed reclaimed raw observations")
     assertions += 1
     import run_benchmarks
 
