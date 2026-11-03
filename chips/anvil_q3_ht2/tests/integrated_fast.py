@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import shutil
 
 from integrated import generate
@@ -68,7 +69,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False):
         *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
-            str(executable.relative_to(run)), f"+vectors={vectors.name}",
+            os.path.relpath(executable, run), f"+vectors={vectors.name}",
             f"+model={model.relative_to(run)}",
             *(["+sample_cycles=16384"] if diagnostic else []),
             *(["+profile"] if profile else [])],
