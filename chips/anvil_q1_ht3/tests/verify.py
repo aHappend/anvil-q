@@ -20,6 +20,7 @@ from execution import (CHECK_SECONDS, ROOT, execute, failure_details, hashes,
 from retention import find_result, inventory
 from run_synthesis import JOBS, JOB_BUDGETS
 from run_reproduction import REPRODUCTION_BUDGET
+from run_parameters import legal_cross
 
 
 SEEDS = (17, 89, 2026)
@@ -79,7 +80,8 @@ def dependencies(script):
                                       "tests/retention.py"],
         "tests/run_integrated_geometry.py": ["tests/reference.py", "tests/inference_tb.sv",
                                             "tests/run_compatibility.py",
-                                            "tests/run_performance.py", "tests/retention.py"],
+                                            "tests/run_performance.py", "tests/retention.py",
+                                            "tests/run_parameters.py"],
         "tests/run_performance.py": ["tests/reference.py", "tests/inference_tb.sv",
                                      "tests/performance_monitor.sv",
                                      "tests/run_compatibility.py",
@@ -252,6 +254,7 @@ def reconcile_coverage(rows):
             observed.append(dict(id=case["id"], geometry=case["geometry"],
                                  format=case["format"], seed=case["seed"],
                                  compared_tokens=len(metrics),
+                                 compared_positions=case.get("compared_positions", []),
                                  simulation_receipt=case["simulation_receipt"]))
         exercised = {(r["geometry"]["TB"], r["geometry"]["KW"], r["geometry"]["FT"])
                      for r in observed}
@@ -268,6 +271,26 @@ def reconcile_coverage(rows):
             elaborated_cross_triples_without_functional_observation=[
                 list(v) for v in sorted(elaborated-exercised)],
             scope="checked inference tuples only; source elaboration is not functional coverage")
+        required = {(name, fmt) for name, _, _ in legal_cross() for fmt in (0, 1)}
+        cross = [row for row in observed if row["id"].startswith("legal-cross-")]
+        cross_complete = (
+            {(row["id"], row["format"]) for row in cross} == required
+            and len(cross) == len(required)
+            and all(row["compared_positions"] == [
+                *range(row["geometry"]["S"] if row["geometry"]["KW"] == 128
+                       else min(row["geometry"]["S"], 4)), 0]
+                    and row["compared_tokens"] == len(row["compared_positions"])
+                    for row in cross))
+        label = ("functional TILE_BEATS/KV_WINDOW/FLASH_TILE cross matrix; "
+                 "the legal boundary cross received source elaboration only")
+        if cross_complete and elaborated.issubset(exercised):
+            limits = parameters.get("coverage_limits", [])
+            if label in limits:
+                parameters.setdefault("reported_coverage_limits", list(limits))
+                parameters["coverage_limits"] = [s for s in limits if s != label]
+                parameters["functional_parameter_coverage"]["pairwise_cross_complete"] = True
+                if not parameters["coverage_limits"]:
+                    parameters["status"] = "passed"
 
     attention = next((r for r in rows if r["id"] == "attention"), None)
     if checked_result(attention, "tests/run_attention.py") is None:

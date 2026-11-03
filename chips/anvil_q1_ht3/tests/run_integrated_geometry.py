@@ -14,6 +14,7 @@ from execution import ROOT, execute, hashes, relative, remaining, timestamp
 from reference import convert, float_bits
 from run_compatibility import (check_case, compiled, matvec, norm, rope, rounded16)
 from run_performance import validated_simulation
+from run_parameters import legal_cross
 
 
 CASES = {
@@ -26,6 +27,17 @@ CASES = {
     "medium-gqa": dict(L=1, H=64, I=64, Q=4, K=2, D=16, G=8, V=3, S=4,
                       TB=256, KW=3, FT=16),
 }
+
+CROSS_CASES = {}
+for name, parameters, _ in legal_cross():
+    CROSS_CASES[name] = {
+        short: parameters[long] for short, long in (
+            ("L", "NUM_LAYERS"), ("H", "HIDDEN_SIZE"), ("I", "INTERMEDIATE_SIZE"),
+            ("Q", "NUM_Q_HEADS"), ("K", "NUM_KV_HEADS"), ("D", "HEAD_DIM"),
+            ("G", "GROUP_SIZE"), ("V", "VOCAB_SIZE"), ("S", "MAX_SEQ_LEN"),
+            ("TB", "TILE_BEATS"), ("KW", "KV_WINDOW"), ("FT", "FLASH_TILE"))
+    }
+CASES.update(CROSS_CASES)
 
 
 def reference(embedding, weights, geometry, fmt, traffic):
@@ -114,8 +126,9 @@ def fixture(directory, geometry, fmt, seed):
     region(11, 0, bytes(geometry["S"]*geometry["D"]*4))
     if len(image)>262144:
         raise ValueError("fixture exceeds the declared public memory model")
+    count = geometry["S"] if geometry["KW"] == 128 else min(geometry["S"], 4)
     traffic = [(position % vocab, position, int(position == 0))
-               for position in range(min(geometry["S"], 4))]
+               for position in range(count)]
     if geometry["S"] > 1:
         traffic.append((0, 0, 1))
     expected = reference(embedding, weights, geometry, fmt, traffic)
@@ -136,10 +149,12 @@ def fixture(directory, geometry, fmt, seed):
     return vectors, expected
 
 
-def run(output, case=None, selected_format=None, fresh=False):
+def run(output, case=None, selected_format=None, fresh=False, cross_only=False):
     rows = []
     for name, geometry in CASES.items():
         if case is not None and name != case:
+            continue
+        if cross_only and name not in CROSS_CASES:
             continue
         try:
             binary, binding = compiled(geometry)
@@ -177,8 +192,12 @@ def run(output, case=None, selected_format=None, fresh=False):
                     if checked is None:
                         raise AssertionError("fresh geometry simulation has invalid provenance")
                 observation, artifacts = checked
+                traffic = json.loads((directory/"image-manifest.json").read_text())["traffic"]
+                if len(observation["metrics"]) != len(traffic):
+                    raise AssertionError("functional geometry did not compare every accepted position")
                 rows.append(dict(id=name, geometry=geometry, directory=relative(directory),
                                  reused=reused, simulation_receipt=relative(simulation_receipt),
+                                 compared_positions=[row[1] for row in traffic],
                                  artifact_sha256=artifacts, **observation))
                 with (directory/"case.json").open("x") as out:
                     json.dump(rows[-1], out, indent=2)
@@ -188,7 +207,7 @@ def run(output, case=None, selected_format=None, fresh=False):
     return dict(status="passed" if rows and all(row["status"]=="passed" for row in rows)
                 else "failed", runs=rows,
                 coverage_limits=(["selected functional geometry/format only"]
-                                 if case or selected_format is not None else []))
+                                 if case or selected_format is not None or cross_only else []))
 
 
 def main():
@@ -198,6 +217,8 @@ def main():
     parser.add_argument("--format", type=int, choices=(0, 1))
     parser.add_argument("--fresh", action="store_true",
                         help="restart selected simulations, never restore partial execution")
+    parser.add_argument("--cross-only", action="store_true",
+                        help="execute the twelve admitted pairwise parameter tuples")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -205,7 +226,7 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     try:
-        result = run(output, args.case, args.format, args.fresh)
+        result = run(output, args.case, args.format, args.fresh, args.cross_only)
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:

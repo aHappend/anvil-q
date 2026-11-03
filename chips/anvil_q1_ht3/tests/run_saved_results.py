@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, hashes, relative, remaining, timestamp
 from retention import find_result, inventory, validated_result
 from verify import TOOLS, dependencies, reconcile_coverage
+from run_integrated_geometry import CASES
 
 
 SUITES = ("integrated_geometry", "parameters", "mutations", "packed_cache",
@@ -77,12 +78,15 @@ def run(output, suites=SUITES):
         parameters = next(r for r in rows if r["id"] == "parameters")
         coverage = parameters.get("functional_parameter_coverage", {})
         cases = coverage.get("cases", [])
-        if (len(cases) != 8 or sum(r["compared_tokens"] for r in cases) != 24
+        if (len(cases) != 2*len(CASES)
+                or any({r["format"] for r in cases if r["id"] == name} != {0, 1}
+                       for name in CASES)
                 or coverage["tile_beats"] != [1, 3, 256]
-                or coverage["kv_window"] != [1, 3]
+                or coverage["kv_window"] != [1, 3, 128]
                 or coverage["flash_tile"] != [1, 3, 16, 128]
-                or not parameters["coverage_limits"]
-                or not coverage["elaborated_cross_triples_without_functional_observation"]):
+                or parameters["coverage_limits"]
+                or not coverage.get("pairwise_cross_complete")
+                or coverage["elaborated_cross_triples_without_functional_observation"]):
             raise AssertionError("functional tuples were lost or elaboration became functional coverage")
         negative = [dict(row) for row in rows]
         for row in negative:
