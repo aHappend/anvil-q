@@ -260,6 +260,12 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False, batch_count=Non
     text = execute([relative(binary), f"+vectors={relative(vectors)}",
                     f"+observations={relative(observations)}", f"+seed={seed}", *options],
                    directory, "simulation", ["verilator", "--version"])
+    return check_case(directory, text, binding, fmt, seed, expected, expected_batch)
+
+
+def check_case(directory, text, binding, fmt, seed, expected, expected_batch=None):
+    """Recheck complete public observations, including retained simulations."""
+    observations = directory/"observations.txt"
     match = re.search(r"SUMMARY inference format=(\d+) tokens=(\d+) logits=(\d+) "
                       r"csr=(\d+) csr_holds=(\d+) output_stalls=(\d+) reads=(\d+) "
                       r"writes=(\d+) bus_waits=(\d+) max_debt=(\d+)", text)

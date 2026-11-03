@@ -210,10 +210,19 @@ def mapping_groups(netlist):
                 chunks.append(chunk)
             for part, chunk in enumerate(chunks):
                 selection = " ".join(f"{module}/c:{name}" for name in chunk)
+                # Preserve the admitted predecessor chain through map-14.
+                # Wide shift expansion creates private aliases and constant
+                # mux arms; fold these before serializing subsequent phases.
+                # Pending word cells keep their names for later selections.
+                compact = (
+                    f"opt_expr {module}/t:$_*; opt_clean {module}; "
+                    f"setattr -unset src {module}/t:$_* {module}/w:$*; "
+                    f"rename -enumerate {module}/t:$_* {module}/w:$*; "
+                    if part >= 15 else "")
                 phases.append((f"gates-{index:02d}-map-{part:02d}",
                                f"select -set decoder_cells {selection}; "
                                "select -assert-any @decoder_cells; techmap @decoder_cells; "
-                               "select -clear; "))
+                               "select -clear; " + compact))
             phases.append((f"gates-{index:02d}-clean",
                            f"opt_clean {module}; select -clear; "))
         else:
@@ -225,7 +234,8 @@ def mapping_groups(netlist):
     return phases
 
 
-def mapped_phases(output, identifier, top, parameters, sources, frontend, version):
+def mapped_phases(output, identifier, top, parameters, sources, frontend, version,
+                  through_phase=None):
     cache = ROOT / "evidence/compiled"
     cache.mkdir(parents=True, exist_ok=True)
     parameter_cmd = ("chparam " + " ".join(f"-set {p} {v}" for p, v in parameters.items())
@@ -295,9 +305,13 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             deadline = os.environ.get("HT3_CHECK_DEADLINE")
             allocation = remaining()
             reserve = (90 if identifier == "compact-mapped" else 30) if phase != "abc" else 0
+            if through_phase == phase:
+                reserve = 0
             minimum = (240 if identifier == "compact-mapped" and phase != "abc"
                        else 60 if identifier == "compact-mapped"
                        else 30 if phase == "abc" else 0)
+            if "rename -enumerate" in commands:
+                minimum = 30
             if allocation-reserve-10 < minimum:
                 raise RuntimeError(f"unstarted synthesis phase {phase}: {allocation:.3f}s "
                                    f"remain, reserving {reserve}s ABC and 10s settlement; "
@@ -317,16 +331,18 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                          ("synthesis.ys", "statistics.json", "netlist.json", "checkpoint.il")]
             if not all(path.is_file() for path in artifacts):
                 raise AssertionError(f"incomplete synthesis phase {phase}")
+            artifact_sha256 = {relative(path): digest(path) for path in artifacts}
             with (directory / "binding.json").open("x") as out:
                 json.dump(dict(identity=identity, status="passed",
-                               artifact_sha256={relative(path): digest(path) for path in artifacts},
+                               artifact_sha256=artifact_sha256,
                                receipt=relative(directory / "synthesis.receipt.json")), out, indent=2)
             reused = False
         else:
             directory, counts = retained, None
+            artifact_sha256 = record["artifact_sha256"]
             reused = True
         predecessor = directory / "checkpoint.il"
-        predecessor_digest = digest(predecessor)
+        predecessor_digest = artifact_sha256[relative(predecessor)]
         records.append(dict(phase=phase, status="passed", reused=reused,
                             binding=relative(directory / "binding.json"),
                             receipt=relative(directory / "synthesis.receipt.json")))
@@ -335,6 +351,11 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
         if phase == "word" and identifier == "compact-mapped":
             netlist = json.loads((directory / "netlist.json").read_text())
             phases[1:2] = mapping_groups(netlist)
+        if through_phase == phase:
+            return dict(id=identifier, status="passed", parameters=parameters,
+                        mapped=False, diagnostic_only=True, phases=records,
+                        receipt=records[-1]["receipt"],
+                        coverage_limits=["partial mapping diagnostic; final ABC not executed"])
     if counts is None:
         counts = checked_account(json.loads((directory/"netlist.json").read_text()),
                                  top, identifier, True)
@@ -344,7 +365,7 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                 statistics=relative(directory / "statistics.json"))
 
 
-def run(output, diagnostic=False, compact_only=False, job=None):
+def run(output, diagnostic=False, compact_only=False, job=None, through_phase=None):
     sources = " ".join(materialize(output))
     frontend = json.loads((output / "frontend.json").read_text())
     version = execute(["yosys", "-V"], output, "version", ["yosys", "-V"]).strip()
@@ -386,7 +407,7 @@ def run(output, diagnostic=False, compact_only=False, job=None):
         try:
             if mapped:
                 rows.append(mapped_phases(directory, identifier, top, parameters,
-                                          sources, frontend, version))
+                                          sources, frontend, version, through_phase))
                 continue
             execute(["yosys", "-Q", "-T", "-s", relative(script_path)], directory,
                     "synthesis", ["yosys", "-V"])
@@ -413,7 +434,9 @@ def run(output, diagnostic=False, compact_only=False, job=None):
         rows.append(row)
     result = dict(status="passed" if all(r["status"] == "passed" for r in rows) else "failed",
                   runs=rows, diagnostic=diagnostic, compact_only=compact_only,
-                  job=job, frontend=relative(output / "frontend.json"))
+                  job=job, frontend=relative(output / "frontend.json"),
+                  coverage_limits=(["partial mapping diagnostic; final ABC not executed"]
+                                   if through_phase else []))
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     return result
@@ -426,13 +449,17 @@ def main():
     mode.add_argument("--diagnostic", action="store_true")
     mode.add_argument("--compact-only", action="store_true")
     mode.add_argument("--job", choices=tuple(row[0] for row in JOBS))
+    parser.add_argument("--through-phase",
+                        help="diagnostic checkpoint stop, never complete mapped acceptance")
     args = parser.parse_args()
+    if args.through_phase and args.job != "compact-mapped":
+        parser.error("--through-phase requires --job compact-mapped")
     output = ROOT / args.output
     output.mkdir(parents=True, exist_ok=False)
     receipt = dict(argv=["python3", "tests/run_synthesis.py", *sys.argv[1:]], cwd=".",
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
-    result = run(output, args.diagnostic, args.compact_only, args.job)
+    result = run(output, args.diagnostic, args.compact_only, args.job, args.through_phase)
     receipt.update(exit=0 if result["status"] == "passed" else 1,
                    timed_out=remaining() <= 0 or any(
                        row.get("timed_out", False) for row in result["runs"]) or any(

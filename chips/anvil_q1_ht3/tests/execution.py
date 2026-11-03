@@ -64,7 +64,7 @@ def execute(argv, output, stem, version_argv, root=ROOT):
     record = dict(argv=argv, cwd="." if root == ROOT else relative(root),
                   start=timestamp(), source_sha256=hashes(root),
                   stdout=relative(stdout), stderr=relative(stderr),
-                  timeout=limit, tool_version_argv=version_argv)
+                  timeout=limit, tool_version_argv=version_argv, launched=False)
     try:
         version = subprocess.run(version_argv, cwd=root, capture_output=True,
                                  text=True, timeout=min(INTERPRETED_SECONDS, remaining()))
@@ -93,6 +93,7 @@ def execute(argv, output, stem, version_argv, root=ROOT):
                     time.time() + max(0, end-time.monotonic()))
                 process = subprocess.Popen(argv, cwd=root, stdout=out, stderr=err,
                                            start_new_session=True, env=environment)
+                record["launched"] = True
                 previous_handler = signal.getsignal(signal.SIGTERM)
                 ancestor_timeout = False
 

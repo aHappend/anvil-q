@@ -8,8 +8,10 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, clean_objects, execute, hashes, relative, remaining, timestamp
-from run_compatibility import compiled, run_case
+from execution import (ROOT, ExecutionFailure, clean_objects, execute, hashes,
+                       relative, remaining, timestamp)
+from retention import digest
+from run_compatibility import check_case, compiled, fixture
 
 
 MEASUREMENT_RULES = {
@@ -23,6 +25,125 @@ MEASUREMENT_RULES = {
     "tokens": "token0 fresh, token1 decode, token2 fresh; no untimed warm-up tokens",
     "image": "identical represented image bytes, descriptor order and precision",
 }
+
+
+def simulation_sources(name):
+    pattern = "anvil_q1_ht2_reference/rtl/*.sv" if name == "ht2" else "rtl/*.sv"
+    return [relative(p) for p in sorted(ROOT.glob(pattern))]+["tests/inference_tb.sv"]
+
+
+def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name):
+    """Admit only settled matching executions; independently rescore raw logits.
+
+    Older aggregate failures can contain complete individual simulations. Their
+    old pass labels are not used. Regenerated input bytes, simulator/binary,
+    source hashes and raw diagnostics must match before the current oracle runs.
+    """
+    record = json.loads(path.read_text())
+    current = hashes()
+    build = json.loads((ROOT/binding).read_text())
+    argv = record.get("argv", [])
+    if (record.get("exit") != 0 or record.get("timed_out")
+            or record.get("tool_version_exit") != 0
+            or record.get("tool_version", "").strip() != build["identity"]["tool_version"]
+            or len(argv) != 4 or argv[0] != relative(binary)
+            or argv[3] != f"+seed={seed}"
+            or digest(binary) != build["binary_sha256"]
+            or any(record.get("source_sha256", {}).get(p) != current[p]
+                   for p in simulation_sources(name))):
+        return None
+    directory = path.parent
+    if (argv[1] != f"+vectors={relative(directory/'vectors.txt')}"
+            or argv[2] != f"+observations={relative(directory/'observations.txt')}"
+            or not (directory/"vectors.txt").is_file()
+            or digest(directory/"vectors.txt") != digest(vectors)
+            or not (directory/"observations.txt").is_file()):
+        return None
+    for key in ("stdout", "stderr"):
+        artifact = ROOT/record[key]
+        if (not artifact.is_file()
+                or record.get("artifact_sha256", {}).get(record[key]) != digest(artifact)):
+            return None
+    checked = check_case(directory, (ROOT/record["stdout"]).read_text(),
+                         binding, fmt, seed, expected)
+    artifacts = [path, directory/"vectors.txt", directory/"observations.txt",
+                 ROOT/record["stdout"], ROOT/record["stderr"], ROOT/binding,
+                 ROOT/build["compile_receipt"], binary]
+    return checked, {relative(p): digest(p) for p in artifacts}
+
+
+def performance_case(output, name, binary, binding, fmt, seed):
+    directory = output/f"{name}-format{fmt}-seed{seed}-{uuid.uuid4().hex[:12]}"
+    directory.mkdir()
+    vectors, expected = fixture(directory, fmt, seed)
+    current = hashes()
+    dependencies = [*simulation_sources(name), "tests/run_performance.py",
+                    "tests/run_compatibility.py", "tests/reference.py", "tests/execution.py"]
+    identity = dict(schema=1, generation=name, format=fmt, seed=seed,
+                    source_sha256={p: current[p] for p in dependencies},
+                    binary_sha256=digest(binary), binding_sha256=digest(ROOT/binding),
+                    vector_sha256=digest(vectors), measurement_rules=MEASUREMENT_RULES)
+    candidates = []
+    for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
+        candidates.extend(parent.glob(f"*/performance-*/*{name}-format{fmt}-seed{seed}-*/case.json"))
+        candidates.extend(parent.glob(f"*/shard-*/*{name}-format{fmt}-seed{seed}-*/case.json"))
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    for candidate in candidates:
+        cached = json.loads(candidate.read_text())
+        if (cached.get("identity") != identity or cached.get("status") != "passed"
+                or not all((ROOT/p).is_file() and digest(ROOT/p) == sha
+                           for p, sha in cached.get("artifact_sha256", {}).items())
+                or not cached.get("artifact_sha256")):
+            continue
+        candidates_receipts = [ROOT/cached["simulation_receipt"]]
+        break
+    else:
+        candidates_receipts = []
+        # Migrate complete pre-case-cache observations from failed aggregates.
+        for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
+            candidates_receipts.extend(parent.glob(
+                f"*/performance-*/*{name}-format{fmt}-seed{seed}-*/simulation.receipt.json"))
+            candidates_receipts.extend(parent.glob(
+                f"*/shard-*/*{name}-format{fmt}-seed{seed}-*/simulation.receipt.json"))
+    checked = None
+    for path in sorted(candidates_receipts, key=lambda p: p.stat().st_mtime, reverse=True):
+        checked = validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name)
+        if checked is not None:
+            simulation_receipt = path
+            break
+    reused = checked is not None
+    if checked is None:
+        execute([relative(binary), f"+vectors={relative(vectors)}",
+                 f"+observations={relative(directory/'observations.txt')}", f"+seed={seed}"],
+                directory, "simulation", ["verilator", "--version"])
+        simulation_receipt = directory/"simulation.receipt.json"
+        checked = validated_simulation(simulation_receipt, binary, binding, vectors,
+                                       fmt, seed, expected, name)
+        if checked is None:
+            raise AssertionError("fresh simulation failed execution/source/input binding")
+    observation, artifacts = checked
+    artifacts.update({relative(p): digest(p)
+                      for p in (vectors, directory/"image-manifest.json")})
+    record = dict(status="passed", identity=identity, observation=observation,
+                  reused=reused, simulation_receipt=relative(simulation_receipt),
+                  artifact_sha256=artifacts, validated_at=timestamp())
+    with (directory/"case.json").open("x") as out:
+        json.dump(record, out, indent=2)
+    observation.update(image=json.loads((directory/"image-manifest.json").read_text())["sha256"],
+                       vectors=digest(vectors), case=relative(directory/"case.json"), reused=reused)
+    return observation
+
+
+def failure_classification(exc, name):
+    if isinstance(exc, ExecutionFailure):
+        if exc.timed_out:
+            return ("execution_budget_timeout" if exc.record.get("launched", True)
+                    else "execution_budget_unstarted")
+        return "simulation_or_tool_failure"
+    if isinstance(exc, AssertionError):
+        return ("parent_numerical_protocol_failure" if name == "ht2"
+                else "HT3_numerical_protocol_failure")
+    return "verification_or_input_failure"
 
 
 def parent_compiled():
@@ -93,20 +214,12 @@ def run(output, diagnostic=False):
         for fmt in ((0,) if diagnostic else (0, 1, 2)):
             observations = {}
             for name, (binary, binding) in binaries.items():
-                directory = output/f"{name}-format{fmt}-seed{seed}-{uuid.uuid4().hex[:8]}"
-                directory.mkdir()
                 try:
-                    observations[name] = run_case(directory, binary, binding, fmt, seed)
-                    observations[name]["image"] = json.loads(
-                        (directory/"image-manifest.json").read_text())["sha256"]
-                    observations[name]["vectors"] = hashlib.sha256(
-                        (directory/"vectors.txt").read_bytes()).hexdigest()
+                    observations[name] = performance_case(output, name, binary, binding, fmt, seed)
                 except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                     rows.append(dict(status="failed", generation=name, format=fmt, seed=seed,
                                      error=f"{type(exc).__name__}: {exc}",
-                                     directory=relative(directory),
-                                     classification="parent regression aid" if name == "ht2"
-                                     else "HT3 independent numerical/protocol failure"))
+                                     classification=failure_classification(exc, name)))
             if len(observations) == 2:
                 old, new = observations["ht2"], observations["ht3"]
                 if (old["image"], old["vectors"]) != (new["image"], new["vectors"]):
