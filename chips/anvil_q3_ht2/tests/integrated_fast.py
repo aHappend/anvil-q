@@ -56,22 +56,15 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
     shutil.copyfile(ROOT / "tests/integrated_driver.cpp", driver)
     sources = [relative(path) for directory in ("anvil_q3_ht_reference/rtl", "rtl")
                for path in sorted((ROOT / directory).glob("*.sv"))]
-    parameters = {
-        "NUM_LAYERS": 36, "HIDDEN_SIZE": 64, "INTERMEDIATE_SIZE": 8,
-        "NUM_Q_HEADS": 16, "NUM_KV_HEADS": 2, "HEAD_DIM": 4,
-        "GROUP_SIZE": 8, "VOCAB_SIZE": 8, "MAX_SEQ_LEN": 8, "BANKS": 1,
-        "CACHE_MODE": mode, "TILE_K": 16, "QUEUE_DEPTH": 3,
-        "BURST_BEATS": 1, "KV_RESIDENT_GROUPS": 3,
-    }
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt",
-        "--top-module", "anvil_q3_ht2_top", "--prefix", "Vintegrated",
+        "--top-module", "integrated_clock_tb", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
         "-CFLAGS", "-O3", "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
-        *[f"-G{name}={value}" for name, value in parameters.items()],
-        *sources, driver.name], obj, "Vintegrated")
+        f"-DHT2_TEST_CACHE_MODE={mode}",
+        *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
             relative(executable), f"+vectors={relative(vectors)}",

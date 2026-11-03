@@ -16,9 +16,9 @@ from verify import Ledger, clean_reproduction, enter_tier
 
 
 FAILED_RECEIPT = (
-    "evidence/l1-all-20261103T033553896046Z/"
-    "compatibility-mode2-1793679078565125390/"
-    "compatibility-simulate-20261103T041832481330Z/receipt.json"
+    "evidence/l1-all-20261103T042653651958Z/"
+    "compatibility-mode1-1793680921796401778/"
+    "compatibility-compile-20261103T044202191734Z/receipt.json"
 )
 
 

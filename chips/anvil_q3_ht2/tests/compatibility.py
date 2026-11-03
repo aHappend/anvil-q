@@ -24,7 +24,7 @@ def run_compatibility(run, mode):
     binary = compile_verilator(run, "compatibility-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt",
-        "--top-module", "compatibility_tb", f"-GCACHE_MODE={mode}",
+        "--top-module", "compatibility_tb", f"-DHT2_TEST_CACHE_MODE={mode}",
         "--prefix", "Vcompatibility",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
