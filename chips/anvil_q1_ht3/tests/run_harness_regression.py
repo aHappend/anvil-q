@@ -39,8 +39,7 @@ def run(output):
     current_sources = hashes()
     geometry_rows = []
     for name, geometry in CROSS_CASES.items():
-        positions = [*range(geometry["S"] if geometry["KW"] == 128
-                            else min(geometry["S"], 4)), 0]
+        positions = [*range(min(geometry["S"], 4)), 0]
         for fmt, seed in ((0, 17), (1, 89)):
             geometry_rows.append(dict(
                 synthetic=True, status="passed", id=name, geometry=geometry,

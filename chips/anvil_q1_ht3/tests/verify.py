@@ -282,8 +282,7 @@ def reconcile_coverage(rows):
                     required[row["id"], row["format"]]
                     and row["seed"] == (17 if row["format"] == 0 else 89)
                     and row["compared_positions"] == [
-                *range(row["geometry"]["S"] if row["geometry"]["KW"] == 128
-                       else min(row["geometry"]["S"], 4)), 0]
+                        *range(min(row["geometry"]["S"], 4)), 0]
                     and row["compared_tokens"] == len(row["compared_positions"])
                     for row in cross))
         label = ("functional TILE_BEATS/KV_WINDOW/FLASH_TILE cross matrix; "

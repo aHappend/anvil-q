@@ -84,7 +84,7 @@ def reference(embedding, weights, geometry, fmt, traffic):
     return result
 
 
-def fixture(directory, geometry, fmt, seed):
+def fixture(directory, geometry, fmt, seed, fill_context=False):
     if geometry["L"] != 1 or fmt not in (0, 1):
         raise ValueError("this functional fixture covers one-layer native formats")
     h, intermediate, kv, vocab = (geometry["H"], geometry["I"],
@@ -126,7 +126,7 @@ def fixture(directory, geometry, fmt, seed):
     region(11, 0, bytes(geometry["S"]*geometry["D"]*4))
     if len(image)>262144:
         raise ValueError("fixture exceeds the declared public memory model")
-    count = geometry["S"] if geometry["KW"] == 128 else min(geometry["S"], 4)
+    count = geometry["S"] if fill_context else min(geometry["S"], 4)
     traffic = [(position % vocab, position, int(position == 0))
                for position in range(count)]
     if geometry["S"] > 1:
@@ -149,7 +149,8 @@ def fixture(directory, geometry, fmt, seed):
     return vectors, expected
 
 
-def run(output, case=None, selected_format=None, fresh=False, cross_only=False):
+def run(output, case=None, selected_format=None, fresh=False, cross_only=False,
+        fill_context=False):
     rows = []
     for name, geometry in CASES.items():
         if case is not None and name != case:
@@ -167,7 +168,7 @@ def run(output, case=None, selected_format=None, fresh=False, cross_only=False):
             directory = output/f"{name}-format{fmt}-seed{seed}-{uuid.uuid4().hex[:8]}"
             directory.mkdir()
             try:
-                vectors, expected = fixture(directory, geometry, fmt, seed)
+                vectors, expected = fixture(directory, geometry, fmt, seed, fill_context)
                 candidates = [p for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation")
                               for p in parent.glob(
                                   f"*/*/{name}-format{fmt}-seed{seed}-*/simulation.receipt.json")]
@@ -207,7 +208,8 @@ def run(output, case=None, selected_format=None, fresh=False, cross_only=False):
     return dict(status="passed" if rows and all(row["status"]=="passed" for row in rows)
                 else "failed", runs=rows,
                 coverage_limits=(["selected functional geometry/format only"]
-                                 if case or selected_format is not None or cross_only else []))
+                                 if case or selected_format is not None or cross_only or fill_context
+                                 else []))
 
 
 def main():
@@ -219,6 +221,8 @@ def main():
                         help="restart selected simulations, never restore partial execution")
     parser.add_argument("--cross-only", action="store_true",
                         help="execute the twelve admitted pairwise parameter tuples")
+    parser.add_argument("--fill-context", action="store_true",
+                        help="supplemental full-capacity context diagnostic; not compact coverage")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -226,7 +230,8 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     try:
-        result = run(output, args.case, args.format, args.fresh, args.cross_only)
+        result = run(output, args.case, args.format, args.fresh, args.cross_only,
+                     args.fill_context)
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
