@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=7 requests=192 responses=192 outputs=4
-COMPARED 197
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-order-m1-s1/compiled-bench.sv:277: Verilog $finish

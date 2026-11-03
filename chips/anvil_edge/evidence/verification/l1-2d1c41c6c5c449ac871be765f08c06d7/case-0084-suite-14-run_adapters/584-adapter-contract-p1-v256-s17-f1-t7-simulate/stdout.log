@@ -1,3 +1,0 @@
-ADAPTER_COMPLETE active=256 logits=256 error=21
-COMPARED 259
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0084-suite-14-run_adapters/adapter-contract-p1-v256-s17-f1-t7/compiled-bench.sv:124: Verilog $finish

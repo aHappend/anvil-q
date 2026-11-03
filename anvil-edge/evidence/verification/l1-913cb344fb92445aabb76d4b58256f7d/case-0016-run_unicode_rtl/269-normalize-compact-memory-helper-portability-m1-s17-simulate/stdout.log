@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=2 requests=36 responses=36 outputs=1
-COMPARED 38
-evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/normalize-compact-memory-helper-portability-m1-s17/bench.sv:195: $finish called at 6146 (1s)

@@ -11,6 +11,7 @@ from execution import ROOT, hashes, relative, remaining, timestamp
 from retention import digest, find_result, inventory, normalize_argv, validated_result
 from verify import TOOLS, dependencies, reconcile_coverage
 from run_integrated_geometry import CASES
+from campaign import artifact, available, logical
 
 
 SUITES = ("integrated_geometry", "parameters", "mutations", "packed_cache",
@@ -27,7 +28,7 @@ def invalid_artifacts(result):
                 path = ROOT/name
                 path.resolve().relative_to(ROOT)
                 try:
-                    if not path.is_file():
+                    if not available(path):
                         rejected[name] = "missing"
                     elif digest(path) != sha:
                         rejected[name] = "hash mismatch"
@@ -69,27 +70,28 @@ def run(output, suites=SUITES):
             raise AssertionError(f"no complete current-source retained result: {name}; "
                                  f"{json.dumps(rejection_details(argv, deps), sort_keys=True)}")
         candidate = ROOT/retained["result_path"]
-        record = json.loads((ROOT/retained["receipt"]).read_text())
+        record = json.loads(artifact(ROOT/retained["receipt"]).read_text())
         if record.get("timed_out"):
             raise AssertionError("partial timeout was admitted")
-        # Refuse the exact candidate when a bound execution log disappears.
+        # Refuse a missing dependency when neither raw nor archived bytes exist.
         tools = retained["tool_receipts"]
-        tool_record = json.loads((ROOT/tools[0]).read_text())
+        tool_record = json.loads(artifact(ROOT/tools[0]).read_text())
         missing = ROOT/tool_record["stdout"]
-        original_is_file = Path.is_file
+        original_available = available
 
         def reclaimed(path):
-            return False if path == missing else original_is_file(path)
+            return False if logical(path) == logical(missing) else original_available(path)
 
-        with patch.object(Path, "is_file", reclaimed):
+        with patch("retention.available", side_effect=reclaimed):
             if validated_result(candidate, argv, deps, versions) is not None:
                 raise AssertionError(f"reclaimed observation accepted: {name}")
         assertions += 2
         if name == "stream_checkpoint":
             result = retained["result"]
-            last = json.loads((ROOT/result["streams"][0][-1]).read_text())
+            last = json.loads(artifact(ROOT/result["streams"][0][-1]).read_text())
             missing = ROOT/last["identity"]["binary"]
-            with patch.object(Path, "is_file", reclaimed):
+            with patch("retention.available", side_effect=reclaimed), \
+                    patch("official_stream.available", side_effect=reclaimed):
                 if validated_result(candidate, argv, deps, versions) is not None:
                     raise AssertionError("reclaimed checkpoint executable accepted")
             assertions += 1

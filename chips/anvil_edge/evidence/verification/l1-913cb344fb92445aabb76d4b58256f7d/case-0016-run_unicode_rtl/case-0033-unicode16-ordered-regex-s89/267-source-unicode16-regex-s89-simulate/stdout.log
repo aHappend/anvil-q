@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=343 requests=22304 responses=22304 outputs=175
-COMPARED 22480
-- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0031-unicode16-ordered-regex-s1/source-unicode16-regex-s1/compiled-bench.sv:685: Verilog $finish

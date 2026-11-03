@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=1 requests=18 responses=18 outputs=0
-COMPARED 19
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-capacity-m4-s1/compiled-bench.sv:192: Verilog $finish

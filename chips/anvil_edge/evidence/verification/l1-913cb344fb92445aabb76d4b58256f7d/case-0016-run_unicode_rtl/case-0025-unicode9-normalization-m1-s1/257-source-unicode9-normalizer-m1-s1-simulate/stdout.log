@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=34 requests=4144 responses=4144 outputs=28
-COMPARED 4173
-- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/case-0025-unicode9-normalization-m1-s1/source-unicode9-normalizer-m1-s1/compiled-bench.sv:225: Verilog $finish

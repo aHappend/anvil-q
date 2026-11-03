@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4412 reads=22588 acknowledgements=27000
-COMPARED 27001
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0055-storage-fault-merge-order/boot-v257-s17-merge-order/compiled-bench.sv:4622: Verilog $finish

@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=0 reads=0 acknowledgements=0
-COMPARED 1
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0167-storage-edge-1-258-None/boot-v258-s1-valid/compiled-bench.sv:4618: Verilog $finish

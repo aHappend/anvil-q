@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=4 requests=40 responses=40 outputs=4
-COMPARED 45
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0027-suite-9-run_normalization/normalize-leading-marks-m1-s1/compiled-bench.sv:195: Verilog $finish

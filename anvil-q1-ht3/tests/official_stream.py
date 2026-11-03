@@ -36,6 +36,22 @@ TOKEN = re.compile(
     r"logits=(\d+) scored=([01])$", re.MULTILINE)
 
 
+def compiler_identity(identity):
+    result = dict(identity)
+    result["source_sha256"] = {
+        p: sha for p, sha in identity["source_sha256"].items()
+        if p not in DEPENDENCIES or p == DRIVER}
+    return result
+
+
+def compiler_argv(objects, parameters, sources):
+    return ["verilator", "--cc", "--exe", "--build", "--savable",
+            "-Wno-fatal", "-j", "2", *COMPILE_OPTIONS,
+            "--top-module", TOP, "--Mdir", relative(objects),
+            *[f"-G{k}={v}" for k, v in (parameters or {}).items()],
+            *sources, "driver.cpp"]
+
+
 def compiled(output, parameters=None):
     sources = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]
     current = hashes()
@@ -48,7 +64,7 @@ def compiled(output, parameters=None):
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
     cache = ROOT/"evidence/compiled"
     cache.mkdir(parents=True, exist_ok=True)
-    for candidate in sorted(cache.glob(f"official-stream-{key}-*")):
+    for candidate in sorted(cache.glob("official-stream-*-*")):
         path, binary = candidate/"binding.json", candidate/"compile-obj"/f"V{TOP}"
         if not available(path) or not available(binary):
             continue
@@ -56,23 +72,37 @@ def compiled(output, parameters=None):
         required = [relative(p) for p in (binary, candidate/"compile-obj/driver.cpp",
                     *[candidate/f"compile.{suffix}" for suffix in
                       ("receipt.json", "stdout.txt", "stderr.txt")])]
-        if (record.get("identity") != identity
+        if (compiler_identity(record.get("identity", {"source_sha256": {}})) !=
+                compiler_identity(identity)
                 or not artifacts_intact(record.get("artifact_sha256", {}), required)):
             continue
         receipt = json.loads(artifact(ROOT/record["compile_receipt"]).read_text())
         if (receipt.get("exit") == 0 and not receipt.get("timed_out")
+                and receipt.get("argv") == compiler_argv(binary.parent, parameters, sources)
+                and receipt.get("tool_version_exit") == 0
+                and receipt.get("tool_version", "").strip() == version
+                and all(receipt.get("source_sha256", {}).get(p) == current[p]
+                        for p in [*sources, DRIVER])
+                and digest(candidate/"compile-obj/driver.cpp") == current[DRIVER]
                 and execution_logs_intact(receipt)):
-            preserve([path], "validated official stream build")
+            revalidation = output/"stream-build-revalidation.json"
+            with revalidation.open("x") as out:
+                json.dump(dict(build_binding=relative(path), build_binding_sha256=digest(path),
+                               compiler_argv=receipt["argv"],
+                               compiled_source_sha256={p: current[p] for p in [*sources, DRIVER]},
+                               current_harness_sha256={p: current[p] for p in DEPENDENCIES
+                                                       if p != DRIVER},
+                               scope="exact original binary/driver/compiler contract; "
+                                     "original build identity unchanged; current harness separately bound"),
+                          out, indent=2)
+            preserve([path, revalidation], "validated official stream build")
             return artifact(binary), path
     directory = cache/f"official-stream-{key}-{uuid.uuid4().hex[:12]}"
     objects = directory/"compile-obj"
     objects.mkdir(parents=True)
     shutil.copyfile(ROOT/DRIVER, objects/"driver.cpp")
-    execute(["verilator", "--cc", "--exe", "--build", "--savable",
-             "-Wno-fatal", "-j", "2", *COMPILE_OPTIONS,
-             "--top-module", TOP, "--Mdir", relative(objects),
-             *[f"-G{k}={v}" for k, v in (parameters or {}).items()],
-             *sources, "driver.cpp"], directory, "compile", ["verilator", "--version"])
+    execute(compiler_argv(objects, parameters, sources), directory, "compile",
+            ["verilator", "--version"])
     binary = objects/f"V{TOP}"
     if not binary.is_file():
         raise AssertionError("zero compiler exit without official stream executable")
@@ -191,9 +221,11 @@ def run_stream(output, image, descriptors, tokens, scored, vocab, binary, bindin
     build = json.loads(artifact(binding).read_text())
     current = hashes()
     sources = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+DEPENDENCIES
+    compiled_sources = [p for p in sources if p not in DEPENDENCIES or p == DRIVER]
     if (digest(ROOT/image["image"]) != image["image_sha256"] or
-            not intact(build) or any(
-                build["identity"]["source_sha256"].get(p) != current[p] for p in sources)):
+            not intact(build) or digest(binary) != build["binary_sha256"] or any(
+                build["identity"]["source_sha256"].get(p) != current[p]
+                for p in compiled_sources)):
         raise AssertionError("stream input/build no longer matches the captured source image")
     identity = dict(schema=1, source_sha256={p: current[p] for p in sources},
                     tool_version=build["identity"]["tool_version"],

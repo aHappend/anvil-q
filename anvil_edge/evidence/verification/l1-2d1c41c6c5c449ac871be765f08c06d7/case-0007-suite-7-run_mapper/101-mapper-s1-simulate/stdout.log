@@ -1,3 +1,0 @@
-MAPPER_DDR_REQUESTS 2007
-COMPARED 237
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0007-suite-7-run_mapper/mapper-s1/compiled-bench.sv:380: Verilog $finish

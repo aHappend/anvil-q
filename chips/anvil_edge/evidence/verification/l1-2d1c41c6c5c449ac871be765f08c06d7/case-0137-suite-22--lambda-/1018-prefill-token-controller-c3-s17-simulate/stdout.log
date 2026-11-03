@@ -1,3 +1,0 @@
-[32825000] %Fatal: compiled-bench.sv:74: Assertion failed in TOP.bench: CONTROLLER_OPERATION case=7 op=1 id=2 pos=1
-%Error: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0137-suite-22--lambda-/prefill-token-controller-c3-s17/compiled-bench.sv:74: Verilog $stop
-Aborting...

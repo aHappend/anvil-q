@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4410 reads=23026 acknowledgements=27436
-COMPARED 27437
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0166-storage-edge-1-257-zero-immutable-hole/boot-v257-s1-zero-immutable-hole/compiled-bench.sv:4619: Verilog $finish

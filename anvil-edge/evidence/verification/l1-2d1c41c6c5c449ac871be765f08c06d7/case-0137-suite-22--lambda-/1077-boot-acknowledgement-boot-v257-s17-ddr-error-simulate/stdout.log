@@ -1,3 +1,0 @@
-[5512956000] %Fatal: compiled-bench.sv:165: Assertion failed in TOP.bench.wait_result: BOOT_REJECTION expected=04 observed=00
-%Error: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0137-suite-22--lambda-/boot-acknowledgement-boot-v257-s17-ddr-error/compiled-bench.sv:165: Verilog $stop
-Aborting...

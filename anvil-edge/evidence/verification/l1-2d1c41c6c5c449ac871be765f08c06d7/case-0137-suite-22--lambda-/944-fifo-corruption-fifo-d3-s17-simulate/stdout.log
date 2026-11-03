@@ -1,3 +1,0 @@
-[42000] %Fatal: compiled-bench.sv:27: Assertion failed in TOP.bench.compare: FIFO_QUEUE cycle=1 expected=1ea0 observed=1ea4
-%Error: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0137-suite-22--lambda-/fifo-corruption-fifo-d3-s17/compiled-bench.sv:27: Verilog $stop
-Aborting...

@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=2 requests=220 responses=220 outputs=1
-COMPARED 222
-evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0016-run_unicode_rtl/source-unicode9-normalizer-m1-dense-memory-portability-s17/bench.sv:159: $finish called at 33976 (1s)

@@ -1,3 +1,0 @@
-CORE_NUMERIC requests=11988 writes=1632 logits=9 completions=3
-COMPARED 1641
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0059-suite-12-run_numerical/numerical-h16-l2-s1/compiled-bench.sv:1813: Verilog $finish

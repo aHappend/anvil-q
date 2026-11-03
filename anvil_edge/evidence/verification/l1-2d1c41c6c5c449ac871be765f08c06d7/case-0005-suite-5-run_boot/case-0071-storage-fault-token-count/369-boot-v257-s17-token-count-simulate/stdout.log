@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4408 reads=64 acknowledgements=4472
-COMPARED 4473
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0071-storage-fault-token-count/boot-v257-s17-token-count/compiled-bench.sv:4618: Verilog $finish

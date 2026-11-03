@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4399 reads=2245 acknowledgements=6644
-COMPARED 6645
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0168-storage-edge-17-256-nonzero-inactive-row/boot-v256-s17-nonzero-inactive-row/compiled-bench.sv:4609: Verilog $finish

@@ -27,6 +27,14 @@ def _sha(path):
     return value.hexdigest()
 
 
+def _stream_sha(stream):
+    stream.seek(0)
+    value = hashlib.sha256()
+    while block := stream.read(1024 * 1024):
+        value.update(block)
+    return value.hexdigest(), stream.tell()
+
+
 def logical(path):
     path = Path(path)
     path = path if path.is_absolute() else ROOT / path
@@ -156,14 +164,18 @@ def dependencies(paths):
         if not path.is_file():
             missing.add(name)
             continue
-        if path.is_symlink() or not stat.S_ISREG(path.stat().st_mode):
+        if path.is_symlink():
             raise ValueError(f"retention requires regular files: {name}")
         found[name] = path
         if path.suffix != ".json" or path.name in (
                 "netlist.json", "statistics.json", "tokenizer.json"):
             continue
         try:
-            values = [json.loads(path.read_text())]
+            values = [json.loads(artifact(path).read_text())]
+        except FileNotFoundError:
+            found.pop(name)
+            missing.add(name)
+            continue
         except json.JSONDecodeError as exc:
             parse_errors.append(dict(path=name, error=str(exc)))
             continue
@@ -201,41 +213,49 @@ def dependencies(paths):
                         and value not in expected and value not in source_versions):
                     continue
                 pending.append(candidate)
-    conflicts = [dict(path=name, recorded_sha256=sorted(sha), actual_sha256=_sha(found[name]))
-                 for name, sha in sorted(expected.items())
-                 if name in found and (len(sha) != 1 or _sha(found[name]) not in sha)]
-    return found, sorted(missing), conflicts, parse_errors, source_versions
+    return found, sorted(missing), expected, parse_errors, source_versions
 
 
 def preserve(paths, label):
     """Archive a dependency closure, round-trip checking every complete actual byte."""
     start = timestamp()
     _load()
-    files, missing, conflicts, parse_errors, source_versions = dependencies(paths)
+    files, missing, expected, parse_errors, source_versions = dependencies(paths)
     rows = []
     for name, path in sorted(files.items()):
-        sha = _sha(path)
-        mode = stat.S_IMODE(path.stat().st_mode)
-        prior = next((row for _, row in _catalog.get(name, [])
-                      if row["sha256"] == sha and row["mode"] == mode), None)
-        if prior is not None:
-            _verify_archive(prior)
-            rows.append(prior)
+        try:
+            source = artifact(ROOT/name).open("rb")
+        except FileNotFoundError:
+            missing.append(name)
             continue
-        directory = STORE / f"object-{sha}-{uuid.uuid4().hex[:12]}"
-        directory.mkdir(parents=True, exist_ok=False)
-        archive = directory / "payload.bundle"
-        with path.open("rb") as source, archive.open("xb") as raw:
-            with gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1, mtime=None) as target:
-                while block := source.read(1024 * 1024):
-                    target.write(block)
-        row = dict(path=name, sha256=sha, bytes=path.stat().st_size, mode=mode,
-                   archive=relative(archive), archive_bytes=archive.stat().st_size,
-                   archive_sha256=_sha(archive))
-        _verify_archive(row)
-        if _sha(path) != sha:
-            raise ValueError(f"artifact changed during retention: {name}")
-        rows.append(row)
+        with source:
+            sha, size = _stream_sha(source)
+            mode = stat.S_IMODE(os.fstat(source.fileno()).st_mode)
+            prior = next((row for _, row in _catalog.get(name, [])
+                          if row["sha256"] == sha and row["mode"] == mode), None)
+            if prior is not None:
+                _verify_archive(prior)
+                rows.append(prior)
+                continue
+            directory = STORE / f"object-{sha}-{uuid.uuid4().hex[:12]}"
+            directory.mkdir(parents=True, exist_ok=False)
+            archive = directory / "payload.bundle"
+            source.seek(0)
+            with archive.open("xb") as raw:
+                with gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1, mtime=None) as target:
+                    while block := source.read(1024 * 1024):
+                        target.write(block)
+            row = dict(path=name, sha256=sha, bytes=size, mode=mode,
+                       archive=relative(archive), archive_bytes=archive.stat().st_size,
+                       archive_sha256=_sha(archive))
+            _verify_archive(row)
+            if _stream_sha(source) != (sha, size):
+                raise ValueError(f"artifact changed during retention: {name}")
+            rows.append(row)
+    observed = {row["path"]: row["sha256"] for row in rows}
+    conflicts = [dict(path=name, recorded_sha256=sorted(sha), actual_sha256=observed[name])
+                 for name, sha in sorted(expected.items())
+                 if name in observed and (len(sha) != 1 or observed[name] not in sha)]
     snapshots, unavailable_versions = [], []
     for name, versions in sorted(source_versions.items()):
         for sha in sorted(versions):

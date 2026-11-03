@@ -1,4 +1,0 @@
-TOP_SYNTHETIC_REAL_Q1 output_bytes=2 k_writes=32 v_writes=32 reads=47724 writes=608
-BOOT_TRANSACTIONS writes=4763 reads=22932 acknowledgements=76027
-COMPARED 84350
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0089-suite-16-run_top/case-0105-top-profile-1-nfc-bos/top-synthetic-q1-s1-nfc-bos/compiled-bench.sv:5056: Verilog $finish

@@ -1,7 +1,0 @@
-HEAD_ERROR_RECOVERY weight-read injected=1
-HEAD_MEASURE 0 30474 3473 823 8 136
-HEAD_MEASURE 1 38583 3408 975 8 136
-HEAD_MEASURE 2 46671 3362 1127 8 136
-CORE_NUMERIC requests=2925 writes=456 logits=51 completions=3
-COMPARED 507
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0136-suite-21-run_head_row_reuse/head-error-weight-read-numerical-h8-l1-s17/compiled-bench.sv:826: Verilog $finish

@@ -1,3 +1,0 @@
-BPE_REQUESTS 4
-COMPARED 6
-- evidence/verification/l1-913cb344fb92445aabb76d4b58256f7d/case-0003-suite-3-run_bpe/bpe-maximum-rank-s1/compiled-bench.sv:140: Verilog $finish

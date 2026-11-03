@@ -1,3 +1,0 @@
-DETOK_REQUESTS 0
-COMPARED 1
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-empty-s1/compiled-bench.sv:139: Verilog $finish

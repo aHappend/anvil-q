@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4412 reads=22640 acknowledgements=27052
-COMPARED 27053
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0029-storage-fault-composition-scalar/boot-v257-s17-composition-scalar/compiled-bench.sv:4622: Verilog $finish

@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=5 requests=128 responses=128 outputs=1
-COMPARED 130
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0036-suite-10-run_dfa/dfa-longest-s1/compiled-bench.sv:213: Verilog $finish

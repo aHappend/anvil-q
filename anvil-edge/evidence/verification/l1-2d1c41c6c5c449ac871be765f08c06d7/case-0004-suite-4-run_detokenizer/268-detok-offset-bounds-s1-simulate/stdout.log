@@ -1,3 +1,0 @@
-DETOK_REQUESTS 4
-COMPARED 5
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-offset-bounds-s1/compiled-bench.sv:141: Verilog $finish

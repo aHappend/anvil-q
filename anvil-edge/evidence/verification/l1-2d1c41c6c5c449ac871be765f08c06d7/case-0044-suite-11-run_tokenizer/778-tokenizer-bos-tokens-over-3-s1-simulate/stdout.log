@@ -1,3 +1,0 @@
-TEXT_COUNTS inputs=3 requests=151 responses=151 outputs=0
-COMPARED 152
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0044-suite-11-run_tokenizer/tokenizer-bytes-3-s1/compiled-bench.sv:201: Verilog $finish

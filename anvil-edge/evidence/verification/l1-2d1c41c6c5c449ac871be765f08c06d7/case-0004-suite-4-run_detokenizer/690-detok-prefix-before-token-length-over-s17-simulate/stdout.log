@@ -1,3 +1,0 @@
-DETOK_REQUESTS 10
-COMPARED 12
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0004-suite-4-run_detokenizer/detok-prefix-before-token-length-over-s1/compiled-bench.sv:170: Verilog $finish

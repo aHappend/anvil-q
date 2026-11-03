@@ -1,3 +1,0 @@
-[5825000] %Fatal: compiled-bench.sv:92: Assertion failed in TOP.bench: CONTROLLER_FINISH_OVERTAKE
-%Error: evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0137-suite-22--lambda-/argmax-tie-controller-c1-s17/compiled-bench.sv:92: Verilog $stop
-Aborting...

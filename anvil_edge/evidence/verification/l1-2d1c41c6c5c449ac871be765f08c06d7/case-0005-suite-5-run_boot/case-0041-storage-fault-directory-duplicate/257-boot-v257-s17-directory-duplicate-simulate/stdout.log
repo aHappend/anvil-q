@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4408 reads=2264 acknowledgements=6672
-COMPARED 6673
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0041-storage-fault-directory-duplicate/boot-v257-s17-directory-duplicate/compiled-bench.sv:4618: Verilog $finish

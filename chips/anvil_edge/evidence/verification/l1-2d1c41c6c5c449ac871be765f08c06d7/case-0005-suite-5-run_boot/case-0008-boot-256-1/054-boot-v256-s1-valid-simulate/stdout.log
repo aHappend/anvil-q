@@ -1,3 +1,0 @@
-BOOT_TRANSACTIONS writes=4399 reads=22616 acknowledgements=27015
-COMPARED 27016
-- evidence/verification/l1-2d1c41c6c5c449ac871be765f08c06d7/case-0005-suite-5-run_boot/case-0008-boot-256-1/boot-v256-s1-valid/compiled-bench.sv:4608: Verilog $finish
