@@ -22,15 +22,20 @@ FAILED_RECEIPT = (
 )
 
 
-def worker(run):
+def worker(run, focus):
     ledger = Ledger(run, "changed-delivery-producers-preparation")
     try:
-        integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
-        ledger.check("compatibility-mode2", run_compatibility, 2)
-        ledger.check("performance", run_performance, integrated)
-        ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
-        ledger.check("compatibility-mode1", run_compatibility, 1)
-        ledger.check("clean-reproduction", clean_reproduction)
+        if focus == "compatibility":
+            ledger.check("compatibility-mode2", run_compatibility, 2)
+            ledger.check("compatibility-mode1", run_compatibility, 1)
+            ledger.check("clean-reproduction", clean_reproduction)
+        else:
+            integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
+            ledger.check("compatibility-mode2", run_compatibility, 2)
+            ledger.check("performance", run_performance, integrated)
+            ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
+            ledger.check("compatibility-mode1", run_compatibility, 1)
+            ledger.check("clean-reproduction", clean_reproduction)
         ledger.finish()
     except Exception as error:
         ledger.data.update(status="failed", finished_at=utc(),
@@ -43,18 +48,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--_worker-run", help=argparse.SUPPRESS)
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
+    parser.add_argument("--focus", choices=("all", "compatibility"), default="all")
     args = parser.parse_args()
     enter_tier()
     if args._worker_run:
         run = ROOT / args._worker_run
         if not run.resolve().is_relative_to(ROOT / "evidence/preparation"):
             parser.error("worker run must be a preparation directory")
-        worker(run)
+        worker(run, args.focus)
     else:
         run = new_run("delivery-producers", preparation=True, repair_of=args.repair_of)
         print(f"Preparation evidence: {relative(run)}", flush=True)
         result = execute(run, "changed-producers", [
-            sys.executable, "tests/delivery_probe.py", "--_worker-run", relative(run)],
+            sys.executable, "tests/delivery_probe.py", "--_worker-run", relative(run),
+            "--focus", args.focus],
             [sys.executable, "--version"])
         print(json.dumps({"preparation_receipt": relative(result / "receipt.json"),
                           "summary": relative(run / "summary.json")}), flush=True)
