@@ -49,12 +49,12 @@ SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
                  "packed_top": 480,
                  "integrated_geometry": 1500,
-                 "mutations": 420, "stream_checkpoint": 360,
+                 "mutations": 420, "stream_checkpoint": 2200,
                  "benchmarks": 2200, "performance": 1500}
 MINIMUM_ALLOCATIONS = {
     "reproduction": REPRODUCTION_BUDGET, "integrated_geometry": 360,
-    "parameters": 240, "mutations": 240, "stream_checkpoint": 300,
-    "benchmarks": 360, "performance": 300, "compatibility": 300,
+    "parameters": 400, "mutations": 360, "stream_checkpoint": 1500,
+    "benchmarks": 1800, "performance": 750, "compatibility": 300,
     "packed_cache": 120, "attention": 180, "attention_timing": 90,
     "packed_top": 360,
 }

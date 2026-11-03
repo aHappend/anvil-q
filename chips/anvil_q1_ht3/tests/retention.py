@@ -22,7 +22,11 @@ def artifacts_intact(bindings, required=()):
     for path, sha in bindings.items():
         artifact = ROOT / path
         artifact.resolve().relative_to(ROOT)
-        if not artifact.is_file() or digest(artifact) != sha:
+        try:
+            matches = artifact.is_file() and digest(artifact) == sha
+        except FileNotFoundError:
+            matches = False
+        if not matches:
             return False
     return True
 
@@ -153,6 +157,39 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
     if any(receipt.get("source_sha256", {}).get(p) != current.get(p)
            for p in dependencies):
         return None
+    pending = [result]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            if "artifact_sha256" in value and not artifacts_intact(value["artifact_sha256"]):
+                return None
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+    if len(argv) > 1 and argv[1] == "tests/run_stream_checkpoint.py":
+        from official_stream import intact, validated_chain
+        streams = result.get("streams", [])
+        if len(streams) != 2 or result.get("bit_identical_vectors") != 2:
+            return None
+        for paths in streams:
+            if not paths or not (ROOT/paths[-1]).is_file():
+                return None
+            identity = json.loads((ROOT/paths[-1]).read_text())["identity"]
+            binary = ROOT/identity["binary"]
+            build_path = binary.parent.parent/"binding.json"
+            image = ROOT/identity["image"]
+            if (not build_path.is_file() or digest(build_path) != identity["build_binding_sha256"]
+                    or not binary.is_file() or digest(binary) != identity["binary_sha256"]
+                    or not image.is_file() or digest(image) != identity["image_sha256"]):
+                return None
+            build = json.loads(build_path.read_text())
+            if not intact(build) or any(
+                    current.get(p) != sha for p, sha in identity["source_sha256"].items()):
+                return None
+            chain = validated_chain(ROOT/paths[-1], identity)
+            if (chain is None or [r["binding"] for r in chain] != paths
+                    or not chain[-1]["summary"]["complete"]):
+                return None
     mutation_campaign = len(argv) > 1 and argv[1] == "tests/run_mutations.py"
     if mutation_campaign:
         from run_mutations import validated_campaign
@@ -213,6 +250,10 @@ def validated_result(result_path, argv, dependencies, versions, allow_failure=Fa
 
 
 def find_result(argv, dependencies, versions, allow_failure=False):
+    if len(argv) > 1 and argv[1] == "tests/run_synthesis.py":
+        # The synthesis driver revalidates every external phase and rescores
+        # the final netlist. A summary with just a retained version log cannot.
+        return None
     candidates = []
     for result_path in (ROOT / "evidence/l1").glob("run-*/*/result.json"):
         candidates.append(result_path)
