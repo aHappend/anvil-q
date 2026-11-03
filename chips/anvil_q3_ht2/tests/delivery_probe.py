@@ -90,6 +90,9 @@ def worker(run, focus):
                 bind_mutation_control(ledger, control, observed,
                                       ("seed", "simulator", "vector_sha256"))
             ledger.check("clean-reproduction", clean_reproduction)
+        elif focus == "integration-boundary":
+            ledger.check("integrated-one-layer-mode1", run_fast_integration, 1, 17,
+                         layers=1)
         elif focus == "integration":
             integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
             ledger.check("performance", run_performance, integrated)
@@ -118,7 +121,8 @@ def main():
     parser.add_argument("--_worker-run", help=argparse.SUPPRESS)
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
     parser.add_argument("--focus", choices=("all", "compatibility", "integration", "residual",
-                                          "compacted", "repaired-tools"),
+                                          "compacted", "repaired-tools",
+                                          "integration-boundary"),
                         default="all")
     args = parser.parse_args()
     enter_tier()

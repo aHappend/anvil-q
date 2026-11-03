@@ -10,9 +10,10 @@ from receipts import ROOT, cleanup_build, execute, relative, compile_verilator
 from serial_reference import Geometry, PackedImage, SerialModel
 
 
-def generate_nonzero(run, mode, seed):
-    model, vectors, lines, qreads = generate(run, nonzero=True, seed=seed, varied=True)
-    geometry = Geometry()
+def generate_nonzero(run, mode, seed, layers=36):
+    model, vectors, lines, qreads = generate(
+        run, layers=layers, nonzero=True, seed=seed, varied=True)
+    geometry = Geometry(layers=layers)
     oracle = SerialModel(PackedImage(model), geometry, mode)
     priming = oracle.evaluate(1, 0)
     chain = oracle.evaluate_tree(15, [3, 3, 3, 3], [4, 0, 1, 2], (priming,))
@@ -50,8 +51,8 @@ def generate_nonzero(run, mode, seed):
 
 
 def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
-                         diagnostic_cycles=262144):
-    model, vectors, lines, qreads = generate_nonzero(run, mode, seed)
+                         diagnostic_cycles=262144, layers=36):
+    model, vectors, lines, qreads = generate_nonzero(run, mode, seed, layers)
     obj = run / "integrated-obj"
     obj.mkdir()
     driver = obj / "integrated_driver.cpp"
@@ -68,11 +69,13 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
         "-CFLAGS", "-O3", "-MAKEFLAGS", "OPT_FAST=-O3 OPT_SLOW=-O3",
         *(["-CFLAGS", "-pg", "-LDFLAGS", "-pg"] if profile else []),
         f"-DHT2_TEST_CACHE_MODE={mode}",
+        f"-DHT2_TEST_LAYERS={layers}",
         *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
             os.path.relpath(executable, run), f"+vectors={vectors.name}",
             f"+model={model.relative_to(run)}",
+            f"+layers={layers}",
             *([f"+sample_cycles={diagnostic_cycles}"] if diagnostic else []),
             *(["+profile"] if profile else [])],
             ["verilator", "--version"], cwd=run)
@@ -100,7 +103,8 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
     binding = json.loads(bindings[0].read_text())
     compile_receipt = json.loads((ROOT / binding["compile_receipt"]).read_text())
     summary = {
-        "mode": mode, "seed": seed, "diagnostic_only": diagnostic, "observed": observation,
+        "mode": mode, "seed": seed, "layers": layers,
+        "diagnostic_only": diagnostic, "observed": observation,
         "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",
         "fixture": "independently decoded nonzero AWQ packed image and dense serial HT2 oracle",
         "nonzero_projection_comparisons":
