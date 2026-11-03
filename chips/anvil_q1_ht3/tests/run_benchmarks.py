@@ -8,16 +8,19 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
+import re
 import sys
 import urllib.parse
 import uuid
 import zipfile
 
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from acquire_public import fetch
 from execution import ROOT, hashes, relative, remaining, timestamp
-from official_reference import Checkpoint, Tokenizer, perplexity, scored_position
+from official_reference import Checkpoint, QwenFP64, Tokenizer, perplexity, scored_position
 
 
 MANIFEST = ROOT / "tests/official_inputs.json"
@@ -253,10 +256,126 @@ def checkpoint_image(output, bindings):
                 image_bytes=image["image_bytes"], reused=False)
 
 
+def score_executed(work, stream, bindings, output):
+    """Score only actual completed RTL vectors, never reference-only substitutes."""
+    import numpy as np
+
+    tokenizer = Tokenizer(ROOT/bindings["tokenizer.json"]["path"])
+    checkpoint = Checkpoint(ROOT/bindings["model.safetensors"]["path"])
+    config = json.loads((ROOT/bindings["config.json"]["path"]).read_text())
+    oracles = {name: QwenFP64(config, checkpoint, represented)
+               for name, represented in (("native", False), ("represented_image", True))}
+    actual_positions = {int(p): record for p, record in stream["observations"].items()}
+    rows = []
+    for position, token in enumerate(work["token_ids"][:-1]):
+        if not actual_positions or position > max(actual_positions):
+            break
+        if remaining() < 45:
+            break
+        references = {name: model.step(token) for name, model in oracles.items()}
+        if position not in actual_positions:
+            if position % 16 == 0:
+                print(f"REFERENCE_PROGRESS task={work['task']} id={work['id']} "
+                      f"position={position}", flush=True)
+            continue
+        captured = actual_positions[position]
+        path = ROOT/captured["path"]
+        if digest(path) != captured["sha256"]:
+            raise AssertionError("official RTL logit capture changed before scoring")
+        actual = np.fromfile(path, dtype="<f4").astype(np.float64)
+        if actual.shape != (151936,):
+            raise AssertionError("official RTL scored vector is not full vocabulary")
+        target = work["token_ids"][position+1]
+        comparisons = {}
+        for name, reference in references.items():
+            path = output/f"reference-{name}-{position}.f64"
+            with path.open("xb") as out:
+                reference.astype("<f8").tofile(out)
+            try:
+                metric = scored_position(actual.tolist(), reference.tolist(), target)
+                comparisons[name] = dict(status="passed", **metric)
+            except AssertionError as exc:
+                comparisons[name] = dict(status="failed", error=str(exc),
+                                         required_cosine=0.9999)
+            comparisons[name].update(reference=relative(path), reference_sha256=digest(path))
+        # Likelihood remains an actual-output metric even when numerical acceptance fails.
+        maximum = float(actual.max())
+        nll = maximum+math.log(math.fsum(math.exp(float(x)-maximum) for x in actual))-float(actual[target])
+        rows.append(dict(position=position, shifted_target=target, actual=captured,
+                         comparisons=comparisons, nll=nll, greedy_token=int(actual.argmax())))
+        print(f"SCORED_PROGRESS task={work['task']} id={work['id']} position={position} "
+              f"native={comparisons['native']['status']} "
+              f"represented={comparisons['represented_image']['status']}", flush=True)
+    passed = (stream["status"] == "passed" and
+              [r["position"] for r in rows] == work["scored_positions"] and
+              all(c["status"] == "passed" for r in rows for c in r["comparisons"].values()))
+    result = dict(status="passed" if passed else "failed" if any(
+                      c["status"] == "failed" for r in rows for c in r["comparisons"].values())
+                  else "incomplete",
+                  scored_positions=rows, scored_tokens=len(rows),
+                  total_nll=math.fsum(r["nll"] for r in rows),
+                  decoded_teacher_forced_greedy=tokenizer.decode([r["greedy_token"] for r in rows]),
+                  decoding="greedy next-token predictions on the official teacher-forced context; "
+                           "not an autoregressive sampled completion",
+                  quantization="native BF16 weights/cache; no INT4/INT8 weight quantization",
+                  reference_comparisons=["native FP64", "represented-image FP64"])
+    result["pending_reference_positions"] = sorted(set(actual_positions) -
+                                                  {r["position"] for r in rows})
+    if rows and work["task"] == "wikitext" and len(rows) == work["scored_tokens"]:
+        result.update(perplexity(rows))
+    if work["task"] in ("arc", "mmlu") and rows:
+        decoded = result["decoded_teacher_forced_greedy"].strip()
+        answer = re.fullmatch(r"[A-D1-5]", decoded)
+        result.update(extracted_answer=answer[0] if answer else None,
+                      expected_answer=work["target_text"],
+                      correct=bool(answer and answer[0] == work["target_text"]),
+                      extraction="entire stripped greedy answer must be a single official label")
+    if work["task"] == "humaneval":
+        result["evaluation"] = "reference-code likelihood and decoded teacher-forced completion; not pass@1"
+    return result
+
+
+def evaluate(output, works, bindings, image, stream_smoke=False):
+    from official_stream import compiled, run_stream
+
+    binary, binding = compiled(output)
+    manifest = json.loads((ROOT/image["manifest"]).read_text())
+    rows = []
+    for index, work in enumerate(works[:1] if stream_smoke else works):
+        directory = output/f"record-{index}-{uuid.uuid4().hex[:12]}"
+        directory.mkdir()
+        evaluated = work
+        if stream_smoke:
+            # A real full-Qwen first-token diagnostic, not any official task score.
+            evaluated = dict(work, token_ids=work["token_ids"][:2],
+                             scored_positions=[0], scored_tokens=1,
+                             shifted_targets=work["token_ids"][1:2])
+        try:
+            stream = run_stream(directory, image, manifest["descriptors"],
+                                evaluated["token_ids"][:-1],
+                                set(evaluated["scored_positions"]), 151936, binary, binding)
+            scored = score_executed(evaluated, stream, bindings, directory)
+            row = dict(task=work["task"], id=work["id"], status=scored["status"],
+                       tokens=len(evaluated["token_ids"])-1,
+                       required_scored_positions=evaluated["scored_tokens"],
+                       stream=relative(directory/"stream-result.json"),
+                       stream_summary=stream["summary"], scoring=scored)
+        except (OSError, RuntimeError, AssertionError, ValueError, KeyError) as exc:
+            row = dict(task=work["task"], id=work["id"], status="failed",
+                       error=f"{type(exc).__name__}: {exc}", directory=relative(directory))
+        rows.append(row)
+        with (directory/"record-result.json").open("x") as out:
+            json.dump(row, out, indent=2)
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
-    parser.add_argument("--prepare-only", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--prepare-only", action="store_true")
+    mode.add_argument("--stream-smoke", action="store_true",
+                        help="full-Qwen first-token RTL diagnostic, not official task acceptance")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -270,20 +389,23 @@ def main():
         if not args.prepare_only:
             if not failures:
                 image = checkpoint_image(output, bindings)
-            # Explicit implementation gap, not replacement results from software.
-            rows = [dict(task=w["task"], id=w["id"], status="not_executed",
-                         required_scored_positions=w["scored_tokens"],
-                         reason="default-geometry compiled RTL stream adapter "
-                                "is not yet implemented") for w in works]
-        result = dict(status="passed" if args.prepare_only and not failures else "failed",
-                      mode="input preparation only" if args.prepare_only else "official RTL evaluation",
+                rows = evaluate(output, works, bindings, image, args.stream_smoke)
+        passed = not failures and (args.prepare_only or
+                  (bool(rows) and all(r["status"] == "passed" for r in rows)))
+        result = dict(status="passed" if passed else "failed",
+                      mode=("input preparation only" if args.prepare_only else
+                            "full-Qwen first-token RTL diagnostic, not task evaluation"
+                            if args.stream_smoke else "official RTL evaluation"),
                       selected_records=len(works), acquisition_failures=failures, runs=rows,
                       input_bindings=bindings, checkpoint_image=image,
                       legacy=json.loads(MANIFEST.read_text())["legacy"],
-                      coverage_limits=["No full-checkpoint RTL logits, native/represented-image "
-                                       "FP64 comparisons, decoded completions, task metrics "
-                                       "or RTL WikiText PPL have executed"])
-    except (OSError, ValueError, AssertionError, KeyError, ImportError) as exc:
+                      coverage_limits=(
+                          ["first-token diagnostic only; full official prefill/decode, "
+                           "13 selected workloads and PPL remain mandatory"] if args.stream_smoke
+                          else [] if args.prepare_only else
+                          [f"{r['task']}/{r['id']}: {r['status']}"
+                           for r in rows if r["status"] != "passed"]))
+    except (OSError, RuntimeError, ValueError, AssertionError, KeyError, ImportError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
         json.dump(result, out, indent=2)
@@ -291,7 +413,12 @@ def main():
                    timed_out=remaining() <= 0, result=relative(output/"result.json"))
     with (output/"receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
-    print(json.dumps(result), flush=True)
+    print(json.dumps(dict(status=result["status"], result=relative(output/"result.json"),
+                          mode=result.get("mode"), selected_records=result.get("selected_records"),
+                          runs=[dict(task=r["task"], id=r["id"], status=r["status"],
+                                     stream_summary=r.get("stream_summary"))
+                                for r in result.get("runs", [])],
+                          error=result.get("error"))), flush=True)
     return receipt["exit"]
 
 
