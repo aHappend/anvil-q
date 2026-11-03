@@ -1,4 +1,41 @@
 package anvil_q4_fp_pkg;
+  function automatic [36:0] narrow_fp8(input [31:0] x);
+    reg [35:0] unpacked;
+    reg signed [11:0] exponent;
+    reg [26:0] significand;
+    reg [3:0] rounded;
+    reg [4:0] encoded_exponent;
+    reg [7:0] bits;
+    reg [4:0] exceptions;
+    reg inexact, increment;
+    begin
+      unpacked=unpack_normalized(x);
+      exponent=$signed(unpacked[35:24]);
+      significand={unpacked[23:0],3'd0};
+      rounded=0; encoded_exponent=0; exceptions=0;
+      bits={x[31],7'd0}; inexact=0; increment=0;
+      if (is_nan(x)) begin bits=8'h7e; exceptions[4]=is_signaling_nan(x); end
+      else if (is_infinity(x)) bits={x[31],5'h1f,2'd0};
+      else if (!is_zero(x)) begin
+        if (exponent < -12'sd14) begin
+          significand=shift_right_jam27(significand,$unsigned(-12'sd14-exponent));
+          exponent=-12'sd14;
+        end
+        inexact=|significand[23:0];
+        increment=significand[23] && (|significand[22:0] || significand[24]);
+        rounded={1'b0,significand[26:24]}+{3'd0,increment};
+        if (rounded[3]) begin rounded=rounded>>1; exponent=exponent+12'sd1; end
+        if (exponent>12'sd15) begin bits={x[31],5'h1f,2'd0}; exceptions=5'b00101; end
+        else begin
+          if (rounded[2]) encoded_exponent=5'(exponent+12'sd15);
+          bits={x[31],encoded_exponent,rounded[1:0]};
+          exceptions[0]=inexact;
+          exceptions[1]=inexact && encoded_exponent==0;
+        end
+      end
+      narrow_fp8={exceptions,24'd0,bits};
+    end
+  endfunction
   function automatic is_nan(input [31:0] x);
     is_nan = x[30:23] == 8'hff && x[22:0] != 0;
   endfunction

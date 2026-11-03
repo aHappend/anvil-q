@@ -97,16 +97,16 @@ module anvil_q4_fp_bank_scheduler #(
       wire bad_configuration = rst_n && !configuration_valid;
       wire abort_now = bad_response || bad_configuration || identity_exhausted;
       wire accept_enable = rst_n && !flush && !draining &&
-        !fault_latched && !wrap_pending && configuration_valid;
+        !fault_latched && !wrap_pending && configuration_valid && !abort_now;
       wire allocate_enable = accept_enable;
       wire wrap_release = rst_n && wrap_pending && !(|bank_live) && !draining &&
         !flush && !abort_now;
       wire [4:0] bank_mask = active_banks - 5'd1;
 
       assign idle = rst_n && !flush && !draining && !fault_latched &&
-        !wrap_pending && configuration_valid && !(|client_live) && !(|bank_live);
+        !wrap_pending && !abort_now && configuration_valid && !(|client_live) && !(|bank_live);
       assign drain_done = rst_n && drain_pulse;
-      assign fault = rst_n && fault_latched;
+      assign fault = rst_n && (fault_latched || abort_now);
 
       always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -115,7 +115,7 @@ module anvil_q4_fp_bank_scheduler #(
           drain_pulse <= 1'b0;
           wrap_pending <= 1'b0;
           identity_exhausted <= 1'b0;
-          epoch <= 0;
+          epoch <= 32'h80000000;
         end else begin
           drain_pulse <= 1'b0;
           if (abort_now) begin
