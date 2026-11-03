@@ -11,18 +11,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evidence import ROOT, execute, new_run, relative, source_hashes
 
 
-def legacy_words(mode):
-    dimension, ratio = 8, 8 if mode == 3 else 1
+def legacy_words(mode, ratio=None, cache=0, dimension=8):
+    ratio = (8 if mode == 3 else 1) if ratio is None else ratio
     hidden = dimension * ratio
-    return [1, mode, 1, 0 if mode == 4 else 1, 0, 0, 8, 1, hidden, 8,
+    block = (0 if mode==4 else 1 if cache==0 else
+             2 if mode==2 else 32 if cache==1 else 64)
+    return [1, mode, 1, 0 if mode == 4 else 1, 0, cache, 8, 1, hidden, 8,
             ratio, 1, dimension, 3, 4, 1, 1, 0x49742400, 0x358637bd,
-            1, 4, 0 if mode == 4 else 1, ratio, 0, 0 if mode == 4 else 1] + [0]*7
+            1, 4, 0 if mode == 4 else 1, ratio, 0, block] + [0]*7
 
 
-def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
+def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None, variants_only=False):
     directory = new_run("compatibility", preparation)
     objects = {}
     records = []
+    configurations = ([] if variants_only else
+                      [(f"mode-{mode}", mode, legacy_words(mode)) for mode in modes])
+    for mode, ratio, cache, dimension in (
+            (2, 3, 1, 8), (2, 6, 0, 8), (2, 7, 1, 8),
+            (3, 8, 1, 2), (3, 8, 2, 2), (3, 8, 3, 2), (4, 3, 1, 2)):
+        if mode in modes:
+            configurations.append((f"mode-{mode}-ratio-{ratio}-cache-{cache}", mode,
+                                   legacy_words(mode, ratio, cache, dimension)))
     try:
         for label, top, source_directory in (
                 ("parent", "anvil_q4_top", ROOT / "anvil_q4_reference/rtl"),
@@ -37,13 +47,13 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
                 *[relative(path) for path in sorted(source_directory.glob("*.sv"))],
                 "tests/arithmetic_observer.sv",
                 os.path.relpath(ROOT / "tests/compatibility_sim.cpp", obj)], timeout=1800)
-        for mode in modes:
-            fixture = directory / f"descriptor-mode-{mode}.txt"
-            fixture.write_text(" ".join(f"{word:x}" for word in legacy_words(mode)) + "\n")
+        for configuration_label, mode, words in configurations:
+            fixture = directory / f"descriptor-{configuration_label}.txt"
+            fixture.write_text(" ".join(f"{word:x}" for word in words) + "\n")
             observed = {}
             for label, top in (("parent", "anvil_q4_top"), ("integrated", "anvil_q4_fp_top")):
-                output = directory / f"{label}-mode-{mode}.json"
-                execute(directory / f"{label}-mode-{mode}", [
+                output = directory / f"{label}-{configuration_label}.json"
+                execute(directory / f"{label}-{configuration_label}", [
                     relative(objects[label] / f"V{top}"), relative(fixture),
                     relative(output)], timeout=1800, extra_inputs=[fixture],
                     repair_of=repair_of)
@@ -53,7 +63,8 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
                              "malformed_tokens"):
                 if observed["parent"][quantity] != observed["integrated"][quantity]:
                     raise AssertionError(f"Legacy differential mismatch: mode={mode} {quantity}")
-            records.append({"mode": mode, "tokens": 2, "token_phase_transition": True,
+            records.append({"mode": mode, "gqa_ratio": words[22], "cache_encoding": words[5],
+                            "tokens": 2, "token_phase_transition": True,
                             "independent_expectation": (
                                 "distinct zero LM-head yields zero" if mode == 4 else
                                 "tied constant FP16(0.5); final Q16 norm rounds to 1; "
@@ -62,7 +73,7 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
                             "integrated_cycles": observed["integrated"]["cycles"],
                             "transactions": observed["parent"]["reads"] +
                                             observed["parent"]["writes"]})
-            if mode == 4:
+            if configuration_label == "mode-4":
                 parent_profile = observed["parent"]["normal_profile"]
     finally:
         for obj in objects.values():
@@ -72,7 +83,7 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
         "source_sha256": source_hashes(), "synthetic": True,
         "cases": records, "comparison": "exact per-bank tuple/value order; opaque tags checked locally",
     }, indent=2) + "\n")
-    if 4 in modes:
+    if 4 in modes and not variants_only:
         profile(directory, parent_profile)
     print(f"Compatibility receipts: {relative(directory)}", flush=True)
     return directory
@@ -127,5 +138,7 @@ if __name__ == "__main__":
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--mode", type=int, choices=(1, 2, 3, 4), action="append")
     parser.add_argument("--repair-of")
+    parser.add_argument("--variants-only", action="store_true")
     args = parser.parse_args()
-    run(args.preparation, tuple(args.mode) if args.mode else (1, 2, 3, 4), args.repair_of)
+    run(args.preparation, tuple(args.mode) if args.mode else (1, 2, 3, 4),
+        args.repair_of, args.variants_only)

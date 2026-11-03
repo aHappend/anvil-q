@@ -93,6 +93,9 @@ def inspect(netlist, geometry):
                    "decoder", "final_norm"):
         if not any(path.endswith("." + suffix) for path in native):
             raise AssertionError(f"Missing native hierarchy: {suffix}")
+    for suffix in ("gemv", "rope", "attention", "kv_cache", "mlp", "elementwise"):
+        if not any(path.endswith(".decoder." + suffix) for path in native):
+            raise AssertionError(f"Missing connected native decoder leaf: {suffix}")
     schedulers = [cell for path, cell in native.items() if path.endswith(".bank_scheduler")]
     if len(schedulers) != 1 or len(schedulers[0]["connections"]["c_req_valid"]) != 17:
         raise AssertionError("Native scheduler must have seventeen clients")
@@ -106,7 +109,22 @@ def inspect(netlist, geometry):
                  and name.endswith(".arithmetic")]
         if len(lanes) != rows:
             raise AssertionError(f"Tensor lane count {path}: {len(lanes)} != {rows}")
-        array_records.append({"path": path, "arithmetic_lanes": len(lanes)})
+        tiles = [cell for cell in cells.values() if cell["type"].startswith("$mem")
+                 and int(cell["parameters"].get("WIDTH", "0"), 2)==16
+                 and int(cell["parameters"].get("SIZE", "0"), 2)==tile_k]
+        if len(tiles) != 1:
+            raise AssertionError(f"Native activation tile is not retained as memory: {path}")
+        array_records.append({"path": path, "arithmetic_lanes": len(lanes),
+                              "activation_tile_bits": 16*tile_k})
+    attention_cells = [cell for path, cell in native.items() if path.endswith(".attention")]
+    if len(attention_cells) != 1:
+        raise AssertionError("Native attention must remain connected")
+    score_memories = [cell for cell in modules[attention_cells[0]["type"]]["cells"].values()
+                      if cell["type"].startswith("$mem") and
+                      int(cell["parameters"].get("WIDTH", "0"), 2)==32 and
+                      int(cell["parameters"].get("SIZE", "0"), 2)==131072]
+    if len(score_memories) != 1:
+        raise AssertionError("Native attention score RAM was not retained")
     memory_bits = 0
     for module in modules.values():
         for cell in module.get("cells", {}).values():
@@ -121,6 +139,7 @@ def inspect(netlist, geometry):
             "memory_bits_in_module_definitions": memory_bits,
             "forbidden_cells": prohibited, "tensor_arrays": array_records,
             "native_scheduler_clients": 17, "external_banks": banks,
+            "native_attention_score_memory_bits": 131072*32,
             "lane_connectivity": routing,
             "cell_types": dict(counts)}
 
