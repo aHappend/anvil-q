@@ -11,18 +11,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, ExecutionFailure, hashes, relative, remaining, timestamp
 from retention import digest
 from run_compatibility import compiled, fixture
-from run_performance import failure_classification, performance_case, validated_simulation
+from run_performance import (failure_classification, performance_case,
+                             transition_measurements, validated_simulation)
 
 
 def run(output):
-    binary, binding = compiled()
+    binary, binding = compiled(performance=True)
     baseline = performance_case(output, "ht3", binary, binding, 0, 17)
     case = json.loads((ROOT/baseline["case"]).read_text())
     source = ROOT/case["simulation_receipt"]
     original = json.loads(source.read_text())
     rows = []
     mutations = ("none", "timeout", "exit", "source", "tool", "seed", "fixture",
-                 "raw_hash", "missing_summary", "missing_completion", "nonfinite")
+                 "raw_hash", "missing_summary", "missing_completion", "nonfinite",
+                 "missing_boundary", "wrong_boundary_op", "missing_mac_retirement")
     for mutation in mutations:
         directory = output/f"copy-{mutation}-{uuid.uuid4().hex[:12]}"
         directory.mkdir()
@@ -67,6 +69,17 @@ def run(output):
             parts[-1] = "7fc00000"
             lines[index] = " ".join(parts)
             observation.write_text("\n".join(lines)+"\n")
+        elif mutation in ("missing_boundary", "wrong_boundary_op", "missing_mac_retirement"):
+            target = ROOT/record["stdout"]
+            lines = target.read_text().splitlines()
+            marker = " mac_end " if mutation == "missing_mac_retirement" else " consumer 2"
+            index = next(i for i, line in enumerate(lines) if marker in line)
+            if mutation == "wrong_boundary_op":
+                lines[index] = lines[index].replace(" consumer 2", " consumer 7")
+            else:
+                del lines[index]
+            target.write_text("\n".join(lines)+"\n")
+            record["artifact_sha256"][relative(target)] = digest(target)
         path = directory/"synthetic-receipt.json"
         record["diagnostic_copy_only"] = True
         with path.open("x") as out:
@@ -78,7 +91,7 @@ def run(output):
         rejection = None
         try:
             accepted = validated_simulation(path, binary, binding, valid_vectors,
-                                            0, 17, expected, "ht3") is not None
+                                            0, 17, expected, "ht3", monitored=True) is not None
         except AssertionError as exc:
             accepted, rejection = False, str(exc)
         if accepted != (mutation == "none"):
@@ -91,6 +104,14 @@ def run(output):
         if failure_classification(error, "ht3") != category:
             raise AssertionError("budget failure was classified as a DUT failure")
         rows.append(dict(case=category, classification=category))
+    for product_cycles, expected_status in ((9, "passed"), (10, "failed"), (11, "failed")):
+        old = dict(transitions=[dict(token=0, path="threshold", transition_cycles=25)])
+        new = dict(transitions=[dict(token=0, path="threshold",
+                                    transition_cycles=product_cycles)])
+        checked = transition_measurements(old, new)
+        if checked[0]["status"] != expected_status:
+            raise AssertionError("strict >60% transition threshold sensitivity")
+        rows.append(dict(case=f"strict-threshold-{product_cycles}", result=checked))
     return dict(status="passed", scope="retention harness only, not RTL mutation coverage",
                 baseline_case=baseline["case"], checks=rows)
 

@@ -258,48 +258,56 @@ def transition_observations(text, manifest, tokens):
         raise AssertionError("no executed public transfer instrumentation")
     # Commands precede their subsequent results. No counter is inferred from an FSM.
     events.sort(key=lambda e: (e[0], e[2]))
-    current, producer, mac_start, token = None, None, None, -1
-    rows, commands = [], []
+    current, mac_start, token = None, None, -1
+    pending, rows, commands, mac_intervals = {}, [], [], []
+    embedding_base = next(row[4] for row in descriptors if row[1] == 0)
     for cycle, excluded, kind, tag in events:
         if kind == "projection":
+            if tag not in by_address and tag != embedding_base:
+                raise AssertionError("projection command is not in the matched image")
             projection = by_address.get(tag, 7)
-            if producer is not None and current in ELIGIBLE:
-                raise AssertionError("eligible producer has no matching consumer transfer")
             if projection == 0:
+                if pending:
+                    raise AssertionError("eligible producer left across token boundary")
                 token += 1
-            current, producer = projection, None
+            current = projection
             commands.append((token, projection))
         elif kind == "mac_begin":
             if mac_start is not None:
                 raise AssertionError("overlapping unretired MAC transaction")
-            mac_start = cycle
+            mac_start = (cycle, excluded)
         elif kind == "mac_end":
-            if mac_start is None or cycle <= mac_start:
+            if mac_start is None or cycle <= mac_start[0]:
                 raise AssertionError("MAC output without accepted producer work")
+            mac_intervals.append((mac_start, (cycle, excluded)))
             mac_start = None
             if current in ELIGIBLE:
-                if producer is not None:
+                if current in pending:
                     raise AssertionError("transition compact fixture has multiple panels")
-                producer = (cycle, excluded)
-        elif kind == "consumer" and current in ELIGIBLE and producer is not None:
-            path, expected_op = ELIGIBLE[current]
+                pending[current] = (cycle, excluded)
+        elif kind == "consumer":
+            matching = [p for p in pending if ELIGIBLE[p][1] == tag]
+            if not matching:
+                continue
+            projection = min(matching, key=lambda p: pending[p][0])
+            path, expected_op = ELIGIBLE[projection]
             if tag != expected_op or mac_start is not None:
                 raise AssertionError("wrong consumer operation or overlapping GEMV interval")
-            start, excluded_start = producer
+            start, excluded_start = pending.pop(projection)
             imposed = excluded-excluded_start
             elapsed = cycle-start
-            if elapsed <= 0 or not 0 <= imposed < elapsed:
+            gemv = sum((b[0]-a[0])-(b[1]-a[1])
+                       for a, b in mac_intervals if start <= a[0] and b[0] <= cycle)
+            if elapsed <= 0 or not 0 <= imposed+gemv < elapsed:
                 raise AssertionError("invalid boundary latency/external-stall accounting")
-            rows.append(dict(token=token, projection=current, path=path,
+            rows.append(dict(token=token, projection=projection, path=path,
                              producer_edge=start, consumer_edge=cycle,
                              elapsed_cycles=elapsed, excluded_cycles=imposed,
-                             gemv_cycles=0, transition_cycles=elapsed-imposed))
-            producer = None
-            current = None
+                             gemv_cycles=gemv, transition_cycles=elapsed-imposed-gemv))
     if (commands != [(token, projection) for token in range(tokens) for projection in range(8)]
             or {(r["token"], r["projection"]) for r in rows} !=
                {(token, projection) for token in range(tokens) for projection in ELIGIBLE}
-            or len(rows) != tokens*len(ELIGIBLE) or mac_start is not None):
+            or len(rows) != tokens*len(ELIGIBLE) or mac_start is not None or pending):
         raise AssertionError("incomplete or duplicated eligible-path transfer coverage")
     return rows
 

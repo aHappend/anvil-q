@@ -68,6 +68,7 @@ def dependencies(script):
                                             "tests/run_compatibility.py",
                                             "tests/run_performance.py", "tests/retention.py"],
         "tests/run_performance.py": ["tests/reference.py", "tests/inference_tb.sv",
+                                     "tests/performance_monitor.sv",
                                      "tests/run_compatibility.py",
                                      *[relative(p) for p in sorted(
                                          ROOT.glob("anvil_q1_ht2_reference/rtl/*.sv"))]],
