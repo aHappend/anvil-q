@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from acquire_public import fetch
 from execution import ROOT, ExecutionFailure, hashes, relative, remaining, timestamp
 from official_reference import Checkpoint, QwenFP64, Tokenizer, perplexity, scored_position
-from campaign import artifact, available, preserve
+from campaign import artifact, available, logical, preserve, retain_replacement
 
 
 MANIFEST = ROOT / "tests/official_inputs.json"
@@ -239,16 +239,16 @@ def checkpoint_image(output, bindings):
         candidates.extend(parent.glob(
             "*/*/checkpoint-images/official-image-*/image-manifest.json"))
     for path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
-        image = json.loads(path.read_text())
+        image = json.loads(artifact(path).read_text())
         if (image.get("status") != "passed" or image.get("checkpoint_sha256") != pin
                 or image.get("config_sha256") != digest(config)
                 or any(image.get("source_sha256", {}).get(p) != current[p] for p in DEPENDENCIES)):
             continue
         payload = ROOT/image["image"]
-        if not payload.is_file():
+        if not available(payload):
             missing.append((path, image))
             continue
-        if (not payload.is_file() or payload.stat().st_size != image["image_bytes"]
+        if (artifact(payload).stat().st_size != image["image_bytes"]
                 or digest(payload) != image["image_sha256"]):
             continue
         return dict(manifest=relative(path), manifest_sha256=digest(path),
@@ -287,22 +287,29 @@ def stream_digest(source):
 
 
 def restore_image(source, image, output, cause):
-    """Regenerate only a missing reclaimable payload, never a receipt or observation."""
-    payload = ROOT/image["image"]
-    payload.resolve().relative_to(ROOT)
-    if "checkpoint-images" not in payload.parts or payload.name != "image.bin":
+    """Retain exact input bytes at a fresh destination, preserving the old identity."""
+    original = ROOT/image["image"]
+    original.resolve().relative_to(ROOT)
+    if "checkpoint-images" not in original.parts or original.name != "image.bin":
         raise ValueError("image regeneration is restricted to checkpoint-images/*/image.bin")
     if stream_digest(source) != image["image_sha256"]:
         raise AssertionError("pinned image differs from the original checked payload")
+    if original.exists():
+        raise FileExistsError("input recovery must not replace an existing original artifact")
     start = timestamp()
-    payload.parent.mkdir(parents=True, exist_ok=True)
+    directory = output/"checkpoint-images"/f"official-image-{uuid.uuid4().hex[:12]}"
+    directory.mkdir(parents=True, exist_ok=False)
+    payload = directory/"image.bin"
     with payload.open("xb") as destination:
         shutil.copyfileobj(source, destination, length=1024*1024)
     source.seek(0)
     if (payload.stat().st_size != image["image_bytes"]
             or digest(payload) != image["image_sha256"]):
         raise AssertionError("regenerated image does not match the original hash/length")
+    retained = retain_replacement(payload, original, image["image_sha256"],
+                                  image["image_bytes"], cause)
     record = dict(kind="reclaimed generated input recovery", image=image["image"],
+                  restored_image=relative(payload), retained_identity=relative(retained),
                   image_sha256=image["image_sha256"], image_bytes=image["image_bytes"],
                   start=start, end=timestamp(), cause=cause,
                   scope="identical input bytes only; no simulation or acceptance result")
@@ -357,7 +364,7 @@ def score_executed(work, stream, bindings, output):
 
 def evaluate(output, works, bindings, image, build, stream_smoke=False, profile_chunks=None):
     payload = ROOT/image["image"]
-    with payload.open("rb") as source:
+    with artifact(payload).open("rb") as source:
         if (stream_digest(source) != image["image_sha256"]
                 or os.fstat(source.fileno()).st_size != image["image_bytes"]):
             raise AssertionError("pinned image no longer matches the checked input")
@@ -370,7 +377,7 @@ def evaluate_pinned(output, works, bindings, image, build, source,
     from official_stream import run_stream
 
     binary, binding = build
-    manifest = json.loads((ROOT/image["manifest"]).read_text())
+    manifest = json.loads(artifact(ROOT/image["manifest"]).read_text())
     rows = []
     for index, work in enumerate(works[:1] if stream_smoke else works):
         directory = output/f"record-{index}-{uuid.uuid4().hex[:12]}"
@@ -397,15 +404,17 @@ def evaluate_pinned(output, works, bindings, image, build, source,
                     if payload.exists() or remaining() < 90:
                         raise
                     if isinstance(exc, FileNotFoundError):
-                        if Path(exc.filename).resolve() != payload.resolve():
+                        if logical(exc.filename) != logical(payload):
                             raise
                         cause = dict(missing_input=image["image"], error=str(exc))
                     else:
                         record = exc.record
                         argv = record.get("argv", [])
                         if (record.get("timed_out") or "--image" not in argv
-                                or argv[argv.index("--image")+1] != image["image"]
-                                or (ROOT/record["stderr"]).read_text().strip() !=
+                                or logical(argv[argv.index("--image")+1]) != logical(image["image"])
+                                or not isinstance(record.get("stderr"), str)
+                                or not available(ROOT/record["stderr"])
+                                or artifact(ROOT/record["stderr"]).read_text().strip() !=
                                    "OFFICIAL_STREAM_FAILURE cannot open pinned memory image"):
                             raise
                         cause = dict(failed_simulation=record["stdout"].replace(

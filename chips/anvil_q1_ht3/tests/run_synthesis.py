@@ -19,7 +19,8 @@ import time
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, execute, hashes, relative, remaining, timestamp
+from execution import (ROOT, ExecutionFailure, execute, failure_details, hashes,
+                       relative, remaining, timestamp)
 from yosys_frontend import materialize
 from retention import artifacts_intact, digest, execution_logs_intact
 from campaign import artifact, available, preserve
@@ -331,9 +332,20 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
                        else 60 if identifier == "compact-mapped"
                        else 30 if phase == "abc" else 0)
             if allocation-reserve-10 < minimum:
-                raise RuntimeError(f"unstarted synthesis phase {phase}: {allocation:.3f}s "
-                                   f"remain, reserving {reserve}s ABC and 10s settlement; "
-                                   "validated predecessors retained")
+                record = dict(argv=["yosys", "-Q", "-T", "-s",
+                                    relative(directory/"synthesis.ys")], cwd=".",
+                              source_sha256=hashes(), start=timestamp(), end=timestamp(),
+                              tool_version=version, tool_version_argv=["yosys", "-V"],
+                              launched=False, exit=None, timed_out=False, timeout=0,
+                              budget_exhausted=True, available_s=allocation,
+                              minimum_s=minimum, reserve_s=reserve+10,
+                              kind="allocation-refused; no tool process launched",
+                              receipt=relative(directory/"admission.receipt.json"))
+                with (directory/"admission.receipt.json").open("x") as out:
+                    json.dump(record, out, indent=2)
+                raise ExecutionFailure(f"unstarted synthesis phase {phase}: {allocation:.3f}s "
+                                       f"remain, reserving {reserve}s ABC and 10s settlement; "
+                                       "validated predecessors retained", record)
             os.environ["HT3_CHECK_DEADLINE"] = str(time.time()+max(0, allocation-reserve-10))
             try:
                 execute(["yosys", "-Q", "-T", "-s", relative(directory / "synthesis.ys")],
@@ -442,11 +454,15 @@ def run(output, diagnostic=False, compact_only=False, job=None, through_phase=No
             row = dict(id=identifier, status="passed", parameters=parameters,
                        mapped=mapped, accounting=counts)
         except (RuntimeError, AssertionError, ValueError) as exc:
-            row = dict(id=identifier, status="failed", parameters=parameters,
+            details = failure_details(exc)
+            row = dict(id=identifier, status=("not_started" if details["failure_kind"] ==
+                                              "execution_budget_unstarted" else "failed"),
+                       parameters=parameters, **details,
                        mapped=mapped, error=str(exc),
                        timed_out=getattr(exc, "timed_out", False))
             if hasattr(exc, "record"):
-                row["receipt"] = exc.record["stdout"].replace(".stdout.txt", ".receipt.json")
+                row["receipt"] = (exc.record["receipt"] if "receipt" in exc.record else
+                                  exc.record["stdout"].replace(".stdout.txt", ".receipt.json"))
         finally:
             if deadline is None:
                 os.environ.pop("HT3_CHECK_DEADLINE", None)

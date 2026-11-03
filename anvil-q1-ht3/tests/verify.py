@@ -193,8 +193,10 @@ def child(identifier, argv, output, budget=None, versions=None, reserve=0, minim
             nested = {key: record[key] for key in
                       ("nested_timed_out", "budget_exhausted", "timed_out_receipts",
                        "unstarted_receipts") if key in record}
-        return dict(id=identifier, status="failed", error=str(exc),
-                    **failure_details(exc), **nested,
+        details = failure_details(exc)
+        return dict(id=identifier, status=("not_started" if details["failure_kind"] ==
+                                          "execution_budget_unstarted" else "failed"),
+                    error=str(exc), **details, **nested,
                     receipt=relative(output / f"{identifier}.receipt.json"),
                     result=relative(directory / "result.json"))
     finally:
@@ -391,16 +393,24 @@ def schedule(has_retained_epilogue=False):
 
 def budget_summary(rows):
     unstarted = []
+    receipts = set()
+    exhausted = False
     for row in rows:
+        receipts.update(row.get("unstarted_receipts", []))
+        exhausted |= row.get("budget_exhausted", False)
         if row.get("jobs"):
-            unstarted.extend(budget_summary(row["jobs"])["unstarted"])
+            nested = budget_summary(row["jobs"])
+            unstarted.extend(nested["unstarted"])
+            receipts.update(nested["unstarted_receipts"])
+            exhausted |= nested["budget_exhausted"]
         elif (row.get("status") == "not_started"
               or row.get("failure_kind") == "execution_budget_unstarted"):
             unstarted.append({key: row[key] for key in
                               ("id", "status", "available_s", "minimum_s", "failure_kind")
                               if key in row})
-    return dict(budget_exhausted=bool(unstarted), unstarted=unstarted,
-                unstarted_count=len(unstarted))
+    return dict(budget_exhausted=bool(unstarted or receipts or exhausted), unstarted=unstarted,
+                unstarted_count=len(unstarted), unstarted_receipts=sorted(receipts),
+                unstarted_receipt_count=len(receipts))
 
 
 def main():

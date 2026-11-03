@@ -28,6 +28,7 @@ from verify import MINIMUM_ALLOCATIONS, child, dependencies, reconcile_coverage,
 from run_integrated_geometry import CROSS_CASES
 from run_parameters import legal_cross
 from run_saved_results import invalid_artifacts
+from campaign import artifact
 import numpy as np
 
 
@@ -273,7 +274,7 @@ def run(output):
     def reclaim_then_resume(directory, image, *args, **kwargs):
         stream_calls.append(directory)
         if len(stream_calls) <= 2:
-            payload.unlink()
+            artifact(payload).unlink()
             if len(stream_calls) == 1:
                 raise FileNotFoundError(errno.ENOENT, "synthetic input reclamation",
                                         str(payload.resolve()))
@@ -285,7 +286,7 @@ def run(output):
                                    dict(argv=["synthetic", "--image", image["image"]],
                                         timed_out=False, exit=1, launched=True,
                                         stderr=relative(stderr), stdout=relative(stdout)))
-        if payload.read_bytes() != expected_image:
+        if artifact(payload).read_bytes() != expected_image:
             raise AssertionError("pinned input was not restored byte-for-byte")
         result = dict(status="incomplete", summary=dict(complete=0))
         (directory/"stream-result.json").write_text(json.dumps(result))
@@ -299,12 +300,16 @@ def run(output):
                                       ("synthetic-binary", "synthetic-binding"))
     if (len(stream_calls) != 3 or rows[0]["status"] != "incomplete"
             or len(rows[0]["input_recoveries"]) != 2
-            or payload.read_bytes() != expected_image):
+            or payload.exists() or artifact(payload).read_bytes() != expected_image):
         raise AssertionError("input recovery lost an attempt, changed bytes or fabricated completion")
     assertions += 1
-    with payload.open("rb") as source:
+    occupied = output/"checkpoint-images"/f"official-image-{uuid.uuid4().hex[:12]}"/"image.bin"
+    occupied.parent.mkdir(parents=True)
+    occupied.write_bytes(expected_image)
+    occupied_image = dict(image_record, image=relative(occupied))
+    with artifact(payload).open("rb") as source:
         try:
-            run_benchmarks.restore_image(source, image_record, output, dict(synthetic=True))
+            run_benchmarks.restore_image(source, occupied_image, output, dict(synthetic=True))
         except FileExistsError:
             assertions += 1
         else:

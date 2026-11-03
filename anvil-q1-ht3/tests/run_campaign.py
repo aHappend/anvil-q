@@ -187,6 +187,14 @@ def regression(output):
     if not budget["budget_exhausted"] or budget["unstarted_count"] != 2:
         raise AssertionError("aggregate budget lost allocation-refused rows")
     assertions += 1
+    nested_budget = budget_summary([dict(
+        id="synthesis", jobs=[dict(id="compact-mapped", status="failed",
+                                  budget_exhausted=True,
+                                  unstarted_receipts=["evidence/synthetic-123/admission.receipt.json"])])])
+    if (not nested_budget["budget_exhausted"] or nested_budget["unstarted_count"]
+            or nested_budget["unstarted_receipt_count"] != 1):
+        raise AssertionError("summary metadata lost an internal unstarted phase")
+    assertions += 1
     return dict(status="passed", kind="synthetic-campaign-lifecycle", assertions=assertions,
                 manifest=relative(manifest_path), restored=restored_paths,
                 incomplete_manifest=relative(incomplete), budget_observation=budget,

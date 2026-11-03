@@ -110,9 +110,12 @@ def artifact(path):
     key = (name, row["sha256"], row["mode"])
     if key in _restored:
         restored = _restored[key]
-        if restored.is_file() and _sha(restored) == row["sha256"]:
-            return restored
-        raise ValueError(f"restored artifact changed: {relative(restored)}")
+        if restored.exists():
+            if (restored.is_file() and _sha(restored) == row["sha256"]
+                    and stat.S_IMODE(restored.stat().st_mode) == row["mode"]):
+                return restored
+            raise ValueError(f"restored artifact changed: {relative(restored)}")
+        del _restored[key]
     _verify_archive(row)
     directory = STORE / f"restored-{uuid.uuid4().hex[:12]}"
     restored = directory / "files" / name
@@ -269,8 +272,6 @@ def preserve(paths, label):
             else:
                 _verify_archive(snapshot)
                 snapshots.append(snapshot)
-    directory = STORE / f"campaign-{uuid.uuid4().hex[:12]}"
-    directory.mkdir(parents=True, exist_ok=False)
     manifest = dict(schema=1, label=label, start=start, end=timestamp(),
                     complete=not missing and not conflicts and not parse_errors
                              and not unavailable_versions,
@@ -280,6 +281,12 @@ def preserve(paths, label):
                     roots=[logical(p) for p in paths], files=rows,
                     retention="gzip complete bytes; original paths and modes preserved; "
                               "restoration only to fresh project-owned destinations")
+    return _publish(manifest)
+
+
+def _publish(manifest):
+    directory = STORE / f"campaign-{uuid.uuid4().hex[:12]}"
+    directory.mkdir(parents=True, exist_ok=False)
     content = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
     path = directory / f"manifest-{hashlib.sha256(content).hexdigest()}.json"
     pending = directory / f"pending-{uuid.uuid4().hex[:12]}"
@@ -291,6 +298,25 @@ def preserve(paths, label):
     pending.unlink()
     _read_manifest(path)
     return path
+
+
+def retain_replacement(replacement, original, expected_sha256, expected_bytes, cause):
+    """Bind new actual bytes to an old identity only after exact independent equality."""
+    replacement = Path(replacement)
+    if replacement.stat().st_size != expected_bytes or _sha(replacement) != expected_sha256:
+        raise ValueError("replacement differs from the original expected hash/length")
+    source_manifest = preserve([replacement], "fresh exact-byte replacement input")
+    source = json.loads(source_manifest.read_text())
+    row = next(r for r in source["files"] if r["path"] == logical(replacement))
+    alias = dict(row, path=logical(original))
+    return _publish(dict(
+        schema=1, label="explicit exact-byte replacement identity", start=timestamp(),
+        end=timestamp(), complete=source["complete"], roots=[logical(replacement)],
+        files=[row, alias], source_snapshots=[], missing_dependencies=[],
+        conflicting_dependencies=[], dependency_parse_errors=[], unavailable_source_versions=[],
+        replacement=dict(original=logical(original), actual=logical(replacement),
+                         expected_sha256=expected_sha256, expected_bytes=expected_bytes,
+                         source_manifest=relative(source_manifest), cause=cause)))
 
 
 def preserve_tree(directory, label, extra=()):
