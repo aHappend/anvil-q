@@ -2,6 +2,7 @@
 """Portable source-current L1 verification and retained preparation probes."""
 
 import argparse
+import difflib
 import hashlib
 import json
 import random
@@ -13,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from reference import dequantize
+from reference import bf16_to_q16, dequantize, quantize_group
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -82,6 +83,13 @@ class Experiment:
         self.save()
         print(str((self.directory / "receipt.json").relative_to(ROOT)), flush=True)
 
+    def cleanup_intermediates(self):
+        for directory in self.directory.iterdir():
+            if directory.is_dir() and "-obj" in directory.name:
+                for pattern in ("*.o", "*.a", "*.gch"):
+                    for path in directory.glob(pattern):
+                        path.unlink()
+
 
 def dequant_vectors(path):
     scales = [0x00000001, 0x00000101, 0x007FFFFF, 0x00800000,
@@ -89,6 +97,9 @@ def dequant_vectors(path):
               0x3F7FFFFF, 0x3F800000, 0x3F800001, 0x3FC00000,
               0x40000000, 0x477FE000, 0x7B000001, 0x7F7FFFFF]
     vectors = [(code, scale) for scale in scales for code in range(256)]
+    vectors += [(code, scale) for scale in (
+        0x3F808000, 0x3F818000, 0x3FFF8000, 0x007F8000, 0x00008000, 0x7F7F8000)
+        for code in range(256)]
     rng = random.Random(17)
     vectors += [(rng.randrange(256), rng.randrange(1, 0x7F800000)) for _ in range(10000)]
     vectors += [(code, scale) for scale in (
@@ -101,7 +112,8 @@ def dequant_vectors(path):
     return len(vectors)
 
 
-def run_dequant(experiment, simulator):
+def run_dequant(experiment, simulator, rtl="rtl/anvil_d2_fp8_dequant.sv",
+                expect_mismatch=False):
     directory = experiment.directory.relative_to(ROOT)
     vectors = experiment.directory / "dequant-vectors.txt"
     count = dequant_vectors(vectors)
@@ -109,7 +121,7 @@ def run_dequant(experiment, simulator):
         experiment.execute(["iverilog", "-V"], "iverilog-version")
         binary = directory / "dequant.vvp"
         experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "dequant_tb", "-o",
-                            str(binary), "rtl/anvil_d2_fp8_dequant.sv", "tests/dequant_tb.sv"],
+                            str(binary), rtl, "tests/dequant_tb.sv"],
                            "dequant-compile")
         argv = ["vvp", str(binary)]
     else:
@@ -117,11 +129,25 @@ def run_dequant(experiment, simulator):
         obj = directory / "dequant-obj"
         experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
                             "--top-module", "dequant_tb", "--Mdir", str(obj),
-                            "-o", "dequant-sim", "rtl/anvil_d2_fp8_dequant.sv",
+                            "-o", "dequant-sim", rtl,
                             "tests/dequant_tb.sv"], "dequant-compile", 1200)
         argv = [str(obj / "dequant-sim")]
-    output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
-                                "dequant-simulation")
+    try:
+        output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
+                                    "dequant-simulation")
+    except RuntimeError:
+        command = experiment.receipt["commands"][-1]
+        output = (ROOT / command["stdout"]).read_text() + (ROOT / command["stderr"]).read_text()
+        if not expect_mismatch or command.get("timed_out") or "DEQUANT_MISMATCH" not in output:
+            raise
+        experiment.receipt["results"]["mutant"] = {
+            "rejected_by": "normal exact-bit numerical scoreboard",
+            "raw_diagnostic": output.strip(),
+        }
+        experiment.save()
+        return
+    if expect_mismatch:
+        raise AssertionError("behavioral mutant survived normal numerical scoreboard")
     experiment.receipt["results"]["dequant"] = {
         "simulator": simulator, "vectors": count,
         "all_codes_at_distinct_scales": 16, "seeded_random_cases": 10000,
@@ -151,9 +177,149 @@ def run_public_smoke(experiment):
     experiment.save()
 
 
+def run_numerical_leaf(experiment, leaf, simulator):
+    directory = experiment.directory.relative_to(ROOT)
+    vectors = experiment.directory / (leaf + "-vectors.txt")
+    if leaf == "bf16":
+        with vectors.open("w") as stream:
+            for bits in range(65536):
+                result, error = bf16_to_q16(bits)
+                stream.write(f"{bits:04x} {result:08x} {error:x}\n")
+        rtl = "rtl/anvil_d2_bf16_to_q16.sv"
+        count = 65536
+    else:
+        rng = random.Random(233)
+        lengths = [1, 2, 3, 4, 127, 128, 129, 255, 256]
+        logical = [[0] * length for length in lengths]
+        logical += [[-0x80000000, 0x7FFFFFFF, -1, 0, 1]]
+        from reference import FP8_POSITIVES
+        midpoints = [int((low + high) * 32768) for low, high in zip(
+            FP8_POSITIVES, FP8_POSITIVES[1:])]
+        logical += [[448 << 16, *midpoints], [-(448 << 16), *(-x for x in midpoints)]]
+        logical += [[rng.randrange(-0x80000000, 0x80000000) for _ in range(length)]
+                    for _ in range(12) for length in lengths]
+        groups = [values[start:start+128] for values in logical
+                  for start in range(0, len(values), 128)]
+        count = sum(map(len, groups))
+        with vectors.open("w") as stream:
+            for group in groups:
+                scale, codes = quantize_group(group)
+                stream.write(f"{len(group)} {scale:08x}\n")
+                for value, code in zip(group, codes):
+                    stream.write(f"{value & 0xFFFFFFFF:08x} {code:02x}\n")
+        rtl = "rtl/anvil_d2_fp8_group_quantizer.sv"
+    top = leaf + "_tb"
+    bench = "tests/" + top + ".sv"
+    if simulator == "icarus":
+        experiment.execute(["iverilog", "-V"], "iverilog-version")
+        binary = directory / (leaf + ".vvp")
+        experiment.execute(["iverilog", "-g2012", "-Wall", "-s", top, "-o",
+                            str(binary), rtl, bench], leaf + "-compile")
+        argv = ["vvp", str(binary)]
+    else:
+        experiment.execute(["verilator", "--version"], "verilator-version")
+        obj = directory / (leaf + "-obj")
+        experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal",
+                            "--top-module", top, "--Mdir", str(obj),
+                            "-o", leaf + "-sim", rtl, bench], leaf + "-compile", 1200)
+        argv = [str(obj / (leaf + "-sim"))]
+    output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
+                                leaf + "-simulation")
+    experiment.receipt["results"][leaf] = {
+        "simulator": simulator, "vectors": count,
+        "public_pin_scoreboard": True, "raw_summary": output.strip(),
+    }
+    experiment.save()
+
+
+def run_synthesis_probe(experiment):
+    directory = experiment.directory.relative_to(ROOT)
+    sources = [str(p.relative_to(ROOT)) for pattern in (
+        "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
+    parameters = {
+        "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+        "NUM_Q_HEADS": 1, "KV_LORA_RANK": 2, "QK_NOPE_HEAD_DIM": 2,
+        "QK_ROPE_HEAD_DIM": 2, "V_HEAD_DIM": 2, "ROUTED_EXPERTS": 2,
+        "TOP_K": 1, "MOE_INTERMEDIATE_SIZE": 8, "FIRST_DENSE_LAYERS": 1,
+        "VOCAB_SIZE": 4, "MAX_SEQ_LEN": 12, "BANKS": 2,
+        "QUEUE_DEPTH": 3, "TILE_K": 8, "TILE_ROWS": 1,
+    }
+    script = experiment.directory / "integrated.ys"
+    commands = [
+        "read_verilog -sv " + " ".join(sources),
+        "chparam " + " ".join(f"-set {key} {value}" for key, value in parameters.items()) +
+        " anvil_d2_top",
+        "hierarchy -check -top anvil_d2_top",
+        "proc", "opt_expr", "opt_clean", "check -noinit -assert",
+        "memory -nomap", "opt_clean", "check -noinit -assert", "stat",
+        f"write_json {directory}/integrated.json",
+    ]
+    script.write_text("\n".join(commands) + "\n")
+    experiment.execute(["yosys", "-V"], "yosys-version")
+    experiment.execute(["yosys", "-s", str(script.relative_to(ROOT))],
+                       "integrated-synthesis", 1800)
+    netlist = json.loads((experiment.directory / "integrated.json").read_text())
+    cell_counts = {}
+    memory_bits = 0
+    for module in netlist["modules"].values():
+        if int(module.get("attributes", {}).get("blackbox", "0"), 2):
+            raise AssertionError("black-box module in synthesized hierarchy")
+        for cell in module.get("cells", {}).values():
+            kind = cell["type"]
+            cell_counts[kind] = cell_counts.get(kind, 0) + 1
+            if "latch" in kind.lower() or kind in ("$div", "$mod", "$divfloor", "$modfloor"):
+                raise AssertionError(f"forbidden synthesis cell {kind}")
+            if kind.startswith("$mem"):
+                params = cell["parameters"]
+                memory_bits += int(params.get("WIDTH", "0"), 2) * int(
+                    params.get("SIZE", "0"), 2)
+    sequential = sum(value for kind, value in cell_counts.items() if "dff" in kind.lower())
+    assert sequential > 100, f"insubstantial sequential state: {sequential}"
+    assert memory_bits > 0, "no inferred memory state"
+    top = netlist["modules"]["anvil_d2_top"]
+    for instance in ("mtp", "fp8"):
+        assert instance in top["cells"], f"missing integrated {instance}"
+        assert any(isinstance(bit, int) for connections in top["cells"][instance][
+            "connections"].values() for bit in connections), f"constant {instance}"
+    experiment.receipt["results"]["synthesis-probe"] = {
+        "parameters": parameters, "sequential_cell_definitions": sequential,
+        "memory_definition_bits": memory_bits,
+        "cell_definition_counts": cell_counts,
+        "scope": "compact integrated synthesis; not physical timing/PPA or full geometry matrix",
+    }
+    experiment.save()
+
+
+def run_dequant_mutant(experiment, defect):
+    source_path = ROOT / "rtl/anvil_d2_fp8_dequant.sv"
+    original = source_path.read_text()
+    before, after = {
+        "fp8-bias": ("})-11'sd10", "})-11'sd9"),
+        "bf16-tie": ("bits[15] && ((|bits[14:0]) || bits[16])", "bits[15]"),
+    }[defect]
+    if original.count(before) != 1:
+        raise AssertionError(f"mutation anchor for {defect} must occur exactly once")
+    mutated = original.replace(before, after)
+    copied = experiment.directory / "anvil_d2_fp8_dequant.sv"
+    copied.write_text(mutated)
+    (experiment.directory / "mutant.diff").write_text("".join(difflib.unified_diff(
+        original.splitlines(True), mutated.splitlines(True),
+        fromfile="rtl/anvil_d2_fp8_dequant.sv",
+        tofile="disposable/anvil_d2_fp8_dequant.sv")))
+    experiment.receipt["mutation"] = {
+        "defect": defect, "original_sha256": hashlib.sha256(original.encode()).hexdigest(),
+        "mutated_sha256": hashlib.sha256(mutated.encode()).hexdigest(),
+        "diff": str((experiment.directory / "mutant.diff").relative_to(ROOT)),
+    }
+    experiment.save()
+    run_dequant(experiment, "verilator", str(copied.relative_to(ROOT)), expect_mismatch=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--probe", choices=["dequant", "public-smoke"], required=True)
+    parser.add_argument("--probe", choices=["dequant", "quantizer", "bf16", "public-smoke",
+                                         "synthesis-probe", "fp8-bias", "bf16-tie"],
+                        required=True)
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     args = parser.parse_args()
@@ -168,11 +334,19 @@ def main():
         experiment.execute(["python3", "--version"], "python-version")
         if args.probe == "dequant":
             run_dequant(experiment, args.simulator)
-        else:
+        elif args.probe == "public-smoke":
             run_public_smoke(experiment)
+        elif args.probe == "synthesis-probe":
+            run_synthesis_probe(experiment)
+        elif args.probe in ("fp8-bias", "bf16-tie"):
+            run_dequant_mutant(experiment, args.probe)
+        else:
+            run_numerical_leaf(experiment, args.probe, args.simulator)
     except Exception as error:
         experiment.finish(False, str(error))
         raise
+    finally:
+        experiment.cleanup_intermediates()
     experiment.finish(True)
 
 
