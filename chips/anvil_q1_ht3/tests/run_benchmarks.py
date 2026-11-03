@@ -283,6 +283,10 @@ def score_executed(work, stream, bindings, output):
                                                   {r["position"] for r in rows})
     if rows and work["task"] == "wikitext" and len(rows) == work["scored_tokens"]:
         result.update(perplexity(rows))
+        result["reference_perplexity"] = {
+            name: perplexity([dict(position=r["position"],
+                                    nll=r["comparisons"][name]["reference_nll"])
+                               for r in rows]) for name in ("native", "represented_image")}
     if work["task"] in ("arc", "mmlu") and rows:
         decoded = result["decoded_teacher_forced_greedy"].strip()
         answer = re.fullmatch(r"[A-D1-5]", decoded)

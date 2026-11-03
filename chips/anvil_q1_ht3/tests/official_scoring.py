@@ -19,6 +19,17 @@ DEPENDENCIES = ("tests/official_scoring.py", "tests/official_reference.py",
                 "tests/run_compatibility.py", "tests/reference.py")
 
 
+def likelihood(values, target):
+    if not 0 <= target < len(values) or not np.isfinite(values).all():
+        raise AssertionError("invalid likelihood input/shifted target")
+    maximum = float(max(values))
+    result = maximum+math.log(math.fsum(math.exp(float(x)-maximum)
+                                       for x in values))-float(values[target])
+    if not math.isfinite(result) or result < 0:
+        raise AssertionError("invalid FP64 log-sum-exp likelihood")
+    return result
+
+
 def save_state(path, models):
     arrays = {}
     for name, model in models.items():
@@ -142,10 +153,10 @@ def reference_rows(work, stream, bindings, config, checkpoint):
                 except AssertionError as exc:
                     comparisons[name] = dict(status="failed", error=str(exc),
                                              required_cosine=0.9999)
-                comparisons[name].update(reference=relative(path), reference_sha256=digest(path))
-            maximum = float(actual.max())
-            nll = maximum+math.log(math.fsum(math.exp(float(x)-maximum)
-                                            for x in actual))-float(actual[target])
+                comparisons[name].update(reference=relative(path), reference_sha256=digest(path),
+                                         reference_nll=likelihood(reference, target),
+                                         reference_greedy_token=int(reference.argmax()))
+            nll = likelihood(actual, target)
             comparison = dict(position=position, shifted_target=target, actual=captured,
                               comparisons=comparisons, nll=nll, greedy_token=int(actual.argmax()))
         state = directory/"state.npz"

@@ -97,20 +97,30 @@ def compiled(output):
     version = execute(["verilator", "--version"], output, "version",
                       ["verilator", "--version"]).strip()
     identity = dict(source_sha256={p: current[p] for p in
-                    [*sources, "tests/inference_tb.sv", "tests/run_packed_top.py"]},
+                    [*sources, "tests/inference_tb.sv"]},
                     generated_sha256=hashlib.sha256(text.encode()).hexdigest(),
                     tool_version=version)
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
     cache = ROOT/"evidence/compiled"
-    for directory in sorted(cache.glob(f"packed-top-{key}-*")):
+    for directory in sorted(cache.glob("packed-top-*")):
         binding = directory/"binding.json"
         if not binding.is_file():
             continue
         row = json.loads(binding.read_text())
-        if row.get("identity") != identity or not artifacts_intact(row.get("artifact_sha256")):
+        old = row.get("identity", {})
+        if (old.get("generated_sha256") != identity["generated_sha256"]
+                or old.get("tool_version") != version
+                or any(old.get("source_sha256", {}).get(p) != sha
+                       for p, sha in identity["source_sha256"].items())
+                or not artifacts_intact(row.get("artifact_sha256"))):
             continue
         receipt = json.loads((directory/"compile.receipt.json").read_text())
-        if receipt["exit"] == 0 and not receipt["timed_out"] and execution_logs_intact(receipt):
+        argv = ["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                "--top-module", "inference_tb", "--Mdir", relative(directory/"compile-obj"),
+                *sources, relative(directory/"inference_tb.sv")]
+        if (receipt["exit"] == 0 and not receipt["timed_out"]
+                and receipt["argv"] == argv and execution_logs_intact(receipt)
+                and digest(directory/"inference_tb.sv") == identity["generated_sha256"]):
             return directory/"compile-obj/Vinference_tb", relative(binding)
     directory = cache/f"packed-top-{key}-{uuid.uuid4().hex[:12]}"
     directory.mkdir(parents=True)
@@ -139,7 +149,7 @@ def run(output):
             directory = output/f"format{fmt}-{probe}-{uuid.uuid4().hex[:12]}"
             directory.mkdir()
             seed = 17
-            base = directory/"native-fixture"
+            base = directory/f"native-fixture-{uuid.uuid4().hex[:12]}"
             base.mkdir()
             native, _ = fixture(base, 0, seed)
             lines = native.read_text().splitlines()

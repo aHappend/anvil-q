@@ -3,10 +3,12 @@
 import argparse
 import ast
 import json
+import math
 import os
 from pathlib import Path
 import sys
 import time
+import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -14,7 +16,7 @@ from execution import ROOT, hashes, relative, remaining, timestamp
 from retention import artifacts_intact, digest, execution_logs_intact
 from run_mutations import trial
 from official_reference import QwenFP64
-from official_scoring import restore_state, save_state
+from official_scoring import likelihood, restore_state, save_state
 from verify import MINIMUM_ALLOCATIONS, child, schedule
 import numpy as np
 
@@ -97,7 +99,7 @@ def run(output):
         (directory/"case.receipt.json").write_text(json.dumps(dict(timed_out=False)))
         raise RuntimeError("deliberate synthetic baseline rejection")
 
-    disposable = output/"synthetic-bundle"
+    disposable = output/f"synthetic-bundle-{uuid.uuid4().hex[:12]}"
     disposable.mkdir()
     with patch("run_mutations.execute", side_effect=failed_baseline):
         for _ in range(2):
@@ -161,6 +163,10 @@ def run(output):
         assertions += 1
     else:
         raise AssertionError("wrong reference position accepted")
+    nll = likelihood(np.asarray([1000, 1000+math.log(3)], dtype=np.float64), 1)
+    if not math.isclose(nll, math.log(4/3), rel_tol=0, abs_tol=2e-13):
+        raise AssertionError("persistent score likelihood differs from analytic FP64 result")
+    assertions += 1
     return dict(status="passed", kind="synthetic-harness-regression",
                 assertions=assertions, cases=list(names),
                 scope="cache/allocation/retry and synthetic FP64 continuation; not RTL acceptance")
