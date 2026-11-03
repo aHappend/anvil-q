@@ -54,6 +54,8 @@ class Experiment:
         (self.directory / "receipt.json").write_text(json.dumps(self.receipt, indent=2) + "\n")
 
     def execute(self, argv, name, timeout=600):
+        if Path(argv[0]).name == "verilator" and "--binary" in argv:
+            argv = [*argv, "-CFLAGS", "-O3"]
         remaining = CHECK_DEADLINE-time.monotonic()
         if remaining <= 0:
             raise TimeoutError("whole-check 2700-second execution budget exhausted")
@@ -101,7 +103,8 @@ class Experiment:
         return (ROOT / record["stdout"]).read_text()
 
     def finish(self, success, error=None):
-        self.receipt.update(ended_at=timestamp(), success=success)
+        self.receipt.update(ended_at=timestamp(), success=success,
+                            duration_s=time.monotonic()-self.started_monotonic)
         if error:
             self.receipt["error"] = error
         self.save()
@@ -1147,7 +1150,11 @@ def run_suite(experiment, suite):
         component("routed-target", lambda e: run_target_model(
             e, Geometry(layers=2), modes=(0, 2)))
     elif suite == "behavior":
-        experiment.receipt["repair"] = "implement behavior execution after argparse rejection"
+        experiment.receipt["repair_of"] = (
+            "evidence/verification/d2-behavior-20261103T132252Z-11846935/receipt.json")
+        experiment.receipt["repair"] = (
+            "optimize compiled simulation and redundant builds; preserve all scenarios "
+            "and independent comparisons after the aggregate execution timeout")
         experiment.save()
         component("public-smoke", run_public_smoke)
         component("public-boundaries", lambda e: run_public_smoke(e, boundaries=True))
