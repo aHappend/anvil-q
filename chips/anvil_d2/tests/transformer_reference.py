@@ -208,6 +208,13 @@ class WeightImage:
                 projection = [[1]*g.hidden + [
                     -65536 if column == row else 0 for column in range(g.hidden)]
                               for row in range(g.hidden)]
+            if fixture.startswith("prefix"):
+                mismatch = int(fixture[6:])
+                gains = [[65536]*g.hidden for _ in range(2)]
+                sign = -1 if head == mismatch else 1
+                projection = [[0]*g.hidden + [
+                    sign*65536 if column == row else 0 for column in range(g.hidden)]
+                              for row in range(g.hidden)]
             self.mtp_projections.append((gains, projection))
             for role, values in enumerate(gains, 1):
                 for column, value in enumerate(values):

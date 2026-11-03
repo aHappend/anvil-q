@@ -6,6 +6,8 @@ import difflib
 import hashlib
 import json
 import random
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -203,7 +205,8 @@ def run_public_smoke(experiment, boundaries=False):
 
 
 def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3),
-                     override=None, expect_mismatch=False, mtp_fixture="random"):
+                     override=None, expect_mismatch=False, mtp_fixture="random",
+                     command_sequence=None, domain=0, compiled=None):
     directory = experiment.directory.relative_to(ROOT)
     image = WeightImage(geometry, seed)
     if any(mode & 1 for mode in modes):
@@ -223,9 +226,11 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
     expected = {}
     for mode in modes:
         target = Target(image, bool(mode & 2))
-        for token, position, fresh, phase, generate, limit in (
+        for token, position, fresh, phase, generate, limit in (command_sequence or (
                 (1, 0, 1, 0, 0, 3), (2, 1, 0, 0, 0, 3),
-                (3, 2, 0, 1, 1, 3), (4, 6, 0, 1, 1, 1)):
+                (3, 2, 0, 1, 1, 3), (4, 6, 0, 1, 1, 1))):
+            if fresh:
+                target = Target(image, bool(mode & 2))
             logits = target.process(token)
             outputs = logits
             if generate:
@@ -263,25 +268,42 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
     if override:
         sources = [override.get(path, path) for path in sources]
     obj = directory / "target-obj"
-    experiment.execute(["verilator", "--version"], "verilator-version")
-    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
-                        "--top-module", "top_model_tb", "--Mdir", str(obj),
-                        "-o", "target-sim", *(f"-G{name}={value}" for name, value in parameters.items()),
-                        *sources, "tests/top_model_tb.sv"], "target-compile", 1200)
+    if compiled is None:
+        experiment.execute(["verilator", "--version"], "verilator-version")
+        experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                            "--top-module", "top_model_tb", "--Mdir", str(obj),
+                            "-o", "target-sim",
+                            *(f"-G{name}={value}" for name, value in parameters.items()),
+                            *sources, "tests/top_model_tb.sv"], "target-compile", 1200)
+        binary = obj / "target-sim"
+    else:
+        binary = Path(compiled["binary"])
+        if compiled["geometry"] != geometry.__dict__ or compiled["source_sha256"] != (
+                experiment.receipt["source_sha256"]):
+            raise AssertionError("in-check compiled prerequisite source/geometry mismatch")
+        experiment.receipt["compiled_prerequisite"] = compiled
     experiment.receipt["results"]["target-fixtures"] = {
         "seed": seed, "geometry": geometry.__dict__, "modes": list(modes),
         "mtp_fixture": mtp_fixture,
         "commands": len(commands),
         "oracle": "independent arbitrary-precision unabsorbed equations and exact fixed-point boundaries",
         "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
+        "domain": domain,
+        "command_expectations": [
+            {"command": header[0], "mode": header[1], "generation": bool(header[2]),
+             "token": header[3], "position": header[4], "expected": outputs}
+            for *header, outputs in commands],
     }
     experiment.save()
     try:
-        output = experiment.execute([str(obj / "target-sim"),
+        output = experiment.execute([str(binary),
                                      "+image=" + str(image_path.relative_to(ROOT)),
                                      "+expected=" + str(expected_path.relative_to(ROOT)),
                                      "+absorption=" + str(absorption_path.relative_to(ROOT)),
                                      "+commands=" + str(commands_path.relative_to(ROOT)),
+                                     "+domain=" + str(domain),
+                                     *(["+require-prefix=" + mtp_fixture[6:]]
+                                       if mtp_fixture.startswith("prefix") else []),
                                      *(["+require-rejection"] if mtp_fixture=="reject-first" else [])],
                                     "target-simulation", 1800)
     except RuntimeError:
@@ -301,6 +323,11 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
         raise AssertionError("MTP/cache mutant survived independent target scoreboard")
     experiment.receipt["results"]["target-model"] = {"raw_summary": output.strip()}
     experiment.save()
+    return {
+        "binary": str(binary), "geometry": geometry.__dict__,
+        "source_sha256": experiment.receipt["source_sha256"],
+        "receipt": str((experiment.directory / "receipt.json").relative_to(ROOT)),
+    }
 
 
 def run_head_model(experiment, override=None, expect_mismatch=False):
@@ -810,6 +837,160 @@ def run_acceptance_mutant(experiment):
                       expect_mismatch=True)
 
 
+def run_scheduler(experiment, banks=2, queue=3):
+    directory = experiment.directory.relative_to(ROOT)
+    binary = directory / "scheduler.vvp"
+    experiment.execute(["iverilog", "-V"], "iverilog-version")
+    experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "scheduler_tb",
+                        "-P", f"scheduler_tb.BANKS={banks}",
+                        "-P", f"scheduler_tb.QUEUE_DEPTH={queue}", "-o", str(binary),
+                        "rtl/anvil_d2_bank_scheduler.sv", "tests/scheduler_tb.sv"],
+                       "scheduler-compile")
+    output = experiment.execute(["vvp", str(binary)], "scheduler-simulation", 600)
+    experiment.receipt["results"]["scheduler"] = {
+        "banks": banks, "queue_depth": queue, "raw_summary": output.strip(),
+        "oracle": "public accepted transactions, unique payloads and saved external tags",
+        "scope": "out-of-order, bank stalls, response stalls, duplicate/unknown/stale tags, "
+                 "flush with outstanding work, injected bus error and conservation",
+    }
+    experiment.save()
+
+
+def parent_prerequisites(experiment):
+    observations = {
+        "generational_handoff": (ROOT / "design/GENERATIONAL_HANDOFF.md").is_file(),
+        "original_scheduler": any("module anvil_q3_bank_scheduler" in p.read_text()
+                                  for p in (ROOT / "anvil_d1_reference/rtl").glob("*.sv")),
+        "original_legacy_top": any("module anvil_q3_top" in p.read_text()
+                                   for p in (ROOT / "anvil_d1_reference/rtl").glob("*.sv")),
+    }
+    experiment.receipt["results"]["parent_prerequisites"] = observations
+    experiment.save()
+    return observations
+
+
+def run_parent_comparison(experiment):
+    observations = parent_prerequisites(experiment)
+    binary = experiment.directory.relative_to(ROOT) / "parent.vvp"
+    parameters = {
+        "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+        "NUM_Q_HEADS": 1, "KV_LORA_RANK": 3, "QK_NOPE_HEAD_DIM": 2,
+        "QK_ROPE_HEAD_DIM": 2, "V_HEAD_DIM": 2, "ROUTED_EXPERTS": 2,
+        "TOP_K": 1, "MOE_INTERMEDIATE_SIZE": 8, "FIRST_DENSE_LAYERS": 1,
+        "VOCAB_SIZE": 7, "MAX_SEQ_LEN": 12, "BANKS": 2,
+        "QUEUE_DEPTH": 3, "TILE_K": 8, "TILE_ROWS": 1,
+    }
+    sources = [str(p.relative_to(ROOT)) for p in sorted(
+        (ROOT / "anvil_d1_reference/rtl").glob("*.sv"))]
+    experiment.execute(["iverilog", "-V"], "iverilog-version")
+    experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "anvil_d1_top",
+                        *(item for key, value in parameters.items()
+                          for item in ("-P", f"anvil_d1_top.{key}={value}")),
+                        "-o", str(binary), *sources], "unchanged-parent-compile")
+    if not all(observations.values()):
+        raise FileNotFoundError("original parent dependencies/historical handoff missing; "
+                                "see parent_prerequisites in receipt")
+    raise NotImplementedError("restored parent requires a native public-pin differential transactor")
+
+
+def result_rows(output, prefix):
+    return [{key: int(value) for key, value in re.findall(r"(\w+)=(-?\d+)", line)}
+            for line in output.splitlines() if line.startswith(prefix + " ")]
+
+
+def run_benchmark(experiment, component):
+    manifest_path = ROOT / "tests/benchmark_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    (experiment.directory / "benchmark-manifest.json").write_bytes(manifest_path.read_bytes())
+    geometry = Geometry(**manifest["geometry"])
+    compiled = None
+    rows = []
+    for domain in manifest["domains"]:
+        for seed in manifest["seeds"]:
+            first, seed_token = domain["tokens"]
+            child, compiled = component(
+                f"domain{domain['id']}-seed{seed}",
+                lambda e, d=domain, s=seed: run_target_model(
+                    e, geometry, seed=s, domain=d["id"], compiled=compiled,
+                    command_sequence=(
+                        (first, 0, 1, 0, 0, manifest["generation_limit"]),
+                        (seed_token, 1, 0, 1, 1, manifest["generation_limit"]))))
+            output = child.receipt["results"]["target-model"]["raw_summary"]
+            measurements = result_rows(output, "COMMAND_RESULT")
+            transfers = {row["command"]: row for row in result_rows(output, "TRANSFER_RESULT")}
+            if len(measurements) != 8 or len(transfers) != 8:
+                raise AssertionError("benchmark missing command/transfer measurements")
+            baseline = next(row for row in measurements if row["mode"] == 0 and row["generation"])
+            expectations = child.receipt["results"]["target-fixtures"]["command_expectations"]
+            base_tokens = next(row["expected"] for row in expectations
+                               if row["mode"] == 0 and row["generation"])
+            for row in measurements:
+                row.update(transfers[row["command"]])
+                row.update(domain_id=domain["id"], seed=seed,
+                           phase="generation" if row["generation"] else "prefill",
+                           receipt=str((child.directory / "receipt.json").relative_to(ROOT)))
+                if row["generation"]:
+                    if row["tokens"] != manifest["generation_limit"]:
+                        raise AssertionError("unmatched completed benchmark token count")
+                    row["committed_tokens_per_second_at_100mhz"] = (
+                        row["tokens"]*manifest["clock_hz"]/row["cycles"])
+                    row["speedup_vs_d2_compatible"] = baseline["cycles"]/row["cycles"]
+                    row["signed_speedup_percent"] = (
+                        row["speedup_vs_d2_compatible"]-1)*100
+                    actual_tokens = next(entry["expected"] for entry in expectations
+                                         if entry["command"] == row["command"])
+                    row["tokens_differ_from_uncompressed"] = actual_tokens != base_tokens
+                rows.append(row)
+            experiment.receipt["results"]["benchmark_rows"] = rows
+            experiment.save()
+    if len(rows) != 5*3*4*2:
+        raise AssertionError("five-domain/three-seed/four-mode measurement matrix incomplete")
+    experiment.receipt["results"]["measurement_scope"] = (
+        "accepted logical 32-bit memory transfers, including scales/refetches; "
+        "simulation cycles at assumed 100MHz, not measured DDR4 bursts or physical timing; "
+        "compact tails do not establish the matched full-group >=2x bandwidth requirement")
+    experiment.save()
+    run_parent_comparison(experiment)
+
+
+def run_reproduction(experiment):
+    destination = experiment.directory / "clean-project"
+    destination.mkdir()
+    copied = {}
+    for pattern in ("rtl/*.sv", "anvil_d1_reference/rtl/*.sv", "design/*.md",
+                    "fpga/quartus_gate.json", "tests/*"):
+        for source in sorted(ROOT.glob(pattern)):
+            if not source.is_file():
+                continue
+            relative = source.relative_to(ROOT)
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            copied[str(relative)] = hashlib.sha256(target.read_bytes()).hexdigest()
+    experiment.receipt["results"]["reproduction_input_sha256"] = copied
+    experiment.save()
+    # Each child resolves its root from its own script, not the original workspace.
+    script = str((destination / "tests/verify.py").relative_to(ROOT))
+    for probe, extra in (
+            ("oracle", []), ("dequant", ["--simulator", "icarus"]),
+            ("public-smoke", []), ("target-model", ["--mode", "0"]),
+            ("synthesis-probe", ["--configuration", "minimum"])):
+        experiment.execute(["python3", script, "--probe", probe, *extra],
+                           "clean-" + probe, 1800)
+    if any((destination / name).exists() for name in (".git", ".vulcan", ".tooling", "VULCAN")):
+        raise AssertionError("runtime/developer metadata entered reproduction")
+    receipts = sorted(destination.glob("evidence/preparation/*/receipt.json"))
+    if len(receipts) != 5:
+        raise AssertionError("missing clean reproduction results")
+    experiment.receipt["results"]["reproduction_receipts"] = [
+        str(path.relative_to(ROOT)) for path in receipts]
+    for path in receipts:
+        result = json.loads(path.read_text())
+        if result.get("success") is not True:
+            raise AssertionError("clean reproduction child did not succeed")
+    experiment.save()
+
+
 def run_suite(experiment, suite):
     def component(stem, operation):
         child = Experiment("d2-" + suite + "-" + stem)
@@ -817,7 +998,7 @@ def run_suite(experiment, suite):
         experiment.receipt.setdefault("component_receipts", []).append(path)
         experiment.save()
         try:
-            operation(child)
+            result = operation(child)
         except Exception as error:
             child.finish(False, str(error))
             raise
@@ -827,6 +1008,7 @@ def run_suite(experiment, suite):
             child.cleanup_intermediates()
         if time.monotonic()-experiment.started_monotonic >= 2700:
             raise TimeoutError("whole-check 2700-second execution budget exhausted")
+        return child, result
 
     if suite == "numerical":
         component("reference", lambda e: e.execute(
@@ -840,6 +1022,19 @@ def run_suite(experiment, suite):
         component("native-heads", run_head_model)
         component("routed-target", lambda e: run_target_model(
             e, Geometry(layers=2), modes=(0, 2)))
+    elif suite == "behavior":
+        experiment.receipt["repair"] = "implement behavior execution after argparse rejection"
+        experiment.save()
+        component("public-smoke", run_public_smoke)
+        component("public-boundaries", lambda e: run_public_smoke(e, boundaries=True))
+        for simulator in ("icarus", "verilator"):
+            component("verdict-" + simulator, lambda e, s=simulator: run_verdict_probe(e, s))
+        component("nonzero-four-mode", run_target_model)
+        component("routed-rejection", lambda e: run_target_model(
+            e, Geometry(layers=2), modes=(1, 3), mtp_fixture="reject-first"))
+        for banks, queue in ((1, 1), (2, 3), (4, 16), (8, 1)):
+            component(f"scheduler-b{banks}-q{queue}",
+                      lambda e, b=banks, q=queue: run_scheduler(e, b, q))
     elif suite == "defects":
         component("dequant-control", lambda e: run_dequant(e, "verilator"))
         component("service-control", run_service_probe)
@@ -859,6 +1054,18 @@ def run_suite(experiment, suite):
         for configuration in ("minimum", "compact", "production"):
             component(configuration, lambda e, config=configuration: run_synthesis_probe(e, config))
         component("parameters", run_parameter_probe)
+    elif suite == "compatibility":
+        parent_prerequisites(experiment)
+        component("reset-compatible", run_public_smoke)
+        for seed in (17, 89, 233):
+            component(f"independent-d1-numerics-seed{seed}", lambda e, s=seed: run_target_model(
+                e, seed=s, modes=(0,)))
+        run_parent_comparison(experiment)
+    elif suite == "benchmark":
+        parent_prerequisites(experiment)
+        run_benchmark(experiment, component)
+    elif suite == "reproduce":
+        run_reproduction(experiment)
     else:
         raise ValueError(f"unknown suite {suite}")
 
@@ -866,20 +1073,27 @@ def run_suite(experiment, suite):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     operation = parser.add_mutually_exclusive_group(required=True)
-    operation.add_argument("--suite", choices=["numerical", "defects", "synthesis"])
+    operation.add_argument("--suite", choices=[
+        "numerical", "behavior", "compatibility", "defects", "synthesis", "benchmark", "reproduce"])
     operation.add_argument("--probe", choices=["dequant", "quantizer", "bf16", "public-smoke",
                                          "synthesis-probe", "fp8-bias", "bf16-tie",
                                          "fp8-service", "byte-order", "scale-group",
                                          "scale-invalidation", "verdict",
                                          "acceptance-past-mismatch", "oracle", "target-model",
                                          "public-boundaries", "native-head", "mtp-alignment",
-                                         "parameters", "causal-mask", "rejected-kv"])
+                                         "parameters", "causal-mask", "rejected-kv",
+                                         "scheduler"])
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
     parser.add_argument("--seed", type=int, default=17)
+    parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=2)
+    parser.add_argument("--queue", type=int, choices=[1, 3, 16], default=3)
     parser.add_argument("--mode", type=int, action="append", choices=[0, 1, 2, 3])
-    parser.add_argument("--mtp-fixture", choices=["random", "reject-first"], default="random")
+    parser.add_argument("--mtp-fixture", choices=[
+        "random", "reject-first", "prefix0", "prefix1", "prefix2", "prefix3", "prefix4"],
+                        default="random")
+    parser.add_argument("--workload", choices=["standard", "full-block"], default="standard")
     parser.add_argument("--configuration", choices=["minimum", "compact", "production"],
                         default="compact")
     args = parser.parse_args()
@@ -905,13 +1119,18 @@ def main():
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
             run_target_model(experiment, geometry, seed=args.seed,
                              modes=tuple(args.mode) if args.mode is not None else (0, 1, 2, 3),
-                             mtp_fixture=args.mtp_fixture)
+                             mtp_fixture=args.mtp_fixture,
+                             command_sequence=(
+                                 (1, 0, 1, 0, 0, 5), (3, 1, 0, 1, 1, 5)
+                             ) if args.workload == "full-block" else None)
         elif args.probe == "native-head":
             run_head_model(experiment)
         elif args.probe == "mtp-alignment":
             run_alignment_mutant(experiment)
         elif args.probe == "parameters":
             run_parameter_probe(experiment)
+        elif args.probe == "scheduler":
+            run_scheduler(experiment, args.banks, args.queue)
         elif args.probe in ("causal-mask", "rejected-kv"):
             run_target_mutant(experiment, args.probe)
         elif args.probe == "synthesis-probe":
