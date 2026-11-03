@@ -297,9 +297,12 @@ class Target:
         return matvec(down, product, bias=weights["bias"][2])
 
     def process(self, token):
+        return self.process_hidden(self.image.embedding[token])
+
+    def process_hidden(self, vector, absolute_position=None):
         g = self.g
-        position = len(self.cache[0])
-        hidden = self.image.embedding[token].copy()
+        position = len(self.cache[0]) if absolute_position is None else absolute_position
+        hidden = list(vector)
         for layer, weights in enumerate(self.image.layers):
             norm = rms(hidden, weights["attn_gain"])
             latent = matvec(weights["down"], norm)
@@ -359,6 +362,7 @@ class Target:
                     mixture = [a+b*coefficient for a, b in zip(mixture, routed)]
                 ffn = [round_boundary(value, 24) for value in mixture]
             hidden = [saturate(x+y) for x, y in zip(hidden, ffn)]
+        self.last_raw_hidden = hidden.copy()
         self.last_hidden = rms(hidden, self.image.final_gain)
         return matvec(self.image.embedding, self.last_hidden)
 

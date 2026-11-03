@@ -3,6 +3,8 @@ from fractions import Fraction
 
 from reference import (bf16_to_q16, committed_block, dequantize, encode_ieee,
                        fp8_value, pow2, quantize_group)
+from transformer_reference import (Geometry, Target, WeightImage, exp_q24, fp8_roundtrip,
+                                   matvec, rms, round_boundary, silu, trunc_div)
 
 
 class NumericalReferenceTests(unittest.TestCase):
@@ -56,6 +58,30 @@ class NumericalReferenceTests(unittest.TestCase):
         self.assertEqual(committed_block(0, [1, 2, 3, 4], [1, 2, 3, 4],
                                          4, 5, 11, 12, 99),
                          ([0], 0, False))
+
+    def test_native_tensor_boundaries(self):
+        self.assertEqual(round_boundary(32768), 1)
+        self.assertEqual(round_boundary(-32768), -1)
+        self.assertEqual(round_boundary((1 << 64)-1), 0x7FFFFFFF)
+        self.assertEqual(trunc_div(-7, 3), -2)
+        self.assertEqual(exp_q24(0), 1 << 24)
+        self.assertEqual(exp_q24(-(16 << 16)-1), 0)
+        self.assertEqual(silu(0), 0)
+        self.assertEqual(matvec([[65536, -65536]], [65536, 32768]), [32768])
+        self.assertEqual(rms([0]*8, [65536]*8), [0]*8)
+        self.assertEqual(rms([65536]*8, [65536]*8), [65536]*8)
+        self.assertEqual(fp8_roundtrip([65536, -65536, 0]), [65536, -65536, 0])
+
+    def test_native_fixture_is_nonzero_and_sensitive(self):
+        image = WeightImage(Geometry(layers=2), 17)
+        target = Target(image)
+        baseline = target.process(3)
+        self.assertTrue(any(value != 0 for value in baseline))
+        self.assertGreater(len(set(baseline)), 1)
+        self.assertTrue(any(value for row in target.raw_cache[0] for value in row))
+        changed = WeightImage(Geometry(layers=2), 17)
+        changed.layers[1]["experts"][changed.geometry.experts]["bias"][2][0] += 65536
+        self.assertNotEqual(baseline, Target(changed).process(3))
 
 
 if __name__ == "__main__":

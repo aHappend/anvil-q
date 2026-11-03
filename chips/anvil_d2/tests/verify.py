@@ -11,11 +11,13 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reference import bf16_to_q16, committed_block, dequantize, quantize_group
-from transformer_reference import Geometry, Target, WeightImage, argmax
+from transformer_reference import Geometry, Target, WeightImage, argmax, matvec, rms
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -196,7 +198,8 @@ def run_public_smoke(experiment, boundaries=False):
     experiment.save()
 
 
-def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3)):
+def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3),
+                     override=None, expect_mismatch=False):
     directory = experiment.directory.relative_to(ROOT)
     image = WeightImage(geometry, seed)
     if any(mode & 1 for mode in modes):
@@ -253,6 +256,8 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
     }
     sources = [str(p.relative_to(ROOT)) for pattern in (
         "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
+    if override:
+        sources = [override.get(path, path) for path in sources]
     obj = directory / "target-obj"
     experiment.execute(["verilator", "--version"], "verilator-version")
     experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
@@ -266,14 +271,153 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
         "image_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
     }
     experiment.save()
-    output = experiment.execute([str(obj / "target-sim"),
-                                 "+image=" + str(image_path.relative_to(ROOT)),
-                                 "+expected=" + str(expected_path.relative_to(ROOT)),
-                                 "+absorption=" + str(absorption_path.relative_to(ROOT)),
-                                 "+commands=" + str(commands_path.relative_to(ROOT))],
-                                "target-simulation", 600)
+    try:
+        output = experiment.execute([str(obj / "target-sim"),
+                                     "+image=" + str(image_path.relative_to(ROOT)),
+                                     "+expected=" + str(expected_path.relative_to(ROOT)),
+                                     "+absorption=" + str(absorption_path.relative_to(ROOT)),
+                                     "+commands=" + str(commands_path.relative_to(ROOT))],
+                                    "target-simulation", 1800)
+    except RuntimeError:
+        command = experiment.receipt["commands"][-1]
+        output = (ROOT / command["stdout"]).read_text() + (ROOT / command["stderr"]).read_text()
+        if not expect_mismatch or command.get("timed_out") or not any(
+                error in output for error in (
+                    "TARGET_CACHE_MISMATCH", "TARGET_LOGIT_MISMATCH", "TARGET_TOKEN_MISMATCH")):
+            raise
+        experiment.receipt["results"]["mutant"] = {
+            "rejected_by": "normal independent sequential target/cache scoreboard",
+            "raw_diagnostic": output.strip(),
+        }
+        experiment.save()
+        return
+    if expect_mismatch:
+        raise AssertionError("MTP/cache mutant survived independent target scoreboard")
     experiment.receipt["results"]["target-model"] = {"raw_summary": output.strip()}
     experiment.save()
+
+
+def run_head_model(experiment, override=None, expect_mismatch=False):
+    image = WeightImage()
+    image.add_mtp()
+    rng = random.Random(233)
+    directory = experiment.directory.relative_to(ROOT)
+    images = experiment.directory / "checkpoint-images"
+    images.mkdir()
+    image_path = images / "native-head-weights.txt"
+    image_path.write_text("".join(f"{address:026x} {word:08x}\n"
+                                 for address, word in sorted(image.words.items())))
+    absorption_path = experiment.directory / "head-absorption.txt"
+    absorption_path.write_text("".join(f"{address:026x} {word:08x}\n" for address, word in
+                                      sorted(image.expected_absorption.items())))
+    models = [Target(SimpleNamespace(
+        geometry=replace(image.geometry, layers=1, first_dense=0),
+        embedding=image.embedding, final_gain=image.mtp_native.final_gain,
+        layers=[weights])) for weights in image.mtp_native.layers]
+    vectors = experiment.directory / "head-vectors.txt"
+    with vectors.open("w") as stream:
+        for position in range(1, 6):
+            for head in range(min(position, 4)):
+                token = 1+(position+head) % 5
+                hidden = [rng.randrange(-131072, 131073) for _ in range(8)]
+                gains, projection = image.mtp_projections[head]
+                projected = matvec(projection, [
+                    *rms(hidden, gains[0]), *rms(image.embedding[token], gains[1])])
+                logits = models[head].process_hidden(projected, position)
+                expected = models[head].last_raw_hidden
+                stream.write(f"{head} {token} {position} {argmax(logits)}\n")
+                stream.writelines(f"{a & 0xFFFFFFFF:08x} {b & 0xFFFFFFFF:08x}\n"
+                                  for a, b in zip(hidden, expected))
+    sources = [str(p.relative_to(ROOT)) for pattern in (
+        "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
+    if override:
+        sources = [override.get(path, path) for path in sources]
+    obj = directory / "head-obj"
+    experiment.execute(["verilator", "--version"], "verilator-version")
+    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                        "--top-module", "draft_head_tb", "--Mdir", str(obj),
+                        "-o", "head-sim", *sources, "tests/draft_head_tb.sv"],
+                       "head-compile", 1200)
+    try:
+        output = experiment.execute([str(obj / "head-sim"),
+                                     "+image=" + str(image_path.relative_to(ROOT)),
+                                     "+absorption=" + str(absorption_path.relative_to(ROOT)),
+                                     "+vectors=" + str(vectors.relative_to(ROOT))],
+                                    "head-simulation", 600)
+    except RuntimeError:
+        command = experiment.receipt["commands"][-1]
+        output = (ROOT / command["stdout"]).read_text() + (ROOT / command["stderr"]).read_text()
+        if not expect_mismatch or command.get("timed_out") or not any(
+                error in output for error in ("HEAD_HIDDEN_MISMATCH", "HEAD_TOKEN_MISMATCH")):
+            raise
+        experiment.receipt["results"]["mutant"] = {
+            "rejected_by": "normal independent native-head hidden/token scoreboard",
+            "raw_diagnostic": output.strip(),
+        }
+        experiment.save()
+        return
+    if expect_mismatch:
+        raise AssertionError("MTP alignment mutant survived native-head scoreboard")
+    experiment.receipt["results"]["native-head"] = {
+        "heads": 4, "commands": 14, "seed": 233,
+        "oracle": "independent RMS, concatenation, nonzero MLA, routed/shared experts and tied output",
+        "raw_summary": output.strip(),
+    }
+    experiment.save()
+
+
+def run_alignment_mutant(experiment):
+    path = "rtl/anvil_d2_mtp_projection.sv"
+    original = (ROOT / path).read_text()
+    before, after = "embedding_address ? token : raw_row", "embedding_address ? token+32'd1 : raw_row"
+    if original.count(before) != 1:
+        raise AssertionError("alignment mutation anchor must occur exactly once")
+    mutated = original.replace(before, after)
+    copied = experiment.directory / Path(path).name
+    copied.write_text(mutated)
+    diff_path = experiment.directory / "mutant.diff"
+    diff_path.write_text("".join(difflib.unified_diff(
+        original.splitlines(True), mutated.splitlines(True), fromfile=path,
+        tofile="disposable/" + copied.name)))
+    experiment.receipt["mutation"] = {
+        "defect": "mtp-embedding-alignment",
+        "original_sha256": hashlib.sha256(original.encode()).hexdigest(),
+        "mutated_sha256": hashlib.sha256(mutated.encode()).hexdigest(),
+        "diff": str(diff_path.relative_to(ROOT)),
+    }
+    experiment.save()
+    run_head_model(experiment, {path: str(copied.relative_to(ROOT))}, expect_mismatch=True)
+
+
+def run_target_mutant(experiment, defect):
+    path, before, after = {
+        "causal-mask": (
+            "rtl/anvil_d2_verify_cache.sv",
+            "layer_base+(read_row-first_pos)*CW+read_col",
+            "layer_base+((read_row+32'd1<first_pos+{29'd0,lanes}) ? "
+            "read_row-first_pos+32'd1 : read_row-first_pos)*CW+read_col"),
+        "rejected-kv": (
+            "rtl/anvil_d2_mtp_engine.sv",
+            "kept_lanes<=verified_kept;", "kept_lanes<=target_lanes;"),
+    }[defect]
+    original = (ROOT / path).read_text()
+    if original.count(before) != 1:
+        raise AssertionError(f"{defect} mutation anchor must occur exactly once")
+    mutated = original.replace(before, after)
+    copied = experiment.directory / Path(path).name
+    copied.write_text(mutated)
+    diff_path = experiment.directory / "mutant.diff"
+    diff_path.write_text("".join(difflib.unified_diff(
+        original.splitlines(True), mutated.splitlines(True), fromfile=path,
+        tofile="disposable/" + copied.name)))
+    experiment.receipt["mutation"] = {
+        "defect": defect, "original_sha256": hashlib.sha256(original.encode()).hexdigest(),
+        "mutated_sha256": hashlib.sha256(mutated.encode()).hexdigest(),
+        "diff": str(diff_path.relative_to(ROOT)),
+    }
+    experiment.save()
+    run_target_model(experiment, Geometry(layers=2), modes=(1,),
+                     override={path: str(copied.relative_to(ROOT))}, expect_mismatch=True)
 
 
 def run_numerical_leaf(experiment, leaf, simulator):
@@ -387,6 +531,68 @@ def run_synthesis_probe(experiment):
         "scope": "compact integrated synthesis; not physical timing/PPA or full geometry matrix",
     }
     experiment.save()
+
+
+def run_parameter_probe(experiment):
+    sources = [str(p.relative_to(ROOT)) for pattern in (
+        "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
+    compact = {
+        "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+        "NUM_Q_HEADS": 1, "KV_LORA_RANK": 1, "QK_NOPE_HEAD_DIM": 1,
+        "QK_ROPE_HEAD_DIM": 2, "V_HEAD_DIM": 1, "ROUTED_EXPERTS": 6,
+        "TOP_K": 1, "MOE_INTERMEDIATE_SIZE": 8, "FIRST_DENSE_LAYERS": 1,
+        "VOCAB_SIZE": 4, "MAX_SEQ_LEN": 5, "BANKS": 1, "QUEUE_DEPTH": 1,
+        "TILE_K": 8, "TILE_ROWS": 1,
+    }
+    bounds = {
+        "NUM_LAYERS": (1, 36), "HIDDEN_SIZE": (8, 2048), "INTERMEDIATE_SIZE": (8, 11008),
+        "NUM_Q_HEADS": (1, 16), "KV_LORA_RANK": (1, 512), "QK_NOPE_HEAD_DIM": (1, 128),
+        "QK_ROPE_HEAD_DIM": (2, 64), "V_HEAD_DIM": (1, 128), "ROUTED_EXPERTS": (1, 64),
+        "TOP_K": (1, 6), "SHARED_EXPERTS": (2, 2), "MOE_INTERMEDIATE_SIZE": (8, 1408),
+        "FIRST_DENSE_LAYERS": (0, 1), "VOCAB_SIZE": (4, 151936),
+        "MAX_SEQ_LEN": (1, 32768), "BANKS": (1, 8), "QUEUE_DEPTH": (1, 16),
+        "TILE_K": (8, 128), "TILE_ROWS": (1, 8),
+        "GROUP_SIZE": (128, 128), "MTP_K": (4, 4),
+    }
+    invalid = [{name: value} for name, (low, high) in bounds.items()
+               for value in (low-1, high+1)]
+    invalid += [{"BANKS": 3}, {"HIDDEN_SIZE": 10}, {"INTERMEDIATE_SIZE": 10},
+                {"MOE_INTERMEDIATE_SIZE": 10}, {"QK_ROPE_HEAD_DIM": 3}, {"TILE_K": 10},
+                {"ROUTED_EXPERTS": 1, "TOP_K": 2}, {"MODEL_MODE": 2}]
+    legal = [{"BANKS": banks, "QUEUE_DEPTH": queue}
+             for banks, queue in ((1, 1), (2, 3), (4, 16), (8, 1))]
+    legal += [{"KV_LORA_RANK": rank} for rank in (1, 127, 128, 129, 512)]
+    legal += [{"MAX_SEQ_LEN": 1}, {"VOCAB_SIZE": 7}, {"TOP_K": 6},
+              {"FIRST_DENSE_LAYERS": 0}, {"TILE_K": 128, "TILE_ROWS": 8},
+              {"HIDDEN_SIZE": 2048}, {"NUM_LAYERS": 36}]
+    experiment.execute(["iverilog", "-V"], "iverilog-version")
+    results = []
+    for rejected, cases in ((True, invalid), (False, legal)):
+        for overrides in cases:
+            case = len(results)
+            parameters = {**compact, **overrides}
+            binary = experiment.directory / f"parameters-{case}.vvp"
+            experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "anvil_d2_top",
+                                *(item for name, value in parameters.items()
+                                  for item in ("-P", f"anvil_d2_top.{name}={value}")),
+                                "-o", str(binary.relative_to(ROOT)), *sources],
+                               f"parameter-{case}-compile", 600)
+            try:
+                output = experiment.execute(["vvp", str(binary.relative_to(ROOT))],
+                                            f"parameter-{case}-diagnostic")
+            except RuntimeError:
+                command = experiment.receipt["commands"][-1]
+                output = (ROOT / command["stdout"]).read_text() + (ROOT / command["stderr"]).read_text()
+                if not rejected or command.get("timed_out") or "PARAMETER ERROR" not in output:
+                    raise
+            else:
+                if rejected:
+                    raise AssertionError(f"illegal parameter configuration accepted: {overrides}")
+            results.append({"overrides": overrides,
+                            "observation": "explicit fatal diagnostic" if rejected else
+                                           "integrated elaboration only"})
+            experiment.receipt["results"]["parameters"] = results
+            experiment.save()
 
 
 def run_dequant_mutant(experiment, defect):
@@ -598,7 +804,8 @@ def main():
                                          "fp8-service", "byte-order", "scale-group",
                                          "scale-invalidation", "verdict",
                                          "acceptance-past-mismatch", "oracle", "target-model",
-                                         "public-boundaries"],
+                                         "public-boundaries", "native-head", "mtp-alignment",
+                                         "parameters", "causal-mask", "rejected-kv"],
                         required=True)
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
@@ -624,6 +831,14 @@ def main():
             geometry = (Geometry(layers=2) if args.geometry == "routed" else
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
             run_target_model(experiment, geometry, seed=args.seed)
+        elif args.probe == "native-head":
+            run_head_model(experiment)
+        elif args.probe == "mtp-alignment":
+            run_alignment_mutant(experiment)
+        elif args.probe == "parameters":
+            run_parameter_probe(experiment)
+        elif args.probe in ("causal-mask", "rejected-kv"):
+            run_target_mutant(experiment, args.probe)
         elif args.probe == "synthesis-probe":
             run_synthesis_probe(experiment)
         elif args.probe in ("fp8-bias", "bf16-tie"):
