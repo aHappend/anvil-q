@@ -34,6 +34,18 @@ Executable coverage:
           zero-dequantized affine fixture, every legacy scratch/KV write and logit.
   isolation-smoke: source-only clean directory, no copied reference tree/build
           products, and actual independent compact QK simulation in the copy.
+  integrated-marker: actual IDs 151667/151668, complete 151936-word frames,
+          marker cutoff, deferred resubmission opposing an idle mode override,
+          held commits, exact scratch/KV payloads and generated-token counters.
+  prefill-marker: actual input markers, complete frames, no commit/draft transfer
+          and no generated-token accounting.
+  production-layer / fusion-profile: authored full-extent first-layer comparison
+          and normalization-only experimental clone; production execution remains
+          incomplete after a retained timeout, not a demonstrated overhead result.
+  fusion-compact / layer-parallel-compact: complete independent compact-layer
+          numerical comparisons and measured simulator scheduling diagnostics.
+  component-applicability: explicit source/tool/parameter/artifact assessment of
+          historical long-context and D128 synthesis components, not fresh execution.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
@@ -78,6 +90,7 @@ from reproduction_checks import run_reproduce, run_reproduction_child
 from production_checks import run_layer, run_fusion_profile
 from marker_checks import run_markers
 from component_cache import historical_applicability, latest_marker_build
+from prefill_marker_checks import run_prefill_marker
 from model import Geometry
 import reference
 
@@ -104,9 +117,10 @@ def main():
                                           "production-layer", "fusion-profile",
                                           "fusion-compact", "integrated-marker",
                                           "component-applicability",
-                                          "layer-parallel-compact"))
+                                          "layer-parallel-compact", "prefill-marker"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
-    parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1)
+    parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
+                        help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
     parser.add_argument("--marker", choices=("open", "close"), default="open")
     parser.add_argument("--fault", type=int, choices=tuple(FAULT_CASES), default=1)
     parser.add_argument("--repair-of")
@@ -115,7 +129,11 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "layer-parallel-compact":
+        if args.probe == "prefill-marker":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_prefill_marker(run, opening=args.marker == "open",
+                                         threads=args.sim_threads)
+        elif args.probe == "layer-parallel-compact":
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_layer(run, compact=True, threads=args.sim_threads)
         elif args.probe == "component-applicability":
