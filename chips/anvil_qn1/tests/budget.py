@@ -72,11 +72,16 @@ class Run(BaseRun):
     def finish(self, status, results=None, error=None):
         timer = signal.setitimer(signal.ITIMER_REAL, 0)
         try:
+            retention_allowance = remaining(retention=True)
+            if retention_allowance <= 0:
+                raise BudgetExceeded("whole-check retention deadline exceeded")
+            signal.setitimer(signal.ITIMER_REAL, retention_allowance)
             if remaining() <= 0:
                 status, results, error = "failed", None, "whole-check preparation deadline exceeded"
             super().finish(status, results, error)
             return status
         finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
             if timer[0]:
                 signal.setitimer(signal.ITIMER_REAL, max(0.001, remaining()))
 

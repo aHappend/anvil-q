@@ -143,6 +143,9 @@ def run_mutant(run, name):
         original.splitlines(True), changed.splitlines(True), fromfile=source,
         tofile=paths[source]))
     (run.path / "mutant.delta").write_text(delta)
+    if any(hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != identity["original"]
+           for path, identity in hashes.items()):
+        raise AssertionError("accepted RTL changed before the mutation experiment")
     first_command = len(run.commands)
     try:
         oracle(MutatedSources(run, paths, kind), kind)
@@ -164,6 +167,9 @@ def run_mutant(run, name):
                 "CYCLE_BOUND", "TOKEN_LIVENESS", "MISSING_VECTORS", "OPEN_VECTORS",
                 "READMEM", "cannot open", "No such file")):
             raise RuntimeError(f"{name}: unrelated/non-comparison simulation failure: {error}") from error
+        if any(hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != identity["original"]
+               for path, identity in hashes.items()):
+            raise AssertionError("accepted RTL changed during the mutation experiment")
         result = {"mutant": name, "oracle": kind, "changed_source": source,
                   "source_sha256": hashes, "delta": relative(run.path / "mutant.delta"),
                   "comparison_diagnostics": detected, "checker_exit": simulation["exit_code"],
