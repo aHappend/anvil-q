@@ -272,6 +272,13 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
     if override:
         sources = [override.get(path, path) for path in sources]
     obj = directory / "target-obj"
+    if compiled is not None and (
+            compiled["geometry"] != geometry.__dict__ or
+            compiled["source_sha256"] != experiment.receipt["source_sha256"] or
+            not (ROOT / compiled["binary"]).is_file()):
+        experiment.receipt["rebuilt_stale_prerequisite"] = compiled["receipt"]
+        experiment.save()
+        compiled = None
     if compiled is None:
         experiment.execute(["verilator", "--version"], "verilator-version")
         experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
@@ -282,9 +289,6 @@ def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3
         binary = obj / "target-sim"
     else:
         binary = Path(compiled["binary"])
-        if compiled["geometry"] != geometry.__dict__ or compiled["source_sha256"] != (
-                experiment.receipt["source_sha256"]):
-            raise AssertionError("in-check compiled prerequisite source/geometry mismatch")
         experiment.receipt["compiled_prerequisite"] = compiled
     experiment.receipt["results"]["target-fixtures"] = {
         "seed": seed, "geometry": geometry.__dict__, "modes": list(modes),
@@ -860,6 +864,90 @@ def run_scheduler(experiment, banks=2, queue=3):
     experiment.save()
 
 
+def run_rms(experiment, hidden=2048, simulator="verilator"):
+    directory = experiment.directory.relative_to(ROOT)
+    vectors = experiment.directory / "rms-vectors.txt"
+    with vectors.open("w") as stream:
+        for seed in (17, 89, 233):
+            rng = random.Random(seed)
+            values = [rng.randrange(-131072, 131073) for _ in range(hidden)]
+            gains = [rng.randrange(32768, 98305) for _ in range(hidden)]
+            expected = rms(values, gains)
+            for value, gain, result in zip(values, gains, expected):
+                stream.write(f"{value & 0xFFFFFFFF:08x} {gain:08x} "
+                             f"{result & 0xFFFFFFFF:08x}\n")
+    sources = [str(p.relative_to(ROOT)) for p in sorted(
+        (ROOT / "anvil_d1_reference/rtl").glob("*.sv"))]
+    if simulator == "icarus" and hidden <= 32:
+        experiment.execute(["iverilog", "-V"], "iverilog-version")
+        binary = directory / "rms.vvp"
+        experiment.execute(["iverilog", "-g2012", "-Wall", "-s", "rms_tb",
+                            "-P", f"rms_tb.HIDDEN={hidden}", "-o", str(binary),
+                            *sources, "tests/rms_tb.sv"], "rms-compile")
+        argv = ["vvp", str(binary)]
+    else:
+        experiment.execute(["verilator", "--version"], "verilator-version")
+        obj = directory / "rms-obj"
+        experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                            "--top-module", "rms_tb", "--Mdir", str(obj),
+                            f"-GHIDDEN={hidden}", "-o", "rms-sim", *sources,
+                            "tests/rms_tb.sv"], "rms-compile", 1200)
+        argv = [str(obj / "rms-sim")]
+    output = experiment.execute(argv + ["+vectors=" + str(vectors.relative_to(ROOT))],
+                                "rms-simulation")
+    experiment.receipt["results"]["rms"] = {
+        "hidden": hidden, "seeds": [17, 89, 233], "raw_summary": output.strip(),
+        "oracle": "arbitrary-precision sum, integer square root, reciprocal and Q16 rounding",
+        "scope": "inherited native RMS datapath used by D2; not full-geometry transformer inference",
+    }
+    experiment.save()
+
+
+def run_target_lanes(experiment):
+    directory = experiment.directory.relative_to(ROOT)
+    image = WeightImage(Geometry(layers=2), 233)
+    images = experiment.directory / "checkpoint-images"
+    images.mkdir()
+    image_path = images / "lane-weights.txt"
+    image_path.write_text("".join(f"{address:026x} {word:08x}\n"
+                                 for address, word in sorted(image.words.items())))
+    absorption_path = experiment.directory / "lane-absorption.txt"
+    absorption_path.write_text("".join(f"{address:026x} {word:08x}\n" for address, word in
+                                      sorted(image.expected_absorption.items())))
+    target = Target(image)
+    result_path = experiment.directory / "lane-results.txt"
+    with result_path.open("w") as stream:
+        for token in (1, 2, 3, 4):
+            prediction = argmax(target.process(token))
+            stream.write(f"{prediction:08x}\n")
+            stream.writelines(f"{value & 0xFFFFFFFF:08x}\n"
+                              for value in target.last_raw_hidden)
+    cache_path = experiment.directory / "lane-cache.txt"
+    cache_path.write_text("".join(f"{address:026x} {word:08x}\n" for address, word in
+                                 sorted(target.expected_cache_words().items())))
+    sources = [str(p.relative_to(ROOT)) for pattern in (
+        "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
+    obj = directory / "lanes-obj"
+    experiment.execute(["verilator", "--version"], "verilator-version")
+    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                        "--top-module", "target_lanes_tb", "--Mdir", str(obj),
+                        "-o", "lanes-sim", *sources, "tests/target_lanes_tb.sv"],
+                       "lanes-compile", 1200)
+    output = experiment.execute([str(obj / "lanes-sim"),
+                                 "+image=" + str(image_path.relative_to(ROOT)),
+                                 "+cache=" + str(cache_path.relative_to(ROOT)),
+                                 "+absorption=" + str(absorption_path.relative_to(ROOT)),
+                                 "+results=" + str(result_path.relative_to(ROOT))],
+                                "lanes-simulation")
+    experiment.receipt["results"]["target-lanes"] = {
+        "seed": 233, "geometry": image.geometry.__dict__, "raw_summary": output.strip(),
+        "oracle": "independent sequential target, four distinct tokens, two layers",
+        "scope": "public unit interface: exact hidden/KV/tokens, held results, registered "
+                 "commit/release, simultaneous four-lane query-weight transfers per layer",
+    }
+    experiment.save()
+
+
 def parent_prerequisites(experiment):
     observations = {
         "generational_handoff": (ROOT / "design/GENERATIONAL_HANDOFF.md").is_file(),
@@ -962,7 +1050,7 @@ def run_benchmark(experiment, component):
 
 
 def run_reproduction(experiment):
-    destination = experiment.directory / "clean-project"
+    destination = experiment.directory / ("clean-project-" + uuid.uuid4().hex[:8])
     destination.mkdir()
     copied = {}
     for pattern in ("rtl/*.sv", "anvil_d1_reference/rtl/*.sv", "design/*.md",
@@ -1055,6 +1143,9 @@ def run_suite(experiment, suite):
             component(f"scheduler-b{banks}-q{queue}",
                       lambda e, b=banks, q=queue: run_scheduler(e, b, q))
         run_prefix_matrix(component)
+        for hidden in (8, 64, 2048):
+            component(f"rms-h{hidden}", lambda e, h=hidden: run_rms(e, h))
+        component("causal-four-lanes", run_target_lanes)
     elif suite == "defects":
         component("dequant-control", lambda e: run_dequant(e, "verilator"))
         component("service-control", run_service_probe)
@@ -1104,13 +1195,15 @@ def main():
                                          "acceptance-past-mismatch", "oracle", "target-model",
                                          "public-boundaries", "native-head", "mtp-alignment",
                                          "parameters", "causal-mask", "rejected-kv",
-                                         "scheduler", "public-interrupts", "native-prefixes"])
+                                         "scheduler", "public-interrupts", "native-prefixes",
+                                         "rms", "parent-prerequisites", "target-lanes"])
     parser.add_argument("--simulator", choices=["icarus", "verilator"], default="icarus")
     parser.add_argument("--repair-of", help="Project-relative retained failed receipt")
     parser.add_argument("--geometry", choices=["compact", "routed", "medium"], default="compact")
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--banks", type=int, choices=[1, 2, 4, 8], default=2)
     parser.add_argument("--queue", type=int, choices=[1, 3, 16], default=3)
+    parser.add_argument("--hidden", type=int, choices=[8, 64, 2048], default=2048)
     parser.add_argument("--mode", type=int, action="append", choices=[0, 1, 2, 3])
     parser.add_argument("--mtp-fixture", choices=[
         "random", "reject-first", "prefix0", "prefix1", "prefix2", "prefix3", "prefix4"],
@@ -1157,6 +1250,12 @@ def main():
             run_parameter_probe(experiment)
         elif args.probe == "scheduler":
             run_scheduler(experiment, args.banks, args.queue)
+        elif args.probe == "rms":
+            run_rms(experiment, args.hidden, args.simulator)
+        elif args.probe == "target-lanes":
+            run_target_lanes(experiment)
+        elif args.probe == "parent-prerequisites":
+            run_parent_comparison(experiment)
         elif args.probe in ("causal-mask", "rejected-kv"):
             run_target_mutant(experiment, args.probe)
         elif args.probe == "synthesis-probe":
