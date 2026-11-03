@@ -2,6 +2,8 @@
 """Source-bound independent arithmetic, protocol, decoder and synthesis checks."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import datetime
 import hashlib
 import json
@@ -29,7 +31,7 @@ from benchmarks import (  # noqa: E402
     rms_benchmark, stream_operator_benchmark, projection_benchmark, attention_benchmark,
 )
 from errors import simulate_errors  # noqa: E402
-from compatibility import simulate_compatibility  # noqa: E402
+from compatibility import simulate_compatibility, compatibility_cases  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -82,6 +84,73 @@ class Run:
             shutil.copyfile(source, destination)
         self.versions = set()
         self.build_cache = {}
+
+    def worker(self, name):
+        """Isolate logs, binaries and receipt updates; share only the deadline."""
+        worker = object.__new__(Run)
+        worker.deadline = self.deadline
+        worker.relative = self.relative / f"{name}-{uuid.uuid4().hex[:8]}"
+        worker.path = ROOT / worker.relative
+        worker.path.mkdir(exist_ok=False)
+        worker.receipt = {
+            key: self.receipt[key] for key in (
+                "argv", "cwd", "aggregate_budget_s", "interpreted_process_limit_s",
+                "python_version", "source_sha256",
+            )
+        }
+        worker.receipt.update(
+            started_at=now(), repair_of=self.receipt["repair_of"],
+            source_snapshot=str(self.relative / "sources"),
+            commands=[], comparisons=[],
+        )
+        worker.versions = set()
+        worker.build_cache = {}
+        return worker
+
+    @contextmanager
+    def parallel(self, jobs):
+        """Two compiled workers plus the caller, with ordered, lossless aggregation."""
+        futures = []
+        failures = []
+        caller_error = None
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="compatibility") as pool:
+            for name, function, arguments in jobs:
+                worker = self.worker(name)
+
+                def execute(worker=worker, function=function, arguments=arguments):
+                    error = None
+                    try:
+                        function(worker, *arguments)
+                    except Exception as exc:
+                        error = exc
+                    finally:
+                        worker.finish(error)
+                    if error is not None:
+                        raise error
+
+                futures.append((worker, pool.submit(execute)))
+            try:
+                yield
+            except Exception as exc:
+                caller_error = exc
+            finally:
+                # Wait for every worker even after a failure. Each child command
+                # enforces the same absolute deadline and settles its process group.
+                for worker, future in futures:
+                    try:
+                        future.result()
+                    except Exception as exc:
+                        failures.append(exc)
+                    self.receipt.setdefault("workers", []).append({
+                        "receipt": str(worker.relative / "receipt.json"),
+                        "exit_code": worker.receipt.get("exit_code", 1),
+                    })
+                    for key in ("commands", "comparisons", "build_reuse"):
+                        if key in worker.receipt:
+                            self.receipt.setdefault(key, []).extend(worker.receipt[key])
+        errors = ([caller_error] if caller_error is not None else []) + failures
+        if errors:
+            raise ExceptionGroup("verification workload failures", errors)
 
     def check_deadline(self):
         remaining = self.deadline - time.monotonic()
@@ -670,6 +739,32 @@ def portable(run):
 
 
 def behavior(run, seeds, compact=True):
+    if not compact:
+        return behavior_serial(run, seeds, compact=False)
+    # Start the longest independent cases first. Minimum-geometry seeds stay
+    # together so their identical compiled drivers retain in-run binary reuse.
+    jobs = []
+    for index in reversed(range(len(GEOMETRIES) - 1)):
+        jobs.append((
+            f"compatibility-worker-h{GEOMETRIES[index + 1][1]}",
+            compatibility_cases,
+            (ROOT, compile_and_run, [
+                (GEOMETRIES[index + 1], seeds[index % len(seeds)], 0, (index + 1,)),
+            ]),
+        ))
+    jobs.append((
+        "compatibility-worker-minimum", compatibility_cases,
+        (ROOT, compile_and_run, [
+            (GEOMETRIES[0], seed, enable, None)
+            for seed in seeds for enable in (0, 1)
+        ]),
+    ))
+    with run.parallel(jobs):
+        behavior_serial(run, seeds, compact=True, parallel_compatibility=True)
+    behavior_coverage(run, seeds, compact)
+
+
+def behavior_serial(run, seeds, compact=True, parallel_compatibility=False):
     """Regenerate all functional stimuli and execute both simulator tiers."""
     arithmetic(run, [17], compact=True)
     simulate_commands(run, "epilogue", 17, 2, "iverilog", compile_and_run)
@@ -690,11 +785,11 @@ def behavior(run, seeds, compact=True):
         simulate_commands(run, "epilogue", seed, 256, "verilator", compile_and_run)
         for tile in (1, 3, 16):
             simulate_commands(run, "attention", seed, 64, "verilator", compile_and_run, tile)
-        if compact:
+        if compact and not parallel_compatibility:
             for enable in (0, 1):
                 simulate_compatibility(run, ROOT, compile_and_run, GEOMETRIES[0],
                                        seed, enable, compact=True)
-        else:
+        elif not compact:
             for geometry in GEOMETRIES:
                 for enable in (0, 1):
                     simulate_compatibility(run, ROOT, compile_and_run, geometry, seed, enable)
@@ -710,11 +805,19 @@ def behavior(run, seeds, compact=True):
             simulate_architecture(run, seed, geometry, mx, "verilator",
                                   compile_and_run, ROOT,
                                   tokens=min(3, geometry[-1]) if compact else geometry[-1])
-    if compact:
+    if compact and not parallel_compatibility:
         for index, geometry in enumerate(GEOMETRIES[1:]):
             simulate_compatibility(run, ROOT, compile_and_run, geometry,
                                    seeds[index % len(seeds)], 0, compact=True,
                                    precisions=(index + 1,))
+    if not parallel_compatibility:
+        behavior_coverage(run, seeds, compact)
+
+
+def behavior_coverage(run, seeds, compact):
+    architecture_matrix = [
+        (seed, GEOMETRIES[index % len(GEOMETRIES)]) for index, seed in enumerate(seeds)
+    ] if compact else [(seed, geometry) for seed in seeds for geometry in GEOMETRIES]
     comparisons = run.receipt["comparisons"]
     for seed in seeds:
         tensor_rows = [row for row in comparisons if row.get("kind") == "tensor" and

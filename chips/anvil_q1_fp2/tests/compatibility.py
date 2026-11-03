@@ -8,6 +8,15 @@ from architecture import bf16
 from reference import bits32
 
 
+def compatibility_cases(run, root, compile_and_run, cases):
+    """Keep related seeds on one worker without changing any case stimulus."""
+    for geometry, seed, enable, precisions in cases:
+        simulate_compatibility(
+            run, root, compile_and_run, geometry, seed, enable,
+            compact=True, precisions=precisions,
+        )
+
+
 def compiled_driver(bench, directory, geometry, seed, enable, tokens, precisions, commands):
     """Drive only public pins; keep clocks of the inactive comparator stopped."""
     layers, hidden, intermediate, queries, kvheads, dimension, group, vocab, sequence = geometry
