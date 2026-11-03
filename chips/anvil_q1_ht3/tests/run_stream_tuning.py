@@ -47,6 +47,13 @@ def run(output, args):
                 raise AssertionError(f"official input acquisition failed: {failures}")
             image = checkpoint_image(output, inputs)
             manifest = json.loads((ROOT / image["manifest"]).read_text())
+            images = output / "checkpoint-images"
+            images.mkdir(exist_ok=True)
+            sample_image = images / f"official-image-timing-{uuid.uuid4().hex[:12]}"
+            sample_image.mkdir()
+            payload = sample_image / "image.bin"
+            payload.hardlink_to(ROOT / image["image"])
+            image = dict(image, original_image=image["image"], image=relative(payload))
             directory = output / f"sample-{uuid.uuid4().hex[:12]}"
             directory.mkdir()
             stream = official_stream.run_stream(
