@@ -21,6 +21,7 @@ from integrated_fast import run_fast_integration
 from kv_atomic import run_atomic
 from parameters import run_parameters
 from performance import run_performance
+from projection_boundary import run_projection_boundary
 from sparse import run_sparse
 from speculative import run_spec
 from synthesis import run_synthesis
@@ -196,6 +197,7 @@ def bind_mutation_control(ledger, control, mutant, fields):
 def all_checks(ledger):
     performance_integration = None
     ledger.check("parameter-boundaries", run_parameters)
+    ledger.check("minimum-gqa-projection", run_projection_boundary)
     ledger.check("arithmetic-portability", run_arithmetic, "iverilog", 17, True)
     ledger.check("tile-portability", run_tile, "iverilog", 17, True)
     ledger.check("aligned-ddr-portability", run_sparse, "iverilog", 17, True)
