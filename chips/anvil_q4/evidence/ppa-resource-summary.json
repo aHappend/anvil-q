@@ -1,6 +1,11 @@
 {
   "chip": "Anvil-Q4",
-  "fitter_resources": {},
+  "fitter_resources": {
+    "total_registers": 113834,
+    "block_memory_bits": 4195072,
+    "dsp_blocks": 116,
+    "virtual_pins": 5103
+  },
   "timing": {
     "device": "10AX115N2F45E1SG",
     "netlist_mode": null,
