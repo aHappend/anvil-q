@@ -197,6 +197,7 @@ def run(preparation=False, geometries=None, repair_of=None):
     lowered = directory / "package-lowered.sv"
     lower_packages(lowered)
     records = []
+    minimum_netlist = None
     for index, geometry in enumerate(geometries or (
             (16, 3, 128, 16), (1, 1, 1, 1), (4, 3, 3, 3))):
         banks, queue, tile_k, rows = geometry
@@ -215,8 +216,17 @@ def run(preparation=False, geometries=None, repair_of=None):
             "-s", relative(script)],
                 timeout=1800, repair_of=repair_of)
         records.append(inspect(json.loads(destination.read_text()), geometry))
+        if geometry == (1, 1, 1, 1):
+            minimum_netlist = destination
+    import identity
+    identity_directory = identity.run(preparation)
+    if minimum_netlist is None:
+        raise AssertionError("Synthesis requires the singleton geometry for the top control proof")
+    epoch_directory = identity.top_epoch(minimum_netlist, preparation)
     (directory / "observed.json").write_text(json.dumps({
         "source_sha256": source_hashes(), "geometries": records,
+        "scheduler_boundary_proofs": relative(identity_directory),
+        "top_epoch_boundary_proof": relative(epoch_directory),
         "scope": "generic synthesis only, not device timing or fit"}, indent=2) + "\n")
     print(f"Synthesis receipts: {relative(directory)}", flush=True)
     return directory
