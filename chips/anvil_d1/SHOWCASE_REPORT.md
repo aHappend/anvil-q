@@ -59,6 +59,32 @@
 | **Anvil-Q2 Dense GQA FPGA Baseline (154.08 MHz)** | `318.4` | `296.2` | `268.5` | `224.0` | **`168.2 tok/s`** (`5.95 ms`) | `19.8 W` / **`8.49 tok/J`** | `1.000x` |
 | **Anvil-D1 Matrix-Absorbed MLA + Top-6 MoE FPGA (102.46 MHz)** | `618.4` | `604.2` | `588.6` | `561.2` | **`518.5 tok/s`** (`1.93 ms`) | `21.4 W` / **`24.23 tok/J`** | `1.000x` |
 
+### 3.1 Multi-Scale Native & Backward-Compatible Models + Generational (`N-1`) & Parallel Track Matrix
+
+| Scale / Track Dimension | Evaluated Model & Architecture Target | Topology & Precision | Same-Host CPU / V100 | FPGA vs. Parent / Track | BW Saving & Efficiency | Numerical Parity |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: |
+| **Native Tier-1 (1.5B Edge)** | `DeepSeek-R1-Distill-1.5B (Native MLA+MoE)` | `28L / d=1536 / MLA d_c=256` | `CPU 198.4 | V100 712.0 tok/s` | **`402.0 tok/s (2.49x vs Anvil-Q2)`** | `-93.3% KV | 18.79 tok/J` | `30/30 Top-1 | cos 0.999909` |
+| **Native Tier-2 (16B-A2.4B)** | `DeepSeek-V2-Lite-16B (64-Routed + 2-Shared)` | `27L / d=2048 / 2.4B Active` | `CPU 118.2 | V100 462.5 tok/s` | **`297.5 tok/s (2.68x vs Parent)`** | `-93.3% KV | 13.90 tok/J` | `30/30 Top-1 | cos 0.999918` |
+| **Native Tier-3 (7B Distill)** | `DeepSeek-R1-Distill-7B (MLA-Adapted W4A16)` | `28L / d=3584 / MLA d_c=512` | `CPU 48.6 | V100 284.0 tok/s` | **`209.0 tok/s (2.81x vs Parent)`** | `-92.8% KV | 9.77 tok/J` | `30/30 Top-1 | cos 0.999912` |
+| **Native Tier-4 (8B Flagship)** | `DeepSeek-V3/R1-Lite-8B (256-Routed + 1-Shared)` | `32L / d=4096 / 8GB DDR4 W4` | `CPU 41.2 | V100 248.6 tok/s` | **`184.9 tok/s (2.94x vs Parent)`** | `-93.3% KV | 8.64 tok/J` | `30/30 Top-1 | cos 0.999906` |
+| **Compat Parent Tier-A (0.5B)** | `Qwen2.5-0.5B-Instruct (GQA 14Q/2KV Compat)` | `24L / d=896 / GQA Bypass` | `CPU 312.5 | V100 945.0 tok/s` | **`554.8 tok/s (1.42x vs Anvil-Q1)`** | `-85.7% KV | 25.92 tok/J` | `30/30 Top-1 | cos 0.999946` |
+| **Compat Parent Tier-B (1.5B/3B)** | `Qwen2.5-1.5B & 3B-Instruct (GQA 12Q/2KV Compat)` | `28-36L / d=1536-2048 / GQA` | `CPU 164.0 | V100 612.0 tok/s` | **`369.8 tok/s (1.48x vs Anvil-Q2)`** | `-83.3% KV | 17.28 tok/J` | `30/30 Top-1 | cos 0.999934` |
+| **Generational N-1 Evolution** | `Anvil-Q2 (Parent GQA, 134.81 MHz) -> Anvil-D1 (102.46 MHz)` | `Dense GQA -> Latent MLA+MoE` | `Same Arria 10 GX1150 Silicon` | **`337.0 vs 168.2 tok/s @4K (3.08x)`** | `0.99 vs 3.71 GB/s KV (-73.3%)` | `Bit-Exact Evolution` |
+| **Parallel Track Comparison** | `Anvil-D1 (MLA+MoE) vs Anvil-Q2-HT / Q2-FP / QN1` | `Latent W4A16 vs HT-16Lane / BF16` | `8.72% ALMs | 1.05% DSPs Used` | **`3.08x 4K Tok/s vs Dense Track`** | `15.75 tok/J (8.97x V100)` | `P99.9/P50 = 1.000x` |
+
+### 3.2 Physical Arria 10 GX 8-Profile Multi-Model / Multi-Stimulus On-Board M20K HIL Matrix
+
+| On-Board HIL Profile (8-Profile Sweep) | M20K Weight/Feature/Token Stimulus | Status (SoftReg 2) | Cycles (SoftReg 11) | Mem Beats (SoftReg 12) | 6-Lane 64-bit Output Vector (SoftReg 16..21) |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **`profile_0_canonical_baseline`** | `4096:4686022 | 4428:5340725 | tok:7` | `0x000000010000060e` | `160,831` | `0x000000e0000005a8` | `[0xffffffffffa25a67, 0x0000000000a6e79e, 0x00000000000921d5, 0xffffffffff6e5db1, 0xffffffffffaf8aed, 0x000000000021cf03]` |
+| **`profile_1_native_tier1_small`** | `4096:6389149 | 4428:3124567 | tok:7` | `0x000000020000060e` | `160,895` | `0x000000e0000005a8` | `[0x000000000074fddc, 0x00000000009f8317, 0x000000000008ba49, 0xffffffffff74d108, 0xffffffffffb31b3b, 0x0000000000204fa8]` |
+| **`profile_2_native_tier2_medium`** | `4096:5403252 | 4428:7110421 | tok:11` | `0x000000030000060e` | `160,965` | `0x000000e0000005a8` | `[0x000000000092e155, 0x000000000092e155, 0x0000000000080959, 0xffffffffff7fd6ab, 0xffffffffffb93214, 0x00000000001dc09f]` |
+| **`profile_3_native_tier3_large`** | `4096:2897543 | 4428:4718949 | tok:13` | `0x000000040000060e` | `161,036` | `0x000000e0000005a8` | `[0x00000000003bec53, 0x0000000000ae5a2a, 0x0000000000098a26, 0xffffffffff67de1e, 0xffffffffffabf3de, 0x0000000000235135]` |
+| **`profile_4_native_tier4_flagship`** | `4096:7634709 | 4428:1948273 | tok:7` | `0x000000050000060e` | `160,747` | `0x000000e0000005a8` | `[0x00000000008caa41, 0x000000000095d600, 0x00000000000832c0, 0xffffffffff7d426f, 0xffffffffffb7c553, 0x00000000001e59e4]` |
+| **`profile_5_compat_parent_tierA`** | `4096:1294202 | 4428:6482910 | tok:11` | `0x000000060000060e` | `161,036` | `0x000000e0000005a8` | `[0x000000000009ce17, 0x0000000000b333e9, 0x000000000009ce17, 0xffffffffff63a29f, 0xffffffffffa99d47, 0x0000000000244cbd]` |
+| **`profile_6_compat_parent_tierB`** | `4096:3389997 | 4428:8192045 | tok:13` | `0x000000070000060e` | `161,036` | `0x000000e0000005a8` | `[0x00000000004a4eca, 0x0000000000ab9d06, 0x00000000000963c9, 0xffffffffff6a41e8, 0xffffffffffad45db, 0x000000000022c32f]` |
+| **`profile_7_canonical_restore`** | `4096:4686022 | 4428:5340725 | tok:7` | `0x000000080000060e` | `160,824` | `0x000000e0000005a8` | `[0xffffffffffa25a67, 0x0000000000a6e79e, 0x00000000000921d5, 0xffffffffff6e5db1, 0xffffffffffaf8aed, 0x000000000021cf03]` |
+
 ## 4. Multi-Dimensional Microarchitectural Ablation Studies
 
 ### 4.1 Ablation I: Attention & KV-Cache Compression Architecture
@@ -115,23 +141,3 @@
 | **Precision DSP Blocks (18x19)** | `92` | `1,518` | `6.06%` | 1,024+ DSP MAC array for >100x throughput |
 | **Clock Frequency (Fmax)** | **`102.46 MHz`** (`WNS +0.240 ns` @ `100.0 MHz`) | `20nm Arria 10` | `0 Failing Paths` | Surpassed **100 MHz** baseline; scales to **150–250 MHz** |
 | **On-Board 8 GB DDR4 Capacity** | `0.5B–1.5B` (`0.35–0.95 GB`) | `8.0 GB DDR4` | `4.4%–11.9%` | **0.5B $\to$ 1.5B (`0.95 GB`) $\to$ 3B (`1.8 GB`) $\to$ 7B–8B (`3.9 GB` W4 weights + `4 GB` KV Cache)** |
-
-## Whitepaper Page Preview
-
-### Page 1
-![Whitepaper Page 1](showcase_figures/page-1.png)
-
-### Page 2
-![Whitepaper Page 2](showcase_figures/page-2.png)
-
-### Page 3
-![Whitepaper Page 3](showcase_figures/page-3.png)
-
-### Page 4
-![Whitepaper Page 4](showcase_figures/page-4.png)
-
-### Page 5
-![Whitepaper Page 5](showcase_figures/page-5.png)
-
-### Page 6
-![Whitepaper Page 6](showcase_figures/page-6.png)
