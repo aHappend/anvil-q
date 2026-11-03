@@ -16,7 +16,7 @@ import numpy as np
 
 from execution import (ROOT, clean_objects, execute, hashes, relative, remaining,
                        timestamp)
-from retention import digest
+from retention import artifacts_intact, digest, execution_logs_intact
 
 
 TOP = "anvil_q1_ht3_top"
@@ -49,10 +49,15 @@ def compiled(output, parameters=None):
         if not path.is_file() or not binary.is_file():
             continue
         record = json.loads(path.read_text())
-        if record.get("identity") != identity or not intact(record):
+        required = [relative(p) for p in (binary, candidate/"compile-obj/driver.cpp",
+                    *[candidate/f"compile.{suffix}" for suffix in
+                      ("receipt.json", "stdout.txt", "stderr.txt")])]
+        if (record.get("identity") != identity
+                or not artifacts_intact(record.get("artifact_sha256", {}), required)):
             continue
         receipt = json.loads((ROOT/record["compile_receipt"]).read_text())
-        if receipt.get("exit") == 0 and not receipt.get("timed_out"):
+        if (receipt.get("exit") == 0 and not receipt.get("timed_out")
+                and execution_logs_intact(receipt)):
             return binary, path
     directory = cache/f"official-stream-{key}-{uuid.uuid4().hex[:12]}"
     objects = directory/"compile-obj"
@@ -78,9 +83,7 @@ def compiled(output, parameters=None):
 
 
 def intact(record):
-    return bool(record.get("artifact_sha256")) and all(
-        (ROOT/p).is_file() and digest(ROOT/p) == sha
-        for p, sha in record.get("artifact_sha256", {}).items())
+    return artifacts_intact(record.get("artifact_sha256", {}))
 
 
 def plan_bytes(descriptors, memory_bytes, tokens, scored, vocab):

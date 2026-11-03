@@ -62,6 +62,7 @@ def bundle(output, name, mutation=None):
 
 
 def trial(output, directory, name, case):
+    name = f"{name}-{uuid.uuid4().hex[:12]}"
     child_path = f"evidence/case-{uuid.uuid4().hex[:12]}"
     argv = ["python3", "tests/run_mutation_case.py", "--case", case, "--output", child_path]
     tool_error = None

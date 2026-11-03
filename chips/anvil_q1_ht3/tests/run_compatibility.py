@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import (ROOT, clean_objects, execute, failure_details, hashes,
                        nested_outcomes, relative, remaining, timestamp)
 from reference import convert, encode, float_bits, float_value
-from retention import validated_execution
+from retention import execution_logs_intact, validated_execution
 
 
 def logit_check(actual, reference):
@@ -233,11 +233,13 @@ def compiled(geometry=None, performance=False):
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
     for directory in sorted(cache.glob(f"inference-{key}-*")):
         binding, binary = directory/"binding.json", directory/"compile-obj/Vinference_tb"
-        if not binding.is_file() or not binary.is_file():
+        if (not binding.is_file() or not binary.is_file()
+                or not (directory/"compile.receipt.json").is_file()):
             continue
         record = json.loads(binding.read_text())
         receipt = json.loads((directory/"compile.receipt.json").read_text())
         if (record["identity"] == identity and receipt["exit"] == 0 and not receipt["timed_out"]
+                and execution_logs_intact(receipt)
                 and record["binary_sha256"] == hashlib.sha256(binary.read_bytes()).hexdigest()):
             return binary, relative(binding)
     directory = cache/f"inference-{key}-{uuid.uuid4().hex[:12]}"

@@ -20,7 +20,7 @@ import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
 from yosys_frontend import materialize
-from retention import digest
+from retention import artifacts_intact, digest, execution_logs_intact
 
 
 COMPACT = {
@@ -100,9 +100,7 @@ def retained_job(identifier, top, parameters, mapped, script, frontend, version)
                           "synthesis.stderr.txt", "synthesis.ys")]
             if not all(path.is_file() for path in artifacts):
                 continue
-            if any(receipt.get("artifact_sha256", {}).get(receipt[key]) !=
-                   hashlib.sha256((ROOT / receipt[key]).read_bytes()).hexdigest()
-                   for key in ("stdout", "stderr")):
+            if not execution_logs_intact(receipt):
                 continue
             counts = checked_account(json.loads(artifacts[0].read_text()), top,
                                      identifier, mapped)
@@ -286,11 +284,13 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             if any(receipt.get("source_sha256", {}).get(path) != sha
                    for path, sha in hashes().items() if path.startswith("design/")):
                 continue
-            if not all((ROOT / path).is_file() and digest(ROOT / path) == sha
-                       for path, sha in record["artifact_sha256"].items()):
+            required = [relative(candidate / name) for name in
+                        ("synthesis.ys", "statistics.json", "netlist.json", "checkpoint.il")]
+            if not artifacts_intact(record.get("artifact_sha256", {}), required):
                 continue
-            if any(receipt.get("artifact_sha256", {}).get(receipt[k]) !=
-                   digest(ROOT / receipt[k]) for k in ("stdout", "stderr")):
+            if not execution_logs_intact(receipt):
+                print(f"CACHE_REJECT {relative(candidate)} missing or changed raw logs",
+                      flush=True)
                 continue
             retained = candidate
             break

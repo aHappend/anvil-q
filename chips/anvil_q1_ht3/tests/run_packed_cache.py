@@ -87,6 +87,11 @@ def run(output):
                         r"attention_outputs=(\d+)", text)
     if not summary or tuple(map(int, (summary[1], summary[2], summary[8]))) != (4, 2048, 512):
         raise AssertionError("incomplete packed-cache observations")
+    faults = re.findall(r"^SUMMARY packed_faults dma_errors=(\d+) abort_drains=(\d+) "
+                        r"reset_debts=(\d+) poisoned_rows=(\d+) flush_invalidations=(\d+)$",
+                        text, re.MULTILINE)
+    if len(faults) != 1 or tuple(map(int, faults[0])) != (4, 4, 4, 4, 4):
+        raise AssertionError("missing packed fault/publication observations")
     actual = {fmt: [] for fmt in range(4)}
     for line in observations.read_text().splitlines():
         fmt, index, bits = line.split()
@@ -101,7 +106,9 @@ def run(output):
             metric = vector_check(actual[fmt][start:start+64], expected[fmt][start:start+64])
             vectors_checked.append(dict(format=fmt, head=head, metric=metric))
     return dict(status="passed", raw_summary=summary[0], vectors=vectors_checked,
-                coverage_limits=["packed-write failure/abort/reset and prefix-publication matrix"])
+                faults=dict(zip(("dma_errors", "abort_drains", "reset_debts",
+                                 "poisoned_rows", "flush_invalidations"), map(int, faults[0]))),
+                coverage_limits=["integrated quantized-cache prefix-publication matrix"])
 
 
 def main():

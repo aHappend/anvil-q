@@ -136,7 +136,7 @@ def fixture(directory, geometry, fmt, seed):
     return vectors, expected
 
 
-def run(output, case=None):
+def run(output, case=None, selected_format=None, fresh=False):
     rows = []
     for name, geometry in CASES.items():
         if case is not None and name != case:
@@ -147,6 +147,8 @@ def run(output, case=None):
             rows.append(dict(id=name, status="failed", phase="compile", error=str(exc)))
             continue
         for fmt, seed in ((0, 17), (1, 89)):
+            if selected_format is not None and fmt != selected_format:
+                continue
             directory = output/f"{name}-format{fmt}-seed{seed}-{uuid.uuid4().hex[:8]}"
             directory.mkdir()
             try:
@@ -154,6 +156,8 @@ def run(output, case=None):
                 candidates = [p for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation")
                               for p in parent.glob(
                                   f"*/*/{name}-format{fmt}-seed{seed}-*/simulation.receipt.json")]
+                if fresh:
+                    candidates = []
                 checked = None
                 for path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
                     checked = validated_simulation(path, binary, binding, vectors, fmt, seed,
@@ -176,18 +180,24 @@ def run(output, case=None):
                 rows.append(dict(id=name, geometry=geometry, directory=relative(directory),
                                  reused=reused, simulation_receipt=relative(simulation_receipt),
                                  artifact_sha256=artifacts, **observation))
+                with (directory/"case.json").open("x") as out:
+                    json.dump(rows[-1], out, indent=2)
             except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                 rows.append(dict(id=name, geometry=geometry, format=fmt, seed=seed,
                                  directory=relative(directory), status="failed", error=str(exc)))
     return dict(status="passed" if rows and all(row["status"]=="passed" for row in rows)
                 else "failed", runs=rows,
-                coverage_limits=["selected functional geometry only"] if case else [])
+                coverage_limits=(["selected functional geometry/format only"]
+                                 if case or selected_format is not None else []))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--case", choices=CASES)
+    parser.add_argument("--format", type=int, choices=(0, 1))
+    parser.add_argument("--fresh", action="store_true",
+                        help="restart selected simulations, never restore partial execution")
     args = parser.parse_args()
     output = ROOT/args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -195,7 +205,7 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     try:
-        result = run(output, args.case)
+        result = run(output, args.case, args.format, args.fresh)
     except (RuntimeError, AssertionError, ValueError, OSError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:

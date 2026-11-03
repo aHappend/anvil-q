@@ -11,7 +11,7 @@ import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import (ROOT, ExecutionFailure, clean_objects, execute, hashes,
                        relative, remaining, timestamp)
-from retention import digest
+from retention import digest, validated_execution
 from run_compatibility import check_case, compiled, fixture
 
 
@@ -52,57 +52,21 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
     old pass labels are not used. Regenerated input bytes, simulator/binary,
     source hashes and raw diagnostics must match before the current oracle runs.
     """
-    record = json.loads(path.read_text())
-    current = hashes()
-    build = json.loads((ROOT/binding).read_text())
-    compile_path = ROOT/build["compile_receipt"]
-    if not compile_path.is_file():
+    validated = validated_execution(path, binary, binding, simulation_sources(name, monitored),
+                                    [vectors], [f"+seed={seed}"])
+    if validated is None:
         return None
-    compile_record = json.loads(compile_path.read_text())
-    if (compile_record.get("exit") != 0 or compile_record.get("timed_out")
-            or compile_record.get("tool_version_exit") != 0
-            or compile_record.get("tool_version", "").strip() != build["identity"]["tool_version"]
-            or any(compile_record.get("source_sha256", {}).get(p) != current[p]
-                   or build["identity"]["source_sha256"].get(p) != current[p]
-                   for p in simulation_sources(name, monitored))):
-        return None
-    argv = record.get("argv", [])
-    if (record.get("exit") != 0 or record.get("timed_out")
-            or record.get("tool_version_exit") != 0
-            or record.get("tool_version", "").strip() != build["identity"]["tool_version"]
-            or len(argv) != 4 or argv[0] != relative(binary)
-            or argv[3] != f"+seed={seed}"
-            or digest(binary) != build["binary_sha256"]
-            or any(record.get("source_sha256", {}).get(p) != current[p]
-                   for p in simulation_sources(name, monitored))):
-        return None
+    text, artifacts = validated
     directory = path.parent
-    if (argv[1] != f"+vectors={relative(directory/'vectors.txt')}"
-            or argv[2] != f"+observations={relative(directory/'observations.txt')}"
-            or not (directory/"vectors.txt").is_file()
-            or digest(directory/"vectors.txt") != digest(vectors)
-            or not (directory/"observations.txt").is_file()):
-        return None
-    for execution in (record, compile_record):
-        for key in ("stdout", "stderr"):
-            artifact = ROOT/execution[key]
-            if (not artifact.is_file()
-                    or execution.get("artifact_sha256", {}).get(execution[key]) != digest(artifact)):
-                return None
-    checked = check_case(directory, (ROOT/record["stdout"]).read_text(),
-                         binding, fmt, seed, expected, vocab=vocab)
+    checked = check_case(directory, text, binding, fmt, seed, expected, vocab=vocab)
     if monitored:
         checked["transitions"] = transition_observations(
-            (ROOT/record["stdout"]).read_text(),
+            text,
             json.loads((vectors.parent/"image-manifest.json").read_text()),
             len(expected))
         checked["scheduler_telemetry"] = scheduler_observations(
-            (ROOT/record["stdout"]).read_text(), len(expected))
-    artifacts = [path, directory/"vectors.txt", directory/"observations.txt",
-                 ROOT/record["stdout"], ROOT/record["stderr"], ROOT/binding,
-                 compile_path, ROOT/compile_record["stdout"], ROOT/compile_record["stderr"],
-                 binary]
-    return checked, {relative(p): digest(p) for p in artifacts}
+            text, len(expected))
+    return checked, artifacts
 
 
 def performance_case(output, name, binary, binding, fmt, seed):

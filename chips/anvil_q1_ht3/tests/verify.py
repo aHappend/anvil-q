@@ -49,6 +49,12 @@ SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
                  "integrated_geometry": 1500,
                  "mutations": 420, "stream_checkpoint": 360,
                  "benchmarks": 1800, "performance": 900}
+MINIMUM_ALLOCATIONS = {
+    "reproduction": REPRODUCTION_BUDGET, "integrated_geometry": 360,
+    "parameters": 240, "mutations": 240, "stream_checkpoint": 300,
+    "benchmarks": 360, "performance": 300, "compatibility": 300,
+    "packed_cache": 120, "attention": 180, "attention_timing": 90,
+}
 
 
 def dependencies(script):
@@ -117,7 +123,7 @@ def retained_epilogue():
                     if p.is_file() and p.suffix in (".json", ".txt")})
 
 
-def child(identifier, argv, output, budget=None, versions=None, reserve=0):
+def child(identifier, argv, output, budget=None, versions=None, reserve=0, minimum=0):
     if versions is not None:
         cached = find_result(["python3", *argv], dependencies(argv[0]), versions,
                              allow_failure=identifier.startswith("epilogue-seed"))
@@ -132,6 +138,11 @@ def child(identifier, argv, output, budget=None, versions=None, reserve=0):
     allocation = max(0, float(deadline) - time.time() - reserve)
     if budget is not None:
         allocation = min(allocation, budget)
+    if allocation < minimum:
+        return dict(id=identifier, status="not_started",
+                    failure_kind="execution_budget_unstarted", available_s=allocation,
+                    minimum_s=minimum,
+                    error="insufficient useful cold-work allocation; no subprocess launched")
     os.environ["HT3_CHECK_DEADLINE"] = str(time.time() + allocation)
     try:
         execute(["python3", *argv, "--output", relative(directory)],
@@ -264,11 +275,12 @@ def schedule(has_retained_epilogue=False):
         argv = [f"tests/run_{identifier}.py"]
         if identifier == "attention":
             argv.append("--compact")
-        jobs.append((identifier, argv, SUITE_BUDGETS[identifier], 30))
+        jobs.append((identifier, argv, SUITE_BUDGETS[identifier],
+                     MINIMUM_ALLOCATIONS.get(identifier, 60)))
     for identifier, _, _, _ in JOBS:
         jobs.append((f"synthesis-{identifier}",
                      ["tests/run_synthesis.py", "--job", identifier],
-                     JOB_BUDGETS[identifier], min(JOB_BUDGETS[identifier], 60)))
+                     JOB_BUDGETS[identifier], JOB_BUDGETS[identifier]))
     return jobs
 
 
@@ -294,15 +306,31 @@ def main():
             rows.append(old)
         synthesis_rows = []
         jobs = schedule(old is not None)
-        for index, (identifier, argv, budget, _) in enumerate(jobs):
-            reserve = SETTLEMENT_RESERVE + sum(job[3] for job in jobs[index+1:])
+        pending = []
+        for identifier, argv, budget, minimum in jobs:
+            cached = (find_result(["python3", *argv], dependencies(argv[0]), versions,
+                                  allow_failure=identifier.startswith("epilogue-seed"))
+                      if identifier != "reproduction" else None)
+            if cached is None:
+                pending.append((identifier, argv, budget, minimum))
+                continue
+            result = cached.pop("result")
+            row = dict(id=identifier, status=("incomplete" if result.get("coverage_limits")
+                                             else result["status"]), reused=True,
+                       coverage_limits=result.get("coverage_limits", []),
+                       failures=result.get("failures", []), **cached)
+            (synthesis_rows if identifier.startswith("synthesis-") else rows).append(row)
+        # Do not reserve fictional 15/30/60-second cold compilations. Reproduction
+        # is always fresh; completed cases in the remaining suites resume separately.
+        for identifier, argv, budget, minimum in pending:
+            reserve = SETTLEMENT_RESERVE
             if not (ROOT/argv[0]).is_file():
                 row = dict(id=identifier, status="not_implemented",
                            requirement=OBLIGATIONS.get(identifier, identifier))
             else:
                 row = child(identifier, argv, output, budget=budget,
                             versions=versions if identifier != "reproduction" else None,
-                            reserve=reserve)
+                            reserve=reserve, minimum=minimum)
             (synthesis_rows if identifier.startswith("synthesis-") else rows).append(row)
         rows.append(dict(id="synthesis", status="passed" if all(
             row["status"] == "passed" for row in synthesis_rows) else "failed",

@@ -15,6 +15,24 @@ def digest(path):
     return value.hexdigest()
 
 
+def artifacts_intact(bindings, required=()):
+    """Reclaimed artifacts invalidate a cache candidate, not the current run."""
+    if not bindings or any(path not in bindings for path in required):
+        return False
+    for path, sha in bindings.items():
+        artifact = ROOT / path
+        artifact.resolve().relative_to(ROOT)
+        if not artifact.is_file() or digest(artifact) != sha:
+            return False
+    return True
+
+
+def execution_logs_intact(record):
+    paths = [record.get(key) for key in ("stdout", "stderr")]
+    return (all(isinstance(path, str) for path in paths)
+            and artifacts_intact(record.get("artifact_sha256", {}), paths))
+
+
 def normalize_argv(argv):
     argv = list(argv)
     if "--output" in argv:
