@@ -199,6 +199,33 @@ def reconcile_coverage(rows):
         attention["status"] = "passed"
 
 
+def schedule(has_retained_epilogue=False):
+    jobs = []
+    for suite in ("primitive", "quantizer"):
+        for simulator, seed in [("icarus", 17), *[("verilator", s) for s in SEEDS]]:
+            jobs.append((f"{suite}-{simulator}-seed{seed}",
+                         ["tests/run_unit.py", "--suite", suite, "--simulator", simulator,
+                          "--seed", str(seed)], 120 if simulator == "icarus" else 90, 15))
+    for seed in SEEDS:
+        if seed != 17 or not has_retained_epilogue:
+            jobs.append((f"epilogue-seed{seed}",
+                         ["tests/run_epilogue.py", "--seed", str(seed)], 90, 15))
+    for identifier in OBLIGATIONS:
+        if identifier in ("synthesis", "reproduction"):
+            continue
+        argv = [f"tests/run_{identifier}.py"]
+        if identifier == "attention":
+            argv.append("--compact")
+        jobs.append((identifier, argv, SUITE_BUDGETS[identifier], 30))
+    for identifier, _, _, _ in JOBS:
+        jobs.append((f"synthesis-{identifier}",
+                     ["tests/run_synthesis.py", "--job", identifier],
+                     JOB_BUDGETS[identifier], min(JOB_BUDGETS[identifier], 60)))
+    jobs.append(("reproduction", ["tests/run_reproduction.py"],
+                 REPRODUCTION_RESERVE, REPRODUCTION_RESERVE))
+    return jobs
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="evidence/l1")
@@ -219,50 +246,21 @@ def main():
         old = retained_epilogue()
         if old is not None:
             rows.append(old)
-        for suite in ("primitive", "quantizer"):
-            rows.append(child(f"{suite}-icarus-seed17",
-                              ["tests/run_unit.py", "--suite", suite,
-                               "--simulator", "icarus", "--seed", "17"], output,
-                              budget=120, versions=versions,
-                              reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
-            for seed in SEEDS:
-                rows.append(child(f"{suite}-verilator-seed{seed}",
-                                  ["tests/run_unit.py", "--suite", suite,
-                                   "--simulator", "verilator", "--seed", str(seed)], output,
-                                  budget=90, versions=versions,
-                                  reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
-        for seed in SEEDS:
-            if seed == 17 and old is not None:
-                continue
-            rows.append(child(f"epilogue-seed{seed}",
-                              ["tests/run_epilogue.py", "--seed", str(seed)], output,
-                              budget=90, versions=versions,
-                              reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
-        for identifier, requirement in OBLIGATIONS.items():
-            if identifier in ("synthesis", "reproduction"):
-                continue
-            script = f"tests/run_{identifier}.py"
-            if (ROOT / script).is_file():
-                rows.append(child(identifier, [script, "--compact"] if identifier == "attention"
-                                  else [script], output,
-                                  budget=SUITE_BUDGETS[identifier], versions=versions,
-                                  reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE))
-            else:
-                rows.append(dict(id=identifier, status="not_implemented",
-                                 requirement=requirement))
         synthesis_rows = []
-        for index, (identifier, _, _, _) in enumerate(JOBS):
-            later_reserve = sum(min(JOB_BUDGETS[name], 60)
-                                for name, _, _, _ in JOBS[index + 1:])
-            synthesis_rows.append(child(
-                f"synthesis-{identifier}", ["tests/run_synthesis.py", "--job", identifier],
-                output, budget=JOB_BUDGETS[identifier], versions=versions,
-                reserve=REPRODUCTION_RESERVE + SETTLEMENT_RESERVE + later_reserve))
+        jobs = schedule(old is not None)
+        for index, (identifier, argv, budget, _) in enumerate(jobs):
+            reserve = SETTLEMENT_RESERVE + sum(job[3] for job in jobs[index+1:])
+            if not (ROOT/argv[0]).is_file():
+                row = dict(id=identifier, status="not_implemented",
+                           requirement=OBLIGATIONS.get(identifier, identifier))
+            else:
+                row = child(identifier, argv, output, budget=budget,
+                            versions=versions if identifier != "reproduction" else None,
+                            reserve=reserve)
+            (synthesis_rows if identifier.startswith("synthesis-") else rows).append(row)
         rows.append(dict(id="synthesis", status="passed" if all(
             row["status"] == "passed" for row in synthesis_rows) else "failed",
                          jobs=synthesis_rows))
-        rows.append(child("reproduction", ["tests/run_reproduction.py"], output,
-                          budget=REPRODUCTION_RESERVE, reserve=SETTLEMENT_RESERVE))
         reconcile_coverage(rows)
     except (OSError, ValueError, AssertionError) as exc:
         rows.append(dict(id="aggregate", status="failed",
@@ -274,11 +272,9 @@ def main():
         json.dump(summary, out, indent=2)
         out.write("\n")
     receipt.update(end=timestamp(), exit=0 if status == "passed" else 1,
-                   timed_out=time.time()-start >= CHECK_SECONDS or any(
-                       json.loads(p.read_text()).get("timed_out", False)
-                       for p in output.rglob("*.json")
-                       if p.name == "receipt.json" or p.name.endswith(".receipt.json")),
-                   result=relative(output / "result.json"))
+                   result=relative(output / "result.json"), **nested_outcomes(output))
+    receipt["timed_out"] = (time.time()-start >= CHECK_SECONDS
+                            or receipt["nested_timed_out"] or receipt["budget_exhausted"])
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
         out.write("\n")

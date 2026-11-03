@@ -76,6 +76,9 @@ def failure_details(exc):
                           or record.get("timeout", 0) > 0)
     return dict(failure_kind=("execution_budget_unstarted" if not launched
                               else "execution_timeout" if exc.timed_out
+                              else "nested_execution_budget" if (
+                                  record.get("nested_timed_out")
+                                  or record.get("budget_exhausted"))
                               else "simulation_or_tool_failure"),
                 process_timed_out=bool(exc.timed_out and launched), launched=launched)
 
@@ -168,7 +171,9 @@ def execute(argv, output, stem, version_argv, root=ROOT):
     if "--output" in argv:
         nested_directory = root/argv[argv.index("--output")+1]
         if nested_directory.is_dir():
-            record.update(nested_outcomes(nested_directory))
+            outcomes = nested_outcomes(nested_directory)
+            outcomes["budget_exhausted"] |= record["budget_exhausted"]
+            record.update(outcomes)
     with receipt.open("x") as out:
         json.dump(record, out, indent=2)
         out.write("\n")

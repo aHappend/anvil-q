@@ -39,7 +39,43 @@ def validated_execution(path, binary, binding, sources, inputs, options):
     identity = build["identity"]
     if digest(binary) != build["binary_sha256"]:
         return None
-    expected_argv = [relative(binary), f"+vectors={relative(directory/inputs[0].name)}",
+    executions = [record, compilation]
+    artifacts = [path, ROOT/binding, binary, compile_path, directory/"observations.txt",
+                 *[directory/p.name for p in inputs]]
+    argv = record.get("argv", [])
+    if not argv:
+        return None
+    executed_binary = argv[0]
+    if executed_binary != relative(binary):
+        # A reclaimed executable may be rebuilt at a new path, but only identical
+        # bytes, sources, parameters, tools and compile arguments permit reuse.
+        original_binary = ROOT/executed_binary
+        original_binary.resolve().relative_to(ROOT)
+        original_binding = original_binary.parent.parent/"binding.json"
+        if (original_binary.parent.name != "compile-obj"
+                or original_binary.name != binary.name or not original_binding.is_file()):
+            return None
+        original_build = json.loads(original_binding.read_text())
+        original_compile = ROOT/original_build["compile_receipt"]
+        if (original_build.get("identity") != identity
+                or original_build.get("binary_sha256") != build["binary_sha256"]
+                or not original_compile.is_file()):
+            return None
+        original_record = json.loads(original_compile.read_text())
+        def compile_arguments(execution):
+            arguments = list(execution.get("argv", []))
+            if "--Mdir" in arguments:
+                arguments[arguments.index("--Mdir")+1] = "<compile-output>"
+            return arguments
+        if compile_arguments(original_record) != compile_arguments(compilation):
+            return None
+        if original_binary.is_file():
+            if digest(original_binary) != build["binary_sha256"]:
+                return None
+            artifacts.append(original_binary)
+        artifacts.extend((original_binding, original_compile))
+        executions.append(original_record)
+    expected_argv = [executed_binary, f"+vectors={relative(directory/inputs[0].name)}",
                      f"+observations={relative(directory/'observations.txt')}", *options]
     if len(inputs) > 1:
         expected_argv.append(f"+batch={relative(directory/inputs[1].name)}")
@@ -49,9 +85,7 @@ def validated_execution(path, binary, binding, sources, inputs, options):
         retained = directory/fresh.name
         if not retained.is_file() or digest(retained) != digest(fresh):
             return None
-    artifacts = [path, ROOT/binding, binary, compile_path, directory/"observations.txt",
-                 *[directory/p.name for p in inputs]]
-    for execution in (record, compilation):
+    for execution in executions:
         if (execution.get("exit") != 0 or execution.get("timed_out")
                 or execution.get("tool_version_exit") != 0
                 or execution.get("tool_version", "").strip() != identity["tool_version"]
