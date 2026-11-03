@@ -18,9 +18,10 @@ def build(directory, obj, banks, tile_rows, tile_k, queue):
         "--top-module", "anvil_q4_fp_top", "--Mdir", relative(obj),
         f"-GBANKS={banks}", f"-GQUEUE_DEPTH={queue}",
         f"-GTILE_ROWS={tile_rows}", f"-GTILE_K={tile_k}",
-        "-CFLAGS", f"-std=c++17 -DBANKS={banks}",
+        "-CFLAGS", f"-std=c++17 -DBANKS={banks} -DCOHORT_MONITOR",
         "-MAKEFLAGS", "OPT_FAST=-O3",
         *[relative(path) for path in sorted((ROOT / "rtl").glob("*.sv"))],
+        "tests/arithmetic_observer.sv",
         os.path.relpath(ROOT / "tests/native_sim.cpp", obj)], timeout=1800)
     return obj / "Vanvil_q4_fp_top"
 

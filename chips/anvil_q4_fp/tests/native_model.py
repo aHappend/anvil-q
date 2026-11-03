@@ -39,10 +39,12 @@ class Fixture:
     def __init__(self, words, seed=17, tokens=2):
         self.words = words
         self.seed = seed
-        self.tokens = [((seed + 3 * index) % words[13]) for index in range(tokens)]
+        self.tokens = ([((seed + 3 * index) % words[13]) for index in range(tokens)]
+                       if isinstance(tokens, int) else list(tokens))
         self.initial = {}
         self.writes = []
         self.logits = []
+        self.steps = []
         self.tensors = []
         self.format = "fp16" if words[2] else "bf16"
         self.cache_format = ("bf16", "fp16", "fp8")[words[5]]
@@ -177,6 +179,10 @@ class Fixture:
 
     def infer(self):
         for position, token in enumerate(self.tokens):
+            if token is None:
+                token = self.greedy(self.logits[-self.words[13]:])
+                self.tokens[position] = token
+            write_start, logit_start = len(self.writes), len(self.logits)
             x = self.store(0, [self.widen(v) for v in self.embedding[token]])
             for layer in range(self.words[7]):
                 normalized = self.store(1, self.norm(x, self.gamma[layer, 5]))
@@ -201,6 +207,21 @@ class Fixture:
                 x = self.store(0, [op(0, a, b) for a, b in zip(residual, down, strict=True)])
             final = self.store(14, self.norm(x, self.final_gamma))
             self.logits.extend(self.gemv(self.lm_head, final))
+            self.steps.append({"token": token, "position": position,
+                               "writes": self.writes[write_start:],
+                               "logits": self.logits[logit_start:]})
+
+    @staticmethod
+    def greedy(logits):
+        from ieee import decode
+        best, value = 0, None
+        for index, bits in enumerate(logits):
+            _, kind, number = decode(bits)
+            if kind == "nan":
+                continue
+            if value is None or number > value:
+                best, value = index, number
+        return best
 
     def export(self, directory):
         source_manifest = export_static(directory / "checkpoint-images",
