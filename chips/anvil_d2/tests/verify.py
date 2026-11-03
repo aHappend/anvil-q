@@ -183,18 +183,31 @@ def run_dequant(experiment, simulator, rtl="rtl/anvil_d2_fp8_dequant.sv",
     experiment.save()
 
 
-def run_public_smoke(experiment, boundaries=False, interrupts=False):
+def run_public_smoke(experiment, boundaries=False, interrupts=False, compiled=None):
     directory = experiment.directory.relative_to(ROOT)
     obj = directory / "public-obj"
     sources = [str(p.relative_to(ROOT)) for pattern in (
         "rtl/*.sv", "anvil_d1_reference/rtl/*.sv") for p in sorted(ROOT.glob(pattern))]
-    experiment.execute(["verilator", "--version"], "verilator-version")
-    experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
-                        "--top-module", "top_smoke_tb", "--Mdir", str(obj),
-                        "-o", "public-sim", *(["-GCAPACITY=5"] if boundaries else []),
-                        *sources, "tests/top_smoke_tb.sv"],
-                       "public-compile", 1200)
-    output = experiment.execute([str(obj / "public-sim")] +
+    capacity = 5 if boundaries else 12
+    if compiled is not None and (
+            compiled["capacity"] != capacity or
+            compiled["source_sha256"] != experiment.receipt["source_sha256"] or
+            not (ROOT / compiled["binary"]).is_file()):
+        experiment.receipt["rebuilt_stale_prerequisite"] = compiled["receipt"]
+        experiment.save()
+        compiled = None
+    if compiled is None:
+        experiment.execute(["verilator", "--version"], "verilator-version")
+        experiment.execute(["verilator", "--binary", "--timing", "-Wno-fatal", "-j", "2",
+                            "--top-module", "top_smoke_tb", "--Mdir", str(obj),
+                            "-o", "public-sim", f"-GCAPACITY={capacity}",
+                            *sources, "tests/top_smoke_tb.sv"],
+                           "public-compile", 1200)
+        binary = obj / "public-sim"
+    else:
+        binary = Path(compiled["binary"])
+        experiment.receipt["compiled_prerequisite"] = compiled
+    output = experiment.execute([str(binary)] +
                                 (["+boundaries"] if boundaries else
                                  ["+interrupts"] if interrupts else []),
                                 "public-simulation", 1200)
@@ -209,6 +222,11 @@ def run_public_smoke(experiment, boundaries=False, interrupts=False):
                   "bounded protocol smoke, not nonzero transformer numerical coverage"),
     }
     experiment.save()
+    return {
+        "binary": str(binary), "capacity": capacity,
+        "source_sha256": experiment.receipt["source_sha256"],
+        "receipt": str((experiment.directory / "receipt.json").relative_to(ROOT)),
+    }
 
 
 def run_target_model(experiment, geometry=Geometry(), seed=17, modes=(0, 1, 2, 3),
@@ -1005,12 +1023,14 @@ def result_rows(output, prefix):
             for line in output.splitlines() if line.startswith(prefix + " ")]
 
 
-def run_benchmark(experiment, component, compact_probe=False):
+def run_benchmark(experiment, component, compact_probe=False, probe_seed=17):
     manifest_path = ROOT / "tests/benchmark_manifest.json"
     manifest = json.loads(manifest_path.read_text())
     if compact_probe:
+        if probe_seed not in manifest["seeds"]:
+            raise ValueError("benchmark probe seed must belong to the frozen manifest")
         manifest["domains"] = manifest["domains"][:1]
-        manifest["seeds"] = manifest["seeds"][:1]
+        manifest["seeds"] = [probe_seed]
         experiment.receipt["probe_scope"] = "one benchmark cell, not five-domain closure"
     (experiment.directory / "benchmark-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n")
@@ -1108,8 +1128,7 @@ def run_reproduction(experiment):
     experiment.save()
 
 
-def run_prefix_matrix(component):
-    compiled = None
+def run_prefix_matrix(component, compiled=None):
     for prefix in range(5):
         _, compiled = component(
             f"native-prefix{prefix}", lambda e, p=prefix: run_target_model(
@@ -1117,7 +1136,7 @@ def run_prefix_matrix(component):
                 command_sequence=((1, 0, 1, 0, 0, 5), (3, 1, 0, 1, 1, 5))))
 
 
-def run_suite(experiment, suite):
+def run_suite(experiment, suite, probe_seed=17):
     def component(stem, operation):
         child = Experiment("d2-" + suite + "-" + stem,
                            preparation=experiment.directory.parent.name == "preparation")
@@ -1156,18 +1175,19 @@ def run_suite(experiment, suite):
             "optimize compiled simulation and redundant builds; preserve all scenarios "
             "and independent comparisons after the aggregate execution timeout")
         experiment.save()
-        component("public-smoke", run_public_smoke)
+        _, public_compiled = component("public-smoke", run_public_smoke)
         component("public-boundaries", lambda e: run_public_smoke(e, boundaries=True))
-        component("public-interrupts", lambda e: run_public_smoke(e, interrupts=True))
+        component("public-interrupts", lambda e: run_public_smoke(
+            e, interrupts=True, compiled=public_compiled))
         for simulator in ("icarus", "verilator"):
             component("verdict-" + simulator, lambda e, s=simulator: run_verdict_probe(e, s))
-        component("nonzero-four-mode", run_target_model)
+        _, target_compiled = component("nonzero-four-mode", run_target_model)
         component("routed-rejection", lambda e: run_target_model(
             e, Geometry(layers=2), modes=(1, 3), mtp_fixture="reject-first"))
         for banks, queue in ((1, 1), (2, 3), (4, 16), (8, 1)):
             component(f"scheduler-b{banks}-q{queue}",
                       lambda e, b=banks, q=queue: run_scheduler(e, b, q))
-        run_prefix_matrix(component)
+        run_prefix_matrix(component, target_compiled)
         for hidden in (8, 64, 2048):
             component(f"rms-h{hidden}", lambda e, h=hidden: run_rms(e, h))
         component("causal-four-lanes", run_target_lanes)
@@ -1208,7 +1228,7 @@ def run_suite(experiment, suite):
     elif suite == "native-prefixes":
         run_prefix_matrix(component)
     elif suite == "benchmark-cell":
-        run_benchmark(experiment, component, compact_probe=True)
+        run_benchmark(experiment, component, compact_probe=True, probe_seed=probe_seed)
     else:
         raise ValueError(f"unknown suite {suite}")
 
@@ -1265,7 +1285,7 @@ def main():
         elif args.probe == "native-prefixes":
             run_suite(experiment, "native-prefixes")
         elif args.probe == "benchmark-cell":
-            run_suite(experiment, "benchmark-cell")
+            run_suite(experiment, "benchmark-cell", probe_seed=args.seed)
         elif args.probe == "target-model":
             geometry = (Geometry(layers=2) if args.geometry == "routed" else
                         Geometry(hidden=64, layers=2) if args.geometry == "medium" else Geometry())
