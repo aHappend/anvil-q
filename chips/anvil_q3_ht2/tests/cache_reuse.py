@@ -15,19 +15,13 @@ from receipts import new_run, relative
 from verify import enter_tier
 
 
-FAILURE = (
-    "evidence/l1-all-20261102T234418357483Z/"
-    "integrated-mode1-1793664874027319183/"
-    "integrated-clock-driver-simulate-20261103T002158905077Z/receipt.json"
-)
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--integration-path", action="store_true")
+    parser.add_argument("--repair-of")
     args = parser.parse_args()
     enter_tier()
-    run = new_run("compiled-reuse", preparation=True, repair_of=FAILURE)
+    run = new_run("compiled-reuse", preparation=True, repair_of=args.repair_of)
     results = []
     cases = (
             ("arithmetic-seed17", run_arithmetic, ("verilator", 17, True), {}, False),
