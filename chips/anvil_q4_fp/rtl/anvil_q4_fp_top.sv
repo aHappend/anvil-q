@@ -115,8 +115,13 @@ module anvil_q4_fp_top #(
     wire [32*SB-1:0] p_req_layer,p_req_row,p_req_col,p_req_data;
     wire [64*SB-1:0] n_req_tag,p_req_tag;
     wire [SB-1:0] parent_bad_tags;
-    reg parent_identity_fault;
-    wire parent_cancel=cancel || parent_identity_fault || (config_accepted && native_mode);
+    reg parent_identity_fault,parent_identity_abort_sent;
+    wire [SB-1:0] parent_input_ready;
+    wire [64*SB-1:0] parent_input_tag;
+    wire [SB-1:0] parent_input_valid,parent_input_error;
+    wire [32*SB-1:0] parent_input_data;
+    wire parent_cancel=cancel || (parent_identity_fault && !parent_identity_abort_sent) ||
+      (config_accepted && native_mode);
     assign cfg_ready=descriptor_ready && parent_cfg_ready;
     assign token_ready=native_mode ? native_token_ready :
       rst_n && !parent_identity_fault && !cfg_valid && !cfg_busy && !cfg_done && parent_token_ready;
@@ -271,16 +276,36 @@ module anvil_q4_fp_top #(
       .verify_valid(parent_verify_valid),.verify_accepted(parent_verify_accepted),
       .verify_error(parent_verify_error),.verify_ready(!native_mode && verify_ready),
       .mem_req_valid(p_req_valid),
-      .mem_req_ready(!native_mode ? mem_req_ready & ~parent_bad_tags : {SB{1'b0}}),
+      .mem_req_ready(parent_input_ready),
       .mem_req_write(p_req_write),.mem_req_kind(p_req_kind),.mem_req_layer(p_req_layer),
       .mem_req_proj(p_req_proj),.mem_req_row(p_req_row),.mem_req_col(p_req_col),
       .mem_req_wdata(p_req_data),.mem_req_tag(p_req_tag),
-      .mem_rsp_valid(!native_mode ? mem_rsp_valid : {SB{1'b0}}),
-      .mem_rsp_error(mem_rsp_error),.mem_rsp_ready(p_rsp_ready),
-      .mem_rsp_rdata(mem_rsp_rdata),.mem_rsp_tag(mem_rsp_tag)
+      .mem_rsp_valid(parent_input_valid),.mem_rsp_error(parent_input_error),
+      .mem_rsp_ready(p_rsp_ready),.mem_rsp_rdata(parent_input_data),.mem_rsp_tag(parent_input_tag)
     );
     for (genvar n=0;n<SB;n=n+1) begin : external_banks
+      reg rejected_valid;
+      reg [63:0] rejected_tag;
       assign parent_bad_tags[n]=p_req_valid[n] && p_req_tag[n*64+63];
+      assign parent_input_ready[n]=rst_n && !native_mode &&
+        (parent_bad_tags[n] ? !rejected_valid : mem_req_ready[n]);
+      assign parent_input_valid[n]=rst_n && !native_mode &&
+        (rejected_valid || mem_rsp_valid[n]);
+      assign parent_input_error[n]=parent_input_valid[n] &&
+        (rejected_valid || mem_rsp_error[n]);
+      assign parent_input_data[n*32+:32]=parent_input_valid[n] && !rejected_valid ?
+        mem_rsp_rdata[n*32+:32] : 32'd0;
+      assign parent_input_tag[n*64+:64]=parent_input_valid[n] ?
+        (rejected_valid ? rejected_tag : mem_rsp_tag[n*64+:64]) : 64'd0;
+      always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin rejected_valid<=0; rejected_tag<=0; end
+        else begin
+          if (rejected_valid && p_rsp_ready[n]) rejected_valid<=0;
+          if (parent_bad_tags[n] && parent_input_ready[n]) begin
+            rejected_valid<=1; rejected_tag<=p_req_tag[n*64+:64];
+          end
+        end
+      end
       assign mem_req_valid[n]=rst_n && (native_mode ? n_req_valid[n] :
         p_req_valid[n] && !parent_bad_tags[n]);
       assign mem_req_write[n]=mem_req_valid[n] && (native_mode ? n_req_write[n] : p_req_write[n]);
@@ -298,11 +323,15 @@ module anvil_q4_fp_top #(
         (native_mode ? n_req_data[n*32+:32] : p_req_data[n*32+:32]) : 32'd0;
       assign mem_req_tag[n*64+:64]=mem_req_valid[n] ?
         (native_mode ? n_req_tag[n*64+:64] : p_req_tag[n*64+:64]) : 64'd0;
-      assign mem_rsp_ready[n]=rst_n && (native_mode ? n_rsp_ready[n] : p_rsp_ready[n]);
+      assign mem_rsp_ready[n]=rst_n &&
+        (native_mode ? n_rsp_ready[n] : p_rsp_ready[n] && !rejected_valid);
     end
     always @(posedge clk or negedge rst_n) begin
-      if (!rst_n) parent_identity_fault<=0;
-      else if (|parent_bad_tags) parent_identity_fault<=1;
+      if (!rst_n) begin parent_identity_fault<=0; parent_identity_abort_sent<=0; end
+      else begin
+        if (|parent_bad_tags) parent_identity_fault<=1;
+        if (parent_identity_fault) parent_identity_abort_sent<=1;
+      end
     end
     always @(posedge clk or negedge rst_n) begin
       if (!rst_n) begin result_published<=0; result_retired<=0; end

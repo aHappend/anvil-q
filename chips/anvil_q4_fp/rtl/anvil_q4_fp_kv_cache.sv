@@ -29,7 +29,7 @@ module anvil_q4_fp_kv_cache (
     PROTECTED_READ=8,PROTECTED_WAIT=9,BEGIN_ACCESS=10,
     SOURCE_READ=11,SOURCE_WAIT=12,CONVERT=13,CONVERT_WAIT=14,
     PACK=15,WRITE_PAYLOAD=16,WRITE_WAIT=17,NEXT_SCALAR=18,
-    READ_PAYLOAD=19,READ_WAIT=20,RESPONSE=21;
+    READ_PAYLOAD=19,READ_WAIT=20,RESPONSE=21,PEER_NEXT=22,PEER_READ=23,PEER_WAIT=24;
   reg [4:0] state;
   reg writing,value_select,allow_current,failed;
   reg [1:0] format;
@@ -38,6 +38,8 @@ module anvil_q4_fp_kv_cache (
   reg [31:0] retained_epoch,retained_pages,stride,kd,packed_stride;
   reg [31:0] requested_head,requested_dimension,dimension,global_index;
   reg [31:0] packed_word,write_word,operand,converted,result_register;
+  reg [31:0] peer_index,alias_candidate_page;
+  reg pair_is_protected;
   reg [4:0] page_shift;
   wire [63:0] configured_kd={32'd0,kv_heads}*{32'd0,head_dim};
   wire [63:0] configured_index={32'd0,cmd_head}*{32'd0,head_dim}+{32'd0,cmd_dimension};
@@ -57,7 +59,8 @@ module anvil_q4_fp_kv_cache (
   end
   wire port_idle,complete,fault;
   wire [31:0] rdata;
-  wire page_read=state==PAGE_READ || state==ALIAS_READ || state==PROTECTED_READ;
+  wire page_read=state==PAGE_READ || state==ALIAS_READ || state==PROTECTED_READ ||
+    state==PEER_READ;
   wire source_read=state==SOURCE_READ;
   wire payload_write=state==WRITE_PAYLOAD;
   wire issue=port_idle && (page_read || source_read || payload_write || state==READ_PAYLOAD);
@@ -77,9 +80,11 @@ module anvil_q4_fp_kv_cache (
     .write(payload_write),
     .kind(page_read ? 4'd15 : source_read ? 4'd8 :
       format==2 ? (value_select ? 4'd13 : 4'd12) : (value_select ? 4'd10 : 4'd9)),
-    .layer(page_read ? (state==PROTECTED_READ ? retained_epoch : epoch) :
+    .layer(page_read ? (state==PROTECTED_READ || (state==PEER_READ && pair_is_protected) ?
+      retained_epoch : epoch) :
       source_read ? 32'd0 : layer),.proj(3'd0),
-    .row(page_read ? (state==PAGE_READ ? logical_page : alias_index) :
+    .row(page_read ? (state==PAGE_READ ? logical_page :
+      state==PEER_READ ? peer_index : alias_index) :
       source_read ? (value_select ? 32'd4 : 32'd3) : physical_row),
     .col(page_read ? 32'd0 : source_read ? global_index : payload_col),
     .wdata(payload_write ? write_word : 32'd0),
@@ -113,6 +118,7 @@ module anvil_q4_fp_kv_cache (
       retained_epoch<=0; retained_pages<=0; stride<=0; kd<=0; packed_stride<=0;
       requested_head<=0; requested_dimension<=0; dimension<=0; global_index<=0;
       packed_word<=0; write_word<=0; operand<=0; converted<=0; result_register<=0;
+      peer_index<=0; alias_candidate_page<=0; pair_is_protected<=0;
       page_shift<=0;
     end else if (flush) begin state<=IDLE; failed<=0; result_register<=0; end
     else if (fault) begin failed<=1; result_register<=0; state<=RESPONSE; end
@@ -163,7 +169,10 @@ module anvil_q4_fp_kv_cache (
       ALIAS_WAIT: if (complete) begin
         if (!rdata[31] || {1'b0,rdata[30:0]}>=pages ||
             {1'b0,rdata[30:0]}==physical_page) begin failed<=1; state<=RESPONSE; end
-        else begin alias_index<=alias_index+1'b1; state<=ALIAS_NEXT; end
+        else begin
+          alias_candidate_page<={1'b0,rdata[30:0]}; peer_index<=0;
+          pair_is_protected<=0; state<=PEER_NEXT;
+        end
       end
       PROTECTED_NEXT: begin
         if (!writing || alias_index>=retained_pages || retained_epoch==epoch) state<=BEGIN_ACCESS;
@@ -173,7 +182,24 @@ module anvil_q4_fp_kv_cache (
       PROTECTED_WAIT: if (complete) begin
         if (!rdata[31] || {1'b0,rdata[30:0]}>=pages ||
             {1'b0,rdata[30:0]}==physical_page) begin failed<=1; state<=RESPONSE; end
-        else begin alias_index<=alias_index+1'b1; state<=PROTECTED_NEXT; end
+        else begin
+          alias_candidate_page<={1'b0,rdata[30:0]}; peer_index<=0;
+          pair_is_protected<=1; state<=PEER_NEXT;
+        end
+      end
+      PEER_NEXT: begin
+        if (peer_index>=alias_index) begin
+          alias_index<=alias_index+1'b1;
+          if (pair_is_protected) state<=PROTECTED_NEXT; else state<=ALIAS_NEXT;
+        end else if (!pair_is_protected && peer_index==logical_page)
+          peer_index<=peer_index+1'b1;
+        else state<=PEER_READ;
+      end
+      PEER_READ: if (issue) state<=PEER_WAIT;
+      PEER_WAIT: if (complete) begin
+        if (!rdata[31] || {1'b0,rdata[30:0]}>=pages ||
+            {1'b0,rdata[30:0]}==alias_candidate_page) begin failed<=1; state<=RESPONSE; end
+        else begin peer_index<=peer_index+1'b1; state<=PEER_NEXT; end
       end
       BEGIN_ACCESS: begin
         packed_word<=0;

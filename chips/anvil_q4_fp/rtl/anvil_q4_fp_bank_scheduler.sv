@@ -70,6 +70,7 @@ module anvil_q4_fp_bank_scheduler #(
         S_SENT = 3, S_RETURNED = 4;
 
       reg draining, fault_latched, drain_pulse, wrap_pending, identity_exhausted;
+      reg exhaustion_drained;
       reg [31:0] epoch;
       reg [2:0] client_state [0:SC-1];
       reg [3:0] client_bank [0:SC-1];
@@ -106,7 +107,8 @@ module anvil_q4_fp_bank_scheduler #(
       assign idle = rst_n && !flush && !draining && !fault_latched &&
         !wrap_pending && !abort_now && configuration_valid && !(|client_live) && !(|bank_live);
       assign drain_done = rst_n && drain_pulse;
-      assign fault = rst_n && (fault_latched || abort_now);
+      assign fault = rst_n && (fault_latched || abort_now) &&
+        !(identity_exhausted && exhaustion_drained);
 
       always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -115,12 +117,20 @@ module anvil_q4_fp_bank_scheduler #(
           drain_pulse <= 1'b0;
           wrap_pending <= 1'b0;
           identity_exhausted <= 1'b0;
+          exhaustion_drained <= 1'b0;
           epoch <= 32'h80000000;
         end else begin
           drain_pulse <= 1'b0;
           if (abort_now) begin
             fault_latched <= 1'b1;
-            draining <= 1'b1;
+            if (identity_exhausted && exhaustion_drained) begin
+              if (flush) begin draining <= 1'b1; exhaustion_drained <= 1'b0; end
+              else draining <= 1'b0;
+            end else if (identity_exhausted && draining && !(|bank_live) && !flush) begin
+              draining <= 1'b0;
+              exhaustion_drained <= 1'b1;
+              drain_pulse <= 1'b1;
+            end else draining <= 1'b1;
           end else if (flush) begin
             fault_latched <= 1'b0;
             draining <= 1'b1;

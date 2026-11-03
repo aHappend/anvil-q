@@ -2,14 +2,14 @@
 
 ## Implementation status
 
-The initial design increment implements the native numerical package,
-`anvil_q4_fp32`, `anvil_q4_fp_tensor_array`, `anvil_q4_fp_gemv`,
-`anvil_q4_fp_mem_port`, `anvil_q4_fp_descriptor`, `anvil_q4_fp_exp`,
-`anvil_q4_fp_umul64`, `anvil_q4_fp_silu`, `anvil_q4_fp_rmsnorm`,
-`anvil_q4_fp_rope` and `anvil_q4_fp_elementwise`.
-It is a partial implementation, not a ready top-level product.
-Top/scheduler, decoder/MLP/token-I/O routing, attention, cache,
-speculative integration and isolated compatibility remain to be implemented.
+The connected native implementation has public entry `anvil_q4_fp_top`.
+It contains descriptor, speculative control, decoder, final normalization,
+embedding/LM-head and seventeen-client bank scheduling. The decoder connects
+the native GEMV, RoPE, attention, paged cache, MLP and elementwise stages.
+The numerical foundation from the first increment is retained.
+The isolated `anvil_q4_parent_*` and `anvil_q3_parent_*` namespace contains the
+compatibility dependency closure; no parent reference source is modified.
+Implementation is not engineering acceptance.
 Independent functional/synthesis/timing/hardware results are not claimed.
 No trained-checkpoint execution is claimed.
 
@@ -47,8 +47,9 @@ The scalar stages retain FP32 intermediates. SiLU deliberately follows
 algebra changes the rounding order and is not the native contract.
 Descriptor validation uses separately registered full-width dimension/page
 products, rejects native quantization and reserved fields, and retains the
-parent version-1 validation rules. Sequence invalidation on a successful
-descriptor commit remains a top-level integration obligation.
+parent version-1 validation rules. Successful public descriptor commits
+invalidate native sequence/prediction and advance the image generation;
+failed commits preserve the active sequence.
 
 For a full R-row by K-element native tile, weight traffic is R*K logical
 reads and activation traffic is K scratch reads. The external payload is
@@ -57,22 +58,98 @@ Results remain FP32. Smaller TILE_ROWS lowers spatial resources/utilization;
 smaller TILE_K increases command/load overhead without changing rounding
 or the 17-channel interface. Smaller BANKS introduces scheduler contention.
 
-## Remaining integration obligations
+## Routing, draining and sequence state
 
-The scheduler must retain complete 64-bit tags, independent response buffers,
-fair per-bank slots and cancellation drain ownership. Recorded stage and
-scalar subowners must survive phase changes and cancellation, not depend on
-current-phase combinational demultiplexing. No outgoing owner may be replaced
-until all its held/accepted/buffered work has retired or transferred to drain.
+`anvil_q4_fp_mem_arbiter` registers a selected owner before accepting its
+request, then captures the complete tuple into a request register. It holds
+that owner through the acknowledged response. Round-robin advances only on
+response retirement. `anvil_q4_fp_channel_mux` instantiates one arbiter per
+logical channel; lane n never becomes another lane or the auxiliary channel.
+Decoder auxiliary arbitration gives attention and cache distinct owner
+indices. The MLP and decoder use explicit completion fences. The top also
+waits for all channel routers and scheduler records to empty before starting
+another stage. This adds routing clocks without changing arithmetic offsets.
 
-The top must preserve the exact public parent signature and isolate modes
-1..4 from native version2/mode5. Copying an old integer/quantized datapath
-under a native module name is not an implementation of native arithmetic.
+The scheduler has per-bank fair arbitration, bounded transaction slots,
+registered held requests and independent per-client response buffers.
+A full-tag comparison matches replies against sent slots, including an
+external acceptance/reply on the same edge. Responses from different banks
+can be captured together even when another client holds its buffered result.
+Flush discards unpresented queues, never an externally held request. Held
+requests may still accept during cancellation and are added to the drain.
+Local arithmetic is flushed while the scheduler retains these external
+ownership records until every reply is consumed.
 
-Host images use the inherited logical kind/layer/projection/row/column tuples,
-with native row-interleaved banking, low-half native elements, FP32 scratch/
-RoPE, and host-mapped page tables. The independent Verifier will supply
-deterministic fixture/export helpers and source-bound manifest hashes.
+Native tags use the high half of the 64-bit namespace. Per-bank serial
+numbers are not reset on cancellation. Exhausting the serial field waits
+for bank quiescence before incrementing its shared tag epoch; exhausting
+the epoch faults/drains the current command and enters a terminal no-accept
+state until reset, rather than reusing identities.
+Compatibility uses the low namespace; its wrapper refuses a tag with bit63
+set before it is externally presented. The rejected internal request receives
+a registered local error acknowledgement, not an external transfer. A one-shot
+abort then drains other already-presented compatibility requests and reports
+the failed command; future compatibility commands require reset. This error
+path cannot leave a forbidden held tag waiting for external acceptance.
+Reset must also reset the responder or exclude all old replies, as required
+by SPEC.
+
+Normal and speculative work use separate committed and working position/
+epoch registers. A well-formed normal new-sequence command and every accepted
+new-sequence draft consume a fresh nonwrapping epoch before target execution,
+even if target execution later fails. Malformed normal commands do not
+allocate an epoch. Old sequence metadata remains intact until normal success
+or speculative result retirement. Tentative continuation rows are beyond
+the committed token count; rejected rows are inaccessible and a later normal
+token overwrites its complete K/V row. New-sequence writes additionally
+scan the protected old epoch's page mappings to reject physical aliases.
+No speculative logits reach the public logit stream.
+
+Once a speculative result is published, a late memory fault cannot change
+its held payload. It prevents tentative commit and produces an error
+completion after draining; result retirement is remembered even if it
+occurs while the fault is being drained. Cancellation instead explicitly
+invalidates the held result and takes priority over retirement.
+
+The cache streams ascending FP32 K and V scratch elements through the
+explicit BF16/FP16/FP8 narrowing boundary, assembling complete packed words
+before acknowledged writes. It packs across head boundaries, zeros the
+last partial word and never emits integer scales or escape payloads.
+FP8 conversion rounds directly from FP32, not through an FP16 intermediate.
+Attention's explicit ratio-position counter implements all ratios 1..8
+without division; its score storage uses synchronous RAM read/write ports.
+Page validation also compares earlier live mappings against each scanned
+candidate, so duplicate aliases not involving the requested page are rejected.
+This intentionally bounded sequential scan uses no huge reset-time table:
+it can take quadratic page-table traffic in the number of live pages, plus
+protected-page scans for a replacing sequence. That is an architectural
+bottleneck to measure, not a claim of scalable constant-time translation.
+
+## Compatibility integration
+
+The compatibility clone preserves the parent's arithmetic, projections,
+legacy cache formats and control pipeline, with row geometry capped at eight
+internally. The native top remains 16-row by default. Configuration writes
+accepted by the public descriptor are mirrored to the isolated descriptor.
+Both shadows reset to the native image, so sparse writes cannot create
+different legacy descriptors. The hidden compatibility active image remains
+the valid parent mode-4 reset image until a legacy commit succeeds. Native
+commits may be rejected by that hidden descriptor; only the public descriptor
+reports configuration status. All commands are blocked during configuration.
+
+Besides namespace changes, two compatibility files have integration edits:
+the descriptor shadow/reset treatment just described, and the bank scheduler's
+held-request draining. Read-only inspection of the supplied scheduler showed
+that cancellation withdrew a held external valid. The isolated copy retains
+that request through acceptance/drain to meet the public cancellation
+contract. This is a known source-level parent difference, not a measured
+parent failure or a passing differential result. The independent compatibility
+suite must retain and classify any observed difference; its acceptance
+requirements are not waived.
+
+Host images use the tuples and external layout in `NATIVE_IMAGE.md`.
+The independent Verifier owns deterministic fixture/export helpers and
+source-bound manifest checks; their existence or results are not assumed.
 
 ## Reproduction and evidence boundaries
 

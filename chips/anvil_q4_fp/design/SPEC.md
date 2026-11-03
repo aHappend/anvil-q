@@ -288,6 +288,7 @@ measured lossy floating-point mode, not the unquantized reference.
 Weights, embeddings, gamma, bias and split-half FP32 RoPE tables are external
 images. Fixtures must be deterministic and labeled synthetic. Manifests bind
 configuration, dimensions, format, tuple mapping and table generation by hash.
+The portable tensor-file and manifest format is defined in `NATIVE_IMAGE.md`.
 Preserve supplied checkpoint RoPE tables including Llama scaling; do not
 silently replace them with unscaled tables. No embedded trained weights,
 network downloads or invented checkpoint results.
