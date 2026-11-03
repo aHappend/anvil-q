@@ -54,7 +54,9 @@ def generate_nonzero(run, mode, seed, layers=36, compact=False):
 
 def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
                          diagnostic_cycles=262144, layers=36, compact=False,
-                         flat=False):
+                         flat=False, compact_lanes=False):
+    if compact_lanes and not compact:
+        raise ValueError("compact lanes require the legal 16-hidden compact model")
     model, vectors, lines, qreads = generate_nonzero(run, mode, seed, layers, compact)
     obj = run / "integrated-obj"
     obj.mkdir()
@@ -75,6 +77,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
         f"-DHT2_TEST_CACHE_MODE={mode}",
         f"-DHT2_TEST_LAYERS={layers}",
         *(["-DHT2_COMPACT_MODEL"] if compact else []),
+        *(["-DHT2_COMPACT_LANES"] if compact_lanes else []),
         *sources, "tests/integrated_clock_tb.sv", driver.name], obj, "Vintegrated")
     try:
         result = execute(run, "integrated-clock-driver-simulate", [
@@ -109,6 +112,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
     compile_receipt = json.loads((ROOT / binding["compile_receipt"]).read_text())
     summary = {
         "mode": mode, "seed": seed, "layers": layers, "compact": compact,
+        "weight_lanes": 16 if compact_lanes else 128,
         "compiler_partition": "flat" if flat else "mac-lane",
         "diagnostic_only": diagnostic, "observed": observation,
         "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",

@@ -21,16 +21,21 @@ def main():
     parser.add_argument("--layers", type=int, default=36)
     parser.add_argument("--repair-of")
     parser.add_argument("--flat", action="store_true")
+    parser.add_argument("--compact-lanes", action="store_true")
+    parser.add_argument("--complete", action="store_true")
+    parser.add_argument("--mode", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--seed", type=int, default=17)
     args = parser.parse_args()
     if args.cycles <= 0 or not 1 <= args.layers <= 36:
         parser.error("cycles must be positive and layers must be in 1..36")
     enter_tier()
     run = new_run("integration-profile", preparation=True, repair_of=args.repair_of)
     print(f"Profile evidence: {relative(run)}", flush=True)
-    summary = run_fast_integration(run, 1, 17, diagnostic=True, profile=args.profile,
+    summary = run_fast_integration(run, args.mode, args.seed,
+                                   diagnostic=not args.complete, profile=args.profile,
                                    diagnostic_cycles=args.cycles,
                                    layers=args.layers, compact=args.compact,
-                                   flat=args.flat)
+                                   flat=args.flat, compact_lanes=args.compact_lanes)
     result = {"summary": summary}
     if args.profile:
         binary = next(run.glob("integrated-clock-driver-compile-binding-*.json"))
