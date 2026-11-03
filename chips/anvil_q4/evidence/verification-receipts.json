@@ -1040,17 +1040,17 @@
       ]
     },
     "check:l1-portable-reproduction": {
-      "attempt_id": 29,
-      "duration_s": 198.08829379593953,
-      "stdout_preview": "L1 portable: portable.py\nl1-portable: check-0 running 30s\nl1-portable: check-0 running 60s\nl1-portable: check-0 running 90s\nl1-portable: check-0 running 120s\nl1-portable: check-0 running 150s\nl1-portable: check-0 running 180s\nevidence/l1-portable-20261102T184005340637Z/receipt.json\n",
+      "attempt_id": 42,
+      "duration_s": 294.60745439399034,
+      "stdout_preview": "L1 portable: portable.py\nl1-portable: check-0 running 30s\nl1-portable: check-0 running 60s\nl1-portable: check-0 running 90s\nl1-portable: check-0 running 120s\nl1-portable: check-0 running 150s\nl1-portable: check-0 running 180s\nl1-portable: check-0 running 210s\nl1-portable: check-0 running 240s\nl1-portable: check-0 running 270s\nevidence/l1-portable-20261103T001514831031Z/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/l1-portable-20261102T184005340637Z/receipt.json",
+          "path": "evidence/l1-portable-20261103T001514831031Z/receipt.json",
           "data": {
             "suite": "l1-portable",
             "cwd": ".",
-            "start_time": "2026-11-02T18:40:05.344611+00:00",
+            "start_time": "2026-11-03T00:15:14.835243+00:00",
             "argv": [
               "/usr/bin/python3",
               "tests/verify.py",
@@ -1086,20 +1086,20 @@
               "anvil_q3_reference/rtl/anvil_q3_token_io.sv": "2ede1a568ace2826f5bde419d0096368fc0ba7bb0f1b44a5238f14c1a16957d4",
               "anvil_q3_reference/rtl/anvil_q3_top.sv": "e6d5f9edcf88e48c8dc5f3cd441c55a4d2aa9399891ef9133ba1125cbc6bac08",
               "anvil_q3_reference/rtl/anvil_q3_weight_prefetcher.sv": "0fe777447f348cad8a0659ee4522f598643c8d694f1934f6951388d0d226fc7b",
-              "design/ARCHITECTURE.md": "55536f9b84a785439d884192ae1258a0ba62f6e4bb427dafa22d6fd688ec5b28",
+              "design/ARCHITECTURE.md": "34033caacf90d51ad5995122e1df1a2b701abd4f21b9facafbec79b70ae1c45b",
               "design/GENERATIONAL_HANDOFF.md": "3b4298fbe87060cc475ba014254004a2bb8cc7a36cae1f3628da48d707a556aa",
               "design/SPEC.md": "40d08878a80e063070309a23d48a5bf429ab4509b2f65008679c3caae8573e36",
               "rtl/anvil_q3_00_pkg.sv": "125df857f6d70b379aa4b4a2cf35fe72a839852201c6fcd470e2af457fa211ce",
               "rtl/anvil_q3_accumulator.sv": "b4cc65bcb0ccdaf19d3f50a799abb4a3a097dc2de60897d083216f15cc13bd00",
               "rtl/anvil_q3_add128.sv": "c72ef3d105339e73a0b39b4bc2da9fd09d58d89fb7f74ec60dba18a0f7e6c84f",
               "rtl/anvil_q3_awq_dot8.sv": "7f49e70bba23a3cb541631ba7a4ab64e14339d4e7cca487c03cf19aafdbfc34b",
-              "rtl/anvil_q3_cache_codec.sv": "fb673e23aa5d8bd9f71c5efded24ab4761ec0264f739b2f1e14647890e8379a9",
+              "rtl/anvil_q3_cache_codec.sv": "d236912d365f82a97f0c9a564672a8ee4511884a16c4fc94cfe4c774fea76edf",
               "rtl/anvil_q3_divider.sv": "477d8babc9c614933484a71817deb22f6c2c9ebdab3654ed8c2ea78d77c276d0",
               "rtl/anvil_q3_elementwise.sv": "4f63122a8677d0d914efb62da2182ccdfaadb500eeb4661fd3a5666c81e911bf",
               "rtl/anvil_q3_exp.sv": "b8c674a40c02964c9086cfc2301b4f03ffb5381782c1a2c65b9c93bcab215fb3",
               "rtl/anvil_q3_gqa_attention.sv": "42be2104851bca77dba2de8d647cd65a3f1517309a9f162343d33a0d7184cd76",
               "rtl/anvil_q3_isqrt.sv": "aa5cb01b5cd7c5c7cd3dd2dffab5fc83c8395010974c238b015b7b486b25c1e9",
-              "rtl/anvil_q3_kv_cache.sv": "79d87f50bf08a8ae32f867a6dedac514eeb85e3399222a4723cf7c1d436f5a9d",
+              "rtl/anvil_q3_kv_cache.sv": "bacfe828d8dc5c682a567de6612b97b7781c1f6c35028a276e2523a575d32f4f",
               "rtl/anvil_q3_mem_port.sv": "10069d98fda414a2206161c570ea6da9aeb9a254ab3d7e4f715a8f0082875856",
               "rtl/anvil_q3_multiplier.sv": "c69142e8d4d2a663bdd0c7edbe22795b2104a9189b2f493a33dd60c1082dfaac",
               "rtl/anvil_q3_rmsnorm.sv": "e77dc394555d973be1dcc5ca74cc586f5abaa45748ba41350672032fe1fabc56",
@@ -1131,7 +1131,7 @@
               "rtl/anvil_q4_token_io.sv": "387f84ec75fec88152d7d167b69e3cbf684e7f7e2a12b8a6822b4b998f09e908",
               "rtl/anvil_q4_top.sv": "45ea8bb82cea7f83439ec4b3753c1c30a6784c289282b1a1aeda03a9d5910360",
               "rtl/anvil_q4_umul64.sv": "ac66fd587c2238e8cffab0ae9ac71bbe660580f586fec51e1aaf6e2fb3a68c89",
-              "tests/README.md": "a345171b52463e0cad6b02c1a1b6e3b771f6317c94dbc9b08deecef89a77cce2",
+              "tests/README.md": "d98c5abc330fa27e4af6f842057e819e58b309144eacbcc761e89f5434fccc20",
               "tests/arithmetic_probe.py": "f1ff4d242b5d0fd87e459e8467eab8ad19539c0efa314496f49dbbf4ed5c243b",
               "tests/arithmetic_tb.sv": "42143764a6472d68e32a633710990e86de5587a4d91cd9d5b9858f7f915de888",
               "tests/benchmarks.py": "f11c97ffd2a9addfe6a4809a1c8c6e7e1d164683955d38cc5532b34b5b7c3f1b",
@@ -1139,15 +1139,15 @@
               "tests/cache_probe.py": "35f7093a5eb4d6ab13f113970bb454b2cb24194973bc646d197cb28248cc7315",
               "tests/cache_recovery_tb.sv": "7a2ef2f2daeb8375379e6d0516f1275a891d3c91e4b1eced3abcd05096a42eaa",
               "tests/cache_reference.py": "ae3ace8fc5f88fdf11949c8b7c2b08978dab176d8a4164e71a49544aea3ffa5a",
-              "tests/codec_equivalence.py": "c609e3f27e9ef85cefec57c82c9a66179ba8d7e6e5baf2e353ba60f780a02cbd",
+              "tests/codec_equivalence.py": "b6261940da4fe5b7dfe2bba9707da7de5b18fdf926e0b39fa2d27b9d209c0abd",
               "tests/codec_equivalence_tb.sv": "556214b9e22ca7a44b8373cb30923f0c6e6300d52f135bd70dca9f44012affd8",
               "tests/codec_lowering_probe.py": "3d8dce4667881b51875c37b1d7a7a04c660dcb744f0be6328dd00c8dca8a14e6",
               "tests/compat_synthesis_top.sv": "078392bb3e3d3f0aad2109bf908fe0581ec0e9374d081138d5e6cdaa2fc66356",
-              "tests/compatibility_probe.py": "f912dedbdf7779a64a5a922138a6b215f47900d885289ecb4c7f127c3c68a2c6",
+              "tests/compatibility_probe.py": "5c5f00038c1413e8f0434dae77b9fe73cfd9156e46421a85c4202300ceb8a95a",
               "tests/descriptor_probe.py": "14112b2487dc2c0b8442b0c0f9412631595f0cd7b31767c4dd94d2acf124776f",
               "tests/descriptor_tb.sv": "14b4aa8f85113edd8d38a8968f3c2765860f2e83816315e4647fa54cc0132415",
               "tests/descriptors.py": "92922dcbdc024c3da724b3629ad911f8d2df3a06e2ff270c041e94cc802f0f0a",
-              "tests/execution.py": "8e3318372ebb7c926d7416ffcd679c027a65763f9da017745a1da4318c8cbaab",
+              "tests/execution.py": "d524b782887ae82f31940282b56ca2f7a95b086bdd4a3ef45b42a789f4cf9a86",
               "tests/frontend_probe.py": "3b3b06e0add029060c46a290a493fb5108386f58f244172226e03b6cb512f1f0",
               "tests/full_shape_probe.py": "3eb0f8df782dea6cd15a9b5f778bb020601dac5888e14d7e4285c62cc5762063",
               "tests/full_shape_tb.sv": "7209ee2b30f161cd750d347c4fb11296cc5ab215b504b691a3d5c309daef3ca3",
@@ -1160,7 +1160,7 @@
               "tests/official-qwen-config.json": "ec0c1f5f875ad8bc1f78c5140c22dbdde1b55478442ad358e7a4d9ecf947a327",
               "tests/parameter_probe.py": "3eab7e8cfc2b2e70ca4cd4e848efc8e0601d240c000f89e185fa6b4d8704c2ce",
               "tests/portable.py": "92dfeef04ddf92e65dd8032fa02a17a365d58c848a30bfd04adb84190047aedc",
-              "tests/probe_receipt.py": "6f503d78472c142b062a2fa4a755792cc626855a6db8f32c273e88c37425353a",
+              "tests/probe_receipt.py": "804dc763f287d502f494e5a31f068c647bd2db71e006d1e436e4902cdfa7e2b5",
               "tests/protocol_probe.cpp": "3db1a6f7fb8005b9607cf38fa15fbf0e2f0bc9658388521e36f78e5d8b814e35",
               "tests/protocol_probe.py": "323314c95c8f0b29174814a3b65a967f0f7404c3d9a8032c017325ffb04bde53",
               "tests/scheduler_probe.cpp": "114dbeacfbaab73aa36a45ca785013c42a548404c8d0e27ad61fa455ef957ba8",
@@ -1170,16 +1170,17 @@
               "tests/startup_probe.py": "383a54c216a971f6be35e12169e481dcbe4cef9237b87fad81f59e6d8945ed2e",
               "tests/startup_tb.sv": "a83d30744d94849c378468ec9a87330ef300a838bd412db49658398804ad711e",
               "tests/switching_probe.py": "ea53c187ce431d847584507c73db4df334f8c0b7f42c0fe798161000a88d8c2b",
-              "tests/synthesis_probe.py": "2a9849b8ebe4f1e15052876712d3bcf0f63fda5cbec79924bbe23948c135d0e5",
-              "tests/system_matrix.py": "b4f1a5be5a599719ec634353c099157241b039fe8e1319ec5aacce109e151ae9",
+              "tests/synthesis_probe.py": "ed5aeeddf99132e79ddeb6731edbdb72fdb4a257b82f1344db8f58de49f44ae2",
+              "tests/system_matrix.py": "c3a829a9635c1e38a884f6cec4e6bc372e95fddf6c26c26c27c3c903fcd9894d",
               "tests/system_probe.py": "3f1c5a1b7e71631c4349141d1346b0721823464660353f9f6e4d7f12487f2eeb",
               "tests/tensor_probe.py": "c0e98d7b8b27351e61bbba5592895574df7ea8f2777af407d662f314a567da3d",
               "tests/tensor_tb.sv": "3241da21f30c11bd4a7ecafcde9891350550d7b8328842a1a5b3096c466544bc",
-              "tests/top_probe.cpp": "0674a56002f75e37b955e53a934d2a04873d89bbeb335acbe7a3c6771468e8a2",
+              "tests/top_probe.cpp": "d35b62fab8e75c519f245bd02a7a1619bc6cee1a6f4ea15ca5d6eb305a585223",
               "tests/top_smoke.py": "3b5094237ec19befd3cd4b6b4c80a38f45b640c94fb9b9b92e1813ceb5ba5404",
               "tests/top_smoke_tb.sv": "41f649b36e5e566fbac5370aaaa51308e0dc4a53131038f711dd95a04fbee8a9",
               "tests/transformer_reference.py": "3192842fd2cb509d78971b1ff2afe13a3aac42f031cad61967e7db8a0ad7206b",
-              "tests/verify.py": "2c85d3a0011e5cfd0beea58c236efd11a42818b5ace6d5d31c34794ba0092d8c"
+              "tests/verify.py": "2c85d3a0011e5cfd0beea58c236efd11a42818b5ace6d5d31c34794ba0092d8c",
+              "tests/verilator.vlt": "af872aed74efd82ec97b19b5bae0a448e7c7ff2848e24a4e88ac56b8603bb3de"
             },
             "commands": [
               {
@@ -1188,14 +1189,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T18:40:05.362215+00:00",
+                "start_time": "2026-11-03T00:15:14.853171+00:00",
                 "timeout_s": 600,
-                "stdout_path": "evidence/l1-portable-20261102T184005340637Z/version.stdout.txt",
-                "stderr_path": "evidence/l1-portable-20261102T184005340637Z/version.stderr.txt",
+                "stdout_path": "evidence/l1-portable-20261103T001514831031Z/version.stdout.txt",
+                "stderr_path": "evidence/l1-portable-20261103T001514831031Z/version.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T18:40:05.368163+00:00",
-                "elapsed_s": 0.005716006038710475
+                "end_time": "2026-11-03T00:15:14.858908+00:00",
+                "elapsed_s": 0.00550634297542274,
+                "user_cpu_s": 0.0,
+                "system_cpu_s": 0.003335
               },
               {
                 "argv": [
@@ -1203,14 +1207,17 @@
                   "tests/portable.py"
                 ],
                 "cwd": ".",
-                "start_time": "2026-11-02T18:40:05.369004+00:00",
-                "timeout_s": 2699.971703725867,
-                "stdout_path": "evidence/l1-portable-20261102T184005340637Z/check-0.stdout.txt",
-                "stderr_path": "evidence/l1-portable-20261102T184005340637Z/check-0.stderr.txt",
+                "start_time": "2026-11-03T00:15:14.859788+00:00",
+                "timeout_s": 2699.971314453054,
+                "stdout_path": "evidence/l1-portable-20261103T001514831031Z/check-0.stdout.txt",
+                "stderr_path": "evidence/l1-portable-20261103T001514831031Z/check-0.stderr.txt",
+                "concurrent_commands": false,
                 "exit_code": 0,
                 "timed_out": false,
-                "end_time": "2026-11-02T18:43:23.226019+00:00",
-                "elapsed_s": 197.85681019700132
+                "end_time": "2026-11-03T00:20:09.246780+00:00",
+                "elapsed_s": 294.38678350904956,
+                "user_cpu_s": 363.198256,
+                "system_cpu_s": 25.25732
               }
             ],
             "comparisons": {},
@@ -1220,11 +1227,11 @@
                 "command": [
                   "portable.py"
                 ],
-                "receipt": "evidence/portable-20261102T184005439614Z/receipt.json"
+                "receipt": "evidence/portable-20261103T001514908909Z/receipt.json"
               }
             ],
             "exit_code": 0,
-            "end_time": "2026-11-02T18:43:23.228598+00:00"
+            "end_time": "2026-11-03T00:20:09.249188+00:00"
           }
         }
       ]
