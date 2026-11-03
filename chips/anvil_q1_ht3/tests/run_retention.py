@@ -10,9 +10,11 @@ import os
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import ROOT, hashes, relative, remaining, timestamp
+from execution import CHECK_SECONDS, ROOT, hashes, relative, remaining, timestamp
 from retention import find_result, inventory, validated_result
-from verify import TOOLS, child, dependencies
+from verify import (OBLIGATIONS, REPRODUCTION_BUDGET, SETTLEMENT_RESERVE, TOOLS,
+                    child, dependencies, schedule)
+from run_synthesis import JOBS
 
 
 def main():
@@ -29,6 +31,16 @@ def main():
         ast.parse(path.read_text(), filename=relative(path))
         parsed_sources.append(relative(path))
     versions = inventory(output, TOOLS)
+    jobs = schedule()
+    identifiers = [job[0] for job in jobs]
+    required = (set(OBLIGATIONS)-{"synthesis"}) | {
+        f"synthesis-{entry[0]}" for entry in JOBS}
+    if not required.issubset(identifiers) or len(identifiers) != len(set(identifiers)):
+        raise AssertionError("scheduling lost or duplicated a mandatory obligation")
+    if (jobs[0][0] != "reproduction" or jobs[0][2] != REPRODUCTION_BUDGET
+            or CHECK_SECONDS - SETTLEMENT_RESERVE - sum(job[3] for job in jobs[1:])
+            < REPRODUCTION_BUDGET):
+        raise AssertionError("fresh reproduction cannot receive its full cold-compile budget")
     observed = []
     for script, options, failed in (
             ("tests/run_unit.py", ["--suite", "primitive", "--simulator", "verilator",
@@ -95,7 +107,7 @@ def main():
         else:
             os.environ["HT3_CHECK_DEADLINE"] = previous_deadline
     result = dict(status="passed", kind="retention-validator-diagnostic",
-                  comparisons=len(observed) * 5 + 2, observations=observed,
+                  comparisons=len(observed) * 5 + 4, observations=observed,
                   synthetic_reserve_observation=row, parsed_sources=parsed_sources)
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)

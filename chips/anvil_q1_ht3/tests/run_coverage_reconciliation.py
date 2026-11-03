@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 import time
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, hashes, relative, remaining, timestamp
@@ -54,8 +55,17 @@ def main():
             raise AssertionError("failed timing evidence incorrectly closed resident coverage")
         if "subnormal/extreme directed vectors" not in rows[1]["coverage_limits"]:
             raise AssertionError("unexecuted numerical coverage was incorrectly closed")
+        stale = copy.deepcopy(missing)
+        stale[2]["status"] = "passed"
+        changed = dict(hashes())
+        changed["tests/attention_timing_tb.sv"] = "0"*64
+        with patch("verify.hashes", return_value=changed):
+            reconcile_coverage(stale)
+        if ("resident_tile_coverage" in stale[1]
+                or "resident-tile handoff edge assertions" not in stale[1]["coverage_limits"]):
+            raise AssertionError("stale timing evidence incorrectly closed resident coverage")
         result = dict(status="passed", scope="cross-suite evidence reconciliation only",
-                      assertions=5, rows=rows)
+                      assertions=6, rows=rows)
     except (OSError, RuntimeError, AssertionError, ValueError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
