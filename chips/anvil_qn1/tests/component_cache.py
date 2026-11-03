@@ -176,12 +176,13 @@ def saved_behavior_applicability(run):
 
 
 def component(run, stem, operation, *, inputs, parameters, tools, validate,
-              equivalence=None, validate_retained=None):
+              equivalence=None, validate_retained=None, aliases=()):
     candidates = []
     for parent in (ROOT / "evidence/preparation", ROOT / "evidence"):
         if parent.is_dir():
-            candidates.extend(parent.glob(f"{stem}-*/receipt.json"))
-            candidates.extend(parent.glob(f"l1-{stem}-*/receipt.json"))
+            for candidate_stem in (stem, *aliases):
+                candidates.extend(parent.glob(f"{candidate_stem}-*/receipt.json"))
+                candidates.extend(parent.glob(f"l1-{candidate_stem}-*/receipt.json"))
     assessments = []
     for path in sorted(set(candidates), key=lambda p: p.stat().st_mtime, reverse=True):
         assessment, results = assess(run, path, inputs, parameters, tools,

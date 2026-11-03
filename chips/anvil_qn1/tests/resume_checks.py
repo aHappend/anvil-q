@@ -20,6 +20,8 @@ WRAPPERS = {
     "tests/memory_checks.py": {"run_memory_matrix"},
     "tests/fault_checks.py": {"run_fault_matrix"},
     "tests/speculative_fault_checks.py": {"run_speculative_cancel_matrix"},
+    "tests/benchmark_checks.py": {"run_benchmark"},
+    "tests/defect_checks.py": {"run_defects"},
 }
 
 

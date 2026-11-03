@@ -183,16 +183,6 @@ def run_mutant(run, name):
 
 
 def run_defects(run):
-    baselines = {}
-    for kind in sorted({record[1] for record in MUTANTS.values()}):
-        baselines[kind] = run.component(
-            f"defects-baseline-{kind}", lambda child, kind=kind: oracle(child, kind))
-    detections = [
-        run.component(f"defects-{name}", lambda child, name=name: run_mutant(child, name))
-        for name in MUTANTS
-    ]
-    if ({r["mutant"] for r in detections} != set(MUTANTS) or
-            not all(r["detected"] and r["checker_exit"] != 0 for r in detections)):
-        raise AssertionError("incomplete executable defect-sensitivity campaign")
-    return {"scope": __doc__, "passing_baselines": baselines, "detections": detections,
-            "required_mutants": list(MUTANTS), "detected_count": len(detections)}
+    from campaign_checkpoints import defects_campaign
+
+    return defects_campaign(run)

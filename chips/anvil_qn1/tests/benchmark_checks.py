@@ -285,28 +285,6 @@ def run_benchmark_case(run, fixture, family, seed, thinking, compiled=None):
 
 
 def run_benchmark(run, domain):
-    if domain not in DOMAINS:
-        raise ValueError(f"unknown benchmark domain: {domain}")
-    check_fixture_manifest()
-    results, builds = [], {}
-    for index, fixture in enumerate(fixture_manifest(domain)):
-        family = (1, 2, 3, 3)[index]
-        for thinking in (False, True):
-            def operation(child, fixture=fixture, family=family, index=index, thinking=thinking):
-                result = run_benchmark_case(child, fixture, family, (17, 89, 203, 17)[index],
-                                            thinking, builds.get(family))
-                builds[family] = result["compiled"]
-                return result
-            results.append(run.component(f"benchmark-{domain}-case{index}-mode{int(thinking)}",
-                                         operation))
-    if (len(results) != 8 or {r["family"] for r in results} != {1, 2, 3} or
-            {r["geometry"]["q_heads"] for r in results} != {2, 4}):
-        raise AssertionError("missing domain/family/mode benchmark coverage")
-    return {"domain": domain, "scope": __doc__, "cases": results,
-            "fixture_manifest_sha256": FIXTURE_MANIFEST_SHA256,
-            "fixture_count": 4, "compared_frames": sum(r["compared_frames"] for r in results),
-            "compared_logit_words": sum(r["compared_logit_words"] for r in results),
-            "modes": {str(int(mode)): {
-                "generated_tokens": sum(r["generated_tokens"] for r in results if r["thinking"] == mode),
-                "decode_cycles": sum(r["decode_cycles"] for r in results if r["thinking"] == mode),
-            } for mode in (False, True)}}
+    from campaign_checkpoints import benchmark_domain
+
+    return benchmark_domain(run, domain)
