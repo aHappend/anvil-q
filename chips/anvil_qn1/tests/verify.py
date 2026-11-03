@@ -30,14 +30,19 @@ Executable coverage:
           five-token publication, drained responses and no-reset fresh recovery.
   attention-context: D128 attention consuming every initialized position in
           a 40960-position external cache with independently calculated context.
+  parent-reference: unchanged compact parent execution, nonuniform FP16 embedding,
+          zero-dequantized affine fixture, every legacy scratch/KV write and logit.
+  isolation-smoke: source-only clean directory, no copied reference tree/build
+          products, and actual independent compact QK simulation in the copy.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
           coefficient comparisons and deterministic E/SiLU checks.
 
-Behavior, benchmark, defect and reproduction suite dispatchers remain
-incomplete; no whole-product acceptance is claimed. Production and boundary
-coarse-synthesis dispatch is authored but its campaign is not yet demonstrated.
+Behavior, benchmark, defect and no-argument suite dispatchers remain
+incomplete; no whole-product acceptance is claimed. Production/boundary
+coarse-synthesis and compact isolated-reproduction dispatch are authored but
+their complete campaigns are not yet demonstrated.
 The original controller
 structural-loop counterexample is retained; the repaired controller has a fresh
 successful structural receipt. No-argument dispatch remains
