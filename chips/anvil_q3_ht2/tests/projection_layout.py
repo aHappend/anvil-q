@@ -177,11 +177,18 @@ if __name__ == "__main__":
     run = new_run("projection-layout", preparation=True, repair_of=args.repair_of)
     ledger = Ledger(run, "projection-layout-preparation")
     print(f"Projection layout evidence: {relative(run)}", flush=True)
-    if args.synthesis_only:
-        for mode in (1, 2):
-            ledger.check(f"minimum-gqa-top-mode{mode}", run_synthesis,
-                         "anvil_q3_ht2_top", mode, compact_parameters())
-    else:
-        for heads in (1, 2, 3):
-            ledger.check(f"kvheads{heads}", run_projection_layout, heads)
-    ledger.finish()
+    try:
+        if args.synthesis_only:
+            for mode in (1, 2):
+                ledger.check(f"minimum-gqa-top-mode{mode}", run_synthesis,
+                             "anvil_q3_ht2_top", mode, compact_parameters())
+        else:
+            for heads in (1, 2, 3):
+                ledger.check(f"kvheads{heads}", run_projection_layout, heads)
+        ledger.finish()
+    except Exception as error:
+        from receipts import utc
+        ledger.data.update(status="failed", finished_at=utc(),
+                           error=f"{type(error).__name__}: {error}")
+        ledger.save()
+        raise

@@ -34,8 +34,13 @@ def run_projection_boundary(run):
 
 
 if __name__ == "__main__":
+    import argparse
     from verify import enter_tier
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repair-of")
+    args = parser.parse_args()
     enter_tier()
-    run = new_run("projection-minimum-gqa", preparation=True)
+    run = new_run("projection-minimum-gqa", preparation=True, repair_of=args.repair_of)
     print(f"Projection boundary evidence: {relative(run)}", flush=True)
     print(json.dumps(run_projection_boundary(run)), flush=True)
