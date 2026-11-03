@@ -72,6 +72,7 @@ class Run(BaseRun):
             if remaining() <= 0:
                 status, results, error = "failed", None, "whole-check preparation deadline exceeded"
             super().finish(status, results, error)
+            return status
         finally:
             if timer[0]:
                 signal.setitimer(signal.ITIMER_REAL, max(0.001, remaining()))

@@ -57,9 +57,15 @@ Executable coverage:
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
           coefficient comparisons and deterministic E/SiLU checks.
 
-Behavior now orchestrates source-bound protocol components and requires all three
-exact-profile strict fusion measurements. Benchmark, defect and no-argument suite
-dispatchers remain incomplete; no whole-product acceptance is claimed. The seven-case production/
+Behavior orchestrates source-bound protocol components and three profile-labeled
+compact, two-layer strict fusion measurements. These are authorized L1 geometry,
+not full-production measurements. Full-extent layer probes remain separately
+labeled and are not an L1 prerequisite. Benchmark cases use identified real-task
+descriptions, a documented lossy compact mapping and independent full-frame/KV
+comparisons; they do not measure published task accuracy. The whole-check clock
+includes Python preparation, compilation, execution and receipt retention; nested
+components never renew it. Defect and no-argument suite dispatchers remain
+incomplete; no whole-product acceptance is claimed. The seven-case production/
 boundary coarse-synthesis campaign has executed successfully; it is not STA.
 The source-only dual-simulator compact reproduction campaign has also executed.
 The original controller
@@ -77,7 +83,7 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from execution import Run
+from budget import Run, whole_check
 from leaf_checks import run_qk, run_scalar, run_tensor, run_tensor_cpp, run_elementary
 from integration import run_top
 from control_checks import run_csr, run_controller
@@ -101,6 +107,7 @@ from component_cache import (historical_applicability, latest_marker_build,
                              saved_behavior_applicability, marker_applicability)
 from prefill_marker_checks import run_prefill_marker
 from model import Geometry
+from benchmark_checks import run_benchmark, run_benchmark_case, fixture_manifest
 import reference
 
 
@@ -130,7 +137,8 @@ def main():
                                           "integrated-marker-fast",
                                           "saved-behavior-applicability",
                                           "marker-applicability", "behavior-components",
-                                          "behavior-checker"))
+                                          "behavior-checker", "delivery-checker",
+                                          "benchmark-case"))
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
                         help="Verilator threads for layer/fusion/marker probes, not RTL geometry")
@@ -142,7 +150,22 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "behavior-checker":
+        if args.probe == "delivery-checker":
+            from checker_checks import run_delivery_checker
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_delivery_checker(run)
+        elif args.probe == "benchmark-case":
+            domain = args.domain or "gsm8k"
+            run.versions(("python3", "verilator", "g++", "make"))
+            direct = run.component(
+                f"benchmark-{domain}-direct",
+                lambda child: run_benchmark_case(child, fixture_manifest(domain)[0], 1, 17, False))
+            thinking = run.component(
+                f"benchmark-{domain}-thinking",
+                lambda child: run_benchmark_case(child, fixture_manifest(domain)[0], 1, 17, True,
+                                                 direct["compiled"]))
+            results = {"direct": direct, "thinking": thinking}
+        elif args.probe == "behavior-checker":
             from checker_checks import run_behavior_checker
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_behavior_checker(run)
@@ -303,6 +326,15 @@ def main():
         elif args.suite == "behavior":
             run.versions(("python3", "verilator", "g++", "make", "yosys"))
             results = run_behavior(run)
+        elif args.suite == "benchmark":
+            run.versions(("python3", "verilator", "g++", "make"))
+            if args.domain:
+                results = run_benchmark(run, args.domain)
+            else:
+                from benchmark_checks import DOMAINS
+                results = {domain: run.component(
+                    f"benchmark-{domain}", lambda child, domain=domain: run_benchmark(child, domain))
+                    for domain in DOMAINS}
         elif args.suite == "synthesis":
             run.versions(("python3", "yosys"))
             results = run_synthesis(run)
@@ -311,8 +343,7 @@ def main():
             results = run_reproduce(run)
         else:
             raise NotImplementedError("L1 suite authoring is in progress; no passing result claimed")
-        run.finish("passed", results)
-        return 0
+        return 0 if run.finish("passed", results) == "passed" else 1
     except Exception as error:
         run.finish("failed", error=f"{type(error).__name__}: {error}")
         print(f"FAIL {error}", file=sys.stderr, flush=True)
@@ -320,4 +351,5 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    with whole_check():
+        sys.exit(main())

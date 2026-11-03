@@ -119,3 +119,77 @@ def run_behavior_checker(run):
             "rejected_counterexamples": rejected, "rejected_count": len(rejected),
             "historical_measurement_rechecks": measured,
             "protocol_components": sorted(complete)}
+
+
+def run_delivery_checker(run):
+    """Source/aggregation diagnostics, not simulation or mandatory-suite closure."""
+    import ast
+    import time
+    from unittest.mock import patch
+    import budget
+    from benchmark_checks import DOMAINS, benchmark_bench, compact_tokens, fixture_manifest
+    from behavior_suite import MODEL, validate_fusion
+
+    parsed = []
+    for path in sorted((ROOT / "tests").glob("*.py")):
+        ast.parse(path.read_text(), filename=relative(path))
+        parsed.append(relative(path))
+    benchmark_bench()
+    fixtures = {domain: fixture_manifest(domain) for domain in DOMAINS}
+    for domain, records in fixtures.items():
+        if (len(records) != 4 or len({r["id"] for r in records}) != 4 or
+                len({tuple(compact_tokens(r["description"])) for r in records}) != 4):
+            raise AssertionError(f"missing distinct domain fixtures/token prompts: {domain}")
+        for record in records:
+            if len(record["sha256"]) != 64 or not record["attribution"]["license"]:
+                raise AssertionError("missing fixture hash/license attribution")
+    now = time.monotonic()
+    with patch.object(budget, "START", now - 100), patch.object(budget.time, "monotonic",
+                                                             return_value=now):
+        if budget.remaining() != 2550 or budget.remaining(retention=True) != 2600:
+            raise AssertionError("whole-check clock lost preparation/retention time")
+    with patch.object(budget, "START", now - 2701), patch.object(budget.time, "monotonic",
+                                                              return_value=now):
+        if budget.remaining() != 0 or budget.remaining(retention=True) != 0:
+            raise AssertionError("whole-check deadline renewed")
+        try:
+            budget.Run("must-not-create-output")
+        except budget.BudgetExceeded:
+            pass
+        else:
+            raise AssertionError("expired check created another child/output")
+    candidates = sorted((ROOT / "evidence/preparation").glob("fusion-compact-*/receipt.json"),
+                        key=lambda p: p.stat().st_mtime, reverse=True)
+    applicable = None
+    for path in candidates:
+        assessment, result = assess(
+            run, path, (*MODEL, "tests/production_checks.py"),
+            {"profile": 1, "compact_diagnostic": True}, TOOLS)
+        if assessment["applicable"]:
+            validate_fusion(result, 1)
+            applicable = assessment
+            break
+    if applicable is None:
+        raise AssertionError("no compatible complete compact profile-1 receipt")
+    rejected = []
+    for field in ("cycles", "requests", "compared_writes", "key_writes", "value_writes"):
+        broken = copy.deepcopy(result)
+        broken["fused"][field] = 0
+        rejected.append(rejection(lambda: validate_fusion(broken, 1), f"fusion:zero-{field}"))
+    for record in ("fused", "without_norm"):
+        for field in ("profile", "geometry", "normalization", "compact_diagnostic", "parameters"):
+            broken = copy.deepcopy(result)
+            broken[record][field] = None
+            rejected.append(rejection(lambda: validate_fusion(broken, 1),
+                                      f"fusion:{record}:changed-{field}"))
+    broken = copy.deepcopy(result)
+    broken["fused"]["cycles"] = broken["without_norm"]["cycles"] * 2
+    broken["extra_cycles"] = broken["fused"]["cycles"] - broken["without_norm"]["cycles"]
+    rejected.append(rejection(lambda: validate_fusion(broken, 1), "fusion:overhead"))
+    rejected.append(rejection(lambda: validate_fusion(result, 2), "fusion:wrong-profile-cache"))
+    return {"scope": "source/checker/applicability diagnostics only",
+            "parsed_sources": parsed, "fixtures": fixtures,
+            "compact_profile1_applicability": applicable,
+            "compact_profile1_counts": {
+                name: result[name] for name in ("extra_cycles", "compact_diagnostic", "profile")},
+            "rejected_counterexamples": rejected, "cumulative_budget_properties": 4}
