@@ -50,8 +50,8 @@ Executable coverage:
           historical long-context and D128 synthesis components, not fresh execution.
   saved-behavior-applicability: recursively assess retained behavior components,
           including descendant executions; this does not certify coverage closure.
-  marker-applicability: validate and reuse complete source-bound opening/closing
-          marker results, executing missing or stale cases rather than skipping them.
+  marker-applicability: validate and reuse a complete source-bound --marker case,
+          executing a missing or stale case rather than skipping it.
   smoke: production/legacy elaboration, illegal diagnostics, compact startup boundary
           matrix and dual-simulator scalar/QK/tensor/CSR checks.
   numerical: full tensor/head vectors, analytic score bounds, independent Decimal
@@ -141,7 +141,7 @@ def main():
         reference.self_check()
         if args.probe == "marker-applicability":
             run.versions(("python3", "verilator", "g++", "make"))
-            results = marker_applicability(run)
+            results = marker_applicability(run, opening=args.marker == "open")
         elif args.probe == "saved-behavior-applicability":
             run.versions(("python3", "verilator", "g++", "make"))
             results = saved_behavior_applicability(run)
