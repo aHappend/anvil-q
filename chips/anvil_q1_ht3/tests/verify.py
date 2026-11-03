@@ -271,12 +271,17 @@ def reconcile_coverage(rows):
             elaborated_cross_triples_without_functional_observation=[
                 list(v) for v in sorted(elaborated-exercised)],
             scope="checked inference tuples only; source elaboration is not functional coverage")
-        required = {(name, fmt) for name, _, _ in legal_cross() for fmt in (0, 1)}
+        required = {
+            (name, fmt): (p["TILE_BEATS"], p["KV_WINDOW"], p["FLASH_TILE"], p["MAX_SEQ_LEN"])
+            for name, p, _ in legal_cross() for fmt in (0, 1)}
         cross = [row for row in observed if row["id"].startswith("legal-cross-")]
         cross_complete = (
-            {(row["id"], row["format"]) for row in cross} == required
+            {(row["id"], row["format"]) for row in cross} == set(required)
             and len(cross) == len(required)
-            and all(row["compared_positions"] == [
+            and all(tuple(row["geometry"][key] for key in ("TB", "KW", "FT", "S")) ==
+                    required[row["id"], row["format"]]
+                    and row["seed"] == (17 if row["format"] == 0 else 89)
+                    and row["compared_positions"] == [
                 *range(row["geometry"]["S"] if row["geometry"]["KW"] == 128
                        else min(row["geometry"]["S"], 4)), 0]
                     and row["compared_tokens"] == len(row["compared_positions"])

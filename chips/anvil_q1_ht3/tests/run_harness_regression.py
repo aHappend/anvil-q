@@ -2,6 +2,7 @@
 
 import argparse
 import ast
+import copy
 from contextlib import redirect_stdout
 import errno
 import io
@@ -23,12 +24,78 @@ from run_compatibility import resumable_case
 from run_synthesis import semantic_sources
 from official_reference import QwenFP64
 from official_scoring import likelihood, restore_state, save_state
-from verify import MINIMUM_ALLOCATIONS, child, schedule
+from verify import MINIMUM_ALLOCATIONS, child, dependencies, reconcile_coverage, schedule
+from run_integrated_geometry import CROSS_CASES
+from run_parameters import legal_cross
 import numpy as np
 
 
 def run(output):
     assertions = 0
+    cross_directory = output/f"synthetic-cross-coverage-{uuid.uuid4().hex[:12]}"
+    cross_directory.mkdir()
+    cross_label = ("functional TILE_BEATS/KV_WINDOW/FLASH_TILE cross matrix; "
+                   "the legal boundary cross received source elaboration only")
+    current_sources = hashes()
+    geometry_rows = []
+    for name, geometry in CROSS_CASES.items():
+        positions = [*range(geometry["S"] if geometry["KW"] == 128
+                            else min(geometry["S"], 4)), 0]
+        for fmt, seed in ((0, 17), (1, 89)):
+            geometry_rows.append(dict(
+                synthetic=True, status="passed", id=name, geometry=geometry,
+                format=fmt, seed=seed, compared_positions=positions,
+                metrics=[dict(cosine=1.0) for _ in positions],
+                measurements=[dict(synthetic=True) for _ in positions],
+                simulation_receipt="synthetic-only; no RTL execution"))
+
+    def cross_reconciliation(cases):
+        parameters = dict(status="passed", synthetic=True, runs=[
+            dict(id=name, parameters=p, status="passed") for name, p, _ in legal_cross()])
+        geometries = dict(status="passed", synthetic=True, runs=cases)
+        rows = []
+        for name, value in (("parameters", parameters), ("integrated_geometry", geometries)):
+            script = f"tests/run_{name}.py"
+            result_path = cross_directory/f"{name}-result.json"
+            receipt_path = cross_directory/f"{name}-receipt.json"
+            result_path.write_text(json.dumps(value))
+            receipt_path.write_text(json.dumps(dict(
+                synthetic=True, exit=0, timed_out=False,
+                source_sha256={p: current_sources[p] for p in dependencies(script)})))
+            rows.append(dict(id=name, status="incomplete" if name == "parameters" else "passed",
+                             coverage_limits=[cross_label] if name == "parameters" else [],
+                             result=relative(result_path), receipt=relative(receipt_path)))
+        reconcile_coverage(rows)
+        return rows[0]
+
+    reconciled = cross_reconciliation(geometry_rows)
+    if (reconciled["coverage_limits"] or reconciled["status"] != "passed"
+            or not reconciled["functional_parameter_coverage"].get("pairwise_cross_complete")):
+        raise AssertionError("complete synthetic pairwise observations did not reconcile")
+    assertions += 1
+    for defect in ("missing_tuple", "duplicate_tuple", "missing_comparison",
+                   "wrong_position", "short_context", "wrong_geometry", "wrong_seed"):
+        cases = copy.deepcopy(geometry_rows)
+        index = next(i for i, row in enumerate(cases) if row["geometry"]["KW"] == 128)
+        if defect == "missing_tuple":
+            del cases[index]
+        elif defect == "duplicate_tuple":
+            cases.append(copy.deepcopy(cases[index]))
+        elif defect == "missing_comparison":
+            cases[index]["metrics"].pop()
+        elif defect == "wrong_position":
+            cases[index]["compared_positions"][-2] -= 1
+        elif defect == "short_context":
+            for key in ("metrics", "measurements", "compared_positions"):
+                cases[index][key] = cases[index][key][:4]
+        elif defect == "wrong_geometry":
+            cases[index]["geometry"]["KW"] = 3
+        else:
+            cases[index]["seed"] = 2026
+        rejected = cross_reconciliation(cases)
+        if rejected["coverage_limits"] != [cross_label] or rejected["status"] != "incomplete":
+            raise AssertionError(f"synthetic coverage defect closed the parameter cross: {defect}")
+        assertions += 1
     filename = "anvil_q1_ht3_decoder.sv"
     old = f"evidence/preparation/synthetic-old-abc/shard-123/frontend-sources/{filename}"
     new = f"evidence/preparation/synthetic-new-def/shard-456/frontend-sources/{filename}"
