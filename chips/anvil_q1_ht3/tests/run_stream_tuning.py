@@ -21,6 +21,15 @@ OPTIONS = {
 
 
 def run(output, args):
+    comparison = None
+    if args.compare:
+        path = ROOT / args.compare
+        comparison = json.loads(path.read_text())
+        receipt = json.loads((path.parent / "receipt.json").read_text())
+        if (comparison.get("status") != "passed" or receipt.get("exit") != 0
+                or receipt.get("timed_out")
+                or not artifacts_intact(comparison["artifact_sha256"])):
+            raise AssertionError("comparison is not an intact settled sample")
     compiler = execute(["g++", "--version"], output, "compiler", ["g++", "--version"]).strip()
     with patch.object(official_stream, "COMPILE_OPTIONS", OPTIONS[args.flavor]):
         if args.geometry == "compact":
@@ -79,7 +88,7 @@ def run(output, args):
         a, b = dict(other["build_identity"]), dict(result["build_identity"])
         a.pop("compile_options")
         b.pop("compile_options")
-        if (other.get("status") != "passed" or receipt.get("exit") != 0
+        if (other != comparison or other.get("status") != "passed" or receipt.get("exit") != 0
                 or receipt.get("timed_out") or a != b
                 or other["compiler_version"] != compiler
                 or not artifacts_intact(other["artifact_sha256"])):
