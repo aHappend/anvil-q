@@ -37,7 +37,8 @@ def orchestration_equivalence(run, path, receipt, name):
     snapshot = path.parent / "source" / name
     if (not snapshot.is_file() or
             hashlib.sha256(snapshot.read_bytes()).hexdigest() !=
-            receipt.get("source_sha256", {}).get(name)):
+            receipt.get("source_sha256", {}).get(name) or
+            hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != run.hashes.get(name)):
         return None
 
     def computation(text):
@@ -405,3 +406,47 @@ def run_resume_checker(run):
     return {"scope": "checker/applicability diagnostics, not mandatory behavior acceptance",
             "memory_cases": cases, "behavior_core": core,
             "rejected_counterexamples": rejections}
+
+
+def run_checkpoint_checker(run):
+    from checker_checks import rejection
+    from types import SimpleNamespace
+
+    original = run_resume_checker(run)
+    memory = [memory_case(run, index) for index in range(6)]
+    matrix = {"cases": memory, "compared_frames": 36, "compared_logit_words": 288}
+    validate_memory_matrix(matrix)
+    faults = fault_matrix(run)
+    speculative = speculative_cancel_matrix(run)
+    rejections = []
+    for index in range(6):
+        broken = copy.deepcopy(matrix)
+        del broken["cases"][index]
+        rejections.append(rejection(lambda: validate_memory_matrix(broken),
+                                    f"memory-matrix:missing-{index}"))
+    for result in faults["cases"]:
+        broken = copy.deepcopy(result)
+        broken["counts"][1] += 1
+        rejections.append(rejection(
+            lambda broken=broken: validate_fault_case(broken, broken["kind"]),
+            f"fault:corrupt-comparison-{result['kind']}"))
+    for result in speculative["cases"]:
+        broken = copy.deepcopy(result)
+        broken["counts"][4] += 1
+        rejections.append(rejection(
+            lambda broken=broken: validate_speculative_case(broken, broken["kind"]),
+            f"speculative:corrupt-commit-{result['kind']}"))
+    path = ROOT / original["memory_cases"][0]["receipt"]
+    for name in ("tests/memory_checks.py", "rtl/anvil_qn1_top.sv", "tests/model.py"):
+        changed = dict(run.hashes)
+        changed[name] = "0" * 64
+        assessment, _ = assess(
+            SimpleNamespace(hashes=changed, tool_versions=run.tool_versions),
+            path, (*MODEL, "tests/memory_checks.py"), memory_identity(0), TOOLS,
+            equivalence=orchestration_equivalence)
+        require(not assessment["applicable"], "stale computational source accepted")
+        rejections.append(f"memory-cache:stale-{name}")
+    return {"scope": "resumability/checker diagnostics, not mandatory behavior acceptance",
+            "original_applicability": original, "memory": matrix, "faults": faults,
+            "speculative": speculative, "rejected_counterexamples": rejections,
+            "executed_new_cases": sum(not c.get("reused") for c in run.components)}

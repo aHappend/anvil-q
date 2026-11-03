@@ -174,11 +174,11 @@ def prefill_case(run, opening):
                 "missing prefill marker/no-generated-token comparisons")
 
     return component(
-        run, "prefill-marker", lambda child: run_prefill_marker(child, opening, threads=4),
+        run, "prefill-marker", lambda child: run_prefill_marker(child, opening, threads=1),
         inputs=("tests/prefill_marker_checks.py", "tests/marker_checks.py",
                 "tests/speculation_checks.py", "tests/model.py", "tests/reference.py"),
         parameters={"opening": opening, "input_marker": 151667 if opening else 151668,
-                    "simulation_threads": 4},
+                    "simulation_threads": 1},
         tools=TOOLS, validate=validate, equivalence=marker_source_equivalence)
 
 
@@ -250,16 +250,22 @@ def validate_fusion(result, profile):
             "measured normalization overhead is not strictly below 2%")
 
 
-def run_behavior(run):
-    results = run_behavior_components(run)
-    results["compact_fusion"] = {}
+def fusion_components(run):
+    results = {}
     for profile in (1, 2, 3):
-        results["compact_fusion"][str(profile)] = component(
+        results[str(profile)] = component(
             run, "fusion-compact" if profile == 1 else f"fusion-compact-profile{profile}",
             lambda child, profile=profile: run_fusion_profile(child, profile, compact=True),
             inputs=(*MODEL, "tests/production_checks.py"),
             parameters={"profile": profile, "compact_diagnostic": True},
-            tools=TOOLS, validate=lambda result, profile=profile: validate_fusion(result, profile))
+            tools=TOOLS, validate=lambda result, profile=profile: validate_fusion(result, profile),
+            aliases=("fusion-compact",) if profile != 1 else ())
+    return results
+
+
+def run_behavior(run):
+    results = run_behavior_components(run)
+    results["compact_fusion"] = fusion_components(run)
     results["scope"] = (
         "behavior components and three profile-labeled compact measured fusion comparisons; "
         "production-geometry measurements remain separate")

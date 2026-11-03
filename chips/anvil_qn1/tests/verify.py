@@ -142,7 +142,9 @@ def main():
                                           "marker-applicability", "behavior-components",
                                           "behavior-checker", "delivery-checker",
                                           "benchmark-case", "mutation-case",
-                                          "resume-checker", "memory-case"))
+                                          "resume-checker", "memory-case", "checkpoint-checker",
+                                          "benchmark-domain", "defects-resume",
+                                          "fusion-checkpoints"))
     parser.add_argument("--case-index", type=int, choices=range(6), default=0)
     parser.add_argument("--profile", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--sim-threads", type=int, choices=(1, 2, 4, 8), default=1,
@@ -156,7 +158,21 @@ def main():
               repair_of=args.repair_of)
     try:
         reference.self_check()
-        if args.probe == "resume-checker":
+        if args.probe == "checkpoint-checker":
+            from resume_checks import run_checkpoint_checker
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_checkpoint_checker(run)
+        elif args.probe == "benchmark-domain":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_benchmark(run, args.domain or "gsm8k")
+        elif args.probe == "defects-resume":
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = run_defects(run)
+        elif args.probe == "fusion-checkpoints":
+            from behavior_suite import fusion_components
+            run.versions(("python3", "verilator", "g++", "make"))
+            results = fusion_components(run)
+        elif args.probe == "resume-checker":
             from resume_checks import run_resume_checker
             run.versions(("python3", "verilator", "g++", "make"))
             results = run_resume_checker(run)
