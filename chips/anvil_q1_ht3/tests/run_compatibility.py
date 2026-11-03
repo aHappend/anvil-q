@@ -16,10 +16,14 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from execution import (ROOT, clean_objects, execute, failure_details, hashes,
+from execution import (ROOT, ExecutionFailure, clean_objects, execute, failure_details, hashes,
                        nested_outcomes, relative, remaining, timestamp)
 from reference import convert, encode, float_bits, float_value
 from retention import execution_logs_intact, validated_execution
+
+
+CASE_MINIMUM_SECONDS = 120
+BATCH_MINIMUM_SECONDS = 180
 
 
 def logit_check(actual, reference):
@@ -269,10 +273,13 @@ def run_case(directory, binary, binding, fmt, seed, smoke=False, batch_count=Non
               else f"format{fmt}-seed{seed}-")
     return resumable_case(directory, binary, binding, inputs, [f"+seed={seed}"], prefix,
                           lambda where, text: check_case(where, text, binding, fmt, seed,
-                                                         expected, expected_batch))
+                                                         expected, expected_batch),
+                          minimum=(BATCH_MINIMUM_SECONDS if batch_count is not None
+                                   else CASE_MINIMUM_SECONDS))
 
 
-def resumable_case(directory, binary, binding, inputs, options, prefix, checker):
+def resumable_case(directory, binary, binding, inputs, options, prefix, checker,
+                   minimum=CASE_MINIMUM_SECONDS):
     sources = [relative(p) for p in sorted(ROOT.glob("rtl/*.sv"))]+["tests/inference_tb.sv"]
     candidates = []
     for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
@@ -287,6 +294,13 @@ def resumable_case(directory, binary, binding, inputs, options, prefix, checker)
         reused = True
         break
     else:
+        available = remaining()
+        if available < minimum:
+            raise ExecutionFailure(
+                f"unstarted compatibility case: {available:.3f}s remain; "
+                f"minimum useful cold allocation is {minimum}s; no simulation launched",
+                dict(timed_out=False, launched=False, exit=None, timeout=0,
+                     available_s=available, minimum_s=minimum, budget_exhausted=True))
         argv = [relative(binary), f"+vectors={relative(inputs[0])}",
                 f"+observations={relative(directory/'observations.txt')}", *options]
         if len(inputs) > 1:

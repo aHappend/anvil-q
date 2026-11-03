@@ -46,7 +46,7 @@ TOOLS = {"python3": ["python3", "--version"], "iverilog": ["iverilog", "-V"],
 SETTLEMENT_RESERVE = 30
 SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
                  "parameters": 450, "attention_restart": 60,
-                 "transcendental": 180, "packed_cache": 180, "compatibility": 420,
+                 "transcendental": 180, "packed_cache": 180, "compatibility": 900,
                  "packed_top": 480,
                  "integrated_geometry": 1500,
                  "mutations": 420, "stream_checkpoint": 2200,
