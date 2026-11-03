@@ -98,6 +98,63 @@ def value(word, fmt, scale):
     return integer * float_value(scale)
 
 
+def directed_fixtures(q, k, d):
+    """Finite boundary images derived independently from IEEE encodings."""
+    for fmt in range(4):
+        labels = (("subnormal_query", "subnormal_values", "extreme_scores", "extreme_values")
+                  if fmt < 2 else ("tiny_scale", "subnormal_scale", "largest_scale",
+                                   "scale_overflow"))
+        for label in labels:
+            length = 1 if label in ("largest_scale", "scale_overflow") else 3
+            prefix = length-1
+            positions, ancestors = tree(1, prefix)
+            fp = int(fmt == 1)
+            query = [[0, 0x7fff, 0x7fff, 0x7fff] for _ in range(q*d)]
+            keys, values = [], []
+            ks = vs = float_bits(0.125)
+            for source in range(prefix+4):
+                for head in range(k):
+                    for column in range(d):
+                        if fmt < 2:
+                            key = val = 0
+                            if label == "subnormal_query":
+                                key = 1
+                                val = convert(float_bits((column+1)*0.25), fp)
+                            elif label == "subnormal_values":
+                                val = (column+1)*(1 if fp else 64)
+                            elif label == "extreme_scores":
+                                key = convert(float_bits((source-1)*(1024 if fp else 1e19)), fp)
+                                val = convert(float_bits((source+column+1)*0.125), fp)
+                            elif label == "extreme_values":
+                                val = (0x7800 if fp else 0x7d00) | ((column & 1) << 15)
+                        else:
+                            width = 4 if fmt == 2 else 8
+                            key = 0
+                            integer = (column % (1 << width))-(1 << (width-1))
+                            if label in ("largest_scale", "scale_overflow"):
+                                integer = 1 if label == "largest_scale" else 2
+                            val = integer & ((1 << width)-1)
+                        keys.append(key)
+                        values.append(val)
+            if label == "subnormal_query":
+                query = [[1 | ((column & 1) << 15), 0x7fff, 0x7fff, 0x7fff]
+                         for column in range(q*d)]
+            elif label == "extreme_scores":
+                query = [[convert(float_bits(0.5), fp), 0x7fff, 0x7fff, 0x7fff]
+                         for _ in range(q*d)]
+            if fmt < 2:
+                # Native formats must ignore these otherwise-invalid scale words.
+                ks, vs = 0x7fc00000, 0xbf800000
+            else:
+                ks = 1
+                vs = (0x00800000 if label == "tiny_scale" else
+                      1 if label == "subnormal_scale" else 0x7f7fffff)
+            yield dict(fmt=fmt, fp=fp, length=length, prefix=prefix, mask=1,
+                       positions=positions, ancestors=ancestors, query=query,
+                       keys=keys, values=values, ks=ks, vs=vs,
+                       error=int(label == "scale_overflow"), fault=0, directed=label)
+
+
 def reference(case, slot, head, k, d, q):
     prefix = case["prefix"]
     ancestors = (case["ancestors"] >> (slot*4)) & 15
@@ -159,10 +216,13 @@ def compiled_attention(q, k, d, tile):
     return binary, relative(directory / "binding.json")
 
 
-def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False, compact=False):
+def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False, compact=False,
+             numerical_only=False):
     vectors = output / "vectors.txt"
     observations = output / "observations.txt"
-    cases = list(fixtures(seed, q, k, d, tile, diagnostic, long_context, compact))
+    cases = ([] if numerical_only else
+             list(fixtures(seed, q, k, d, tile, diagnostic, long_context, compact)))
+    cases.extend(directed_fixtures(q, k, d))
     with vectors.open("x") as out:
         for c in cases:
             out.write(f'{c["fmt"]} {c["fp"]} {c["mask"]} {c["prefix"]} '
@@ -242,15 +302,20 @@ def run_case(output, seed, q, k, d, tile, diagnostic, long_context=False, compac
                     cosine, error = vector_check(vector, expected)
                     comparisons.append(dict(command=cmd, slot=slot, head=head,
                                             cosine=cosine, max_abs_error=error,
-                                            format=c["fmt"], context=c["length"]))
+                                            format=c["fmt"], context=c["length"],
+                                            directed=c.get("directed")))
                 except AssertionError as exc:
                     failures.append(dict(command=cmd, slot=slot, head=head,
-                                         message=str(exc), actual=vector, reference=expected))
+                                         message=str(exc), actual=vector, reference=expected,
+                                         format=c["fmt"], directed=c.get("directed")))
     result = dict(status="failed" if failures else "passed", seed=seed,
                   geometry=dict(q=q, k=k, d=d, tile=tile), commands=len(cases),
                   comparisons=comparisons, failures=failures, completions=completed,
                   diagnostic=diagnostic, raw_summary=summary[0] if summary else None,
                   compact=compact, compile_binding=compile_binding,
+                  directed_commands=[dict(command=i, format=c["fmt"], label=c["directed"],
+                                          expected_error=c["error"], observed=completed.get(i))
+                                     for i, c in enumerate(cases) if "directed" in c],
                   vector_sha256=hashlib.sha256(vectors.read_bytes()).hexdigest())
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
@@ -263,10 +328,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--diagnostic", action="store_true")
+    parser.add_argument("--numerical-only", action="store_true",
+                        help="focused boundary vectors only, not the full attention matrix")
     parser.add_argument("--compact", action="store_true",
                         help="distributed obligation matrix, not a Cartesian seed sweep")
     parser.add_argument("--seed", type=int, choices=(17,89,2026), default=17)
     parser.add_argument("--tile", type=int, choices=(1,3,16,128), default=3)
+    parser.add_argument("--dimension", type=int, choices=(8,64), default=8,
+                        help="head dimension for focused diagnostics")
     args = parser.parse_args()
     output = ROOT / args.output
     output.mkdir(parents=True, exist_ok=False)
@@ -274,7 +343,9 @@ def main():
                    start=timestamp(), timeout=remaining(), source_sha256=hashes(),
                    tool_version=sys.version)
     results, errors = [], []
-    matrix = ([(args.seed, 3, 1, 8, args.tile, False)] if args.diagnostic else
+    focused_geometry = (3, 1, 8) if args.dimension == 8 else (2, 2, 64)
+    matrix = ([(args.seed, *focused_geometry, args.tile, False)]
+              if args.diagnostic or args.numerical_only else
               COMPACT_SCHEDULE if args.compact else [
         (seed, q, k, d, tile, seed == 17 and tile == 16 and d == 8)
         for seed in (17,89,2026) for q,k,d in ((3,1,8),(2,2,64))
@@ -283,7 +354,8 @@ def main():
         shard = output / f"q{q}-k{k}-d{d}-tile{tile}-seed{seed}-{uuid.uuid4().hex[:8]}"
         shard.mkdir()
         try:
-            result = run_case(shard, seed,q,k,d,tile,args.diagnostic,long_context,args.compact)
+            result = run_case(shard, seed,q,k,d,tile,args.diagnostic,long_context,args.compact,
+                              args.numerical_only)
             results.append(dict(path=relative(shard/"result.json"), status=result["status"],
                                 vectors=len(result["comparisons"]), commands=result["commands"]))
         except (RuntimeError, AssertionError) as exc:
@@ -294,8 +366,9 @@ def main():
                   schedule=[dict(seed=s,q=q,k=k,d=d,tile=t,long_context=l)
                             for s,q,k,d,t,l in matrix],
                   coverage_limits=["abort/reset during accepted KV", "zero-latency KV response",
-                                   "resident-tile handoff edge assertions",
-                                   "subnormal/extreme directed vectors"])
+                                   "resident-tile handoff edge assertions"] +
+                                   (["focused boundary vectors, not the full attention matrix"]
+                                    if args.numerical_only else []))
     with (output / "result.json").open("x") as out:
         json.dump(result, out, indent=2)
     receipt.update(exit=1 if errors else 0, end=timestamp(),

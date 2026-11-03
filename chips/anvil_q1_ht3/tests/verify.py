@@ -33,6 +33,7 @@ OBLIGATIONS = {
     "integrated_geometry": "functional smallest/nonpower/H64, native formats and GQA",
     "parameters": "legal extrema/default elaboration and explicit illegal diagnostics",
     "mutations": "five compiling/executing disposable defects rejected by public assertions",
+    "stream_checkpoint": "uninterrupted/restored RTL agreement with accepted memory debt and independent logits",
     "benchmarks": "hash-pinned official model/datasets; scored logits, PPL and legacy fixtures",
     "performance": "matched HT2/HT3 actual cycles, transition reduction >60%, bytes and TPM",
     "synthesis": "default hierarchy/256 lanes, compact mapping, new modules and zero latches",
@@ -46,7 +47,8 @@ SUITE_BUDGETS = {"attention": 750, "attention_timing": 180,
                  "parameters": 450, "attention_restart": 60,
                  "transcendental": 180, "packed_cache": 180, "compatibility": 420,
                  "integrated_geometry": 1500,
-                 "mutations": 420, "benchmarks": 300, "performance": 480}
+                 "mutations": 420, "stream_checkpoint": 360,
+                 "benchmarks": 1800, "performance": 900}
 
 
 def dependencies(script):

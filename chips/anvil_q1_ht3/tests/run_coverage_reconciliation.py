@@ -53,8 +53,26 @@ def main():
         if ("resident_tile_coverage" in missing[1]
                 or "resident-tile handoff edge assertions" not in missing[1]["coverage_limits"]):
             raise AssertionError("failed timing evidence incorrectly closed resident coverage")
-        if "subnormal/extreme directed vectors" not in rows[1]["coverage_limits"]:
-            raise AssertionError("unexecuted numerical coverage was incorrectly closed")
+        if "subnormal/extreme directed vectors" in rows[1]["coverage_limits"]:
+            raise AssertionError("executed directed numerical matrix was not accounted for")
+        attention_path = rows[1].get("result_path", rows[1].get("result"))
+        attention_result = json.loads((ROOT/attention_path).read_text())
+        directed_vectors = 0
+        expected_labels = {(fmt, label) for fmt in range(4) for label in (
+            ("subnormal_query", "subnormal_values", "extreme_scores", "extreme_values")
+            if fmt < 2 else ("tiny_scale", "subnormal_scale", "largest_scale", "scale_overflow"))}
+        for shard in attention_result["shards"]:
+            observed = json.loads((ROOT/shard["path"]).read_text())
+            directed = observed["directed_commands"]
+            if (len(directed) != 16 or
+                    {(r["format"], r["label"]) for r in directed} != expected_labels or
+                    any(r["observed"] is None for r in directed)):
+                raise AssertionError("directed numerical command matrix is incomplete")
+            commands = {r["command"] for r in directed if not r["expected_error"]}
+            comparisons = [c for c in observed["comparisons"] if c["command"] in commands]
+            if len(comparisons) != 14*observed["geometry"]["q"]:
+                raise AssertionError("directed numerical vectors were not all compared")
+            directed_vectors += len(comparisons)
         stale = copy.deepcopy(missing)
         stale[2]["status"] = "passed"
         changed = dict(hashes())
@@ -65,7 +83,7 @@ def main():
                 or "resident-tile handoff edge assertions" not in stale[1]["coverage_limits"]):
             raise AssertionError("stale timing evidence incorrectly closed resident coverage")
         result = dict(status="passed", scope="cross-suite evidence reconciliation only",
-                      assertions=6, rows=rows)
+                      assertions=7, directed_vectors=directed_vectors, rows=rows)
     except (OSError, RuntimeError, AssertionError, ValueError) as exc:
         result = dict(status="failed", error=f"{type(exc).__name__}: {exc}")
     with (output/"result.json").open("x") as out:
