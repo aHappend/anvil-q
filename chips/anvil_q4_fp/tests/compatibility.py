@@ -19,7 +19,7 @@ def legacy_words(mode):
             1, 4, 0 if mode == 4 else 1, ratio, 0, 0 if mode == 4 else 1] + [0]*7
 
 
-def run(preparation=False, modes=(1, 2, 3, 4)):
+def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None):
     directory = new_run("compatibility", preparation)
     objects = {}
     records = []
@@ -44,13 +44,17 @@ def run(preparation=False, modes=(1, 2, 3, 4)):
                 output = directory / f"{label}-mode-{mode}.json"
                 execute(directory / f"{label}-mode-{mode}", [
                     relative(objects[label] / f"V{top}"), relative(fixture),
-                    relative(output)], timeout=1800, extra_inputs=[fixture])
+                    relative(output)], timeout=1800, extra_inputs=[fixture],
+                    repair_of=repair_of)
                 observed[label] = json.loads(output.read_text())
             for quantity in ("reads", "writes", "logits", "done", "errors", "transactions"):
                 if observed["parent"][quantity] != observed["integrated"][quantity]:
                     raise AssertionError(f"Legacy differential mismatch: mode={mode} {quantity}")
             records.append({"mode": mode, "tokens": 2, "token_phase_transition": True,
-                            "independent_expectation": "zero LM-head yields exact zero logits",
+                            "independent_expectation": (
+                                "distinct zero LM-head yields zero" if mode == 4 else
+                                "tied constant FP16(0.5); final Q16 norm rounds to 1; "
+                                "each logit is hidden*32768"),
                             "parent_cycles": observed["parent"]["cycles"],
                             "integrated_cycles": observed["integrated"]["cycles"],
                             "transactions": observed["parent"]["reads"] +
@@ -71,5 +75,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preparation", action="store_true")
     parser.add_argument("--mode", type=int, choices=(1, 2, 3, 4))
+    parser.add_argument("--repair-of")
     args = parser.parse_args()
-    run(args.preparation, (args.mode,) if args.mode else (1, 2, 3, 4))
+    run(args.preparation, (args.mode,) if args.mode else (1, 2, 3, 4), args.repair_of)
