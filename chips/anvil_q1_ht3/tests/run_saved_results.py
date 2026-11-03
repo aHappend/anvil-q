@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, hashes, relative, remaining, timestamp
-from retention import find_result, inventory, validated_result
+from retention import digest, find_result, inventory, normalize_argv, validated_result
 from verify import TOOLS, dependencies, reconcile_coverage
 from run_integrated_geometry import CASES
 
@@ -16,6 +16,45 @@ from run_integrated_geometry import CASES
 SUITES = ("integrated_geometry", "parameters", "mutations", "packed_cache",
           "packed_top", "stream_checkpoint", "performance", "attention_timing",
           "compatibility")
+
+
+def invalid_artifacts(result):
+    pending, rejected = [result], {}
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            for name, sha in value.get("artifact_sha256", {}).items():
+                path = ROOT/name
+                path.resolve().relative_to(ROOT)
+                try:
+                    if not path.is_file():
+                        rejected[name] = "missing"
+                    elif digest(path) != sha:
+                        rejected[name] = "hash mismatch"
+                except FileNotFoundError:
+                    rejected[name] = "removed during validation"
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+    return rejected
+
+
+def rejection_details(argv, deps):
+    current = hashes()
+    candidates = [*(ROOT/"evidence/l1").glob("run-*/*/result.json"),
+                  *(ROOT/"evidence/preparation").glob("*/shard-*/result.json")]
+    for path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
+        receipt_path = path.parent/"receipt.json"
+        if not receipt_path.is_file():
+            continue
+        receipt = json.loads(receipt_path.read_text())
+        if (normalize_argv(receipt.get("argv", [])) != normalize_argv(argv)
+                or any(receipt.get("source_sha256", {}).get(p) != current[p] for p in deps)):
+            continue
+        result = json.loads(path.read_text())
+        if result.get("status") == "passed":
+            return dict(candidate=relative(path), invalid_artifacts=invalid_artifacts(result))
+    return dict(candidate=None)
 
 
 def run(output, suites=SUITES):
@@ -27,7 +66,8 @@ def run(output, suites=SUITES):
         deps = dependencies(argv[1])
         retained = find_result(argv, deps, versions)
         if retained is None:
-            raise AssertionError(f"no complete current-source retained result: {name}")
+            raise AssertionError(f"no complete current-source retained result: {name}; "
+                                 f"{json.dumps(rejection_details(argv, deps), sort_keys=True)}")
         candidate = ROOT/retained["result_path"]
         record = json.loads((ROOT/retained["receipt"]).read_text())
         if record.get("timed_out"):

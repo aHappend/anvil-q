@@ -27,6 +27,7 @@ from official_scoring import likelihood, restore_state, save_state
 from verify import MINIMUM_ALLOCATIONS, child, dependencies, reconcile_coverage, schedule
 from run_integrated_geometry import CROSS_CASES
 from run_parameters import legal_cross
+from run_saved_results import invalid_artifacts
 import numpy as np
 
 
@@ -135,6 +136,16 @@ def run(output):
     if artifacts_intact(omitted, artifacts):
         raise AssertionError("omitted required driver accepted")
     assertions += 1
+    missing = output/"synthetic-missing-executable"
+    broken = dict(artifact_sha256={relative(missing): "0"*64,
+                                  relative(output/"driver.cpp"): "0"*64})
+    expected_rejections = {relative(missing): "missing",
+                           relative(output/"driver.cpp"): "hash mismatch"}
+    if invalid_artifacts(dict(runs=[broken])) != expected_rejections:
+        raise AssertionError("binding diagnostic lost the exact missing/corrupt artifact")
+    if invalid_artifacts(dict(runs=[record])):
+        raise AssertionError("binding diagnostic rejected intact synthetic artifacts")
+    assertions += 2
     old_build = output/f"synthetic-old-build-{uuid.uuid4().hex[:12]}"
     new_build = output/f"synthetic-new-build-{uuid.uuid4().hex[:12]}"
     for build in (old_build, new_build):
