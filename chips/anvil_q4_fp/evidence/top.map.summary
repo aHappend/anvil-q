@@ -1,11 +1,14 @@
-Analysis & Synthesis Status : Failed - Tue Nov  3 01:26:08 2026
+Analysis & Synthesis Status : Successful - Tue Nov  3 01:57:47 2026
 Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
 Revision Name : top
-Top-level Entity Name : anvil_q4_parent_top
+Top-level Entity Name : anvil_q4_fp_top
 Family : Arria 10
-Logic utilization (in ALMs) : N/A until Partition Merge
-Total registers : N/A until Partition Merge
-Total pins : N/A until Partition Merge
-Total virtual pins : N/A until Partition Merge
-Total block memory bits : N/A until Partition Merge
-Total PLLs : N/A until Partition Merge
+Logic utilization (in ALMs) : N/A
+Total registers : 205753
+Total pins : 0
+Total virtual pins : 5,103
+Total block memory bits : 8,407,040
+Total DSP Blocks : 243
+Total HSSI RX channels : 0
+Total HSSI TX channels : 0
+Total PLLs : 0
