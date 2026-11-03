@@ -66,41 +66,29 @@ module anvil_q3_fp_top #(
   wire [CLIENTS*32-1:0] scheduler_req_row, scheduler_req_col, scheduler_req_wdata;
   genvar client;
   generate for (client=0;client<CLIENTS;client=client+1) begin: request_staging
-    if (client<SB) begin: weight
-      reg pending;
-      reg [135:0] payload;
-      wire replace_request=!pending || scheduler_req_ready[client];
-      assign c_req_ready[client]=rst_n && !core_flush && replace_request;
-      assign scheduler_req_valid[client]=rst_n && !core_flush && pending;
-      assign {scheduler_req_write[client],scheduler_req_kind[client*4+:4],
-        scheduler_req_layer[client*32+:32],scheduler_req_proj[client*3+:3],
-        scheduler_req_row[client*32+:32],scheduler_req_col[client*32+:32],
-        scheduler_req_wdata[client*32+:32]}=payload;
-      // Local faults cannot change an accepted address before scheduler capture.
-      always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-          pending<=0; payload<=0;
-        end else if (core_flush) begin
-          pending<=0; payload<=0;
-        end else if (replace_request) begin
-          pending<=c_req_valid[client];
-          if (c_req_valid[client])
-            payload<={c_req_write[client],c_req_kind[client*4+:4],
-              c_req_layer[client*32+:32],c_req_proj[client*3+:3],
-              c_req_row[client*32+:32],c_req_col[client*32+:32],
-              c_req_wdata[client*32+:32]};
-        end
+    reg pending;
+    reg [135:0] payload;
+    wire replace_request=!pending || scheduler_req_ready[client];
+    assign c_req_ready[client]=rst_n && !core_flush && replace_request;
+    // Scheduler flush/draining suppresses admission without a route-input mux.
+    assign scheduler_req_valid[client]=rst_n && pending;
+    assign {scheduler_req_write[client],scheduler_req_kind[client*4+:4],
+      scheduler_req_layer[client*32+:32],scheduler_req_proj[client*3+:3],
+      scheduler_req_row[client*32+:32],scheduler_req_col[client*32+:32],
+      scheduler_req_wdata[client*32+:32]}=payload;
+    always @(posedge clk or negedge rst_n) begin
+      if (!rst_n) begin
+        pending<=0; payload<=0;
+      end else if (core_flush) begin
+        pending<=0;
+      end else if (replace_request) begin
+        pending<=c_req_valid[client];
+        if (c_req_valid[client])
+          payload<={c_req_write[client],c_req_kind[client*4+:4],
+            c_req_layer[client*32+:32],c_req_proj[client*3+:3],
+            c_req_row[client*32+:32],c_req_col[client*32+:32],
+            c_req_wdata[client*32+:32]};
       end
-    end else begin: direct
-      assign c_req_ready[client]=scheduler_req_ready[client];
-      assign scheduler_req_valid[client]=c_req_valid[client];
-      assign scheduler_req_write[client]=c_req_write[client];
-      assign scheduler_req_kind[client*4+:4]=c_req_kind[client*4+:4];
-      assign scheduler_req_layer[client*32+:32]=c_req_layer[client*32+:32];
-      assign scheduler_req_proj[client*3+:3]=c_req_proj[client*3+:3];
-      assign scheduler_req_row[client*32+:32]=c_req_row[client*32+:32];
-      assign scheduler_req_col[client*32+:32]=c_req_col[client*32+:32];
-      assign scheduler_req_wdata[client*32+:32]=c_req_wdata[client*32+:32];
     end
   end endgenerate
   anvil_q3_fp_parameters #(

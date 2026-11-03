@@ -148,40 +148,51 @@ Mode 0 packs two raw elements; lossy modes use eight words per allocated
 block plus one metadata word. Requests retain logical addressing rather than
 encoding private byte pointers.
 
-### Registered weight-request boundary
+### Registered client-request boundary
 
-The top's `request_staging[client].weight` registers isolate weight-fetch
-clients `0..BANKS-1` from scheduler bank routing and ingress arbitration.
+The top's `request_staging[client]` registers isolate every producer from
+scheduler bank routing and ingress arbitration: weight-fetch clients
+`0..BANKS-1` and scalar clients `BANKS..BANKS+8`, including RoPE at `BANKS+2`.
 Each holds one valid bit and the complete 136-bit request payload. Producer
 acceptance transfers ownership to this register; scheduler acceptance
 transfers it onward. An empty register accepts independently of scheduler
 backpressure, and a forwarded request may be replaced on the same edge.
 Held payload is not recomputed from producer validity or local flush.
-The response path and all scalar clients remain direct.
+The ordered response path remains direct.
 
-This boundary addresses the retained native 10 ns setup failure
+The weight boundary addressed the retained native 10 ns setup failure
 (-0.426 ns setup WNS, +0.037 ns hold WNS): the reported path ran from tensor
 `failed` through prefetch request gating/address generation into scheduler
 `successor[20][3]`, not through a floating-point multiplier. With staging,
-that producer cone terminates at the request register; scheduler routing
-uses registered addresses and valid ownership. This is a structural repair,
-not a claim of new timing closure.
+that producer cone terminates at the request register. Subsequent compact
+post-fit evidence reported -0.722 ns setup WNS and +0.034 ns hold WNS at 10 ns:
+RoPE `failed` reached scheduler `stage[19][0:1]`, and `ABORT_FLUSH` also
+reached that arbitration cone. Extending the same elastic boundary to scalar
+clients terminates their producer fault/address cones at request registers.
+Scheduler routing now uses only registered payload and valid ownership,
+without redundant combinational core-flush gating. These are structural
+repairs, not claims of new timing closure or production-default physical PPA.
 
-Every native weight read and every AWQ q/z/scale read gains one unstalled
-clock between prefetch acceptance and scheduler eligibility. No response
-stage or arithmetic stage is added. Registers are independent across banks;
-the two tile slots and fill/consume overlap are unchanged. Measured command
-latency and bandwidth must be refreshed rather than reusing historical L1
-measurements.
+Every request gains one unstalled clock between producer acceptance and
+scheduler eligibility. Accepted weight staging is retained; scalar reads and
+writes now have the same latency/ownership boundary. No response stage or
+arithmetic stage is added. Registers are independent across clients; the two
+tile slots and fill/consume overlap are unchanged. Measured command latency
+and bandwidth must be refreshed rather than reusing historical L1 measurements.
 
 Local faults still propagate through the existing completion path and cannot
-rewrite an accepted staged read. Until top-level abort, such a read may be
-forwarded, but cannot create a write or resurrect tile ownership. Cancel and
-top-level core flush combinationally suppress stage input readiness and output
-valid, then clear staged ownership at the edge. The unchanged scheduler alone
-drains already accepted external transactions; unforwarded staged requests
-are annulled. Reset clears both payload and valid. This avoids delaying flush
-or masking errors to shorten the timing path.
+rewrite an accepted staged payload. Until top-level abort, its original read
+or write may be forwarded; no request is fabricated by a fault. Cancel and
+top-level core flush combinationally suppress producer readiness, then clear
+staged ownership at the edge with priority over retire/refill. Scheduler flush
+immediately prevents scheduler admission on cancel/sequence-flush/abort-flush,
+and scheduler draining prevents admission thereafter. Forwarded valid and
+payload need no core-flush mux before routing. The unchanged scheduler alone
+drains already accepted external transactions; unforwarded staged requests are
+annulled. Writes already acknowledged are not rolled back, and incomplete cache
+commits remain inaccessible. Reset clears both payload and valid; flush clears
+ownership without clearing payload. This avoids delaying cancellation or
+masking errors to shorten the timing path.
 
 ## Cache hierarchy
 

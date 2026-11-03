@@ -146,25 +146,31 @@ Scheduler clients, ingress fairness, queue depths, low-bit bank routing, unique
 responses and flush/drain remain real RTL behavior. Keep the two independent
 prefetch slots EMPTY/FILLING/READY/ACTIVE and overlap filling with consuming.
 
-The top inserts one elastic request register for each weight-fetch client
-(`0..BANKS-1`) before `bank_scheduler`; scalar clients remain direct. This
-does not change module ports or scheduler queue depth. A prefetch request
+The top inserts one elastic request register for every client before
+`bank_scheduler`: weight-fetch clients `0..BANKS-1` and scalar clients
+`BANKS..BANKS+8`, including RoPE at `BANKS+2`. This does not change module
+ports or scheduler queue depth. A producer request
 accepted at E0 owns a complete registered 136-bit payload (write, kind, layer,
 projection, row, column, write data). It is first eligible for scheduler
-acceptance at E1, adding one unstalled clock per weight read, including each
-AWQ q/z/scale read. Responses retain the direct, ordered scheduler path.
-Registered addresses do not depend combinationally on tensor failure or
-prefetch flush. Payload may remain present without valid; only valid transfers
-establish scheduler ownership.
+acceptance at E1, adding one unstalled clock per request, including scalar
+reads/writes and each AWQ q/z/scale read. Responses retain the direct, ordered
+scheduler path. Registered addresses and scheduler-facing valid do not depend
+combinationally on producer failure or core flush. Payload may remain present
+without valid; only valid transfers establish scheduler ownership.
 
-The register retains accepted reads independently of later producer-local
+The register retains accepted reads/writes independently of later producer-local
 fault/flush gating, until forwarded or annulled by top-level core flush.
-It cannot introduce writes or hide a fault: all existing error propagation
-remains active. Top-level cancel/core flush immediately suppresses both its
-input readiness and scheduler-facing valid, and clears staged ownership on
-the edge. Requests already accepted by the scheduler retain its unchanged
-flush/drain semantics; an unforwarded staged read is discarded, not externally
-issued or awaited. No local failure signal is delayed to achieve this boundary.
+All existing error propagation remains active. Core flush immediately
+suppresses producer readiness and clears staged ownership on the edge, with
+priority over forwarding/refill. Scheduler flush immediately suppresses
+scheduler admission on cancel, sequence flush and abort flush; its existing
+draining state suppresses admission thereafter. Staged valid and payload are
+not redundantly gated by core flush before scheduler routing/arbitration.
+Requests already accepted by the scheduler retain its unchanged flush/drain
+semantics; an unforwarded staged request is discarded, not externally issued
+or awaited. External writes already acknowledged are not rolled back; failed
+or cancelled cache commits remain inaccessible. No local failure signal is
+delayed to achieve this boundary.
 
 ### Arithmetic interfaces
 
@@ -269,12 +275,13 @@ E0 is the rising edge accepting pre-edge valid && ready.
 | Accumulator retirement and another-row issue | Commit old sum/release its row and reserve the other row on the same edge |
 | Repeated-row issue at retirement | Conservatively waits one further clock; never bypasses an uncommitted sum |
 | Prefetch RAM fill plus active read | Independent owned slots may write/read concurrently; held beat disables replacement read |
-| Weight request accepted at E0 | Registered payload/valid visible post-E0; earliest scheduler acceptance E1 |
-| Weight request held | Entire payload remains unchanged until scheduler acceptance or top-level flush |
-| Weight request retire/refill | Forward old request and accept replacement on the same edge; each owns its own response |
-| Weight stage empty, scheduler stalled | Accept one request independently; backpressure further requests while occupied |
-| Weight stage plus cancel/core flush | Immediately suppress admission/forwarding; clear staged valid on the edge; scheduler-owned requests still drain |
-| Weight stage, BANKS=1 / QUEUE_DEPTH=1 or 3 | One independent register per configured client; no pointers or power-of-two depth assumption |
+| Any client request accepted at E0 | Registered payload/valid visible post-E0; earliest scheduler acceptance E1 |
+| Any client request held | Entire payload remains unchanged until scheduler acceptance or top-level flush; producer-local faults cannot rewrite it |
+| Any client request retire/refill | Forward old request and accept replacement on the same edge; each owns its own response |
+| Client stage empty, scheduler stalled | Accept one request independently; backpressure further requests while occupied |
+| Client stage plus cancel/core flush | Producer readiness suppressed; scheduler flush/draining suppresses admission; clear staged valid on the edge before any refill; scheduler-owned requests still drain |
+| Client stage reset / first post-reset edge | Reset clears payload/ownership; after release an empty stage may accept, but cannot forward before E1 |
+| Client stage, BANKS=1 / QUEUE_DEPTH=1 or 3 | One independent register per weight or scalar client; no pointers or power-of-two depth assumption |
 | Codec final input and validation | Last is checked on acceptance; lossy output waits for complete group/padding validation |
 | Codec output retirement and last write acknowledgment | Separate events; cache commitment requires the acknowledgment, not just codec retirement |
 
