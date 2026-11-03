@@ -32,7 +32,16 @@ def main():
     except RuntimeError:
         pass
     record = json.loads((output / "tool.receipt.json").read_text())
+    nested_timeouts = []
+    for path in child.rglob("*.json"):
+        if path.name != "receipt.json" and not path.name.endswith(".receipt.json"):
+            continue
+        if json.loads(path.read_text()).get("timed_out", False):
+            nested_timeouts.append(relative(path))
     record.update(kind="bounded-verifier-preparation",
+                  outer_execution_timed_out=record["timed_out"],
+                  timed_out=record["timed_out"] or bool(nested_timeouts),
+                  nested_timeout_receipts=nested_timeouts,
                   launcher_argv=["python3", "tests/prepare.py", *sys.argv[1:]])
     if args.repair_of:
         record["repair_of"] = args.repair_of

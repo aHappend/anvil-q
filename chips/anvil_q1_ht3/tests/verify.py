@@ -218,7 +218,8 @@ def main():
     receipt.update(end=timestamp(), exit=0 if status == "passed" else 1,
                    timed_out=time.time()-start >= CHECK_SECONDS or any(
                        json.loads(p.read_text()).get("timed_out", False)
-                       for p in output.rglob("*.receipt.json")),
+                       for p in output.rglob("*.json")
+                       if p.name == "receipt.json" or p.name.endswith(".receipt.json")),
                    result=relative(output / "result.json"))
     with (output / "receipt.json").open("x") as out:
         json.dump(receipt, out, indent=2)
