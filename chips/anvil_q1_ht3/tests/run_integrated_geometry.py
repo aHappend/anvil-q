@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from execution import ROOT, execute, hashes, relative, remaining, timestamp
 from reference import convert, float_bits
 from run_compatibility import (check_case, compiled, matvec, norm, rope, rounded16)
+from run_performance import validated_simulation
 
 
 CASES = {
@@ -150,14 +151,31 @@ def run(output, case=None):
             directory.mkdir()
             try:
                 vectors, expected = fixture(directory, geometry, fmt, seed)
-                text = execute([relative(binary), f"+vectors={relative(vectors)}",
-                                f"+observations={relative(directory/'observations.txt')}",
-                                f"+seed={seed}"], directory, "simulation",
-                               ["verilator", "--version"])
-                checked = check_case(directory, text, binding, fmt, seed, expected,
-                                     vocab=geometry["V"])
+                candidates = [p for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation")
+                              for p in parent.glob(
+                                  f"*/*/{name}-format{fmt}-seed{seed}-*/simulation.receipt.json")]
+                checked = None
+                for path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
+                    checked = validated_simulation(path, binary, binding, vectors, fmt, seed,
+                                                   expected, "ht3", vocab=geometry["V"])
+                    if checked is not None:
+                        simulation_receipt = path
+                        break
+                reused = checked is not None
+                if checked is None:
+                    execute([relative(binary), f"+vectors={relative(vectors)}",
+                             f"+observations={relative(directory/'observations.txt')}",
+                             f"+seed={seed}"], directory, "simulation", ["verilator", "--version"])
+                    simulation_receipt = directory/"simulation.receipt.json"
+                    checked = validated_simulation(simulation_receipt, binary, binding, vectors,
+                                                   fmt, seed, expected, "ht3",
+                                                   vocab=geometry["V"])
+                    if checked is None:
+                        raise AssertionError("fresh geometry simulation has invalid provenance")
+                observation, artifacts = checked
                 rows.append(dict(id=name, geometry=geometry, directory=relative(directory),
-                                 **checked))
+                                 reused=reused, simulation_receipt=relative(simulation_receipt),
+                                 artifact_sha256=artifacts, **observation))
             except (RuntimeError, AssertionError, ValueError, OSError) as exc:
                 rows.append(dict(id=name, geometry=geometry, format=fmt, seed=seed,
                                  directory=relative(directory), status="failed", error=str(exc)))

@@ -32,7 +32,7 @@ def simulation_sources(name):
     return [relative(p) for p in sorted(ROOT.glob(pattern))]+["tests/inference_tb.sv"]
 
 
-def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name):
+def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, name, vocab=3):
     """Admit only settled matching executions; independently rescore raw logits.
 
     Older aggregate failures can contain complete individual simulations. Their
@@ -77,7 +77,7 @@ def validated_simulation(path, binary, binding, vectors, fmt, seed, expected, na
                     or execution.get("artifact_sha256", {}).get(execution[key]) != digest(artifact)):
                 return None
     checked = check_case(directory, (ROOT/record["stdout"]).read_text(),
-                         binding, fmt, seed, expected)
+                         binding, fmt, seed, expected, vocab=vocab)
     artifacts = [path, directory/"vectors.txt", directory/"observations.txt",
                  ROOT/record["stdout"], ROOT/record["stderr"], ROOT/binding,
                  compile_path, ROOT/compile_record["stdout"], ROOT/compile_record["stderr"],
