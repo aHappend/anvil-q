@@ -314,11 +314,10 @@ def mapped_phases(output, identifier, top, parameters, sources, frontend, versio
             reserve = (90 if identifier == "compact-mapped" else 30) if phase != "abc" else 0
             if through_phase == phase:
                 reserve = 0
-            minimum = (240 if identifier == "compact-mapped" and phase == "word"
+            minimum = (240 if identifier == "compact-mapped" and
+                       (phase == "word" or "select -set decoder_cells " in commands)
                        else 60 if identifier == "compact-mapped"
                        else 30 if phase == "abc" else 0)
-            if "rename -enumerate" in commands:
-                minimum = 30
             if allocation-reserve-10 < minimum:
                 raise RuntimeError(f"unstarted synthesis phase {phase}: {allocation:.3f}s "
                                    f"remain, reserving {reserve}s ABC and 10s settlement; "
