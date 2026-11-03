@@ -137,7 +137,9 @@ def run_tile(run, simulator, seed, compact, mutant=False):
             raise AssertionError(f"tile {field}: {records[0][field]} != {expected}")
     if records[0]["max_consecutive_beats"] < 64:
         raise AssertionError("no observed 64-beat initiation-interval-one sequence")
-    summary = {"seed": seed, "simulator": simulator, "observed": records[0],
+    summary = {"seed": seed, "simulator": simulator, "compact": compact,
+               "weight_lanes": lanes, "expected_inputs": totals["inputs"],
+               "observed": records[0],
                "vector_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                "receipt": relative(output / "receipt.json")}
     (run / "tile-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
