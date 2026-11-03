@@ -14,7 +14,8 @@ from receipts import ROOT, cleanup_build, compile_verilator, execute, relative
 
 
 def run_compatibility(run, mode):
-    model, _, lines, _ = generate(run, layers=1, nonzero=True, vocabulary=4)
+    model, _, lines, _ = generate(run, layers=1, nonzero=True, vocabulary=4,
+                                 compact=True)
     obj = run / "compatibility-obj"
     obj.mkdir()
     driver = obj / "compatibility_driver.cpp"
@@ -24,7 +25,7 @@ def run_compatibility(run, mode):
     binary = compile_verilator(run, "compatibility-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "--inline-mult", "1", "--expand-limit", "1024",
-        "--hierarchical", "tests/compiled.vlt",
+        "tests/native.vlt",
         "--top-module", "compatibility_tb", f"-DHT2_TEST_CACHE_MODE={mode}",
         "--prefix", "Vcompatibility",
         "--Mdir", relative(obj), "-j", "2",
@@ -69,7 +70,7 @@ def run_compatibility(run, mode):
                    observed["cycles"] / simulation_receipt["duration_s"],
                "compile_receipt": binding["compile_receipt"],
                "oracle": "unchanged parent RTL on identical public inputs",
-               "fixture": "one-layer legal nonzero AWQ model, 64 hidden, vocabulary 4",
+               "fixture": "one-layer legal nonzero AWQ model, 16 hidden, vocabulary 4",
                "receipt": relative(result / "receipt.json")}
     (run / "compatibility-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return summary

@@ -66,7 +66,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
         "-O3", "--expand-limit", "1024",
         *(["--flatten"] if flat else [
-            "--inline-mult", "1", "--hierarchical", "tests/compiled.vlt"]),
+            "--inline-mult", "1", "tests/native.vlt"]),
         "--top-module", "integrated_clock_tb", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",
@@ -109,7 +109,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False, profile=False,
     compile_receipt = json.loads((ROOT / binding["compile_receipt"]).read_text())
     summary = {
         "mode": mode, "seed": seed, "layers": layers, "compact": compact,
-        "compiler_partition": "flat" if flat else "mac-lane",
+        "compiler_partition": "flat" if flat else "native-mac-lane",
         "diagnostic_only": diagnostic, "observed": observation,
         "functional_result": "incomplete" if diagnostic else "nonzero-model-compared",
         "fixture": "independently decoded nonzero AWQ packed image and dense serial HT2 oracle",
