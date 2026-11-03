@@ -2,15 +2,15 @@
   "chip": "Anvil-D2",
   "passed_checks": {
     "check:numerical": {
-      "attempt_id": 11,
-      "duration_s": 247.27979910885915,
-      "stdout_preview": "evidence/verification/d2-numerical-reference-20261103T131842Z-a1f3fa5e/receipt.json\nevidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/receipt.json\nevidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/receipt.json\nevidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/receipt.json\nevidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/receipt.json\nevidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/receipt.json\nevidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/receipt.json\nprogress: target-compile executing (30s)\nprogress: target-simulation executing (30s)\nprogress: target-simulation executing (60s)\nprogress: target-simulation executing (90s)\nprogress: target-simulation executing (120s)\nevidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/receipt.json\nevidence/verification/d2-numerical-20261103T131842Z-e105bad2/receipt.json\n",
+      "attempt_id": 14,
+      "duration_s": 232.50592243601568,
+      "stdout_preview": "evidence/verification/d2-numerical-reference-20261103T143523Z-885a5f9e/receipt.json\nevidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/receipt.json\nevidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/receipt.json\nevidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/receipt.json\nevidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/receipt.json\nevidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/receipt.json\nevidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/receipt.json\nprogress: target-compile executing (30s)\nprogress: target-compile executing (60s)\nprogress: target-simulation executing (30s)\nprogress: target-simulation executing (60s)\nprogress: target-simulation executing (90s)\nevidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/receipt.json\nevidence/verification/d2-numerical-20261103T143523Z-3db01f5c/receipt.json\n",
       "receipt_count": 9,
       "receipts": [
         {
-          "path": "evidence/verification/d2-numerical-reference-20261103T131842Z-a1f3fa5e/receipt.json",
+          "path": "evidence/verification/d2-numerical-reference-20261103T143523Z-885a5f9e/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:42.771723+00:00",
+            "started_at": "2026-11-03T14:35:23.959463+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -67,7 +67,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -79,11 +79,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -98,25 +98,26 @@
                   "test_reference.py"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:42.780889+00:00",
+                "started_at": "2026-11-03T14:35:23.964931+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-reference-20261103T131842Z-a1f3fa5e/oracle-unit-tests.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-reference-20261103T131842Z-a1f3fa5e/oracle-unit-tests.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-reference-20261103T143523Z-885a5f9e/oracle-unit-tests.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-reference-20261103T143523Z-885a5f9e/oracle-unit-tests.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:42.945797+00:00",
-                "duration_s": 0.1646033509168774
+                "ended_at": "2026-11-03T14:35:24.129495+00:00",
+                "duration_s": 0.16437726910226047
               }
             ],
             "results": {},
-            "ended_at": "2026-11-03T13:18:42.946526+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:35:24.130179+00:00",
+            "success": true,
+            "duration_s": 0.17184254596941173
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/receipt.json",
+          "path": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:42.949985+00:00",
+            "started_at": "2026-11-03T14:35:24.133407+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -173,7 +174,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -185,11 +186,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -198,14 +199,14 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:43.670308+00:00",
+                "started_at": "2026-11-03T14:35:24.614827+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/iverilog-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/iverilog-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/iverilog-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/iverilog-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:43.687516+00:00",
-                "duration_s": 0.016845472157001495
+                "ended_at": "2026-11-03T14:35:24.631296+00:00",
+                "duration_s": 0.016215322073549032
               },
               {
                 "argv": [
@@ -215,35 +216,35 @@
                   "-s",
                   "dequant_tb",
                   "-o",
-                  "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant.vvp",
+                  "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant.vvp",
                   "rtl/anvil_d2_fp8_dequant.sv",
                   "tests/dequant_tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:43.688433+00:00",
+                "started_at": "2026-11-03T14:35:24.631688+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:43.721275+00:00",
-                "duration_s": 0.0324209239333868
+                "ended_at": "2026-11-03T14:35:24.663993+00:00",
+                "duration_s": 0.032067324966192245
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant.vvp",
-                  "+vectors=evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant-vectors.txt"
+                  "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant.vvp",
+                  "+vectors=evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant-vectors.txt"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:43.722162+00:00",
+                "started_at": "2026-11-03T14:35:24.664442+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/dequant-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/dequant-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:45.040037+00:00",
-                "duration_s": 1.3174291430041194
+                "ended_at": "2026-11-03T14:35:25.981434+00:00",
+                "duration_s": 1.3167358818463981
               }
             ],
             "results": {
@@ -256,14 +257,15 @@
                 "raw_summary": "RESULT compared=15674 discarded=6 stalls=6706 flush=1 reset=1 cycles=23735\ntests/dequant_tb.sv:119: $finish called at 237376000 (1ps)"
               }
             },
-            "ended_at": "2026-11-03T13:18:45.041364+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:35:25.982738+00:00",
+            "success": true,
+            "duration_s": 1.8518334839027375
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/receipt.json",
+          "path": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:45.045132+00:00",
+            "started_at": "2026-11-03T14:35:25.986253+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -320,7 +322,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -332,11 +334,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -345,14 +347,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:45.767766+00:00",
+                "started_at": "2026-11-03T14:35:26.702380+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/verilator-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/verilator-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/verilator-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/verilator-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:45.883033+00:00",
-                "duration_s": 0.11488730693235993
+                "ended_at": "2026-11-03T14:35:26.817390+00:00",
+                "duration_s": 0.11461684410460293
               },
               {
                 "argv": [
@@ -363,36 +365,38 @@
                   "--top-module",
                   "dequant_tb",
                   "--Mdir",
-                  "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-obj",
+                  "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-obj",
                   "-o",
                   "dequant-sim",
                   "rtl/anvil_d2_fp8_dequant.sv",
-                  "tests/dequant_tb.sv"
+                  "tests/dequant_tb.sv",
+                  "-CFLAGS",
+                  "-O3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:45.883961+00:00",
+                "started_at": "2026-11-03T14:35:26.818149+00:00",
                 "timeout_s": 1200,
-                "stdout": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:55.470825+00:00",
-                "duration_s": 9.586510010063648
+                "ended_at": "2026-11-03T14:35:38.357884+00:00",
+                "duration_s": 11.539378044893965
               },
               {
                 "argv": [
-                  "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-obj/dequant-sim",
-                  "+vectors=evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-vectors.txt"
+                  "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-obj/dequant-sim",
+                  "+vectors=evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-vectors.txt"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:55.472029+00:00",
+                "started_at": "2026-11-03T14:35:38.359083+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/dequant-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/dequant-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:55.687769+00:00",
-                "duration_s": 0.2152624549344182
+                "ended_at": "2026-11-03T14:35:38.574662+00:00",
+                "duration_s": 0.21507259993813932
               }
             ],
             "results": {
@@ -405,14 +409,15 @@
                 "raw_summary": "RESULT compared=15674 discarded=6 stalls=6706 flush=1 reset=1 cycles=23735\n- tests/dequant_tb.sv:119: Verilog $finish"
               }
             },
-            "ended_at": "2026-11-03T13:18:55.688928+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:35:38.576149+00:00",
+            "success": true,
+            "duration_s": 12.592524561099708
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/receipt.json",
+          "path": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:55.693836+00:00",
+            "started_at": "2026-11-03T14:35:38.581427+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -469,7 +474,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -481,11 +486,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -494,14 +499,14 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:55.922499+00:00",
+                "started_at": "2026-11-03T14:35:38.793735+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/iverilog-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/iverilog-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/iverilog-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/iverilog-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:55.939597+00:00",
-                "duration_s": 0.01669612294062972
+                "ended_at": "2026-11-03T14:35:38.810604+00:00",
+                "duration_s": 0.01651032199151814
               },
               {
                 "argv": [
@@ -511,35 +516,35 @@
                   "-s",
                   "quantizer_tb",
                   "-o",
-                  "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer.vvp",
+                  "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer.vvp",
                   "rtl/anvil_d2_fp8_group_quantizer.sv",
                   "tests/quantizer_tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:55.940214+00:00",
+                "started_at": "2026-11-03T14:35:38.811198+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:55.972999+00:00",
-                "duration_s": 0.032354951137676835
+                "ended_at": "2026-11-03T14:35:38.844186+00:00",
+                "duration_s": 0.032578920014202595
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer.vvp",
-                  "+vectors=evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer-vectors.txt"
+                  "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer.vvp",
+                  "+vectors=evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer-vectors.txt"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:55.974080+00:00",
+                "started_at": "2026-11-03T14:35:38.845230+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/quantizer-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/quantizer-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:56.840662+00:00",
-                "duration_s": 0.8661665781401098
+                "ended_at": "2026-11-03T14:35:39.711692+00:00",
+                "duration_s": 0.8660537621472031
               }
             ],
             "results": {
@@ -550,14 +555,15 @@
                 "raw_summary": "RESULT groups=159 compared=12024 invalids=2 stalls=15690 cycles=64270\ntests/quantizer_tb.sv:92: $finish called at 642700000 (1ps)"
               }
             },
-            "ended_at": "2026-11-03T13:18:56.842225+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:35:39.713315+00:00",
+            "success": true,
+            "duration_s": 1.1346111299935728
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/receipt.json",
+          "path": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:56.845470+00:00",
+            "started_at": "2026-11-03T14:35:39.716668+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -614,7 +620,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -626,11 +632,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -639,14 +645,14 @@
                   "-V"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:57.820790+00:00",
+                "started_at": "2026-11-03T14:35:40.632087+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/iverilog-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/iverilog-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/iverilog-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/iverilog-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:57.837588+00:00",
-                "duration_s": 0.016456435900181532
+                "ended_at": "2026-11-03T14:35:40.649283+00:00",
+                "duration_s": 0.016656034160405397
               },
               {
                 "argv": [
@@ -656,35 +662,35 @@
                   "-s",
                   "bf16_tb",
                   "-o",
-                  "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16.vvp",
+                  "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16.vvp",
                   "rtl/anvil_d2_bf16_to_q16.sv",
                   "tests/bf16_tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:57.838245+00:00",
+                "started_at": "2026-11-03T14:35:40.649936+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:57.871220+00:00",
-                "duration_s": 0.03240848099812865
+                "ended_at": "2026-11-03T14:35:40.666598+00:00",
+                "duration_s": 0.016269483137875795
               },
               {
                 "argv": [
                   "vvp",
-                  "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16.vvp",
-                  "+vectors=evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16-vectors.txt"
+                  "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16.vvp",
+                  "+vectors=evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16-vectors.txt"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:57.871931+00:00",
+                "started_at": "2026-11-03T14:35:40.667308+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/bf16-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/bf16-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:59.790540+00:00",
-                "duration_s": 1.918325096834451
+                "ended_at": "2026-11-03T14:35:42.185020+00:00",
+                "duration_s": 1.5173001368530095
               }
             ],
             "results": {
@@ -695,14 +701,15 @@
                 "raw_summary": "RESULT compared=65536 stalls=66048 cycles=197123\ntests/bf16_tb.sv:53: $finish called at 1971230000 (1ps)"
               }
             },
-            "ended_at": "2026-11-03T13:18:59.791862+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:35:42.186477+00:00",
+            "success": true,
+            "duration_s": 2.4722533009480685
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/receipt.json",
+          "path": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:59.795375+00:00",
+            "started_at": "2026-11-03T14:35:42.190015+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -759,7 +766,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -771,11 +778,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -784,14 +791,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:00.259286+00:00",
+                "started_at": "2026-11-03T14:35:42.635542+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/verilator-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/verilator-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/verilator-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/verilator-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:00.375940+00:00",
-                "duration_s": 0.11584357102401555
+                "ended_at": "2026-11-03T14:35:42.750972+00:00",
+                "duration_s": 0.11505844793282449
               },
               {
                 "argv": [
@@ -802,39 +809,41 @@
                   "--top-module",
                   "fp8_service_tb",
                   "--Mdir",
-                  "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-obj",
+                  "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-obj",
                   "-o",
                   "service-sim",
                   "rtl/anvil_d2_fp8_dequant.sv",
                   "rtl/anvil_d2_fp8_group_quantizer.sv",
                   "rtl/anvil_d2_bf16_to_q16.sv",
                   "rtl/anvil_d2_fp8_mla_moe.sv",
-                  "tests/fp8_service_tb.sv"
+                  "tests/fp8_service_tb.sv",
+                  "-CFLAGS",
+                  "-O3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:00.377281+00:00",
+                "started_at": "2026-11-03T14:35:42.751875+00:00",
                 "timeout_s": 1200,
-                "stdout": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:11.576972+00:00",
-                "duration_s": 11.198813966009766
+                "ended_at": "2026-11-03T14:35:56.698394+00:00",
+                "duration_s": 13.945808263029903
               },
               {
                 "argv": [
-                  "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-obj/service-sim",
-                  "+vectors=evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-vectors.txt"
+                  "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-obj/service-sim",
+                  "+vectors=evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-vectors.txt"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:11.578952+00:00",
+                "started_at": "2026-11-03T14:35:56.699501+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/service-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/service-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:11.844718+00:00",
-                "duration_s": 0.2652339939959347
+                "ended_at": "2026-11-03T14:35:56.964906+00:00",
+                "duration_s": 0.26494101784192026
               }
             ],
             "results": {
@@ -845,14 +854,15 @@
                 "scope": "cache packing/roundtrip and expert dequantized Q16 boundary; not MAC/logit coverage"
               }
             },
-            "ended_at": "2026-11-03T13:19:11.847247+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:35:56.966464+00:00",
+            "success": true,
+            "duration_s": 14.779038846958429
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/receipt.json",
+          "path": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:19:11.852466+00:00",
+            "started_at": "2026-11-03T14:35:56.971155+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -909,7 +919,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -921,11 +931,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -934,14 +944,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:11.945993+00:00",
+                "started_at": "2026-11-03T14:35:57.055585+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/verilator-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/verilator-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/verilator-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/verilator-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:12.061819+00:00",
-                "duration_s": 0.1152048259973526
+                "ended_at": "2026-11-03T14:35:57.170946+00:00",
+                "duration_s": 0.11495066713541746
               },
               {
                 "argv": [
@@ -954,7 +964,7 @@
                   "--top-module",
                   "draft_head_tb",
                   "--Mdir",
-                  "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-obj",
+                  "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-obj",
                   "-o",
                   "head-sim",
                   "rtl/anvil_d2_bank_scheduler.sv",
@@ -1002,34 +1012,36 @@
                   "anvil_d1_reference/rtl/anvil_d1_token_io.sv",
                   "anvil_d1_reference/rtl/anvil_d1_top.sv",
                   "anvil_d1_reference/rtl/anvil_d1_udiv.sv",
-                  "tests/draft_head_tb.sv"
+                  "tests/draft_head_tb.sv",
+                  "-CFLAGS",
+                  "-O3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:12.062458+00:00",
+                "started_at": "2026-11-03T14:35:57.171708+00:00",
                 "timeout_s": 1200,
-                "stdout": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:33.533248+00:00",
-                "duration_s": 21.47029561805539
+                "ended_at": "2026-11-03T14:36:22.241040+00:00",
+                "duration_s": 25.068947456777096
               },
               {
                 "argv": [
-                  "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-obj/head-sim",
-                  "+image=evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/checkpoint-images/native-head-weights.txt",
-                  "+absorption=evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-absorption.txt",
-                  "+vectors=evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-vectors.txt"
+                  "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-obj/head-sim",
+                  "+image=evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/checkpoint-images/native-head-weights.txt",
+                  "+absorption=evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-absorption.txt",
+                  "+vectors=evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-vectors.txt"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:33.535013+00:00",
+                "started_at": "2026-11-03T14:36:22.242818+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/head-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/head-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:44.375883+00:00",
-                "duration_s": 10.840322745963931
+                "ended_at": "2026-11-03T14:36:29.675398+00:00",
+                "duration_s": 7.432064270833507
               }
             ],
             "results": {
@@ -1041,14 +1053,15 @@
                 "raw_summary": "HEAD_RESULT head=0 pos=1 token=5\nHEAD_RESULT head=0 pos=2 token=3\nHEAD_RESULT head=1 pos=2 token=3\nHEAD_RESULT head=0 pos=3 token=2\nHEAD_RESULT head=1 pos=3 token=1\nHEAD_RESULT head=2 pos=3 token=3\nHEAD_RESULT head=0 pos=4 token=3\nHEAD_RESULT head=1 pos=4 token=5\nHEAD_RESULT head=2 pos=4 token=5\nHEAD_RESULT head=3 pos=4 token=1\nHEAD_RESULT head=0 pos=5 token=1\nHEAD_RESULT head=1 pos=5 token=4\nHEAD_RESULT head=2 pos=5 token=3\nHEAD_RESULT head=3 pos=5 token=5\nRESULT commands=14 hidden=112 results=14 absorption=1152 cache_writes=70 stalls=56\n- tests/draft_head_tb.sv:196: Verilog $finish"
               }
             },
-            "ended_at": "2026-11-03T13:19:44.378690+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:36:29.678119+00:00",
+            "success": true,
+            "duration_s": 32.70945940981619
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/receipt.json",
+          "path": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:19:44.482677+00:00",
+            "started_at": "2026-11-03T14:36:29.773119+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -1105,7 +1118,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -1117,11 +1130,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -1130,14 +1143,14 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:44.875878+00:00",
+                "started_at": "2026-11-03T14:36:30.139855+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/verilator-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/verilator-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/verilator-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/verilator-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:19:44.991383+00:00",
-                "duration_s": 0.11510926811024547
+                "ended_at": "2026-11-03T14:36:30.255468+00:00",
+                "duration_s": 0.11511508119292557
               },
               {
                 "argv": [
@@ -1150,7 +1163,7 @@
                   "--top-module",
                   "top_model_tb",
                   "--Mdir",
-                  "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/target-obj",
+                  "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/target-obj",
                   "-o",
                   "target-sim",
                   "-GHIDDEN=8",
@@ -1213,36 +1226,38 @@
                   "anvil_d1_reference/rtl/anvil_d1_token_io.sv",
                   "anvil_d1_reference/rtl/anvil_d1_top.sv",
                   "anvil_d1_reference/rtl/anvil_d1_udiv.sv",
-                  "tests/top_model_tb.sv"
+                  "tests/top_model_tb.sv",
+                  "-CFLAGS",
+                  "-O3"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:19:44.992140+00:00",
+                "started_at": "2026-11-03T14:36:30.256202+00:00",
                 "timeout_s": 1200,
-                "stdout": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/target-compile.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/target-compile.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/target-compile.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/target-compile.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:20:39.156761+00:00",
-                "duration_s": 54.164164068875834
+                "ended_at": "2026-11-03T14:37:44.749909+00:00",
+                "duration_s": 74.49328526109457
               },
               {
                 "argv": [
-                  "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/target-obj/target-sim",
-                  "+image=evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/checkpoint-images/target-weights.txt",
-                  "+expected=evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/cache-expected.txt",
-                  "+absorption=evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/absorption-expected.txt",
-                  "+commands=evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/commands.txt",
+                  "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/target-obj/target-sim",
+                  "+image=evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/checkpoint-images/target-weights.txt",
+                  "+expected=evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/cache-expected.txt",
+                  "+absorption=evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/absorption-expected.txt",
+                  "+commands=evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/commands.txt",
                   "+domain=0"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:20:39.159649+00:00",
+                "started_at": "2026-11-03T14:37:44.753235+00:00",
                 "timeout_s": 1800,
-                "stdout": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/target-simulation.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/target-simulation.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/target-simulation.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/target-simulation.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:22:49.739673+00:00",
-                "duration_s": 130.57925644796342
+                "ended_at": "2026-11-03T14:39:16.172805+00:00",
+                "duration_s": 91.4186729369685
               }
             ],
             "results": {
@@ -1391,14 +1406,15 @@
                 "raw_summary": "COMMAND_RESULT command=1 mode=0 generation=0 cycles=92449 tokens=0 logits=7 cache_read_bytes=0 cache_write_bytes=40 expert_read_bytes=4320\nTRANSFER_RESULT command=1 latent_payload_reads=0 latent_payload_writes=24 cache_scale_bytes=0 routed_expert_payload_reads=1536 routed_expert_scale_bytes=0 other_reads=9296 other_writes=2320\nCOUNTER_RESULT command=1 generation_cycles=0 committed=0 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=2 mode=0 generation=0 cycles=78845 tokens=0 logits=7 cache_read_bytes=80 cache_write_bytes=40 expert_read_bytes=4320\nTRANSFER_RESULT command=2 latent_payload_reads=48 latent_payload_writes=24 cache_scale_bytes=0 routed_expert_payload_reads=1536 routed_expert_scale_bytes=0 other_reads=6256 other_writes=16\nCOUNTER_RESULT command=2 generation_cycles=0 committed=0 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=3 mode=0 generation=1 cycles=354487 tokens=3 logits=0 cache_read_bytes=1120 cache_write_bytes=160 expert_read_bytes=17280\nTRANSFER_RESULT command=3 latent_payload_reads=672 latent_payload_writes=96 cache_scale_bytes=0 routed_expert_payload_reads=6144 routed_expert_scale_bytes=0 other_reads=25344 other_writes=64\nCOUNTER_RESULT command=3 generation_cycles=354485 committed=3 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=4 mode=0 generation=1 cycles=200815 tokens=1 logits=0 cache_read_bytes=1040 cache_write_bytes=80 expert_read_bytes=8640\nTRANSFER_RESULT command=4 latent_payload_reads=624 latent_payload_writes=48 cache_scale_bytes=0 routed_expert_payload_reads=3072 routed_expert_scale_bytes=0 other_reads=12864 other_writes=32\nCOUNTER_RESULT command=4 generation_cycles=200813 committed=1 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=5 mode=2 generation=0 cycles=95977 tokens=0 logits=7 cache_read_bytes=0 cache_write_bytes=32 expert_read_bytes=3360\nTRANSFER_RESULT command=5 latent_payload_reads=0 latent_payload_writes=8 cache_scale_bytes=8 routed_expert_payload_reads=384 routed_expert_scale_bytes=192 other_reads=9296 other_writes=2320\nCOUNTER_RESULT command=5 generation_cycles=0 committed=0 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=6 mode=2 generation=0 cycles=82409 tokens=0 logits=7 cache_read_bytes=48 cache_write_bytes=32 expert_read_bytes=3360\nTRANSFER_RESULT command=6 latent_payload_reads=8 latent_payload_writes=8 cache_scale_bytes=16 routed_expert_payload_reads=384 routed_expert_scale_bytes=192 other_reads=6256 other_writes=16\nCOUNTER_RESULT command=6 generation_cycles=0 committed=0 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=7 mode=2 generation=1 cycles=369271 tokens=3 logits=0 cache_read_bytes=672 cache_write_bytes=128 expert_read_bytes=13440\nTRANSFER_RESULT command=7 latent_payload_reads=112 latent_payload_writes=32 cache_scale_bytes=144 routed_expert_payload_reads=1536 routed_expert_scale_bytes=768 other_reads=25344 other_writes=64\nCOUNTER_RESULT command=7 generation_cycles=369269 committed=3 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nCOMMAND_RESULT command=8 mode=2 generation=1 cycles=208410 tokens=1 logits=0 cache_read_bytes=624 cache_write_bytes=64 expert_read_bytes=6720\nTRANSFER_RESULT command=8 latent_payload_reads=104 latent_payload_writes=16 cache_scale_bytes=120 routed_expert_payload_reads=768 routed_expert_scale_bytes=384 other_reads=12864 other_writes=32\nCOUNTER_RESULT command=8 generation_cycles=208408 committed=1 proposed=0 accepted=0 rejected_blocks=0 verification_cycles=0\nRESULT commands=8 cache_compares=144 absorption_compares=1152 logits=28 tokens=8 stalls=40\nPREFIX_RESULT prefix0=8 prefix1=0 prefix2=0 prefix3=0 prefix4=0 first_reject_blocks=0\n- tests/top_model_tb.sv:404: Verilog $finish"
               }
             },
-            "ended_at": "2026-11-03T13:22:49.741837+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:39:16.175459+00:00",
+            "success": true,
+            "duration_s": 166.40456185513176
           }
         },
         {
-          "path": "evidence/verification/d2-numerical-20261103T131842Z-e105bad2/receipt.json",
+          "path": "evidence/verification/d2-numerical-20261103T143523Z-3db01f5c/receipt.json",
           "data": {
-            "started_at": "2026-11-03T13:18:42.755467+00:00",
+            "started_at": "2026-11-03T14:35:23.947772+00:00",
             "entry_argv": [
               "python3",
               "tests/verify.py",
@@ -1455,7 +1471,7 @@
               "rtl/anvil_d2_target_lanes.sv": "3f2f357d59c72a834aa020706d3019eb172937db50a4ba1154e1a88cd56f1d17",
               "rtl/anvil_d2_top.sv": "9c3e9d37e51c9e1f4502d5cbff98a02575d822d2e7538a5aba5f884434a654c9",
               "rtl/anvil_d2_verify_cache.sv": "d3c7aa8989ae8c6f8c11766be199702106e8e7af8c954dd85fa1c2ae5a57d723",
-              "tests/README.md": "ef34334f2d1b8d2ae89ad349ec123cc3479db1b012fe1a343da1763df6b6136b",
+              "tests/README.md": "10367cd44658297c4bfb22fdc50f5a5d6a9057e81a4c79f16a73c5f72efc9aeb",
               "tests/benchmark_manifest.json": "e9184db04d54d57cdac79dc7ba80ff70ae13c13832a0a9b25d090a229d002c44",
               "tests/bf16_tb.sv": "5f37957027af6958aa559c76a3af55dc9fdb9cc04055ead0711b19dd90655b66",
               "tests/dequant_tb.sv": "ed3f62745d0dff892508eeec93c15efb74b575a3e526cd4fed122278326cb191",
@@ -1467,11 +1483,11 @@
               "tests/scheduler_tb.sv": "684473063e6183f928811004a045ff30f2905f252112d7745c7de43b809564e1",
               "tests/target_lanes_tb.sv": "0361383ff6e4dfb0a64d4acc79696a873040499264a40013c98a6d06b135d85d",
               "tests/test_reference.py": "eb23585e83189d69a6f4dab5cdd7e5d312b3029b5f26d7af018adffc06e82ac7",
-              "tests/top_model_tb.sv": "bc4a886a1b7bb269379f058b2f8879af1e8294c781947b9382c242d7fb1397b3",
-              "tests/top_smoke_tb.sv": "0a314e9465112983ac893e2e4ef51d5c466e34e148ec0cdc8b0980320f0b1bf3",
+              "tests/top_model_tb.sv": "672bb48123af99e62bc4c9f599a0129ae90e8ab00ad105ae8f22a76329940bea",
+              "tests/top_smoke_tb.sv": "461889fb6a1bd78cce8c662363a9d4b3c6ff3d11314088fba235d13d57b26d1a",
               "tests/transformer_reference.py": "62551184b366c1788cdfd7b06383a296f653f5a2582472c84191f6ece0c0cad2",
               "tests/verdict_tb.sv": "82d90cc2f0aca490e21b8694bf708a2191de3fb0113474bbe8a1f9a6ca55f0de",
-              "tests/verify.py": "fc55e0e7d3689e06e9f09c4c049466e61339fff9ebb5f4182a702993a83ce3e8"
+              "tests/verify.py": "dcdcc8015984aaf4eef660773ba8f038ecc4d88fb8c714f443caa9ddd8881f24"
             },
             "commands": [
               {
@@ -1480,29 +1496,30 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-03T13:18:42.764420+00:00",
+                "started_at": "2026-11-03T14:35:23.953276+00:00",
                 "timeout_s": 600,
-                "stdout": "evidence/verification/d2-numerical-20261103T131842Z-e105bad2/python-version.stdout.txt",
-                "stderr": "evidence/verification/d2-numerical-20261103T131842Z-e105bad2/python-version.stderr.txt",
+                "stdout": "evidence/verification/d2-numerical-20261103T143523Z-3db01f5c/python-version.stdout.txt",
+                "stderr": "evidence/verification/d2-numerical-20261103T143523Z-3db01f5c/python-version.stderr.txt",
                 "exit_code": 0,
                 "timed_out": false,
-                "ended_at": "2026-11-03T13:18:42.769329+00:00",
-                "duration_s": 0.004446957027539611
+                "ended_at": "2026-11-03T14:35:23.958032+00:00",
+                "duration_s": 0.0044031699653714895
               }
             ],
             "results": {},
             "component_receipts": [
-              "evidence/verification/d2-numerical-reference-20261103T131842Z-a1f3fa5e/receipt.json",
-              "evidence/verification/d2-numerical-dequant-icarus-20261103T131842Z-e99fe648/receipt.json",
-              "evidence/verification/d2-numerical-dequant-verilator-20261103T131845Z-253b6387/receipt.json",
-              "evidence/verification/d2-numerical-quantizer-20261103T131855Z-88ffac33/receipt.json",
-              "evidence/verification/d2-numerical-bf16-20261103T131856Z-5813b349/receipt.json",
-              "evidence/verification/d2-numerical-fp8-service-20261103T131859Z-f37837fb/receipt.json",
-              "evidence/verification/d2-numerical-native-heads-20261103T131911Z-196154e2/receipt.json",
-              "evidence/verification/d2-numerical-routed-target-20261103T131944Z-78bba430/receipt.json"
+              "evidence/verification/d2-numerical-reference-20261103T143523Z-885a5f9e/receipt.json",
+              "evidence/verification/d2-numerical-dequant-icarus-20261103T143524Z-90360a7e/receipt.json",
+              "evidence/verification/d2-numerical-dequant-verilator-20261103T143525Z-63f0bfa6/receipt.json",
+              "evidence/verification/d2-numerical-quantizer-20261103T143538Z-b250825c/receipt.json",
+              "evidence/verification/d2-numerical-bf16-20261103T143539Z-351cec71/receipt.json",
+              "evidence/verification/d2-numerical-fp8-service-20261103T143542Z-3107f25b/receipt.json",
+              "evidence/verification/d2-numerical-native-heads-20261103T143556Z-e31ffd8b/receipt.json",
+              "evidence/verification/d2-numerical-routed-target-20261103T143629Z-69da64ff/receipt.json"
             ],
-            "ended_at": "2026-11-03T13:22:49.817413+00:00",
-            "success": true
+            "ended_at": "2026-11-03T14:39:16.267196+00:00",
+            "success": true,
+            "duration_s": 232.3214829871431
           }
         }
       ]
