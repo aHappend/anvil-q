@@ -15,6 +15,69 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 _COMPILED_MODELS = {}
+_RETAINED_MODELS = None
+
+
+def compilation_identity(identity):
+    """Python or documentation changes cannot change a compiled RTL model."""
+    return {
+        **identity,
+        "source_sha256": {
+            name: digest for name, digest in identity["source_sha256"].items()
+            if Path(name).suffix in (
+                ".sv", ".v", ".svh", ".vh", ".cpp", ".c", ".h", ".hpp", ".vlt")
+        },
+    }
+
+
+def retained_models():
+    global _RETAINED_MODELS
+    if _RETAINED_MODELS is None:
+        _RETAINED_MODELS = {}
+        patterns = (
+            "evidence/l1-*/*/*-binding-*.json",
+            "evidence/preparation/*/*-binding-*.json",
+            "evidence/preparation/*/*/*-binding-*.json",
+        )
+        for path in sorted({path for pattern in patterns for path in ROOT.glob(pattern)},
+                           reverse=True):
+            binding = json.loads(path.read_text())
+            if binding.get("reused") or "identity" not in binding:
+                continue
+            identity = compilation_identity(binding["identity"])
+            key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+            _RETAINED_MODELS.setdefault(key, []).append((path, binding))
+    return _RETAINED_MODELS
+
+
+def retained_model(key, identity):
+    for path, binding in retained_models().get(key, []):
+        executable = (ROOT / binding["executable"]).resolve()
+        receipt_path = (ROOT / binding["compile_receipt"]).resolve()
+        if not all(item.is_relative_to(ROOT / "evidence")
+                   for item in (executable, receipt_path)):
+            raise RuntimeError(f"compiled artifact escapes project evidence: {relative(path)}")
+        if not executable.is_file() or not receipt_path.is_file():
+            continue
+        receipt = json.loads(receipt_path.read_text())
+        if (receipt.get("exit_code") != 0 or receipt.get("timed_out") or
+                not receipt.get("execution_started") or receipt.get("execution_error")):
+            continue
+        if (receipt["argv"] != binding["requested_argv"] or receipt["cwd"] != "." or
+                compilation_identity(binding["identity"]) != identity or
+                any(receipt["source_sha256"].get(name) != digest
+                    for name, digest in identity["source_sha256"].items())):
+            raise RuntimeError(f"inconsistent retained build binding: {relative(path)}")
+        if (not os.access(executable, os.X_OK) or
+                hashlib.sha256(executable.read_bytes()).hexdigest() !=
+                binding["executable_sha256"]):
+            continue
+        return {
+            name: binding[name] for name in
+            ("executable", "executable_sha256", "compile_receipt")
+        } | {"retained_binding": relative(path),
+             "retained_binding_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    return None
 
 
 def utc():
@@ -194,7 +257,7 @@ def relative(path):
 
 
 def compile_verilator(run, name, argv, obj, executable):
-    """Reuse only an identical successful build within this Python execution."""
+    """Reuse exact-bound successful builds, never prior simulation results."""
     argv = list(map(str, argv))
     if argv[0] != "verilator" or argv.count("--Mdir") != 1:
         raise ValueError("compiled-model reuse requires an explicit Verilator Mdir")
@@ -243,7 +306,7 @@ def compile_verilator(run, name, argv, obj, executable):
         else:
             normalized.append(argument)
     source_identity = hashes(sources())
-    identity = {
+    identity = compilation_identity({
         "argv": normalized, "source_sha256": source_identity, "tools": tools,
         "environment_sha256": hashlib.sha256(json.dumps({
             key: os.environ.get(key) for key in (
@@ -251,10 +314,16 @@ def compile_verilator(run, name, argv, obj, executable):
                 "VERILATOR_ROOT", "VERILATOR_BIN", "SYSTEMC_INCLUDE", "SYSTEMC_LIBDIR",
                 "CPATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH", "LD_LIBRARY_PATH")
         }, sort_keys=True).encode()).hexdigest(),
-    }
+    })
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
     cached = _COMPILED_MODELS.get(key)
-    reused = cached is not None
+    reuse_origin = "process" if cached is not None else "cold"
+    if cached is None:
+        cached = retained_model(key, identity)
+        if cached is not None:
+            reuse_origin = "retained"
+            _COMPILED_MODELS[key] = cached
+    reused = reuse_origin != "cold"
     if cached is None:
         compiled = execute(run, name, argv, ["verilator", "--version"])
         binary = obj / executable
@@ -275,7 +344,8 @@ def compile_verilator(run, name, argv, obj, executable):
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     binding = run / f"{name}-binding-{timestamp}.json"
     with binding.open("x") as stream:
-        json.dump({"key": key, "reused": reused, "identity": identity,
+        json.dump({"key": key, "reused": reused, "reuse_origin": reuse_origin,
+                   "identity": identity,
                    "requested_argv": argv, "tool_identity_receipts": tool_receipts,
                    **cached}, stream, indent=2)
         stream.write("\n")
