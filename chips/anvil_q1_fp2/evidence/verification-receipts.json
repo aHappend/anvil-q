@@ -3853,14 +3853,964 @@
         }
       ]
     },
-    "check:five-domain-benchmark": {
-      "attempt_id": 22,
-      "duration_s": 572.9338024170138,
-      "stdout_preview": "progress: benchmark-gemv-bf16-17-compile, 30s\nprogress: benchmark-gemv-bf16-17-compile, 60s\nprogress: benchmark-gemv-mx-17-compile, 30s\nprogress: benchmark-gemv-mx-17-compile, 60s\nprogress: benchmark-gemv-bf16-29-simulate, 30s\nprogress: benchmark-gemv-mx-29-simulate, 30s\nreceipt: evidence/fp2-benchmark-20261102T231939Z-15239816/receipt.json\n",
+    "check:defect-sensitivity": {
+      "attempt_id": 27,
+      "duration_s": 258.5517652449198,
+      "stdout_preview": "progress: group-scale-control-tensor-17-verilator-compile, 30s\nprogress: group-scale-mutant-tensor-17-verilator-compile, 30s\nprogress: rounding-mutant-tensor-17-verilator-compile, 30s\nreceipt: evidence/fp2-sensitivity-20261103T002818Z-81f73548/receipt.json\n",
       "receipt_count": 1,
       "receipts": [
         {
-          "path": "evidence/fp2-benchmark-20261102T231939Z-15239816/receipt.json",
+          "path": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/receipt.json",
+          "data": {
+            "argv": [
+              "python3",
+              "tests/verify.py",
+              "--suite",
+              "sensitivity"
+            ],
+            "cwd": ".",
+            "started_at": "2026-11-03T00:28:18.055935+00:00",
+            "repair_of": "evidence/fp2-sensitivity-20261102T232913Z-1f31eb9d/receipt.json",
+            "aggregate_budget_s": 2700,
+            "interpreted_process_limit_s": 600,
+            "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+            "source_sha256": {
+              "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv": "9b41a1c242c344871258f0ba9d861e669cb1688f4b5fb2a46818b729251c2af7",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv": "eac1e0eeb66843257e06b87d76a206dabed4079f91c0994330532aadcedda786",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv": "316a81331458820566c2beb83fd5ce6d002078fb4cf8cff252eb6f8e8e9500e6",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_awq_dequant.sv": "f714d3aa309c6dd13eadbd8390475c10b467aca3beeee62bf47ba92b32f9f157",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_binary.sv": "8d36c5f1b5c27bc1925c16467b37303e96d1c24ecf47ba93dc67cea2958da795",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_compat_div.sv": "8343e2e3d22ae19b0a6d15b1782220ba4d3e990d5a1c98f24a71c827a923c8cf",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_compat_exp.sv": "d5f1ff1c09dc76e08926474404d33d01f1858e247423622019c084b997c86ac4",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_compat_round_div.sv": "ad0ddaa524f45e6aaaf70f69bec10bc8ea718141818143c31a0309d33429fd58",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_compat_sqrt.sv": "19c75532bcae2881d880cf67bc1a83c1e494d33f0c8060598412b3400bc75bc4",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_decoder_layer.sv": "4a338f16a4d5a96a348a214d7adb6f6a5f7a396cdd78e08b217c10b14b2667fc",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_dot8.sv": "7bb12d8a0646c2a962d6ec3197f7062b10412bd5c4b5ef86c6102685e2fff25f",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_dot8_mixed.sv": "49634a43f9b8fcbccc595be251f702d481e9f06717512a54a74dc34bafe87901",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_elementwise.sv": "c3e5389120c5b004d84b343de9c1c15b887d9e3ab4d00121e407f03639106701",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_exp.sv": "01d296faff3310a91875a0b2628e3b050e78be56cd19125eb28b4c44f5bc8d15",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_gemv.sv": "97029e9f21cac8c3ae4952c8077131ff19dff0ae8152c3b6abf2d027ed06bcbe",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_gqa_attention.sv": "fb7bc337a471c9ee73b1db61421a0d028537a984fbe037b70eb4d37035b4809a",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_reciprocal.sv": "eb2d9fb3fba07cb10ff478106b14bac35ea45b9ec07da07edab1250da2838a3d",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_reduce3.sv": "4da472a7ff77ad63e8876b7e5878c58ee8a15a9f4cdd2d84e84a33294e14b703",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_rmsnorm.sv": "6516220e84a8afc64cdd3d9387bdf53b0e6235c97615f4d3349d17423c0545e0",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_rope.sv": "aeacd351b43d4fe8386ae2adc18db163ddd9a2e1d20d3d3af8da6a9076630d5f",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_rsqrt.sv": "f6674723d2c245eaba79128e05254a19243adde4f14ed696878fad6e72ff2170",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_swiglu_mlp.sv": "f40f5879acf8c67f37e8c2bfb41ebf35e8f035c4dfc83c48d246f2d0bd55d948",
+              "anvil_q1_fp_reference/rtl/anvil_q1_fp_top.sv": "6616305950509eb4cdae94898f3282957bc2a3c12eb78f08e360826d30a35092",
+              "anvil_q1_fp_reference/rtl/anvil_q1_mem_port.sv": "fc0b18df80b47572561fd8c8018d465856405a224c03640137d791d0c90b4561",
+              "anvil_q1_fp_reference/rtl/anvil_q1_parameters.sv": "2d0f084668ac9ed561da2978c10eade6adf142c4ba9673f5bfc3d963755968f9",
+              "design/ARCHITECTURE.md": "b2585ef9b06e74a99c43e8317e9937f1c0bb1963d2f697435def91b4ff0337cf",
+              "design/SPEC.md": "e70df20bc57a06faa9c653ca55981736bc879083a8148383aa498397f7a3f67d",
+              "fpga/anvil_q1_fp2.sdc": "118a53ae9874fe288ca7f2da72e9df7535f9ba4e1b87e504a850caf0df43d049",
+              "rtl/anvil_q1_fp2_00_pkg.sv": "b7eae1d0a2112134f665483f2c49bcf117a4f4e837c49faf7cc1739ebc4f921a",
+              "rtl/anvil_q1_fp2_bfp_tensor_array.sv": "f7d109f92c7897c7a0d3bf31332791b2131c2a90ba334f1e985e6aed92dcc594",
+              "rtl/anvil_q1_fp2_ddr_pingpong.sv": "4f6b4c13d956dca1e30fe93fd761b48dcb7ba44e277acc871332cc638b9ba453",
+              "rtl/anvil_q1_fp2_ddr_read_stream.sv": "197d9ef07a47ca660299e3dd7431d3ce15e61f888a6ee782f1fa91e23e438ea3",
+              "rtl/anvil_q1_fp2_decoder_control.sv": "5d0838ecaa416241eec7885f09e62e53de37411659e179e263ad6752c4adea80",
+              "rtl/anvil_q1_fp2_epilogue_fusion.sv": "4b4344767384804b11e7becf777748e5c6e0d0b0f3e3e804b83a9c3fc2efe1eb",
+              "rtl/anvil_q1_fp2_exp.sv": "85233cb60954a93f63d3ccbf15789c0764d76d220a1eb5f9dbe5f36e5a3d4707",
+              "rtl/anvil_q1_fp2_fast_rsqrt.sv": "e9f531cbd4233979299f2f367adac32ecca36a17a146bb40d4af54254965ee2c",
+              "rtl/anvil_q1_fp2_flash_attn.sv": "84e4e144da7700524865f459f1ae56a80220b2f2192334ed7a75d971f6bc4113",
+              "rtl/anvil_q1_fp2_fp32_binary.sv": "1a2162730dd734598310fc142254ed3cf3680ea5f7d6197196015a8c33ec5e95",
+              "rtl/anvil_q1_fp2_gqa_group.sv": "810b90dd123d15d2a3adbe39ab8465ea89d3df3662d664bc8739393967facdf8",
+              "rtl/anvil_q1_fp2_kv_reader.sv": "32af0ffd35cd1a8046f16f17d3254195694be3904710ba7d4efafe55ce7f2f6e",
+              "rtl/anvil_q1_fp2_kv_writer.sv": "65bc865e03eb65e415b10f5217ee5c83777254a8b0c274b5f68bda4fb7978717",
+              "rtl/anvil_q1_fp2_mx_quantize.sv": "33fee8ab01749c38ea93a85f02e436fad0a3e014de388822a0c0bc88398e6f7e",
+              "rtl/anvil_q1_fp2_projection.sv": "ae6f7b8b4518517b1011677aaa15b6a42342522cb1c88e804117f8fcf1967a58",
+              "rtl/anvil_q1_fp2_reciprocal.sv": "a6195264c1aa087742eae8e8489061dbe0e8270bcd04d4345601f83c2c57c83e",
+              "rtl/anvil_q1_fp2_telemetry_csr.sv": "eca8a27751b9ece5eac2cd049165e087ae150cd6ac6fe3a2dc167c605ab4d1a2",
+              "rtl/anvil_q1_fp2_top.sv": "b225547f6e495bce6ed0b40d69541702515bb33ec26a4ff57c852daaf403915b",
+              "tests/architecture.py": "f025939e0b1792ee636d6d29fc06d5b645c280fec10df5c5f04d0ceb388eb2b7",
+              "tests/benchmarks.py": "518158bf6afd867a8597e4ec086cb53232d29e26b0f8938b4393f5b7444d62e7",
+              "tests/compatibility.py": "0410dd848a9ac959a7fa815859ef4e4d2e1653fa0641135e3324b8e63b969197",
+              "tests/errors.py": "2b9ede93b5385ee4eae913af45871ed691ca45f892c0d2033428e053408403da",
+              "tests/operators.py": "cb82f381d140891ad4dde1eb599e06712fab44b73f545259763becc1dd1289b2",
+              "tests/protocols.py": "a783c55f95b2857b0ac2c7a565a59fb926aa2cbe2f3ac43e663d1b9b424301a2",
+              "tests/reference.py": "dbe3ca20d542bbcd50957a4a90de086d929709c137968374bfe01acb89d0e8a6",
+              "tests/sensitivity.py": "39bb50ade6f5ad19ea7053d8305a1cfb9ca6d9a63b1cfc7ecadbf3b13f6c0b5c",
+              "tests/structure.py": "1cf99cf49e947cc80e284c9ddd3b92c370ed619dda36366d590340d511bb9919",
+              "tests/verify.py": "75a03f605bfc9aa2c59036c15a9256258f7bd1f69102459cbced70bf4360252b"
+            },
+            "commands": [
+              {
+                "argv": [
+                  "verilator",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:28:20.457093+00:00",
+                "timeout_s": 2697.5972740559373,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/version-verilator.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 4192600
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:28:20.573289+00:00",
+                "elapsed_s": 0.1161578621249646
+              },
+              {
+                "argv": [
+                  "g++",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:28:20.573504+00:00",
+                "timeout_s": 2697.480856449809,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/version-g++.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 4192603
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:28:20.578899+00:00",
+                "elapsed_s": 0.005376080982387066
+              },
+              {
+                "argv": [
+                  "make",
+                  "--version"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:28:20.578925+00:00",
+                "timeout_s": 2697.4754354159813,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/version-make.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/version-make.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 4192604
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:28:20.583924+00:00",
+                "elapsed_s": 0.004978840006515384
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control/tensor-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "rtl/anvil_q1_fp2_bfp_tensor_array.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control/tensor-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:28:20.584047+00:00",
+                "timeout_s": 2697.4703123969957,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control-tensor-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control-tensor-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 4192605
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:29:08.591687+00:00",
+                "elapsed_s": 48.00764115503989
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control/tensor-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control/tensor-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:29:08.594433+00:00",
+                "timeout_s": 2649.4599359829444,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control-tensor-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-control-tensor-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 469
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:29:09.713740+00:00",
+                "elapsed_s": 1.119287693174556
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant/tensor-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant/tensor-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:29:12.138136+00:00",
+                "timeout_s": 2645.916226555826,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant-tensor-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant-tensor-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 1836
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:29:56.287727+00:00",
+                "elapsed_s": 44.14958557486534
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant/tensor-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant/tensor-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:29:56.290379+00:00",
+                "timeout_s": 2601.763989378931,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant-tensor-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant-tensor-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 4248
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:29:58.110335+00:00",
+                "elapsed_s": 1.8199257079977542
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/build-cache/1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-control/tensor-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:30:00.575954+00:00",
+                "timeout_s": 2597.4784074428026,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-control-tensor-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-control-tensor-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 4684
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:30:01.693447+00:00",
+                "elapsed_s": 1.1174726670142263
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant/tensor-17-verilator/compile-obj",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding.sv",
+                  "rtl/anvil_q1_fp2_bfp_tensor_array.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant/tensor-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:30:03.957188+00:00",
+                "timeout_s": 2594.0971723278053,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant-tensor-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant-tensor-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 5183
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:30:48.096282+00:00",
+                "elapsed_s": 44.139097863808274
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant/tensor-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant/tensor-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:30:48.099065+00:00",
+                "timeout_s": 2549.9553034889977,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant-tensor-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant-tensor-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 7584
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:30:49.919210+00:00",
+                "elapsed_s": 1.820105551974848
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control/rsqrt-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "rtl/anvil_q1_fp2_fast_rsqrt.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control/rsqrt-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:30:50.114264+00:00",
+                "timeout_s": 2547.9401059248485,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control-rsqrt-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control-rsqrt-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 7911
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:30:56.795148+00:00",
+                "elapsed_s": 6.680850550998002
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control/rsqrt-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control/rsqrt-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:30:56.796677+00:00",
+                "timeout_s": 2541.2576923808083,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control-rsqrt-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-control-rsqrt-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 8480
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:30:56.962625+00:00",
+                "elapsed_s": 0.1659143529832363
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant/rsqrt-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant/rsqrt-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:30:57.073664+00:00",
+                "timeout_s": 2540.9807035939302,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant-rsqrt-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant-rsqrt-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 8784
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:31:03.203823+00:00",
+                "elapsed_s": 6.130126984091476
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant/rsqrt-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant/rsqrt-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:03.205165+00:00",
+                "timeout_s": 2534.8492023888975,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant-rsqrt-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant-rsqrt-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 8931
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:31:04.523426+00:00",
+                "elapsed_s": 1.3182329030241817
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control/epilogue-3-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "rtl/anvil_q1_fp2_fp32_binary.sv",
+                  "rtl/anvil_q1_fp2_fast_rsqrt.sv",
+                  "rtl/anvil_q1_fp2_reciprocal.sv",
+                  "rtl/anvil_q1_fp2_exp.sv",
+                  "rtl/anvil_q1_fp2_epilogue_fusion.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control/epilogue-3-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:05.011287+00:00",
+                "timeout_s": 2533.043081342941,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control-epilogue-3-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control-epilogue-3-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 9199
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:31:17.857986+00:00",
+                "elapsed_s": 12.846670024795458
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control/epilogue-3-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control/epilogue-3-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:17.860059+00:00",
+                "timeout_s": 2520.1943091999274,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control-epilogue-3-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-control-epilogue-3-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 10112
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:31:18.777741+00:00",
+                "elapsed_s": 0.9176551369018853
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant/epilogue-3-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "rtl/anvil_q1_fp2_fp32_binary.sv",
+                  "rtl/anvil_q1_fp2_fast_rsqrt.sv",
+                  "rtl/anvil_q1_fp2_reciprocal.sv",
+                  "rtl/anvil_q1_fp2_exp.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant/epilogue-3-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:19.369814+00:00",
+                "timeout_s": 2518.68455506186,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant-epilogue-3-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant-epilogue-3-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 10407
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:31:31.511700+00:00",
+                "elapsed_s": 12.141859980067238
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant/epilogue-3-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant/epilogue-3-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:31.513229+00:00",
+                "timeout_s": 2506.5411389598157,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant-epilogue-3-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant-epilogue-3-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 11310
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:31:33.583045+00:00",
+                "elapsed_s": 2.0697793141007423
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control/attention-3-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "rtl/anvil_q1_fp2_fp32_binary.sv",
+                  "rtl/anvil_q1_fp2_fast_rsqrt.sv",
+                  "rtl/anvil_q1_fp2_reciprocal.sv",
+                  "rtl/anvil_q1_fp2_exp.sv",
+                  "rtl/anvil_q1_fp2_flash_attn.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control/attention-3-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:33.863595+00:00",
+                "timeout_s": 2504.1907764398493,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control-attention-3-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control-attention-3-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 11632
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:31:49.712737+00:00",
+                "elapsed_s": 15.849110428011045
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control/attention-3-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control/attention-3-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:49.714375+00:00",
+                "timeout_s": 2488.33999320399,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control-attention-3-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-control-attention-3-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 13360
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:31:51.083703+00:00",
+                "elapsed_s": 1.3693081471137702
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant/attention-3-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_00_pkg.sv",
+                  "rtl/anvil_q1_fp2_fp32_binary.sv",
+                  "rtl/anvil_q1_fp2_fast_rsqrt.sv",
+                  "rtl/anvil_q1_fp2_reciprocal.sv",
+                  "rtl/anvil_q1_fp2_exp.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant/attention-3-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:31:51.375577+00:00",
+                "timeout_s": 2486.6788133278023,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant-attention-3-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant-attention-3-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 13653
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:05.378004+00:00",
+                "elapsed_s": 14.00239871093072
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant/attention-3-17-verilator/compile-obj/Vtb",
+                  "+vectors=evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant/attention-3-17-verilator/vectors.txt",
+                  "+seed=17"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:05.379727+00:00",
+                "timeout_s": 2472.6746407409664,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant-attention-3-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant-attention-3-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 15468
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:32:06.698476+00:00",
+                "elapsed_s": 1.3187245801091194
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control/ddr-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_ddr_pingpong.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control/ddr-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:06.795693+00:00",
+                "timeout_s": 2471.258675114019,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control-ddr-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control-ddr-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 16259
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:14.079060+00:00",
+                "elapsed_s": 7.283350921003148
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control/ddr-17-verilator/compile-obj/Vtb"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:14.079439+00:00",
+                "timeout_s": 2463.9749287958257,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control-ddr-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-control-ddr-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 16421
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:14.145876+00:00",
+                "elapsed_s": 0.0664162200409919
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant/ddr-17-verilator/compile-obj",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant/ddr-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:14.149462+00:00",
+                "timeout_s": 2463.904903648887,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant-ddr-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant-ddr-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 16677
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:21.231146+00:00",
+                "elapsed_s": 7.081673444015905
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant/ddr-17-verilator/compile-obj/Vtb"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:21.231517+00:00",
+                "timeout_s": 2456.8228516688105,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant-ddr-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant-ddr-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 17486
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:32:22.550901+00:00",
+                "elapsed_s": 1.3192526439670473
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control/csr-64-17-verilator/compile-obj",
+                  "rtl/anvil_q1_fp2_telemetry_csr.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control/csr-64-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:22.574420+00:00",
+                "timeout_s": 2455.4799493029714,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control-csr-64-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control-csr-64-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 17776
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:28.603096+00:00",
+                "elapsed_s": 6.028652244945988
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control/csr-64-17-verilator/compile-obj/Vtb"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:28.603454+00:00",
+                "timeout_s": 2449.450914153829,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control-csr-64-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-control-csr-64-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 18242
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:28.719681+00:00",
+                "elapsed_s": 0.11619357415474951
+              },
+              {
+                "argv": [
+                  "verilator",
+                  "--binary",
+                  "--timing",
+                  "-Wno-fatal",
+                  "--top-module",
+                  "tb",
+                  "-j",
+                  "2",
+                  "-CFLAGS",
+                  "-O3",
+                  "--Mdir",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant/csr-64-17-verilator/compile-obj",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority.sv",
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant/csr-64-17-verilator/tb.sv"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:28.740782+00:00",
+                "timeout_s": 2449.3135874869768,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant-csr-64-17-verilator-compile.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant-csr-64-17-verilator-compile.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 18503
+                },
+                "timed_out": false,
+                "exit_code": 0,
+                "ended_at": "2026-11-03T00:32:35.070008+00:00",
+                "elapsed_s": 6.329198131104931
+              },
+              {
+                "argv": [
+                  "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant/csr-64-17-verilator/compile-obj/Vtb"
+                ],
+                "cwd": ".",
+                "started_at": "2026-11-03T00:32:35.070347+00:00",
+                "timeout_s": 2442.984021730954,
+                "stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant-csr-64-17-verilator-simulate.stdout.txt",
+                "stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant-csr-64-17-verilator-simulate.stderr.txt",
+                "process_scope": {
+                  "leader_pid": 19489
+                },
+                "timed_out": false,
+                "exit_code": -6,
+                "ended_at": "2026-11-03T00:32:36.389233+00:00",
+                "elapsed_s": 1.318846337031573
+              }
+            ],
+            "comparisons": [
+              {
+                "kind": "tensor",
+                "seed": 17,
+                "simulator": "verilator",
+                "vectors": 8966,
+                "result": "passed",
+                "format_counts": {
+                  "mx": 4354,
+                  "bf16": 4612
+                }
+              },
+              {
+                "mutation": "group-scale",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "NUMERICAL",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant-tensor-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/group-scale-mutant-tensor-17-verilator-simulate.stderr.txt"
+              },
+              {
+                "kind": "tensor",
+                "seed": 17,
+                "simulator": "verilator",
+                "vectors": 8966,
+                "result": "passed",
+                "format_counts": {
+                  "mx": 4354,
+                  "bf16": 4612
+                }
+              },
+              {
+                "mutation": "rounding",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "NUMERICAL",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant-tensor-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rounding-mutant-tensor-17-verilator-simulate.stderr.txt"
+              },
+              {
+                "kind": "rsqrt",
+                "seed": 17,
+                "simulator": "verilator",
+                "vectors": 11015,
+                "result": "passed"
+              },
+              {
+                "mutation": "rsqrt-seed",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "NUMERICAL",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant-rsqrt-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/rsqrt-seed-mutant-rsqrt-17-verilator-simulate.stderr.txt"
+              },
+              {
+                "kind": "epilogue",
+                "seed": 17,
+                "simulator": "verilator",
+                "tile": 3,
+                "commands": 1028,
+                "components": 8448,
+                "result": "passed"
+              },
+              {
+                "mutation": "residual-routing",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "NUMERICAL",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant-epilogue-3-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/residual-routing-mutant-epilogue-3-17-verilator-simulate.stderr.txt"
+              },
+              {
+                "kind": "attention",
+                "seed": 17,
+                "simulator": "verilator",
+                "tile": 3,
+                "commands": 66,
+                "components": 512,
+                "result": "passed"
+              },
+              {
+                "mutation": "online-rescaling",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "NUMERICAL",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant-attention-3-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/online-rescaling-mutant-attention-3-17-verilator-simulate.stderr.txt"
+              },
+              {
+                "kind": "ddr",
+                "seed": 17,
+                "transactions": 96,
+                "result": "passed"
+              },
+              {
+                "mutation": "response-ownership",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "DDR RESPONSE OWNERSHIP",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant-ddr-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/response-ownership-mutant-ddr-17-verilator-simulate.stderr.txt"
+              },
+              {
+                "kind": "csr",
+                "seed": 17,
+                "counter_bits": 64,
+                "edges": 731,
+                "coverage": {
+                  "read": 47,
+                  "write": 25,
+                  "error": 22,
+                  "stall": 213,
+                  "clear": 1,
+                  "snapshot": 1,
+                  "saturation": 0,
+                  "clear_with_event": 1,
+                  "snapshot_with_event": 1
+                },
+                "result": "passed"
+              },
+              {
+                "mutation": "clear-priority",
+                "control": "passed",
+                "mutant": "assertion-rejected",
+                "assertion": "CSR cycle=",
+                "simulation_stdout": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant-csr-64-17-verilator-simulate.stdout.txt",
+                "simulation_stderr": "evidence/fp2-sensitivity-20261103T002818Z-81f73548/clear-priority-mutant-csr-64-17-verilator-simulate.stderr.txt"
+              }
+            ],
+            "build_reuse": [
+              {
+                "case": "tensor-17-verilator",
+                "source_digest": "1618c38dc773ec80eecc2761a54fb21cd9bfbcd0442e812f2d6cedb06cf057e0",
+                "binary_sha256": "f327de7e3b09d0dc5ba03540f90f6fa35100ddf5ded4b06a741e06d2dc87d79b"
+              }
+            ],
+            "ended_at": "2026-11-03T00:32:36.392616+00:00",
+            "exit_code": 0
+          }
+        }
+      ]
+    },
+    "check:five-domain-benchmark": {
+      "attempt_id": 26,
+      "duration_s": 577.0424225318711,
+      "stdout_preview": "progress: benchmark-gemv-bf16-17-compile, 30s\nprogress: benchmark-gemv-bf16-17-compile, 60s\nprogress: benchmark-gemv-mx-17-compile, 30s\nprogress: benchmark-gemv-mx-17-compile, 60s\nprogress: benchmark-gemv-mx-29-simulate, 30s\nreceipt: evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/receipt.json\n",
+      "receipt_count": 1,
+      "receipts": [
+        {
+          "path": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/receipt.json",
           "data": {
             "argv": [
               "python3",
@@ -3871,7 +4821,7 @@
               "17,29,71"
             ],
             "cwd": ".",
-            "started_at": "2026-11-02T23:19:39.080154+00:00",
+            "started_at": "2026-11-03T00:18:39.108490+00:00",
             "repair_of": null,
             "aggregate_budget_s": 2700,
             "interpreted_process_limit_s": 600,
@@ -3930,7 +4880,7 @@
               "tests/operators.py": "cb82f381d140891ad4dde1eb599e06712fab44b73f545259763becc1dd1289b2",
               "tests/protocols.py": "a783c55f95b2857b0ac2c7a565a59fb926aa2cbe2f3ac43e663d1b9b424301a2",
               "tests/reference.py": "dbe3ca20d542bbcd50957a4a90de086d929709c137968374bfe01acb89d0e8a6",
-              "tests/sensitivity.py": "40308f776f35b464db5cbe7f5f8e84566decd4767a078a34770051411031a099",
+              "tests/sensitivity.py": "39bb50ade6f5ad19ea7053d8305a1cfb9ca6d9a63b1cfc7ecadbf3b13f6c0b5c",
               "tests/structure.py": "1cf99cf49e947cc80e284c9ddd3b92c370ed619dda36366d590340d511bb9919",
               "tests/verify.py": "75a03f605bfc9aa2c59036c15a9256258f7bd1f69102459cbced70bf4360252b"
             },
@@ -3941,17 +4891,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:19:41.627203+00:00",
-                "timeout_s": 2697.452121076174,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/version-verilator.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/version-verilator.stderr.txt",
+                "started_at": "2026-11-03T00:18:42.136062+00:00",
+                "timeout_s": 2696.9705348629504,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/version-verilator.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/version-verilator.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3801769
+                  "leader_pid": 4160593
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:19:41.743031+00:00",
-                "elapsed_s": 0.11579161998815835
+                "ended_at": "2026-11-03T00:18:42.253124+00:00",
+                "elapsed_s": 0.11698817391879857
               },
               {
                 "argv": [
@@ -3959,17 +4909,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:19:41.744531+00:00",
-                "timeout_s": 2697.3347889040597,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/version-g++.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/version-g++.stderr.txt",
+                "started_at": "2026-11-03T00:18:42.255746+00:00",
+                "timeout_s": 2696.8507965640165,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/version-g++.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/version-g++.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3801773
+                  "leader_pid": 4160599
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:19:41.750183+00:00",
-                "elapsed_s": 0.005619896110147238
+                "ended_at": "2026-11-03T00:18:42.261538+00:00",
+                "elapsed_s": 0.0057718169409781694
               },
               {
                 "argv": [
@@ -3977,17 +4927,17 @@
                   "--version"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:19:41.750207+00:00",
-                "timeout_s": 2697.329112092033,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/version-make.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/version-make.stderr.txt",
+                "started_at": "2026-11-03T00:18:42.261597+00:00",
+                "timeout_s": 2696.8449471727945,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/version-make.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/version-make.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3801774
+                  "leader_pid": 4160600
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:19:41.755289+00:00",
-                "elapsed_s": 0.005062276031821966
+                "ended_at": "2026-11-03T00:18:42.267113+00:00",
+                "elapsed_s": 0.005468019051477313
               },
               {
                 "argv": [
@@ -4002,7 +4952,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17/compile-obj",
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -4046,38 +4996,38 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17/tb.sv"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:19:41.755398+00:00",
-                "timeout_s": 2697.3239212061744,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17-compile.stderr.txt",
+                "started_at": "2026-11-03T00:18:42.267311+00:00",
+                "timeout_s": 2696.839232082013,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3801775
+                  "leader_pid": 4160601
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:20:56.110964+00:00",
-                "elapsed_s": 74.35557657992467
+                "ended_at": "2026-11-03T00:19:58.514731+00:00",
+                "elapsed_s": 76.24741533305496
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:20:56.114917+00:00",
-                "timeout_s": 2622.9644110552035,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:19:58.519963+00:00",
+                "timeout_s": 2620.5865813428536,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3811946
+                  "leader_pid": 4163844
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:21:24.947233+00:00",
-                "elapsed_s": 28.832298618974164
+                "ended_at": "2026-11-03T00:20:26.981520+00:00",
+                "elapsed_s": 28.4617438709829
               },
               {
                 "argv": [
@@ -4092,7 +5042,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17/compile-obj",
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -4136,38 +5086,38 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17/tb.sv"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:22:05.254931+00:00",
-                "timeout_s": 2553.8243941841647,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17-compile.stderr.txt",
+                "started_at": "2026-11-03T00:21:09.134477+00:00",
+                "timeout_s": 2549.972062041983,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3818865
+                  "leader_pid": 4167697
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:23:21.457931+00:00",
-                "elapsed_s": 76.20298492489383
+                "ended_at": "2026-11-03T00:22:23.835733+00:00",
+                "elapsed_s": 74.70125118992291
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:23:21.461820+00:00",
-                "timeout_s": 2477.6175069662277,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:22:23.839713+00:00",
+                "timeout_s": 2475.266829070868,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3829421
+                  "leader_pid": 4171558
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:23:50.905965+00:00",
-                "elapsed_s": 29.444120248081163
+                "ended_at": "2026-11-03T00:22:52.574039+00:00",
+                "elapsed_s": 28.73429986112751
               },
               {
                 "argv": [
@@ -4182,7 +5132,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17/compile-obj",
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -4226,38 +5176,38 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17/tb.sv"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:23:51.031727+00:00",
-                "timeout_s": 2448.047606785083,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17-compile.stderr.txt",
+                "started_at": "2026-11-03T00:22:52.698097+00:00",
+                "timeout_s": 2446.4084494509734,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3833115
+                  "leader_pid": 4172783
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:24:09.394205+00:00",
-                "elapsed_s": 18.362461426993832
+                "ended_at": "2026-11-03T00:23:11.712790+00:00",
+                "elapsed_s": 19.01467620814219
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:24:09.396206+00:00",
-                "timeout_s": 2429.6831208851654,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:23:11.714505+00:00",
+                "timeout_s": 2427.3920349129476,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3834946
+                  "leader_pid": 4173221
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:24:09.964058+00:00",
-                "elapsed_s": 0.5678373370319605
+                "ended_at": "2026-11-03T00:23:12.281166+00:00",
+                "elapsed_s": 0.5666153898928314
               },
               {
                 "argv": [
@@ -4272,7 +5222,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17/compile-obj",
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -4316,38 +5266,38 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17/tb.sv"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:24:10.085619+00:00",
-                "timeout_s": 2428.99371460313,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17-compile.stderr.txt",
+                "started_at": "2026-11-03T00:23:12.395345+00:00",
+                "timeout_s": 2426.7112002519425,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3835467
+                  "leader_pid": 4173552
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:24:28.113772+00:00",
-                "elapsed_s": 18.02813334716484
+                "ended_at": "2026-11-03T00:23:30.059898+00:00",
+                "elapsed_s": 17.66452597687021
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:24:28.115766+00:00",
-                "timeout_s": 2410.9635614522267,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:23:30.061782+00:00",
+                "timeout_s": 2409.0447590257972,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3837387
+                  "leader_pid": 4173946
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:24:28.482685+00:00",
-                "elapsed_s": 0.3669077390804887
+                "ended_at": "2026-11-03T00:23:30.428115+00:00",
+                "elapsed_s": 0.3662939060013741
               },
               {
                 "argv": [
@@ -4362,7 +5312,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17/compile-obj",
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -4406,38 +5356,38 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17/tb.sv"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:24:28.999383+00:00",
-                "timeout_s": 2410.0799481291324,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17-compile.stderr.txt",
+                "started_at": "2026-11-03T00:23:30.929438+00:00",
+                "timeout_s": 2408.177107902011,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3837649
+                  "leader_pid": 4174220
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:24:46.003774+00:00",
-                "elapsed_s": 17.00436451798305
+                "ended_at": "2026-11-03T00:23:47.939169+00:00",
+                "elapsed_s": 17.009694292908534
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:24:46.005393+00:00",
-                "timeout_s": 2393.073933918029,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:23:47.941031+00:00",
+                "timeout_s": 2391.1655103629455,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3839906
+                  "leader_pid": 4174761
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:24:48.727306+00:00",
-                "elapsed_s": 2.721882970072329
+                "ended_at": "2026-11-03T00:23:50.715673+00:00",
+                "elapsed_s": 2.774621427990496
               },
               {
                 "argv": [
@@ -4452,7 +5402,7 @@
                   "-CFLAGS",
                   "-O3",
                   "--Mdir",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17/compile-obj",
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17/compile-obj",
                   "anvil_q1_fp_reference/rtl/anvil_q1_bus_mux.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_00_pkg.sv",
                   "anvil_q1_fp_reference/rtl/anvil_q1_fp_01_compat_pkg.sv",
@@ -4496,254 +5446,254 @@
                   "rtl/anvil_q1_fp2_reciprocal.sv",
                   "rtl/anvil_q1_fp2_telemetry_csr.sv",
                   "rtl/anvil_q1_fp2_top.sv",
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17/tb.sv"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17/tb.sv"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:24:48.849725+00:00",
-                "timeout_s": 2390.2296061671805,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17-compile.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17-compile.stderr.txt",
+                "started_at": "2026-11-03T00:23:50.840609+00:00",
+                "timeout_s": 2388.265936879907,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17-compile.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17-compile.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3840187
+                  "leader_pid": 4175140
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:25:08.362067+00:00",
-                "elapsed_s": 19.5123149829451
+                "ended_at": "2026-11-03T00:24:11.164395+00:00",
+                "elapsed_s": 20.32375691086054
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17/compile-obj/Vtb",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17/compile-obj/Vtb",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:25:08.363946+00:00",
-                "timeout_s": 2370.715379783185,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:24:11.166294+00:00",
+                "timeout_s": 2367.9402475079987,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3842832
+                  "leader_pid": 4176044
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:25:18.312773+00:00",
-                "elapsed_s": 9.948807487031445
+                "ended_at": "2026-11-03T00:24:21.157233+00:00",
+                "elapsed_s": 9.99091515596956
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/f8a7fd12887c76ee4a680519d81009b123e5ab97f1803c0be2670b3bd706939c",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-29"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/f8a7fd12887c76ee4a680519d81009b123e5ab97f1803c0be2670b3bd706939c",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:25:20.906210+00:00",
-                "timeout_s": 2358.1731095172,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:24:23.759243+00:00",
+                "timeout_s": 2355.3472899599,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3843785
+                  "leader_pid": 4176825
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:25:50.939975+00:00",
-                "elapsed_s": 30.03375816810876
+                "ended_at": "2026-11-03T00:24:52.746113+00:00",
+                "elapsed_s": 28.986863187048584
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/f2fd3b7120f2d3002ad5851e832426d63a8e225a450dabca4e33a3584c56a8ae",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-29"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/f2fd3b7120f2d3002ad5851e832426d63a8e225a450dabca4e33a3584c56a8ae",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:26:31.280284+00:00",
-                "timeout_s": 2287.799035843229,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:25:34.293708+00:00",
+                "timeout_s": 2284.8128241198137,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3852266
+                  "leader_pid": 4179911
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:27:01.798076+00:00",
-                "elapsed_s": 30.51778961904347
+                "ended_at": "2026-11-03T00:26:04.760793+00:00",
+                "elapsed_s": 30.467070409096777
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/04a3fda05a5f496745487a9ce463bb0ce333d6f8af550cb5fa6ca9163ffab2fa",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-29"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/04a3fda05a5f496745487a9ce463bb0ce333d6f8af550cb5fa6ca9163ffab2fa",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:27:01.828752+00:00",
-                "timeout_s": 2257.250577918021,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:26:04.787397+00:00",
+                "timeout_s": 2254.3191418978386,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3855073
+                  "leader_pid": 4180852
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:27:02.396073+00:00",
-                "elapsed_s": 0.5672828031238168
+                "ended_at": "2026-11-03T00:26:05.354307+00:00",
+                "elapsed_s": 0.5668772091157734
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/e3838c3c5c645ce614f6472192c3109409425f105f8ea206f83887b256cf5c65",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-29"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/e3838c3c5c645ce614f6472192c3109409425f105f8ea206f83887b256cf5c65",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:27:02.420355+00:00",
-                "timeout_s": 2256.65897148801,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:26:05.378226+00:00",
+                "timeout_s": 2253.728313404834,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3855612
+                  "leader_pid": 4181155
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:27:02.787052+00:00",
-                "elapsed_s": 0.3666701528709382
+                "ended_at": "2026-11-03T00:26:05.744989+00:00",
+                "elapsed_s": 0.3667195960879326
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/5c51fa0cafdc5646d4d5ee3d3e96fb45ae00543c2061b5dd8b85af143959a5a4",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-29"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/5c51fa0cafdc5646d4d5ee3d3e96fb45ae00543c2061b5dd8b85af143959a5a4",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:27:03.224129+00:00",
-                "timeout_s": 2255.8551956070587,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:26:06.154503+00:00",
+                "timeout_s": 2252.9520355837885,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3856144
+                  "leader_pid": 4181438
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:27:05.795114+00:00",
-                "elapsed_s": 2.570942300837487
+                "ended_at": "2026-11-03T00:26:08.073946+00:00",
+                "elapsed_s": 1.9193937978707254
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/10afcc8e93942b633b540fa24f1f08eef82e34596a958a7faaa40378a501a40e",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-29"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/10afcc8e93942b633b540fa24f1f08eef82e34596a958a7faaa40378a501a40e",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-29"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:27:05.827385+00:00",
-                "timeout_s": 2253.2519405861385,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-29-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-29-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:26:08.106200+00:00",
+                "timeout_s": 2251.000339595834,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-29-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-29-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3857443
+                  "leader_pid": 4181948
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:27:15.816763+00:00",
-                "elapsed_s": 9.989361189072952
+                "ended_at": "2026-11-03T00:26:20.751504+00:00",
+                "elapsed_s": 12.64527839096263
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/f8a7fd12887c76ee4a680519d81009b123e5ab97f1803c0be2670b3bd706939c",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-71"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/f8a7fd12887c76ee4a680519d81009b123e5ab97f1803c0be2670b3bd706939c",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:27:18.364136+00:00",
-                "timeout_s": 2240.715183574008,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-71-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:26:23.288768+00:00",
+                "timeout_s": 2235.817765760934,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3858613
+                  "leader_pid": 4184052
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:27:47.546889+00:00",
-                "elapsed_s": 29.182745832018554
+                "ended_at": "2026-11-03T00:26:50.866490+00:00",
+                "elapsed_s": 27.577719491906464
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/f2fd3b7120f2d3002ad5851e832426d63a8e225a450dabca4e33a3584c56a8ae",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-71"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/f2fd3b7120f2d3002ad5851e832426d63a8e225a450dabca4e33a3584c56a8ae",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:28:27.800967+00:00",
-                "timeout_s": 2171.2783528862055,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-71-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:27:31.915636+00:00",
+                "timeout_s": 2167.1908986768685,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3869195
+                  "leader_pid": 4189157
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:28:57.636487+00:00",
-                "elapsed_s": 29.835512374993414
+                "ended_at": "2026-11-03T00:28:01.597970+00:00",
+                "elapsed_s": 29.68233345099725
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/04a3fda05a5f496745487a9ce463bb0ce333d6f8af550cb5fa6ca9163ffab2fa",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-71"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/04a3fda05a5f496745487a9ce463bb0ce333d6f8af550cb5fa6ca9163ffab2fa",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:28:57.666147+00:00",
-                "timeout_s": 2141.413178820163,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-71-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:28:01.627114+00:00",
+                "timeout_s": 2137.479427564889,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3874933
+                  "leader_pid": 4190768
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:28:58.285109+00:00",
-                "elapsed_s": 0.6189408251084387
+                "ended_at": "2026-11-03T00:28:02.194160+00:00",
+                "elapsed_s": 0.5670038249809295
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/e3838c3c5c645ce614f6472192c3109409425f105f8ea206f83887b256cf5c65",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-71"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/e3838c3c5c645ce614f6472192c3109409425f105f8ea206f83887b256cf5c65",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:28:58.309211+00:00",
-                "timeout_s": 2140.7701138712,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-71-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:28:02.218502+00:00",
+                "timeout_s": 2136.8880383868236,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3875249
+                  "leader_pid": 4191027
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:28:58.675781+00:00",
-                "elapsed_s": 0.3665341488085687
+                "ended_at": "2026-11-03T00:28:02.585144+00:00",
+                "elapsed_s": 0.36658884212374687
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/5c51fa0cafdc5646d4d5ee3d3e96fb45ae00543c2061b5dd8b85af143959a5a4",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-71"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/5c51fa0cafdc5646d4d5ee3d3e96fb45ae00543c2061b5dd8b85af143959a5a4",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:28:59.084069+00:00",
-                "timeout_s": 2139.9952531422023,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-71-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:28:02.993246+00:00",
+                "timeout_s": 2136.113290427951,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3875557
+                  "leader_pid": 4191283
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:29:01.755517+00:00",
-                "elapsed_s": 2.671428120927885
+                "ended_at": "2026-11-03T00:28:05.865213+00:00",
+                "elapsed_s": 2.871950573986396
               },
               {
                 "argv": [
-                  "evidence/fp2-benchmark-20261102T231939Z-15239816/build-cache/10afcc8e93942b633b540fa24f1f08eef82e34596a958a7faaa40378a501a40e",
-                  "+fixture=evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-71"
+                  "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/build-cache/10afcc8e93942b633b540fa24f1f08eef82e34596a958a7faaa40378a501a40e",
+                  "+fixture=evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-71"
                 ],
                 "cwd": ".",
-                "started_at": "2026-11-02T23:29:01.787448+00:00",
-                "timeout_s": 2137.2918777761515,
-                "stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-71-simulate.stdout.txt",
-                "stderr": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-71-simulate.stderr.txt",
+                "started_at": "2026-11-03T00:28:05.896876+00:00",
+                "timeout_s": 2133.2096634099726,
+                "stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-71-simulate.stdout.txt",
+                "stderr": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-71-simulate.stderr.txt",
                 "process_scope": {
-                  "leader_pid": 3876052
+                  "leader_pid": 4191561
                 },
                 "timed_out": false,
                 "exit_code": 0,
-                "ended_at": "2026-11-02T23:29:11.775740+00:00",
-                "elapsed_s": 9.98826861497946
+                "ended_at": "2026-11-03T00:28:15.934673+00:00",
+                "elapsed_s": 10.037778669036925
               }
             ],
             "comparisons": [
@@ -4937,7 +5887,7 @@
                     "components": 128
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-17-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-17-simulate.stdout.txt"
               },
               {
                 "domain": "tensor-mx",
@@ -4961,7 +5911,7 @@
                     "components": 128
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-17-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-17-simulate.stdout.txt"
               },
               {
                 "domain": "rmsnorm",
@@ -4981,7 +5931,7 @@
                     "parent_physical_bytes": 458752
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-17-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-17-simulate.stdout.txt"
               },
               {
                 "domain": "rope",
@@ -5001,7 +5951,7 @@
                     "components": 1024
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-17-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-17-simulate.stdout.txt"
               },
               {
                 "domain": "swiglu-residual",
@@ -5021,7 +5971,7 @@
                     "components": 5760
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-17-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-17-simulate.stdout.txt"
               },
               {
                 "domain": "attention",
@@ -5045,7 +5995,7 @@
                     "prefix": 17
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-17-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-17-simulate.stdout.txt"
               },
               {
                 "domain": "tensor-bf16",
@@ -5069,7 +6019,7 @@
                     "components": 128
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-29-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-29-simulate.stdout.txt"
               },
               {
                 "domain": "tensor-mx",
@@ -5093,7 +6043,7 @@
                     "components": 128
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-29-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-29-simulate.stdout.txt"
               },
               {
                 "domain": "rmsnorm",
@@ -5113,7 +6063,7 @@
                     "parent_physical_bytes": 458752
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-29-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-29-simulate.stdout.txt"
               },
               {
                 "domain": "rope",
@@ -5133,7 +6083,7 @@
                     "components": 1024
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-29-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-29-simulate.stdout.txt"
               },
               {
                 "domain": "swiglu-residual",
@@ -5153,7 +6103,7 @@
                     "components": 5760
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-29-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-29-simulate.stdout.txt"
               },
               {
                 "domain": "attention",
@@ -5177,7 +6127,7 @@
                     "prefix": 17
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-29-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-29-simulate.stdout.txt"
               },
               {
                 "domain": "tensor-bf16",
@@ -5201,7 +6151,7 @@
                     "components": 128
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-bf16-71-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-bf16-71-simulate.stdout.txt"
               },
               {
                 "domain": "tensor-mx",
@@ -5225,7 +6175,7 @@
                     "components": 128
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-gemv-mx-71-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-gemv-mx-71-simulate.stdout.txt"
               },
               {
                 "domain": "rmsnorm",
@@ -5245,7 +6195,7 @@
                     "parent_physical_bytes": 458752
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rmsnorm-h896-71-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rmsnorm-h896-71-simulate.stdout.txt"
               },
               {
                 "domain": "rope",
@@ -5265,7 +6215,7 @@
                     "components": 1024
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-rope-71-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-rope-71-simulate.stdout.txt"
               },
               {
                 "domain": "swiglu-residual",
@@ -5285,7 +6235,7 @@
                     "components": 5760
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-swiglu-residual-71-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-swiglu-residual-71-simulate.stdout.txt"
               },
               {
                 "domain": "attention",
@@ -5309,69 +6259,69 @@
                     "prefix": 17
                   }
                 ],
-                "raw_stdout": "evidence/fp2-benchmark-20261102T231939Z-15239816/benchmark-attention-71-simulate.stdout.txt"
+                "raw_stdout": "evidence/fp2-benchmark-20261103T001839Z-f3b9ffa9/benchmark-attention-71-simulate.stdout.txt"
               }
             ],
             "build_reuse": [
               {
                 "case": "benchmark-gemv-bf16-29",
                 "source_digest": "f8a7fd12887c76ee4a680519d81009b123e5ab97f1803c0be2670b3bd706939c",
-                "binary_sha256": "7cef24b8ca019dabf50cf1852e25ee3614fab885365c8cfc3d5eae64540d70df"
+                "binary_sha256": "11079d3680508258ea849160040f4a8271ea5ebeebd2377bfd36a3756070dbd6"
               },
               {
                 "case": "benchmark-gemv-mx-29",
                 "source_digest": "f2fd3b7120f2d3002ad5851e832426d63a8e225a450dabca4e33a3584c56a8ae",
-                "binary_sha256": "04d307ddce3357fb99bfd5fe1e91effb80290d8b6717ab8202bbfbcedeedf25f"
+                "binary_sha256": "7a845b596a6c20b82f3f2b8221bbf96d5676730b062370fb2789914e83f3d3f8"
               },
               {
                 "case": "benchmark-rmsnorm-h896-29",
                 "source_digest": "04a3fda05a5f496745487a9ce463bb0ce333d6f8af550cb5fa6ca9163ffab2fa",
-                "binary_sha256": "26ab25a1008a5172cba8945743f33138d6ce981cd6324756f895ec48ebfe66c3"
+                "binary_sha256": "9919002866d1b60c34cd3595bec1307858e43195f71c80ece29cea86f3eb3e91"
               },
               {
                 "case": "benchmark-rope-29",
                 "source_digest": "e3838c3c5c645ce614f6472192c3109409425f105f8ea206f83887b256cf5c65",
-                "binary_sha256": "3e12a497f105907317ecd7e7dda968a53270cd4c69250ac57583beec3bc82283"
+                "binary_sha256": "094858ba352eaf05d5fe647d3273f931a6cfcbccef2d8422c655f80b1c5e3592"
               },
               {
                 "case": "benchmark-swiglu-residual-29",
                 "source_digest": "5c51fa0cafdc5646d4d5ee3d3e96fb45ae00543c2061b5dd8b85af143959a5a4",
-                "binary_sha256": "55108189858e1fea95139aa5e1092e51d2e9a38de8a3a8a1a7390458504cf898"
+                "binary_sha256": "b88920cb68709fb1afe770f3cf5737f410332eb5408cb8714fe1bb81fa071962"
               },
               {
                 "case": "benchmark-attention-29",
                 "source_digest": "10afcc8e93942b633b540fa24f1f08eef82e34596a958a7faaa40378a501a40e",
-                "binary_sha256": "041d613ca01ca7cee677c0410808aae479a012b22210dcbed4079ceb04aac961"
+                "binary_sha256": "d9508e132d4e2e970ffc1b2057e98fe29347269d3297c1f1eabff453d7c29117"
               },
               {
                 "case": "benchmark-gemv-bf16-71",
                 "source_digest": "f8a7fd12887c76ee4a680519d81009b123e5ab97f1803c0be2670b3bd706939c",
-                "binary_sha256": "7cef24b8ca019dabf50cf1852e25ee3614fab885365c8cfc3d5eae64540d70df"
+                "binary_sha256": "11079d3680508258ea849160040f4a8271ea5ebeebd2377bfd36a3756070dbd6"
               },
               {
                 "case": "benchmark-gemv-mx-71",
                 "source_digest": "f2fd3b7120f2d3002ad5851e832426d63a8e225a450dabca4e33a3584c56a8ae",
-                "binary_sha256": "04d307ddce3357fb99bfd5fe1e91effb80290d8b6717ab8202bbfbcedeedf25f"
+                "binary_sha256": "7a845b596a6c20b82f3f2b8221bbf96d5676730b062370fb2789914e83f3d3f8"
               },
               {
                 "case": "benchmark-rmsnorm-h896-71",
                 "source_digest": "04a3fda05a5f496745487a9ce463bb0ce333d6f8af550cb5fa6ca9163ffab2fa",
-                "binary_sha256": "26ab25a1008a5172cba8945743f33138d6ce981cd6324756f895ec48ebfe66c3"
+                "binary_sha256": "9919002866d1b60c34cd3595bec1307858e43195f71c80ece29cea86f3eb3e91"
               },
               {
                 "case": "benchmark-rope-71",
                 "source_digest": "e3838c3c5c645ce614f6472192c3109409425f105f8ea206f83887b256cf5c65",
-                "binary_sha256": "3e12a497f105907317ecd7e7dda968a53270cd4c69250ac57583beec3bc82283"
+                "binary_sha256": "094858ba352eaf05d5fe647d3273f931a6cfcbccef2d8422c655f80b1c5e3592"
               },
               {
                 "case": "benchmark-swiglu-residual-71",
                 "source_digest": "5c51fa0cafdc5646d4d5ee3d3e96fb45ae00543c2061b5dd8b85af143959a5a4",
-                "binary_sha256": "55108189858e1fea95139aa5e1092e51d2e9a38de8a3a8a1a7390458504cf898"
+                "binary_sha256": "b88920cb68709fb1afe770f3cf5737f410332eb5408cb8714fe1bb81fa071962"
               },
               {
                 "case": "benchmark-attention-71",
                 "source_digest": "10afcc8e93942b633b540fa24f1f08eef82e34596a958a7faaa40378a501a40e",
-                "binary_sha256": "041d613ca01ca7cee677c0410808aae479a012b22210dcbed4079ceb04aac961"
+                "binary_sha256": "d9508e132d4e2e970ffc1b2057e98fe29347269d3297c1f1eabff453d7c29117"
               }
             ],
             "aggregate_benchmarks": [
@@ -5408,7 +6358,7 @@
                 "domains": 5
               }
             ],
-            "ended_at": "2026-11-02T23:29:11.776342+00:00",
+            "ended_at": "2026-11-03T00:28:15.935284+00:00",
             "exit_code": 0
           }
         }
