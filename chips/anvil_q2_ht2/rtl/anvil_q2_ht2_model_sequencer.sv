@@ -340,15 +340,15 @@ module anvil_q2_ht2_model_sequencer #(
         reg [15:0] data_q;
         assign read_data[16*word_lane+:16]=data_q;
         always @(posedge clk) begin
-          if (memory_write && memory_write_slot==bank &&
-              memory_write_index[6:0]==word_lane &&
-              memory_write_index<MAX_WORDS && memory_write_vector<VECTOR_COUNT)
-            words[AW'(write_address)]<=memory_write_data;
-          if (vector_store_write && slot==bank && index[6:0]==word_lane)
-            words[AW'(destination_vector*VECTOR_TILES+(index >> 7))]<=vector_data;
           if (row_write && row_store_tokens[bank] && row_store_row[6:0]==word_lane)
             words[AW'(destination_vector*VECTOR_TILES+(row_store_row >> 7))]<=
               row_store_data[16*bank+:16];
+          else if (vector_store_write && slot==bank && index[6:0]==word_lane)
+            words[AW'(destination_vector*VECTOR_TILES+(index >> 7))]<=vector_data;
+          else if (memory_write && memory_write_slot==bank &&
+              memory_write_index[6:0]==word_lane &&
+              memory_write_index<MAX_WORDS && memory_write_vector<VECTOR_COUNT)
+            words[AW'(write_address)]<=memory_write_data;
           if ((tile_read && slot==bank && !tile_read_bad) ||
               (memory_read && memory_slot==bank && !memory_read_bad &&
                 memory_index[6:0]==word_lane))
