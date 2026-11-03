@@ -25,7 +25,11 @@ FAILED_RECEIPT = (
 def worker(run, focus):
     ledger = Ledger(run, "changed-delivery-producers-preparation")
     try:
-        if focus == "compatibility":
+        if focus == "integration":
+            integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
+            ledger.check("performance", run_performance, integrated)
+            ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
+        elif focus == "compatibility":
             ledger.check("compatibility-mode2", run_compatibility, 2)
             ledger.check("compatibility-mode1", run_compatibility, 1)
             ledger.check("clean-reproduction", clean_reproduction)
@@ -48,7 +52,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--_worker-run", help=argparse.SUPPRESS)
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
-    parser.add_argument("--focus", choices=("all", "compatibility"), default="all")
+    parser.add_argument("--focus", choices=("all", "compatibility", "integration"), default="all")
     args = parser.parse_args()
     enter_tier()
     if args._worker_run:
