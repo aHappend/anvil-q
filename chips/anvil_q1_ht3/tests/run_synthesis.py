@@ -229,10 +229,14 @@ def mapping_groups(netlist):
                            f"opt_clean {module}; select -clear; "))
         else:
             selection = " ".join(group)
+            private_objects = " ".join(f"{name}/t:$_* {name}/w:$*" for name in group)
+            compact = (f"setattr -unset src {private_objects}; "
+                       f"rename -enumerate -pattern _ht3group{index}_%_ {private_objects}; "
+                       if index >= 2 else "")
             phases.append((f"gates-{index:02d}",
                            f"select -set mapping_group {selection}; techmap @mapping_group; "
                            "opt_expr @mapping_group; opt_merge @mapping_group; "
-                           "opt_clean @mapping_group; select -clear; "))
+                           "opt_clean @mapping_group; select -clear; " + compact))
     return phases
 
 

@@ -220,6 +220,39 @@ def prepare(output, checkpoint=True):
     return works, bindings, failures
 
 
+def checkpoint_image(output, bindings):
+    from official_image import DEPENDENCIES, build
+
+    pin = json.loads(MANIFEST.read_text())["model"]["files"]["model.safetensors"]
+    config = ROOT/bindings["config.json"]["path"]
+    current = hashes()
+    candidates = []
+    for parent in (ROOT/"evidence/l1", ROOT/"evidence/preparation"):
+        candidates.extend(parent.glob(
+            "*/*/checkpoint-images/official-image-*/image-manifest.json"))
+    for path in sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True):
+        image = json.loads(path.read_text())
+        if (image.get("status") != "passed" or image.get("checkpoint_sha256") != pin
+                or image.get("config_sha256") != digest(config)
+                or any(image.get("source_sha256", {}).get(p) != current[p] for p in DEPENDENCIES)):
+            continue
+        payload = ROOT/image["image"]
+        if (not payload.is_file() or payload.stat().st_size != image["image_bytes"]
+                or digest(payload) != image["image_sha256"]):
+            continue
+        return dict(manifest=relative(path), manifest_sha256=digest(path),
+                    image=relative(payload), image_sha256=image["image_sha256"],
+                    image_bytes=image["image_bytes"], reused=True)
+    images = output/"checkpoint-images"
+    images.mkdir()
+    directory = images/f"official-image-{uuid.uuid4().hex[:12]}"
+    image = build(directory, ROOT/bindings["model.safetensors"]["path"], config, pin)
+    manifest = directory/"image-manifest.json"
+    return dict(manifest=relative(manifest), manifest_sha256=digest(manifest),
+                image=image["image"], image_sha256=image["image_sha256"],
+                image_bytes=image["image_bytes"], reused=False)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
@@ -233,16 +266,19 @@ def main():
     try:
         works, bindings, failures = prepare(output)
         rows = []
+        image = None
         if not args.prepare_only:
+            if not failures:
+                image = checkpoint_image(output, bindings)
             # Explicit implementation gap, not replacement results from software.
             rows = [dict(task=w["task"], id=w["id"], status="not_executed",
                          required_scored_positions=w["scored_tokens"],
-                         reason="default-geometry compiled RTL checkpoint image/stream "
-                                "adapter is not yet implemented") for w in works]
+                         reason="default-geometry compiled RTL stream adapter "
+                                "is not yet implemented") for w in works]
         result = dict(status="passed" if args.prepare_only and not failures else "failed",
                       mode="input preparation only" if args.prepare_only else "official RTL evaluation",
                       selected_records=len(works), acquisition_failures=failures, runs=rows,
-                      input_bindings=bindings,
+                      input_bindings=bindings, checkpoint_image=image,
                       legacy=json.loads(MANIFEST.read_text())["legacy"],
                       coverage_limits=["No full-checkpoint RTL logits, native/represented-image "
                                        "FP64 comparisons, decoded completions, task metrics "

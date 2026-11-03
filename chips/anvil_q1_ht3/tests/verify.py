@@ -63,7 +63,7 @@ def dependencies(script):
                                          ROOT.glob("anvil_q1_ht2_reference/rtl/*.sv"))]],
         "tests/run_benchmarks.py": ["tests/official_inputs.json", "tests/official_reference.py",
                                    "tests/acquire_public.py", "tests/reference.py",
-                                   "tests/run_compatibility.py"],
+                                   "tests/run_compatibility.py", "tests/official_image.py"],
     }
     if script not in owned:
         return list(hashes())
