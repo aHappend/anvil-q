@@ -115,10 +115,12 @@ def worker(run, focus):
             ledger.check("compatibility-mode1", run_compatibility, 1)
             ledger.check("clean-reproduction", clean_reproduction)
         else:
-            integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
+            integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17,
+                                      compact=True)
             ledger.check("compatibility-mode2", run_compatibility, 2)
             ledger.check("performance", run_performance, integrated)
-            ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
+            ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29,
+                         compact=True)
             ledger.check("compatibility-mode1", run_compatibility, 1)
             ledger.check("clean-reproduction", clean_reproduction)
         ledger.finish()

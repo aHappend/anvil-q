@@ -146,7 +146,7 @@ def run_performance(run, integration=None):
     if integration is None:
         child = run / f"integrated-prerequisite-{time_ns()}"
         child.mkdir()
-        integration = run_fast_integration(child, 1, 17)
+        integration = run_fast_integration(child, 1, 17, compact=True)
     ffn = complete_ffn(integration)
     sustained = measure_sustained(run)
     summary = {"whole_ffn_reduction": ffn["whole_ffn_reduction"],
