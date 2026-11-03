@@ -13,11 +13,8 @@ from receipts import ROOT, execute, new_run, relative, cleanup_build
 from reference import pack_rows, nearest_div
 
 
-def generate(run, *, layers=36, nonzero=False, seed=17, varied=False,
-             hidden=64, kv_heads=2, head_dim=4):
-    intermediate, kvdim, group, vocabulary, maximum = 8, kv_heads * head_dim, 8, 8, 8
-    if hidden != 8 * kv_heads * head_dim or hidden % group or kvdim % 8:
-        raise ValueError("fixture requires legal grouped geometry and packed output rows")
+def generate(run, *, layers=36, nonzero=False, seed=17, varied=False):
+    hidden, intermediate, kvdim, group, vocabulary, maximum = 64, 8, 8, 8, 8, 8
     image = {}
 
     def store(address, data):
@@ -65,11 +62,11 @@ def generate(run, *, layers=36, nonzero=False, seed=17, varied=False,
         rotations = ((1 << 30, 0), (0, 1 << 30), (-(1 << 30), 0), (0, -(1 << 30)))
         store(0x6e000000, b"".join(
             coefficient.to_bytes(4, "little", signed=True)
-            for position in range(maximum) for _ in range(head_dim // 2)
+            for position in range(maximum) for _ in range(2)
             for coefficient in rotations[position % 4]))
     else:
         # Zero projected Q/K makes these bounded coefficients immaterial.
-        store(0x6e000000, b"\x00\x3c\x00\x00" * (maximum * head_dim))
+        store(0x6e000000, b"\x00\x3c\x00\x00" * (maximum * 4))
     half_array(0x80000000, [
         0x3800 + ((token * 17 + row * 5 + seed) % 256) if varied else 0x3c00
         for token in range(vocabulary) for row in range(hidden)])
