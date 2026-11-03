@@ -67,7 +67,7 @@ module anvil_d2_lane_memory #(
       reg [SC-1:0] local_address, local_legal, local_ready;
       reg [SC-1:0] response_valids, response_errors;
       reg [SC*32-1:0] response_words;
-      reg [AW-1:0] addresses [0:SC-1];
+      (* nomem2reg *) reg [AW-1:0] addresses [0:SC-1];
       reg found;
       reg [CW-1:0] selected;
       reg [31:0] mapped, bound, row_value, col_value;

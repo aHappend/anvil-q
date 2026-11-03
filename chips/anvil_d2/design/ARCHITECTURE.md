@@ -2,7 +2,8 @@
 
 ## Current inventory and ownership
 
-This is an incremental design, not an accepted integrated product.
+This is an integrated RTL implementation awaiting independent verification,
+not an accepted product.
 The unchanged parent directory is input provenance, not a passing baseline.
 
 | Source | Implementation responsibility / current scope |
@@ -23,18 +24,17 @@ The unchanged parent directory is input provenance, not a passing baseline.
 | `rtl/anvil_d2_draft_cache.sv` | Four private candidate rows per native head, contiguous committed frontiers, causal reads and acknowledged explicit commit/discard |
 | `rtl/anvil_d2_draft_head.sv` | Native RMS/concatenation -> transformer MLA/residual/MoE -> shared vocabulary projection, independently addressed by head |
 | `rtl/anvil_d2_draft_sequence.sv` | Actual-token head-history priming, sequential triangular speculative graph and private-head rollback |
+| `rtl/anvil_d2_mtp_engine.sv` | Public command classification, seed/replay/materialization, draft/target scheduling, acknowledged prefix commit and generation retirement |
+| `rtl/anvil_d2_top.sv` | Parent-compatible ports, literal mtp/fp8 instances, CSR/performance wiring, 29-client adapter and 30-client tagged scheduler |
+| `fpga/quartus_gate.json` | Production defaults, actual Arria 10 device, reference RTL and 10.0 ns clock contract |
 
-These components do not yet constitute `anvil_d2_top`,
-or `anvil_d2_mtp_engine`. The four-lane target subsystem now connects
-unchanged native arithmetic to lane-local scratch and an isolated
-candidate cache. The scalar FP8 adapter and group service still require
-top-level connection to those consumers and the tagged scheduler. Native
-head transformers and their sequential dependency graph now exist in
-the draft subsystem. Its connection to target context/verification,
-the complete generation/final-materialization controller and a completed
-Quartus source manifest remain design work.
-Do not infer implemented generation from these subsystems or the
-publication leaf alone.
+`anvil_d2_top.mtp` connects native draft computation, the four-lane causal
+target subsystem and the public generation controller. Its 29 shared
+memory clients feed the scalar FP8 adapter. The adapter's group channel
+feeds `anvil_d2_top.fp8`; the service has the 30th scheduler client.
+Unchanged native parent arithmetic executes actual target/head tensors,
+with local scratch and isolated candidate K/V. The Quartus manifest
+selects production defaults rather than reducing geometry.
 No functional, synthesis, timing, hardware or speedup result is claimed.
 
 ## Frozen boundaries
@@ -46,7 +46,7 @@ translate actual latent/expert accesses into kind-13 packed words and
 kind-14 scales and feed dequantized BF16/Q16.16 into the real arithmetic.
 It must not operate as a disconnected sidecar.
 
-The intended connected path is:
+The connected path is:
 
 ```
 public command / D2 CSR policy
@@ -65,12 +65,11 @@ actual target latent write group
   -> group quantizer -> packed payload + FP32 scale -> acknowledged memory
 ```
 
-The numerical leaves are now connected within the FP8 group service and
-the parent arithmetic is connected within the MTP input projection.
-The numerical and native draft/target paths are not yet integrated with
-one another or the public controller. The system-level arrows remain
-integration obligations. Preserve literal top instances `mtp` and `fp8`
-on integration.
+The numerical leaves are connected within the FP8 group service and
+the parent arithmetic is connected within the native draft/target paths.
+FP8-transformed reads feed their real MAC boundaries; compatible traffic
+retains the original logical identities. The literal top instances are
+`mtp` and `fp8`, without a new public prediction/verdict interface.
 
 ## FP8 dequant datapath
 
@@ -163,7 +162,8 @@ The D2 CSR frontend routes inherited addresses to the unchanged
 domain behavior. D2 addresses have their own held registered response;
 the frontend admits only one response owner at a time. Configuration
 busy includes a public command accepted on the same edge plus integrated
-work/drain/publication occupancy, supplied by the future top.
+work/drain/publication occupancy, supplied by the integrated engine's
+idle predicate. Same-edge token acceptance also forbids reconfiguration.
 
 D2 counters consume explicit event increments from integrated clients.
 They do not estimate traffic from dimensions. The parent clear/snapshot
@@ -171,7 +171,7 @@ command also controls D2 live/saved counters. Saved values are pre-edge
 live values; clear has priority over snapshot and increments. The new
 registers do not depend on parent snapshots or future product reports.
 
-## Remaining integration decisions and evidence
+## Connected integration decisions and evidence
 
 The input projection tensor map is implemented: kind 12, layer
 NUM_LAYERS+head, projections 0/1/2 for concatenation/hidden gain/embedding
@@ -182,11 +182,11 @@ projection 6 owns committed head context and projection 7 separates
 wide absorbed A/B matrices with row bit 27. Exactly
 four target lanes are instantiated in `anvil_d2_target_lanes`, with
 separate query/softmax/context state, committed-prefix broadcasts and
-explicit per-layer causal K/V barriers. They have not yet been connected
-inside an MTP engine or functionally exercised. Scratch uses bounded
+explicit per-layer causal K/V barriers. They are connected
+inside the MTP engine but have not been functionally exercised. Scratch uses bounded
 synchronous RAM, not full-model register arrays.
 
-Speculative cache ownership must separate unpublished lane data from the
+Speculative cache ownership separates unpublished lane data from the
 committed frontier. Verdict precedes publish; output handshakes advance
 only the visible frontier. Pending correction/all-accepted tail
 materialization advances the target frontier before another block or
@@ -260,10 +260,10 @@ quantization by consuming the original signed32 input.
 
 Expert commands select projection 5 and accept arbitrary legal binary32
 scales. Matrix/bias/routed/shared classification and actual group lengths
-must come from the future native adapter; the service cannot infer them
-from an arbitrary row number. raw parent per-element requests are adapted by `anvil_d2_fp8_adapter`;
-the final consumer/adapter/service connection remains a top-level
-integration obligation. On any failure both records invalidate,
+come from the native adapter; the service cannot infer them
+from an arbitrary row number. Raw parent per-element requests are adapted
+by `anvil_d2_fp8_adapter` and connected to the literal top `fp8` service.
+On any failure both records invalidate,
 arithmetic flushes, a failed completion publishes once, and FAULTED
 requires explicit flush/reset.
 
@@ -365,18 +365,19 @@ must include priming, auxiliary head passes and replay costs.
 
 The draft subsystem exports nine memory clients: seven native head
 clients, one input-projection client and one private-cache client.
-Future engine arbitration can reuse the target's 29 transport slots
+Engine arbitration reuses the target's 29 transport slots
 between nonoverlapping draft/target phases, plus a slot for the group
 service, instead of exceeding the scheduler's 32-client maximum.
-It must switch ownership only after the previous subsystem is quiescent.
+It switches ownership only after the previous subsystem and complete
+adapter/service/scheduler path are quiescent.
 FP8 adaptation now recognizes kind-12/projection-5 routed matrices in
 NUM_LAYERS..NUM_LAYERS+3, retaining those exact head identities in packed
 payload and scale traffic. Target latents alone use projection 3;
 head-private context must not be mislabeled as target bandwidth savings.
 
-These connected draft modules still need the native MTP engine, target
-hidden/verification connection, public generation controller and top-level
-FP8/scheduler integration. Static elaboration does not establish numerical
+The native MTP engine supplies target hidden streams, actual-token priming,
+speculative command sequencing and top-level FP8/scheduler integration.
+Static elaboration does not establish numerical
 correctness, behavior, memory inference, physical timing or acceptance.
 
 ## Concurrent target subsystem
@@ -406,9 +407,9 @@ The target subsystem exports 29 untagged memory clients: seven per lane
 and one shared cache client. Per-lane cache requests are intercepted
 before these exported ports. The other exported ports include real
 native weights and independently scheduled expert prefetch. The D2 bank
-scheduler can support these clients concurrently; the future top must
-connect the adapter/service and remaining native-head clients within its
-32-client limit.
+scheduler supports these clients concurrently. The engine reuses the
+first nine transport owners for draft phases, then the top adds the FP8
+service as client 29, within the 32-client limit.
 
 `anvil_d2_verify_cache` stores four candidate rows per layer in separate
 raw and effective synchronous RAMs. Raw candidate K/V never reaches
@@ -440,9 +441,9 @@ Rejected rows remain private and are invalidated on release/new block
 or flush. The caller must compute the commit count from the
 terminal-truncated verdict, never from untruncated matching drafts.
 
-The one-lane option can process a supplied seed or materialize a final
+The one-lane option processes a supplied seed or materializes a final
 correction. This is an implementation primitive, not a replacement for
-four-lane verification. The still-required generation controller owns
+four-lane verification. The generation controller owns
 public command classification, visible retirement, next-position rules,
 final materialization, cancellation/drain and COMPLETE.
 
@@ -475,7 +476,103 @@ This working set accommodates multiple expert tile rows instead of
 refetching a full group for every scalar. Measured bandwidth thresholds
 remain independent verification obligations, not a resource-count claim.
 
-The top must connect this adapter's group interface to its literal `fp8`
-instance, and flush both on cancellation, epoch reset and an idle
-precision-mode change. An adapter failure requires abort/drain of
+The top connects this adapter's group interface to its literal `fp8`
+instance, and flushes both on cancellation, epoch reset and a
+precision-mode change before replay. An adapter failure triggers abort/drain of
 accepted tagged memory, not reuse of captured partial groups.
+
+## Public generation, replay and materialization
+
+The public handshake predicate, not a feature bit or an internal state,
+selects generation: generation policy AND token_phase in native mode.
+The engine captures features, limit and EOS for that complete command.
+It first executes the real newly supplied seed through the target,
+acknowledges its cache commit, and primes native head history when enabled.
+Non-generation forwards only this seed's vocabulary logits. Generation
+consumes the same logits internally to select the first target anchor.
+
+An append-only synchronous token journal holds MAX_SEQ_LEN entries of
+33 bits (actual token plus phase), approximately 132 KiB at maximum
+capacity. Seed acceptance and generated-token retirement are its only
+write events. No journal read accesses an unwritten logical position.
+It does not retain MAX_SEQ_LEN hidden vectors. Late MTP enable replays
+actual prior tokens through the target and the independently weighted
+heads, with no public logits or speculative output during replay.
+Changing precision similarly replays the actual context using the new
+mode, rebuilding every target cache row and absorbed coefficient before
+processing the new seed. Replay starts a fresh internal epoch, flushes
+all residency/absorption/head ownership, and includes every actual
+prior position. It does not regenerate or change already observed tokens.
+Replay cost is real command work and belongs in measurements.
+
+The journal RAM, all lane scratch and all candidate storage have clocked
+ports without reset clearing. Reset/epoch validity controls visibility.
+The public next position advances only for the supplied seed after its
+successful materialization, or on an actual committed output handshake.
+A cache prefix can lag that visible position during publication, but
+token_ready remains zero until the cache has caught up.
+
+For each block the controller bounds draft depth by both remaining output
+limit and sequence capacity, reserving room for anchor plus drafts.
+With zero drafts it publishes a singleton target anchor and subsequently
+materializes it. Otherwise native sequential draft heads produce the
+candidate block, then up to four target lanes execute concurrently.
+The verdict captures actual pairs and enters a separate registered
+publication state. A stalled beat cannot retire or start materialization
+of a prospective next public command.
+
+After publication, commit exactly
+min(visible_count, visible_accepted+1, active_verification_lanes) target
+rows. Rejected suffix rows never become external cache writes. Prime
+head history from each retained lane's unnormalized target hidden vector,
+then release target storage. If the last visible token is a correction
+or an all-accepted tail without computed target state, invoke the
+one-lane target for that token, acknowledge its writes and prime its
+head history before another block or COMPLETE. If all visible tokens
+already have target state, use the last retained lane's target prediction
+as the next anchor. No public token is emitted twice.
+
+Draft transport ownership is a register. It can change only in explicit
+switch/drain states after adapter, FP8 service and scheduler are idle;
+target hidden reads during draft priming are lane-local RAM accesses.
+The target remains in HOLD, not a second outstanding memory producer.
+No request/response is reinterpreted according to a new phase while live.
+The four verification lanes retain their parallel transport ownership
+throughout every target layer and causal attention window.
+
+Generation counters increment from executed engine cycles, actual
+publication handshakes and diagonal draft computations. Byte counters
+sum accepted public-bank transfers, not client queue admission. Latent
+payload counters exclude raw RoPE columns; scale traffic is separate.
+Parent dense-equivalent events come from completed target MLA/MoE work;
+shared/prefetch events observe actual decoder busy-counter increments.
+Head expert work is included in expert traffic/cost, not disguised as
+target latent compression.
+
+The integrated cancellation path flushes unpublished work immediately
+and drains accepted tagged transactions before emitting one cancellation
+completion after release. Active cancellation also emits failed done;
+idle cancellation does not fabricate a token completion. Any error
+invalidates continuation and requires a new sequence. COMPLETE is
+separate from last retirement, final materialization and drain; readiness
+returns only in the following idle state.
+
+## Reproduction and evidence boundaries
+
+From the delivered root, a syntax/elaboration-only command is:
+
+```
+iverilog -g2012 -t null -s anvil_d2_top rtl/*.sv anvil_d1_reference/rtl/*.sv
+```
+
+The Quartus gate uses `fpga/quartus_gate.json`, production top defaults,
+10.0 ns and device `10AX115N2F45E1SG`. Reference modules are synthesis
+inputs because native arithmetic is instantiated, not copied/modified.
+The absent original legacy top remains an unresolved prerequisite for
+MODEL_MODE=1 elaboration and parent differential compatibility.
+
+Independent functional/numerical/mutation/synthesis evidence is still
+pending from the seven `tests/verify.py` suites listed in SPEC.md. No
+current throughput, bandwidth, Fmax, resource or power measurement is
+asserted here. The runtime later owns independent engineering acceptance,
+physical timing/hardware gates and the product PDF.

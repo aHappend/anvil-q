@@ -21,9 +21,10 @@ simulation, reference models, mutations and synthesis belong to Verifier.
 The shared runtime owns timing lint, Quartus STA, physical hardware gates,
 engineering state and the later independently approved product PDF.
 
-The current implementation inventory is in `ARCHITECTURE.md`. Missing
-integration is not an implemented feature. In particular, leaf arithmetic
-alone does not satisfy the required FP8 cache/expert path or native MTP.
+The current integrated implementation inventory is in `ARCHITECTURE.md`.
+Native draft/target compute and FP8 consumers are connected in
+`anvil_d2_top`; their presence is not numerical, behavioral, synthesis or
+timing acceptance.
 
 ## Public interface and parameters
 
@@ -193,6 +194,67 @@ constant on all its beats. last marks the block boundary, not command
 completion. Sequential generation publishes count=1, accepted=0, last=1.
 Error/cancel preserves already observed output history but requires a new
 sequence before subsequent success.
+
+### Integrated engine cycle and ownership table
+
+The implementation uses registered state transitions. A row labeled
+"handshake" samples pre-edge valid AND ready; a row labeled "cycle"
+does not imply that a transfer occurred. Target results remain in HOLD
+while the engine reads hidden vectors or executes head-history appends.
+
+| Engine state(s) | Edge condition and registered effect |
+|---|---|
+| IDLE | Public token handshake captures seed, phase, generation policy, features, limit and EOS; invalid input enters abort without executing it |
+| CONTEXT_FLUSH | One cycle invalidates target/head/FP8 ownership and pulses scheduler flush; used for a new sequence or context replay |
+| CONTEXT_DRAIN | Wait for both scheduler drain and complete transport idle; never issue a target during drain |
+| JOURNAL_READ / JOURNAL_CAPTURE | Synchronous actual-token/phase RAM read, then capture one prior context token; no public output |
+| TARGET_COMMAND | Internal target command handshake captures seed, replay token, four-lane verification block or pending final token |
+| TARGET_RESULT | Target result handshake registers actual greedy predictions; seed/replay/materialization proceed to commit; verification proceeds to verdict |
+| TARGET_COMMIT / TARGET_COMMIT_WAIT | Internal prefix-commit handshake, then wait for all selected target-cache write acknowledgements |
+| APPEND_SELECT / APPEND_SWITCH | Select a retained target lane; change to draft transport ownership only after full transport idle |
+| APPEND_COMMAND | Actual-token head-history command handshake; position 0 explicitly restarts head history |
+| HIDDEN_REQUEST / HIDDEN_RESPONSE | Indexed lane-local hidden read handshake and separate registered response consumption |
+| HIDDEN_FEED | Head-history input handshake for exactly one hidden component; loop for H components |
+| APPEND_WAIT / APPEND_DRAIN | Wait for actual native head computation/commit completion and idle transport before restoring target ownership |
+| TARGET_RELEASE | Release handshake only after target commit, no pending hidden response and full transport idle |
+| AFTER_TARGET | Replay advances to the next saved position or seed; seed sets next position; verification selects last-lane prediction or pending-token materialization |
+| BLOCK_PREPARE | One cycle bounds depth to min(4,remaining limit-1,remaining capacity-1); zero depth selects singleton publication |
+| DRAFT_SWITCH / DRAFT_COMMAND | Idle transport ownership switch followed by sequential native draft command handshake |
+| DRAFT_RESULT / DRAFT_WAIT / DRAFT_DRAIN | Capture independently computed drafts, wait for private-head rollback completion and idle transport, then select target verification |
+| VERDICT_COMMAND | Handshake passes actual anchor/draft/target predictions to the verdict leaf; it registers decision before publishing |
+| PUBLISH | Only committed-output handshakes advance visible position, journal and generated-token counts; stalled payload/metadata remain fixed |
+| PUBLICATION_WAIT | Distinct block-publication completion; choose terminal-truncated materialized prefix, never rejected suffix |
+| BLOCK_FINISH | After required final materialization, either begin another block or enter COMPLETE |
+| COMPLETE | One cycle done, error only on failure; token_ready=0; following cycle enters IDLE |
+| ABORT_FLUSH / ABORT_DRAIN | Annul unpublished work, invalidate sequence and drain accepted tagged memory before failed completion |
+| CANCEL_COMPLETE | One pulse after cancel release/drain; failed done accompanies it only when a public command was active |
+
+The journal contains one 33-bit actual token/phase per legal sequence
+position, never hidden/model vectors. It is written only on a legal
+seed handshake or generated-output retirement. If MTP is enabled after
+unprimed actual tokens, replay positions 0 through seed_position-1 to
+build true hidden/head history. A precision change also replays that
+actual context with the newly selected arithmetic, rebuilding target
+cache and absorption state. Both use a fresh internal epoch, emit no
+public replay logits/tokens, and include all replay work in cycle/byte
+costs. Already observed tokens are not regenerated or changed.
+
+For a verified block commit
+`min(spec_count,spec_accepted+1,active_verification_lanes)` leading target
+rows after the final output handshake. Each retained row's unnormalized
+hidden vector primes actual-token head history before release.
+Any final visible correction or all-accepted tail without target state
+is materialized exactly once through the one-lane target before
+BLOCK_FINISH. No public handshake is generated by that materialization.
+For a singleton block the anchor itself is this pending token.
+
+The 29 target memory clients share slots 0..8 with the nine draft
+clients only in nonoverlapping phases. A registered owner changes only
+after adapter, group service and scheduler idle. Hidden reads during
+head priming remain lane-local. The FP8 group service owns scheduler
+slot 29, for 30 total clients. Native target verification still launches
+all active lanes concurrently and retains explicit per-layer barriers;
+transport reuse does not serialize the four decoder invocations.
 
 ## Native MTP and parallel target verification
 
@@ -460,8 +522,8 @@ lookup or externally supplied prediction.
 | Minimum H=8, any legal non-power-of-two H | Explicit final-component tests, no power-of-two wrap assumptions |
 
 Reset zeros public handshakes/data and arming; flush/reset is required to
-leave FAULTED. Head-specific transformer, residual/MLA/FFN and final shared
-output projection remain separate integration obligations. This component
+leave FAULTED. The head-specific transformer, residual/MLA/FFN and final
+shared output projection are connected in `anvil_d2_draft_head`. This component
 does not establish four native draft heads or causal verification by itself.
 
 ### MTP verdict/publication implementation boundary
@@ -498,8 +560,8 @@ for an actual mismatch, not an output-retirement count.
 | First position at sequence end | Shorten to one beat; first position outside the sequence fails |
 
 `publication_done` does not certify target materialization, write
-acknowledgements or command completion. The future engine/controller must
-drain/materialize the final emitted token before the public COMPLETE.
+acknowledgements or command completion. The engine/controller
+drains/materializes the final emitted token before the public COMPLETE.
 No top-level engine-result input is authorized by this internal component.
 
 ### Target-lane and speculative-cache implementation boundary
@@ -520,7 +582,7 @@ MAX_SEQ_LEN. Its layer command must precede decoder issue. Layer zero
 starts a new private block; subsequent layers must have the same epoch,
 positions, active lanes and precision and appear in order. Illegal
 commands or malformed cache accesses latch an explicit fault, requiring
-the future top's abort/drain path.
+the integrated top's abort/drain path.
 
 | Target/cache phase or edge | Effect |
 |---|---|
@@ -580,8 +642,8 @@ the full decoder layer barrier; hidden row 0 persists across that barrier.
 Weights, wide absorbed coefficients and committed cache retain parent
 logical identities outside this local scratch map.
 
-These connected target components are not yet integrated with the native
-draft subsystem, the public generation controller or `anvil_d2_top`. Their static
+These target components are integrated with the native
+draft subsystem and public controller in `anvil_d2_top`. Their static
 elaboration is not numerical, behavioral, synthesis or timing acceptance.
 
 Use bounded queues, tagged bank arbitration and explicit owner/epoch
@@ -687,8 +749,8 @@ the independent suites must measure accepted external transfers,
 including scales, padding, refetches and unchanged tensors.
 
 The adapter exposes an internal group interface for connection to the
-literal top-level `fp8` instance. That final top-level connection remains
-an implementation obligation, not a claim of completed inference.
+literal top-level `fp8` instance. This is a connected implementation,
+not a claim of independently verified inference.
 
 ### FP8 group service implementation boundary
 
@@ -749,8 +811,8 @@ are one-cycle command completion signals. Memory responses belong to the
 single outstanding internal service request; external tag validation is
 the scheduler's responsibility. Actual byte counters must be driven from
 external bank handshakes, not these earlier queue-admission handshakes.
-The service is implemented independently of the still-required native
-decoder adapter; its presence alone is not integrated FP8 inference.
+The service is connected through the native decoder adapter to the real
+cache/expert arithmetic. Numerical/behavioral evidence remains independent.
 
 ## Implementation and independent acceptance obligations
 
