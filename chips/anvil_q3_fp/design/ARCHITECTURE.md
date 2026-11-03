@@ -209,7 +209,7 @@ rewrite an accepted staged payload. Until top-level abort, its original read
 or write may be forwarded; no request is fabricated by a fault. Cancel and
 top-level core flush combinationally suppress producer readiness, then clear
 staged ownership at the edge with priority over retire/refill. Scheduler flush
-immediately prevents scheduler admission on cancel/sequence-flush/abort-flush,
+immediately prevents scheduler admission on cancel/abort-flush,
 and scheduler draining prevents admission thereafter. Forwarded valid and
 payload need no core-flush mux before routing. The unchanged scheduler alone
 drains already accepted external transactions; unforwarded staged requests are
@@ -252,6 +252,38 @@ response survives a sequence flush, cancellation, fault or epoch restart.
 Acknowledged writes are not rolled back; cache commitment rules are unchanged.
 Fresh mandatory checks and source-bound post-fit STA must establish this repair;
 the failed timing result is not timing closure or production-default PPA.
+
+### Idle-qualified sequence-start clear
+
+The subsequent completed compact post-fit run at unchanged 10 ns reported
+setup WNS -0.647 ns and hold WNS +0.037 ns. The measured path originated at
+top `state.SEQUENCE_FLUSH`, passed through scheduler response retirement,
+same-cycle free-slot reuse and ingress arbitration, and ended at
+`successor[23][1]`. Registered response credit does not cut the scheduler's
+own flush-to-retirement path.
+
+Sequence start now flushes only the core and local staging, not the scheduler.
+The acceptance guard already requires scheduler idle: all slots FREE, no
+flush and no drain in progress. Reset starts with empty client FIFOs.
+Successful operations wait for their memory acknowledgments, and the final
+logit follows the output-head reads and arithmetic; no old producer has
+pending traffic when successful completion returns to IDLE. Abort/cancel
+clears local FIFOs before returning to IDLE and waits for external drain.
+Consequently accepted sequence start has neither scheduler-owned traffic
+nor a staged request to forward. IDLE and the two sequence-start states issue
+no commands, and both startup states continue asserting core flush.
+
+The core-clear cycle and epoch increment are retained. The next startup state
+waits for scheduler idle instead of the drain-done pulse previously created
+by flushing the empty scheduler. Cache ownership and pinned format are cleared
+before embedding starts. Scheduler tags and round-robin state continue without
+reset, as before. A wrong/stale external response still faults and aborts.
+Cancellation still directly asserts scheduler/core flush with priority over
+acceptance on the same edge; abort flushing and complete external drain are
+unchanged. No scheduler source or interface changes are needed. This removes
+the measured sequence-state input from the scheduler flush cone, but fresh
+mandatory checks and source-bound post-fit STA must establish correctness and
+timing; the retained failure is not waived.
 
 ## Cache hierarchy
 

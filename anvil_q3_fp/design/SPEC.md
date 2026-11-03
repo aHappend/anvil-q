@@ -194,7 +194,7 @@ Neither buffering boundary changes top ports, scheduler parameters or epochs.
 All existing error propagation remains active. Core flush immediately
 suppresses producer readiness and clears staged ownership on the edge, with
 priority over forwarding/refill. Scheduler flush immediately suppresses
-scheduler admission on cancel, sequence flush and abort flush; its existing
+scheduler admission on cancel and abort flush; its existing
 draining state suppresses admission thereafter. Staged valid and payload are
 not redundantly gated by core flush before scheduler routing/arbitration.
 Requests already accepted by the scheduler retain its unchanged flush/drain
@@ -202,6 +202,20 @@ semantics; an unforwarded staged request is discarded, not externally issued
 or awaited. External writes already acknowledged are not rolled back; failed
 or cancelled cache commits remain inaccessible. No local failure signal is
 delayed to achieve this boundary.
+
+Sequence start clears core/cache and staging ownership, but does not flush
+the scheduler. Token acceptance requires `state==IDLE && scheduler_idle`,
+with cancellation and scheduler faults excluded. Scheduler idle proves no live
+slots and no drain in progress. Successful completion follows all operation
+acknowledgments and the last logit handshake; failed/cancelled completion
+follows external drain and core/staging annulment. Thus no prior request is
+pending in the client FIFOs at sequence acceptance. No command issues in
+IDLE or either sequence-start state. `SEQUENCE_FLUSH` retains its core-clear
+cycle, followed by `SEQUENCE_DRAIN`, which waits for `scheduler_idle` rather
+than a drain-done pulse from an unnecessary scheduler flush. Epoch increments,
+sequence dtype sampling and cache invalidation remain unchanged. An unexpected
+external response still invokes the scheduler fault/abort path. The parent
+scheduler implementation, tags, fairness and queue ordering are unchanged.
 
 ### Arithmetic interfaces
 
@@ -294,6 +308,9 @@ E0 is the rising edge accepting pre-edge valid && ready.
 | Retire and replace | Same edge can consume held output and replace its stage |
 | Bubble | Not a transaction; must not accumulate, advance row or raise an error |
 | Flush/cancel/reset plus transfer | Annul/flush/reset wins; no old result escapes |
+| New sequence accepted at E0 | Scheduler already idle; increment epoch and sample dtype/AWQ; post-E0 core flush clears cache/staging ownership, without scheduler flush |
+| Sequence-start E1/E2 | E1 clears core/staging ownership and enters SEQUENCE_DRAIN; E2 enters EMBED only if scheduler idle; no drain-done pulse is required |
+| Cancel/fault during sequence start | Cancel immediately flushes scheduler/core; fault takes the existing abort-flush/drain path; neither can issue embedding work |
 | QUEUE_DEPTH=1 | Singleton queue supports simultaneous retire/refill without overwrite |
 | QUEUE_DEPTH=3 | Explicit endpoint wrap, never binary-mask wrap |
 | TILE_ROWS=1 or 3 | Row interlock waits for previous sum commitment; no fixed eight-row assumption |

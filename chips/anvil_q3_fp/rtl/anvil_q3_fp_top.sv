@@ -40,7 +40,8 @@ module anvil_q3_fp_top #(
   reg [31:0] token, position, next_position, layer, epoch;
   reg [31:0] prefill_count, frozen_prefill_count;
   wire scheduler_idle, scheduler_drained, scheduler_fault;
-  wire scheduler_flush=cancel || state==SEQUENCE_FLUSH || state==ABORT_FLUSH;
+  // Sequence acceptance already requires scheduler idle; only the core clears.
+  wire scheduler_flush=cancel || state==ABORT_FLUSH;
   wire core_flush=cancel || state==SEQUENCE_FLUSH || state==SEQUENCE_DRAIN ||
     state==ABORT_FLUSH || state==ABORT_DRAIN || state==CANCEL_COMPLETE ||
     (state==COMPLETE && failed);
@@ -264,7 +265,7 @@ module anvil_q3_fp_top #(
         end
       end
       SEQUENCE_FLUSH: state<=SEQUENCE_DRAIN;
-      SEQUENCE_DRAIN: if (scheduler_drained) state<=EMBED;
+      SEQUENCE_DRAIN: if (scheduler_idle) state<=EMBED;
       EMBED: if (io_ready) state<=EMBED_WAIT;
       EMBED_WAIT: if (io_done) state<=DECODER;
       DECODER: if (decoder_ready) state<=DECODER_WAIT;
