@@ -63,7 +63,7 @@ def worker():
     import behavior
     import defects
     import synthesis
-    import images
+    import four_state
     from native_model import descriptor
 
     records = {}
@@ -74,6 +74,7 @@ def worker():
     records["native"] = relative(behavior.run(
         banks=1, queue=1, tile_rows=3, tile_k=3, tokens=1,
         words=descriptor(banks=1, intermediate=3, vocabulary=3, context=1, page_tokens=1)))
+    records["Icarus_native"] = relative(four_state.run())
     records["mutation"] = relative(defects.numerical_mutants())
     records["synthesis"] = relative(synthesis.run(geometries=[(1, 1, 1, 1)]))
     (ROOT / "delivery-result.json").write_text(json.dumps({

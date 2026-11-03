@@ -47,11 +47,13 @@ def run_suite(suite):
             import behavior
             import cache_write
             import descriptor
+            import four_state
             import integrated
             import scheduler
             import speculative
             import top_safety
             check("four-state-startup-and-illegal-parameters", top_safety.run)
+            check("four-state-complete-native-inference", four_state.run)
             check("atomic-descriptors", descriptor.run)
             check("all-attention-dimensions", attention.run_matrix)
             check("packed-cache-pages-and-readback", cache_write.run)

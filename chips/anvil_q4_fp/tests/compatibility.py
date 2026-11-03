@@ -33,6 +33,8 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None, variants_only=Fal
         if mode in modes:
             configurations.append((f"mode-{mode}-ratio-{ratio}-cache-{cache}", mode,
                                    legacy_words(mode, ratio, cache, dimension)))
+    if not configurations:
+        raise ValueError("Selected modes have no requested compatibility configurations")
     try:
         for label, top, source_directory in (
                 ("parent", "anvil_q4_top", ROOT / "anvil_q4_reference/rtl"),
@@ -43,11 +45,13 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None, variants_only=Fal
             execute(directory / f"{label}-compile", [
                 "verilator", "--cc", "--exe", "--build", "-Wno-fatal", "-j", "2",
                 "--top-module", top, "--Mdir", relative(obj),
+                "-MAKEFLAGS", "OPT_FAST=-O3",
                 "-CFLAGS", flags,
                 *[relative(path) for path in sorted(source_directory.glob("*.sv"))],
                 "tests/arithmetic_observer.sv",
                 os.path.relpath(ROOT / "tests/compatibility_sim.cpp", obj)], timeout=1800)
         for configuration_label, mode, words in configurations:
+            token_count = 2 if configuration_label==f"mode-{mode}" else 1
             fixture = directory / f"descriptor-{configuration_label}.txt"
             fixture.write_text(" ".join(f"{word:x}" for word in words) + "\n")
             observed = {}
@@ -55,7 +59,7 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None, variants_only=Fal
                 output = directory / f"{label}-{configuration_label}.json"
                 execute(directory / f"{label}-{configuration_label}", [
                     relative(objects[label] / f"V{top}"), relative(fixture),
-                    relative(output)], timeout=1800, extra_inputs=[fixture],
+                    relative(output), str(token_count)], timeout=1800, extra_inputs=[fixture],
                     repair_of=repair_of)
                 observed[label] = json.loads(output.read_text())
             for quantity in ("reads", "writes", "logits", "done", "errors", "transactions",
@@ -63,8 +67,16 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None, variants_only=Fal
                              "malformed_tokens"):
                 if observed["parent"][quantity] != observed["integrated"][quantity]:
                     raise AssertionError(f"Legacy differential mismatch: mode={mode} {quantity}")
+            cache_reads = sum(transaction[0]==0 and transaction[1] in (12, 13)
+                              for bank in observed["parent"]["transactions"] for transaction in bank)
+            cache_writes = sum(transaction[0]==1 and transaction[1] in (12, 13)
+                               for bank in observed["parent"]["transactions"] for transaction in bank)
+            if words[5] and (not cache_reads or not cache_writes):
+                raise AssertionError(f"Compressed cache traffic not observed: {configuration_label}")
             records.append({"mode": mode, "gqa_ratio": words[22], "cache_encoding": words[5],
-                            "tokens": 2, "token_phase_transition": True,
+                            "tokens": token_count, "token_phase_transition": token_count==2,
+                            "compared_compressed_cache_reads": cache_reads,
+                            "compared_compressed_cache_writes": cache_writes,
                             "independent_expectation": (
                                 "distinct zero LM-head yields zero" if mode == 4 else
                                 "tied constant FP16(0.5); final Q16 norm rounds to 1; "
