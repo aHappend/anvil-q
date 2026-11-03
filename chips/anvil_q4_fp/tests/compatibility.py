@@ -1,6 +1,7 @@
 """Original-parent differential execution; never a native numerical oracle."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
@@ -54,14 +55,22 @@ def run(preparation=False, modes=(1, 2, 3, 4), repair_of=None, variants_only=Fal
             token_count = 2 if configuration_label==f"mode-{mode}" else 1
             fixture = directory / f"descriptor-{configuration_label}.txt"
             fixture.write_text(" ".join(f"{word:x}" for word in words) + "\n")
-            observed = {}
-            for label, top in (("parent", "anvil_q4_top"), ("integrated", "anvil_q4_fp_top")):
+
+            def execute_case(label, top):
                 output = directory / f"{label}-{configuration_label}.json"
                 execute(directory / f"{label}-{configuration_label}", [
                     relative(objects[label] / f"V{top}"), relative(fixture),
                     relative(output), str(token_count)], timeout=1800, extra_inputs=[fixture],
                     repair_of=repair_of)
-                observed[label] = json.loads(output.read_text())
+                return json.loads(output.read_text())
+
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                pending = {
+                    label: workers.submit(execute_case, label, top)
+                    for label, top in (
+                        ("parent", "anvil_q4_top"), ("integrated", "anvil_q4_fp_top"))
+                }
+                observed = {label: future.result() for label, future in pending.items()}
             for quantity in ("reads", "writes", "logits", "done", "errors", "transactions",
                              "verified_drafts", "invalid_descriptors", "cancellations",
                              "malformed_tokens"):
