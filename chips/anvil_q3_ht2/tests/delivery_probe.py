@@ -93,6 +93,17 @@ def worker(run, focus):
         elif focus == "integration-boundary":
             ledger.check("integrated-one-layer-mode1", run_fast_integration, 1, 17,
                          layers=1, compact=True)
+        elif focus == "compact-closure":
+            controls = {}
+            for seed in (17, 29, 43):
+                controls[seed] = ledger.check(
+                    f"tile-seed{seed}", run_tile, "verilator", seed, True)
+            mutant = ledger.check("mutation-broadcast", run_tile, "verilator",
+                                  17, True, mutant=True)
+            bind_mutation_control(ledger, controls[17], mutant,
+                                  ("seed", "simulator", "vector_sha256"))
+            ledger.check("integrated-one-layer-mode2", run_fast_integration, 2, 29,
+                         layers=1, compact=True)
         elif focus == "integration":
             integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17,
                                       compact=True)
@@ -124,7 +135,7 @@ def main():
     parser.add_argument("--repair-of", default=FAILED_RECEIPT)
     parser.add_argument("--focus", choices=("all", "compatibility", "integration", "residual",
                                           "compacted", "repaired-tools",
-                                          "integration-boundary"),
+                                          "integration-boundary", "compact-closure"),
                         default="all")
     args = parser.parse_args()
     enter_tier()
