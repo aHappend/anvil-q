@@ -87,10 +87,16 @@ def component(run, stem, operation, *, inputs, parameters, tools, validate):
         assessment, results = assess(run, path, inputs, parameters, tools)
         assessments.append(assessment)
         if assessment["applicable"]:
-            validate(results)
-            run.components.append({"receipt": relative(path), "status": "passed",
-                                   "reused": True, "applicability": assessment})
-            return results
+            try:
+                validate(results)
+            except AssertionError as error:
+                assessment["applicable"] = False
+                assessment["reasons"].append(f"retained comparison/artifact invalid: {error}")
+                print(f"COMPONENT_STALE {relative(path)}: {error}", flush=True)
+            else:
+                run.components.append({"receipt": relative(path), "status": "passed",
+                                       "reused": True, "applicability": assessment})
+                return results
     result = run.component(stem, operation)
     validate(result)
     run.components[-1]["reused"] = False
