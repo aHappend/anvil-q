@@ -30,6 +30,8 @@ def assess(run, path, inputs, parameters, tools, ancestors=(), equivalence=None)
     if path in ancestors or len(ancestors) >= 32:
         raise ValueError(f"cyclic/excessively nested component receipt: {relative(path)}")
     receipt = json.loads(path.read_text())
+    if not isinstance(receipt, dict):
+        raise ValueError("component receipt is not a structured object")
     reasons = []
     if receipt.get("status") != "passed":
         reasons.append("component did not pass")
@@ -185,15 +187,22 @@ def component(run, stem, operation, *, inputs, parameters, tools, validate,
                 candidates.extend(parent.glob(f"l1-{candidate_stem}-*/receipt.json"))
     assessments = []
     for path in sorted(set(candidates), key=lambda p: p.stat().st_mtime, reverse=True):
-        assessment, results = assess(run, path, inputs, parameters, tools,
-                                     equivalence=equivalence)
+        try:
+            assessment, results = assess(run, path, inputs, parameters, tools,
+                                         equivalence=equivalence)
+        except (OSError, ValueError, TypeError, KeyError) as error:
+            assessment = {"receipt": relative(path), "applicable": False,
+                          "reasons": [f"invalid retained receipt/artifact: {error}"]}
+            assessments.append(assessment)
+            print(f"COMPONENT_STALE {relative(path)}: {error}", flush=True)
+            continue
         assessments.append(assessment)
         if assessment["applicable"]:
             try:
                 validate(results)
                 if validate_retained is not None:
                     validate_retained(run, path, json.loads(path.read_text()), results)
-            except (AssertionError, KeyError, TypeError, ValueError) as error:
+            except (AssertionError, KeyError, TypeError, ValueError, OSError) as error:
                 assessment["applicable"] = False
                 assessment["reasons"].append(f"retained comparison/artifact invalid: {error}")
                 print(f"COMPONENT_STALE {relative(path)}: {error}", flush=True)
@@ -363,6 +372,7 @@ def marker_source_equivalence(run, path, receipt, name):
 
 def marker_case(run, opening):
     from marker_checks import run_markers
+    from resume_checks import validate_marker_receipt
 
     def validate(result):
         if result.get("counts", [])[:5] != [
@@ -377,7 +387,7 @@ def marker_case(run, opening):
         parameters={"opening": opening, "target": 151667 if opening else 151668,
                     "vocabulary": 151936, "simulation_threads": 8},
         tools=("python3", "verilator", "g++", "make"), validate=validate,
-        equivalence=marker_source_equivalence)
+        equivalence=marker_source_equivalence, validate_retained=validate_marker_receipt)
 
 
 def marker_applicability(run, opening):

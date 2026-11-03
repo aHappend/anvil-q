@@ -356,6 +356,85 @@ def speculative_cancel_matrix(run):
     return result
 
 
+def validate_marker_receipt(run, path, receipt, result):
+    from marker_checks import MARKER_DRIVER, marker_reference
+    from marker_builds import OPTIMIZATION
+    from prefill_marker_checks import prefill_driver
+    from speculation_checks import replace_once
+    import reference as fp
+
+    prefill = "input_marker" in result
+    prefix = "prefill-marker" if prefill else "marker"
+    driver_name = "prefill_marker_driver.cpp" if prefill else "marker_driver.cpp"
+    text = prefill_driver() if prefill else MARKER_DRIVER
+    if result.get("clock_optimized"):
+        require(not prefill, "unsupported optimized prefill driver")
+        text = replace_once(text, "auto edge=[&] {",
+                            "auto edge=[&](bool low_settled=false) {\n"
+                            "      if (!low_settled) dut->eval();")
+        text = replace_once(
+            text, "dut->clk=0;dut->eval();context->timeInc(5);++cycle;",
+            "dut->clk=0;context->timeInc(5);++cycle;")
+        text = replace_once(text, "        edge();\n        if (transfer)",
+                            "        edge(true);\n        if (transfer)")
+    driver = path.parent / driver_name
+    require(driver.is_file() and driver.read_text() == text,
+            "retained marker driver differs from current public-pin comparisons")
+    compiled = result["compiled"]
+    binding = compiled["binding"]
+    parameters = {
+        "COMPACT": 1, "NUM_LAYERS": 1, "HIDDEN_SIZE": 8, "INTERMEDIATE_SIZE": 8,
+        "NUM_Q_HEADS": 2, "NUM_KV_HEADS": 1, "HEAD_DIM": 8, "VOCAB_SIZE": 151936,
+        "MAX_SEQ_LEN": 4, "GROUP_SIZE": 8, "BANKS": 8, "QUEUE_DEPTH": 3}
+    require(result["parameters"] == binding["parameters"] == parameters and
+            result["simulation_threads"] == binding["simulation_threads"] and
+            compiled.get("optimization") == OPTIMIZATION and
+            binding["driver_sha256"] == hashlib.sha256(text.encode()).hexdigest() and
+            binding["rtl_sha256"] == {name: digest for name, digest in run.hashes.items()
+                                     if name.startswith("rtl/anvil_qn1_")} and
+            binding["tool_versions"] == {name: run.tool_versions[name]
+                                        for name in ("verilator", "g++", "make")},
+            "marker build parameters/source/tool/driver mismatch")
+    binary = ROOT / compiled["binary"]
+    require(binary.is_file() and hashlib.sha256(binary.read_bytes()).hexdigest() ==
+            compiled["binary_sha256"], "missing/corrupted marker executable")
+    owner_path = binary.parent.parent / "receipt.json"
+    owner, _ = assess(
+        run, owner_path, ("tests/marker_builds.py", "tests/marker_checks.py",
+                         "tests/prefill_marker_checks.py", "tests/reference.py"), {}, TOOLS)
+    require(owner["applicable"], "stale/incomplete marker build checkpoint")
+    commands = [c for c in receipt["commands"]
+                if Path(c["stdout"]).name == f"{prefix}-simulation.stdout.txt"]
+    require(len(commands) == 1 and commands[0]["argv"] == [
+        compiled["binary"], relative(path.parent / "checkpoint-images"),
+        str(int(result["opening"])), str(result["simulation_threads"])],
+        "retained marker simulation argv mismatch")
+    output = (ROOT / commands[0]["stdout"]).read_text()
+    pattern = (r"^PREFILL_MARKER_SUMMARY opening=(\d+) frames=1 logits=(\d+) "
+               if prefill else r"^MARKER_SUMMARY opening=(\d+) frames=2 logits=(\d+) ")
+    matches = re.findall(
+        pattern + r"commits=(\d+) drafts=(\d+) compared_writes=(\d+) "
+        r"requests=(\d+) cycles=(\d+)$", output, re.M)
+    counts = result["counts"]
+    require(len(matches) == 1 and list(map(int, matches[0])) == counts and
+            len(counts) == 7 and counts[5] > 0 and counts[6] > 0,
+            "retained marker raw frame/commit/KV/counter summary mismatch")
+    expected_counts = ([int(result["opening"]), 151936, 0, 0, 152] if prefill else
+                       [int(result["opening"]), 303872, 2,
+                        0 if result["opening"] else 2, 304])
+    require(counts[:5] == expected_counts, "incomplete real-marker comparisons")
+    with tempfile.TemporaryDirectory(prefix="official-image-", dir=run.path) as directory:
+        images = Path(directory) / "checkpoint-images"
+        marker_reference(images, False if prefill else result["opening"])
+        rope = [value for position in range(2)
+                for pair in zip(*fp.coefficients(8, position)) for value in pair]
+        (images / "rope.hex").write_text("".join(f"{value:08x}\n" for value in rope))
+        hashes = {f"checkpoint-images/{file.name}":
+                  hashlib.sha256(file.read_bytes()).hexdigest() for file in images.glob("*.hex")}
+    require(hashes == receipt.get("transient_image_sha256"),
+            "retained marker independent image/reference mismatch")
+
+
 def run_resume_checker(run):
     """Read-only retained-case assessment plus in-memory negative counterexamples."""
     from behavior_suite import SPECULATION, validate_core

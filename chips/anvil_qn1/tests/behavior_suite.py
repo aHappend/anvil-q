@@ -168,6 +168,8 @@ def validate_parent(result):
 
 
 def prefill_case(run, opening):
+    from resume_checks import validate_marker_receipt
+
     def validate(result):
         require(result.get("counts", [])[:5] ==
                 [int(opening), 151936, 0, 0, 152],
@@ -179,7 +181,8 @@ def prefill_case(run, opening):
                 "tests/speculation_checks.py", "tests/model.py", "tests/reference.py"),
         parameters={"opening": opening, "input_marker": 151667 if opening else 151668,
                     "simulation_threads": 8},
-        tools=TOOLS, validate=validate, equivalence=marker_source_equivalence)
+        tools=TOOLS, validate=validate, equivalence=marker_source_equivalence,
+        validate_retained=validate_marker_receipt)
 
 
 def run_behavior_components(run):
